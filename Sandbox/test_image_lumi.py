@@ -7,18 +7,10 @@ import luminoth.predict as predict
 from luminoth.tools.checkpoint import get_checkpoint_config
 from luminoth.utils.predicting import PredictorNetwork
 
-
 max_detections = 100
 min_prob = 0.5
 max_prob = 1.0
 checkpoint="e1c2565b51e9"
-# initialize the camera and grab a reference to the raw camera capture
-camera = PiCamera()
-camera.resolution = (696, 512)
-camera.framerate = 5
-rawCapture = PiRGBArray(camera, size=(696, 512))
-# allow the camera to warmup
-time.sleep(0.1)
 config = get_checkpoint_config(checkpoint)
 # Filter bounding boxes according to `min_prob` and `max_detections`.
 if config.model.type == 'fasterrcnn':
@@ -36,23 +28,17 @@ else:
 
 # Instantiate the model indicated by the config.
 network = PredictorNetwork(config)
-index = 0
-# capture frames from the camera
-for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-    # grab the raw NumPy array representing the image, then initialize the timestamp
-    # and occupied/unoccupied text
-    image = frame.array
-    image = cv2.resize(image, (696,512))
-    print(image.shape)
-    predicted_image, objects = predict.run_image_through_network(network, image, save_path="predicted_image_{}.jpg".format(index))
-    print(objects)
-    # show the frame
-    cv2.imshow("Frame", predicted_image)
-    cv2.imwrite("image_{}.jpg".format(index), image)
-    index += 1
-    key = cv2.waitKey(1) & 0xFF
-    # clear the stream in preparation for the next frame
-    rawCapture.truncate(0)
-    # if the `q` key was pressed, break from the loop
-    if key == ord("q"):
-        break
+
+# initialize the camera and grab a reference to the raw camera capture
+camera = PiCamera()
+rawCapture = PiRGBArray(camera)
+# allow the camera to warmup
+time.sleep(0.1)
+# grab an image from the camera
+camera.capture(rawCapture, format="bgr")
+image = rawCapture.array
+print(image.shape)
+predicted_image, objects = predict.run_image_through_network(network, image)
+# display the image on screen and wait for a keypress
+cv2.imshow("Image", predicted_image)
+cv2.waitKey(0)
