@@ -44,9 +44,10 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     image = frame.array
     image = cv2.resize(image, (696,512))
     print(image.shape)
-    predicted_image, objects = predict.run_image_through_network(network, image, save_path="predicted_image_{}.jpg".format(index))
+    objects = predict.run_image_through_network(network, image, save_path="predicted_image_{}.jpg".format(index))
     print(objects)
     # show the frame
+    predicted_image = cv2.imread("predicted_image_{}.jpg".format(index))
     cv2.imshow("Frame", predicted_image)
     cv2.imwrite("image_{}.jpg".format(index), image)
     index += 1

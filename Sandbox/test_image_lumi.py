@@ -38,7 +38,8 @@ time.sleep(0.1)
 camera.capture(rawCapture, format="bgr")
 image = rawCapture.array
 print(image.shape)
-predicted_image, objects = predict.run_image_through_network(network, image)
+objects = predict.run_image_through_network(network, image, save_path="predicted_image.png")
+predicted_image = cv2.imread("predicted_image.png")
 # display the image on screen and wait for a keypress
 cv2.imshow("Image", predicted_image)
 cv2.waitKey(0)
