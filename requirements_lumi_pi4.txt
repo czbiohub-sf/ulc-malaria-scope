@@ -59,7 +59,7 @@ keyrings.alt==3.1.1
 kiwisolver==1.0.1
 lazy-object-proxy==1.3.1
 logilab-common==1.4.2
--e git+git@github.com:czbiohub/luminoth-uv-imaging.git@0f55e984b99fe94a2976a64ff69f4d9668818a5a#egg=luminoth
+-e git+git@github.com:czbiohub/luminoth-uv-imaging.git@master#egg=luminoth
 lxml==4.3.5
 Markdown==3.2.2
 MarkupSafe==1.1.0
