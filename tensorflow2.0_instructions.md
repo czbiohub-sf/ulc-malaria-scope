@@ -13,19 +13,19 @@ Get the coco model to test on
 unzip coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip -d Sample_TFLite_model
 
 ```
-
-Then clones a repo that contains the tensorflow lite based prediction on images
-```
-git clone https://github.com/EdjeElectronics/TensorFlow-Lite-Object-Detection-on-Android-and-Raspberry-Pi.git
-```
-Run the real time object detection pointing raspberry pi camera towards objects commonly found in COCO
-```
-python3 TFLite_detection_webcam.py --modeldir=Sample_TFLite_model
-```
 For the COCO dataset I used, I dowloaded data as below and made a video using ffmpeg from the images, and raspberry pi camera is pointed at the video
+
 ```
 wget http://images.cocodataset.org/zips/val2017.zip
 unzip val2017.zip -d val2017
 cd val2017
 ffmpeg -pattern_type glob -i '*.jpg' -vf "setpts=5*PTS" test_r5.mp4
+```
+Then clone a repo that contains the tensorflow lite based prediction on images
+```
+git clone https://github.com/EdjeElectronics/TensorFlow-Lite-Object-Detection-on-Android-and-Raspberry-Pi.git
+```
+Run the real time object detection pointing raspberry pi camera towards objects commonly found in COCO and COCO model downloaded
+```
+python3 TFLite_detection_webcam.py --modeldir=Sample_TFLite_model
 ```
