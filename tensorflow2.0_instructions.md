@@ -1,6 +1,6 @@
 Below creates a virutal environment with pillow, numpy, opencv, and tensorflow 2.0 
 ```pip3 install virtualenv
-pthon3 -m virtualenv -p $(which python3) venv_lite
+python3 -m virtualenv -p $(which python3) venv_lite
 source venv_lite/bin/activate
 pip3 install Pillow numpy
 wget https://github.com/PINTO0309/Tensorflow-bin/raw/master/tensorflow-2.1.0-cp37-cp37m-linux_armv7l.whl
