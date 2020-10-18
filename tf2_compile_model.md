@@ -1,5 +1,5 @@
 # Starting docker container for object detection
-`
+```
   CORAL_DIR=${HOME}/google-coral && mkdir -p ${CORAL_DIR}
   cd ${CORAL_DIR}
   git clone https://github.com/google-coral/tutorials.git
@@ -10,7 +10,7 @@
   8.tar.gz
   apt-get install cuda-cudart-10-1
   python3.6 -m pip install tensorflow-gpu
-`
+```
 
 # Train
 `
