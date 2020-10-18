@@ -13,8 +13,9 @@ python3.6 -m pip install tensorflow-gpu
 `
 wget http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.tar.gz
 tar -xzf ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.tar.gz .
+`
 # Use lumi to split and get transform to records but this might be different tensorflow version
-lumi split_train_val annotated_bounding_boxes.txt annotated_bounding_boxes_1.txt annotated_bounding_boxes_2.txt --output_dir all_data_lumi_csv --percentage 0.9 --random_seed 42 --input_image_format .tif
+`lumi split_train_val annotated_bounding_boxes.txt annotated_bounding_boxes_1.txt annotated_bounding_boxes_2.txt --output_dir all_data_lumi_csv --percentage 0.9 --random_seed 42 --input_image_format .tif
 lumi dataset transform --type csv --data-dir /lumi_csv/ --output-dir /tfdata/ --split train --split val --only-classes=table
 `
 `
