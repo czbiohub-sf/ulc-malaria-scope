@@ -12,21 +12,27 @@ python3.6 -m pip install tensorflow-gpu
 `
 
 # Train
+`
 python3.6 ${RESEARCH_DIR}/object_detection/model_main_tf2.py --model_dir=/data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn_sep24 --pipeline_config_path=/data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn/pipeline.config 
+`
 
 # Evaluation
+`
 python3.6 ${RESEARCH_DIR}/object_detection/model_main_tf2.py --model_dir=/data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn --pipeline_config_path=/data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn/pipeline.config --checkpoint_dir=/data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn
+`
 
 # Convert checkpoint to savedmodel
-
+`
 python3.6 ${RESEARCH_DIR}/object_detection/exporter_main_v2.py --input_type image_tensor --pipeline_config_path /data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn/pipeline.config --trained_checkpoint_dir /data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn_sep24 --output_directory /data/uv_microscopy_data/uv_multi_color/training_demo/models/export_sep25/
+`
 
 # Convert checkpoint to savedmodel
-
+`
 python3.6 ${RESEARCH_DIR}/object_detection/export_tflite_graph_tf2.py --pipeline_config_path=/data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn/pipeline.config --trained_checkpoint_dir=/data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn_sep24 --output_directory=/data/uv_microscopy_data/uv_multi_color/training_demo/models/export_sep28/
+`
 
 # Saved model to tflite 2 tensorflow 2 version
-
+`
 tflite_convert \
   --output_file=/data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn/detect.tflite \
   --saved_model_dir=/data/uv_microscopy_data/uv_multi_color/training_demo/models/export_sep25/saved_model/ \
@@ -39,7 +45,8 @@ tflite_convert \
   --change_concat_input_ranges=false \
   --allow_nudging_weights_to_use_fast_gemm_kernel=true \
   --allow_custom_ops
-
+`
 # Saved model to edge tpu compatible tflite tensorflow 2 version
-
+`
 edgetpu_compiler /data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn/out/output_tflite_graph.tflite
+`
