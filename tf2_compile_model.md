@@ -1,14 +1,15 @@
 # Starting docker container for object detection
-`CORAL_DIR=${HOME}/google-coral && mkdir -p ${CORAL_DIR}
-cd ${CORAL_DIR}
-git clone https://github.com/google-coral/tutorials.git
-cd tutorials/docker/object_detection
-docker build . -t detect-tutorial-tf1
-nvidia-docker run -it -p 4000:8888 -p 4001:6006 -v "/mnt/ibm_lg/pranathi:/data/" -v "/data/users/biohub/pranathi/code:/code/" detect-tutorial-tf1:latest bash
-wget http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_resnet50_v1_fpn_640x640_coco17_tpu-
-8.tar.gz
-apt-get install cuda-cudart-10-1
-python3.6 -m pip install tensorflow-gpu
+`
+  CORAL_DIR=${HOME}/google-coral && mkdir -p ${CORAL_DIR}
+  cd ${CORAL_DIR}
+  git clone https://github.com/google-coral/tutorials.git
+  cd tutorials/docker/object_detection
+  docker build . -t detect-tutorial-tf1
+  nvidia-docker run -it -p 4000:8888 -p 4001:6006 -v "/mnt/ibm_lg/pranathi:/data/" -v "/data/users/biohub/pranathi/code:/code/" detect-tutorial-tf1:latest bash
+  wget http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_resnet50_v1_fpn_640x640_coco17_tpu-
+  8.tar.gz
+  apt-get install cuda-cudart-10-1
+  python3.6 -m pip install tensorflow-gpu
 `
 
 # Train
