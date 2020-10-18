@@ -1,4 +1,4 @@
-CORAL_DIR=${HOME}/google-coral && mkdir -p ${CORAL_DIR}
+`CORAL_DIR=${HOME}/google-coral && mkdir -p ${CORAL_DIR}
 cd ${CORAL_DIR}
 git clone https://github.com/google-coral/tutorials.git
 cd tutorials/docker/object_detection
@@ -8,19 +8,22 @@ wget http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_res
 8.tar.gz
 apt-get install cuda-cudart-10-1
 python3.6 -m pip install tensorflow-gpu
+`
 
-
+`
 wget http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.tar.gz
 tar -xzf ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.tar.gz .
 # Use lumi to split and get transform to records but this might be different tensorflow version
 lumi split_train_val annotated_bounding_boxes.txt annotated_bounding_boxes_1.txt annotated_bounding_boxes_2.txt --output_dir all_data_lumi_csv --percentage 0.9 --random_seed 42 --input_image_format .tif
 lumi dataset transform --type csv --data-dir /lumi_csv/ --output-dir /tfdata/ --split train --split val --only-classes=table
-
+`
+`
 python3.6 generate_tfrecord.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/images/train -c /data/uv_microscopy_data/uv_multi_color/training_demo/images/train.csv -l /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/label_map.pbtxt -o /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/train.record
-
+`
+`
 python3.6 generate_tfrecord.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/images/val -c /data/uv_microscopy_data/uv_multi_color/training_demo/images/val.csv -l /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/label_map.pbtxt -o /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/val.record
-
-
+`
+`
 add-apt-repository ppa:deadsnakes/ppa
 apt-get update
 apt-get install python3.6-dev
@@ -65,3 +68,4 @@ tflite_convert \
   --allow_custom_ops
 
 edgetpu_compiler /data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn/out/output_tflite_graph.tflite
+`
