@@ -33,7 +33,9 @@ python3.6 ${RESEARCH_DIR}/object_detection/export_tflite_graph_tf2.py --pipeline
 `
 
 # Saved model to tflite 2 tensorflow 2 version
-`
+```
+INPUT_TENSORS='normalized_input_image_tensor'
+OUTPUT_TENSORS='TFLite_Detection_PostProcess,TFLite_Detection_PostProcess:1,TFLite_Detection_PostProcess:2,TFLite_Detection_PostProcess:3'
 tflite_convert \
   --output_file=/data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn/detect.tflite \
   --saved_model_dir=/data/uv_microscopy_data/uv_multi_color/training_demo/models/export_sep25/saved_model/ \
@@ -46,7 +48,7 @@ tflite_convert \
   --change_concat_input_ranges=false \
   --allow_nudging_weights_to_use_fast_gemm_kernel=true \
   --allow_custom_ops
-`
+```
 # Saved model to edge tpu compatible tflite tensorflow 2 version
 `
 edgetpu_compiler /data/uv_microscopy_data/uv_multi_color/training_demo/models/my_ssd_resnet50_v1_fpn/out/output_tflite_graph.tflite
