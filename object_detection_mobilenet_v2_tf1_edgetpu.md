@@ -1,4 +1,4 @@
-### Clone the repo with the scripts
+### Clone the repo with the scripts/ Instructions are from https://coral.ai/docs/edgetpu/retrain-detection/#using-the-coral-dev-board
 git clone https://github.com/czbiohub/ulc-malaria-scope.git
 cd ulc-malaria-scope/scripts
 
