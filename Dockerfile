@@ -36,6 +36,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         tmux \
 	graphviz \
         vim \
+        && \
 
 # ==================================================================
 # python
