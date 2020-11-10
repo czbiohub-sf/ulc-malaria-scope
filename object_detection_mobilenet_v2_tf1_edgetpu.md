@@ -1,42 +1,9 @@
-### Clone the repo with the scripts/ Instructions are from https://coral.ai/docs/edgetpu/retrain-detection/#using-the-coral-dev-board
-git clone https://github.com/czbiohub/ulc-malaria-scope.git
-cd ulc-malaria-scope/scripts
-
-### Prepare training data and config file
-./prepare_checkpoint_and_dataset.sh --network_type mobilenet_v1_ssd --train_whole_model false
-NUM_TRAINING_STEPS=50000 && \
-NUM_EVAL_STEPS=2000
-
-### Start the training job: From the /tensorflow/models/research/ directory
-./retrain_detection_model.sh \
---num_training_steps ${NUM_TRAINING_STEPS} \
---num_eval_steps ${NUM_EVAL_STEPS}
-
-### From the Docker /tensorflow/models/research directory
-./convert_checkpoint_to_edgetpu_tflite.sh --checkpoint_num ${NUM_TRAINING_STEPS}
-cd ${HOME}/google-coral/tutorials/docker/object_detection/out/models
-mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
-
-### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi), cd into detection code
-
-pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp35-cp35m-linux_armv7l.whl
-
-cd detection
-
-### Run detection through for a folder of images
-
-python3 detect_image.py \
-  --model ${HOME}/ssd_mobilenet_v2_cells_quant_edgetpu.tflite \
-  --labels ${HOME}/labels.txt \
-  --input ${HOME}/ \
-  --output cells_result/
-
-### Docker
+### Build docker and run it
 
 It is recommended that you run object detection with tensorflow inside a Docker container, 
 you can do so using:
 ```buildoutcfg
-docker build -t object_detection_docker:gpu_py36_cu90 -f Dockerfile.object_detection_docker_py36_cu90 .
+docker build -t object_detection_docker:gpu_py36_cu90 -f Dockerfile .
 ```
 Now you want to start a Docker container from your image, which is the virtual environment you will run your code in.
 ```buildoutcfg
@@ -56,6 +23,76 @@ Then you can access your notebooks in your browser at:
 http://<your server name (e.g. fry)>:<whatever port you mapped to when starting up docker>
 ```
 You will need to copy/paste the token generated in your Docker container.
+
+### Clone and install luminoth-uv-imaging for using the utils
+```pip install -e git+https://github.com/czbiohub/luminoth-uv-imaging.git
+  export LC_ALL=C.UTF-8
+  export LANG=C.UTF-8
+```
+
+### Clone the repo with the scripts/ Instructions are from https://coral.ai/docs/edgetpu/retrain-detection/#using-the-coral-dev-board
+```git clone https://github.com/czbiohub/ulc-malaria-scope.git
+cd ulc-malaria-scope/detection
+```
+
+### Convert to rgb jpgs - optional
+```
+python3 convert_to_rgb_jpg -i /data/uv_microscopy_data/uv_multi_color/training_demo/annotations -o /data/uv_microscopy_data/uv_multi_color/training_demo/images/ -f png
+```
+
+### Use lumi to split and get transform to records but this might be different tensorflow version
+```
+lumi split_train_val bb_labels.csv --output_dir lumi_csv --percentage 0.9 --random_seed 42 --input_image_format .jpg
+lumi dataset transform --type csv --data-dir /lumi_csv/ --output-dir /tfdata/ --split train --split val --only-classes=table
+```
+
+### Convert to tf record given the training images and training csv file 
+```
+python generate_tfrecord.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/images/train -c /data/uv_microscopy_data/uv_multi_color/training_demo/images/train.csv -l /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/label_map.pbtxt -o /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/train.record
+```
+
+### Convert to tf record given the validation images and validation csv file 
+```
+python generate_tfrecord.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/images/val -c /data/uv_microscopy_data/uv_multi_color/training_demo/images/val.csv -l /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/label_map.pbtxt -o /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/val.record
+```
+
+
+### Prepare training data and config file
+```
+./prepare_checkpoint_and_dataset.sh --network_type mobilenet_v1_ssd --train_whole_model false
+NUM_TRAINING_STEPS=50000 && \
+NUM_EVAL_STEPS=2000
+```
+
+### Start the training job: From the /tensorflow/models/research/ directory
+```
+./retrain_detection_model.sh \
+--num_training_steps ${NUM_TRAINING_STEPS} \
+--num_eval_steps ${NUM_EVAL_STEPS}
+```
+
+### From the Docker /tensorflow/models/research directory
+```
+./convert_checkpoint_to_edgetpu_tflite.sh --checkpoint_num ${NUM_TRAINING_STEPS}
+cd ${HOME}/google-coral/tutorials/docker/object_detection/out/models
+mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
+```
+
+### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi), cd into detection code
+```
+pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp35-cp35m-linux_armv7l.whl
+```
+
+cd detection
+
+### Run detection through for a folder of images
+```
+python3 detect_image.py \
+  --model ${HOME}/ssd_mobilenet_v2_cells_quant_edgetpu.tflite \
+  --labels ${HOME}/labels.txt \
+  --input ${HOME}/ \
+  --output cells_result/
+```
 
 ## Visualizing results
 

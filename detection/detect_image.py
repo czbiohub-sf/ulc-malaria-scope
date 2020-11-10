@@ -95,7 +95,7 @@ def main():
   parser.add_argument('-f', '--format', type=str, default=".jpg",
                       help='Format of image')
   args = parser.parse_args()
-
+  df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
   labels = load_labels(args.labels) if args.labels else {}
   interpreter = make_interpreter(args.model)
   interpreter.allocate_tensors()
@@ -126,8 +126,6 @@ def main():
     # if not objs:
     #   print('No objects detected')
 
-    df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
-    print(len(objs))
     for obj in objs:
       df = df.append({'image_id': input_image,
                       'xmin': obj.bbox.xmin,
@@ -138,7 +136,6 @@ def main():
                       'prob': obj.score},
                      ignore_index=True)
 
-      df.to_csv("bb_labels.csv")
       # print('  id:    ', obj.id)
       # print('  score: ', obj.score)
       # print('  bbox:  ', obj.bbox)
@@ -148,7 +145,7 @@ def main():
       draw_objects(ImageDraw.Draw(image), objs, labels)
       image.save(os.path.join(os.path.abspath(args.output), os.path.basename(input_image)))
       # image.show()
-
+  df.to_csv(os.path.join(os.path.abspath(args.output), "preds_val.csv"))
 
 if __name__ == '__main__':
   main()
