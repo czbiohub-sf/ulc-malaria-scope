@@ -150,7 +150,7 @@ parser.add_argument('-v', '--video', required=True,
       draw_objects(ImageDraw.Draw(image), objs, labels)
       image.save(os.path.join(os.path.abspath(args.output), input_image))
       # image.show()
-  df.to_csv("bb_labels.csv")
+  df.to_csv(os.path.join(os.path.abspath(args.output), "preds_val.csv"))
 
 if __name__ == '__main__':
   main()

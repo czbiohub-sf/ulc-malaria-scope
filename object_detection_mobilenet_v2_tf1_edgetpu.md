@@ -94,6 +94,12 @@ python3 detect_image.py \
   --output cells_result/
 ```
 
+### Confusion matrix and additional accuracy results
+
+```
+lumi confusion_matrix --groundtruth_csv /data/uv_microscopy_data/uv_multi_color/training_demo/images/val.csv --predicted_csv /data/ai_mosquito_data/lumi_csv/preds_val/preds_val.csv --output_txt /data/ai_mosquito_data/output.txt --classes_json /data/ai_mosquito_data/tfdata/classes.json --output_fig /data/ai_mosquito_data/cm.png
+````
+
 ## Visualizing results
 
 We strive to get useful and understandable summary and graph visualizations. We consider them to be essential not only for monitoring (duh!), but for getting a broader understanding of what's going under the hood. The same way it is important for code to be understandable and easy to follow, the computation graph should be as well.
