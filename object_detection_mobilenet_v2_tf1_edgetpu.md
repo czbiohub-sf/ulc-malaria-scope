@@ -19,10 +19,9 @@ mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflit
 
 ### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi), cd into detection code
 
-### Install the example's requirements:
+pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp35-cp35m-linux_armv7l.whl
 
-cd tflite/python/examples/detection
-./install_requirements.sh
+cd detection
 
 ### Run detection through for a folder of images
 
