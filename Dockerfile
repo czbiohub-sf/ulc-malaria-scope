@@ -19,7 +19,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
            /etc/apt/sources.list.d/cuda.list \
            /etc/apt/sources.list.d/nvidia-ml.list && \
 
-    apt-get update && \
+    apt-get update
 
 # ==================================================================
 # tools
@@ -124,7 +124,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 # Get the tensorflow models research directory, and move it into tensorflow
 # source folder to match recommendation of installation
 # ------------------------------------------------------------------
-
+RUN mkdir tensorflow && cd tensorflow
 RUN git clone https://github.com/tensorflow/models.git && \
     (cd models && git checkout f788046ca876a8820e05b0b48c1fc2e16b0955bc) && \
     mv models /tensorflow/models
