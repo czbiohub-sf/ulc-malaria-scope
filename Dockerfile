@@ -29,6 +29,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         libcupti-dev \
         ca-certificates \
         cmake \
+        curl \
         wget \
         git \
         tmux \
@@ -180,7 +181,7 @@ ENV PYTHONPATH $PYTHONPATH:/tensorflow/models/research:/tensorflow/models/resear
 # ------------------------------------------------------------------------------
 
 RUN apt-get update && \
-    apt-get install -y wget vim emacs nano
+    apt-get install -y vim emacs nano
 
 # ===================================================================
 # Install edgetpu compiler
