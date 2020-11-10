@@ -1,6 +1,11 @@
+### Clone the repo with the scripts/ Instructions are from https://coral.ai/docs/edgetpu/retrain-detection/#using-the-coral-dev-board
+```git clone https://github.com/czbiohub/ulc-malaria-scope.git
+   cd ulc-malaria-scope
+```
+
 ### Build docker and run it
 
-It is recommended that you run object detection with tensorflow inside a Docker container, 
+It is recommended that you run object detection with tensorflow inside a Docker container, From the directory use Docker
 you can do so using:
 ```buildoutcfg
 docker build -t object_detection_docker:gpu_py36_cu90 -f Dockerfile .
