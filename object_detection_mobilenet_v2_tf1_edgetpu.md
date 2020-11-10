@@ -1,3 +1,7 @@
+### Clone the repo with the scripts
+git clone https://github.com/czbiohub/ulc-malaria-scope.git
+cd ulc-malaria-scope/scripts
+
 ### Prepare training data and config file
 ./prepare_checkpoint_and_dataset.sh --network_type mobilenet_v1_ssd --train_whole_model false
 NUM_TRAINING_STEPS=50000 && \
@@ -13,24 +17,20 @@ NUM_EVAL_STEPS=2000
 cd ${HOME}/google-coral/tutorials/docker/object_detection/out/models
 mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
 
-### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi), download the detect_image.py code from GitHub:
-
-mkdir google-coral && cd google-coral
-git clone https://github.com/google-coral/tflite --depth 1
-
+### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi), cd into detection code
 
 ### Install the example's requirements:
 
 cd tflite/python/examples/detection
 ./install_requirements.sh
 
-### Run detection through for an image
+### Run detection through for a folder of images
 
 python3 detect_image.py \
   --model ${HOME}/ssd_mobilenet_v2_cells_quant_edgetpu.tflite \
   --labels ${HOME}/labels.txt \
-  --input ${HOME}/cells.jpg \
-  --output cells_result.jpg
+  --input ${HOME}/ \
+  --output cells_result/
 
 ### Docker
 
