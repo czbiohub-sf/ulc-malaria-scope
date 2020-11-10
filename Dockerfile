@@ -31,11 +31,11 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         cmake \
         curl \
         wget \
+        unzip \
         git \
         tmux \
 	graphviz \
         vim \
-        && \
 
 # ==================================================================
 # python
@@ -75,6 +75,9 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     $PIP_INSTALL \
         torch \
         torchvision \
+        ontextlib2 \
+        pillow \
+        lxml \
         && \
 
 # ==================================================================
@@ -135,12 +138,6 @@ RUN git clone https://github.com/tensorflow/models.git && \
 
 RUN apt-get update && \
     apt-get install -y python python-tk curl
-RUN pip install Cython && \
-    pip install contextlib2 && \
-    pip install pillow && \
-    pip install lxml && \
-    pip install jupyter && \
-    pip install matplotlib
 
 # ===========================================================================================================
 # Get protoc 3.0.0, rather than the old version already in the container
@@ -173,19 +170,13 @@ RUN cd /tensorflow/models/research && \
 # =====================================================================================
 # Set the PYTHONPATH to finish installing the API
 # -------------------------------------------------------------------------------------
+
 ENV PYTHONPATH $PYTHONPATH:/tensorflow/models/research:/tensorflow/models/research/slim
-
-# =============================================================================
-# Install wget (to make life easier below) and editors (to allow people to edit
-# the files inside the container)
-# ------------------------------------------------------------------------------
-
-RUN apt-get update && \
-    apt-get install -y vim emacs nano
 
 # ===================================================================
 # Install edgetpu compiler
 # -------------------------------------------------------------------
+
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 
 RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
