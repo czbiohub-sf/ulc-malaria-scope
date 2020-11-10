@@ -76,7 +76,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     $PIP_INSTALL \
         torch \
         torchvision \
-        ontextlib2 \
+        contextlib2 \
         pillow \
         lxml \
         && \
@@ -178,9 +178,9 @@ ENV PYTHONPATH $PYTHONPATH:/tensorflow/models/research:/tensorflow/models/resear
 # Install edgetpu compiler
 # -------------------------------------------------------------------
 
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 
-RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
+RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list
 
 RUN apt-get update && \
     apt-get install -y edgetpu-compiler
