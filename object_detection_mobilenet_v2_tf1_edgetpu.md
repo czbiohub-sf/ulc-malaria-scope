@@ -30,13 +30,15 @@ http://<your server name (e.g. fry)>:<whatever port you mapped to when starting 
 You will need to copy/paste the token generated in your Docker container.
 
 ### Clone and install luminoth-uv-imaging for using the utils
-```pip install -e git+https://github.com/czbiohub/luminoth-uv-imaging.git
+```
+  pip install -e git+https://github.com/czbiohub/luminoth-uv-imaging.git
   export LC_ALL=C.UTF-8
   export LANG=C.UTF-8
 ```
 
 ### Clone the repo with the scripts/ Instructions are from https://coral.ai/docs/edgetpu/retrain-detection/#using-the-coral-dev-board
-```git clone https://github.com/czbiohub/ulc-malaria-scope.git
+```
+git clone https://github.com/czbiohub/ulc-malaria-scope.git
 cd ulc-malaria-scope/detection
 ```
 
