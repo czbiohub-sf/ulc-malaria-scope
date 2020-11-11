@@ -30,3 +30,7 @@ def main():
   	cv2.imwrite(
   	  os.path.join(path, os.path.basename(input_image)),
   	  convert_to_rgb_gray(cv2.imread(input_image)))
+
+    
+if __name__ == '__main__':
+  main()
