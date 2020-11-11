@@ -66,7 +66,7 @@ python generate_tfrecord.py -i /data/uv_microscopy_data/uv_multi_color/training_
 
 ### Prepare training data and config file
 ```
-./prepare_checkpoint_and_dataset.sh --network_type mobilenet_v1_ssd --train_whole_model false
+./prepare_checkpoint_and_dataset.sh --network_type mobilenet_v2_ssd --train_whole_model true
 NUM_TRAINING_STEPS=50000 && \
 NUM_EVAL_STEPS=2000
 ```
