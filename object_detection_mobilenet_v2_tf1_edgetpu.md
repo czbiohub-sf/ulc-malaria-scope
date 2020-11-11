@@ -44,7 +44,7 @@ cd ulc-malaria-scope/detection
 
 ### Convert to rgb jpgs - optional
 ```
-python3 convert_to_rgb_jpg -i /data/uv_microscopy_data/uv_multi_color/training_demo/annotations -o /data/uv_microscopy_data/uv_multi_color/training_demo/images/ -f png
+python3 convert_to_rgb_jpg.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/annotations -o /data/uv_microscopy_data/uv_multi_color/training_demo/images/ -f png
 ```
 
 ### Use lumi to split and get transform to records but this might be different tensorflow version
