@@ -21,7 +21,12 @@ def main():
   parser.add_argument('-f', '--format', type=str, default=".png",
                       help='Format of image')
   args = parser.parse_args()
+  path = os.path.abspath(args.output)
+  if not os.path.exists(path):
+        os.makedirs(path)
+     else:
+         print("Path {} already exists, might be overwriting data".format(path))
   for input_image in glob.glob(os.path.join(args.input, "*" + args.format)):
   	cv2.imwrite(
-  	  os.path.join(args.output, os.path.basename(input_image)),
+  	  os.path.join(path, os.path.basename(input_image)),
   	  convert_to_rgb_gray(cv2.imread(input_image)))
