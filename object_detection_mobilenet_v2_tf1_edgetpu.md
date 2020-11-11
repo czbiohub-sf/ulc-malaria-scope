@@ -71,28 +71,28 @@ NUM_TRAINING_STEPS=50000 && \
 NUM_EVAL_STEPS=2000
 ```
 
-### Start the training job: From the /tensorflow/models/research/ directory
+### Start the training job
 ```
 ./retrain_detection_model_cells.sh \
 --num_training_steps ${NUM_TRAINING_STEPS} \
 --num_eval_steps ${NUM_EVAL_STEPS}
 ```
 
-### From the Docker /tensorflow/models/research directory
+### From the Docker convert checkpoint graph from training to edge tpu model
 ```
 ./convert_checkpoint_to_edgetpu_tflite_cells.sh --checkpoint_num ${NUM_TRAINING_STEPS}
 cd ${HOME}/google-coral/tutorials/docker/object_detection/out/models
 mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
 ```
 
-### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi), cd into detection code
+### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi)
 ```
 pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp35-cp35m-linux_armv7l.whl
 ```
 
 cd detection
 
-### Run detection through for a folder of images
+### Run detection through for a folder of images, cd into detection code
 ```
 python3 detect_image.py \
   --model ${HOME}/ssd_mobilenet_v2_cells_quant_edgetpu.tflite \
