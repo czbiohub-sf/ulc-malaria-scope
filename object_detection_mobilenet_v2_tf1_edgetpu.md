@@ -30,55 +30,57 @@ http://<your server name (e.g. fry)>:<whatever port you mapped to when starting 
 You will need to copy/paste the token generated in your Docker container.
 
 ### Clone and install luminoth-uv-imaging for using the utils
-```pip install -e git+https://github.com/czbiohub/luminoth-uv-imaging.git
+```
+  pip install -e git+https://github.com/czbiohub/luminoth-uv-imaging.git
   export LC_ALL=C.UTF-8
   export LANG=C.UTF-8
 ```
 
 ### Clone the repo with the scripts/ Instructions are from https://coral.ai/docs/edgetpu/retrain-detection/#using-the-coral-dev-board
-```git clone https://github.com/czbiohub/ulc-malaria-scope.git
+```
+git clone https://github.com/czbiohub/ulc-malaria-scope.git
 cd ulc-malaria-scope/detection
 ```
 
-### Convert to rgb jpgs - optional
+### Convert to rgb jpgs - optional, only if the images are not 3 channeled jpgs
 ```
-python3 convert_to_rgb_jpg -i /data/uv_microscopy_data/uv_multi_color/training_demo/annotations -o /data/uv_microscopy_data/uv_multi_color/training_demo/images/ -f png
+python3 convert_to_rgb_jpg.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/annotations -o /data/uv_microscopy_data/uv_multi_color/training_demo/images/ -f png
 ```
 
-### Use lumi to split and get transform to records but this might be different tensorflow version
+### Use lumi to split to get train, val images, csv file
 ```
 lumi split_train_val bb_labels.csv --output_dir lumi_csv --percentage 0.9 --random_seed 42 --input_image_format .jpg
-lumi dataset transform --type csv --data-dir /lumi_csv/ --output-dir /tfdata/ --split train --split val --only-classes=table
 ```
 
 ### Convert to tf record given the training images and training csv file 
 ```
-python generate_tfrecord.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/images/train -c /data/uv_microscopy_data/uv_multi_color/training_demo/images/train.csv -l /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/label_map.pbtxt -o /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/train.record
+python3 generate_tfrecord.py --image_dir /data/uv_microscopy_data/uv_multi_color/training_demo/color_images_nov11/train --csv_input /data/uv_microscopy_data/uv_multi_color/training_demo/color_images_nov11/train.csv --output_path /data/uv_microscopy_data/uv_multi_color/training_demo/color_records_nov11/train.record
 ```
 
 ### Convert to tf record given the validation images and validation csv file 
 ```
-python generate_tfrecord.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/images/val -c /data/uv_microscopy_data/uv_multi_color/training_demo/images/val.csv -l /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/label_map.pbtxt -o /data/uv_microscopy_data/uv_multi_color/training_demo/annotations/val.record
+python3 generate_tfrecord.py --image_dir /data/uv_microscopy_data/uv_multi_color/training_demo/color_images_nov11/val --csv_input /data/uv_microscopy_data/uv_multi_color/training_demo/color_images_nov11/val.csv --output_path /data/uv_microscopy_data/uv_multi_color/training_demo/color_records_nov11/val.record
 ```
 
 
-### Prepare training data and config file
+### Prepare training data and config file, check for constants_cells.sh file
 ```
-./prepare_checkpoint_and_dataset.sh --network_type mobilenet_v1_ssd --train_whole_model false
+cd ../scripts
+./prepare_checkpoint_and_dataset_cells.sh --network_type mobilenet_v2_ssd --train_whole_model true
 NUM_TRAINING_STEPS=50000 && \
 NUM_EVAL_STEPS=2000
 ```
 
 ### Start the training job: From the /tensorflow/models/research/ directory
 ```
-./retrain_detection_model.sh \
+./retrain_detection_model_cells.sh \
 --num_training_steps ${NUM_TRAINING_STEPS} \
 --num_eval_steps ${NUM_EVAL_STEPS}
 ```
 
 ### From the Docker /tensorflow/models/research directory
 ```
-./convert_checkpoint_to_edgetpu_tflite.sh --checkpoint_num ${NUM_TRAINING_STEPS}
+./convert_checkpoint_to_edgetpu_tflite_cells.sh --checkpoint_num ${NUM_TRAINING_STEPS}
 cd ${HOME}/google-coral/tutorials/docker/object_detection/out/models
 mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
 ```
