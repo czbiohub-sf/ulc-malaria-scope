@@ -83,7 +83,7 @@ def main():
       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('-m', '--model', required=True,
                       help='File path of .tflite file.')
-parser.add_argument('-v', '--video', required=True,
+  parser.add_argument('-v', '--video', required=True,
                     help='Name of the video file')
   parser.add_argument('-l', '--labels',
                       help='File path of labels file.')
@@ -100,7 +100,7 @@ parser.add_argument('-v', '--video', required=True,
   interpreter = make_interpreter(args.model)
   interpreter.allocate_tensors()
 
-  video_path = os.path.abspath(args.v)
+  video_path = os.path.abspath(args.video)
   video = cv2.VideoCapture(video_path)
   image_width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
   image_height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -114,6 +114,7 @@ parser.add_argument('-v', '--video', required=True,
       print('Reached the end of the video!')
       break
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = Image.fromarray(image)
     scale = detect.set_input(interpreter, image.size,
                              lambda size: image.resize(size, Image.ANTIALIAS))
     # print('----INFERENCE TIME----')
@@ -130,7 +131,8 @@ parser.add_argument('-v', '--video', required=True,
     # if not objs:
     #   print('No objects detected')
 
-    input_image = os.path.basename(video_path).split(".") + "_{}.png".format(frame_count)
+    input_image = os.path.basename(video_path).split(".")[0] + "_{}.png".format(frame_count)
+    print(input_image)
     for obj in objs:
       df = df.append({'image_id': os.path.join(os.path.dirname(video_path), input_image),
                       'xmin': obj.bbox.xmin,
