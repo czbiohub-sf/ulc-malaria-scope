@@ -90,7 +90,7 @@ def main():
                       help='Score threshold for detected objects.')
   parser.add_argument('-o', '--output',
                       help='File path for the result image with annotations')
-  parser.add_argument('-c', '--count', type=int, default=5,
+  parser.add_argument('-c', '--count', type=int, default=1,
                       help='Number of times to run inference')
   parser.add_argument('-f', '--format', type=str, default=".jpg",
                       help='Format of image')
