@@ -112,15 +112,15 @@ def main():
     scale = detect.set_input(interpreter, image.size,
                              lambda size: image.resize(size, Image.ANTIALIAS))
 
-    # print('----INFERENCE TIME----')
-    # print('Note: The first inference is slow because it includes',
-    #       'loading the model into Edge TPU memory.')
+    print('----INFERENCE TIME----')
+    print('Note: The first inference is slow because it includes',
+          'loading the model into Edge TPU memory.')
     for _ in range(args.count):
       start = time.perf_counter()
       interpreter.invoke()
       inference_time = time.perf_counter() - start
       objs = detect.get_output(interpreter, args.threshold, scale)
-      # print('%.2f ms' % (inference_time * 1000))
+      print('%.2f ms' % (inference_time * 1000))
 
     # print('-------RESULTS--------')
     # if not objs:
@@ -136,15 +136,15 @@ def main():
                       'prob': obj.score},
                      ignore_index=True)
 
-      # print('  id:    ', obj.id)
-      # print('  score: ', obj.score)
-      # print('  bbox:  ', obj.bbox)
+      print('  id:    ', obj.id)
+      print('  score: ', obj.score)
+      print('  bbox:  ', obj.bbox)
 
     if args.output:
       image = image.convert('RGB')
       draw_objects(ImageDraw.Draw(image), objs, labels)
       image.save(os.path.join(os.path.abspath(args.output), os.path.basename(input_image)))
-      # image.show()
+      image.show()
   df.to_csv(os.path.join(os.path.abspath(args.output), "preds_val.csv"))
 
 if __name__ == '__main__':
