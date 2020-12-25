@@ -81,6 +81,12 @@ NUM_EVAL_STEPS=2000
 ### From the Docker convert checkpoint graph from training to edge tpu model
 ```
 ./convert_checkpoint_to_edgetpu_tflite_cells.sh --checkpoint_num ${NUM_TRAINING_STEPS}
+
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
+sudo apt update
+sudo apt-get install edgetpu-compiler
+
 cd ${HOME}/google-coral/tutorials/docker/object_detection/out/models
 edgetpu_compiler output_tflite_graph.tflite 
 mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
