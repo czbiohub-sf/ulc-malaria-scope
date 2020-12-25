@@ -95,6 +95,7 @@ def main():
                       help='Number of times to run inference')
 
   args = parser.parse_args()
+  print(args)
 
   labels = load_labels(args.labels) if args.labels else {}
   interpreter = make_interpreter(args.model)
@@ -125,7 +126,7 @@ def main():
       interpreter.invoke()
       inference_time = time.perf_counter() - start
       objs = detect.get_output(interpreter, args.threshold, scale)
-      # print('%.2f ms' % (inference_time * 1000))
+      print('%.2f ms' % (inference_time * 1000))
 
     # print('-------RESULTS--------')
     # if not objs:

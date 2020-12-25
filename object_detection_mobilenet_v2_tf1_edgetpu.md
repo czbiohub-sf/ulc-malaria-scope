@@ -82,6 +82,7 @@ NUM_EVAL_STEPS=2000
 ```
 ./convert_checkpoint_to_edgetpu_tflite_cells.sh --checkpoint_num ${NUM_TRAINING_STEPS}
 cd ${HOME}/google-coral/tutorials/docker/object_detection/out/models
+edgetpu_compiler output_tflite_graph.tflite 
 mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
 ```
 
