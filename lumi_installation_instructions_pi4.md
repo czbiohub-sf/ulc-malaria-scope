@@ -42,8 +42,6 @@ pip install -r requirements_lumi_pi4.txt
 git clone https://github.com/czbiohub/luminoth-uv-imaging.git
 cd luminoth
 pip install -e .
-python sandbox/run_capture_image_predict_lumi.py
-python sandbox/run_capture_video_predict_lumi.py
 ```
 
 ## Check that the installation worked

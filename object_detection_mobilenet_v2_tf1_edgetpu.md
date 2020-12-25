@@ -92,14 +92,22 @@ edgetpu_compiler output_tflite_graph.tflite
 mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
 ```
 
-### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi)
+### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi) install tflite runtime
+For raspberry pi
 ```
 pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp35-cp35m-linux_armv7l.whl
+pip3 install -r requirements_edgetpu.txt
 ```
+For mac
+```
+pip3 install -r requirements_edgetpu.txt
+pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp35-cp35m-macosx_10_14_x86_64.whl
+```
+
 
 cd detection
 
-### Run detection through for a folder of images, cd into detection code
+### Run detection through for a folder of images, cd into detection code from ulc-malaria-scope
 ```
 python3 detect_image.py \
   --model ${HOME}/ssd_mobilenet_v2_cells_quant_edgetpu.tflite \
@@ -108,7 +116,7 @@ python3 detect_image.py \
   --output cells_result/
 ```
 
-### Confusion matrix and additional accuracy results
+### Confusion matrix and additional accuracy results install lumi dependencies and then clone, install lumi where you are running the below command from, If it is raspberry pi follow the instructions in lumi_installation_instruction_pi4.md
 
 ```
 lumi confusion_matrix --groundtruth_csv /data/uv_microscopy_data/uv_multi_color/training_demo/images/val.csv --predicted_csv /data/ai_mosquito_data/lumi_csv/preds_val/preds_val.csv --output_txt /data/ai_mosquito_data/output.txt --classes_json /data/ai_mosquito_data/tfdata/classes.json --output_fig /data/ai_mosquito_data/cm.png
