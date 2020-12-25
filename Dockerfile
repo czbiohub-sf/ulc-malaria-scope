@@ -174,6 +174,14 @@ RUN cd /tensorflow/models/research && \
 
 ENV PYTHONPATH $PYTHONPATH:/tensorflow/models/research:/tensorflow/models/research/slim
 
+# =====================================================================================
+# Clone and install luminoth-uv-imaging for using the utils for confusion matrix display etc
+# -------------------------------------------------------------------------------------
+
+RUN pip install -e git+https://github.com/czbiohub/luminoth-uv-imaging.git
+RUN export LC_ALL=C.UTF-8
+RUN export LANG=C.UTF-8
+
 # ===================================================================
 # Install edgetpu compiler
 # -------------------------------------------------------------------
