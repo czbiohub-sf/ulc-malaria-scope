@@ -1,3 +1,6 @@
+### Link to the google doc with errors, progress, and logs for training
+https://docs.google.com/document/d/1Vvkk25Ux1ne7O7HDWTHOih5sJ8eG-v7UqWWT2QrtoD8/edit?usp=sharing
+
 ### Build docker and run it
 
 It is recommended that you run object detection with tensorflow inside a Docker container, From the directory use Docker
