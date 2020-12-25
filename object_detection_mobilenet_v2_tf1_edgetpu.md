@@ -1,8 +1,3 @@
-### Clone the repo with the scripts/ Instructions are from https://coral.ai/docs/edgetpu/retrain-detection/#using-the-coral-dev-board
-```git clone https://github.com/czbiohub/ulc-malaria-scope.git
-   cd ulc-malaria-scope
-```
-
 ### Build docker and run it
 
 It is recommended that you run object detection with tensorflow inside a Docker container, From the directory use Docker
@@ -36,7 +31,7 @@ You will need to copy/paste the token generated in your Docker container.
   export LANG=C.UTF-8
 ```
 
-### Clone the repo with the scripts/ Instructions are from https://coral.ai/docs/edgetpu/retrain-detection/#using-the-coral-dev-board
+### Clone the repo with the scripts. For reference, some of the instructions are from https://coral.ai/docs/edgetpu/retrain-detection/#using-the-coral-dev-board
 ```
 git clone https://github.com/czbiohub/ulc-malaria-scope.git
 cd ulc-malaria-scope/detection
@@ -92,7 +87,7 @@ edgetpu_compiler output_tflite_graph.tflite
 mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
 ```
 
-### Now from the Dev Board shell (could be where the TPU is connected, your PC or raspberry pi) install tflite runtime
+### Now from where  the TPU is connected, (your PC or raspberry pi) install tflite runtime
 For raspberry pi
 ```
 pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp35-cp35m-linux_armv7l.whl
