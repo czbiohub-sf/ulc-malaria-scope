@@ -119,9 +119,7 @@ lumi confusion_matrix --groundtruth_csv /data/uv_microscopy_data/uv_multi_color/
 
 ## Visualizing results
 
-We strive to get useful and understandable summary and graph visualizations. We consider them to be essential not only for monitoring (duh!), but for getting a broader understanding of what's going under the hood. The same way it is important for code to be understandable and easy to follow, the computation graph should be as well.
-
-By default summary and graph logs are saved to `jobs/` under the current directory. You can use TensorBoard by running:
+By default summary and graph logs are saved to `jobs/` under the current directory. You can use TensorBoard to monitor results and loss functions by running:
 
 ```bash
 tensorboard --logdir path/to/jobs
