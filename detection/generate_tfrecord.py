@@ -52,7 +52,7 @@ def create_tf_example(group, path):
     ymaxs = []
     classes_text = []
     classes = []
-    unique_classes_sorted = sorted(group.label.unique().tolist())
+    unique_classes_sorted = sorted(group.object.label.unique().tolist())
 
     for index, row in group.object.iterrows():
         xmins.append(row['xmin'] / width)
