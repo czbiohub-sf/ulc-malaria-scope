@@ -32,19 +32,19 @@ def class_text_to_int(row_label, unique_classes_sorted):
 
 
 def split(df, group):
-    data = namedtuple('data', ['image_id', 'object'])
+    data = namedtuple('data', ['filename', 'object'])
     gb = df.groupby(group)
     return [data(filename, gb.get_group(x)) for filename, x in zip(gb.groups.keys(), gb.groups)]
 
 
 def create_tf_example(group, path):
-    with tf.gfile.GFile(os.path.join(path, '{}'.format(group.image_id)), 'rb') as fid:
+    with tf.gfile.GFile(os.path.join(path, '{}'.format(group.filename)), 'rb') as fid:
         encoded_jpg = fid.read()
     encoded_jpg_io = io.BytesIO(encoded_jpg)
     image = Image.open(encoded_jpg_io)
     width, height = image.size
 
-    filename = group.image_id.encode('utf8')
+    filename = group.filename.encode('utf8')
     image_format = b'jpg'
     xmins = []
     xmaxs = []
@@ -83,7 +83,7 @@ def main(_):
     writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
     path = os.path.join(FLAGS.image_dir)
     examples = pd.read_csv(FLAGS.csv_input)
-    grouped = split(examples, 'image_id')
+    grouped = split(examples, 'filename')
     for group in grouped:
         tf_example = create_tf_example(group, path)
         writer.write(tf_example.SerializeToString())
