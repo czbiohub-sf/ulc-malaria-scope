@@ -20,8 +20,7 @@ def convert_lumi_to_tflite(trained_checkpoint_prefix, output_dir):
         # Export checkpoint to SavedModel
         builder = tf.saved_model.builder.SavedModelBuilder(export_dir)
         builder.add_meta_graph_and_variables(
-            sess,
-            [tf.saved_model.TRAINING, tf.saved_model.SERVING],
+            sess, ["train", "serve"],
             strip_default_attrs=True)
         builder.save()
 
@@ -49,7 +48,7 @@ def main():
         os.makedirs(path)
     else:
         print("Path {} already exists, might be overwriting data".format(path))
-    convert_lumi_to_tflite(path, args.trained_checkpoint_prefix)
+    convert_lumi_to_tflite(args.trained_checkpoint_prefix, path)
 
 
 if __name__ == '__main__':

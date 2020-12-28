@@ -32,7 +32,7 @@ def class_text_to_int(row_label, unique_classes_sorted):
 
 
 def split(df, group):
-    data = namedtuple('data', ['filename', 'object'])
+    data = namedtuple('data', ['image_id', 'object'])
     gb = df.groupby(group)
     return [data(filename, gb.get_group(x)) for filename, x in zip(gb.groups.keys(), gb.groups)]
 
@@ -83,7 +83,7 @@ def main(_):
     writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
     path = os.path.join(FLAGS.image_dir)
     examples = pd.read_csv(FLAGS.csv_input)
-    grouped = split(examples, 'filename')
+    grouped = split(examples, 'image_id')
     for group in grouped:
         tf_example = create_tf_example(group, path)
         writer.write(tf_example.SerializeToString())
