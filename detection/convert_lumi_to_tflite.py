@@ -9,10 +9,8 @@ import tensorflow as tf
 def convert_lumi_to_tflite(trained_checkpoint_prefix, output_dir):
     # path to the SavedModel directory
     export_dir = os.path.join(output_dir, '0')
-    init_op = tf.global_variables_initializer()
     graph = tf.Graph()
     with tf.Session(graph=graph) as sess:
-        sess.run(init_op)
         sess.run(tf.local_variables_initializer())
         # Restore from checkpoint
         loader = tf.train.import_meta_graph(
