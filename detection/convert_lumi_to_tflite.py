@@ -46,7 +46,7 @@ def main():
                         help='.meta for your model',
                         metavar='MODEL', required=True)
     args = parser.parse_args()
-    convert_lumi_to_tflite(args.model, args.checkpoint, path)
+    convert_lumi_to_tflite(args.model, args.checkpoint, os.path.abspath(args.output_dir))
 
 
 if __name__ == '__main__':
