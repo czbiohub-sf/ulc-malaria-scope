@@ -46,11 +46,6 @@ def main():
                         help='.meta for your model',
                         metavar='MODEL', required=True)
     args = parser.parse_args()
-    path = os.path.abspath(args.output_dir)
-    if not os.path.exists(path):
-        os.makedirs(path)
-    else:
-        print("Path {} already exists, might be overwriting data".format(path))
     convert_lumi_to_tflite(args.model, args.checkpoint, path)
 
 
