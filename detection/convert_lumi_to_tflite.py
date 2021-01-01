@@ -6,21 +6,20 @@ import tensorflow as tf
 # Program to convert lumi checkpoint to tflite model
 
 
-def convert_lumi_to_tflite(trained_checkpoint_prefix, output_dir):
+def convert_lumi_to_tflite(model, checkpoint, output_dir):
     # path to the SavedModel directory
-    export_dir = os.path.join(output_dir, '0')
-    graph = tf.Graph()
-    with tf.Session(graph=graph) as sess:
-        sess.run(tf.local_variables_initializer())
-        # Restore from checkpoint
-        loader = tf.train.import_meta_graph(
-            trained_checkpoint_prefix + '.meta')
-        loader.restore(sess, trained_checkpoint_prefix)
-
-        # Export checkpoint to SavedModel
-        builder = tf.saved_model.builder.SavedModelBuilder(export_dir)
+    export_dir = os.path.join(output_dir)
+    tf.reset_default_graph()
+    saver = tf.train.import_meta_graph(model)
+    builder = tf.saved_model.builder.SavedModelBuilder(output_dir)
+    with tf.Session() as sess:
+        # Restore variables from disk.
+        saver.restore(sess, checkpoint)
+        print("Model restored.")
         builder.add_meta_graph_and_variables(
-            sess, ["train", "serve"])
+            sess,
+            ['tfckpt2pb'],
+            strip_default_attrs=False)
         builder.save()
 
     # Convert the model
@@ -37,17 +36,22 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '-o', '--output_dir', required=True,
-        help='File path of output dir where tflite and export_dir for SavedModel should eb stored')
-    parser.add_argument(
-        '-i', '--trained_checkpoint_prefix', required=True,
-        help='File path of checkpoint to convert')
+        help='File path of output dir where tflite and export_dir for SavedModel should be stored')
+    parser.add_argument('--checkpoint', type=str,
+                        dest='checkpoint',
+                        help='dir or .ckpt file to load checkpoint from',
+                        metavar='CHECKPOINT', required=True)
+    parser.add_argument('--model', type=str,
+                        dest='model',
+                        help='.meta for your model',
+                        metavar='MODEL', required=True)
     args = parser.parse_args()
     path = os.path.abspath(args.output_dir)
     if not os.path.exists(path):
         os.makedirs(path)
     else:
         print("Path {} already exists, might be overwriting data".format(path))
-    convert_lumi_to_tflite(args.trained_checkpoint_prefix, path)
+    convert_lumi_to_tflite(args.model, args.checkpoint, path)
 
 
 if __name__ == '__main__':
