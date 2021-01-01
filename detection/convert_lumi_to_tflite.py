@@ -12,6 +12,7 @@ def convert_lumi_to_tflite(trained_checkpoint_prefix, output_dir):
 
     graph = tf.Graph()
     with tf.Session(graph=graph) as sess:
+        sess.run(tf.local_variables_initializer())
         # Restore from checkpoint
         loader = tf.train.import_meta_graph(
             trained_checkpoint_prefix + '.meta')
