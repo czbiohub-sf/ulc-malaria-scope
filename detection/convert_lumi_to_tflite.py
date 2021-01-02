@@ -8,7 +8,6 @@ import tensorflow as tf
 
 def convert_lumi_to_tflite(model, checkpoint, output_dir):
     # path to the SavedModel directory
-    export_dir = os.path.join(output_dir)
     tf.reset_default_graph()
     saver = tf.train.import_meta_graph(model)
     builder = tf.saved_model.builder.SavedModelBuilder(output_dir)
@@ -23,7 +22,7 @@ def convert_lumi_to_tflite(model, checkpoint, output_dir):
         builder.save()
 
     # Convert the model
-    converter = tf.lite.TFLiteConverter.from_saved_model(export_dir)
+    converter = tf.lite.TFLiteConverter.from_saved_model(output_dir)
     tflite_model = converter.convert()
 
     # Save the model.
@@ -36,17 +35,21 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '-o', '--output_dir', required=True,
-        help='File path of output dir where tflite and export_dir for SavedModel should be stored')
-    parser.add_argument('--checkpoint', type=str,
-                        dest='checkpoint',
-                        help='dir or .ckpt file to load checkpoint from',
-                        metavar='CHECKPOINT', required=True)
-    parser.add_argument('--model', type=str,
-                        dest='model',
-                        help='.meta for your model',
-                        metavar='MODEL', required=True)
+        help='File path of output dir where tflite and export_dir' +
+        ' for SavedModel should be stored')
+    parser.add_argument(
+        '--checkpoint', type=str,
+        dest='checkpoint',
+        help='dir or .ckpt file to load checkpoint from',
+        metavar='CHECKPOINT', required=True)
+    parser.add_argument(
+        '--model', type=str,
+        dest='model',
+        help='.meta for your model',
+        metavar='MODEL', required=True)
     args = parser.parse_args()
-    convert_lumi_to_tflite(args.model, args.checkpoint, os.path.abspath(args.output_dir))
+    convert_lumi_to_tflite(
+        args.model, args.checkpoint, os.path.abspath(args.output_dir))
 
 
 if __name__ == '__main__':
