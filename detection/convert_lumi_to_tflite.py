@@ -76,7 +76,7 @@ def main():
         metavar='MODEL', required=True)
     args = parser.parse_args()
     convert_lumi_to_tflite(
-        args.model, args.checkpoint, os.path.abspath(args.output_dir))
+        args.model, args.config, args.checkpoint, os.path.abspath(args.output_dir))
 
 
 if __name__ == '__main__':
