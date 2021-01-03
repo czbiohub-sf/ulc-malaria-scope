@@ -9,7 +9,7 @@ from luminoth.utils.training import get_optimizer
 # Program to convert lumi checkpoint to tflite model
 
 
-def convert_lumi_to_tflite(model, config, checkpoint, output_dir):
+def convert_lumi_to_tflite(model, checkpoint_id, checkpoint, output_dir):
     # path to the SavedModel directory
     tf.reset_default_graph()
     saver = tf.train.import_meta_graph(model)
@@ -18,7 +18,7 @@ def convert_lumi_to_tflite(model, config, checkpoint, output_dir):
     # our checkpoints. An example of slots in an optimizer are the Momentum
     # variables in MomentumOptimizer. We do this because slot variables can
     # effectively duplicate the size of your checkpoint!
-    config = get_checkpoint_config(config)
+    config = get_checkpoint_config(checkpoint_id)
     model_class = get_model(config.model.type)
     model = model_class(config)
     trainable_vars = model.get_trainable_vars()
@@ -65,10 +65,10 @@ def main():
         help='dir or .ckpt file to load checkpoint from',
         metavar='CHECKPOINT', required=True)
     parser.add_argument(
-        '--config', type=str,
-        dest='config',
-        help='path to .config file used in training',
-        metavar='CONFIG', required=True)
+        '--checkpoint_id', type=str,
+        dest='checkpoint_id',
+        help='checkpoint id',
+        metavar='CHECKPOINT_ID', required=True)
     parser.add_argument(
         '--model', type=str,
         dest='model',
@@ -76,7 +76,7 @@ def main():
         metavar='MODEL', required=True)
     args = parser.parse_args()
     convert_lumi_to_tflite(
-        args.model, args.config, args.checkpoint, os.path.abspath(args.output_dir))
+        args.model, args.checkpoint_id, args.checkpoint, os.path.abspath(args.output_dir))
 
 
 if __name__ == '__main__':
