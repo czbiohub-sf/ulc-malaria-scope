@@ -65,6 +65,11 @@ def main():
         help='dir or .ckpt file to load checkpoint from',
         metavar='CHECKPOINT', required=True)
     parser.add_argument(
+        '--config', type=str,
+        dest='config',
+        help='path to .config file used in training',
+        metavar='CONFIG', required=True)
+    parser.add_argument(
         '--model', type=str,
         dest='model',
         help='.meta for your model',
