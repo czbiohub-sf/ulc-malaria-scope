@@ -48,7 +48,7 @@ def convert_lumi_to_tflite(model, config_file, checkpoint, output_dir):
             grads_and_vars, global_step=global_step
         )
     slot_variables = [
-        tf.train.MomentumOptimizer.get_slot(var, name)
+        optimizer.get_slot(var, name)
         for name in optimizer.get_slot_names()
         for var in trainable_vars
     ]
@@ -56,7 +56,6 @@ def convert_lumi_to_tflite(model, config_file, checkpoint, output_dir):
         slot_variables)
 
     with tf.Session() as sess:
-        sess.run(slot_init)
         # Restore variables from disk.
         saver.restore(sess, checkpoint)
         print("Model restored.")
