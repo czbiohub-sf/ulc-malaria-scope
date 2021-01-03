@@ -22,7 +22,6 @@ def convert_lumi_to_tflite(model, checkpoint_id, checkpoint, output_dir):
     config = get_checkpoint_config(checkpoint_id)
     model_class = get_model(config.model.type)
     model = model_class(config)
-    trainable_vars = model.get_trainable_vars()
     dataset_class = get_dataset(config.dataset.type)
     dataset = dataset_class(config)
     train_dataset = dataset()
@@ -32,6 +31,7 @@ def convert_lumi_to_tflite(model, checkpoint_id, checkpoint, output_dir):
     model(train_image, train_bboxes, is_training=False)
     global_step = re.findall(r'[0-9]+', os.path.basename(checkpoint))
     optimizer = get_optimizer(config.train, global_step)
+    trainable_vars = model.get_trainable_vars()
     slot_variables = [
         tf.train.MomentumOptimizer.get_slot(var, name)
         for name in optimizer.get_slot_names()
