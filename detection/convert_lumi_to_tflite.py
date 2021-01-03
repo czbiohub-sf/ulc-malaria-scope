@@ -6,7 +6,7 @@ import tensorflow as tf
 from luminoth.datasets import get_dataset
 from luminoth.models import get_model
 from luminoth.utils.config import get_config
-from luminoth.utils.training import get_optimizer
+from luminoth.utils.training import get_optimizer, clip_gradients_by_norm
 # Program to convert lumi checkpoint to tflite model
 
 
@@ -28,10 +28,25 @@ def convert_lumi_to_tflite(model, config_file, checkpoint, output_dir):
     train_image = train_dataset['image']
     train_bboxes = train_dataset['bboxes']
 
-    model(train_image, train_bboxes, is_training=False)
+    prediction_dict = model(train_image, train_bboxes, is_training=False)
+    total_loss = model.loss(prediction_dict)
     global_step = re.findall(r'[0-9]+', os.path.basename(checkpoint))
     optimizer = get_optimizer(config.train, global_step)
     trainable_vars = model.get_trainable_vars()
+    # Compute, clip and apply gradients
+    with tf.name_scope('gradients'):
+        grads_and_vars = optimizer.compute_gradients(
+            total_loss, trainable_vars
+        )
+
+        if config.train.clip_by_norm:
+            grads_and_vars = clip_gradients_by_norm(grads_and_vars)
+
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    with tf.control_dependencies(update_ops):
+        optimizer.apply_gradients(
+            grads_and_vars, global_step=global_step
+        )
     slot_variables = [
         tf.train.MomentumOptimizer.get_slot(var, name)
         for name in optimizer.get_slot_names()
