@@ -52,10 +52,11 @@ def convert_lumi_to_tflite(model, config_file, checkpoint, output_dir):
         for name in optimizer.get_slot_names()
         for var in trainable_vars
     ]
-    slot_init = tf.variables_initializer(
+    tf.variables_initializer(
         slot_variables)
 
     with tf.Session() as sess:
+        sess.run(set(tf.global_variables()) + set(slot_variables))
         # Restore variables from disk.
         saver.restore(sess, checkpoint)
         print("Model restored.")
