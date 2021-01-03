@@ -3,6 +3,7 @@ import os
 import re
 
 import tensorflow as tf
+from luminoth.datasets import get_dataset
 from luminoth.models import get_model
 from luminoth.tools.checkpoint import get_checkpoint_config
 from luminoth.utils.training import get_optimizer
@@ -22,6 +23,13 @@ def convert_lumi_to_tflite(model, checkpoint_id, checkpoint, output_dir):
     model_class = get_model(config.model.type)
     model = model_class(config)
     trainable_vars = model.get_trainable_vars()
+    dataset_class = get_dataset(config.dataset.type)
+    dataset = dataset_class(config)
+    train_dataset = dataset()
+    train_image = train_dataset['image']
+    train_bboxes = train_dataset['bboxes']
+
+    model(train_image, train_bboxes, is_training=False)
     global_step = re.findall(r'[0-9]+', os.path.basename(checkpoint))
     optimizer = get_optimizer(config.train, global_step)
     slot_variables = [
