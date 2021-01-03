@@ -42,11 +42,11 @@ def convert_lumi_to_tflite(model, config_file, checkpoint, output_dir):
         if config.train.clip_by_norm:
             grads_and_vars = clip_gradients_by_norm(grads_and_vars)
 
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    with tf.control_dependencies(update_ops):
-        optimizer.apply_gradients(
-            grads_and_vars, global_step=global_step
-        )
+    # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    # with tf.control_dependencies(update_ops):
+    #     optimizer.apply_gradients(
+    #         grads_and_vars, global_step=global_step
+    #     )
     slot_variables = [
         optimizer.get_slot(var, name)
         for name in optimizer.get_slot_names()
