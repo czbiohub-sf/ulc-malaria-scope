@@ -56,7 +56,7 @@ def convert_lumi_to_tflite(model, config_file, checkpoint, output_dir):
         slot_variables)
 
     with tf.Session() as sess:
-        sess.run(set(tf.global_variables()) + set(slot_variables))
+        sess.run(set(tf.global_variables()).union(set(slot_variables)))
         # Restore variables from disk.
         saver.restore(sess, checkpoint)
         print("Model restored.")
