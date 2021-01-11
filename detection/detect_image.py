@@ -144,7 +144,7 @@ def main():
       image = image.convert('RGB')
       draw_objects(ImageDraw.Draw(image), objs, labels)
       image.save(os.path.join(os.path.abspath(args.output), os.path.basename(input_image)))
-      image.show()
+      # image.show()
   df.to_csv(os.path.join(os.path.abspath(args.output), "preds_val.csv"))
 
 if __name__ == '__main__':
