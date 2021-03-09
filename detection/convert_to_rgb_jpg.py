@@ -2,13 +2,8 @@ import argparse
 import glob
 import os
 
-import cv2
-
+from skimage.io import imread, imsave
 # Program to convert gray to rgb jpg images
-
-
-def convert_to_rgb_gray(image):
-    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 
 def main():
@@ -30,9 +25,10 @@ def main():
     else:
         print("Path {} already exists, might be overwriting data".format(path))
     for input_image in glob.glob(os.path.join(args.input, "*" + args.format)):
-        cv2.imwrite(
-            os.path.join(path, os.path.basename(input_image)),
-            convert_to_rgb_gray(cv2.imread(input_image)))
+        imsave(
+            os.path.join(
+                path, os.path.basename(input_image).split(".")[0] + ".jpg"),
+            imread(input_image))
 
 
 if __name__ == '__main__':
