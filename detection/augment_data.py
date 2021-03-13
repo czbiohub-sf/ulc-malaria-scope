@@ -8,8 +8,8 @@ import sys
 import skimage.io
 
 dicts = []
-
-output_random_df = pd.read_csv(sys.argv[1])
+csv_path = sys.argv[1]
+output_random_df = pd.read_csv(csv_path)
 path = sys.argv[2]
 image_paths = natsort.natsorted(
     glob.glob(os.path.join(path, "*.jpg")))
@@ -32,15 +32,13 @@ aug_techniques = [
             shear=(-16, 16),  # shear by -16 to +16 degrees
             order=[0, 1],  # use nearest neighbour or bilinear interpolation (fast)
             cval=(0, 255),  # if mode is constant, use a cval between 0 and 255
-            mode=ia.ALL  # use any of scikit-image's warping modes (see 2nd image from the top for examples)
         )]),
     iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)), # sharpen images
     iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)), # emboss images
     # search either for all edges or for directed edges,
     # blend the result with the original image using a blobby mask
     iaa.SimplexNoiseAlpha(iaa.Sequential([
-        iaa.EdgeDetect(alpha=(0.5, 1.0)),
-        iaa.DirectedEdgeDetect(alpha=(0.5, 1.0), direction=(0.0, 1.0)),
+        iaa.EdgeDetect(alpha=(0., 0.5)),
     ])),
     iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05 * 255), per_channel=0.5),  # add gaussian noise to images
     iaa.AddToHueAndSaturation((-20, 20)),  # change hue and saturation
@@ -73,16 +71,17 @@ for image_path in image_paths:
                 x1=row.xmin, y1=row.ymin,
                 x2=row.xmax, y2=row.ymax,
                 label=row.label))
+    assert len(bbs_per_image) != 0
     for index, aug_technique in enumerate(aug_techniques):
         seq = iaa.Sequential([aug_technique])
         images_aug, bbs_aug = seq(images=[image], bounding_boxes=bbs_per_image)
         assert len(images_aug) == 1
         aug_path = image_path.replace(
             ".jpg", "_aug_{}.jpg".format(index))
-        print(aug_path)
         skimage.io.imsave(aug_path, images_aug[0])
-        for index, bbs_per_image in enumerate(bbs_aug):
-            for bb in bbs_per_image:
+        assert len(bbs_aug) == len(bbs_per_image)
+        for index, bb in enumerate(bbs_aug):
+            if bb.compute_out_of_image_fraction(images_aug[0]) <= 0.8:
                 dicts.append(
                     {
                         'filename': aug_path,
@@ -96,4 +95,5 @@ for d in dicts:
     output_random_df = output_random_df.append(
         d, ignore_index=True)
 
-output_random_df.to_csv("output_random_df_aug.csv")
+aug_csv_path = csv_path.replace(".csv", "_aug.csv")
+output_random_df.to_csv(aug_csv_path)
