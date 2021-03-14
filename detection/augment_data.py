@@ -81,7 +81,7 @@ for image_path in image_paths:
         skimage.io.imsave(aug_path, images_aug[0])
         assert len(bbs_aug) == len(bbs_per_image)
         for index, bb in enumerate(bbs_aug):
-            if bb.compute_out_of_image_fraction(images_aug[0]) <= 0.8:
+            if bb.compute_out_of_image_fraction(images_aug[0]) <= 0.2:
                 dicts.append(
                     {
                         'filename': aug_path,
