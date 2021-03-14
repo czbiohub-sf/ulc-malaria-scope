@@ -11,7 +11,7 @@ input_args = sys.argv
 
 for csv_path in input_args[1:]:
 
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path, index_col=0)
     first = True
 
     cnt = 0
@@ -55,32 +55,32 @@ for csv_path in input_args[1:]:
                 'Height mismatch for image: ', name, height, '!=', org_height)
         if xmin > org_width:
             error = True
-            df.loc[index] = index, name, org_width, xmax, ymin, ymax, label
+            xmin = org_width
             print('XMIN {} > org_width for file {}'.format(xmin, name))
 
         if xmin < 0:
             error = True
-            df.loc[index] = index, name, 0, xmax, ymin, ymax, label
+            xmin = 0
             print('XMIN {} < 0 for file {}'.format(xmin, name))
 
         if xmax > org_width:
             error = True
-            df.loc[index] = index, name, xmin, org_width, ymin, ymax, label
+            xmax = org_width
             print('XMAX {} > orig_width {} for file {}'.format(xmax, org_width, name))
 
         if ymin > org_height:
             error = True
-            df.loc[index] = index, name, xmin, xmax, org_height, ymax, label
+            ymin = org_height
             print('YMIN {} > org_height {} for file {}'.format(ymin, org_height, name))
 
         if ymin < 0:
             error = True
-            df.loc[index] = index, name, xmin, xmax, 0, ymax, label
+            ymin = 0
             print('YMIN {} < 0 for file {}'.format(ymin, name))
-
+        df.loc[index] = name, xmin, xmax, ymin, ymax, label
         if ymax > org_height:
             error = True
-            df.loc[index] = index, name, xmin, xmax, ymin, org_height, label
+            ymax = org_height
             print('YMAX {} > org_height {} for file {}'.format(ymax, org_height, name))
 
         if xmin >= xmax:
