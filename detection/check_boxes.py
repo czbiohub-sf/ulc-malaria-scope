@@ -60,28 +60,31 @@ for csv_path in input_args[1:]:
 
         if xmin < 0:
             error = True
-            xmin = 0
             print('XMIN {} < 0 for file {}'.format(xmin, name))
+            xmin = 0
 
         if xmax > org_width:
             error = True
-            xmax = org_width
             print('XMAX {} > orig_width {} for file {}'.format(xmax, org_width, name))
+            xmax = org_width
 
         if ymin > org_height:
             error = True
-            ymin = org_height
             print('YMIN {} > org_height {} for file {}'.format(ymin, org_height, name))
+            ymin = org_height
 
         if ymin < 0:
             error = True
-            ymin = 0
             print('YMIN {} < 0 for file {}'.format(ymin, name))
-        df.loc[index] = name, xmin, xmax, ymin, ymax, label
+            ymin = 0
+
         if ymax > org_height:
             error = True
             ymax = org_height
             print('YMAX {} > org_height {} for file {}'.format(ymax, org_height, name))
+
+        if error:
+            df.loc[index] = name, xmin, xmax, ymin, ymax, label
 
         if xmin >= xmax:
             error = True
