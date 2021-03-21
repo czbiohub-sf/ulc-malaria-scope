@@ -34,6 +34,9 @@ EDGETPU_SHARED_LIB = {
 }[platform.system()]
 LUMI_CSV_COLUMNS = [
     'image_id', 'xmin', 'xmax', 'ymin', 'ymax', 'label', 'prob']
+DEFAULT_CONFIDENCE = 0.4
+DEFAULT_INFERENCE_COUNT = 1
+DEFAULT_IMAGE_FORMAT = ".jpg"
 
 
 def load_labels(path, encoding='utf-8'):
@@ -78,38 +81,11 @@ def draw_objects(draw, objs, labels):
                   fill='red')
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument(
-        '-m', '--model', required=True,
-        help='File path of .tflite file.')
-    parser.add_argument(
-        '-i', '--input', required=True,
-        help='File path of image to process.')
-    parser.add_argument(
-        '-l', '--labels',
-        help='File path of labels file.')
-    parser.add_argument(
-        '-t', '--threshold', type=float, default=0.4,
-        help='Score threshold for detected objects.')
-    parser.add_argument(
-        '-o', '--output',
-        help='File path for the result image with annotations')
-    parser.add_argument(
-        '-c', '--count', type=int, default=1,
-        help='Number of times to run inference')
-    parser.add_argument(
-        '-f', '--format', type=str, default=".jpg",
-        help='Format of image')
-    parser.add_argument(
-        '--edgetpu',
-        help='Use Coral Edge TPU Accelerator to speed up detection',
-        action='store_true')
-    args = parser.parse_args()
-    use_tpu = args.edgetpu
+def detect_images(
+        mode, use_tpu, input_path, format_of_files,
+        labels, threshold, output, count, overlaid):
     df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
-    labels = load_labels(args.labels) if args.labels else {}
+    labels = load_labels(labels) if args.labels else {}
     # Import TensorFlow libraries
     # If tflite_runtime is installed, import interpreter from tflite_runtime,
     # else import from regular tensorflow
@@ -124,18 +100,18 @@ def main():
         if use_tpu:
             from tensorflow.lite.python.interpreter import load_delegate
     if use_tpu:
-        interpreter = make_interpreter(args.model)
+        interpreter = make_interpreter(model)
     else:
-        interpreter = Interpreter(model_path=args.model)
+        interpreter = Interpreter(model_path=model)
 
     interpreter.allocate_tensors()
 
     input_images = []
-    if args.input.endswith(args.format):
-        input_images.append(args.input)
+    if input_path.endswith(format_of_files):
+        input_images.append(input_path)
     else:
         for input_image in glob.glob(
-                os.path.join(args.input, "*" + args.format)):
+                os.path.join(input_path, "*" + format_of_files)):
             input_images.append(input_image)
     print('----INFERENCE TIME----')
 
@@ -148,11 +124,11 @@ def main():
             interpreter, image.size,
             lambda size: image.resize(size, Image.ANTIALIAS))
 
-        for _ in range(args.count):
+        for _ in range(count):
             start = time.perf_counter()
             interpreter.invoke()
             inference_time = time.perf_counter() - start
-            objs = detect.get_output(interpreter, args.threshold, scale)
+            objs = detect.get_output(interpreter, threshold, scale)
             print('%.2f ms' % (inference_time * 1000))
 
         for obj in objs:
@@ -165,14 +141,53 @@ def main():
                  'label': labels.get(obj.id, obj.id),
                  'prob': obj.score}, ignore_index=True)
 
-        if args.output:
+        if overlaid:
             image = image.convert('RGB')
             draw_objects(ImageDraw.Draw(image), objs, labels)
             image.save(
                 os.path.join(
-                    os.path.abspath(args.output),
+                    os.path.abspath(output),
                     os.path.basename(input_image)))
-    df.to_csv(os.path.join(os.path.abspath(args.output), "preds_val.csv"))
+    df.to_csv(os.path.join(os.path.abspath(output), "bb_labels.csv"))
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        '-m', '--model', required=True,
+        help='File path of .tflite file.')
+    parser.add_argument(
+        '-i', '--input', required=True,
+        help='File path of image to process.')
+    parser.add_argument(
+        '-l', '--labels',
+        help='File path of labels file.')
+    parser.add_argument(
+        '-t', '--threshold', type=float, default=DEFAULT_CONFIDENCE,
+        help='Score threshold for detected objects.')
+    parser.add_argument(
+        '-o', '--output',
+        help='File path for the result image with annotations ' +
+        'and csv file containing bboxes, annotations')
+    parser.add_argument(
+        '-c', '--count', type=int, default=DEFAULT_INFERENCE_COUNT,
+        help='Number of times to run inference')
+    parser.add_argument(
+        '-f', '--format', type=str, default=DEFAULT_IMAGE_FORMAT,
+        help='Format of image')
+    parser.add_argument(
+        '--edgetpu',
+        help='Use Coral Edge TPU Accelerator to speed up detection',
+        action='store_true')
+    parser.add_argument(
+        '--overlaid',
+        help='Use Coral Edge TPU Accelerator to speed up detection',
+        action='store_true')
+    args = parser.parse_args()
+    detect_images(
+        args.model, args.edgetpu, args.input, args.format,
+        args.labels, args.threshold, args.output, args.count, args.overlaid)
 
 if __name__ == '__main__':
     main()
