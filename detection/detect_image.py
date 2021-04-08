@@ -93,9 +93,10 @@ def check_if_bbox_not_background(obj, estimated_bboxes):
     count = 0
     obtained_bbox = obj.bbox
     for estimated_bbox in estimated_bboxes:
-        overlap_with_foreground = detect.BBox.iou(
-            estimated_bbox, obtained_bbox)
-        if overlap_with_foreground < DEFAULT_FILTER_AREA * 0.7:
+        overlap_with_foreground = detect.BBox.intersect(
+            estimated_bbox, obtained_bbox).area
+        estimated_area = obtained_bbox.area * 0.7
+        if overlap_with_foreground > estimated_area:
             count += 1
     bbox_is_in_foreground = True
     if count == 0:
@@ -144,14 +145,12 @@ def detect_images(
               'loading the model into Edge TPU memory.')
     for input_image in input_images:
         image = Image.open(input_image)
-        print(input_image)
         scale = detect.set_input(
             interpreter, image.size,
             lambda size: image.resize(size, Image.ANTIALIAS))
         if filter_background_bboxes:
             numpy_image = np.array(image)
             numpy_image = numpy_image[:, :, 0]
-            print(numpy_image.shape)
             thresholded_image = np.zeros(
                 (numpy_image.shape[0], numpy_image.shape[1]), dtype=np.uint8)
             thresh_value = 46
