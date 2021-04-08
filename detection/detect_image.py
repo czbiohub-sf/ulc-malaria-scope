@@ -48,7 +48,6 @@ def create_dir_if_not_exists(path):
 
 
 def out_of_bounds(xmin, xmax, ymin, ymax, org_width, org_height):
-    print(xmin, xmax, ymin, ymax, org_width, org_height)
     if xmin > org_width:
         xmin = org_width - 1
 
@@ -66,7 +65,6 @@ def out_of_bounds(xmin, xmax, ymin, ymax, org_width, org_height):
 
     if ymax > org_height:
         ymax = org_height - 1
-    print(xmin, xmax, ymin, ymax, org_width, org_height)
     return xmin, xmax, ymin, ymax
 
 
@@ -115,7 +113,6 @@ def draw_objects(draw, objs, labels):
 def check_if_bbox_not_background(bbox, thresholded_image):
     # Draw filled rectangle on the mask image
     mask = np.zeros_like(thresholded_image)
-    print(bbox)
     rr, cc = rectangle(
         start=(bbox.xmin, bbox.ymin), end=(bbox.xmax, bbox.ymax))
     mask[rr, cc] = 1

@@ -93,13 +93,13 @@ mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflit
 ### Now from where  the TPU is connected, (your PC or raspberry pi) install tflite runtime
 For raspberry pi
 ```
-pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp35-cp35m-linux_armv7l.whl
+pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_armv7l.whl
 pip3 install -r requirements_edgetpu.txt
 ```
 For mac
 ```
 pip3 install -r requirements_edgetpu.txt
-pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp35-cp35m-macosx_10_14_x86_64.whl
+pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-macosx_10_14_x86_64.whl
 ```
 
 
