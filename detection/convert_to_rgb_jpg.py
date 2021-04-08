@@ -11,10 +11,10 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '-o', '--output', required=True,
-        help='File path of .tflite file.')
+        help='Output directory to save to')
     parser.add_argument(
         '-i', '--input', required=True,
-        help='File path of image to process.')
+        help='Input folder to convert')
     parser.add_argument(
         '-f', '--format', type=str, default=".png",
         help='Format of image')
@@ -25,10 +25,12 @@ def main():
     else:
         print("Path {} already exists, might be overwriting data".format(path))
     for input_image in glob.glob(os.path.join(args.input, "*" + args.format)):
+        image = imread(input_image)
+        print(os.path.basename(input_image).split(".")[0] + ".jpg")
         imsave(
             os.path.join(
                 path, os.path.basename(input_image).split(".")[0] + ".jpg"),
-            imread(input_image))
+            image)
 
 
 if __name__ == '__main__':

@@ -100,6 +100,10 @@ def main():
     parser.add_argument(
         '-c', '--count', type=int, default=1,
         help='Number of times to run inference')
+    parser.add_argument(
+        '--edgetpu',
+        help='Use Coral Edge TPU Accelerator to speed up detection',
+        action='store_true')
 
     args = parser.parse_args()
     print(args)
