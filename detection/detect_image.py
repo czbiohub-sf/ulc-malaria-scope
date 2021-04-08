@@ -19,11 +19,13 @@ import importlib
 import time
 import glob
 import os
+import numpy as np
 import pandas as pd
 from PIL import Image
 from PIL import ImageDraw
-
 import detect
+from skimage.filters import threshold_minimum
+from skimage.measure import regionprops
 import tflite_runtime.interpreter as tflite
 import platform
 
@@ -35,8 +37,14 @@ EDGETPU_SHARED_LIB = {
 LUMI_CSV_COLUMNS = [
     'image_id', 'xmin', 'xmax', 'ymin', 'ymax', 'label', 'prob']
 DEFAULT_CONFIDENCE = 0.4
+DEFAULT_FILTER_AREA = 22680
 DEFAULT_INFERENCE_COUNT = 1
 DEFAULT_IMAGE_FORMAT = ".jpg"
+
+
+def create_dir_if_not_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 def load_labels(path, encoding='utf-8'):
@@ -81,11 +89,28 @@ def draw_objects(draw, objs, labels):
                   fill='red')
 
 
+def check_if_bbox_not_background(obj, estimated_bboxes):
+    count = 0
+    obtained_bbox = obj.bbox
+    for estimated_bbox in estimated_bboxes:
+        overlap_with_foreground = detect.BBox.iou(
+            estimated_bbox, obtained_bbox)
+        if overlap_with_foreground < DEFAULT_FILTER_AREA * 0.7:
+            count += 1
+    bbox_is_in_foreground = True
+    if count == 0:
+        bbox_is_in_foreground = False
+    return bbox_is_in_foreground
+
+
 def detect_images(
-        mode, use_tpu, input_path, format_of_files,
-        labels, threshold, output, count, overlaid):
+        model, use_tpu, input_path, format_of_files,
+        labels, threshold, output, count, overlaid,
+        area_filter, filter_background_bboxes):
     df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
-    labels = load_labels(labels) if args.labels else {}
+    output = os.path.abspath(output)
+    create_dir_if_not_exists(output)
+    labels = load_labels(labels) if labels else {}
     # Import TensorFlow libraries
     # If tflite_runtime is installed, import interpreter from tflite_runtime,
     # else import from regular tensorflow
@@ -114,41 +139,68 @@ def detect_images(
                 os.path.join(input_path, "*" + format_of_files)):
             input_images.append(input_image)
     print('----INFERENCE TIME----')
-
     if use_tpu:
         print('Note: The first inference is slow because it includes',
               'loading the model into Edge TPU memory.')
     for input_image in input_images:
         image = Image.open(input_image)
+        print(input_image)
         scale = detect.set_input(
             interpreter, image.size,
             lambda size: image.resize(size, Image.ANTIALIAS))
-
+        if filter_background_bboxes:
+            numpy_image = np.array(image)
+            numpy_image = numpy_image[:, :, 0]
+            print(numpy_image.shape)
+            thresholded_image = np.zeros(
+                (numpy_image.shape[0], numpy_image.shape[1]), dtype=np.uint8)
+            thresh_value = 46
+            thresholded_image[numpy_image < thresh_value] = 1
+            estimated_bbox_regions = regionprops(thresholded_image)
+            estimated_bboxes = []
+            for region in estimated_bbox_regions:
+                minr, minc, maxr, maxc = region.bbox
+                estimated_bboxes.append(
+                    detect.BBox(minc, minr, maxc, maxr))
         for _ in range(count):
             start = time.perf_counter()
             interpreter.invoke()
             inference_time = time.perf_counter() - start
             objs = detect.get_output(interpreter, threshold, scale)
             print('%.2f ms' % (inference_time * 1000))
-
+        filtered_objs = []
         for obj in objs:
-            df = df.append(
-                {'image_id': input_image,
-                 'xmin': obj.bbox.xmin,
-                 'xmax': obj.bbox.xmax,
-                 'ymin': obj.bbox.ymin,
-                 'ymax': obj.bbox.ymax,
-                 'label': labels.get(obj.id, obj.id),
-                 'prob': obj.score}, ignore_index=True)
+            if obj.bbox.area < area_filter:
+                if filter_background_bboxes:
+                    if check_if_bbox_not_background(obj, estimated_bboxes):
+                        df = df.append(
+                            {'image_id': input_image,
+                             'xmin': obj.bbox.xmin,
+                             'xmax': obj.bbox.xmax,
+                             'ymin': obj.bbox.ymin,
+                             'ymax': obj.bbox.ymax,
+                             'label': labels.get(obj.id, obj.id),
+                             'prob': obj.score}, ignore_index=True)
+                        filtered_objs.append(obj)
+                else:
+                    df = df.append(
+                        {'image_id': input_image,
+                         'xmin': obj.bbox.xmin,
+                         'xmax': obj.bbox.xmax,
+                         'ymin': obj.bbox.ymin,
+                         'ymax': obj.bbox.ymax,
+                         'label': labels.get(obj.id, obj.id),
+                         'prob': obj.score}, ignore_index=True)
+                    filtered_objs.append(obj)
 
         if overlaid:
             image = image.convert('RGB')
-            draw_objects(ImageDraw.Draw(image), objs, labels)
+            draw_objects(ImageDraw.Draw(image), filtered_objs, labels)
             image.save(
                 os.path.join(
-                    os.path.abspath(output),
+                    output,
                     os.path.basename(input_image)))
-    df.to_csv(os.path.join(os.path.abspath(output), "bb_labels.csv"))
+    df.to_csv(os.path.join(output, "bb_labels.csv"))
 
 
 def main():
@@ -182,12 +234,21 @@ def main():
         action='store_true')
     parser.add_argument(
         '--overlaid',
-        help='Use Coral Edge TPU Accelerator to speed up detection',
+        help='Enable overlaid',
+        action='store_true')
+    parser.add_argument(
+        '--area_filter',
+        help='Enable filtering bounding boxes of area', type=int,
+        default=DEFAULT_FILTER_AREA)
+    parser.add_argument(
+        '--filter_background_bboxes',
+        help='Enable filtering bounding boxes that are in the background',
         action='store_true')
     args = parser.parse_args()
     detect_images(
         args.model, args.edgetpu, args.input, args.format,
-        args.labels, args.threshold, args.output, args.count, args.overlaid)
+        args.labels, args.threshold, args.output, args.count, args.overlaid,
+        args.area_filter, args.filter_background_bboxes)
 
 if __name__ == '__main__':
     main()
