@@ -24,8 +24,8 @@ import pandas as pd
 from PIL import Image
 from PIL import ImageDraw
 import detect
-from skimage.filters import threshold_minimum
-from skimage.measure import regionprops
+from skimage.draw import rectangle
+from skimage.filters import threshold_otsu
 import tflite_runtime.interpreter as tflite
 import platform
 
@@ -45,6 +45,29 @@ DEFAULT_IMAGE_FORMAT = ".jpg"
 def create_dir_if_not_exists(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
+
+def out_of_bounds(xmin, xmax, ymin, ymax, org_width, org_height):
+    print(xmin, xmax, ymin, ymax, org_width, org_height)
+    if xmin > org_width:
+        xmin = org_width - 1
+
+    if xmin < 0:
+        xmin = 0
+
+    if xmax > org_width:
+        xmax = org_width - 1
+
+    if ymin > org_height:
+        ymin = org_height - 1
+
+    if ymin < 0:
+        ymin = 0
+
+    if ymax > org_height:
+        ymax = org_height - 1
+    print(xmin, xmax, ymin, ymax, org_width, org_height)
+    return xmin, xmax, ymin, ymax
 
 
 def load_labels(path, encoding='utf-8'):
@@ -89,17 +112,17 @@ def draw_objects(draw, objs, labels):
                   fill='red')
 
 
-def check_if_bbox_not_background(obj, estimated_bboxes):
-    count = 0
-    obtained_bbox = obj.bbox
-    for estimated_bbox in estimated_bboxes:
-        overlap_with_foreground = detect.BBox.intersect(
-            estimated_bbox, obtained_bbox).area
-        estimated_area = obtained_bbox.area * 0.7
-        if overlap_with_foreground > estimated_area:
-            count += 1
+def check_if_bbox_not_background(bbox, thresholded_image):
+    # Draw filled rectangle on the mask image
+    mask = np.zeros_like(thresholded_image)
+    print(bbox)
+    rr, cc = rectangle(
+        start=(bbox.xmin, bbox.ymin), end=(bbox.xmax, bbox.ymax))
+    mask[rr, cc] = 1
+    mask_nonzero_area = bbox.area
+    intersection = np.logical_and(thresholded_image, mask).astype(np.uint8)
     bbox_is_in_foreground = True
-    if count == 0:
+    if (intersection != mask).sum() / float(intersection.size):
         bbox_is_in_foreground = False
     return bbox_is_in_foreground
 
@@ -144,23 +167,18 @@ def detect_images(
         print('Note: The first inference is slow because it includes',
               'loading the model into Edge TPU memory.')
     for input_image in input_images:
+        print(input_image)
         image = Image.open(input_image)
         scale = detect.set_input(
             interpreter, image.size,
             lambda size: image.resize(size, Image.ANTIALIAS))
+        numpy_image = np.array(image)
         if filter_background_bboxes:
-            numpy_image = np.array(image)
             numpy_image = numpy_image[:, :, 0]
             thresholded_image = np.zeros(
                 (numpy_image.shape[0], numpy_image.shape[1]), dtype=np.uint8)
-            thresh_value = 46
+            thresh_value = threshold_otsu(numpy_image)
             thresholded_image[numpy_image < thresh_value] = 1
-            estimated_bbox_regions = regionprops(thresholded_image)
-            estimated_bboxes = []
-            for region in estimated_bbox_regions:
-                minr, minc, maxr, maxc = region.bbox
-                estimated_bboxes.append(
-                    detect.BBox(minc, minr, maxc, maxr))
         for _ in range(count):
             start = time.perf_counter()
             interpreter.invoke()
@@ -169,25 +187,29 @@ def detect_images(
             print('%.2f ms' % (inference_time * 1000))
         filtered_objs = []
         for obj in objs:
+            xmin, xmax, ymin, ymax = obj.bbox.xmin, obj.bbox.xmax, obj.bbox.ymin, obj.bbox.ymax
+            org_height, org_width = numpy_image.shape[:2]
+            xmin, xmax, ymin, ymax = out_of_bounds(xmin, xmax, ymin, ymax, org_height, org_width)
+            bbox = detect.BBox(xmin, xmax, ymin, ymax)
             if obj.bbox.area < area_filter:
                 if filter_background_bboxes:
-                    if check_if_bbox_not_background(obj, estimated_bboxes):
+                    if check_if_bbox_not_background(bbox, thresholded_image):
                         df = df.append(
                             {'image_id': input_image,
-                             'xmin': obj.bbox.xmin,
-                             'xmax': obj.bbox.xmax,
-                             'ymin': obj.bbox.ymin,
-                             'ymax': obj.bbox.ymax,
+                             'xmin': xmin,
+                             'xmax': xmax,
+                             'ymin': ymin,
+                             'ymax': ymax,
                              'label': labels.get(obj.id, obj.id),
                              'prob': obj.score}, ignore_index=True)
                         filtered_objs.append(obj)
                 else:
                     df = df.append(
                         {'image_id': input_image,
-                         'xmin': obj.bbox.xmin,
-                         'xmax': obj.bbox.xmax,
-                         'ymin': obj.bbox.ymin,
-                         'ymax': obj.bbox.ymax,
+                         'xmin': xmin,
+                         'xmax': xmax,
+                         'ymin': ymin,
+                         'ymax': ymax,
                          'label': labels.get(obj.id, obj.id),
                          'prob': obj.score}, ignore_index=True)
                     filtered_objs.append(obj)
