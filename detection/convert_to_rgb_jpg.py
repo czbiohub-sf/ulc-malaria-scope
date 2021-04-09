@@ -33,7 +33,7 @@ def main():
         help='Output directory to save to')
     parser.add_argument(
         '-i', '--input', required=True,
-        help='Input folder to convert')
+        help='Input folder or file to convert')
     parser.add_argument(
         '-f', '--format', type=str, default=".png",
         help='Format of image')
@@ -46,7 +46,17 @@ def main():
         os.makedirs(path)
     else:
         print("Path {} already exists, might be overwriting data".format(path))
-    for input_image in glob.glob(os.path.join(args.input, "*" + args.format)):
+
+    input_path = args.input
+    format_of_files = args.format
+    input_images = []
+    if input_path.endswith(format_of_files):
+        input_images.append(input_path)
+    else:
+        for input_image in glob.glob(
+                os.path.join(input_path, "*" + format_of_files)):
+            input_images.append(input_image)
+    for input_image in input_images:
         image = imread(input_image)
         if image.dtype != np.uint8:
             image = scale_to_uint8(image)
@@ -58,7 +68,6 @@ def main():
                 image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         elif len(image.shape) == 2:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        print(os.path.basename(input_image).split(".")[0] + ".jpg")
         imsave(
             os.path.join(
                 path, os.path.basename(input_image).split(".")[0] + ".jpg"),
