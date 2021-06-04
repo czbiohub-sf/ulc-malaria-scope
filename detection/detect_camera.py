@@ -35,7 +35,7 @@ from constants_ulc import (
 
 
 def detect_stream(
-        model, use_tpu, format_of_files,
+        model, use_tpu,
         labels, threshold, output, count, resolution,
         overlaid, area_filter, filter_background_bboxes):
     labels = utils.load_labels(labels) if labels else {}
@@ -134,14 +134,16 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '-m', '--model', required=True,
+        '-m', '--model', required=False,
+        default="output_tflite_graph.tflite",
         help='File path of .tflite file.')
     parser.add_argument(
         '--edgetpu',
         help='Use Coral Edge TPU Accelerator to speed up detection',
         action='store_true')
     parser.add_argument(
-        '-l', '--labels',
+        '-l', '--labels', required=False,
+        default="labels.txt",
         help='File path of labels file.')
     parser.add_argument(
         '-t', '--threshold', type=float, default=DEFAULT_CONFIDENCE,
