@@ -82,7 +82,7 @@ def detect_stream(
             inference_time = time.perf_counter() - start
             objs = detect.get_output(interpreter, threshold, scale)
             print('%.2f ms' % (inference_time * 1000))
-        input_image = "frame_{}".format(frame_count)
+        input_image = "frame_{}.png".format(frame_count)
         print(input_image)
         numpy_image = np.array(image)
         if filter_background_bboxes:
