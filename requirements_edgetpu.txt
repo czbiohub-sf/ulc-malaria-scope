@@ -1,5 +1,5 @@
 certifi==2018.8.24
-numpy==1.18.5
+numpy==1.20.3
 opencv-python==4.4.0.42
 pandas==0.25.3
 Pillow==8.1.1
