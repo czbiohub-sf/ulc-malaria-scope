@@ -70,7 +70,7 @@ def detect_stream(
         count = 0
         frame1 = videostream.read()
         image = cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB)
-        print("numpy image shape, size, sum {} {}".format(image.shape, image.size, np.sum(image)))
+        print("numpy image shape, size, sum {} {} {}".format(image.shape, image.size, np.sum(image)))
         image = Image.fromarray(image)
         scale = detect.set_input(
             interpreter, image.size,
