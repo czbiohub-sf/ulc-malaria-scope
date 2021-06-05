@@ -102,6 +102,11 @@ sudo apt-get install libjasper-dev
 sudo apt-get install libqtgui4 
 sudo apt-get install libqt4-test
 pip3 install -r requirements_edgetpu.txt
+sudo pip uninstall edgetpu
+sudo apt-get remove python3-edgetpu libedgetpu1-std
+
+# Now install the new Python library and Edge TPU runtime
+sudo apt-get install python3-edgetpu libedgetpu1-std
 ```
 For mac
 ```
