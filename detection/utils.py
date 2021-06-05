@@ -1,16 +1,6 @@
-import argparse
-import importlib
-import time
-import glob
 import os
 import numpy as np
-import pandas as pd
-from PIL import Image
-from PIL import ImageDraw
-import detect
 from skimage.draw import rectangle
-from skimage.filters import threshold_otsu
-import tflite_runtime.interpreter as tflite
 import platform
 
 EDGETPU_SHARED_LIB = {
@@ -65,16 +55,6 @@ def load_labels(path, encoding='utf-8'):
         return {int(index): label.strip() for index, label in pairs}
     else:
         return {index: line.strip() for index, line in enumerate(lines)}
-
-
-def make_interpreter(model_file):
-    model_file, *device = model_file.split('@')  # noqa
-    return tflite.Interpreter(
-        model_path=model_file,
-        experimental_delegates=[
-            tflite.load_delegate(
-                EDGETPU_SHARED_LIB,
-                {'device': device[0]} if device else {})])
 
 
 def draw_objects(draw, objs, labels):

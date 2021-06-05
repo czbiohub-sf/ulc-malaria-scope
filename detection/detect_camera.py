@@ -47,10 +47,21 @@ def detect_stream(
     pkg = importlib.util.find_spec('tflite_runtime')
     if pkg:
         from tflite_runtime.interpreter import Interpreter
+        if use_tpu:
+            from tflite_runtime.interpreter import load_delegate
     else:
         from tensorflow.lite.python.interpreter import Interpreter
+        if use_tpu:
+            from tensorflow.lite.python.interpreter import load_delegate
+
     if use_tpu:
-        interpreter = utils.make_interpreter(model)
+        model, *device = model.split('@')  # noqa
+        interpreter = tflite.Interpreter(
+            model_path=model,
+            experimental_delegates=[
+                load_delegate(
+                    EDGETPU_SHARED_LIB,
+                    {'device': device[0]} if device else {})])
     else:
         interpreter = Interpreter(model_path=model)
 

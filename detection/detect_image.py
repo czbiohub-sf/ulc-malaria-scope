@@ -26,6 +26,7 @@ from PIL import ImageDraw
 import detect
 import utils
 from constants_ulc import (
+    EDGETPU_SHARED_LIB,
     LUMI_CSV_COLUMNS,
     DEFAULT_CONFIDENCE,
     DEFAULT_INFERENCE_COUNT,
@@ -48,13 +49,23 @@ def detect_images(
     pkg = importlib.util.find_spec('tflite_runtime')
     if pkg:
         from tflite_runtime.interpreter import Interpreter
+        if use_tpu:
+            from tflite_runtime.interpreter import load_delegate
     else:
         from tensorflow.lite.python.interpreter import Interpreter
+        if use_tpu:
+            from tensorflow.lite.python.interpreter import load_delegate
+
     if use_tpu:
-        interpreter = utils.make_interpreter(model)
+        model, *device = model.split('@')  # noqa
+        interpreter = tflite.Interpreter(
+            model_path=model,
+            experimental_delegates=[
+                load_delegate(
+                    EDGETPU_SHARED_LIB,
+                    {'device': device[0]} if device else {})])
     else:
         interpreter = Interpreter(model_path=model)
-
     interpreter.allocate_tensors()
 
     input_images = []
