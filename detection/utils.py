@@ -13,6 +13,12 @@ from skimage.filters import threshold_otsu
 import tflite_runtime.interpreter as tflite
 import platform
 
+EDGETPU_SHARED_LIB = {
+    'Linux': 'libedgetpu.so.1',
+    'Darwin': 'libedgetpu.1.dylib',
+    'Windows': 'edgetpu.dll'
+}[platform.system()]
+
 
 def create_dir_if_not_exists(path):
     if not os.path.exists(path):
