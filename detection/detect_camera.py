@@ -39,6 +39,7 @@ def detect_stream(
         labels, threshold, output, count, resolution,
         overlaid, area_filter, filter_background_bboxes):
     labels = utils.load_labels(labels) if labels else {}
+    utils.create_dir_if_not_exists(output)
     # Import TensorFlow libraries
     # If tflite_runtime is installed, import interpreter from tflite_runtime,
     # else import from regular tensorflow
