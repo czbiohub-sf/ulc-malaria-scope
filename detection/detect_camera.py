@@ -53,6 +53,8 @@ def detect_stream(
     else:
         interpreter = Interpreter(model_path=model)
 
+    interpreter.allocate_tensors()
+
     res_w, res_h = resolution.split('x')
     im_w, im_h = int(res_w), int(res_h)
 
