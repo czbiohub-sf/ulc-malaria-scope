@@ -56,7 +56,7 @@ def detect_stream(
 
     if use_tpu:
         model, *device = model.split('@')  # noqa
-        interpreter = tflite.Interpreter(
+        interpreter = Interpreter(
             model_path=model,
             experimental_delegates=[
                 load_delegate(
