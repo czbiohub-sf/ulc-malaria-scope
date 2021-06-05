@@ -138,9 +138,9 @@ def detect_stream(
         frame_count += 1
         if overlaid:
             image = image.convert('RGB')
-            utils.draw_objects(ImageDraw.Draw(image), objs, labels)
             image.save(
                 os.path.join(os.path.abspath(output), input_image))
+            utils.draw_objects(ImageDraw.Draw(image), objs, labels)
             image.show()
     df.to_csv(os.path.join(os.path.abspath(output), "preds_val.csv"))
 

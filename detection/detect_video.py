@@ -136,11 +136,11 @@ def detect_video_file(
         print(len(filtered_objs))
         if overlaid:
             image = image.convert('RGB')
-            utils.draw_objects(ImageDraw.Draw(image), filtered_objs, labels)
             image.save(
                 os.path.join(
                     output,
                     os.path.basename(input_image)))
+            utils.draw_objects(ImageDraw.Draw(image), filtered_objs, labels)
     df.to_csv(os.path.join(output, "preds_val.csv"))
 
 
