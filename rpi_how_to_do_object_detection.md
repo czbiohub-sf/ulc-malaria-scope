@@ -3,6 +3,7 @@ https://docs.google.com/document/d/1Vvkk25Ux1ne7O7HDWTHOih5sJ8eG-v7UqWWT2QrtoD8/
 
 ### Build docker and run it
 
+Skip building docker and go to Prediction section if you already have the model or trying to use the tflite models saved in this repo
 It is recommended that you run object detection with tensorflow inside a Docker container, From the directory use Docker
 you can do so using:
 ```buildoutcfg
@@ -90,7 +91,7 @@ edgetpu_compiler output_tflite_graph.tflite
 mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
 ```
 
-### Now from where  the TPU is connected, (your PC or raspberry pi) install tflite runtime
+### Prediction - Now from where  the TPU is connected, (your PC or raspberry pi) install tflite runtime
 For raspberry pi
 ```
 pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_armv7l.whl
