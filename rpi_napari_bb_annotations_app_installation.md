@@ -10,4 +10,15 @@ pip3 install git+git://github.com/napari/napari.git@3188e86950d04ad6444cf6201019
 pip3 install -r requirements_pi4.txt
 sudo apt-get update
 python3 setup.py install 
+
+# To make sure it is working, run the below command
+
+python3.7 ./napari_bb_annotations/launcher/bb_annotations.py if you are installing the annotations app. 
+
+# Run inside ipython below if you just want to test if napari install worked
+
+from skimage import data
+import napari
+
+viewer = napari.view_image(data.astronaut(), rgb=True)
 ```
