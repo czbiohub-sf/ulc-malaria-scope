@@ -24,7 +24,7 @@ jobs:
       - name: Run tests with coverage
         shell: bash -l {0}
         run: |
-          pip install -r requirements_edgetpu.txt
+          pip install -r requirements_testing.txt
           make unit-tests
           make coverage
       - name: Send coverage to codecov.io
