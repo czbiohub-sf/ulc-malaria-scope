@@ -18,6 +18,7 @@ python3.7 ./napari_bb_annotations/launcher/bb_annotations.py if you are installi
 
 # Run inside ipython below if you just want to test if napari install worked
 
+ipython3 --gui=qt
 from skimage import data
 import napari
 
