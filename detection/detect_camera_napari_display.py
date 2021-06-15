@@ -1,4 +1,5 @@
 # Experiments for fast live update
+# https://github.com/VolkerH/NapariPlayground/blob/087fd967288a658d3aedad8b4be76af9e1249bb2/LiveUpdate/webcam_opencv.py
 # Adapted from the opencv face detect examples
 #
 # Volker Hilsenstein at Monash Edu
