@@ -33,31 +33,21 @@ import time
 #         return [line.strip() for line in f.readlines()]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     totalTime = 0
     invokeTime = 0
     start = time.time()
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-i',
-        '--image',
-        help='image to be classified')
-    parser.add_argument(
-        '-m',
-        '--model_file',
-        help='.tflite model to be executed')
+    parser.add_argument("-i", "--image", help="image to be classified")
+    parser.add_argument("-m", "--model_file", help=".tflite model to be executed")
     # parser.add_argument(
     #     '-l',
     #     '--label_file',
     #     help='name of file containing labels')
+    parser.add_argument("--input_mean", default=127.5, type=float, help="input_mean")
     parser.add_argument(
-        '--input_mean',
-        default=127.5, type=float,
-        help='input_mean')
-    parser.add_argument(
-        '--input_std',
-        default=127.5, type=float,
-        help='input standard deviation')
+        "--input_std", default=127.5, type=float, help="input standard deviation"
+    )
     args = parser.parse_args()
 
     interpreter = tflite.Interpreter(model_path=args.model_file)
@@ -67,27 +57,26 @@ if __name__ == '__main__':
     output_details = interpreter.get_output_details()
 
     # check the type of the input tensor
-    floating_model = input_details[0]['dtype'] == np.float32
+    floating_model = input_details[0]["dtype"] == np.float32
 
     # NxHxWxC, H:1, W:2
-    height = input_details[0]['shape'][1]
-    width = input_details[0]['shape'][2]
+    height = input_details[0]["shape"][1]
+    width = input_details[0]["shape"][2]
     img = Image.open(args.image).resize((width, height))
 
     # add N dim
     input_data = np.expand_dims(img, axis=0)
 
     if floating_model:
-        input_data = (
-            np.float32(input_data) - args.input_mean) / args.input_std
+        input_data = (np.float32(input_data) - args.input_mean) / args.input_std
 
-    interpreter.set_tensor(input_details[0]['index'], input_data)
+    interpreter.set_tensor(input_details[0]["index"], input_data)
 
     invoke_start = time.time()
     interpreter.invoke()
     invoke_end = time.time()
 
-    output_data = interpreter.get_tensor(output_details[0]['index'])
+    output_data = interpreter.get_tensor(output_details[0]["index"])
     results = np.squeeze(output_data)
     np.save("results_1.npy", results)
     top_k = results.argsort()[-5:][::-1]
@@ -99,8 +88,8 @@ if __name__ == '__main__':
     #         print('{:08.6f}: {}'.format(float(results[i] / 255.0), labels[i]))
 
     end = time.time()
-    totalTime += (end - start)
-    invokeTime += (invoke_end - invoke_start)
+    totalTime += end - start
+    invokeTime += invoke_end - invoke_start
 
     print("invoke time: {} sec".format(invokeTime))
     print("total time: {} sec".format(totalTime))

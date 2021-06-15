@@ -16,9 +16,9 @@ from napari.qt import thread_worker
 
 viewer = napari.Viewer(ndisplay=3)
 # pass a directory to monitor or it will monitor current directory.
-path = sys.argv[1] if len(sys.argv) > 1 else '.'
+path = sys.argv[1] if len(sys.argv) > 1 else "."
 path = os.path.abspath(path)
-end_of_experiment = 'final.log'
+end_of_experiment = "final.log"
 
 
 def append(delayed_image):
@@ -37,16 +37,20 @@ def append(delayed_image):
         image_shape = layer.data.shape[1:]
         image_dtype = layer.data.dtype
         image = da.from_delayed(
-            delayed_image, shape=image_shape, dtype=image_dtype,
+            delayed_image,
+            shape=image_shape,
+            dtype=image_dtype,
         ).reshape((1,) + image_shape)
         layer.data = da.concatenate((layer.data, image), axis=0)
     else:
         # first run, no layer added yet
         image = delayed_image.compute()
         image = da.from_delayed(
-            delayed_image, shape=image.shape, dtype=image.dtype,
+            delayed_image,
+            shape=image.shape,
+            dtype=image.dtype,
         ).reshape((1,) + image.shape)
-        layer = viewer.add_image(image, rendering='attenuated_mip')
+        layer = viewer.add_image(image, rendering="attenuated_mip")
 
     # we want to show the last file added in the viewer to do so we want to
     # put the slider at the very end. But, sometimes when user is scrolling
@@ -57,20 +61,20 @@ def append(delayed_image):
         viewer.dims.set_point(0, layer.data.shape[0] - 1)
 
 
-@thread_worker(connect={'yielded': append})
+@thread_worker(connect={"yielded": append})
 def watch_path(path):
     """Watches the path for new files and yields it once file is ready.
 
     Notes
     -----
-    Currently, there is no proper way to know if the file has written 
-    entirely. So the workaround is we assume that files are generating 
-    serially (in most microscopes it common), and files are name in 
-    alphanumeric sequence We start loading the total number of minus the 
-    last file (`total__files - last`). In other words, once we see the new 
+    Currently, there is no proper way to know if the file has written
+    entirely. So the workaround is we assume that files are generating
+    serially (in most microscopes it common), and files are name in
+    alphanumeric sequence We start loading the total number of minus the
+    last file (`total__files - last`). In other words, once we see the new
     file in the directory, it means the file before it has completed so load
-    that file. For this example, we also assume that the microscope is 
-    generating a `final.log` file at the end of the acquisition, this file 
+    that file. For this example, we also assume that the microscope is
+    generating a `final.log` file at the end of the acquisition, this file
     is an indicator to stop monitoring the directory.
 
     Parameters
