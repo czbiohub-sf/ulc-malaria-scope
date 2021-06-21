@@ -17,16 +17,17 @@
 import collections
 import numpy as np
 
-Object = collections.namedtuple('Object', ['id', 'score', 'bbox'])
+Object = collections.namedtuple("Object", ["id", "score", "bbox"])
 
 
-class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
+class BBox(collections.namedtuple("BBox", ["xmin", "ymin", "xmax", "ymax"])):
     """Bounding box.
 
     Represents a rectangle which sides are either
     vertical or horizontal, parallel
     to the x or y axis.
     """
+
     __slots__ = ()
 
     @property
@@ -56,40 +57,47 @@ class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
 
     def scale(self, sx, sy):
         """Returns scaled bounding box."""
-        return BBox(xmin=sx * self.xmin,
-                    ymin=sy * self.ymin,
-                    xmax=sx * self.xmax,
-                    ymax=sy * self.ymax)
+        return BBox(
+            xmin=sx * self.xmin,
+            ymin=sy * self.ymin,
+            xmax=sx * self.xmax,
+            ymax=sy * self.ymax,
+        )
 
     def translate(self, dx, dy):
         """Returns translated bounding box."""
-        return BBox(xmin=dx + self.xmin,
-                    ymin=dy + self.ymin,
-                    xmax=dx + self.xmax,
-                    ymax=dy + self.ymax)
+        return BBox(
+            xmin=dx + self.xmin,
+            ymin=dy + self.ymin,
+            xmax=dx + self.xmax,
+            ymax=dy + self.ymax,
+        )
 
     def map(self, f):
         """Returns bounding box modified by applying f for each coordinate."""
-        return BBox(xmin=f(self.xmin),
-                    ymin=f(self.ymin),
-                    xmax=f(self.xmax),
-                    ymax=f(self.ymax))
+        return BBox(
+            xmin=f(self.xmin), ymin=f(self.ymin), xmax=f(self.xmax), ymax=f(self.ymax)
+        )
 
     @staticmethod
     def intersect(a, b):
         """Returns the intersection of two bounding boxes (may be invalid)."""
-        return BBox(xmin=max(a.xmin, b.xmin),
-                    ymin=max(a.ymin, b.ymin),
-                    xmax=min(a.xmax, b.xmax),
-                    ymax=min(a.ymax, b.ymax))
+        return BBox(
+            xmin=max(a.xmin, b.xmin),
+            ymin=max(a.ymin, b.ymin),
+            xmax=min(a.xmax, b.xmax),
+            ymax=min(a.ymax, b.ymax),
+        )
 
     @staticmethod
     def union(a, b):
         """Returns the union of two bounding boxes (always valid)."""
-        return BBox(xmin=min(a.xmin, b.xmin),
-                    ymin=min(a.ymin, b.ymin),
-                    xmax=max(a.xmax, b.xmax),
-                    ymax=max(a.ymax, b.ymax))
+        return BBox(
+            xmin=min(a.xmin, b.xmin),
+            ymin=min(a.ymin, b.ymin),
+            xmax=max(a.xmax, b.xmax),
+            ymax=max(a.ymax, b.ymax),
+        )
 
     @staticmethod
     def iou(a, b):
@@ -103,13 +111,13 @@ class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
 
 def input_size(interpreter):
     """Returns input image size as (width, height) tuple."""
-    _, height, width, _ = interpreter.get_input_details()[0]['shape']
+    _, height, width, _ = interpreter.get_input_details()[0]["shape"]
     return width, height
 
 
 def input_tensor(interpreter):
     """Returns input tensor view as numpy array of shape (height, width, 3)."""
-    tensor_index = interpreter.get_input_details()[0]['index']
+    tensor_index = interpreter.get_input_details()[0]["index"]
     return interpreter.tensor(tensor_index)()[0]
 
 
@@ -137,7 +145,7 @@ def set_input(interpreter, size, resize):
 
 def output_tensor(interpreter, i):
     """Returns output tensor view."""
-    tensor = interpreter.tensor(interpreter.get_output_details()[i]['index'])()
+    tensor = interpreter.tensor(interpreter.get_output_details()[i]["index"])()
     return np.squeeze(tensor)
 
 
@@ -157,9 +165,9 @@ def get_output(interpreter, score_threshold, image_scale=(1.0, 1.0)):
         return Object(
             id=int(class_ids[i]),
             score=float(scores[i]),
-            bbox=BBox(xmin=xmin,
-                      ymin=ymin,
-                      xmax=xmax,
-                      ymax=ymax).scale(sx, sy).map(int))
+            bbox=BBox(xmin=xmin, ymin=ymin, xmax=xmax, ymax=ymax)
+            .scale(sx, sy)
+            .map(int),
+        )
 
     return [make(i) for i in range(count) if scores[i] >= score_threshold]

@@ -7,12 +7,13 @@ from threading import Thread
 
 class VideoStream:
     """Camera object that controls video streaming from the Picamera"""
-    def __init__(self,resolution=(640,480),framerate=30):
+
+    def __init__(self, resolution=(640, 480), framerate=30):
         # Initialize the PiCamera and the camera image stream
         self.stream = cv2.VideoCapture(0)
-        ret = self.stream.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-        ret = self.stream.set(3,resolution[0])
-        ret = self.stream.set(4,resolution[1])
+        ret = self.stream.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+        ret = self.stream.set(3, resolution[0])
+        ret = self.stream.set(4, resolution[1])
 
         # Read first frame from the stream
         (self.grabbed, self.frame) = self.stream.read()
@@ -21,7 +22,7 @@ class VideoStream:
 
     def start(self):
         # Start the thread that reads frames from the video stream
-        Thread(target=self.update,args=()).start()
+        Thread(target=self.update, args=()).start()
         return self
 
     def update(self):
