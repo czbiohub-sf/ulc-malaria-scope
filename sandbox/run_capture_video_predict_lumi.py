@@ -11,7 +11,7 @@ from luminoth.utils.predicting import PredictorNetwork
 max_detections = 100
 min_prob = 0.5
 max_prob = 1.0
-checkpoint="e1c2565b51e9"
+checkpoint = "e1c2565b51e9"
 # initialize the camera and grab a reference to the raw camera capture
 camera = PiCamera()
 camera.resolution = (696, 512)
@@ -21,18 +21,17 @@ rawCapture = PiRGBArray(camera, size=(696, 512))
 time.sleep(0.1)
 config = get_checkpoint_config(checkpoint)
 # Filter bounding boxes according to `min_prob` and `max_detections`.
-if config.model.type == 'fasterrcnn':
+if config.model.type == "fasterrcnn":
     if config.model.network.with_rcnn:
         config.model.rcnn.proposals.total_max_detections = max_detections
     else:
         config.model.rpn.proposals.post_nms_top_n = max_detections
         config.model.rcnn.proposals.min_prob_threshold = min_prob
-elif config.model.type == 'ssd':
+elif config.model.type == "ssd":
     config.model.proposals.total_max_detections = max_detections
     config.model.proposals.min_prob_threshold = min_prob
 else:
-    raise ValueError(
-        "Model type '{}' not supported".format(config.model.type))
+    raise ValueError("Model type '{}' not supported".format(config.model.type))
 
 # Instantiate the model indicated by the config.
 network = PredictorNetwork(config)
@@ -42,9 +41,11 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     # grab the raw NumPy array representing the image, then initialize the timestamp
     # and occupied/unoccupied text
     image = frame.array
-    image = cv2.resize(image, (696,512))
+    image = cv2.resize(image, (696, 512))
     print(image.shape)
-    objects = predict.run_image_through_network(network, image, save_path="predicted_image_{}.jpg".format(index))
+    objects = predict.run_image_through_network(
+        network, image, save_path="predicted_image_{}.jpg".format(index)
+    )
     print(objects)
     # show the frame
     predicted_image = cv2.imread("predicted_image_{}.jpg".format(index))

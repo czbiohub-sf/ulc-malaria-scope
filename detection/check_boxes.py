@@ -19,9 +19,9 @@ for csv_path in input_args[1:]:
     error = False
     for index, row in df.iterrows():
 
-        bb = ia.BoundingBox(x1=row.xmin, y1=row.ymin,
-                            x2=row.xmax, y2=row.ymax,
-                            label=row.label)
+        bb = ia.BoundingBox(
+            x1=row.xmin, y1=row.ymin, x2=row.xmax, y2=row.ymax, label=row.label
+        )
         img = cv2.imread(row.filename)
         if img is None:
             print(row.filename)
@@ -47,53 +47,52 @@ for csv_path in input_args[1:]:
 
         if org_width != width:
             error = True
-            print('Width mismatch for image: ', name, width, '!=', org_width)
+            print("Width mismatch for image: ", name, width, "!=", org_width)
 
         if org_height != height:
             error = True
-            print(
-                'Height mismatch for image: ', name, height, '!=', org_height)
+            print("Height mismatch for image: ", name, height, "!=", org_height)
         if xmin > org_width:
             error = True
             xmin = org_width
-            print('XMIN {} > org_width for file {}'.format(xmin, name))
+            print("XMIN {} > org_width for file {}".format(xmin, name))
 
         if xmin < 0:
             error = True
-            print('XMIN {} < 0 for file {}'.format(xmin, name))
+            print("XMIN {} < 0 for file {}".format(xmin, name))
             xmin = 0
 
         if xmax > org_width:
             error = True
-            print('XMAX {} > orig_width {} for file {}'.format(xmax, org_width, name))
+            print("XMAX {} > orig_width {} for file {}".format(xmax, org_width, name))
             xmax = org_width
 
         if ymin > org_height:
             error = True
-            print('YMIN {} > org_height {} for file {}'.format(ymin, org_height, name))
+            print("YMIN {} > org_height {} for file {}".format(ymin, org_height, name))
             ymin = org_height
 
         if ymin < 0:
             error = True
-            print('YMIN {} < 0 for file {}'.format(ymin, name))
+            print("YMIN {} < 0 for file {}".format(ymin, name))
             ymin = 0
 
         if ymax > org_height:
             error = True
             ymax = org_height
-            print('YMAX {} > org_height {} for file {}'.format(ymax, org_height, name))
+            print("YMAX {} > org_height {} for file {}".format(ymax, org_height, name))
 
         if error:
             df.loc[index] = name, xmin, xmax, ymin, ymax, label
 
         if xmin >= xmax:
             error = True
-            print('xmin {} >= xmax {} for file {} '.format(xmin, xmax, name))
+            print("xmin {} >= xmax {} for file {} ".format(xmin, xmax, name))
         if ymin >= ymax:
             error = True
-            print('ymin {} >= ymax {} for file {}'.format(ymin, ymax, name))
+            print("ymin {} >= ymax {} for file {}".format(ymin, ymax, name))
         if error:
-            print('Error for file: %s' % name)
+            print("Error for file: %s" % name)
             print()
-    print('Checked %d files and realized %d errors' % (cnt, error_cnt))
+    print("Checked %d files and realized %d errors" % (cnt, error_cnt))
     df.to_csv(csv_path, index=False)
