@@ -8,5 +8,5 @@ test:
 	py.test
 
 coverage:
-	coverage run --source orpheum --omit="*/test*" --module py.test
+	coverage run --source ulc-malaria-scope --omit="*/test*" --module py.test
 	coverage report --show-missing
