@@ -41,7 +41,7 @@ git clone https://github.com/czbiohub/ulc-malaria-scope.git
 cd ulc-malaria-scope/detection
 ```
 
-### Convert to rgb jpgs - optional, only if the images are not 3 channeled jpgs
+### Convert to rgb jpgs, only if the images are not 3 channeled jpgs
 ```
 python3 convert_to_rgb_jpg.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/annotations -o /data/uv_microscopy_data/uv_multi_color/training_demo/images/ -f png
 ```
@@ -62,10 +62,10 @@ python3 generate_tfrecord.py --image_dir /data/uv_microscopy_data/uv_multi_color
 ```
 
 
-### Prepare training data and config file, check for constants_cells.sh file
+### Prepare training data and config file, check for constants_cells.sh file, If mobilenet_v1_ssd doesn't give good results i.e bounding boxes are not detected at all with the default confidence score of 0.4 or greater, please try -network_type mobilenet_v2_ssd
 ```
 cd ../scripts
-./prepare_checkpoint_and_dataset_cells.sh --network_type mobilenet_v2_ssd --train_whole_model true
+./prepare_checkpoint_and_dataset_cells.sh --network_type mobilenet_v1_ssd --train_whole_model true
 NUM_TRAINING_STEPS=50000 && \
 NUM_EVAL_STEPS=2000
 ```
