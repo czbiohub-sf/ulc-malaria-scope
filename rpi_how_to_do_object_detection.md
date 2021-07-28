@@ -41,12 +41,18 @@ git clone https://github.com/czbiohub/ulc-malaria-scope.git
 cd ulc-malaria-scope/detection
 ```
 
-### Convert to rgb jpgs, only if the images are not 3 channeled jpgs
+### Convert to rgb jpgs, only if the images are not 3 channeled jpgs 
+TODO: This should not be required but without this the training currently generates worse results. Using pngs is ideal and tflite record generation below and training should be fixed below to see if the acceptable training results are obtained with pngs
 ```
 python3 convert_to_rgb_jpg.py -i /data/uv_microscopy_data/uv_multi_color/training_demo/annotations -o /data/uv_microscopy_data/uv_multi_color/training_demo/images/ -f png
 ```
 
 ### Use lumi to split to get train, val images, csv file
+Here if the csv file contains the image_id column it might have to be replaced to say filename using below command
+```
+sed -i '1s/.*/filename,xmin,xmax,ymin,ymax,label/' /data/april14thpngs/lumi_csv/train.csv
+sed -i '1s/.*/filename,xmin,xmax,ymin,ymax,label/' /data/april14thpngs/lumi_csv/val.csv
+```
 ```
 lumi split_train_val bb_labels.csv --output_dir lumi_csv --percentage 0.9 --random_seed 42 --input_image_format .jpg
 ```
@@ -63,6 +69,10 @@ python3 generate_tfrecord.py --image_dir /data/uv_microscopy_data/uv_multi_color
 
 
 ### Prepare training data and config file, check for constants_cells.sh file, If mobilenet_v1_ssd doesn't give good results i.e bounding boxes are not detected at all with the default confidence score of 0.4 or greater, please try -network_type mobilenet_v2_ssd
+Please change the pipeline.config file parameters to reflect your data directories, example of pipeline.config here - https://github.com/czbiohub/ulc-malaria-scope/blob/master/models/pipeline.config
+Some parameters namely to change in pipeline.config are num_classes, shape, data_augmentation, batch_size, data directories for training and validation
+Example of label_map.pbtxt here - https://github.com/czbiohub/ulc-malaria-scope/blob/master/models/label_map.pbtxt
+Please change the parameters in constants_cells.sh to reflect a directory you would like to save the results to
 ```
 cd ../scripts
 ./prepare_checkpoint_and_dataset_cells.sh --network_type mobilenet_v1_ssd --train_whole_model true
@@ -91,7 +101,9 @@ edgetpu_compiler output_tflite_graph.tflite
 mv output_tflite_graph_edgetpu.tflite ssd_mobilenet_v2_cells_quant_edgetpu.tflite
 ```
 
-### Prediction - Now from where  the TPU is connected, (your PC or raspberry pi) install tflite runtime
+### Prediction
+You can use the output_tflite_graph.tflite or ssd_mobilenet_v2_cells_quant.tflite for the server as the Coral USB or the TPU is not connected there, but if you have a coral USB connected which is the TPU you use the edgetpu compatible output_tflite_graph_edgetpu.tflite model or ssd_mobilenet_v2_cells_quant_edgetpu.tflite model
+Please pick an appropriate tflite_runtime model based on the OS version and python version you have from here https://github.com/google-coral/pycoral/releases/ or from this link - https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
 For raspberry pi
 ```
 pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_armv7l.whl
