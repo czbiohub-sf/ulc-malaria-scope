@@ -140,6 +140,7 @@ python3 detect_image.py \
 ```
 
 ### Confusion matrix and additional accuracy results install lumi dependencies and then clone, install lumi where you are running the below command from, If it is raspberry pi follow the instructions in lumi_installation_instruction_pi4.md
+classes.json file example here - https://github.com/czbiohub/ulc-malaria-scope/blob/master/models/classes.json
 
 ```
 lumi confusion_matrix --groundtruth_csv /data/uv_microscopy_data/uv_multi_color/training_demo/images/val.csv --predicted_csv /data/ai_mosquito_data/lumi_csv/preds_val/preds_val.csv --output_txt /data/ai_mosquito_data/output.txt --classes_json /data/ai_mosquito_data/tfdata/classes.json --output_fig /data/ai_mosquito_data/cm.png
