@@ -57,6 +57,12 @@ sed -i '1s/.*/filename,xmin,xmax,ymin,ymax,label/' /data/april14thpngs/lumi_csv/
 lumi split_train_val bb_labels.csv --output_dir lumi_csv --percentage 0.9 --random_seed 42 --input_image_format .jpg
 ```
 
+### If multiple datasets were annotated
+Here is where the data and annotations are https://drive.google.com/folderview?id=1997wqyWtwc58u9ZOaE8EJuMTTolN159X
+The datasets could be merged to get the training data. To merge them using lumi while creating training data you just have to point the command to two csv files like below
+```
+lumi split_train_val bb_labels_for_first_folder.csv bb_labels_for_second_folder.csv --output_dir lumi_csv --percentage 0.9 --random_seed 42 --input_image_format .png
+```
 ### Convert to tf record given the training images and training csv file 
 ```
 python3 generate_tfrecord.py --image_dir /data/uv_microscopy_data/uv_multi_color/training_demo/color_images_nov11/train --csv_input /data/uv_microscopy_data/uv_multi_color/training_demo/color_images_nov11/train.csv --output_path /data/uv_microscopy_data/uv_multi_color/training_demo/color_records_nov11/train.record
