@@ -143,7 +143,7 @@ soupsieve==1.8
 spidev==3.4
 ssh-import-id==5.7
 tensorboard==1.13.1
-tensorflow==1.13.1
+tensorflow==2.5.1
 tensorflow-estimator==1.14.0
 tensorflow-tensorboard==1.5.1
 termcolor==1.1.0
