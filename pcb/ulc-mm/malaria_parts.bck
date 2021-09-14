@@ -7,8 +7,14 @@ F https://www.infineon.com/dgdl/irl6283mpbf.pdf?fileId=5546d462533600a40153565fe
 $ENDCMP
 #
 $CMP MPR_Pressure_Breakout_Conn
-D Generic connector, single row, 01x07, script generated (kicad-library-utils/schlib/autogen/connector/)
+D Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)
 K connector
+F ~
+$ENDCMP
+#
+$CMP TCN0MA1A
+D Light emitting diode
+K LED diode
 F ~
 $ENDCMP
 #
