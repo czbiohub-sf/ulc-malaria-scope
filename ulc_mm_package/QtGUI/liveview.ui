@@ -27,20 +27,20 @@
      <string/>
     </property>
    </widget>
-   <widget class="QLabel" name="label">
+   <widget class="QLabel" name="lblExposure">
     <property name="geometry">
      <rect>
-      <x>670</x>
-      <y>100</y>
-      <width>60</width>
-      <height>16</height>
+      <x>570</x>
+      <y>40</y>
+      <width>141</width>
+      <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>Exposure</string>
+     <string>Exposure: 1 ms</string>
     </property>
    </widget>
-   <widget class="QSlider" name="verticalSlider">
+   <widget class="QSlider" name="vsExposure">
     <property name="geometry">
      <rect>
       <x>750</x>
@@ -53,10 +53,13 @@
      <number>10</number>
     </property>
     <property name="maximum">
-     <number>80000</number>
+     <number>10000</number>
     </property>
     <property name="singleStep">
      <number>100</number>
+    </property>
+    <property name="sliderPosition">
+     <number>1000</number>
     </property>
     <property name="orientation">
      <enum>Qt::Vertical</enum>

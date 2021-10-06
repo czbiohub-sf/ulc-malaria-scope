@@ -6,8 +6,8 @@ from PyQt5.QtCore import Qt, QCoreApplication, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 
 _UI_FILE_DIR = "liveview.ui"
-LABEL_WIDTH = 325
-LABEL_HEIGHT = 260
+LABEL_WIDTH = 480
+LABEL_HEIGHT = 360
 
 class CameraThread(QThread):
     changePixmap = pyqtSignal(QImage)
@@ -29,6 +29,8 @@ class CameraThread(QThread):
                 # TODO - think about error modes and how to deal with them
                 print(e)
 
+    def updateExposure(self, exposure):
+        self.livecam.setExposure(exposure)
 
 class CameraStream(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -44,9 +46,17 @@ class CameraStream(QtWidgets.QMainWindow):
         self.cameraThread.changePixmap.connect(self.updateImage)
         self.cameraThread.start()
 
+        # Connect UI elements to actions
+        self.vsExposure.valueChanged.connect(self.updateExposure)
+
     @pyqtSlot(QImage)
     def updateImage(self, image):
         self.lblImage.setPixmap(QPixmap.fromImage(image))
+
+    def updateExposure(self):
+        exposure = self.vsExposure.value()
+        self.cameraThread.updateExposure(exposure)
+        self.lblExposure.setText(f"Exposure: {exposure/1000} ms")
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
