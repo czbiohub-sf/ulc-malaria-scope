@@ -1,0 +1,4 @@
+0 healthy
+1 ring
+2 schizont
+3 troph
