@@ -37,6 +37,8 @@ class CameraStream(QtWidgets.QMainWindow):
         # Load the ui file 
         uic.loadUi(_UI_FILE_DIR, self)
 
+        self.showFullScreen()
+
         # Start the video stream
         self.cameraThread = CameraThread()
         self.cameraThread.changePixmap.connect(self.updateImage)
