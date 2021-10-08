@@ -17,7 +17,7 @@
 import sys
 import enum
 import time
-import RPi.GPIO as GPIO
+import pigpio
 
 from hardware_constants import *
 
@@ -59,12 +59,16 @@ class DRV88258Nema():
         self.homed = False
         self.stop_motor = False
 
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
+        # Set up GPIO
+        self._pi = pigpio.pi()
+        self._pi.set_mode(direction_pin, pigpio.OUTPUT)
+        self._pi.set_mode(STEP_PIN, pigpio.OUTPUT)
+        self._pi.set_mode(self.lim1, pigpio.INPUT)
+        self._pi.set_mode(self.lim2, pigpio.INPUT)
 
         # Limit switch callbacks
-        GPIO.add_event_detect(self.lim1, GPIO.RISING, callback=self.motor_stop, bouncetime=200)
-        GPIO.add_event_detect(self.lim2, GPIO.RISING, callback=self.motor_stop, bouncetime=200)
+        self._pi.callback(self.lim1, pigpio.RISING, callback=self.motor_stop)
+        self._pi.callback(self.lim2, pigpio.RISING, callback=self.motor_stop)
 
     def isMoveValid(self, dir, steps):
         """If homing has been done, check to see if a motion is within the allowable range."""
@@ -95,7 +99,7 @@ class DRV88258Nema():
         self.max_pos = self.pos
         self.homed = True
 
-    def motor_stop(self):
+    def motor_stop(self, *args):
         """ Stop the motor """
         self.stop_motor = True
 
@@ -118,10 +122,8 @@ class DRV88258Nema():
         self.stop_motor = False
         step_increment = 1 if clockwise else -1
 
-        # setup GPIO
-        GPIO.setup(self.direction_pin, GPIO.OUT)
-        GPIO.setup(self.step_pin, GPIO.OUT)
-        GPIO.output(self.direction_pin, clockwise)
+        # set direction
+        self._pi.write(self.direction_pin, clockwise)
 
         if self.homed:
             if not self.isMoveValid(clockwise, steps):
@@ -143,9 +145,9 @@ class DRV88258Nema():
                     # Limit switch triggered, return the number of steps taken
                     return i
                 else:
-                    GPIO.output(self.step_pin, True)
+                    self._pi.write(self.step_pin, True)
                     time.sleep(stepdelay)
-                    GPIO.output(self.step_pin, False)
+                    self._pi.write(self.step_pin, False)
                     time.sleep(stepdelay)
                     self.pos += step_increment
                     if verbose:
@@ -173,8 +175,8 @@ class DRV88258Nema():
                       .format(degree_calc(steps, self.steptype)))
         finally:
             # cleanup
-            GPIO.output(self.step_pin, False)
-            GPIO.output(self.direction_pin, False)
+            self._pi.write(self.step_pin, False)
+            self._pi.write(self.direction_pin, False)
 
 def degree_calc(steps, steptype):
     """ calculate and returns size of turn in degree

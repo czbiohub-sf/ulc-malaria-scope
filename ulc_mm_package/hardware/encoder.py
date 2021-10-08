@@ -4,7 +4,7 @@
 # Main author       :Ilakkiyan Jeyakumar
 
 # ========================== IMPORTS ======================
-import RPi.GPIO as GPIO
+import pigpio
 from hardware_constants import *
 
 '''The lookup table maps the state transition of the two encoder pins:
@@ -34,17 +34,17 @@ class Encoder():
         self.lookup_table = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0]
         self.encoder_value = 0b0000
         self.encoder_count = 0
+        self._pi = pigpio.pi()
 
         # Set up GPIO and callbacks
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(pin_a, GPIO.IN)
-        GPIO.setup(pin_b, GPIO.IN)
-        GPIO.add_event_detect(self.pin_a, GPIO.RISING, callback=self.encoderISR)
-        GPIO.add_event_detect(self.pin_b, GPIO.RISING, callback=self.encoderISR)
+        self._pi.set_mode(self.pin_a, pigpio.INPUT)
+        self._pi.set_mode(self.pin_b, pigpio.INPUT)
+        self._pi.callback(self.pin_a, pigpio.RISING, callback=self.encoderISR)
+        self._pi.callback(self.pin_b, pigpio.RISING, callback=self.encoderISR)
 
-    def encoderISR(self):
+    def encoderISR(self, *args):
         # Read the two input pins and convert it to a 2-bit binary (i.e 00 / 10 / 01 / 11)
-        val = GPIO.input(self.pin_a) << 1 | GPIO.input(self.pin_b)
+        val = self._pi.read(self.pin_a) << 1 | self._pi.read(self.pin_b)
 
         # Left shift the encoder value and OR with the current readout
         # (OLD, NEW) --> (NEW, NEW') (the previous new becomes old and we add
@@ -54,3 +54,9 @@ class Encoder():
         # Finally use the lookup table to figure out how the encoder has moved
         # and increment
         self.encoder_count += self.lookup_table[self.encoder_value]
+
+    def getCount(self):
+        return self.encoder_count
+
+    def resetCount(self):
+        self.encoder_count = 0
