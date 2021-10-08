@@ -5,7 +5,6 @@
 
 # ========================== IMPORTS ======================
 import pigpio
-from hardware_constants import *
 
 '''The lookup table maps the state transition of the two encoder pins:
 OLD |NEW|BINARY |--DIR--
@@ -28,7 +27,7 @@ increment the encoder count.
 '''
 
 class Encoder():
-    def __init__(self, pin_a=ROT_A_PIN, pin_b=ROT_B_PIN):
+    def __init__(self, pin_a, pin_b):
         self.pin_a = pin_a
         self.pin_b = pin_b
         self.lookup_table = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0]
