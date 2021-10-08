@@ -19,6 +19,7 @@ import enum
 import time
 import pigpio
 
+from encoder import Encoder
 from hardware_constants import *
 
 # ==================== CLASS SECTION ===============================
@@ -39,7 +40,7 @@ class DRV88258Nema():
     """ Class to control a Nema bi-polar stepper motor for a DRV8825.
     Default pin values set to the pins laid out on the malaria scope PCB schematic, and GPIO microstepping selection disabled."""
     def __init__(self, direction_pin=DIR_PIN, step_pin=STEP_PIN, motor_type="DRV8825", steptype="Full", 
-                    lim1=LIMIT_SWITCH1, lim2=LIMIT_SWITCH2):
+                    lim1=LIMIT_SWITCH1, lim2=LIMIT_SWITCH2, encoder_A=ROT_A_PIN, encoder_B=ROT_B_PIN):
         """ class init method 3 inputs
         (1) direction type=int , help=GPIO pin connected to DIR pin of IC
         (2) step_pin type=int , help=GPIO pin connected to STEP of IC
@@ -48,6 +49,8 @@ class DRV88258Nema():
             (Full, Half, 1/4, 1/8, 1/16) 1/32 for DRV8825 only
         (5) lim1, type=int, help=Limit switch 1 GPIO pin
         (6) lim2, type=int, help=Limit switch 2 GPIO pin
+        (7) encoder_a, type=int, help=Rotary encoder pin A
+        (8) encoder_b, type=int, help=Rotary encoder pin B
         """
         self.motor_type = motor_type
         self.direction_pin = direction_pin
@@ -55,7 +58,7 @@ class DRV88258Nema():
         self.lim1 = lim1
         self.lim2 = lim2
         self.steptype = steptype
-        self.pos = 0
+        self.encoder = Encoder(encoder_A, encoder_B)
         self.homed = False
         self.stop_motor = False
 
@@ -75,9 +78,9 @@ class DRV88258Nema():
 
         if self.homed:
             if dir == Direction.CW:
-                return self.pos + steps <= self.max_pos
+                return self.encoder.getCount() + steps <= self.max_pos
             elif dir == Direction.CCW:
-                return self.pos - steps >= 0
+                return self.encoder.getCount() - steps >= 0
 
         return True
 
@@ -89,14 +92,14 @@ class DRV88258Nema():
 
         # Add slight offset to zero position
         self.motor_go(clockwise=Direction.CW, steps=ZERO_OFFSET_STEPS)
-        self.pos = 0
+        self.encoder.resetCount()
 
         # Move to the CW limit switch
         self.motor_go(clockwise=Direction.CW, steps=1e6)
         self.motor_go(clockwise=Direction.CCW, steps=ZERO_OFFSET_STEPS)
 
         # Set limit
-        self.max_pos = self.pos
+        self.max_pos = self.encoder.getCount()
         self.homed = True
 
     def motor_stop(self, *args):
@@ -130,28 +133,28 @@ class DRV88258Nema():
                 direction = "CW (+)" if clockwise else "CCW (-)"
                 raise InvalidMove(f"""
                 =======INVALID MOVE, OUT OF RANGE=======
-                Current position: {self.pos}\n
+                Current position: {self.encoder.getCount()}\n
                 Attempted direction: {direction}\n
                 Attempted steps: {steps}\n
                 Allowable range: 0 <= steps <= {self.max_pos}\n
-                Attempted move would result in: {self.pos + step_increment*steps}
+                Attempted move would result in: {self.encoder.getCount() + step_increment*steps}
                 """)
 
         try:
             time.sleep(initdelay)
-
-            for i in range(steps):
+            start_pos = self.encoder.getCount()
+            end_pos = self.encoder.getCount() + step_increment*steps
+            while (step_increment == 1 and self.encoder.getCount() < end_pos) or (step_increment == -1 and self.encoder.getCount() > end_pos):
                 if self.stop_motor:
-                    # Limit switch triggered, return the number of steps taken
-                    return i
+                    # Limit switch triggered
+                    return
                 else:
                     self._pi.write(self.step_pin, True)
                     time.sleep(stepdelay)
                     self._pi.write(self.step_pin, False)
                     time.sleep(stepdelay)
-                    self.pos += step_increment
                     if verbose:
-                        print("Steps count {}".format(i+1), end="\r", flush=True)
+                        print("Steps count {}".format(self.encoder.getCount()-start_pos), flush=True)
 
         except KeyboardInterrupt:
             print("User Keyboard Interrupt : RpiMotorLib:")
@@ -161,22 +164,23 @@ class DRV88258Nema():
             print(sys.exc_info()[0])
             print(motor_error)
             print("RpiMotorLib  : Unexpected error:")
-        else:
+
+        finally:
+            # cleanup
+            self._pi.write(self.step_pin, False)
+            self._pi.write(self.direction_pin, False)
+
             # print report status
             if verbose:
                 print("\nRpiMotorLib, Motor Run finished, Details:.\n")
                 print("Motor type = {}".format(self.motor_type))
                 print("Clockwise = {}".format(clockwise))
                 print("Step Type = {}".format(self.steptype))
-                print("Number of steps = {}".format(steps))
+                print("Number of steps = {}".format(self.encoder.getCount() - start_pos))
                 print("Step Delay = {}".format(stepdelay))
                 print("Intial delay = {}".format(initdelay))
                 print("Size of turn in degrees = {}"
                       .format(degree_calc(steps, self.steptype)))
-        finally:
-            # cleanup
-            self._pi.write(self.step_pin, False)
-            self._pi.write(self.direction_pin, False)
 
 def degree_calc(steps, steptype):
     """ calculate and returns size of turn in degree
