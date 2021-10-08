@@ -28,7 +28,8 @@ setup(name='ulc_mm_package',
                           'numpy',\
                           'opencv-python',\
                           'PyQt5',\
-                          'pypylon'],
+                          'pypylon',
+                          'zarr'],
 #      package_data = {'':['stateMachine.json', 'tic_settings.txt', 'MANIFEST.in', 'spec-file.txt', 'gui.kv']},
       classifiers = ["CZ Biohub :: Bioengineering"],
 #      include_package_data = True
