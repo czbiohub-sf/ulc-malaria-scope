@@ -12,8 +12,9 @@
 # mail              :glyons66@hotmail.com
 # python_version    :3.5.3
 
-# ========================== IMPORTS ======================
-# Import the system modules needed to run rpiMotorlib.py
+# Adapted by:       Ilakkiyan Jeyakumar
+# Date:             2021-Oct-06
+
 import sys
 import enum
 import time
@@ -22,7 +23,7 @@ import pigpio
 from encoder import Encoder
 from hardware_constants import *
 
-# ==================== CLASS SECTION ===============================
+# ==================== Custom errors ===============================
 
 class StopMotorInterrupt(Exception):
     """ Stop the motor """
@@ -32,25 +33,41 @@ class InvalidMove(Exception):
     """ Motor move not in range """
     pass
 
+# ==================== Convenience enum for readability ===============================
 class Direction(enum.Enum):
     CW = True
     CCW = False
 
+# ==================== Main class ===============================
 class DRV88258Nema():
     """ Class to control a Nema bi-polar stepper motor for a DRV8825.
-    Default pin values set to the pins laid out on the malaria scope PCB schematic, and GPIO microstepping selection disabled."""
+
+    Default pin values set to the pins laid out on the malaria scope PCB schematic, and GPIO microstepping selection disabled.
+    """
+
     def __init__(self, direction_pin=DIR_PIN, step_pin=STEP_PIN, motor_type="DRV8825", steptype="Full", 
                     lim1=LIMIT_SWITCH1, lim2=LIMIT_SWITCH2, encoder_A=ROT_A_PIN, encoder_B=ROT_B_PIN):
-        """ class init method 3 inputs
-        (1) direction type=int , help=GPIO pin connected to DIR pin of IC
-        (2) step_pin type=int , help=GPIO pin connected to STEP of IC
-        (3) motor_type type=string, help=Type of motor two options: A4988 or DRV8825
-        (4) steptype, type=string , default=Full help= type of drive to step motor 5 options
+        """Class init method 3 inputs
+
+        Parameters
+        ----------
+        direction : int
+            GPIO pin connected to DIR pin of IC
+        step_pin : int
+            GPIO pin connected to STEP of IC
+        motor_type : string
+            Type of motor two options: A4988 or DRV8825
+        steptype : string 
+            Type of drive to step motor, options:
             (Full, Half, 1/4, 1/8, 1/16) 1/32 for DRV8825 only
-        (5) lim1, type=int, help=Limit switch 1 GPIO pin
-        (6) lim2, type=int, help=Limit switch 2 GPIO pin
-        (7) encoder_a, type=int, help=Rotary encoder pin A
-        (8) encoder_b, type=int, help=Rotary encoder pin B
+        lim1 : int
+            Limit switch 1 GPIO pin
+        lim2 : int
+            Limit switch 2 GPIO pin
+        encoder_a : int
+            Rotary encoder pin A
+        encoder_b : int 
+            Rotary encoder pin B
         """
         self.motor_type = motor_type
         self.direction_pin = direction_pin
@@ -73,8 +90,15 @@ class DRV88258Nema():
         self._pi.callback(self.lim1, pigpio.RISING, callback=self.motor_stop)
         self._pi.callback(self.lim2, pigpio.RISING, callback=self.motor_stop)
 
-    def isMoveValid(self, dir, steps):
-        """If homing has been done, check to see if a motion is within the allowable range."""
+    def isMoveValid(self, dir: Direction, steps: int):
+        """If homing has been done, check to see if an attempted move is within the allowable range.
+        
+        Parameters
+        ----------
+        dir : Direction enum
+        steps : int
+            Number of steps to take
+        """
 
         if self.homed:
             if dir == Direction.CW:
@@ -104,24 +128,25 @@ class DRV88258Nema():
 
     def motor_stop(self, *args):
         """ Stop the motor """
+
         self.stop_motor = True
 
     def motor_go(self, clockwise=Direction.CCW,
                  steps=200, stepdelay=.005, verbose=False, initdelay=.05):
-        """ motor_go,  moves stepper motor based on 6 inputs
+        """motor_go,  moves stepper motor based on 6 inputs
 
-         (1) clockwise, type=bool default=False
-         help="True - clockwise, False - CCW"
-         (2) steps, type=int, default=200, help=Number of steps sequence's
-         to execute. Default is one revolution , 200 in Full mode.
-         (3) stepdelay, type=float, default=0.05, help=Time to wait
-         (in seconds) between steps.
-         (4) verbose, type=bool  type=bool default=False
-         help="Write pin actions",
-         (5) initdelay, type=float, default=1mS, help= Intial delay after
-         GPIO pins initialized but before motor is moved.
-
+        Parameters
+        ----------
+        clockwise : Direction enum
+        steps : int
+            Number of steps Default is 200 (one revolution in Full mode)
+        stepdelay : float 
+            Time to wait (in seconds) between steps
+        verbose : bool
+        initdelay : float
+            Intial delay after GPIO pins initialized but before motor is moved
         """
+
         self.stop_motor = False
         step_increment = 1 if clockwise else -1
 
@@ -183,8 +208,8 @@ class DRV88258Nema():
                       .format(degree_calc(steps, self.steptype)))
 
 def degree_calc(steps, steptype):
-    """ calculate and returns size of turn in degree
-    , passed number of steps and steptype"""
+    """calculate and returns size of turn in degree, passed number of steps and steptype"""
+    
     degree_value = {'Full': 1.8,
                     'Half': 0.9,
                     '1/4': .45,
