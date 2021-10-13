@@ -9,13 +9,13 @@ import pigpio
 '''The lookup table maps the state transition of the two encoder pins:
 OLD |NEW|BINARY |--DIR--
 AB  |AB |-------|-------
-00  |00 |0000   | 0 (can't tell)
+00  |00 |0000   |  0
 00  |01 |0001   | -1
 00  |10 |0010   | +1
-00  |11 |0011   | 0 (can't tell)
+00  |11 |0011   |  0
 01  |00 |0100   | +1
-01  |01 |0101   | 0
-01  |10 |0110   | 0
+01  |01 |0101   |  0
+01  |10 |0110   |  0
 01  |11 |0111   | -1
 ...
 etc.
@@ -26,6 +26,7 @@ This 4-bit number can be used to index into the lookup table and determine how t
 increment the encoder count.
 '''
 
+# ==================== Main class ===============================
 class Encoder():
     def __init__(self, pin_a, pin_b):
         self.pin_a = pin_a
