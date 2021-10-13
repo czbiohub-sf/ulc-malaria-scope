@@ -22,15 +22,17 @@ setup(name='ulc_mm_package',
       license = 'MIT',
       packages = find_packages(),
 #      scripts = ['main.py'],
-      install_requires = ['Pillow', \
-                          'h5py', \
-                          'matplotlib',\
-                          'numpy',\
-                          'opencv-python',\
-                          'PyQt5',\
+      install_requires = ['Pillow',
+                          'h5py', 
+                          'matplotlib',
+                          'numpy',
+                          'opencv-python',
+                          'PyQt5',
                           'pypylon',
                           'zarr',
-                          'pigpio'],
+                          'pigpio',
+                          'adafruit-circuitpython-pcf8523',
+                          'py_cameras @ git+https://github.com/czbiohub/pyCameras@master'],
 #      package_data = {'':['stateMachine.json', 'tic_settings.txt', 'MANIFEST.in', 'spec-file.txt', 'gui.kv']},
       classifiers = ["CZ Biohub :: Bioengineering"],
 #      include_package_data = True
