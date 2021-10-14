@@ -22,9 +22,9 @@ import os
 import numpy as np
 from PIL import Image
 from PIL import ImageDraw
-import detect
-import utils
-from constants_ulc import (
+from ulc_mm_package.detection import detect
+from ulc_mm_package.detection import utils
+from ulc_mm_package.detection.constants_ulc import (
     EDGETPU_SHARED_LIB,
     LUMI_CSV_COLUMNS,
     DEFAULT_CONFIDENCE,
@@ -33,8 +33,7 @@ from constants_ulc import (
     DEFAULT_IMAGE_FORMAT,
 )
 
-
-def detect_images(
+def detect_image(
     model,
     use_tpu,
     input_image,
@@ -108,6 +107,11 @@ def detect_images(
             xmin, xmax, ymin, ymax, org_width, org_height
         )
         bbox = detect.BBox(xmin, ymin, xmax, ymax)
+        obj = detect.Object(
+            id=obj.id,
+            score=obj.score,
+            bbox=bbox
+        )
         if obj.bbox.area < area_filter:
             if filter_background_bboxes:
                 if utils.check_if_bbox_not_background(bbox, thresholded_image):
