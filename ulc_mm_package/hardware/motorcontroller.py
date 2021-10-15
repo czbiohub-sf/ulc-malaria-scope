@@ -1,19 +1,12 @@
 #!/usr/bin/env python3
-"""Taken and adpated from Gavin Lyons' RPiMotorLib repository (https://github.com/gavinlyonsrepo/RpiMotorLib/blob/master/RpiMotorLib/RpiMotorLib.py)"""
-# ========================= HEADER ===================================
-# title             :rpiMotorlib.py
-# description       :A python 3 library for various motors
-# and servos to connect to a raspberry pi
-# This file is for stepper motor tested on
-# Bipolar Nema Stepper motor DRV8825 Driver class
-# Main author       :Gavin Lyons
-# Version           :See changelog at url
-# url               :https://github.com/gavinlyonsrepo/RpiMotorLib
-# mail              :glyons66@hotmail.com
-# python_version    :3.5.3
+"""DRV8825 - Stepper Motor Controller IC
 
-# Adapted by:       Ilakkiyan Jeyakumar
-# Date:             2021-Oct-06
+-- Important Links -- 
+Datasheet:
+    https://www.ti.com/lit/ds/symlink/drv8825.pdf
+    
+*Taken and adpated from Gavin Lyons' RPiMotorLib repository (https://github.com/gavinlyonsrepo/RpiMotorLib/blob/master/RpiMotorLib/RpiMotorLib.py)
+"""
 
 import sys
 import enum
@@ -24,7 +17,6 @@ from encoder import Encoder
 from hardware_constants import *
 
 # ==================== Custom errors ===============================
-
 class StopMotorInterrupt(Exception):
     """ Stop the motor """
     pass
@@ -38,7 +30,6 @@ class Direction(enum.Enum):
     CW = True
     CCW = False
 
-# ==================== Main class ===============================
 class DRV88258Nema():
     """ Class to control a Nema bi-polar stepper motor for a DRV8825.
 
