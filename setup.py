@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Oct 6, 2021
+Created on Oct 1, 2021
 
 @author: i-jey
 """
@@ -21,7 +21,6 @@ setup(name='ulc_mm_package',
       author_email = 'ilakkiyan.jeyakumar@czbiohub.org',
       license = 'MIT',
       packages = find_packages(),
-#      scripts = ['main.py'],
       install_requires = ['Pillow',
                           'h5py', 
                           'matplotlib',
@@ -33,7 +32,5 @@ setup(name='ulc_mm_package',
                           'pigpio',
                           'adafruit-circuitpython-pcf8523',
                           'py_cameras @ git+https://github.com/czbiohub/pyCameras@master'],
-#      package_data = {'':['stateMachine.json', 'tic_settings.txt', 'MANIFEST.in', 'spec-file.txt', 'gui.kv']},
       classifiers = ["CZ Biohub :: Bioengineering"],
-#      include_package_data = True
 )
