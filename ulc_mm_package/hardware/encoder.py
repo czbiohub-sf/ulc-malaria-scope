@@ -28,28 +28,29 @@ increment the encoder count.
 
 # ==================== Main class ===============================
 class Encoder():
-    def __init__(self, pin_a, pin_b):
+    def __init__(self, pin_a: int, pin_b: int, pi: pigpio.pi=None):
         self.pin_a = pin_a
         self.pin_b = pin_b
         self.lookup_table = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0]
         self.encoder_value = 0b0000
         self.encoder_count = 0
-        self._pi = pigpio.pi()
+        self._pi = pi if pi != None else pigpio.pi()
 
         # Set up GPIO and callbacks
         self._pi.set_mode(self.pin_a, pigpio.INPUT)
         self._pi.set_mode(self.pin_b, pigpio.INPUT)
-        self._pi.callback(self.pin_a, pigpio.RISING, callback=self.encoderISR)
-        self._pi.callback(self.pin_b, pigpio.RISING, callback=self.encoderISR)
+        self._pi.callback(self.pin_a, pigpio.RISING_EDGE, self.encoderISR)
+        self._pi.callback(self.pin_b, pigpio.RISING_EDGE, self.encoderISR)
 
     def encoderISR(self, *args):
         # Read the two input pins and convert it to a 2-bit binary (i.e 00 / 10 / 01 / 11)
         val = self._pi.read(self.pin_a) << 1 | self._pi.read(self.pin_b)
 
-        # Left shift the encoder value and OR with the current readout
+        # Left shift the encoder value and OR with the current readout  
         # (OLD, NEW) --> (NEW, NEW') (the previous new becomes old and we add
         # in the current readout into the 2 least significant bits)
-        self.encoder_value = (self.encoder_value << 2) | val
+        # Lastly bitwise AND with 15 (1111) to retain only last 4 bits
+        self.encoder_value = ((self.encoder_value << 2) | val) & 15
 
         # Finally use the lookup table to figure out how the encoder has moved
         # and increment
