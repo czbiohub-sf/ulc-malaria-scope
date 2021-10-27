@@ -1,13 +1,8 @@
 """ PatchyBackgroundSubtraction - Find the average image background based on bounding boxes
-
 Find and average pixel values that lay outside bounding boxes across a series of image frames.
 
 #TODO
 Remove the dependence on the "BBox" object that is used for this project and just generalize to taking inputs to x/y arrays
-
--- Important Links -- 
-Background:
-    
 """
 
 # ========================= HEADER ===================================

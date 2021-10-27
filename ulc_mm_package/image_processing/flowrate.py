@@ -6,12 +6,16 @@ def getFlowRateInPixels(prev_bboxes, curr_bboxes):
     """
     Returns the flow rate in number of pixels based on the previous and current frame bounding boxes
     
-    Parameters:
-    - prev_bboxes (List[BBox]): A list of BBox objects from the previous frame
-    - curr_bboxes (List[BBox]): A list of BBox objects from the current frame
+    Parameters
+    ----------
+    prev_bboxes : List[BBox]
+        A list of BBox objects from the previous frame
+    curr_bboxes : List[BBox] 
+        A list of BBox objects from the current frame
 
-    Returns:
-    - int:
+    Returns
+    -------
+    int:
         An integer representing the average bounding box displacements found between the previous and current frame
 
     """
