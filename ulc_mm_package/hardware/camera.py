@@ -10,7 +10,6 @@ Basler PyPlon Library:
 """
 
 import sys
-from time import perf_counter
 import queue
 import threading
 import cv2

@@ -22,8 +22,7 @@ RESOLUTION = {
             }
 
 # ================ Motor constants ================ # 
-SHAFT_DIAM_UM = 2500
-SHAFT_TRAVEL_RATIO = 1/40
+FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
 
 
 # ================ Encoder constants ================ #

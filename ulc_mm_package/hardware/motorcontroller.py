@@ -36,18 +36,17 @@ class DRV88258Nema():
     """
 
     def __init__(
-                    self, 
-                    direction_pin=DIR_PIN, 
-                    step_pin=STEP_PIN, 
-                    motor_type="DRV8825", 
-                    steptype="Full", 
-                    lim1=LIMIT_SWITCH1, 
-                    lim2: int=None, 
-                    max_pos: int=None, 
-                    encoder_A=ROT_A_PIN, 
+                    self,
+                    direction_pin=DIR_PIN,
+                    step_pin=STEP_PIN,
+                    motor_type="DRV8825",
+                    steptype="Full",
+                    lim1=LIMIT_SWITCH1,
+                    lim2: int=None,
+                    max_pos: int=None,
+                    encoder_A=ROT_A_PIN,
                     encoder_B=ROT_B_PIN, 
                     pi: pigpio.pi=None, 
-                    step_distance_ratio: float = SHAFT_TRAVEL_RATIO,
                 ):
         """
         Parameters
@@ -93,7 +92,7 @@ class DRV88258Nema():
                         '1/64': 0.028125,
                         '1/128': 0.0140625}
         self.step_degree = degree_value[steptype]
-        self.dist_per_step_um = (self.step_degree/360 * PI*SHAFT_DIAM_UM) * step_distance_ratio
+        self.dist_per_step_um = self.step_degree / degree_value['Full'] * FULL_STEP_TO_TRAVEL_DIST_UM
 
         # TODO Calculate the max position allowable based on stepping mode and actual travel distance on the scope
         self.max_pos = max_pos if max_pos != None else 1e6
@@ -251,7 +250,7 @@ class DRV88258Nema():
         allow_rounding : bool=False
             Toggle whether to raise an error when the attempted move is not a multiple of the step distance
         """
-        if not allow_rounding:
+        if (not allow_rounding and distance_um % self.dist_per_step_um != 0) or distance_um > self.dist_per_step_um:
             raise InvalidMove(f"\
                     Minimum step distance: {self.dist_per_step_um}\n \
                     Attempted move: {distance_um}\n \
