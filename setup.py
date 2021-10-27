@@ -31,6 +31,7 @@ setup(name='ulc_mm_package',
                           'zarr',
                           'pigpio',
                           'adafruit-circuitpython-pcf8523',
+                          'adafruit-circuitpython-mprls',
                           'py_cameras @ git+https://github.com/czbiohub/pyCameras@master'],
       classifiers = ["CZ Biohub :: Bioengineering"],
 )
