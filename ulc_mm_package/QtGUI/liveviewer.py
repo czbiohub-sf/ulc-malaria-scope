@@ -1,7 +1,11 @@
 from re import S
 from ulc_mm_package.hardware.camera import ULCMM_Camera
 from ulc_mm_package.hardware.motorcontroller import DRV88258Nema
-from ulc_mm_package.hardware.zarrwriter import ZarrWriter
+
+try:
+    from ulc_mm_package.hardware.pressure_control import PressureControl
+except:
+    pass
 
 import sys
 import traceback
@@ -18,6 +22,7 @@ LABEL_HEIGHT = 360
 
 class CameraThread(QThread):
     changePixmap = pyqtSignal(QImage)
+    camera_activated = False
     main_dir = None
     single_save = False
     continuous_save = False
@@ -25,12 +30,12 @@ class CameraThread(QThread):
     try:
         livecam = ULCMM_Camera()
         livecam.print()
+        camera_activated = True
     except Exception as e:
-        print(f"Could not create the Basler camera:\n{e}. Closing application...")
-        exit()
+        camera_activated = False
 
     def run(self):
-        while True:
+        while self.camera_activated:
             try:
                 for image in self.livecam.yieldImages():
                     self.image = image
@@ -78,23 +83,53 @@ class CameraStream(QtWidgets.QMainWindow):
 
         # Start the video stream
         self.cameraThread = CameraThread()
-        self.cameraThread.changePixmap.connect(self.updateImage)
         self.cameraThread.start()
         self.recording = False
+        if not self.cameraThread.camera_activated:
+            print(f"Error initializing Basler camera. Disabling camera GUI elements.")
+            self.btnSnap.setEnabled(False)
+            self.chkBoxRecord.setEnabled(False)
+            self.vsExposure.setEnabled(False)
+            self.txtBoxExposure.setEnabled(False)
 
-        # # Create motor w/ default pins/settings (full step)
-        # self.motor = DRV88258Nema()
-        # self.motor.homeToLimitSwitches()
 
-        # Connect UI elements to actions
+        # Create motor w/ default pins/settings (full step)
+        try:
+            self.motor = DRV88258Nema()
+            self.motor.homeToLimitSwitches()
+        except Exception as e:
+            print("Error initializing DRV8825. Disabling focus actuation GUI elements.")
+            self.btnFocusUp.setEnabled(False)
+            self.btnFocusDown.setEnabled(False)
+            self.vsFocus.setEnabled(False)
+            self.txtBoxFocus.setEnabled(False)
+        
+        # Create pressure controller (sensor + servo)
+        try:
+            self.pressure_control = PressureControl()
+            self.vsFlow.setMinimum(self.pressure_control.getMinDutyCycle)
+            self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle)
+            self.vsFlow.setTickInterval(self.pressure_control.min_step_size*2)
+        except Exception as e:
+            print("Error initializing Pressure Controller. Disabling flow GUI elements.")
+            self.btnFlowUp.setEnabled(False)
+            self.btnFlowDown.setEnabled(False)
+            self.vsFlow.setEnabled(False)
+            self.txtBoxFlow.setEnabled(False)
+
+        ### Connect UI elements to actions ###
+
+        # Camera
+        self.cameraThread.changePixmap.connect(self.updateImage)
         self.vsExposure.valueChanged.connect(self.updateExposureSlider)
         self.txtBoxExposure.textChanged.connect(self.updateExposureTextBox)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxHandler)
         self.btnSnap.clicked.connect(self.takeImage)
         
+        # Pressure control
         self.btnFlowUp.clicked.connect(self.increaseFlowPWM)
         self.btnFlowDown.clicked.connect(self.decreaseFlowPWM)
-        self.txtBoxFlow.textChanged.connect(self.setFlowPWM)
+        self.txtBoxFlow.textChanged.connect(self.setFlowPWMTextBox)
 
     def checkBoxHandler(self):
         if self.chkBoxRecord.checkState():
@@ -102,7 +137,6 @@ class CameraStream(QtWidgets.QMainWindow):
             self.btnSnap.setText("Record images")
         else:
             self.btnSnap.setText("Take image")
-        
 
     def takeImage(self):
         if self.recording:
@@ -128,7 +162,6 @@ class CameraStream(QtWidgets.QMainWindow):
     def updateExposureSlider(self):
         exposure = int(self.vsExposure.value())
         self.cameraThread.updateExposure(exposure / 1000) # Exposure time us -> ms
-        self.lblExposure.setText(f"Exposure: {exposure} us")
         self.txtBoxExposure.setText(f"{exposure}")
 
     def updateExposureTextBox(self):
@@ -140,25 +173,41 @@ class CameraStream(QtWidgets.QMainWindow):
         try:
             self.cameraThread.updateExposure(exposure / 1000) # Exposure time us -> ms
         except:
+            print("Invalid exposure, ignoring and continuing...")
             return
-        self.lblExposure.setText(f"Exposure: {exposure} us")
         self.vsExposure.setValue(exposure)
 
     def increaseFlowPWM(self):
-        pass
+        self.pressure_control.increaseDutyCycle()
+        duty_cycle = self.pressure_control.duty_cycle
+        self.vsFlow.setValue(duty_cycle)
+        self.txtBoxFlow.setText(f"{duty_cycle}")
 
     def decreaseFlowPWM(self):
-        pass
+        self.pressure_control.decreaseDutyCycle()
+        duty_cycle = self.pressure_control.duty_cycle
+        self.vsFlow.setValue(duty_cycle)
+        self.txtBoxFlow.setText(f"{duty_cycle}")
 
-    def setFlowPWM(self):
+    def setFlowPWMSlider(self):
+        flow_duty_cycle = int(self.vsFlow.value())
+        self.pressure_control.setDutyCycle(flow_duty_cycle)
+        self.txtBoxFlow.setText(f"{flow_duty_cycle}")
+
+    def setFlowPWMTextBox(self):
         try:
-            flow_pwm = int(self.txtBoxFlow.text())
+            flow_duty_cycle = int(self.txtBoxFlow.text())
         except:
             print("Error parsing textbox flow PWM input. Continuing...")
             return
 
+        try:
+            self.pressure_control.setDutyCycle(flow_duty_cycle)
+        except:
+            print("Invalid duty cycle, ignoring and continuing...")
+            return
         
-        pass
+        self.vsFlow.setValue(flow_duty_cycle)
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
