@@ -214,7 +214,7 @@
      <string>125</string>
     </property>
     <property name="maxLength">
-     <number>3</number>
+     <number>5</number>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -372,7 +372,7 @@
      <string>0</string>
     </property>
     <property name="maxLength">
-     <number>3</number>
+     <number>5</number>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>

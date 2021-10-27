@@ -107,9 +107,11 @@ class CameraStream(QtWidgets.QMainWindow):
         # Create pressure controller (sensor + servo)
         try:
             self.pressure_control = PressureControl()
-            self.vsFlow.setMinimum(self.pressure_control.getMinDutyCycle)
-            self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle)
-            self.vsFlow.setTickInterval(self.pressure_control.min_step_size*2)
+            self.vsFlow.setMinimum(self.pressure_control.getMinDutyCycle())
+            self.lblMinFlow.setText(f"{self.pressure_control.getMinDutyCycle()}")
+            self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle())
+            self.lblMaxFlow.setText(f"{self.pressure_control.getMaxDutyCycle()}")
+            self.vsFlow.setTickInterval(self.pressure_control.min_step_size)
         except Exception as e:
             print("Error initializing Pressure Controller. Disabling flow GUI elements.")
             self.btnFlowUp.setEnabled(False)
