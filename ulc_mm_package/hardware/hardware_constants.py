@@ -21,6 +21,11 @@ RESOLUTION = {
                 '1/32': (1, 0, 1)
             }
 
+# ================ Motor constants ================ # 
+SHAFT_DIAM_UM = 2500
+SHAFT_TRAVEL_RATIO = 1/40
+
+
 # ================ Encoder constants ================ #
 ROT_A_PIN = 17
 ROT_B_PIN = 27
@@ -37,3 +42,7 @@ PWM_DIM_MODE_DUTYCYCLE = ((PWM_DIM_MODE_LOWER_THRESHOLD_V + PWM_DIM_MODE_UPPER_T
 
 # To ensure linear dimming performance, PWM must be <1kHz (see datasheet pg. 19)
 PWM_DIMMING_MAX_FREQ_HZ = 1000
+
+# ================ Pressure control constants ================ #
+SERVO_PWM_PIN = 12
+VALVE_PIN = 16
