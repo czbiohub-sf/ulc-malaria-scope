@@ -47,6 +47,9 @@
     </property>
    </widget>
    <widget class="QSlider" name="vsExposure">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>750</x>

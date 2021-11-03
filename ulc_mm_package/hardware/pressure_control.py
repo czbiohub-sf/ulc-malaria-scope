@@ -21,7 +21,7 @@ class PressureControlError(Exception):
 class PressureSensorNotInstantiated(PressureControlError):
     """Raised when the Adafruit MPRLS can not be instantiated."""
     def __init__(self):
-        super.__init__("Could not instantiate pressure sensor.")
+        super().__init__("Could not instantiate pressure sensor.")
 
 class PressureControl():
     """Class that deals with monitoring and adjusting the pressure. 
@@ -33,7 +33,7 @@ class PressureControl():
         try:
             i2c = board.I2C()
             self.mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
-        except:
+        except Exception:
             raise PressureSensorNotInstantiated()
 
         self._pi = pi if pi != None else pigpio.pi()

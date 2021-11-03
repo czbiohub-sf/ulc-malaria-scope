@@ -1,4 +1,4 @@
-from ulc_mm_package.hardware.camera import ULCMM_Camera
+from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
 
 # Temporary import, remove once DRV8825 is in use
@@ -33,7 +33,7 @@ class CameraThread(QThread):
         livecam = ULCMM_Camera()
         livecam.print()
         camera_activated = True
-    except Exception as e:
+    except CameraError:
         camera_activated = False
 
     def run(self):
@@ -77,6 +77,12 @@ class CameraThread(QThread):
 class CameraStream(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(CameraStream, self).__init__(*args, **kwargs)
+        
+        # List hardware components
+        self.cameraThread = None
+        self.motor = None
+        self.pressure_control = None
+        self.encoder = None
 
         # Load the ui file 
         uic.loadUi(_UI_FILE_DIR, self)
@@ -92,20 +98,16 @@ class CameraStream(QtWidgets.QMainWindow):
             print(f"Error initializing Basler camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
-            self.vsExposure.setEnabled(False)
             self.txtBoxExposure.setEnabled(False)
+            self.vsExposure.setEnabled(False)
 
         # Create motor w/ default pins/settings (full step)
         try:
-            # self.motor = DRV8825Nema()
-            # self.motor.homeToLimitSwitches()
+            self.motor = DRV8825Nema()
+            self.motor.homeToLimitSwitches()
 
-            # # Create the encoder
-            # self.encoder = Encoder(pin_a=ROT_A_PIN, pin_b=ROT_B_PIN, callback=self.manualFocusWithEncoder)
-            
-            # TODO Temporary, remove the tic motor and uncomment the above once we have the PCB
-            self.tic_motor = TicStageULCMM()
-            self.encoder = Encoder(pin_a=ROT_A_PIN, pin_b=ROT_B_PIN, callback=self.manualFocusWithEncoderTic)
+            # Create the encoder
+            self.encoder = Encoder(pin_a=ROT_A_PIN, pin_b=ROT_B_PIN, callback=self.manualFocusWithEncoder)
 
         except MotorControllerError:
             print("Error initializing DRV8825. Disabling focus actuation GUI elements.")
@@ -113,6 +115,10 @@ class CameraStream(QtWidgets.QMainWindow):
             self.btnFocusDown.setEnabled(False)
             self.vsFocus.setEnabled(False)
             self.txtBoxFocus.setEnabled(False)
+
+            # Use the encoder to adjust exposure instead (temporary, this is just to demonstrate how the encoder feels)
+            if self.cameraThread.camera_activated:
+                self.encoder = Encoder(pin_a=ROT_A_PIN, pin_b=ROT_B_PIN, callback=self.changeExposureWithEncoder)
         
         # Create pressure controller (sensor + servo)
         try:
@@ -233,13 +239,6 @@ class CameraStream(QtWidgets.QMainWindow):
             self.motor.motor_go(dir=Direction.CCW, steps=1)
         sleep(0.01)
 
-    def manualFocusWithEncoderTic(self, increment: int):
-        if increment == 1:
-            self.tic_motor.tic_stage.moveRelSteps(1)
-        elif increment == -1:
-            self.tic_motor.tic_stage.moveRelSteps(-1)
-        sleep(0.01)
-
     def changeExposureWithEncoder(self, increment):
         if increment == 1:
             self.vsExposure.setValue(self.vsExposure.value() + 10)
@@ -249,8 +248,11 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def exit(self):
         # Move syringe back
-        self.pressure_control.setDutyCycle(self.pressure_control.getMinDutyCycle())
-        self.cameraThread.camera_activated = False
+        if self.pressure_control != None:
+            self.pressure_control.setDutyCycle(self.pressure_control.getMinDutyCycle())
+        # Turn off camera
+        if self.cameraThread != None:
+            self.cameraThread.camera_activated = False
         quit()
 
 if __name__ == '__main__':
