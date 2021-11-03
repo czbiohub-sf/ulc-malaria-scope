@@ -1,14 +1,16 @@
-from re import S
 from ulc_mm_package.hardware.camera import ULCMM_Camera
-from ulc_mm_package.hardware.motorcontroller import DRV88258Nema
+from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
 
-try:
-    from ulc_mm_package.hardware.pressure_control import PressureControl
-except:
-    pass
+# Temporary import, remove once DRV8825 is in use
+from ulc_mm_package.hardware.tic_ulcmm import TicStageULCMM
+
+from ulc_mm_package.hardware.encoder import Encoder
+from ulc_mm_package.hardware.pressure_control import PressureControl, PressureControlError
+from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN
 
 import sys
 import traceback
+from time import sleep
 from os import path, mkdir
 from datetime import datetime
 from PyQt5 import QtWidgets, uic
@@ -54,6 +56,8 @@ class CameraThread(QThread):
                     qimage = qimage.scaled(LABEL_WIDTH, LABEL_HEIGHT, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                     self.changePixmap.emit(qimage)
             except Exception as e:
+                # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
+                # Once that happens, this can be swapped to catch the PyCameraException
                 print(e)
                 print(traceback.format_exc())
 
@@ -70,8 +74,6 @@ class CameraThread(QThread):
             self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S")
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
 
-    
-        
 class CameraStream(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(CameraStream, self).__init__(*args, **kwargs)
@@ -85,6 +87,7 @@ class CameraStream(QtWidgets.QMainWindow):
         self.cameraThread = CameraThread()
         self.cameraThread.start()
         self.recording = False
+        
         if not self.cameraThread.camera_activated:
             print(f"Error initializing Basler camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
@@ -92,12 +95,19 @@ class CameraStream(QtWidgets.QMainWindow):
             self.vsExposure.setEnabled(False)
             self.txtBoxExposure.setEnabled(False)
 
-
         # Create motor w/ default pins/settings (full step)
         try:
-            self.motor = DRV88258Nema()
-            self.motor.homeToLimitSwitches()
-        except Exception as e:
+            # self.motor = DRV8825Nema()
+            # self.motor.homeToLimitSwitches()
+
+            # # Create the encoder
+            # self.encoder = Encoder(pin_a=ROT_A_PIN, pin_b=ROT_B_PIN, callback=self.manualFocusWithEncoder)
+            
+            # TODO Temporary, remove the tic motor and uncomment the above once we have the PCB
+            self.tic_motor = TicStageULCMM()
+            self.encoder = Encoder(pin_a=ROT_A_PIN, pin_b=ROT_B_PIN, callback=self.manualFocusWithEncoderTic)
+
+        except MotorControllerError:
             print("Error initializing DRV8825. Disabling focus actuation GUI elements.")
             self.btnFocusUp.setEnabled(False)
             self.btnFocusDown.setEnabled(False)
@@ -108,11 +118,12 @@ class CameraStream(QtWidgets.QMainWindow):
         try:
             self.pressure_control = PressureControl()
             self.vsFlow.setMinimum(self.pressure_control.getMinDutyCycle())
+            self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
             self.lblMinFlow.setText(f"{self.pressure_control.getMinDutyCycle()}")
             self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle())
             self.lblMaxFlow.setText(f"{self.pressure_control.getMaxDutyCycle()}")
             self.vsFlow.setTickInterval(self.pressure_control.min_step_size)
-        except Exception as e:
+        except PressureControlError:
             print("Error initializing Pressure Controller. Disabling flow GUI elements.")
             self.btnFlowUp.setEnabled(False)
             self.btnFlowDown.setEnabled(False)
@@ -123,15 +134,19 @@ class CameraStream(QtWidgets.QMainWindow):
 
         # Camera
         self.cameraThread.changePixmap.connect(self.updateImage)
-        self.vsExposure.valueChanged.connect(self.updateExposureSlider)
-        self.txtBoxExposure.textChanged.connect(self.updateExposureTextBox)
+        self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
+        self.txtBoxExposure.textChanged.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxHandler)
-        self.btnSnap.clicked.connect(self.takeImage)
+        self.btnSnap.clicked.connect(self.btnSnapHandler)
         
         # Pressure control
-        self.btnFlowUp.clicked.connect(self.increaseFlowPWM)
-        self.btnFlowDown.clicked.connect(self.decreaseFlowPWM)
-        self.txtBoxFlow.textChanged.connect(self.setFlowPWMTextBox)
+        self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
+        self.btnFlowDown.clicked.connect(self.btnFlowDownHandler)
+        self.txtBoxFlow.textChanged.connect(self.flowTextBoxHandler)
+        self.vsFlow.valueChanged.connect(self.vsFlowHandler)
+
+        # Misc
+        self.btnExit.clicked.connect(self.exit)
 
     def checkBoxHandler(self):
         if self.chkBoxRecord.checkState():
@@ -140,7 +155,7 @@ class CameraStream(QtWidgets.QMainWindow):
         else:
             self.btnSnap.setText("Take image")
 
-    def takeImage(self):
+    def btnSnapHandler(self):
         if self.recording:
             self.recording = False
             self.btnSnap.setText("Record images")
@@ -161,12 +176,12 @@ class CameraStream(QtWidgets.QMainWindow):
     def updateImage(self, image):
         self.lblImage.setPixmap(QPixmap.fromImage(image))
 
-    def updateExposureSlider(self):
+    def exposureSliderHandler(self):
         exposure = int(self.vsExposure.value())
         self.cameraThread.updateExposure(exposure / 1000) # Exposure time us -> ms
         self.txtBoxExposure.setText(f"{exposure}")
 
-    def updateExposureTextBox(self):
+    def exposureTextBoxHandler(self):
         try:
             exposure = int(self.txtBoxExposure.text())
         except:
@@ -179,24 +194,24 @@ class CameraStream(QtWidgets.QMainWindow):
             return
         self.vsExposure.setValue(exposure)
 
-    def increaseFlowPWM(self):
+    def btnFlowUpHandler(self):
         self.pressure_control.increaseDutyCycle()
         duty_cycle = self.pressure_control.duty_cycle
         self.vsFlow.setValue(duty_cycle)
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
-    def decreaseFlowPWM(self):
+    def btnFlowDownHandler(self):
         self.pressure_control.decreaseDutyCycle()
         duty_cycle = self.pressure_control.duty_cycle
         self.vsFlow.setValue(duty_cycle)
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
-    def setFlowPWMSlider(self):
+    def vsFlowHandler(self):
         flow_duty_cycle = int(self.vsFlow.value())
         self.pressure_control.setDutyCycle(flow_duty_cycle)
         self.txtBoxFlow.setText(f"{flow_duty_cycle}")
 
-    def setFlowPWMTextBox(self):
+    def flowTextBoxHandler(self):
         try:
             flow_duty_cycle = int(self.txtBoxFlow.text())
         except:
@@ -211,12 +226,35 @@ class CameraStream(QtWidgets.QMainWindow):
         
         self.vsFlow.setValue(flow_duty_cycle)
 
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    main = CameraStream()
-    main.show()
-    sys.exit(app.exec_())
+    def manualFocusWithEncoder(self, increment: int):
+        if increment == 1:
+            self.motor.motor_go(dir=Direction.CW, steps=1)
+        elif increment == -1:
+            self.motor.motor_go(dir=Direction.CCW, steps=1)
+        sleep(0.01)
 
+    def manualFocusWithEncoderTic(self, increment: int):
+        if increment == 1:
+            self.tic_motor.tic_stage.moveRelSteps(1)
+        elif increment == -1:
+            self.tic_motor.tic_stage.moveRelSteps(-1)
+        sleep(0.01)
+
+    def changeExposureWithEncoder(self, increment):
+        if increment == 1:
+            self.vsExposure.setValue(self.vsExposure.value() + 10)
+        elif increment == -1:
+            self.vsExposure.setValue(self.vsExposure.value() - 10)
+        sleep(0.01)
+
+    def exit(self):
+        # Move syringe back
+        self.pressure_control.setDutyCycle(self.pressure_control.getMinDutyCycle())
+        self.cameraThread.camera_activated = False
+        quit()
 
 if __name__ == '__main__':
-    main()
+    app = QtWidgets.QApplication(sys.argv)
+    main_window = CameraStream()
+    main_window.show()
+    sys.exit(app.exec_())
