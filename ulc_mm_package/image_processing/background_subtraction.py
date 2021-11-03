@@ -5,14 +5,8 @@ Find and average pixel values that lay outside bounding boxes across a series of
 Remove the dependence on the "BBox" object that is used for this project and just generalize to taking inputs to x/y arrays
 """
 
-# ========================= HEADER ===================================
-# title             :patchy_background_subtraction.py
-# description       :Find and average pixel values that lay outside bounding boxes across a series of image frames. #TODO make a better description
-# Main author       :Ilakkiyan Jeyakumar
-
 # ========================== IMPORTS ======================
 from typing import List
-from cv2 import subtract
 import numpy as np
 
 # ========================== CONSTANTS ======================
@@ -146,3 +140,28 @@ class PatchyBackgroundSubtractionContinuous(PatchyBackgroundSubtraction):
         update_step = np.divide((masked_img - self._backgroundAverageArray), self.img_counter, where=self.img_counter != 0)
         update_step[masked_img == INSIDE_BBOX_FLAG] = 0
         self._backgroundAverageArray = self._backgroundAverageArray + update_step
+        
+
+class MedianBGSubtraction():
+    def __init__(self, img_height: int = 0, img_width: int = 0, num_frames_in_memory: int = 100):
+        self._num_frames_in_memory = num_frames_in_memory
+        self.frame_storage = np.full((img_height, img_width, num_frames_in_memory), INSIDE_BBOX_FLAG)
+        self._oldest_frame_ptr = 0
+        self._backgroundMedian = 0
+
+    def _addImageToMemory(self, img_arr):
+        """Writes over the array where the pointer is. Updates the pointer location.
+        
+        Slicing in numpy is fast which is why this approach of maintaining a pointer
+        and overwriting was chosen (as opposed to using other approaches like keeping a
+        FIFO queue, using np.roll, or using append/delete etc.)
+        """
+        self.frame_storage[:, :, self._oldest_frame_ptr] = img_arr
+        self._oldest_frame_ptr = (self._oldest_frame_ptr + 1) % self._num_frames_in_memory
+
+    def addImage(self, img_arr):
+        self._addImageToMemory(img_arr)
+
+    def getMedian(self):
+        self._backgroundMedian = np.median(self.frame_storage, axis=2)
+        return self._backgroundMedian
