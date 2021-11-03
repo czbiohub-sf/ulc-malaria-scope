@@ -9,14 +9,8 @@ Basler PyPlon Library:
     https://github.com/basler/pypylon
 """
 
-import sys
-import queue
 import threading
-import cv2
-from pypylon import pylon
-from py_cameras.py_basler import Basler, GrabStrategy
-
-sys.setswitchinterval(0.001)
+from py_cameras import Basler, GrabStrategy
 
 # ------ CONSTANTS ------ #
 _DEFAULT_EXPOSURE_MS = 1
