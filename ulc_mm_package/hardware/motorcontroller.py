@@ -106,7 +106,7 @@ class DRV8825Nema():
         self._pi.set_mode(self.lim1, pigpio.INPUT)
 
         # Limit switch callbacks
-        self._pi.callback(self.lim1, pigpio.RISING, callback=self.motor_stop)
+        self._pi.callback(self.lim1, pigpio.RISING_EDGE, self.motor_stop)
 
     def degree_calc(self, steps):
         """calculate and returns size of turn in degree, passed number of steps and steptype"""
