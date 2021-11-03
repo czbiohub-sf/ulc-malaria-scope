@@ -34,21 +34,21 @@ increment the encoder count.
 
 # ==================== Main class ===============================
 class Encoder():
-    def __init__(self, pin_a: int, pin_b: int, pi: pigpio.pi=None, custom_callback: Callable = None):
+    def __init__(self, pin_a: int, pin_b: int, pi: pigpio.pi=None, callback: Callable = None):
         self.pin_a = pin_a
         self.pin_b = pin_b
         self.lookup_table = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0]
         self.encoder_value = 0b0000
         self.encoder_count = 0
         self._pi = pi if pi != None else pigpio.pi()
-        self.custom_callback = custom_callback
+        self.custom_callback = callback
         self.last_dir = 0
 
         # Set up GPIO and callbacks
         self._pi.set_mode(self.pin_a, pigpio.INPUT)
-        self._pi.set_pull_up_down(self.pin_a, pigpio.PUD_DOWN)
+        self._pi.set_pull_up_down(self.pin_a, pigpio.PUD_UP)
         self._pi.set_mode(self.pin_b, pigpio.INPUT)
-        self._pi.set_pull_up_down(self.pin_b, pigpio.PUD_DOWN)
+        self._pi.set_pull_up_down(self.pin_b, pigpio.PUD_UP)
         self.enableEncoder()
         self.enabled = True
 
