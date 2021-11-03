@@ -7,21 +7,29 @@ Datasheet:
 *Taken and adpated from Gavin Lyons' RPiMotorLib repository (https://github.com/gavinlyonsrepo/RpiMotorLib/blob/master/RpiMotorLib/RpiMotorLib.py)
 """
 
-from math import pi as PI
 import sys
 import enum
 import time
 import pigpio
 
-from ulc_mm_package.hardware.encoder import Encoder
 from ulc_mm_package.hardware.hardware_constants import *
 
 # ==================== Custom errors ===============================
-class StopMotorInterrupt(Exception):
-    """ Stop the motor """
+
+class MotorControllerError(Exception):
+    """ Base class for catching all motor controller related errors. """
     pass
 
-class InvalidMove(Exception):
+class HomingError(MotorControllerError):
+    """ Error raised if an issue occurs during the homing procedure. """
+    pass
+
+class StopMotorInterrupt(MotorControllerError):
+    """ Stop the motor. """
+    pass
+
+class InvalidMove(MotorControllerError):
+    """Error raised if an invalid move is attempted."""
     pass
 
 # ==================== Convenience enum for readability ===============================
@@ -29,7 +37,7 @@ class Direction(enum.Enum):
     CW = True
     CCW = False
 
-class DRV88258Nema():
+class DRV8825Nema():
     """ Class to control a Nema bi-polar stepper motor for a DRV8825.
 
     Default pin values set to the pins laid out on the malaria scope PCB schematic, and GPIO microstepping selection disabled.
@@ -44,8 +52,6 @@ class DRV88258Nema():
                     lim1=LIMIT_SWITCH1,
                     lim2: int=None,
                     max_pos: int=None,
-                    encoder_A=ROT_A_PIN,
-                    encoder_B=ROT_B_PIN, 
                     pi: pigpio.pi=None, 
                 ):
         """
@@ -64,10 +70,6 @@ class DRV88258Nema():
             Limit switch 1 GPIO pin
         lim2 : int
             Limit switch 2 GPIO pin (defaults to None, i.e no secondary limit switch)
-        encoder_a : int
-            Rotary encoder pin A
-        encoder_b : int 
-            Rotary encoder pin B
         pi : pigpio.pi()
             Optional parameter to pass an existing pigpio.pi() object. This would be passed in for cases where you may want two or more hardware objects to 
             both use the same callback thread
@@ -78,7 +80,7 @@ class DRV88258Nema():
         self.lim1 = lim1
         self.lim2 = lim2
         self.steptype = steptype
-        self.encoder = Encoder(encoder_A, encoder_B)
+        self.pos = None
         self.homed = False
         self.stop_motor = False
 
@@ -127,9 +129,9 @@ class DRV88258Nema():
 
         if self.homed:
             if dir == Direction.CW:
-                return self.encoder.getCount() + steps <= self.max_pos
+                return self.pos + steps <= self.max_pos
             elif dir == Direction.CCW:
-                return self.encoder.getCount() - steps >= 0
+                return self.pos - steps >= 0
 
         return True
 
@@ -139,20 +141,24 @@ class DRV88258Nema():
         If a second limit switch is present, move to that one and set the max position.
         """
 
-        # Move the motor until it hits the CCW limit switch
-        self.motor_go(dir=Direction.CCW, steps=1e6)
+        try:
+            # Move the motor until it hits the CCW limit switch
+            try:
+                self.motor_go(dir=Direction.CCW, steps=1e6)
+            except StopMotorInterrupt:
+                # Add slight offset to zero position
+                self.motor_go(dir=Direction.CW, steps=ZERO_OFFSET_STEPS)
+                self.pos = 0
 
-        # Add slight offset to zero position
-        self.motor_go(dir=Direction.CW, steps=ZERO_OFFSET_STEPS)
-        self.encoder.resetCount()
-
-        if self.lim2 != None:
-            # Move to the CW limit switch
-            self.motor_go(dir=Direction.CW, steps=1e6)
-            self.motor_go(dir=Direction.CCW, steps=ZERO_OFFSET_STEPS)
-
-            # Set limit
-            self.max_pos = self.encoder.getCount()
+            if self.lim2 != None:
+                # Move to the CW limit switch
+                try:
+                    self.motor_go(dir=Direction.CW, steps=1e6)
+                except StopMotorInterrupt:
+                    self.motor_go(dir=Direction.CCW, steps=ZERO_OFFSET_STEPS)
+                    self.max_pos = self.pos
+        except:
+            raise HomingError()
             
         self.homed = True
 
@@ -189,51 +195,51 @@ class DRV88258Nema():
                 direction = "CW (+)" if dir else "CCW (-)"
                 raise InvalidMove(f"""
                 =======INVALID MOVE, OUT OF RANGE=======
-                Current position: {self.encoder.getCount()}\n
+                Current position: {self.pos}\n
                 Attempted direction: {direction}\n
                 Attempted steps: {steps}\n
                 Allowable range: 0 <= steps <= {self.max_pos}\n
-                Attempted move would result in: {self.encoder.getCount() + step_increment*steps}
+                Attempted move would result in: {self.pos + step_increment*steps}
                 """)
 
         try:
             time.sleep(initdelay)
-            start_pos = self.encoder.getCount()
-            curr_pos = self.encoder.getCount()
-            end_pos = self.encoder.getCount() + step_increment*steps
-            while (step_increment == 1 and curr_pos < end_pos) or (step_increment == -1 and curr_pos > end_pos):
+            start_pos = self.pos
+
+            for i in range(steps):
                 if self.stop_motor:
-                    # Limit switch triggered
-                    return
+                    raise StopMotorInterrupt("Limit switch hit.")
                 else:
                     self._pi.write(self.step_pin, True)
                     time.sleep(stepdelay)
                     self._pi.write(self.step_pin, False)
                     time.sleep(stepdelay)
-                    curr_pos = self.encoder.getCount()
+                    self.pos += step_increment
                     if verbose:
-                        print(f"Steps {curr_pos-start_pos}")
+                        print(f"Steps {i} \ Position: {self.pos}")
 
         except KeyboardInterrupt:
-            print("User Keyboard Interrupt : RpiMotorLib:")
+            print("User Keyboard Interrupt")
         except StopMotorInterrupt:
-            print("Stop Motor Interrupt : RpiMotorLib: ")
+            print("Stop Motor Interrupt")
         except Exception as motor_error:
             print(sys.exc_info()[0])
             print(motor_error)
             print("RpiMotorLib  : Unexpected error:")
+            raise
 
         finally:
             # cleanup
             self._pi.write(self.step_pin, False)
             self._pi.write(self.direction_pin, False)
+
             # print report status
             if verbose:
                 print("\nRpiMotorLib, Motor Run finished, Details:.\n")
                 print("Motor type = {}".format(self.motor_type))
                 print("Direction = {}".format(dir))
                 print("Step Type = {}".format(self.steptype))
-                print("Number of steps = {}".format(self.encoder.getCount() - start_pos))
+                print("Number of steps = {}".format(self.pos - start_pos))
                 print("Step Delay = {}".format(stepdelay))
                 print("Intial delay = {}".format(initdelay))
                 print("Size of turn in degrees = {}"
@@ -258,12 +264,11 @@ class DRV88258Nema():
 
         steps = int(distance_um / self.dist_per_step_um)
         self.motor_go(dir=dir, steps=steps)
-
     
 
 if __name__ == "__main__":
     print("Instantiating motor...")
-    motor = DRV88258Nema(steptype="Full") # Instantiate with all other defaults
+    motor = DRV8825Nema(steptype="Full") # Instantiate with all other defaults
     print("Successfully instantiated.")
 
     print("Beginning homing...")
