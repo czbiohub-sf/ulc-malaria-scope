@@ -76,7 +76,7 @@ numpy==1.16.2
 oauthlib==2.1.0
 olefile==0.46
 opencv-contrib-python==4.1.1.26
-opencv-python==3.4.6.27
+opencv-python==4.2.0.32
 opt-einsum==3.3.0
 pandas==1.1.0rc0
 pantilthat==0.0.7
