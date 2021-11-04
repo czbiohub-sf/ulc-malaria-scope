@@ -18,8 +18,8 @@ L Switch:SW_SPDT #SW?
 U 1 1 64DF04EA
 P 8855 2530
 AR Path="/64DF04EA" Ref="#SW?"  Part="1" 
-AR Path="/64D22535/64DF04EA" Ref="#SW2"  Part="1" 
-F 0 "#SW2" H 8780 2680 50  0000 C CNN
+AR Path="/64D22535/64DF04EA" Ref="#SW3"  Part="1" 
+F 0 "#SW3" H 8780 2680 50  0000 C CNN
 F 1 "SW_SPDT" H 8805 2755 50  0000 C CNN
 F 2 "" H 8855 2530 50  0001 C CNN
 F 3 "https://sensing.honeywell.com/honeywell-micro-switch-zm-zm1-basic-product-sheet-004991-3-en.pdf" H 8855 2530 50  0001 C CNN
@@ -51,8 +51,8 @@ L Connector_Generic:Conn_01x02 #J?
 U 1 1 64DF04FA
 P 1855 1610
 AR Path="/64DF04FA" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF04FA" Ref="#J3"  Part="1" 
-F 0 "#J3" H 1935 1602 50  0000 L CNN
+AR Path="/64D22535/64DF04FA" Ref="#J25"  Part="1" 
+F 0 "#J25" H 1935 1602 50  0000 L CNN
 F 1 "LED" H 1935 1511 50  0000 L CNN
 F 2 "" H 1855 1610 50  0001 C CNN
 F 3 "https://www.molex.com/molex/products/part-detail/crimp_housings/2026542021" H 1855 1610 50  0001 C CNN
@@ -66,11 +66,11 @@ L Connector_Generic:Conn_02x08_Counter_Clockwise #J?
 U 1 1 64DF0502
 P 1840 4140
 AR Path="/64DF0502" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF0502" Ref="#J2"  Part="1" 
-F 0 "#J2" H 1890 4657 50  0000 C CNN
+AR Path="/64D22535/64DF0502" Ref="#J17"  Part="1" 
+F 0 "#J17" H 1890 4657 50  0000 C CNN
 F 1 "SHIELD SIDE CABLE" H 1890 4566 50  0000 C CNN
 F 2 "" H 1840 4140 50  0001 C CNN
-F 3 "https://www.mouser.com/ProductDetail/Molex/87568-1643?qs=%2FB1RQGSXGA88T%252BY0HW2EkA%3D%3D" H 1840 4140 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/cnc-tech/3230-16-0104-00/3883520" H 1840 4140 50  0001 C CNN
 	1    1840 4140
 	1    0    0    -1  
 $EndComp
@@ -79,11 +79,11 @@ L Connector_Generic:Conn_02x08_Counter_Clockwise #J?
 U 1 1 64DF0508
 P 3955 4140
 AR Path="/64DF0508" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF0508" Ref="#J6"  Part="1" 
-F 0 "#J6" H 4005 4657 50  0000 C CNN
+AR Path="/64D22535/64DF0508" Ref="#J18"  Part="1" 
+F 0 "#J18" H 4005 4657 50  0000 C CNN
 F 1 "REMOTE SIDE CABLE" H 4005 4566 50  0000 C CNN
 F 2 "" H 3955 4140 50  0001 C CNN
-F 3 "https://www.mouser.com/ProductDetail/Molex/87568-1643?qs=%2FB1RQGSXGA88T%252BY0HW2EkA%3D%3D" H 3955 4140 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/cnc-tech/3230-16-0104-00/3883520" H 3955 4140 50  0001 C CNN
 	1    3955 4140
 	-1   0    0    -1  
 $EndComp
@@ -206,8 +206,8 @@ L Device:LED #D?
 U 1 1 64DF0549
 P 1275 1675
 AR Path="/64DF0549" Ref="#D?"  Part="1" 
-AR Path="/64D22535/64DF0549" Ref="#D1"  Part="1" 
-F 0 "#D1" V 1314 1754 50  0000 L CNN
+AR Path="/64D22535/64DF0549" Ref="#D5"  Part="1" 
+F 0 "#D5" V 1314 1754 50  0000 L CNN
 F 1 "LED" V 1223 1754 50  0000 L CNN
 F 2 "" H 1275 1675 50  0001 C CNN
 F 3 "TCN0MA1A" H 1275 1675 50  0001 C CNN
@@ -231,7 +231,7 @@ AR Path="/64D22535/64DF0553" Ref="#M3"  Part="1"
 F 0 "#M3" H 8864 2169 50  0000 C CNN
 F 1 "Motor_Servo" H 8864 2078 50  0000 C CNN
 F 2 "" H 8870 1635 50  0001 C CNN
-F 3 "http://forums.parallax.com/uploads/attachments/46831/74481.png" H 8870 1635 50  0001 C CNN
+F 3 "https://www.pololu.com/file/0J508/HD-1810MG.pdf" H 8870 1635 50  0001 C CNN
 	1    8870 1825
 	-1   0    0    -1  
 $EndComp
@@ -240,8 +240,8 @@ L Connector_Generic:Conn_01x03 #J?
 U 1 1 64DF0559
 P 9485 1825
 AR Path="/64DF0559" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF0559" Ref="#J12"  Part="1" 
-F 0 "#J12" H 9485 2170 50  0000 C CNN
+AR Path="/64D22535/64DF0559" Ref="#J27"  Part="1" 
+F 0 "#J27" H 9485 2170 50  0000 C CNN
 F 1 "SERVO" H 9440 2075 50  0000 C CNN
 F 2 "" H 9485 1825 50  0001 C CNN
 F 3 "https://www.molex.com/molex/products/part-detail/crimp_housings/0022012037" H 9485 1825 50  0001 C CNN
@@ -272,8 +272,8 @@ L Connector_Generic:Conn_01x04 #J?
 U 1 1 64DF0568
 P 7610 1880
 AR Path="/64DF0568" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF0568" Ref="#J8"  Part="1" 
-F 0 "#J8" H 7528 1455 50  0000 C CNN
+AR Path="/64D22535/64DF0568" Ref="#J26"  Part="1" 
+F 0 "#J26" H 7528 1455 50  0000 C CNN
 F 1 "STEPPER" H 7528 1546 50  0000 C CNN
 F 2 "" H 7610 1880 50  0001 C CNN
 F 3 "https://www.molex.com/molex/products/part-detail/cable_assemblies/0151340400" H 7610 1880 50  0001 C CNN
@@ -307,11 +307,11 @@ L Connector_Generic:Conn_01x02 #J?
 U 1 1 64DF0579
 P 9480 2435
 AR Path="/64DF0579" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF0579" Ref="#J11"  Part="1" 
-F 0 "#J11" H 9560 2427 50  0000 L CNN
+AR Path="/64D22535/64DF0579" Ref="#J21"  Part="1" 
+F 0 "#J21" H 9560 2427 50  0000 L CNN
 F 1 "LIMIT_SWITCH_1" H 9560 2336 50  0000 L CNN
 F 2 "" H 9480 2435 50  0001 C CNN
-F 3 "https://www.molex.com/molex/products/part-detail/crimp_housings/2026542021" H 9480 2435 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/9685337" H 9480 2435 50  0001 C CNN
 	1    9480 2435
 	1    0    0    -1  
 $EndComp
@@ -328,8 +328,8 @@ L Switch:SW_SPDT #SW?
 U 1 1 64DF0583
 P 8860 3110
 AR Path="/64DF0583" Ref="#SW?"  Part="1" 
-AR Path="/64D22535/64DF0583" Ref="#SW3"  Part="1" 
-F 0 "#SW3" H 8785 3260 50  0000 C CNN
+AR Path="/64D22535/64DF0583" Ref="#SW4"  Part="1" 
+F 0 "#SW4" H 8785 3260 50  0000 C CNN
 F 1 "SW_SPDT" H 8810 3335 50  0000 C CNN
 F 2 "" H 8860 3110 50  0001 C CNN
 F 3 "https://sensing.honeywell.com/honeywell-micro-switch-zm-zm1-basic-product-sheet-004991-3-en.pdf" H 8860 3110 50  0001 C CNN
@@ -342,11 +342,11 @@ L Connector_Generic:Conn_01x02 #J?
 U 1 1 64DF058A
 P 9485 3015
 AR Path="/64DF058A" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF058A" Ref="#J13"  Part="1" 
-F 0 "#J13" H 9565 3007 50  0000 L CNN
+AR Path="/64D22535/64DF058A" Ref="#J22"  Part="1" 
+F 0 "#J22" H 9565 3007 50  0000 L CNN
 F 1 "LIMIT_SWITCH_2" H 9565 2916 50  0000 L CNN
 F 2 "" H 9485 3015 50  0001 C CNN
-F 3 "https://www.molex.com/molex/products/part-detail/crimp_housings/2026542021" H 9485 3015 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/9685337" H 9485 3015 50  0001 C CNN
 	1    9485 3015
 	1    0    0    -1  
 $EndComp
@@ -365,11 +365,11 @@ L Connector_Generic:Conn_01x05 #J?
 U 1 1 64DF0595
 P 7635 3270
 AR Path="/64DF0595" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF0595" Ref="#J9"  Part="1" 
-F 0 "#J9" H 7553 3687 50  0000 C CNN
+AR Path="/64D22535/64DF0595" Ref="#J28"  Part="1" 
+F 0 "#J28" H 7553 3687 50  0000 C CNN
 F 1 "ENCODER" H 7553 3596 50  0000 C CNN
 F 2 "" H 7635 3270 50  0001 C CNN
-F 3 "~" H 7635 3270 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/5024390500/3260509" H 7635 3270 50  0001 C CNN
 	1    7635 3270
 	1    0    0    -1  
 $EndComp
@@ -416,19 +416,6 @@ F 3 "https://www.mechatronics.com/pdf/B5020.pdf" H 2650 1735 50  0001 C CNN
 	1    2650 1725
 	1    0    0    -1  
 $EndComp
-$Comp
-L Connector_Generic:Conn_01x02 #J?
-U 1 1 64DF05B0
-P 3330 1625
-AR Path="/64DF05B0" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF05B0" Ref="#J5"  Part="1" 
-F 0 "#J5" H 3410 1617 50  0000 L CNN
-F 1 "FAN" H 3410 1526 50  0000 L CNN
-F 2 "" H 3330 1625 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/molex/5024390200/6575361" H 3330 1625 50  0001 C CNN
-	1    3330 1625
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	2650 1425 3130 1425
 Wire Wire Line
@@ -444,8 +431,8 @@ L Connector_Generic:Conn_01x05 #J?
 U 1 1 64DF05CA
 P 1620 2625
 AR Path="/64DF05CA" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF05CA" Ref="#J1"  Part="1" 
-F 0 "#J1" H 1538 3042 50  0000 C CNN
+AR Path="/64D22535/64DF05CA" Ref="#J15"  Part="1" 
+F 0 "#J15" H 1538 3042 50  0000 C CNN
 F 1 "MPR_Pressure_Breakout" H 1538 2951 50  0000 C CNN
 F 2 "" H 1620 2625 50  0001 C CNN
 F 3 "~" H 1620 2625 50  0001 C CNN
@@ -457,16 +444,16 @@ L Connector_Generic:Conn_01x05 #J?
 U 1 1 64DF05D0
 P 2875 2625
 AR Path="/64DF05D0" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF05D0" Ref="#J4"  Part="1" 
-F 0 "#J4" H 2793 3042 50  0000 C CNN
+AR Path="/64D22535/64DF05D0" Ref="#J16"  Part="1" 
+F 0 "#J16" H 2793 3042 50  0000 C CNN
 F 1 "MPR_Pressure_Breakout_Conn" H 2793 2951 50  0000 C CNN
 F 2 "" H 2875 2625 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/molex/0901560145/760736" H 2875 2625 50  0001 C CNN
 	1    2875 2625
 	1    0    0    -1  
 $EndComp
-Text Notes 1230 2975 0    39   ~ 0
-Use regular P2.54mm male pins
+Text Notes 915  2995 0    39   ~ 0
+Use regular P2.54mm male pins on breakout board\n
 Wire Wire Line
 	1820 2425 2675 2425
 Wire Wire Line
@@ -490,8 +477,8 @@ L Device:Electromagnetic_Actor L?
 U 1 1 64DF05C0
 P 8925 3810
 AR Path="/64DF05C0" Ref="L?"  Part="1" 
-AR Path="/64D22535/64DF05C0" Ref="L3"  Part="1" 
-F 0 "L3" H 8795 3814 50  0000 R CNN
+AR Path="/64D22535/64DF05C0" Ref="#L3"  Part="1" 
+F 0 "#L3" H 8795 3814 50  0000 R CNN
 F 1 "VALVE" H 8795 3905 50  0000 R CNN
 F 2 "" V 8900 3910 50  0001 C CNN
 F 3 "~" V 8900 3910 50  0001 C CNN
@@ -503,8 +490,8 @@ L Connector_Generic:Conn_01x02 #J?
 U 1 1 64DF05BA
 P 9475 3830
 AR Path="/64DF05BA" Ref="#J?"  Part="1" 
-AR Path="/64D22535/64DF05BA" Ref="#J10"  Part="1" 
-F 0 "#J10" H 9555 3822 50  0000 L CNN
+AR Path="/64D22535/64DF05BA" Ref="#J24"  Part="1" 
+F 0 "#J24" H 9555 3822 50  0000 L CNN
 F 1 "VALVE" H 9555 3731 50  0000 L CNN
 F 2 "" H 9475 3830 50  0001 C CNN
 F 3 "https://www.molex.com/molex/products/part-detail/crimp_housings/2026542021" H 9475 3830 50  0001 C CNN
@@ -514,10 +501,10 @@ $EndComp
 Text Notes 1935 1110 0    59   ~ 0
 Main Board Components\n
 $Comp
-L Connector:Barrel_Jack #J7
+L Connector:Barrel_Jack #J30
 U 1 1 6604EE9C
 P 6370 4365
-F 0 "#J7" H 6427 4690 50  0000 C CNN
+F 0 "#J30" H 6405 4690 50  0000 C CNN
 F 1 "Barrel_Jack" H 6427 4599 50  0000 C CNN
 F 2 "" H 6420 4325 50  0001 C CNN
 F 3 "https://www.cuidevices.com/product/resource/pj-065b.pdf" H 6420 4325 50  0001 C CNN
@@ -550,4 +537,106 @@ F 3 "" H 6830 4265 50  0001 C CNN
 	1    6830 4265
 	1    0    0    -1  
 $EndComp
+$Comp
+L Connector_Generic:Conn_01x02 #J?
+U 1 1 616521FB
+P 4870 1595
+AR Path="/616521FB" Ref="#J?"  Part="1" 
+AR Path="/64D22535/616521FB" Ref="#J19"  Part="1" 
+F 0 "#J19" H 4950 1587 50  0000 L CNN
+F 1 "12V_SWITCH" H 4950 1496 50  0000 L CNN
+F 2 "" H 4870 1595 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0039012020/61315?s=N4IgTCBcDaIMwE4AMBGMT0gLoF8g" H 4870 1595 50  0001 C CNN
+	1    4870 1595
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4245 1890 4670 1890
+Wire Wire Line
+	4670 1890 4670 1695
+Wire Wire Line
+	4670 1490 4670 1595
+$Comp
+L Switch:SW_SPST SW?
+U 1 1 61673018
+P 4245 1690
+AR Path="/61673018" Ref="SW?"  Part="1" 
+AR Path="/64D22535/61673018" Ref="#SW6"  Part="1" 
+F 0 "#SW6" V 4295 1980 50  0000 R CNN
+F 1 "12V_SWITCH" V 4220 2225 50  0000 R CNN
+F 2 "" H 4245 1690 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/switch-components/RF1-1A-DC-2-R-1/11492837" H 4245 1690 50  0001 C CNN
+	1    4245 1690
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	4245 1490 4670 1490
+$Comp
+L ODMeter-cache:Switch_SW_Push SW?
+U 1 1 616FEA8C
+P 4175 2555
+AR Path="/616FEA8C" Ref="SW?"  Part="1" 
+AR Path="/64D22535/616FEA8C" Ref="#SW5"  Part="1" 
+F 0 "#SW5" V 4221 2703 50  0000 L CNN
+F 1 "GPIO_WAKE" V 4130 2703 50  0000 L CNN
+F 2 "" H 4175 2755 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/e-switch/LP1OA1AB/1984638" H 4175 2755 50  0001 C CNN
+	1    4175 2555
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x02 #J?
+U 1 1 61701810
+P 4950 2485
+AR Path="/61701810" Ref="#J?"  Part="1" 
+AR Path="/64D22535/61701810" Ref="#J20"  Part="1" 
+F 0 "#J20" H 5030 2477 50  0000 L CNN
+F 1 "GPIO_WAKE" H 5030 2386 50  0000 L CNN
+F 2 "" H 4950 2485 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/9685337" H 4950 2485 50  0001 C CNN
+	1    4950 2485
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4175 2355 4750 2355
+Wire Wire Line
+	4750 2355 4750 2485
+Wire Wire Line
+	4175 2755 4750 2755
+Wire Wire Line
+	4750 2755 4750 2585
+$Comp
+L Connector_Generic:Conn_01x02 #J?
+U 1 1 6165AC7C
+P 3330 1625
+AR Path="/6165AC7C" Ref="#J?"  Part="1" 
+AR Path="/64D22535/6165AC7C" Ref="#J23"  Part="1" 
+F 0 "#J23" H 3410 1617 50  0000 L CNN
+F 1 "FAN" H 3410 1526 50  0000 L CNN
+F 2 "" H 3330 1625 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0510210200/242842?utm_adgroup=Connectors%20%26%20Interconnects&utm_source=google&utm_medium=cpc&utm_campaign=Dynamic%20Search_EN_Product&utm_term=&utm_content=Connectors%20%26%20Interconnects&gclid=CjwKCAjwtfqKBhBoEiwAZuesiFsxfBKkBfunjHFEX8ndclfE03LpsQ0aJ1bUUSo-KliiUNP-btW6HxoC67MQAvD_BwE" H 3330 1625 50  0001 C CNN
+	1    3330 1625
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x02 #J29
+U 1 1 616CBECB
+P 7360 4335
+F 0 "#J29" H 7278 4552 50  0000 C CNN
+F 1 "12V_WALL_CONN" H 7278 4461 50  0000 C CNN
+F 2 "" H 7360 4335 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0039012020/61315?s=N4IgTCBcDaIMwE4AMBGMT0gLoF8g" H 7360 4335 50  0001 C CNN
+	1    7360 4335
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6830 4265 7160 4265
+Wire Wire Line
+	7160 4265 7160 4335
+Connection ~ 6830 4265
+Wire Wire Line
+	7160 4435 7160 4465
+Wire Wire Line
+	7160 4465 6825 4465
+Connection ~ 6825 4465
 $EndSCHEMATC

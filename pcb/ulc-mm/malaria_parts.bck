@@ -12,7 +12,7 @@ K connector
 F ~
 $ENDCMP
 #
-$CMP SHTC3
+$CMP SHT3x
 D Humidity and Temperature Sensor, +/-2%RH, +/-0.2degC, I2C, 1.62-3.6V, DFN-4
 K Sensirion environment environmental measurement digital
 F https://www.sensirion.com/fileadmin/user_upload/customers/sensirion/Dokumente/0_Datasheets/Humidity/Sensirion_Humidity_Sensors_SHTC3_Datasheet.pdf
