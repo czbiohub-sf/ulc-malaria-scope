@@ -71,12 +71,11 @@ class CameraThread(QThread):
 
     def takeImage(self):
         if self.main_dir == None:
-            self.main_dir = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+            self.main_dir = datetime.now().strftime("%Y-%m-%d-%H%M%S-%f")
             mkdir(self.main_dir)
-            print(self.main_dir)
 
         if self.continuous_save:
-            self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+            self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S-%f")
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
             self.start_time = perf_counter()
             self.im_counter = 0
@@ -189,9 +188,9 @@ class CameraStream(QtWidgets.QMainWindow):
     def btnSnapHandler(self):
         if self.recording:
             self.recording = False
+            self.cameraThread.continuous_save = False
             self.btnSnap.setText("Record images")
             self.chkBoxRecord.setEnabled(True)
-            self.cameraThread.continuous_save = False
             end_time = perf_counter()
             start_time = self.cameraThread.start_time
             num_images = self.cameraThread.im_counter
@@ -249,7 +248,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def flowTextBoxHandler(self):
         try:
-            flow_duty_cycle = int(self.txtBoxFlow.text())
+            flow_duty_cycle = int(float(self.txtBoxFlow.text()))
         except:
             print("Error parsing textbox flow PWM input. Continuing...")
             return
