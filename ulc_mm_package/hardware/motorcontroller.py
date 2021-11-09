@@ -222,9 +222,7 @@ class DRV8825Nema():
             print("User Keyboard Interrupt")
         except StopMotorInterrupt:
             print("Stop Motor Interrupt")
-        except Exception as motor_error:
-            print(sys.exc_info()[0])
-            print(motor_error)
+        except Exception:
             print("RpiMotorLib  : Unexpected error:")
             raise
 
