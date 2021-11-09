@@ -16,11 +16,15 @@ from time import sleep
 # Set default resolution to 1000 (i.e three decimal points, e.g 0.499 -> 499, but 0.4991 -> 499.1 and would be rounded)
 DUTY_CYCLE_RESOLUTION = 1000 # valid range is 25-40000 (see http://abyz.me.uk/rpi/pigpio/python.html#set_PWM_range)
 
+class LEDError(Exception):
+    """Base class for catching LED errors."""
+    pass
+
 class LED_TPS5420TDDCT():
     """An LED driver class for the TPS5420TDDCT and sets the dimming mode to PWM on initialization."""
     def __init__(self, pi: pigpio.pi=None, pwm_pin: int=LED_PWM_PIN):
         self.pwm_pin = pwm_pin
-        self.pwm_freq = PWM_DIMMING_MAX_FREQ_HZ / 2
+        self.pwm_freq = int(PWM_DIMMING_MAX_FREQ_HZ / 2)
         self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(PWM_DIM_MODE_DUTYCYCLE)
         self._pi = pi if pi != None else pigpio.pi()
         self._pi = pigpio.pi()
@@ -54,5 +58,8 @@ class LED_TPS5420TDDCT():
             resolution is at 1000, i.e values such as 0.501 would be set correctly (501), 
             however 0.5018 would be subject to rounding (502).
         """
-        pwm_val = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
-        self._pi.set_PWM_dutycycle(self.pwm_pin, pwm_val)
+        try:
+            pwm_val = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
+            self._pi.set_PWM_dutycycle(self.pwm_pin, pwm_val)
+        except Exception:
+            raise LEDError()

@@ -9,6 +9,7 @@ Servo Motor Pololu HD-1810MG:
     https://www.pololu.com/product/1047
 """
 
+from time import sleep
 import pigpio
 import board
 import adafruit_mprls
@@ -30,12 +31,6 @@ class PressureControl():
     PWM-driven Servo motor (Pololu HD-1810MG) to adjust the position of the syringe (thereby adjusting the pressure).
     """
     def __init__(self, servo_pin: int=SERVO_PWM_PIN, pi: pigpio.pi=None):
-        try:
-            i2c = board.I2C()
-            self.mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
-        except Exception:
-            raise PressureSensorNotInstantiated()
-
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
@@ -48,7 +43,7 @@ class PressureControl():
 
         # The three values below (dead_bandwidth, min_width, max_width) are taken from the datasheet
         self.dead_bandwidth_us = 5
-        self.min_width_us = 1500
+        self.min_width_us = 1500 + 100 # adding some padding
         self.max_width_us = 2250
 
         # Convert to valid PWM value
@@ -59,6 +54,19 @@ class PressureControl():
 
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_PWM_dutycycle(servo_pin, self.duty_cycle)
+
+        # Instantiate pressure sensor
+        try:
+            i2c = board.I2C()
+            self.mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
+        except Exception:
+            raise PressureSensorNotInstantiated()
+
+    def __del__(self):
+        self._pi.set_PWM_dutycycle(self.servo_pin, self.min_duty_cycle)
+        self._pi.set_PWM_frequency(self.servo_pin, 0)
+        self._pi.set_mode(self.servo_pin, pigpio.INPUT)
+        sleep(0.5)
 
     def getCurrentDutyCycle(self):
         return self.duty_cycle

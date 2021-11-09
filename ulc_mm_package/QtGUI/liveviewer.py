@@ -1,8 +1,6 @@
 from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
-
-# Temporary import, remove once DRV8825 is in use
-from ulc_mm_package.hardware.tic_ulcmm import TicStageULCMM
+from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 
 from ulc_mm_package.hardware.encoder import Encoder
 from ulc_mm_package.hardware.pressure_control import PressureControl, PressureControlError
@@ -10,7 +8,7 @@ from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN
 
 import sys
 import traceback
-from time import sleep
+from time import perf_counter, sleep
 from os import path, mkdir
 from datetime import datetime
 from PyQt5 import QtWidgets, uic
@@ -18,9 +16,15 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 from cv2 import imwrite
 
-_UI_FILE_DIR = "liveview.ui"
-LABEL_WIDTH = 480
-LABEL_HEIGHT = 360
+BIG_SCREEN = True
+if BIG_SCREEN:
+    _UI_FILE_DIR = "liveview_big.ui"
+    LABEL_WIDTH = 800
+    LABEL_HEIGHT = 600
+else:
+    _UI_FILE_DIR = "liveview.ui"
+    LABEL_WIDTH = 480
+    LABEL_HEIGHT = 360
 
 class CameraThread(QThread):
     changePixmap = pyqtSignal(QImage)
@@ -43,13 +47,14 @@ class CameraThread(QThread):
                     self.image = image
 
                     if self.single_save:
-                        filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + ".jpeg"
+                        filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + ".jpg"
                         imwrite(filename, image)
                         self.single_save = False
 
                     if self.continuous_save:
-                        filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + ".jpeg"
-                        imwrite(filename, image)
+                        filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"_{self.im_counter}.jpg"
+                        if imwrite(filename, image):
+                            self.im_counter += 1
                     
                     h, w = image.shape
                     qimage = QImage(image, w, h, QImage.Format_Grayscale8)
@@ -73,6 +78,8 @@ class CameraThread(QThread):
         if self.continuous_save:
             self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S")
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
+            self.start_time = perf_counter()
+            self.im_counter = 0
 
 class CameraStream(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -83,6 +90,7 @@ class CameraStream(QtWidgets.QMainWindow):
         self.motor = None
         self.pressure_control = None
         self.encoder = None
+        self.led = None
 
         # Load the ui file 
         uic.loadUi(_UI_FILE_DIR, self)
@@ -100,6 +108,13 @@ class CameraStream(QtWidgets.QMainWindow):
             self.chkBoxRecord.setEnabled(False)
             self.txtBoxExposure.setEnabled(False)
             self.vsExposure.setEnabled(False)
+
+        # Create the LED
+        try:
+            self.led = LED_TPS5420TDDCT()
+            self.led.setDutyCycle(0.5)
+        except LEDError:
+            print("Error instantiating LED. Continuing...")
 
         # Create motor w/ default pins/settings (full step)
         try:
@@ -129,21 +144,22 @@ class CameraStream(QtWidgets.QMainWindow):
             self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle())
             self.lblMaxFlow.setText(f"{self.pressure_control.getMaxDutyCycle()}")
             self.vsFlow.setTickInterval(self.pressure_control.min_step_size)
+            self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
         except PressureControlError:
             print("Error initializing Pressure Controller. Disabling flow GUI elements.")
-            self.btnFlowUp.setEnabled(False)
-            self.btnFlowDown.setEnabled(False)
-            self.vsFlow.setEnabled(False)
-            self.txtBoxFlow.setEnabled(False)
+            # self.btnFlowUp.setEnabled(False)
+            # self.btnFlowDown.setEnabled(False)
+            # self.vsFlow.setEnabled(False)
+            # self.txtBoxFlow.setEnabled(False)
 
         ### Connect UI elements to actions ###
 
         # Camera
         self.cameraThread.changePixmap.connect(self.updateImage)
-        self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
         self.txtBoxExposure.textChanged.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxHandler)
         self.btnSnap.clicked.connect(self.btnSnapHandler)
+        self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
         
         # Pressure control
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
@@ -153,6 +169,15 @@ class CameraStream(QtWidgets.QMainWindow):
 
         # Misc
         self.btnExit.clicked.connect(self.exit)
+
+        # Set slider min/max
+        min_exposure_us = 100
+        max_exposure_us = 10000
+        self.vsExposure.setMinimum(min_exposure_us) 
+        self.vsExposure.setMaximum(max_exposure_us)
+        self.vsExposure.setValue(500)
+        self.lblMinExposure.setText(f"{min_exposure_us} us")
+        self.lblMaxExposure.setText(f"{max_exposure_us} us")
 
     def checkBoxHandler(self):
         if self.chkBoxRecord.checkState():
@@ -166,6 +191,10 @@ class CameraStream(QtWidgets.QMainWindow):
             self.recording = False
             self.btnSnap.setText("Record images")
             self.chkBoxRecord.setEnabled(True)
+            end_time = perf_counter()
+            start_time = self.cameraThread.start_time
+            num_images = self.cameraThread.im_counter
+            print(f"{num_images} taken in {end_time - start_time} ({num_images / (end_time-start_time)} fps)")
             return
 
         if self.chkBoxRecord.checkState():
@@ -189,7 +218,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def exposureTextBoxHandler(self):
         try:
-            exposure = int(self.txtBoxExposure.text())
+            exposure = int(float(self.txtBoxExposure.text()))
         except:
             print("Error parsing textbox exposure time input. Continuing...")
             return
@@ -247,7 +276,7 @@ class CameraStream(QtWidgets.QMainWindow):
         sleep(0.01)
 
     def exit(self):
-        # Move syringe back
+        # Move syringe back and de-energize
         if self.pressure_control != None:
             self.pressure_control.setDutyCycle(self.pressure_control.getMinDutyCycle())
         # Turn off camera

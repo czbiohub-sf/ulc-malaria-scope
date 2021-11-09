@@ -1,4 +1,15 @@
+""" Simple Zarr storage format wrapper
+
+-- Important Links -- 
+Library Documentation:
+    https://zarr.readthedocs.io/en/stable/index.html
+    
+"""
+
 import zarr
+from os import listdir, path
+import cv2
+from time import perf_counter
 
 # ==================== Custom errors ===============================
 class AttemptingWriteWithoutFile(Exception):
@@ -24,9 +35,9 @@ class ZarrWriter():
         filename : str 
             Filename, don't include the extension (i.e pass "new_file" not "new_file.zip").
         overwrite : bool
-            Will overwrite a file with the existing filename if it exists, otherwise will append.
-                
+            Will overwrite a file with the existing filename if it exists, otherwise will append.     
         """
+        
         try:
             filename = f"{filename}.zip"
             if overwrite:
@@ -57,5 +68,22 @@ class ZarrWriter():
 if __name__ == "__main__":
     writer = ZarrWriter()
     writer.createNewFile("experiment1")
-    writer.writeSingleArray([1, 2, 3])
+    dir = "../images/"
+    start = perf_counter()
+    for i, img in enumerate(listdir(dir)):
+        if "tif" in img:
+            if i % 1000 == 0:
+                print(i)
+            img = path.join(dir, img)
+            arr = cv2.imread(img, 0)
+            writer.writeSingleArray(arr)
+    runtime = perf_counter() - start
+    print(f"Num images: {i} Runtime: {runtime}")
+    # writer.writeSingleArray([1, 2, 3])
+
+    # zdf = zarr.open("experiment1.zip", mode="r")
+    # for z in zdf:
+    #     cv2.imshow("Temp", zdf[z][:, :])
+    #     cv2.waitKey(0)
+
     writer.closeFile()
