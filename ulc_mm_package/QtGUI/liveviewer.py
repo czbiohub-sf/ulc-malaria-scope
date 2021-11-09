@@ -191,6 +191,7 @@ class CameraStream(QtWidgets.QMainWindow):
             self.recording = False
             self.btnSnap.setText("Record images")
             self.chkBoxRecord.setEnabled(True)
+            self.cameraThread.continuous_save = False
             end_time = perf_counter()
             start_time = self.cameraThread.start_time
             num_images = self.cameraThread.im_counter
