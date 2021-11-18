@@ -43,7 +43,7 @@ class PressureControl():
 
         # The three values below (dead_bandwidth, min_width, max_width) are taken from the datasheet
         self.dead_bandwidth_us = 5
-        self.min_width_us = 1500 + 100 # adding some padding
+        self.min_width_us = 1500 + 200 # adding some padding
         self.max_width_us = 2250
 
         # Convert to valid PWM value
