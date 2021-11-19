@@ -39,18 +39,10 @@ Wire Wire Line
 	2225 1475 1075 1475
 Wire Wire Line
 	1075 1575 2225 1575
-Wire Wire Line
-	2225 1975 1075 1975
-Wire Wire Line
-	1075 2075 2225 2075
 Text Label 1075 1475 0    50   ~ 0
 SDA
 Text Label 1075 1575 0    50   ~ 0
 SCL
-Text Label 1075 1975 0    50   ~ 0
-ROT_A
-Text Label 1075 2075 0    50   ~ 0
-ROT_SWITCH
 Text Label 3875 2875 2    50   ~ 0
 SERVO_PWM
 Text Label 3875 2375 2    50   ~ 0
@@ -1007,38 +999,11 @@ F 3 "https://www.digikey.com/en/products/detail/cnc-tech/3210-16-003-12-00/38827
 	1    1815 7670
 	1    0    0    -1  
 $EndComp
-$Comp
-L Connector_Generic:Conn_01x05 J11
-U 1 1 62B44FF4
-P 15120 7745
-F 0 "J11" H 15200 7787 50  0000 L CNN
-F 1 "ENCODER" H 15200 7696 50  0000 L CNN
-F 2 "Connector_Molex:Molex_CLIK-Mate_502443-0570_1x05-1MP_P2.00mm_Vertical" H 15120 7745 50  0001 C CNN
-F 3 "https://www.molex.com/webdocs/datasheets/pdf/en-us/5024430570_PCB_RECEPTACLES.pdf" H 15120 7745 50  0001 C CNN
-F 4 "https://www.molex.com/molex/products/part-detail/crimp_housings/5024390500" H 15120 7745 50  0001 C CNN "Mating Conn"
-	1    15120 7745
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR064
-U 1 1 62B473FF
-P 14875 7990
-F 0 "#PWR064" H 14875 7740 50  0001 C CNN
-F 1 "GND" H 14880 7817 50  0000 C CNN
-F 2 "" H 14875 7990 50  0001 C CNN
-F 3 "" H 14875 7990 50  0001 C CNN
-	1    14875 7990
-	1    0    0    -1  
-$EndComp
-Text Label 14485 7545 0    39   ~ 0
-R_ROT_A
 Wire Wire Line
 	3500 7430 3300 7430
-Text Label 14475 7745 0    39   ~ 0
-R_ROT_B
 Wire Notes Line
 	10275 8175 4675 8175
-Text Notes 14660 7385 0    47   ~ 0
+Text Notes 14660 7320 0    47   ~ 0
 Use internal Pi PU
 Text Notes 5375 8700 0    98   ~ 0
 Real Time Clock
@@ -1420,10 +1385,6 @@ Wire Wire Line
 Connection ~ 14825 2450
 Wire Wire Line
 	14825 2450 15300 2450
-Wire Wire Line
-	14920 7945 14470 7945
-Text Label 14470 7945 0    39   ~ 0
-R_ROT_SWITCH
 $Comp
 L Device:R_Small R4
 U 1 1 614A4218
@@ -1478,19 +1439,6 @@ F 4 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/968
 	1    12705 7680
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	14485 7545 14920 7545
-Wire Wire Line
-	14475 7745 14920 7745
-Wire Wire Line
-	14920 7645 14875 7645
-Wire Wire Line
-	14875 7645 14875 7845
-Wire Wire Line
-	14920 7845 14875 7845
-Connection ~ 14875 7845
-Wire Wire Line
-	14875 7845 14875 7990
 Text Notes 5605 6120 0    20   ~ 0
 Leave switches open\nfor full step.
 Wire Wire Line
@@ -1613,56 +1561,6 @@ F1 "off_board_components.sch" 39
 $EndSheet
 Text Notes 1885 9595 0    98   ~ 0
 Off Board Components
-Text Label 1390 7870 0    39   ~ 0
-VALVE
-Wire Wire Line
-	1615 7870 1390 7870
-Wire Wire Line
-	1245 7470 1245 7465
-Wire Wire Line
-	1615 7470 1245 7470
-$Comp
-L power:+12V #PWR01
-U 1 1 64F0BFCD
-P 1245 7465
-F 0 "#PWR01" H 1245 7315 50  0001 C CNN
-F 1 "+12V" H 1260 7638 50  0000 C CNN
-F 2 "" H 1245 7465 50  0001 C CNN
-F 3 "" H 1245 7465 50  0001 C CNN
-	1    1245 7465
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1615 8070 1290 8070
-$Comp
-L power:GND #PWR02
-U 1 1 64F0BFC4
-P 1290 8270
-F 0 "#PWR02" H 1290 8020 50  0001 C CNN
-F 1 "GND" H 1290 8120 50  0000 C CNN
-F 2 "" H 1290 8270 50  0001 C CNN
-F 3 "" H 1290 8270 50  0001 C CNN
-	1    1290 8270
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1290 7670 1615 7670
-Text Label 1390 7770 0    39   ~ 0
-S4
-Text Label 1390 7970 0    39   ~ 0
-S3
-Text Label 1390 7570 0    39   ~ 0
-S2
-Text Label 1390 7370 0    39   ~ 0
-S1
-Wire Wire Line
-	1615 7770 1390 7770
-Wire Wire Line
-	1615 7970 1390 7970
-Wire Wire Line
-	1615 7570 1390 7570
-Wire Wire Line
-	1615 7370 1390 7370
 $Comp
 L Converter_DCDC:RPM5.0-6.0 U4
 U 1 1 6509D9D0
@@ -2504,10 +2402,6 @@ Wire Notes Line
 	4675 475  4675 11225
 Text Label 3875 2075 2    50   ~ 0
 LS2
-Text Notes -3770 935  0    197  ~ 39
-TO DOs:
-Text Notes -4170 2000 0    79   ~ 0
-\n- Double check functionality of using gpio26 for wake\n- Double check connectors mate with each other properly\n- Change references so that the silkscreen is more useful\n- Change 12V switch reference to handle more current\n\n\n
 $Comp
 L Connector_Generic:Conn_01x02 J3
 U 1 1 61639693
@@ -2578,41 +2472,6 @@ $EndComp
 Wire Wire Line
 	10755 4980 10755 5130
 Connection ~ 10755 5130
-Wire Wire Line
-	2115 7470 2340 7470
-Wire Wire Line
-	2115 7670 2340 7670
-Text Label 2340 7470 2    39   ~ 0
-LS1
-Text Label 2340 7670 2    39   ~ 0
-LS2
-$Comp
-L power:GND #PWR0104
-U 1 1 62085A63
-P 2590 8470
-F 0 "#PWR0104" H 2590 8220 50  0001 C CNN
-F 1 "GND" H 2590 8320 50  0000 C CNN
-F 2 "" H 2590 8470 50  0001 C CNN
-F 3 "" H 2590 8470 50  0001 C CNN
-	1    2590 8470
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2115 8070 2590 8070
-Text Label 2340 7570 2    39   ~ 0
-ROT_A
-Text Label 2340 7770 2    39   ~ 0
-ROT_B
-Wire Wire Line
-	2115 7570 2340 7570
-Wire Wire Line
-	2115 7770 2340 7770
-Wire Wire Line
-	2590 8070 2590 8470
-Text Label 2440 7970 2    39   ~ 0
-ROT_SWITCH
-Wire Wire Line
-	2115 7970 2440 7970
 Text Label 3875 3175 2    50   ~ 0
 DIR
 Wire Wire Line
@@ -2644,89 +2503,27 @@ Wire Wire Line
 Connection ~ 14025 2000
 Wire Wire Line
 	14025 2000 14150 2000
-NoConn ~ 2225 2275
 NoConn ~ 2225 2375
-Wire Wire Line
-	2115 7370 2590 7370
-$Comp
-L power:+5V #PWR0105
-U 1 1 62085A6B
-P 2590 7370
-F 0 "#PWR0105" H 2590 7220 50  0001 C CNN
-F 1 "+5V" H 2605 7543 50  0000 C CNN
-F 2 "" H 2590 7370 50  0001 C CNN
-F 3 "" H 2590 7370 50  0001 C CNN
-	1    2590 7370
-	1    0    0    -1  
-$EndComp
-Connection ~ 1290 8070
-Wire Wire Line
-	1290 8070 1290 8270
-Wire Wire Line
-	1290 7670 1290 8070
-Text Label 1075 1875 0    50   ~ 0
-ROT_B
-Wire Wire Line
-	1075 1875 2225 1875
 Wire Wire Line
 	3875 2175 2725 2175
 Text Label 3875 2175 2    50   ~ 0
 LS1
-Text Label 11085 9105 0    39   ~ 0
-R_VALVE
-Wire Wire Line
-	11310 9105 11085 9105
-Wire Wire Line
-	10940 8705 10940 8700
-Wire Wire Line
-	11310 8705 10940 8705
-$Comp
-L power:+12V #PWR0106
-U 1 1 6372D2A1
-P 10940 8700
-F 0 "#PWR0106" H 10940 8550 50  0001 C CNN
-F 1 "+12V" H 10955 8873 50  0000 C CNN
-F 2 "" H 10940 8700 50  0001 C CNN
-F 3 "" H 10940 8700 50  0001 C CNN
-	1    10940 8700
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	11310 9305 10985 9305
-$Comp
-L power:GND #PWR0107
-U 1 1 6372D2A8
-P 10985 9505
-F 0 "#PWR0107" H 10985 9255 50  0001 C CNN
-F 1 "GND" H 10985 9355 50  0000 C CNN
-F 2 "" H 10985 9505 50  0001 C CNN
-F 3 "" H 10985 9505 50  0001 C CNN
-	1    10985 9505
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	10985 8905 11310 8905
-Text Label 11085 9005 0    39   ~ 0
-R_S4
 Text Label 11085 9205 0    39   ~ 0
+R_S4
+Text Label 11085 9005 0    39   ~ 0
 R_S3
 Text Label 11085 8805 0    39   ~ 0
 R_S2
 Text Label 11085 8605 0    39   ~ 0
 R_S1
 Wire Wire Line
-	11310 9005 11085 9005
-Wire Wire Line
 	11310 9205 11085 9205
+Wire Wire Line
+	11310 9005 11085 9005
 Wire Wire Line
 	11310 8805 11085 8805
 Wire Wire Line
 	11310 8605 11085 8605
-Connection ~ 10985 9305
-Wire Wire Line
-	10985 9305 10985 9505
-Wire Wire Line
-	10985 8905 10985 9305
 Wire Wire Line
 	11810 8705 12035 8705
 Wire Wire Line
@@ -2740,28 +2537,14 @@ R_SERVO_PWM
 $Comp
 L power:GND #PWR0108
 U 1 1 6377FFE3
-P 12285 9705
-F 0 "#PWR0108" H 12285 9455 50  0001 C CNN
-F 1 "GND" H 12285 9555 50  0000 C CNN
-F 2 "" H 12285 9705 50  0001 C CNN
-F 3 "" H 12285 9705 50  0001 C CNN
-	1    12285 9705
+P 12305 9315
+F 0 "#PWR0108" H 12305 9065 50  0001 C CNN
+F 1 "GND" H 12305 9165 50  0000 C CNN
+F 2 "" H 12305 9315 50  0001 C CNN
+F 3 "" H 12305 9315 50  0001 C CNN
+	1    12305 9315
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	11810 9305 12285 9305
-Text Label 12035 8805 2    39   ~ 0
-R_ROT_A
-Text Label 12035 9005 2    39   ~ 0
-R_ROT_B
-Wire Wire Line
-	11810 8805 12035 8805
-Wire Wire Line
-	11810 9005 12035 9005
-Wire Wire Line
-	12285 9305 12285 9705
-Text Label 12225 9205 2    39   ~ 0
-R_ROT_SWITCH
 Wire Wire Line
 	11810 8605 12285 8605
 $Comp
@@ -2777,9 +2560,6 @@ F 3 "" H 12285 8605 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	11810 9105 12220 9105
-Wire Wire Line
-	11810 9205 12225 9205
-NoConn ~ 2225 2175
 $Comp
 L Device:R_Small R18
 U 1 1 61969EFD
@@ -2828,10 +2608,6 @@ Wire Wire Line
 	11975 2250 12325 2250
 Wire Wire Line
 	12405 2450 12650 2450
-Wire Wire Line
-	2115 7870 2440 7870
-Text Label 2440 7870 2    39   ~ 0
-SERVO_PWM
 Wire Wire Line
 	13490 8695 13380 8695
 Wire Wire Line
@@ -2957,6 +2733,232 @@ F 1 "1M" V 8560 5225 50  0000 L CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 8560 5285 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/rohm-semiconductor/ESR03EZPJ105/4051181" H 8560 5285 50  0001 C CNN
 	1    8560 5285
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x05 J11
+U 1 1 62B44FF4
+P 15120 7745
+F 0 "J11" H 15200 7787 50  0000 L CNN
+F 1 "ENCODER" H 15200 7696 50  0000 L CNN
+F 2 "Connector_Molex:Molex_CLIK-Mate_502443-0570_1x05-1MP_P2.00mm_Vertical" H 15120 7745 50  0001 C CNN
+F 3 "https://www.molex.com/webdocs/datasheets/pdf/en-us/5024430570_PCB_RECEPTACLES.pdf" H 15120 7745 50  0001 C CNN
+F 4 "https://www.molex.com/molex/products/part-detail/crimp_housings/5024390500" H 15120 7745 50  0001 C CNN "Mating Conn"
+	1    15120 7745
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0105
+U 1 1 62067BBA
+P 14815 7945
+F 0 "#PWR0105" H 14815 7695 50  0001 C CNN
+F 1 "GND" H 14820 7772 50  0000 C CNN
+F 2 "" H 14815 7945 50  0001 C CNN
+F 3 "" H 14815 7945 50  0001 C CNN
+	1    14815 7945
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	14920 7945 14815 7945
+Text Label 14785 7645 0    39   ~ 0
+R_SDA
+Text Label 14780 7745 0    39   ~ 0
+R_SCL
+Text Label 14780 7845 0    39   ~ 0
+R_INT
+Wire Wire Line
+	14785 7645 14920 7645
+Wire Wire Line
+	14780 7745 14920 7745
+Wire Wire Line
+	14780 7845 14920 7845
+Wire Wire Line
+	11310 8905 11085 8905
+Text Label 11085 8905 0    39   ~ 0
+R_INT
+Wire Wire Line
+	11810 9005 12035 9005
+Text Label 12035 9005 2    39   ~ 0
+R_SDA
+Text Label 11095 9105 0    39   ~ 0
+R_VALVE
+Wire Wire Line
+	11310 9105 11095 9105
+Wire Wire Line
+	11810 9305 12305 9305
+Wire Wire Line
+	2115 7470 2340 7470
+Wire Wire Line
+	2115 7670 2340 7670
+Text Label 2340 7470 2    39   ~ 0
+LS1
+Text Label 2340 7670 2    39   ~ 0
+LS2
+Text Label 2525 7870 2    39   ~ 0
+SERVO_PWM
+$Comp
+L power:GND #PWR0112
+U 1 1 624FB5AF
+P 2610 8080
+F 0 "#PWR0112" H 2610 7830 50  0001 C CNN
+F 1 "GND" H 2610 7930 50  0000 C CNN
+F 2 "" H 2610 8080 50  0001 C CNN
+F 3 "" H 2610 8080 50  0001 C CNN
+	1    2610 8080
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2115 7370 2590 7370
+$Comp
+L power:+5V #PWR0113
+U 1 1 624FB5B6
+P 2590 7370
+F 0 "#PWR0113" H 2590 7220 50  0001 C CNN
+F 1 "+5V" H 2605 7543 50  0000 C CNN
+F 2 "" H 2590 7370 50  0001 C CNN
+F 3 "" H 2590 7370 50  0001 C CNN
+	1    2590 7370
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2115 7870 2525 7870
+Text Label 1400 7870 0    39   ~ 0
+VALVE
+Wire Wire Line
+	1615 7870 1400 7870
+Wire Wire Line
+	2115 8070 2610 8070
+Wire Wire Line
+	2610 8070 2610 8080
+$Comp
+L power:+12V #PWR0115
+U 1 1 625B7E22
+P 1290 7470
+F 0 "#PWR0115" H 1290 7320 50  0001 C CNN
+F 1 "+12V" H 1305 7643 50  0000 C CNN
+F 2 "" H 1290 7470 50  0001 C CNN
+F 3 "" H 1290 7470 50  0001 C CNN
+	1    1290 7470
+	1    0    0    -1  
+$EndComp
+Text Label 1390 7970 0    39   ~ 0
+S4
+Text Label 1390 7770 0    39   ~ 0
+S3
+Text Label 1390 7570 0    39   ~ 0
+S2
+Text Label 1390 7370 0    39   ~ 0
+S1
+Wire Wire Line
+	1615 7970 1390 7970
+Wire Wire Line
+	1615 7770 1390 7770
+Wire Wire Line
+	1615 7570 1390 7570
+Wire Wire Line
+	1615 7370 1390 7370
+Wire Wire Line
+	2115 7770 2340 7770
+Text Label 2340 7770 2    39   ~ 0
+SDA
+Wire Wire Line
+	1615 8070 1390 8070
+Text Label 1390 8070 0    39   ~ 0
+SCL
+Wire Wire Line
+	1075 1875 2225 1875
+Text Label 1075 1875 0    50   ~ 0
+INT
+$Comp
+L power:+12V #PWR0106
+U 1 1 6372D2A1
+P 10940 8700
+F 0 "#PWR0106" H 10940 8550 50  0001 C CNN
+F 1 "+12V" H 10955 8873 50  0000 C CNN
+F 2 "" H 10940 8700 50  0001 C CNN
+F 3 "" H 10940 8700 50  0001 C CNN
+	1    10940 8700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	11310 8705 10940 8705
+Wire Wire Line
+	10940 8705 10940 8700
+Wire Wire Line
+	1290 7470 1615 7470
+Wire Wire Line
+	11810 9205 12305 9205
+Wire Wire Line
+	12305 9205 12305 9305
+Connection ~ 12305 9305
+Wire Wire Line
+	12305 9305 12305 9315
+Wire Wire Line
+	2115 7970 2610 7970
+Wire Wire Line
+	2610 7970 2610 8070
+Connection ~ 2610 8070
+Text Label 1390 7670 0    39   ~ 0
+INT
+Wire Wire Line
+	1615 7670 1390 7670
+Text Label 11085 9305 0    39   ~ 0
+R_SCL
+Wire Wire Line
+	11310 9305 11085 9305
+NoConn ~ 2225 1975
+NoConn ~ 2225 2075
+NoConn ~ 2225 2275
+Wire Wire Line
+	2025 2175 2225 2175
+$Comp
+L power:+3.3V #PWR?
+U 1 1 630B841F
+P 2025 2060
+F 0 "#PWR?" H 2025 1910 50  0001 C CNN
+F 1 "+3.3V" H 2025 2200 50  0000 C CNN
+F 2 "" H 2025 2060 50  0000 C CNN
+F 3 "" H 2025 2060 50  0000 C CNN
+	1    2025 2060
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2025 2060 2025 2175
+$Comp
+L power:+3.3V #PWR?
+U 1 1 63145D3A
+P 2570 7570
+F 0 "#PWR?" H 2570 7420 50  0001 C CNN
+F 1 "+3.3V" H 2570 7710 50  0000 C CNN
+F 2 "" H 2570 7570 50  0000 C CNN
+F 3 "" H 2570 7570 50  0000 C CNN
+	1    2570 7570
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2570 7570 2115 7570
+$Comp
+L ODMeter-cache:+3.3V #PWR?
+U 1 1 631F1B79
+P 12275 8805
+F 0 "#PWR?" H 12275 8655 50  0001 C CNN
+F 1 "+3.3V" H 12285 8950 50  0000 C CNN
+F 2 "" H 12275 8805 50  0001 C CNN
+F 3 "" H 12275 8805 50  0001 C CNN
+	1    12275 8805
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	11810 8805 12275 8805
+$Comp
+L ODMeter-cache:+3.3V #PWR?
+U 1 1 6322CB16
+P 14920 7545
+F 0 "#PWR?" H 14920 7395 50  0001 C CNN
+F 1 "+3.3V" H 14935 7718 50  0000 C CNN
+F 2 "" H 14920 7545 50  0001 C CNN
+F 3 "" H 14920 7545 50  0001 C CNN
+	1    14920 7545
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC

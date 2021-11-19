@@ -27,25 +27,6 @@ F 3 "https://sensing.honeywell.com/honeywell-micro-switch-zm-zm1-basic-product-s
 	0    -1   -1   0   
 $EndComp
 NoConn ~ 8755 2330
-Wire Wire Line
-	6175 3385 6275 3385
-Wire Wire Line
-	7125 3185 6875 3185
-Wire Wire Line
-	7225 3285 6875 3285
-$Comp
-L Device:Rotary_Encoder_Switch #SW?
-U 1 1 64DF04F4
-P 6575 3285
-AR Path="/64DF04F4" Ref="#SW?"  Part="1" 
-AR Path="/64D22535/64DF04F4" Ref="#SW1"  Part="1" 
-F 0 "#SW1" H 6575 3652 50  0000 C CNN
-F 1 "Rotary_Encoder_Switch" H 6575 3561 50  0000 C CNN
-F 2 "" H 6425 3445 50  0001 C CNN
-F 3 "https://cdn-shop.adafruit.com/datasheets/pec11.pdf" H 6575 3545 50  0001 C CNN
-	1    6575 3285
-	-1   0    0    -1  
-$EndComp
 $Comp
 L Connector_Generic:Conn_01x02 #J?
 U 1 1 64DF04FA
@@ -373,36 +354,6 @@ F 3 "https://www.digikey.com/en/products/detail/molex/5024390500/3260509" H 7635
 	1    7635 3270
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	7435 3070 7125 3070
-Wire Wire Line
-	7125 3070 7125 3185
-Wire Wire Line
-	7435 3170 7225 3170
-Wire Wire Line
-	7225 3170 7225 3285
-Wire Wire Line
-	7435 3270 7265 3270
-Wire Wire Line
-	7265 3270 7265 3385
-Wire Wire Line
-	7265 3385 6875 3385
-Wire Wire Line
-	6175 3385 6175 3535
-Wire Wire Line
-	6175 3535 7320 3535
-Wire Wire Line
-	7320 3535 7320 3370
-Wire Wire Line
-	7320 3370 7435 3370
-Wire Wire Line
-	6275 3185 6110 3185
-Wire Wire Line
-	6110 3185 6110 3580
-Wire Wire Line
-	6110 3580 7435 3580
-Wire Wire Line
-	7435 3580 7435 3470
 $Comp
 L Motor:Fan #M?
 U 1 1 64DF05AA
@@ -639,4 +590,27 @@ Wire Wire Line
 Wire Wire Line
 	7160 4465 6825 4465
 Connection ~ 6825 4465
+$Comp
+L Connector_Generic:Conn_01x05 #J?
+U 1 1 6323F68B
+P 7050 3270
+AR Path="/6323F68B" Ref="#J?"  Part="1" 
+AR Path="/64D22535/6323F68B" Ref="#J?"  Part="1" 
+F 0 "#J?" H 6968 3687 50  0000 C CNN
+F 1 "ENCODER" H 6968 3596 50  0000 C CNN
+F 2 "" H 7050 3270 50  0001 C CNN
+F 3 "https://shop.pimoroni.com/products/rgb-encoder-breakout" H 7050 3270 50  0001 C CNN
+	1    7050 3270
+	-1   0    0    -1  
+$EndComp
+Wire Wire Line
+	7250 3070 7435 3070
+Wire Wire Line
+	7250 3170 7435 3170
+Wire Wire Line
+	7250 3270 7435 3270
+Wire Wire Line
+	7250 3370 7435 3370
+Wire Wire Line
+	7250 3470 7435 3470
 $EndSCHEMATC
