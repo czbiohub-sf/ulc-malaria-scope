@@ -15,6 +15,7 @@ from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 from cv2 import imwrite
+import numpy as np
 
 BIG_SCREEN = True
 if BIG_SCREEN:
@@ -44,6 +45,7 @@ class CameraThread(QThread):
         while self.camera_activated:
             try:
                 for image in self.livecam.yieldImages():
+                    image = np.flipud(image)
                     self.image = image
 
                     if self.single_save:
