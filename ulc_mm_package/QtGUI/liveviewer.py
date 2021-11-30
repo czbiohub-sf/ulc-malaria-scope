@@ -122,9 +122,6 @@ class CameraStream(QtWidgets.QMainWindow):
             self.motor = DRV8825Nema()
             self.motor.homeToLimitSwitches()
 
-            # Create the encoder
-            self.encoder = Encoder(pin_a=ROT_A_PIN, pin_b=ROT_B_PIN, callback=self.manualFocusWithEncoder)
-
         except MotorControllerError:
             print("Error initializing DRV8825. Disabling focus actuation GUI elements.")
             self.btnFocusUp.setEnabled(False)
@@ -134,7 +131,8 @@ class CameraStream(QtWidgets.QMainWindow):
 
             # Use the encoder to adjust exposure instead (temporary, this is just to demonstrate how the encoder feels)
             if self.cameraThread.camera_activated:
-                self.encoder = Encoder(pin_a=ROT_A_PIN, pin_b=ROT_B_PIN, callback=self.changeExposureWithEncoder)
+                self.encoder.enableInterrupt()
+                self.encoder.setInterruptCallback(self.changeExposureWithEncoder)
         
         # Create pressure controller (sensor + servo)
         try:
