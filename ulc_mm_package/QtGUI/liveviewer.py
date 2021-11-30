@@ -131,6 +131,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
             # Use the encoder to adjust exposure instead (temporary, this is just to demonstrate how the encoder feels)
             if self.cameraThread.camera_activated:
+                self.encoder = PIM522RotaryEncoder()
                 self.encoder.enableInterrupt()
                 self.encoder.setInterruptCallback(self.changeExposureWithEncoder)
         
