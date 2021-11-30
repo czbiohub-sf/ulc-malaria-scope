@@ -128,12 +128,6 @@ class CameraStream(QtWidgets.QMainWindow):
             self.btnFocusDown.setEnabled(False)
             self.vsFocus.setEnabled(False)
             self.txtBoxFocus.setEnabled(False)
-
-            # Use the encoder to adjust exposure instead (temporary, this is just to demonstrate how the encoder feels)
-            if self.cameraThread.camera_activated:
-                self.encoder = PIM522RotaryEncoder()
-                self.encoder.enableInterrupt()
-                self.encoder.setInterruptCallback(self.changeExposureWithEncoder)
         
         # Create pressure controller (sensor + servo)
         try:
