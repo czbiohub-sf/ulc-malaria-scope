@@ -56,11 +56,12 @@ class PressureControl():
         self._pi.set_PWM_dutycycle(servo_pin, self.duty_cycle)
 
         # Instantiate pressure sensor
-        try:
-            i2c = board.I2C()
-            self.mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
-        except Exception:
-            raise PressureSensorNotInstantiated()
+        # TODO: uncomment this after. Commented out for now so that the servo will work
+        # try:
+        #     i2c = board.I2C()
+        #     self.mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
+        # except Exception:
+        #     raise PressureSensorNotInstantiated()
 
     def __del__(self):
         self._pi.set_PWM_dutycycle(self.servo_pin, self.min_duty_cycle)
