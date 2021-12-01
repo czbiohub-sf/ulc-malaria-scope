@@ -20,8 +20,8 @@ import numpy as np
 BIG_SCREEN = True
 if BIG_SCREEN:
     _UI_FILE_DIR = "liveview_big.ui"
-    LABEL_WIDTH = 800
-    LABEL_HEIGHT = 600
+    LABEL_WIDTH = 1040
+    LABEL_HEIGHT = 780
 else:
     _UI_FILE_DIR = "liveview.ui"
     LABEL_WIDTH = 480
@@ -45,7 +45,7 @@ class CameraThread(QThread):
         while self.camera_activated:
             try:
                 for image in self.livecam.yieldImages():
-                    image = np.flipud(image)
+                    image = np.flipud(image).copy()
                     self.image = image
 
                     if self.single_save:
