@@ -549,11 +549,11 @@ F 3 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/968
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	4175 2355 4750 2355
+	4175 2355 4490 2355
 Wire Wire Line
 	4750 2355 4750 2485
 Wire Wire Line
-	4175 2755 4750 2755
+	4175 2755 4470 2755
 Wire Wire Line
 	4750 2755 4750 2585
 $Comp
@@ -595,8 +595,8 @@ L Connector_Generic:Conn_01x05 #J?
 U 1 1 6323F68B
 P 7050 3270
 AR Path="/6323F68B" Ref="#J?"  Part="1" 
-AR Path="/64D22535/6323F68B" Ref="#J?"  Part="1" 
-F 0 "#J?" H 6968 3687 50  0000 C CNN
+AR Path="/64D22535/6323F68B" Ref="#J1"  Part="1" 
+F 0 "#J1" H 6968 3687 50  0000 C CNN
 F 1 "ENCODER" H 6968 3596 50  0000 C CNN
 F 2 "" H 7050 3270 50  0001 C CNN
 F 3 "https://shop.pimoroni.com/products/rgb-encoder-breakout" H 7050 3270 50  0001 C CNN
@@ -613,4 +613,27 @@ Wire Wire Line
 	7250 3370 7435 3370
 Wire Wire Line
 	7250 3470 7435 3470
+Connection ~ 4490 2355
+Wire Wire Line
+	4490 2355 4750 2355
+Text Label 4490 2110 3    39   ~ 0
+J2_RUN
+Wire Wire Line
+	4490 2110 4490 2355
+$Comp
+L power:GND #PWR?
+U 1 1 61E8BEC9
+P 4470 2755
+F 0 "#PWR?" H 4470 2505 50  0001 C CNN
+F 1 "GND" H 4475 2582 50  0000 C CNN
+F 2 "" H 4470 2755 50  0001 C CNN
+F 3 "" H 4470 2755 50  0001 C CNN
+	1    4470 2755
+	1    0    0    -1  
+$EndComp
+Connection ~ 4470 2755
+Wire Wire Line
+	4470 2755 4750 2755
+Text Notes 3665 3115 0    39   ~ 0
+Momentary push button gets directly wired to J2 (RUN / GND) on the RPi. \nShort them together by pushing the button to wake the Pi.
 $EndSCHEMATC

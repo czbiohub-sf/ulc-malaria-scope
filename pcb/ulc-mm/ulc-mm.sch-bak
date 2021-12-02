@@ -291,11 +291,11 @@ Vf,typ = 3.5V, If,typ = 500mA
 Text Notes 11015 4175 0    30   ~ 0
 I2C addr = 0x44\n
 $Comp
-L Connector:TestPoint 12V1
+L Connector:TestPoint TP1
 U 1 1 616AFA1E
 P 7965 8760
-F 0 "12V1" V 7919 8948 50  0000 L CNN
-F 1 "TestPoint" V 8010 8948 50  0000 L CNN
+F 0 "TP1" V 7919 8948 50  0000 L CNN
+F 1 "12V" V 8010 8948 50  0000 L CNN
 F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8165 8760 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8165 8760 50  0001 C CNN
 	1    7965 8760
@@ -313,22 +313,22 @@ F 3 "" H 7965 8760 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector:TestPoint 5V1
+L Connector:TestPoint TP2
 U 1 1 616B83BB
 P 8590 8760
-F 0 "5V1" V 8544 8948 50  0000 L CNN
-F 1 "TestPoint" V 8635 8948 50  0000 L CNN
+F 0 "TP2" V 8544 8948 50  0000 L CNN
+F 1 "5V" V 8635 8948 50  0000 L CNN
 F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8790 8760 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8790 8760 50  0001 C CNN
 	1    8590 8760
 	0    1    1    0   
 $EndComp
 $Comp
-L Connector:TestPoint 3.3V1
+L Connector:TestPoint TP3
 U 1 1 616BDB4B
 P 9190 8760
-F 0 "3.3V1" V 9144 8948 50  0000 L CNN
-F 1 "TestPoint" V 9235 8948 50  0000 L CNN
+F 0 "TP3" V 9144 8948 50  0000 L CNN
+F 1 "3.3V" V 9235 8948 50  0000 L CNN
 F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 9390 8760 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 9390 8760 50  0001 C CNN
 	1    9190 8760
@@ -357,11 +357,11 @@ F 3 "" H 9190 8760 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector:TestPoint SDA1
+L Connector:TestPoint TP4
 U 1 1 616E33D0
 P 8020 9190
-F 0 "SDA1" H 8078 9308 50  0000 L CNN
-F 1 "TestPoint" H 8078 9217 50  0000 L CNN
+F 0 "TP4" H 8078 9308 50  0000 L CNN
+F 1 "SDA" H 8078 9217 50  0000 L CNN
 F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8220 9190 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8220 9190 50  0001 C CNN
 	1    8020 9190
@@ -372,11 +372,11 @@ SDA
 Wire Wire Line
 	7820 9190 8020 9190
 $Comp
-L Connector:TestPoint SCL1
+L Connector:TestPoint TP5
 U 1 1 616EF7A7
 P 8735 9190
-F 0 "SCL1" H 8793 9308 50  0000 L CNN
-F 1 "TestPoint" H 8793 9217 50  0000 L CNN
+F 0 "TP5" H 8793 9308 50  0000 L CNN
+F 1 "SCL" H 8793 9217 50  0000 L CNN
 F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8935 9190 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8935 9190 50  0001 C CNN
 	1    8735 9190
@@ -911,28 +911,6 @@ Wire Wire Line
 	12505 7680 12280 7680
 Wire Wire Line
 	12505 7780 12280 7780
-$Comp
-L power:GND #PWR049
-U 1 1 61C8CABE
-P 11045 7770
-F 0 "#PWR049" H 11045 7520 50  0001 C CNN
-F 1 "GND" H 11050 7597 50  0000 C CNN
-F 2 "" H 11045 7770 50  0001 C CNN
-F 3 "" H 11045 7770 50  0001 C CNN
-	1    11045 7770
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR054
-U 1 1 61C8D58E
-P 12280 7780
-F 0 "#PWR054" H 12280 7530 50  0001 C CNN
-F 1 "GND" H 12285 7607 50  0000 C CNN
-F 2 "" H 12280 7780 50  0001 C CNN
-F 3 "" H 12280 7780 50  0001 C CNN
-	1    12280 7780
-	1    0    0    -1  
-$EndComp
 Text Label 11045 7670 0    39   ~ 0
 R_LS1
 Text Label 12280 7680 0    39   ~ 0
@@ -949,36 +927,14 @@ F 4 "https://www.molex.com/molex/products/part-detail/crimp_housings/0022012037"
 	1    13690 8695
 	1    0    0    -1  
 $EndComp
-$Comp
-L power:+5V #PWR058
-U 1 1 61CB4C9B
-P 13380 8560
-F 0 "#PWR058" H 13380 8410 50  0001 C CNN
-F 1 "+5V" H 13395 8733 50  0000 C CNN
-F 2 "" H 13380 8560 50  0001 C CNN
-F 3 "" H 13380 8560 50  0001 C CNN
-	1    13380 8560
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR059
-U 1 1 61CB4CA1
-P 13380 8795
-F 0 "#PWR059" H 13380 8545 50  0001 C CNN
-F 1 "GND" H 13385 8622 50  0000 C CNN
-F 2 "" H 13380 8795 50  0001 C CNN
-F 3 "" H 13380 8795 50  0001 C CNN
-	1    13380 8795
-	1    0    0    -1  
-$EndComp
 Text Label 12710 8595 0    39   ~ 0
 R_SERVO_PWM
 $Comp
-L Connector:TestPoint DRV_VREF1
+L Connector:TestPoint TP6
 U 1 1 6257AF6B
 P 9560 9190
-F 0 "DRV_VREF1" H 9618 9308 50  0000 L CNN
-F 1 "TestPoint" H 9618 9217 50  0000 L CNN
+F 0 "TP6" H 9618 9308 50  0000 L CNN
+F 1 "DRV_VREF" H 9618 9217 50  0000 L CNN
 F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 9760 9190 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 9760 9190 50  0001 C CNN
 	1    9560 9190
@@ -1078,17 +1034,6 @@ Wire Wire Line
 Connection ~ 1575 5450
 Wire Wire Line
 	1575 5450 1575 5525
-$Comp
-L power:+12V #PWR062
-U 1 1 63CC0AE1
-P 13900 7685
-F 0 "#PWR062" H 13900 7535 50  0001 C CNN
-F 1 "+12V" H 13915 7858 50  0000 C CNN
-F 2 "" H 13900 7685 50  0001 C CNN
-F 3 "" H 13900 7685 50  0001 C CNN
-	1    13900 7685
-	1    0    0    -1  
-$EndComp
 Text Label 1575 4850 3    39   ~ 0
 VALVE
 $Comp
@@ -1113,10 +1058,8 @@ Wire Wire Line
 	925  5450 1225 5450
 Text Notes 1900 4600 2    59   ~ 0
 Valve Switch
-Text Label 13725 7785 0    39   ~ 0
+Text Label 13890 8030 1    39   ~ 0
 R_VALVE
-Wire Wire Line
-	13900 7785 13725 7785
 Wire Wire Line
 	3300 7530 3500 7530
 Wire Wire Line
@@ -2103,11 +2046,11 @@ $EndComp
 Text Label 15300 2000 2    39   ~ 0
 Vled
 $Comp
-L Connector:TestPoint VLED1
+L Connector:TestPoint TP7
 U 1 1 66F74BDE
 P 8020 9590
-F 0 "VLED1" H 8078 9708 50  0000 L CNN
-F 1 "TestPoint" H 8078 9617 50  0000 L CNN
+F 0 "TP7" H 8078 9708 50  0000 L CNN
+F 1 "VLED" H 8078 9617 50  0000 L CNN
 F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8220 9590 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8220 9590 50  0001 C CNN
 	1    8020 9590
@@ -2188,7 +2131,6 @@ Wire Wire Line
 	13755 7685 13755 7580
 Wire Wire Line
 	13755 7580 13520 7580
-Connection ~ 13900 7685
 Wire Wire Line
 	13725 7785 13725 7880
 Wire Wire Line
@@ -2426,11 +2368,11 @@ F 3 "" H 8685 9430 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector:TestPoint GND1
+L Connector:TestPoint TP8
 U 1 1 616D01C4
 P 8685 9430
-F 0 "GND1" V 8639 9618 50  0000 L CNN
-F 1 "TestPoint" V 8730 9618 50  0000 L CNN
+F 0 "TP8" V 8639 9618 50  0000 L CNN
+F 1 "GND" V 8730 9618 50  0000 L CNN
 F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8885 9430 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8885 9430 50  0001 C CNN
 	1    8685 9430
@@ -2534,30 +2476,8 @@ Text Label 12035 8905 2    39   ~ 0
 R_LS2
 Text Label 12220 9105 2    39   ~ 0
 R_SERVO_PWM
-$Comp
-L power:GND #PWR0108
-U 1 1 6377FFE3
-P 12305 9315
-F 0 "#PWR0108" H 12305 9065 50  0001 C CNN
-F 1 "GND" H 12305 9165 50  0000 C CNN
-F 2 "" H 12305 9315 50  0001 C CNN
-F 3 "" H 12305 9315 50  0001 C CNN
-	1    12305 9315
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	11810 8605 12285 8605
-$Comp
-L power:+5V #PWR0109
-U 1 1 6377FFF3
-P 12285 8605
-F 0 "#PWR0109" H 12285 8455 50  0001 C CNN
-F 1 "+5V" H 12300 8778 50  0000 C CNN
-F 2 "" H 12285 8605 50  0001 C CNN
-F 3 "" H 12285 8605 50  0001 C CNN
-	1    12285 8605
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	11810 9105 12220 9105
 $Comp
@@ -2661,35 +2581,8 @@ Text Label 1075 3175 0    50   ~ 0
 DRV_EN
 Wire Wire Line
 	1075 3175 2225 3175
-$Comp
-L Connector_Generic:Conn_01x02 #J14
-U 1 1 617552DD
-P 3690 8435
-F 0 "#J14" H 3770 8427 50  0000 L CNN
-F 1 "GPIO_WAKE" H 3770 8336 50  0000 L CNN
-F 2 "Connector_Molex:Molex_PicoBlade_53047-0210_1x02_P1.25mm_Vertical" H 3690 8435 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/molex/0530470210/242853" H 3690 8435 50  0001 C CNN
-F 4 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/9685337" H 3690 8435 50  0001 C CNN "Cable Assm"
-	1    3690 8435
-	1    0    0    -1  
-$EndComp
 NoConn ~ 2225 2475
 NoConn ~ 2225 2575
-Wire Wire Line
-	3490 8435 3315 8435
-Text Label 3315 8435 0    39   ~ 0
-J2_RUN
-$Comp
-L power:GND #PWR0110
-U 1 1 61C27541
-P 3490 8535
-F 0 "#PWR0110" H 3490 8285 50  0001 C CNN
-F 1 "GND" H 3495 8362 50  0000 C CNN
-F 2 "" H 3490 8535 50  0001 C CNN
-F 3 "" H 3490 8535 50  0001 C CNN
-	1    3490 8535
-	1    0    0    -1  
-$EndComp
 Text Notes 3095 8990 0    39   ~ 0
 Momentary pushbutton\nconnector for RPi wake. Connected off board.
 Text Notes 3095 9215 0    39   ~ 0
@@ -2747,19 +2640,6 @@ F 4 "https://www.molex.com/molex/products/part-detail/crimp_housings/5024390500"
 	1    15120 7745
 	1    0    0    -1  
 $EndComp
-$Comp
-L power:GND #PWR0105
-U 1 1 62067BBA
-P 14815 7945
-F 0 "#PWR0105" H 14815 7695 50  0001 C CNN
-F 1 "GND" H 14820 7772 50  0000 C CNN
-F 2 "" H 14815 7945 50  0001 C CNN
-F 3 "" H 14815 7945 50  0001 C CNN
-	1    14815 7945
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	14920 7945 14815 7945
 Text Label 14785 7645 0    39   ~ 0
 R_SDA
 Text Label 14780 7745 0    39   ~ 0
@@ -2785,7 +2665,7 @@ R_VALVE
 Wire Wire Line
 	11310 9105 11095 9105
 Wire Wire Line
-	11810 9305 12305 9305
+	11810 9305 11980 9305
 Wire Wire Line
 	2115 7470 2340 7470
 Wire Wire Line
@@ -2869,30 +2749,10 @@ Wire Wire Line
 	1075 1875 2225 1875
 Text Label 1075 1875 0    50   ~ 0
 INT
-$Comp
-L power:+12V #PWR0106
-U 1 1 6372D2A1
-P 10940 8700
-F 0 "#PWR0106" H 10940 8550 50  0001 C CNN
-F 1 "+12V" H 10955 8873 50  0000 C CNN
-F 2 "" H 10940 8700 50  0001 C CNN
-F 3 "" H 10940 8700 50  0001 C CNN
-	1    10940 8700
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	11310 8705 10940 8705
 Wire Wire Line
-	10940 8705 10940 8700
-Wire Wire Line
 	1290 7470 1615 7470
-Wire Wire Line
-	11810 9205 12305 9205
-Wire Wire Line
-	12305 9205 12305 9305
-Connection ~ 12305 9305
-Wire Wire Line
-	12305 9305 12305 9315
 Wire Wire Line
 	2115 7970 2610 7970
 Wire Wire Line
@@ -2911,54 +2771,168 @@ NoConn ~ 2225 2075
 NoConn ~ 2225 2275
 Wire Wire Line
 	2025 2175 2225 2175
-$Comp
-L power:+3.3V #PWR?
-U 1 1 630B841F
-P 2025 2060
-F 0 "#PWR?" H 2025 1910 50  0001 C CNN
-F 1 "+3.3V" H 2025 2200 50  0000 C CNN
-F 2 "" H 2025 2060 50  0000 C CNN
-F 3 "" H 2025 2060 50  0000 C CNN
-	1    2025 2060
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	2025 2060 2025 2175
+Wire Wire Line
+	2570 7570 2115 7570
+Wire Wire Line
+	11810 8805 12275 8805
+Wire Wire Line
+	11810 9205 11980 9205
+Wire Wire Line
+	11980 9205 11980 9305
+Connection ~ 11980 9305
+Wire Wire Line
+	11980 9305 12305 9305
 $Comp
-L power:+3.3V #PWR?
-U 1 1 63145D3A
-P 2570 7570
-F 0 "#PWR?" H 2570 7420 50  0001 C CNN
-F 1 "+3.3V" H 2570 7710 50  0000 C CNN
-F 2 "" H 2570 7570 50  0000 C CNN
-F 3 "" H 2570 7570 50  0000 C CNN
-	1    2570 7570
+L malaria_parts:R_GND #PWR0105
+U 1 1 61B4EB49
+P 11045 7770
+F 0 "#PWR0105" H 11045 7520 50  0001 C CNN
+F 1 "R_GND" H 11050 7597 50  0000 C CNN
+F 2 "" H 11045 7770 50  0001 C CNN
+F 3 "" H 11045 7770 50  0001 C CNN
+	1    11045 7770
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:R_GND #PWR0106
+U 1 1 61B4F91E
+P 12280 7780
+F 0 "#PWR0106" H 12280 7530 50  0001 C CNN
+F 1 "R_GND" H 12285 7607 50  0000 C CNN
+F 2 "" H 12280 7780 50  0001 C CNN
+F 3 "" H 12280 7780 50  0001 C CNN
+	1    12280 7780
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:R_GND #PWR0108
+U 1 1 61B880A8
+P 14920 7945
+F 0 "#PWR0108" H 14920 7695 50  0001 C CNN
+F 1 "R_GND" H 14925 7772 50  0000 C CNN
+F 2 "" H 14920 7945 50  0001 C CNN
+F 3 "" H 14920 7945 50  0001 C CNN
+	1    14920 7945
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:R_GND #PWR0109
+U 1 1 61BC1527
+P 13380 8795
+F 0 "#PWR0109" H 13380 8545 50  0001 C CNN
+F 1 "R_GND" H 13385 8622 50  0000 C CNN
+F 2 "" H 13380 8795 50  0001 C CNN
+F 3 "" H 13380 8795 50  0001 C CNN
+	1    13380 8795
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:R_GND #PWR0111
+U 1 1 61BDE260
+P 12305 9305
+F 0 "#PWR0111" H 12305 9055 50  0001 C CNN
+F 1 "R_GND" H 12310 9132 50  0000 C CNN
+F 2 "" H 12305 9305 50  0001 C CNN
+F 3 "" H 12305 9305 50  0001 C CNN
+	1    12305 9305
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	2570 7570 2115 7570
+	13890 8030 13890 7785
+Wire Wire Line
+	13725 7785 13890 7785
+Connection ~ 13890 7785
+Wire Wire Line
+	13890 7785 13900 7785
 $Comp
-L ODMeter-cache:+3.3V #PWR?
-U 1 1 631F1B79
+L malaria_parts:+R_12V #PWR0114
+U 1 1 61C55B9C
+P 13900 7685
+F 0 "#PWR0114" H 13900 7535 50  0001 C CNN
+F 1 "+R_12V" H 13915 7858 50  0000 C CNN
+F 2 "" H 13900 7685 50  0001 C CNN
+F 3 "" H 13900 7685 50  0001 C CNN
+	1    13900 7685
+	1    0    0    -1  
+$EndComp
+Connection ~ 13900 7685
+$Comp
+L malaria_parts:+R_12V #PWR0116
+U 1 1 61C90A3D
+P 10940 8705
+F 0 "#PWR0116" H 10940 8555 50  0001 C CNN
+F 1 "+R_12V" H 10955 8878 50  0000 C CNN
+F 2 "" H 10940 8705 50  0001 C CNN
+F 3 "" H 10940 8705 50  0001 C CNN
+	1    10940 8705
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:+R_3.3V #PWR0117
+U 1 1 61CAE9C8
+P 14920 7545
+F 0 "#PWR0117" H 14920 7395 50  0001 C CNN
+F 1 "+R_3.3V" H 14935 7718 50  0000 C CNN
+F 2 "" H 14920 7545 50  0001 C CNN
+F 3 "" H 14920 7545 50  0001 C CNN
+	1    14920 7545
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:+R_3.3V #PWR0118
+U 1 1 61D06CD4
 P 12275 8805
-F 0 "#PWR?" H 12275 8655 50  0001 C CNN
-F 1 "+3.3V" H 12285 8950 50  0000 C CNN
+F 0 "#PWR0118" H 12275 8655 50  0001 C CNN
+F 1 "+R_3.3V" H 12290 8960 50  0000 C CNN
 F 2 "" H 12275 8805 50  0001 C CNN
 F 3 "" H 12275 8805 50  0001 C CNN
 	1    12275 8805
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	11810 8805 12275 8805
 $Comp
-L ODMeter-cache:+3.3V #PWR?
-U 1 1 6322CB16
-P 14920 7545
-F 0 "#PWR?" H 14920 7395 50  0001 C CNN
-F 1 "+3.3V" H 14935 7718 50  0000 C CNN
-F 2 "" H 14920 7545 50  0001 C CNN
-F 3 "" H 14920 7545 50  0001 C CNN
-	1    14920 7545
+L malaria_parts:+R_5V #PWR0119
+U 1 1 61D438FF
+P 12285 8605
+F 0 "#PWR0119" H 12285 8455 50  0001 C CNN
+F 1 "+R_5V" H 12300 8778 50  0000 C CNN
+F 2 "" H 12285 8605 50  0001 C CNN
+F 3 "" H 12285 8605 50  0001 C CNN
+	1    12285 8605
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:+R_5V #PWR0120
+U 1 1 61D6159A
+P 13380 8560
+F 0 "#PWR0120" H 13380 8410 50  0001 C CNN
+F 1 "+R_5V" H 13395 8733 50  0000 C CNN
+F 2 "" H 13380 8560 50  0001 C CNN
+F 3 "" H 13380 8560 50  0001 C CNN
+	1    13380 8560
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3VA #PWR0104
+U 1 1 61DE4F00
+P 2025 2060
+F 0 "#PWR0104" H 2025 1910 50  0001 C CNN
+F 1 "+3.3VA" H 2040 2233 50  0000 C CNN
+F 2 "" H 2025 2060 50  0001 C CNN
+F 3 "" H 2025 2060 50  0001 C CNN
+	1    2025 2060
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3VA #PWR0107
+U 1 1 61E3B34D
+P 2570 7570
+F 0 "#PWR0107" H 2570 7420 50  0001 C CNN
+F 1 "+3.3VA" H 2585 7743 50  0000 C CNN
+F 2 "" H 2570 7570 50  0001 C CNN
+F 3 "" H 2570 7570 50  0001 C CNN
+	1    2570 7570
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC

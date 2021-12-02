@@ -1,5 +1,25 @@
 EESchema-DOCLIB  Version 2.0
 #
+$CMP +3.3V
+D Power symbol creates a global label with name "+3.3V"
+K power-flag
+$ENDCMP
+#
+$CMP +R_12V
+D Power symbol creates a global label with name "+12V"
+K power-flag
+$ENDCMP
+#
+$CMP +R_3.3V
+D Power symbol creates a global label with name "+3V3"
+K power-flag
+$ENDCMP
+#
+$CMP +R_5V
+D Power symbol creates a global label with name "+5V"
+K power-flag
+$ENDCMP
+#
 $CMP IRLML6344TRPbF
 D 38A Id, 20V Vds, 0.75mOhm Rds, N-Channel MOSFET, DirectFET MD
 K N-Channel MOSFET
@@ -12,13 +32,12 @@ K connector
 F ~
 $ENDCMP
 #
-$CMP SHT3x
-D Humidity and Temperature Sensor, +/-2%RH, +/-0.2degC, I2C, 1.62-3.6V, DFN-4
-K Sensirion environment environmental measurement digital
-F https://www.sensirion.com/fileadmin/user_upload/customers/sensirion/Dokumente/0_Datasheets/Humidity/Sensirion_Humidity_Sensors_SHTC3_Datasheet.pdf
+$CMP R_GND
+D Power symbol creates a global label with name "GND" , ground
+K power-flag
 $ENDCMP
 #
-$CMP SHTC3x
+$CMP SHT3x
 D Humidity and Temperature Sensor, +/-2%RH, +/-0.2degC, I2C, 1.62-3.6V, DFN-4
 K Sensirion environment environmental measurement digital
 F https://www.sensirion.com/fileadmin/user_upload/customers/sensirion/Dokumente/0_Datasheets/Humidity/Sensirion_Humidity_Sensors_SHTC3_Datasheet.pdf
