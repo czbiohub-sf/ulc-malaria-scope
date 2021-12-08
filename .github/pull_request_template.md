@@ -1,4 +1,4 @@
-Many thanks to contributing to snafees/ortho_seqs!
+Many thanks to contributing to czbiohub/ulc-malaria-scope!
 
 Please fill in the appropriate checklist below (delete whatever is not relevant). These are the most common things requested on pull requests (PRs).
 
