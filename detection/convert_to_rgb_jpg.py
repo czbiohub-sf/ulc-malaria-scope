@@ -36,7 +36,7 @@ def main():
         "-i", "--input", required=True, help="Input folder or file to convert"
     )
     parser.add_argument(
-        "-f", "--format", type=str, default=".png", help="Format of image"
+        "-f", "--format", type=str, default=".png", help="Format of image including dot. for example .png"
     )
     parser.add_argument(
         "--resize", type=int, nargs="+", required=False, help="Resize image to a shape"
@@ -56,6 +56,9 @@ def main():
     else:
         for input_image in glob.glob(os.path.join(input_path, "*" + format_of_files)):
             input_images.append(input_image)
+    if len(input_images) == 0:
+        print("No images of format {} found at path {}".format(
+            format_of_files, input_path))
     for input_image in input_images:
         image = imread(input_image)
         if image.dtype != np.uint8:
