@@ -94,8 +94,8 @@ def detect_images(
             "Note: The first inference is slow because it includes",
             "loading the model into Edge TPU memory.",
         )
-    for input_image in input_images:
-        print(input_image)
+    print(len(input_images))
+    for index, input_image in enumerate(input_images):
         image = Image.open(input_image)
         scale = detect.set_input(
             interpreter, image.size, lambda size: image.resize(size, Image.ANTIALIAS)
@@ -157,12 +157,14 @@ def detect_images(
                         ignore_index=True,
                     )
                     filtered_objs.append(obj)
-        print(len(filtered_objs))
+        print("{} {} {}".format(index, input_image, len(filtered_objs)))
         if overlaid:
             image = image.convert("RGB")
-            image.save(os.path.join(output, os.path.basename(input_image)))
             utils.draw_objects(ImageDraw.Draw(image), filtered_objs, labels)
-    df.to_csv(os.path.join(output, "bb_labels.csv"))
+            image.save(os.path.join(output, os.path.basename(input_image)))
+    path = os.path.join(output, "bb_labels.csv")
+    print("wrote the detections to csv file {}".format(path))
+    df.to_csv(path)
 
 
 def main():

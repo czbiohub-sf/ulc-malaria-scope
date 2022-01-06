@@ -163,9 +163,11 @@ def detect_video_file(
         print(len(filtered_objs))
         if overlaid:
             image = image.convert("RGB")
-            image.save(os.path.join(output, os.path.basename(input_image)))
             utils.draw_objects(ImageDraw.Draw(image), filtered_objs, labels)
-    df.to_csv(os.path.join(output, "preds_val.csv"))
+            image.save(os.path.join(output, os.path.basename(input_image)))
+    path = os.path.join(output, "preds_val.csv")
+    print("Saving predictions to csv at {}".format(path))
+    df.to_csv(path)
 
 
 def main():
