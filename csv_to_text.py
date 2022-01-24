@@ -29,9 +29,24 @@ def get_parser():
     return parser
 
 
+def add_basename_gather_df(filename):
+    bb_labels_df = pd.read_csv(filename)
+
+    # Add base_path columns
+    base_names = [
+        os.path.basename(row["filename"])
+        for index, row in bb_labels_df.iterrows()
+    ]
+    bb_labels_df["base_path"] = pd.Series(base_names)
+
+    bb_labels_df.reset_index(drop=True, inplace=True)
+
+    return bb_labels_df
+
+
 def convert_csv_to_txt(
         csv_path, images, label_ids, width, height, input_image_format):
-    bb_labels = pd.read_csv(csv_path)
+    bb_labels = add_basename_gather_df(csv_path)
     dirname = os.path.dirname(images[0])
     # Find boxes in each image and put them in a dataframe
     for img_name in images:
@@ -39,20 +54,19 @@ def convert_csv_to_txt(
         basename = os.path.basename(img_name)
         text_path = os.path.join(
             dirname, basename.replace(input_image_format, ".txt"))
-
+        tmp_df = bb_labels[bb_labels.base_path == basename]
         # Add all the bounding boxes for the images to the dataframe
         lines = []
-        for index, row in bb_labels.iterrows():
-            if os.path.basename(row["filename"]) == basename:
-                box_width = (float(row["xmax"]) - float(row["xmin"])) + 1
-                box_height = (float(row["ymax"]) - float(row["ymin"])) + 1
-                scaled_box_width = box_width / width
-                scaled_box_height = box_height / height
-                x_center = (row["xmin"] + row["xmax"] / 2) / width
-                y_center = (row["ymin"] + row["ymax"] / 2) / height
-                # object class <x_center> <y_center> <box_width> <box_height>
-                lines.append(
-                    "{} {} {} {} {}".format(label_ids.get(row['class']), x_center, y_center, scaled_box_width, scaled_box_height))
+        for index, row in tmp_df.iterrows():
+            box_width = (float(row["xmax"]) - float(row["xmin"])) + 1
+            box_height = (float(row["ymax"]) - float(row["ymin"])) + 1
+            scaled_box_width = box_width / width
+            scaled_box_height = box_height / height
+            x_center = (row["xmin"] + row["xmax"] / 2) / width
+            y_center = (row["ymin"] + row["ymax"] / 2) / height
+            # object class <x_center> <y_center> <box_width> <box_height>
+            lines.append(
+                "{} {} {} {} {}".format(label_ids.get(row['class']), x_center, y_center, scaled_box_width, scaled_box_height))
         with open(text_path, 'w') as f:
             for line in lines:
                 f.write(line)
@@ -88,13 +102,19 @@ def main():
     val_csv_path = os.path.join(args.input, "val.csv")
     image_format = args.image_format
     train_images = glob.glob(
-        os.path.join(os.path.join(args.input, "train"), "*." + image_format))
+        os.path.join(os.path.join(args.input, "train"), "*" + image_format))
     val_images = glob.glob(
-        os.path.join(os.path.join(args.input, "val"), "*." + image_format))
+        os.path.join(os.path.join(args.input, "val"), "*" + image_format))
     convert_csv_to_txt(
         train_csv_path, train_images, label_ids, width, height, image_format)
     convert_csv_to_txt(
         val_csv_path, val_images, label_ids, width, height, image_format)
+    with open("train.txt", "w") as f:
+        for image in train_images:
+            f.write("data/obj/" + os.path.basenmae(image))
+    with open("test.txt", "w") as f:
+        for image in val_images:
+            f.write("data/obj/" + os.path.basenmae(image))
 
 
 if __name__ == '__main__':
