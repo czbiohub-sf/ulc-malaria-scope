@@ -111,10 +111,10 @@ def main():
         val_csv_path, val_images, label_ids, width, height, image_format)
     with open("train.txt", "w") as f:
         for image in train_images:
-            f.write("data/obj/" + os.path.basenmae(image))
+            f.write("data/obj/" + os.path.basename(image))
     with open("test.txt", "w") as f:
         for image in val_images:
-            f.write("data/obj/" + os.path.basenmae(image))
+            f.write("data/obj/" + os.path.basename(image))
 
 
 if __name__ == '__main__':
