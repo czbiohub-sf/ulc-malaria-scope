@@ -112,9 +112,11 @@ def main():
     with open("train.txt", "w") as f:
         for image in train_images:
             f.write("data/obj/" + os.path.basename(image))
+            f.write('\n')
     with open("test.txt", "w") as f:
         for image in val_images:
             f.write("data/obj/" + os.path.basename(image))
+            f.write('\n')
 
 
 if __name__ == '__main__':
