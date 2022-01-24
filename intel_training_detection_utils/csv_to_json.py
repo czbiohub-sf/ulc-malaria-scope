@@ -9,6 +9,8 @@ from argparse import ArgumentParser
 def get_parser():
     parser = ArgumentParser()
     # Path to the folder with model and file to process
+    # Example command
+    # python3 csv_to_json.py --input /Users/pranathi.vemuri/images/ --image_format jpg --labels /Users/pranathi.vemuri/czbiohub/learn_cells/models/labels.txt
     parser.add_argument(
         "-i", "--input",
         help="Path to folder containing training, validation data",
