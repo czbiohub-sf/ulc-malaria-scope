@@ -52,8 +52,8 @@ def convert_text_to_csv(
         content_list = text_file.readlines()
         for line in content_list:
             # object class <x_center> <y_center> <box_width> <box_height>
-            line_parts = line.split(",")
-            label_name = label_names.get(line_parts[0])
+            line_parts = line.split(" ")
+            label_name = label_names.get(int(line_parts[0]))
             x_center = float(line_parts[1])
             y_center = float(line_parts[2])
             box_width = float(line_parts[3])
@@ -69,7 +69,7 @@ def convert_text_to_csv(
                     "xmax": np.int64(xmax),
                     "ymin": np.int64(ymin),
                     "ymax": np.int64(ymax),
-                    "class": label_name,
+                    "class": label_name
                 },
                 ignore_index=True,
             )
@@ -92,7 +92,7 @@ def get_label_names_for_ids(path, encoding="utf-8"):
 
     if lines[0].split(" ", maxsplit=1)[0].isdigit():
         pairs = [line.split(" ", maxsplit=1) for line in lines]
-        return {int(index): line.strip() for index, label in pairs}
+        return {int(index): label.strip() for index, label in pairs}
     else:
         return {index: line.strip() for index, line in enumerate(lines)}
 
