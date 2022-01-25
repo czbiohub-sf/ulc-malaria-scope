@@ -58,10 +58,10 @@ def convert_text_to_csv(
             y_center = float(line_parts[2])
             box_width = float(line_parts[3])
             box_height = float(line_parts[4])
-            xmin = (x_center - (box_width / 2)) * width
-            ymin = (y_center - (box_height / 2)) * height
-            xmax = (x_center + (box_width / 2)) * width
-            ymax = (y_center + (box_height / 2)) * height
+            ymin = (x_center - (box_width / 2)) * width
+            xmin = (y_center - (box_height / 2)) * height
+            ymax = (x_center + (box_width / 2)) * width
+            xmax = (y_center + (box_height / 2)) * height
             df = df.append(
                 {
                     "filename": img_name,
