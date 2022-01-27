@@ -1,0 +1,214 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "9028433f-fbe1-4429-bfda-4a0fed42a8b0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "f9e949fc-f19d-4ad4-9e36-d11c18bef6cd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Number of experiments to run\n",
+    "n_experiments = 100\n",
+    "\n",
+    "# The set of class labels in the sample\n",
+    "labels = ['healthy','ring','troph','schizont']\n",
+    "n_labels = len(labels)\n",
+    "\n",
+    "# Define confusion matrix. Rows are ground truth, columns are output. Confusion matrix in this form\n",
+    "# is normalized such that all rows sum to 1 and is indexed in the same order as the 'labels' variable\n",
+    "\n",
+    "cm = np.array([[0.97, 0.02, 0.01, 0.0], \\\n",
+    "               [0.02, 0.97, 0.01, 0.0], \\\n",
+    "               [0.01, 0.01, 0.97, 0.01], \\\n",
+    "               [0.0, 0.01, 0.02, 0.97]])\n",
+    "\n",
+    "# Ground truth sample composition (sums to 1)\n",
+    "sample_comp = np.array([1, 0.0002, 0.0001, 0.0001])\n",
+    "sample_comp[0] = 1 - np.sum(sample_comp[1:])\n",
+    "assert np.sum(sample_comp) == 1.0\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "bc429ffc-f4a1-49fe-88b5-5af84ac53669",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "800000\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Define the duration of the imaging experiment, in seconds\n",
+    "t_max_s = 20*60\n",
+    "\n",
+    "# Inference time per image. Assume for the moment we're limited by inference time\n",
+    "t_inf_s = 0.03\n",
+    "\n",
+    "# Total images processed\n",
+    "n_images = t_max_s/t_inf_s\n",
+    "\n",
+    "# Average number of cells per image\n",
+    "n_cells_per_image = 20\n",
+    "\n",
+    "# Total cells imaged\n",
+    "n_cells_total = int(n_cells_per_image*n_images)\n",
+    "print(n_cells_total)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "48ff0c2c-ca63-4c88-bdab-7071ccdefb2b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# numpy random number generator\n",
+    "rng = np.random.default_rng()\n",
+    "\n",
+    "# Ground truth class counts for each experiment\n",
+    "sample_gt = np.zeros((n_experiments, n_labels))\n",
+    "\n",
+    "# Classifier's estimate of the sample\n",
+    "est = np.zeros((n_experiments, n_labels))\n",
+    "est_parasitemia = np.zeros((n_experiments, n_labels))\n",
+    "\n",
+    "for e in range(n_experiments):\n",
+    "    \n",
+    "    r = rng.random(n_cells_total)\n",
+    "    # Create a random variable with length equal to the total number of cells\n",
+    "    \n",
+    "    # Partition\n",
+    "    p = 0.0\n",
+    "    \n",
+    "    # Partition the class counts in proportion to the random number distribution between 0-1\n",
+    "    for i in range(n_labels):\n",
+    "        sample_gt[e,i] = np.count_nonzero( np.logical_and(np.greater(r,p),np.less(r, np.sum(sample_comp[0:(i+1)]))))\n",
+    "        p += sample_comp[i]\n",
+    "    \n",
+    "    # Compute the sample estimates based on the confusion matrix\n",
+    "    est[e,:] = np.matmul(cm,sample_gt[e])\n",
+    "    \n",
+    "    # Sample composition estimate (parasitemia)\n",
+    "    est_parasitemia[e,:] = 100*est[e,:]/n_cells_total\n",
+    "    \n",
+    "# Average over experiments\n",
+    "# Total number of parasites in sample\n",
+    "sample_gt_mean = np.average(sample_gt,0)\n",
+    "mean_est_parasitemia = np.average(est_parasitemia, 0)\n",
+    "std_est_parasitemia = np.std(est_parasitemia, 0)\n",
+    "absolute_parasitemia_error = mean_est_parasitemia - 100*sample_comp\n",
+    "fold_error = np.divide(absolute_parasitemia_error, 100*sample_comp)\n",
+    "\n",
+    "# Make dicts for easier association with labels\n",
+    "sample_gt_dict = dict(zip(labels, sample_gt_mean))\n",
+    "abs_error_dict = dict(zip(labels,absolute_parasitemia_error))\n",
+    "fold_error_dict = dict(zip(labels,fold_error))\n",
+    "mean_dict = dict(zip(labels,mean_est_parasitemia))\n",
+    "gt_dict = dict(zip(labels, 100*sample_comp))\n",
+    "std_est_dict = dict(zip(labels, std_est_parasitemia))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "8a70c2f0-6ad8-48fe-b131-eb846651ce0b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "Avg Healthy: 799680.230 \n",
+      "Avg Ring: 161.310\n",
+      "Avg Troph: 79.750\n",
+      "Avg Schizont: 78.710\n",
+      "\n",
+      "Ground truth composition: \n",
+      "Healthy: 99.960% \n",
+      "Ring: 0.020%\n",
+      "Troph: 0.010%\n",
+      "Schizont: 0.010% \n",
+      "\n",
+      "Mean of the estimates: \n",
+      "Healthy: 96.962% \n",
+      "Ring: 2.019%\n",
+      "Troph: 1.010%\n",
+      "Schizont: 0.010% \n",
+      "\n",
+      "Absolute error: \n",
+      "Healthy: -2.998% \n",
+      "Ring: 1.999%\n",
+      "Troph: 1.000%\n",
+      "Schizont: -0.000% \n",
+      "\n",
+      "Fold error: \n",
+      "Healthy: -0.030 \n",
+      "Ring: 99.943\n",
+      "Troph: 99.957\n",
+      "Schizont: -0.006\n",
+      "\n",
+      "Stdev across estimates: \n",
+      "Healthy: 0.00230 \n",
+      "Ring: 0.00159\n",
+      "Troph: 0.00111\n",
+      "Schizont: 0.00102\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"\\nAvg Healthy: {healthy:2.3f} \\nAvg Ring: {ring:2.3f}\\nAvg Troph: {troph:2.3f}\\nAvg Schizont: {schizont:2.3f}\".format(**sample_gt_dict))\n",
+    "print(\"\\nGround truth composition: \\nHealthy: {healthy:2.3f}% \\nRing: {ring:2.3f}%\\nTroph: {troph:2.3f}%\\nSchizont: {schizont:2.3f}% \".format(**gt_dict))\n",
+    "print(\"\\nMean of the estimates: \\nHealthy: {healthy:2.3f}% \\nRing: {ring:2.3f}%\\nTroph: {troph:2.3f}%\\nSchizont: {schizont:2.3f}% \".format(**mean_dict))\n",
+    "print(\"\\nAbsolute error: \\nHealthy: {healthy:2.3f}% \\nRing: {ring:2.3f}%\\nTroph: {troph:2.3f}%\\nSchizont: {schizont:2.3f}% \".format(**abs_error_dict))\n",
+    "print(\"\\nFold error: \\nHealthy: {healthy:2.3f} \\nRing: {ring:2.3f}\\nTroph: {troph:2.3f}\\nSchizont: {schizont:2.3f}\".format(**fold_error_dict))\n",
+    "print(\"\\nStdev across estimates: \\nHealthy: {healthy:2.5f} \\nRing: {ring:2.5f}\\nTroph: {troph:2.5f}\\nSchizont: {schizont:2.5f}\".format(**std_est_dict))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "41ef68cc-1017-4840-99f4-d1f085b45740",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.2"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
