@@ -26,7 +26,10 @@ def get_parser():
     parser.add_argument(
         "--labels",
         help="Labels mapping file",
-        default=None,
+        type=str)
+    parser.add_argument(
+        "--images_text_path",
+        help="Images text file",
         type=str)
     parser.add_argument(
         "-r", "--resolution",
@@ -36,43 +39,47 @@ def get_parser():
 
 
 def convert_text_to_csv(
-        input, label_names, resolution, image_format):
+        input, label_names, resolution, image_format, images_text_path):
     images = glob.glob(
         os.path.join(os.path.join(input), "*" + image_format))
+    images_from_text_file = open(images_text_path, "r")
+    images_from_text = images_from_text_file.readlines()
     dirname = os.path.dirname(images[0])
     csv_path = os.path.join(dirname, "bb_labels.csv")
-    df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
+    # df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
     width, height = (int(x) for x in resolution.split('X'))
+    dfs = []
     # Find boxes in each image and put them in a dataframe
     for img_name in images:
-        basename = os.path.basename(img_name)
-        text_path = os.path.join(
-            dirname, basename.replace(image_format, ".txt"))
-        text_file = open(text_path, "r")
-        content_list = text_file.readlines()
-        for line in content_list:
-            # object class <x_center> <y_center> <box_width> <box_height>
-            line_parts = line.split(" ")
-            label_name = label_names.get(int(line_parts[0]))
-            x_center = float(line_parts[1])
-            y_center = float(line_parts[2])
-            box_width = float(line_parts[3])
-            box_height = float(line_parts[4])
-            ymin = (x_center - (box_width / 2)) * width
-            xmin = (y_center - (box_height / 2)) * height
-            ymax = (x_center + (box_width / 2)) * width
-            xmax = (y_center + (box_height / 2)) * height
-            df = df.append(
-                {
-                    "filename": img_name,
-                    "xmin": np.int64(xmin),
-                    "xmax": np.int64(xmax),
-                    "ymin": np.int64(ymin),
-                    "ymax": np.int64(ymax),
-                    "class": label_name
-                },
-                ignore_index=True,
-            )
+        if img_name + "\n" in images_from_text:
+            basename = os.path.basename(img_name)
+            text_path = os.path.join(
+                dirname, basename.replace(image_format, ".txt"))
+            text_file = open(text_path, "r")
+            content_list = text_file.readlines()
+            for line in content_list:
+                # object class <x_center> <y_center> <box_width> <box_height>
+                line_parts = line.split(" ")
+                label_name = label_names.get(int(line_parts[0]))
+                x_center = float(line_parts[1])
+                y_center = float(line_parts[2])
+                box_width = float(line_parts[3])
+                box_height = float(line_parts[4])
+                ymin = (x_center - (box_width / 2)) * width
+                xmin = (y_center - (box_height / 2)) * height
+                ymax = (x_center + (box_width / 2)) * width
+                xmax = (y_center + (box_height / 2)) * height
+                dfs.append(
+                    pd.DataFrame.from_records([{
+                        "filename": img_name,
+                        "xmin": np.int64(xmin),
+                        "xmax": np.int64(xmax),
+                        "ymin": np.int64(ymin),
+                        "ymax": np.int64(ymax),
+                        "class": label_name
+                    }])
+                )
+    df = pd.concat(dfs)
     df.to_csv(csv_path, index=False)
 
 
@@ -101,7 +108,7 @@ def main():
     args = get_parser().parse_args()
     label_names = get_label_names_for_ids(args.labels)
     convert_text_to_csv(
-        args.input, label_names, args.resolution, args.image_format)
+        args.input, label_names, args.resolution, args.image_format, args.images_text_path)
 
 
 if __name__ == '__main__':
