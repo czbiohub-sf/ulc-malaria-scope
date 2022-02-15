@@ -17,6 +17,7 @@ from openvino.inference_engine import IECore
 import numpy as np
 import pandas as pd
 import ngraph as ng
+from scipy import ndimage
 
 logging.basicConfig(format="[ %(levelname)s ] %(message)s", level=logging.INFO, stream=sys.stdout)
 log = logging.getLogger()
@@ -330,6 +331,8 @@ if __name__ == '__main__':
     parsing_times = []
     while cap.isOpened():
         ret, frame = cap.read()
+        frame = ndimage.zoom(frame, [2.5, 2.5, 1])
+        print(frame.shape)
         output_img_name = os.path.join(args.output, "result_{}.jpg".format(count_frame))
         if not ret:
             break
