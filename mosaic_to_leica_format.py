@@ -20,7 +20,7 @@ are stored in RBC Instances/405 nm 40x/sl1
 HOME = os.path.expanduser("~")
 DATA_DIR = "/mnt/flexo/MicroscopyData/Bioengineering/Label-Free Malaria Paper/Processed Data/Leica/Human annotated/405 nm classifier training/"
 OUTPUT_DIR = "/mnt/ibm_lg/pranathi/bioengineering_data/leica_intel_ssd_data/"
-os.makedirs(OUTPUT_DIR)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Known input data parameters for the leica commercial microscope data
 # 800 x 600 randomly placed cells mosaic image is created
 IMAGE_SHAPE = [800, 600]
