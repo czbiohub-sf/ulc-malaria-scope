@@ -58,8 +58,8 @@ troph_images = glob.glob(os.path.join(troph_im_dir, "*." + INPUT_IMAGE_FORMAT))
 all_images = healthy_images + ring_images + schizont_images + troph_images
 random.shuffle(all_images)
 print(len(all_images))
+count = 0
 for img_name in tqdm(all_images):
-    count = 0
     dicts = []
     # Iterate throw each row containing annotations for rbc cell tile
     kernel = np.ones((5, 5), np.uint8)
