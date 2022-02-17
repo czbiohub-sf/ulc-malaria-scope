@@ -67,10 +67,12 @@ for img_name in tqdm(all_images):
         img_name,
         cv2.IMREAD_GRAYSCALE,
     )
+    print(img_name)
     # save the image one with tiles randomly placed,
     saved_random_image_path = os.path.join(
         OUTPUT_DIR, "{}.png".format(image_count)
     )
+    print(saved_random_image_path)
     # First image, create arrays to place the randomized cells and a mask
     # to set the already occupied cell locations to 255
     if count == 0:
@@ -127,6 +129,9 @@ for img_name in tqdm(all_images):
                     "label": os.path.dirname(os.path.dirname(img_name)),
                 }
             )
+            print("if condition count = 0")
+            print(count)
+            print(len(dicts))
         else:
             # Try to get a unoccupied subset of random location
             trial_count = 0
@@ -161,6 +166,9 @@ for img_name in tqdm(all_images):
                         "label": os.path.dirname(os.path.dirname(img_name)),
                     }
                 )
+            print("else condition count = 0")
+            print(count)
+            print(len(dicts))
         count += 1
     elif count < len(indices):
         # Repeat above for other indices at count greater than zero
@@ -207,6 +215,9 @@ for img_name in tqdm(all_images):
                     "label": os.path.dirname(os.path.dirname(img_name)),
                 }
             )
+            print("if count less than indices and subset is good")
+            print(count)
+            print(len(dicts))
         else:
             trial_count = 0
             for i in range(NUM_TRIALS):
@@ -236,11 +247,14 @@ for img_name in tqdm(all_images):
                         "label": os.path.dirname(os.path.dirname(img_name)),
                     }
                 )
-
+            print(" count less than indices and subset is not good")
+            print(count)
+            print(len(dicts))
         count += 1
     else:
         # Reset count, increment image count, save image
         count = 0
+        print(saved_random_image_path)
         cv2.imwrite(saved_random_image_path, random_mosaiced_im)
         for d in dicts:
             output_random_df = output_random_df.append(d, ignore_index=True)
