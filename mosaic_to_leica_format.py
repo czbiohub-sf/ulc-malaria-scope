@@ -5,6 +5,7 @@ import numpy as np
 import itertools
 import pandas as pd
 import random
+from tqdm import tqdm
 
 """
 This program is used to preprocess the 2048 x 2048 leica commerical microscope
@@ -46,22 +47,22 @@ image_count = 0
 # are in an image
 
 healthy_im_dir = os.path.join(DATA_DIR, "healthy")
-healthy_images = glob.glob(os.path.join(healthy_im_dir, "*.png"))
+healthy_images = glob.glob(os.path.join(healthy_im_dir, "*." + INPUT_IMAGE_FORMAT))
 ring_im_dir = os.path.join(DATA_DIR, "ring")
-ring_images = glob.glob(os.path.join(ring_im_dir, "*.png"))
+ring_images = glob.glob(os.path.join(ring_im_dir, "*." + INPUT_IMAGE_FORMAT))
 schizont_im_dir = os.path.join(DATA_DIR, "schizont")
-schizont_images = glob.glob(os.path.join(schizont_im_dir, "*.png"))
+schizont_images = glob.glob(os.path.join(schizont_im_dir, "*." + INPUT_IMAGE_FORMAT))
 troph_im_dir = os.path.join(DATA_DIR, "troph")
-troph_images = glob.glob(os.path.join(troph_im_dir, "*.png"))
+troph_images = glob.glob(os.path.join(troph_im_dir, "*." + INPUT_IMAGE_FORMAT))
 
 all_images = healthy_images + ring_images + schizont_images + troph_images
 random.shuffle(all_images)
-while len(all_images) > 0:
+print(len(all_images))
+for img_name in tqdm(all_images):
     count = 0
     dicts = []
     # Iterate throw each row containing annotations for rbc cell tile
     kernel = np.ones((5, 5), np.uint8)
-    img_name = all_images[count]
     image = cv2.imread(
         img_name,
         cv2.IMREAD_GRAYSCALE,
