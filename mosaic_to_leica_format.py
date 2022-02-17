@@ -23,7 +23,7 @@ OUTPUT_DIR = "/mnt/ibm_lg/pranathi/bioengineering_data/leica_intel_ssd_data/"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Known input data parameters for the leica commercial microscope data
 # 800 x 600 randomly placed cells mosaic image is created
-IMAGE_SHAPE = [800, 600]
+IMAGE_SHAPE = [600, 800]
 TILE_SIZE_X = TILE_SIZE_Y = 60  # each rbc cell is in a 60 x 60 tile
 INPUT_IMAGE_FORMAT = "tif"
 BACKGROUND_COLOR = 214  # for 405 nm wavelength data, avg background intensity
