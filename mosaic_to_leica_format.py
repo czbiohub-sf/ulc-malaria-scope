@@ -247,5 +247,5 @@ while len(all_images) > 0:
         dicts = []
 
 output_random_df.to_csv(
-    os.path.join(DATA_DIR, "random_mosaic/output_random_df_montage_1.csv")
+    os.path.join(OUTPUT_DIR, "output_random_df_montage_1.csv")
 )
