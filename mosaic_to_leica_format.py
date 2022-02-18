@@ -124,7 +124,7 @@ for img_name in tqdm(all_images):
                     "xmax": random_x + w,
                     "ymin": random_y,
                     "ymax": random_y + h,
-                    "label": os.path.dirname(os.path.dirname(img_name)),
+                    "label": os.path.basename(os.path.dirname(img_name)),
                 }
             )
         else:
@@ -158,7 +158,7 @@ for img_name in tqdm(all_images):
                         "xmax": random_x + w,
                         "ymin": random_y,
                         "ymax": random_y + h,
-                        "label": os.path.dirname(os.path.dirname(img_name)),
+                        "label": os.path.basename(os.path.dirname(img_name)),
                     }
                 )
         count += 1
@@ -204,7 +204,7 @@ for img_name in tqdm(all_images):
                     "xmax": random_x + w,
                     "ymin": random_y,
                     "ymax": random_y + h,
-                    "label": os.path.dirname(os.path.dirname(img_name)),
+                    "label": os.path.basename(os.path.dirname(img_name)),
                 }
             )
         else:
@@ -233,7 +233,7 @@ for img_name in tqdm(all_images):
                         "xmax": random_x + w,
                         "ymin": random_y,
                         "ymax": random_y + h,
-                        "label": os.path.dirname(os.path.dirname(img_name)),
+                        "label": os.path.basename(os.path.dirname(img_name)),
                     }
                 )
         count += 1
@@ -246,5 +246,5 @@ for img_name in tqdm(all_images):
         dicts = []
 
 output_random_df.to_csv(
-    os.path.join(OUTPUT_DIR, "output_random_df_montage_1.csv")
+    os.path.join(OUTPUT_DIR, "bb_labels.csv")
 )
