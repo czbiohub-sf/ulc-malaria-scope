@@ -41,7 +41,7 @@ indices = list(itertools.product(range(x_tiles), range(y_tiles)))
 
 # make a csv as required by lumi with only required columns
 LUMI_CSV_COLUMNS = ["image_id", "xmin", "xmax", "ymin", "ymax", "label"]
-output_random_df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
+# output_random_df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
 image_count = 0
 # List of indices, already copied to the csv file and rbc cells in the row
 # are in an image
@@ -241,8 +241,8 @@ for img_name in tqdm(all_images):
         # Reset count, increment image count, save image
         count = 0
         cv2.imwrite(saved_random_image_path, random_mosaiced_im)
-        for d in dicts:
-            output_random_df = output_random_df.append(d, ignore_index=True)
+        print(len(dicts))
+        output_random_df = pd.DataFrame(dicts)
         image_count += 1
         dicts = []
 

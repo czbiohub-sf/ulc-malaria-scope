@@ -13,6 +13,7 @@ MAX_HUE = 255
 DEFAULT_IMAGE_FORMAT = "png"
 MORPHOLOGY_KERNEL = np.ones((10, 10), np.uint8)
 XLSX_SPACING = 2
+ALPHA = 0.3
 
 
 def get_parser():
@@ -114,14 +115,16 @@ def write_xlsx(path, spacing, subset_images, central_subset_rgbs, num_inference_
         worksheet.write(rowy * spacing, 3, num_inference_object)
         temp_image = os.path.join(temp_folder, "temp_{}.png".format(rowy))
         cv2.imwrite(temp_image, rgb_image)
+        binary_color_image = np.zeros_like(rgb_image)
+        binary_color_image[binary_image != 0] = [255, 0, 0]
+        overlaid_image = cv2.addWeighted(rgb_image, ALPHA, binary_color_image, 1 - ALPHA, 0)
+        temp_overlaid_image = os.path.join(temp_folder, "temp_{}_overlaid.png".format(rowy))
+        cv2.imwrite(temp_overlaid_image, overlaid_image)
         worksheet.insert_image(
-            rowy * spacing, 0, temp_image, {"x_scale": 0.3, "y_scale": 0.3}
+            rowy * spacing, 0, temp_overlaid_image, {"x_scale": 0.3, "y_scale": 0.3}
         )
         temp_image = os.path.join(temp_folder, "temp_{}_binary.png".format(rowy))
         cv2.imwrite(temp_image, binary_image * 255)
-        worksheet.insert_image(
-            rowy * spacing, 1, temp_image, {"x_scale": 0.3, "y_scale": 0.3}
-        )
         rowy += 1
 
     workbook.close()
