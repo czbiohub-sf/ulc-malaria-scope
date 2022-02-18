@@ -59,10 +59,10 @@ all_images = healthy_images + ring_images + schizont_images + troph_images
 random.shuffle(all_images)
 print(len(all_images))
 count = 0
+dicts = []
+kernel = np.ones((5, 5), np.uint8)
+# Iterate throw each row containing annotations for rbc cell tile
 for img_name in tqdm(all_images):
-    dicts = []
-    # Iterate throw each row containing annotations for rbc cell tile
-    kernel = np.ones((5, 5), np.uint8)
     image = cv2.imread(
         img_name,
         cv2.IMREAD_GRAYSCALE,
@@ -241,7 +241,6 @@ for img_name in tqdm(all_images):
         # Reset count, increment image count, save image
         count = 0
         cv2.imwrite(saved_random_image_path, random_mosaiced_im)
-        print(len(dicts))
         output_random_df = pd.DataFrame(dicts)
         image_count += 1
         dicts = []
