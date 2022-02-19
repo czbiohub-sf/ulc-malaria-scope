@@ -241,10 +241,9 @@ for img_name in tqdm(all_images):
         # Reset count, increment image count, save image
         count = 0
         cv2.imwrite(saved_random_image_path, random_mosaiced_im)
-        output_random_df = pd.DataFrame(dicts)
         image_count += 1
-        dicts = []
 
+output_random_df = pd.DataFrame(dicts)
 output_random_df.to_csv(
     os.path.join(OUTPUT_DIR, "bb_labels.csv")
 )
