@@ -4,11 +4,13 @@ RPI_OUTPUT_V = 3.3
 # ================ Motor controller constants ================ #
 
 # Pin numbers in BCM, see https://pinout.xyz/
-DRV_FAULT_PIN = 25
-STEP_PIN = 8
-DIR_PIN = 7
-LIMIT_SWITCH1 = 20
-LIMIT_SWITCH2 = 21
+MOTOR_SLEEP = 6
+MOTOR_FAULT_PIN = 16
+MOTOR_STEP_PIN = 19
+MOTOR_DIR_PIN = 20
+MOTOR_RESET = 21
+MOTOR_LIMIT_SWITCH1 = 24
+MOTOR_ENABLE = 26
 ZERO_OFFSET_STEPS = 20
 
 # DRR8825 stepping mode reference

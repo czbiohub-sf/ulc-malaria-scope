@@ -45,11 +45,15 @@ class DRV8825Nema():
 
     def __init__(
                     self,
-                    direction_pin=DIR_PIN,
-                    step_pin=STEP_PIN,
+                    direction_pin=MOTOR_DIR_PIN,
+                    step_pin=MOTOR_STEP_PIN,
+                    enable_pin=MOTOR_ENABLE,
+                    sleep_pin=MOTOR_SLEEP,
+                    reset_pin=MOTOR_RESET,
+                    fault_pin=MOTOR_FAULT_PIN,
                     motor_type="DRV8825",
                     steptype="Full",
-                    lim1=LIMIT_SWITCH1,
+                    lim1=MOTOR_LIMIT_SWITCH1,
                     lim2: int=None,
                     max_pos: int=None,
                     pi: pigpio.pi=None, 
@@ -77,10 +81,14 @@ class DRV8825Nema():
         self.motor_type = motor_type
         self.direction_pin = direction_pin
         self.step_pin = step_pin
+        self.enable_pin = enable_pin
+        self.sleep_pin = sleep_pin
+        self.reset_pin = reset_pin
+        self.fault_pin = fault_pin
         self.lim1 = lim1
         self.lim2 = lim2
         self.steptype = steptype
-        self.pos = None
+        self.pos = 0
         self.homed = False
         self.stop_motor = False
 
@@ -101,9 +109,18 @@ class DRV8825Nema():
 
         # Set up GPIO
         self._pi = pi if pi != None else pigpio.pi()
+        self._pi.set_mode(self.enable_pin, pigpio.OUTPUT)
+        self._pi.set_mode(self.sleep_pin, pigpio.OUTPUT)
+        self._pi.set_mode(self.reset_pin, pigpio.OUTPUT)
+        self._pi.set_mode(self.fault_pin, pigpio.INPUT)
+
         self._pi.set_mode(direction_pin, pigpio.OUTPUT)
-        self._pi.set_mode(STEP_PIN, pigpio.OUTPUT)
+        self._pi.set_mode(step_pin, pigpio.OUTPUT)
         self._pi.set_mode(self.lim1, pigpio.INPUT)
+
+        self._pi.write(self.enable_pin, False)
+        self._pi.write(self.sleep_pin, True)
+        self._pi.write(self.reset_pin, True)
 
         # Limit switch callbacks
         self._pi.callback(self.lim1, pigpio.RISING_EDGE, self.motor_stop)
@@ -144,6 +161,7 @@ class DRV8825Nema():
         try:
             # Move the motor until it hits the CCW limit switch
             try:
+                print("CCW")
                 self.motor_go(dir=Direction.CCW, steps=1e6)
             except StopMotorInterrupt:
                 # Add slight offset to zero position
@@ -185,6 +203,7 @@ class DRV8825Nema():
 
         dir = dir.value
         self.stop_motor = False
+        steps = int(steps)
         step_increment = 1 if dir else -1
 
         # set direction
@@ -210,6 +229,7 @@ class DRV8825Nema():
                 if self.stop_motor:
                     raise StopMotorInterrupt("Limit switch hit.")
                 else:
+                    print("Running ", self.step_pin)
                     self._pi.write(self.step_pin, True)
                     time.sleep(stepdelay)
                     self._pi.write(self.step_pin, False)
