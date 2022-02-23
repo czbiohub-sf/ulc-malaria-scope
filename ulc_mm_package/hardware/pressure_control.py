@@ -63,10 +63,11 @@ class PressureControl():
         # except Exception:
         #     raise PressureSensorNotInstantiated()
 
-    def __del__(self):
-        self._pi.set_PWM_dutycycle(self.servo_pin, self.min_duty_cycle)
-        self._pi.set_PWM_frequency(self.servo_pin, 0)
+    def close(self):
+        self.setDutyCycle(self.min_duty_cycle)
+        sleep(0.1)
         self._pi.set_mode(self.servo_pin, pigpio.INPUT)
+        self._pi.stop()
         sleep(0.5)
 
     def getCurrentDutyCycle(self):
@@ -90,5 +91,13 @@ class PressureControl():
 
     def setDutyCycle(self, duty_cycle):
         if self.min_duty_cycle <= duty_cycle <= self.max_duty_cycle:
-            self.duty_cycle = duty_cycle
-            self._pi.set_PWM_dutycycle(self.servo_pin, duty_cycle)
+            if self.duty_cycle < duty_cycle:
+                while self.duty_cycle < duty_cycle - self.min_step_size:
+                    self.increaseDutyCycle()
+                    sleep(0.01)
+            else:
+                while self.duty_cycle > duty_cycle + self.min_step_size:
+                    self.decreaseDutyCycle()
+                    sleep(0.01)
+            # self.duty_cycle = duty_cycle
+            # self._pi.set_PWM_dutycycle(self.servo_pin, duty_cycle)

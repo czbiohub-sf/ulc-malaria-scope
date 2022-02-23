@@ -41,9 +41,10 @@ class LED_TPS5420TDDCT():
         self._pi.set_PWM_frequency(self.pwm_pin, 0)
         self._pi.set_PWM_dutycycle(self.pwm_pin, 0)
 
-    def __del__(self):
+    def close(self):
         self._pi.set_PWM_dutycycle(self.pwm_pin, 0)
         self._pi.stop()
+        sleep(0.5)
 
     def _convertDutyCyclePercentToPWMVal(self, duty_cycle_percentage: float):
         return int(duty_cycle_percentage * DUTY_CYCLE_RESOLUTION)
