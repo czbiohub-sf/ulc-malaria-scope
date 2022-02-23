@@ -4,6 +4,7 @@
 """
 from __future__ import print_function, division
 
+import glob
 import logging
 import os
 import sys
@@ -211,92 +212,89 @@ class ObjectDetection(object):
         parsing_time = 0
         # ----------------------------------------------- 5. Doing inference -----------------------------------------------
         is_async_mode = False
-        while cap.isOpened():
-            # Here is the first asynchronous point: in the Async mode, we capture frame to populate the NEXT infer request
-            # in the regular mode, we capture frame to the CURRENT infer request
-            if not ret:
-                break
+        # Here is the first asynchronous point: in the Async mode, we capture frame to populate the NEXT infer request
+        # in the regular mode, we capture frame to the CURRENT infer request
 
-            # Read and pre-process input images
-            n, c, h, w = self.net.input_info[self.input_blob].input_data.shape
+        # Read and pre-process input images
+        n, c, h, w = self.net.input_info[self.input_blob].input_data.shape
 
-            request_id = cur_request_id
-            in_frame = cv2.resize(frame, (w, h))
+        request_id = cur_request_id
+        in_frame = cv2.resize(frame, (w, h))
 
-            # resize input_frame to network size
-            in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
-            in_frame = in_frame.reshape((n, c, h, w))
-            # Start inference
-            infer_time = time()
-            self.exec_net.start_async(request_id=request_id, inputs={self.input_blob: in_frame})
-            # exec_net.infer(inputs={self.input_blob: in_frame})
-            det_time = time() - infer_time
+        # resize input_frame to network size
+        in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
+        in_frame = in_frame.reshape((n, c, h, w))
+        # Start inference
+        infer_time = time()
+        self.exec_net.start_async(request_id=request_id, inputs={self.input_blob: in_frame})
+        # exec_net.infer(inputs={self.input_blob: in_frame})
+        det_time = time() - infer_time
 
-            # Collecting object detection results
-            objects = list()
-            if self.exec_net.requests[cur_request_id].wait(-1) == 0:
-                output = self.exec_net.requests[cur_request_id].output_blobs
-                start_time = time()
-                for layer_name, out_blob in output.items():
-                    out_blob = out_blob.buffer.reshape(self.net.outputs[layer_name].shape)
-                    params = [x._get_attributes() for x in self.function.get_ordered_ops() if x.get_friendly_name() == layer_name][0]
-                    layer_params = YoloParams(params, out_blob.shape[2])
-                    log.info("Layer {} parameters: ".format(layer_name))
-                    layer_params.log_params()
-                    objects += parse_yolo_region(out_blob, in_frame.shape[2:],
-                                                 frame.shape[:-1], layer_params,
-                                                 self.args.prob_threshold)
-                parsing_time = time() - start_time
+        # Collecting object detection results
+        objects = list()
+        if self.exec_net.requests[cur_request_id].wait(-1) == 0:
+            output = self.exec_net.requests[cur_request_id].output_blobs
+            start_time = time()
+            for layer_name, out_blob in output.items():
+                out_blob = out_blob.buffer.reshape(self.net.outputs[layer_name].shape)
+                params = [x._get_attributes() for x in self.function.get_ordered_ops() if x.get_friendly_name() == layer_name][0]
+                layer_params = YoloParams(params, out_blob.shape[2])
+                log.info("Layer {} parameters: ".format(layer_name))
+                layer_params.log_params()
+                objects += parse_yolo_region(out_blob, in_frame.shape[2:],
+                                             frame.shape[:-1], layer_params,
+                                             self.args.prob_threshold)
+            parsing_time = time() - start_time
 
-            # Filtering overlapping boxes with respect to the --iou_threshold CLI parameter
-            objects = sorted(objects, key=lambda obj : obj['confidence'], reverse=True)
-            for i in range(len(objects)):
-                if objects[i]['confidence'] == 0:
-                    continue
-                for j in range(i + 1, len(objects)):
-                    if intersection_over_union(objects[i], objects[j]) > self.args.iou_threshold:
-                        objects[j]['confidence'] = 0
+        # Filtering overlapping boxes with respect to the --iou_threshold CLI parameter
+        objects = sorted(objects, key=lambda obj : obj['confidence'], reverse=True)
+        for i in range(len(objects)):
+            if objects[i]['confidence'] == 0:
+                continue
+            for j in range(i + 1, len(objects)):
+                if intersection_over_union(objects[i], objects[j]) > self.args.iou_threshold:
+                    objects[j]['confidence'] = 0
 
-            # Drawing objects with respect to the --prob_threshold CLI parameter
-            objects = [obj for obj in objects if obj['confidence'] >= self.args.prob_threshold]
+        # Drawing objects with respect to the --prob_threshold CLI parameter
+        objects = [obj for obj in objects if obj['confidence'] >= self.args.prob_threshold]
 
-            if len(objects) and self.args.raw_output_message:
-                log.info("\nDetected boxes for batch {}:".format(1))
-                log.info(" Class ID | Confidence | XMIN | YMIN | XMAX | YMAX | COLOR ")
+        if len(objects) and self.args.raw_output_message:
+            log.info("\nDetected boxes for batch {}:".format(1))
+            log.info(" Class ID | Confidence | XMIN | YMIN | XMAX | YMAX | COLOR ")
 
-            origin_im_size = frame.shape[:-1]
-            for obj in objects:
-                # Validation bbox of detected object
-                if obj['xmax'] > origin_im_size[1] or obj['ymax'] > origin_im_size[0] or obj['xmin'] < 0 or obj['ymin'] < 0:
-                    continue
-                color = (int(min(obj['class_id'] * 12.5, 255)),
-                         min(obj['class_id'] * 7, 255), min(obj['class_id'] * 5, 255))
-                det_label = self.labels_map[obj['class_id']] if self.labels_map and len(self.labels_map) >= obj['class_id'] else \
-                    str(obj['class_id'])
+        origin_im_size = frame.shape[:-1]
+        for obj in objects:
+            # Validation bbox of detected object
+            if obj['xmax'] > origin_im_size[1] or obj['ymax'] > origin_im_size[0] or obj['xmin'] < 0 or obj['ymin'] < 0:
+                continue
+            color = (int(min(obj['class_id'] * 12.5, 255)),
+                     min(obj['class_id'] * 7, 255), min(obj['class_id'] * 5, 255))
+            det_label = self.labels_map[obj['class_id']] if self.labels_map and len(self.labels_map) >= obj['class_id'] else \
+                str(obj['class_id'])
 
-                if self.args.raw_output_message:
-                    log.info(
-                        "{:^9} | {:10f} | {:4} | {:4} | {:4} | {:4} | {} ".format(det_label, obj['confidence'], obj['xmin'],
-                                                                                  obj['ymin'], obj['xmax'], obj['ymax'],
-                                                                                  color))
+            if self.args.raw_output_message:
+                log.info(
+                    "{:^9} | {:10f} | {:4} | {:4} | {:4} | {:4} | {} ".format(det_label, obj['confidence'], obj['xmin'],
+                                                                              obj['ymin'], obj['xmax'], obj['ymax'],
+                                                                              color))
 
-                cv2.rectangle(frame, (obj['xmin'], obj['ymin']), (obj['xmax'], obj['ymax']), color, 2)
-                cv2.putText(frame,
-                            "#" + det_label + ' ' + str(round(obj['confidence'] * 100, 1)) + ' %',
-                            (obj['xmin'], obj['ymin'] - 7), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
+            cv2.rectangle(frame, (obj['xmin'], obj['ymin']), (obj['xmax'], obj['ymax']), color, 2)
+            cv2.putText(frame,
+                        "#" + det_label + ' ' + str(round(obj['confidence'] * 100, 1)) + ' %',
+                        (obj['xmin'], obj['ymin'] - 7), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
 
-            # Draw performance stats over frame
-            inf_time_message = "" if is_async_mode else \
-                "Inference time: {:.3f} ms".format(det_time * 1e3)
-            async_mode_message = "sync mode is on. Processing request {}".format(cur_request_id) if is_async_mode else \
-                ''
-            parsing_message = "parsing time is {:.3f} ms".format(parsing_time * 1e3)
+        # Draw performance stats over frame
+        inf_time_message = "" if is_async_mode else \
+            "Inference time: {:.3f} ms".format(det_time * 1e3)
+        async_mode_message = "sync mode is on. Processing request {}".format(cur_request_id) if is_async_mode else \
+            ''
+        parsing_message = "parsing time is {:.3f} ms".format(parsing_time * 1e3)
 
-            cv2.putText(frame, inf_time_message, (15, 15), cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
-            cv2.putText(frame, async_mode_message, (10, int(origin_im_size[0] - 20)), cv2.FONT_HERSHEY_COMPLEX, 0.5,
-                        (10, 10, 200), 1)
-            cv2.putText(frame, parsing_message, (15, 30), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
-            return frame, objects, det_time * 1e3, parsing_time * 1e3
+        cv2.putText(frame, inf_time_message, (15, 15), cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
+        cv2.putText(frame, async_mode_message, (10, int(origin_im_size[0] - 20)), cv2.FONT_HERSHEY_COMPLEX, 0.5,
+                    (10, 10, 200), 1)
+        cv2.putText(frame, parsing_message, (15, 30), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
+        return frame, objects, det_time * 1e3, parsing_time * 1e3
 
 
 def create_dir_if_not_exists(path):
@@ -308,13 +306,16 @@ if __name__ == '__main__':
     args = build_argparser().parse_args()
     yolo = ObjectDetection(args)
     input_images = []
+    video_file = False
     if args.input == 'cam':
         input_stream = 0
         cap = cv2.VideoCapture(input_stream)
+        video_file = True
     if args.format in VIDEO_EXTS:
         input_stream = args.input
         cap = cv2.VideoCapture(input_stream)
         assert os.path.isfile(args.input), "Specified input file doesn't exist"
+        video_file = True
     cv2.namedWindow('frame', cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
     last_start_time = perf_counter()
     count_frame = 0
@@ -329,38 +330,67 @@ if __name__ == '__main__':
     create_dir_if_not_exists(args.output)
     inference_times = []
     parsing_times = []
-    while cap.isOpened():
-        ret, frame = cap.read()
-        frame = ndimage.zoom(frame, [2.5, 2.5, 1])
-        print(frame.shape)
-        output_img_name = os.path.join(args.output, "result_{}.jpg".format(count_frame))
-        if not ret:
-            break
-        start_time = perf_counter()
-        out_frame, objects, inference_time, parsing_time = yolo.inference(frame)
-        all_time = perf_counter() - start_time
-        print('The processing time of one frame is', all_time)
-        cv2.imwrite(output_img_name, frame)
-        count_frame = count_frame + 1
-        print("FPS is", count_frame / (perf_counter() - last_start_time))
-        cv2.imshow("frame", frame)
-        for obj in objects:
-            dfs.append(
-                pd.DataFrame.from_records([{
-                    "filename": output_img_name,
-                    "xmin": obj["xmin"],
-                    "xmax": obj["xmax"],
-                    "ymin": obj["ymin"],
-                    "ymax": obj["ymax"],
-                    "class": labels_map[obj['class_id']]
-                }])
-            )
-        inference_times.append(inference_time)
-        parsing_times.append(parsing_time)
+    if video_file:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            output_img_name = os.path.join(args.output, "result_{}.jpg".format(count_frame))
+            if not ret:
+                break
+            start_time = perf_counter()
+            out_frame, objects, inference_time, parsing_time = yolo.inference(frame)
+            all_time = perf_counter() - start_time
+            print('The processing time of one frame is', all_time)
+            cv2.imwrite(output_img_name, frame)
+            count_frame = count_frame + 1
+            print("FPS is", count_frame / (perf_counter() - last_start_time))
+            cv2.imshow("frame", frame)
+            for obj in objects:
+                dfs.append(
+                    pd.DataFrame.from_records([{
+                        "filename": output_img_name,
+                        "xmin": obj["xmin"],
+                        "xmax": obj["xmax"],
+                        "ymin": obj["ymin"],
+                        "ymax": obj["ymax"],
+                        "class": labels_map[obj['class_id']]
+                    }])
+                )
+            inference_times.append(inference_time)
+            parsing_times.append(parsing_time)
 
-        key = cv2.waitKey(3)
-        if key == 27:
-            break
+            key = cv2.waitKey(3)
+            if key == 27:
+                break
+    else:
+        input_images = glob.glob(os.path.join(args.input, "*" + args.format))
+        for img_name in input_images:
+            frame = cv2.imread(img_name)
+            output_img_name = os.path.join(args.output, os.path.basename(img_name))
+            start_time = perf_counter()
+            out_frame, objects, inference_time, parsing_time = yolo.inference(frame)
+            all_time = perf_counter() - start_time
+            print('The processing time of one frame is', all_time)
+            cv2.imwrite(output_img_name, frame)
+            count_frame = count_frame + 1
+            print("FPS is", count_frame / (perf_counter() - last_start_time))
+            cv2.imshow("frame", frame)
+            for obj in objects:
+                dfs.append(
+                    pd.DataFrame.from_records([{
+                        "filename": output_img_name,
+                        "xmin": obj["xmin"],
+                        "xmax": obj["xmax"],
+                        "ymin": obj["ymin"],
+                        "ymax": obj["ymax"],
+                        "class": labels_map[obj['class_id']]
+                    }])
+                )
+            inference_times.append(inference_time)
+            parsing_times.append(parsing_time)
+
+            key = cv2.waitKey(3)
+            if key == 27:
+                break
     print("inference_time average and std is {} and {}". format(np.mean(inference_times), np.std(inference_times)))
     print("parsing_time average and std is {} and {}". format(np.mean(parsing_times), np.std(parsing_times)))
 

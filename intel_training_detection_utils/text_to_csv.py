@@ -71,12 +71,12 @@ def convert_text_to_csv(
                 xmax = (y_center + (box_height / 2)) * height
                 dfs.append(
                     pd.DataFrame.from_records([{
-                        "filename": img_name,
-                        "xmin": np.int64(xmin),
-                        "xmax": np.int64(xmax),
-                        "ymin": np.int64(ymin),
-                        "ymax": np.int64(ymax),
-                        "class": label_name
+                        "image_id": img_name,
+                        "xmin": np.int64(ymin),
+                        "xmax": np.int64(ymax),
+                        "ymin": np.int64(xmin),
+                        "ymax": np.int64(xmax),
+                        "label": label_name
                     }])
                 )
     df = pd.concat(dfs)
