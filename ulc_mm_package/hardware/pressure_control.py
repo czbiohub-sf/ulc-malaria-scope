@@ -66,7 +66,6 @@ class PressureControl():
     def close(self):
         self.setDutyCycle(self.min_duty_cycle)
         sleep(0.1)
-        self._pi.set_mode(self.servo_pin, pigpio.INPUT)
         self._pi.stop()
         sleep(0.5)
 
