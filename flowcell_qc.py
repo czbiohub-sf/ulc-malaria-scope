@@ -41,6 +41,19 @@ def get_parser():
         default=MAX_HUE)
     return parser
 
+CROP_BOUNDARY_OFFSET = 300
+NUM_ROWS = 8
+NUM_COLS = 4
+
+
+def img_to_grid(img, row=NUM_ROWS, col=NUM_COLS):
+    print(img.shape)
+    img = img[CROP_BOUNDARY_OFFSET: img.shape[0] - CROP_BOUNDARY_OFFSET, :, :]
+    ww = [[i.min(), i.max()] for i in np.array_split(range(img.shape[0]), row)]
+    hh = [[i.min(), i.max()] for i in np.array_split(range(img.shape[1]), col)]
+    grid = [img[j:jj, i:ii, :] for j, jj in ww for i, ii in hh]
+    return grid
+
 
 def binarize_by_hue_filter(
         rgb_flowcell_image,
@@ -112,10 +125,13 @@ def write_xlsx(path, spacing, subset_images, central_subset_rgbs, num_inference_
         print("Path {} already exists, might be overwriting data".format(temp_folder))
     rowy = 0
     for binary_image, rgb_image, num_inference_object in zip(subset_images, central_subset_rgbs, num_inference_objects):
+        print(rowy)
         worksheet.write(rowy * spacing, 3, num_inference_object)
         temp_image = os.path.join(temp_folder, "temp_{}.png".format(rowy))
         cv2.imwrite(temp_image, rgb_image)
         binary_color_image = np.zeros_like(rgb_image)
+        print(binary_color_image.shape)
+        print(binary_image.shape)
         binary_color_image[binary_image != 0] = [255, 0, 0]
         overlaid_image = cv2.addWeighted(rgb_image, ALPHA, binary_color_image, 1 - ALPHA, 0)
         temp_overlaid_image = os.path.join(temp_folder, "temp_{}_overlaid.png".format(rowy))
@@ -140,13 +156,18 @@ def main():
     num_inference_objects = []
     central_subset_rgbs = []
     for image in images:
-        rgb_flowcell_image = cv2.cvtColor(cv2.imread(image), cv2.COLOR_BGR2RGB)
-        binary_image = binarize_by_hue_filter(rgb_flowcell_image, min_hue, max_hue)
-        central_subset_rgb, central_subset, num_inference_object = count_regions_in_center_of_image(
-            rgb_flowcell_image, binary_image)
-        central_subsets.append(central_subset)
-        central_subset_rgbs.append(central_subset_rgb)
-        num_inference_objects.append(num_inference_object)
+        print(image)
+        rgb_flowcells_image = cv2.cvtColor(cv2.imread(image), cv2.COLOR_BGR2RGB)
+        grid = img_to_grid(rgb_flowcells_image)
+        for index, each_flowcell_image in enumerate(grid):
+            print(index, each_flowcell_image.shape)
+            binary_image = binarize_by_hue_filter(each_flowcell_image, min_hue, max_hue)
+            print(binary_image.shape)
+            central_subset_rgb, central_subset, num_inference_object = count_regions_in_center_of_image(
+                each_flowcell_image, binary_image)
+            central_subsets.append(central_subset)
+            central_subset_rgbs.append(central_subset_rgb)
+            num_inference_objects.append(num_inference_object)
 
     write_xlsx(path, XLSX_SPACING, central_subsets, central_subset_rgbs, num_inference_objects)
 
