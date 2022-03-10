@@ -87,11 +87,11 @@ class PressureControl():
     def setDutyCycle(self, duty_cycle):
         if self.min_duty_cycle <= duty_cycle <= self.max_duty_cycle:
             if self.duty_cycle < duty_cycle:
-                while self.duty_cycle < duty_cycle - self.min_step_size:
+                while self.duty_cycle <= duty_cycle - self.min_step_size:
                     self.increaseDutyCycle()
                     sleep(0.01)
             else:
-                while self.duty_cycle > duty_cycle + self.min_step_size:
+                while self.duty_cycle >= duty_cycle + self.min_step_size:
                     self.decreaseDutyCycle()
                     sleep(0.01)
             # self.duty_cycle = duty_cycle
