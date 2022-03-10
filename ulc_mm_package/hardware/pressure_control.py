@@ -34,14 +34,9 @@ class PressureControl():
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
-        # The three values below (dead_bandwidth, min_width, max_width) are taken from the datasheet
-        self.dead_bandwidth_us = 5
-        self.min_width_us = 1500 + 200 # adding some padding
-        self.max_width_us = 2250
-
         # Convert to valid PWM value
         self.min_step_size = 50
-        self.min_duty_cycle = 1500
+        self.min_duty_cycle = 1600
         self.max_duty_cycle = 2200
         self.duty_cycle = self.max_duty_cycle
 
