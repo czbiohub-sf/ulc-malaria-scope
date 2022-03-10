@@ -58,8 +58,10 @@ class PressureControl():
         #     raise PressureSensorNotInstantiated()
 
     def close(self):
-        self.setDutyCycle(self.min_duty_cycle)
+        self.setDutyCycle(self.max_duty_cycle)
         sleep(0.1)
+        self.setDutyCycle(0)
+        sleep(0.5)
         self._pi.stop()
         sleep(0.5)
 

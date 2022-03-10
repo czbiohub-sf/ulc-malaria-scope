@@ -390,14 +390,23 @@ class CameraStream(QtWidgets.QMainWindow):
         sleep(0.01)
 
     def exit(self):
-        # Move syringe back and de-energize
-        self.pressure_control.close()
-        # Turn off the LED
-        self.led.close()
-        # Turn off camera
-        if self.cameraThread != None:
-            self.cameraThread.camera_activated = False
-        quit()
+        msgBox = QtWidgets.QMessageBox()
+        msgBox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+        msgBox.setText("Please remove the flow cell now. Only press okay after the flow cell has been removed.")
+        msgBox.setWindowTitle("Exit procedure")
+        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        msgBox.buttonClicked.connect(self.exitOk)
+        retval = msgBox.exec()
+
+        if retval == QtWidgets.QMessageBox.Ok:
+            # Move syringe back and de-energize
+            self.pressure_control.close()
+            # Turn off the LED
+            self.led.close()
+            # Turn off camera
+            if self.cameraThread != None:
+                self.cameraThread.camera_activated = False
+            quit()
 
     def closeEvent(self, event):
         print("Cleaning up and exiting the application.")
