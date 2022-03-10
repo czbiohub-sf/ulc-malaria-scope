@@ -21,7 +21,7 @@ from qimage2ndarray import gray2qimage
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 BIG_SCREEN = True
 MIN_EXPOSURE_US = 100
-EXTERNAL_DIR = "media/pi/T7/"
+EXTERNAL_DIR = "/media/pi/T7/"
 
 if BIG_SCREEN:
     _UI_FILE_DIR = "liveview_big.ui"
@@ -94,11 +94,6 @@ class CameraThread(QThread):
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
             self.start_time = perf_counter()
             self.im_counter = 0
-
-    def saveImage(self, img):
-        """Function which sets which method to use to save images."""
-
-        pass
 
     def changeBinningMode(self):
         if self.camera_activated:
