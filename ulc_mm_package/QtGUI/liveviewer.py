@@ -148,7 +148,7 @@ class CameraStream(QtWidgets.QMainWindow):
         try:
             self.led = LED_TPS5420TDDCT()
             self.led.setDutyCycle(0.5)
-            self.vsLED.valueChanged.connect(self.vsLEDHandler())
+            self.vsLED.valueChanged.connect(self.vsLEDHandler)
         except LEDError:
             print("Error instantiating LED. Continuing...")
 
