@@ -21,6 +21,7 @@ from qimage2ndarray import gray2qimage
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 BIG_SCREEN = True
 MIN_EXPOSURE_US = 100
+EXTERNAL_DIR = "media/pi/T7/"
 
 if BIG_SCREEN:
     _UI_FILE_DIR = "liveview_big.ui"
@@ -88,7 +89,7 @@ class CameraThread(QThread):
 
     def takeImage(self):
         if self.main_dir == None:
-            self.main_dir = "/media/pi/T7/" + datetime.now().strftime("%Y-%m-%d-%H%M%S")
+            self.main_dir = EXTERNAL_DIR + datetime.now().strftime("%Y-%m-%d-%H%M%S")
             mkdir(self.main_dir)
 
         if self.continuous_save:
