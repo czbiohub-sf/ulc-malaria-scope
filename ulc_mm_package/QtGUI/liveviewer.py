@@ -392,7 +392,7 @@ class CameraStream(QtWidgets.QMainWindow):
     def exit(self):
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-        msgBox.setText("Please remove the flow cell now. Only press okay after the flow cell has been removed.")
+        msgBox.setText("Please remove the flow cell now. Only press okay after the flow cell has been removed. The syringe will move into the topmost position after pressing okay.")
         msgBox.setWindowTitle("Exit procedure")
         msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         retval = msgBox.exec()
