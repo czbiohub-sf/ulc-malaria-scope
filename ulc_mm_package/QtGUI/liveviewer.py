@@ -60,12 +60,12 @@ class CameraThread(QThread):
                             image = np.flipud(image).copy()
 
                         if self.single_save:
-                            filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.jpg"
+                            filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
                             cv2.imwrite(filename, image)
                             self.single_save = False
 
                         if self.continuous_save and self.continuous_dir_name != None:
-                            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}{self.im_counter:05}.jpg"
+                            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}{self.im_counter:05}.tiff"
                             if cv2.imwrite(filename, image):
                                 self.im_counter += 1
                         
