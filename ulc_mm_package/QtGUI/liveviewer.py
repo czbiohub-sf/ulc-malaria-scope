@@ -73,10 +73,10 @@ class CameraThread(QThread):
                         if self.scale_image:
                             image = cv2.resize(image.astype('uint8'), (LABEL_WIDTH, LABEL_HEIGHT))
 
-                        qimage = gray2qimage(image)
                         # if self.scale_image:
                         #     qimage = qimage.scaled(LABEL_WIDTH, LABEL_HEIGHT, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                         if self.liveview:
+                            qimage = gray2qimage(image)
                             self.changePixmap.emit(qimage)
                 except Exception as e:
                     # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
