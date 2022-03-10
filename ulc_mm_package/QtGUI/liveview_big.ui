@@ -218,9 +218,9 @@
    <widget class="QLabel" name="lblMinFlow">
     <property name="geometry">
      <rect>
-      <x>1190</x>
+      <x>1180</x>
       <y>430</y>
-      <width>31</width>
+      <width>41</width>
       <height>16</height>
      </rect>
     </property>
@@ -231,9 +231,9 @@
    <widget class="QLabel" name="lblMaxFlow">
     <property name="geometry">
      <rect>
-      <x>1190</x>
+      <x>1180</x>
       <y>290</y>
-      <width>31</width>
+      <width>41</width>
       <height>16</height>
      </rect>
     </property>
