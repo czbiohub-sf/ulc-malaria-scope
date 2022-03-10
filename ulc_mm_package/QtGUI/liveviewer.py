@@ -177,6 +177,7 @@ class CameraStream(QtWidgets.QMainWindow):
         try:
             self.pressure_control = PressureControl()
             self.vsFlow.setMinimum(self.pressure_control.getMinDutyCycle())
+            print(self.pressure_control.getCurrentDutyCycle())
             self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
             self.lblMinFlow.setText(f"{self.pressure_control.getMinDutyCycle()}")
             self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle())

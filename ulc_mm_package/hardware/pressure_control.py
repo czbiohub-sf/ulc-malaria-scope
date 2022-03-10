@@ -75,12 +75,12 @@ class PressureControl():
         return self.min_duty_cycle
 
     def increaseDutyCycle(self):
-        if self.duty_cycle < self.max_duty_cycle - self.min_step_size:
+        if self.duty_cycle <= self.max_duty_cycle - self.min_step_size:
             self.duty_cycle += self.min_step_size
             self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
 
     def decreaseDutyCycle(self):
-        if self.duty_cycle > self.min_duty_cycle + self.min_step_size:
+        if self.duty_cycle >= self.min_duty_cycle + self.min_step_size:
             self.duty_cycle -= self.min_step_size
             self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
 
