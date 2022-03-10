@@ -42,7 +42,7 @@ PWM_DIM_MODE_UPPER_THRESHOLD_V = 2.07
 PWM_DIM_MODE_DUTYCYCLE = ((PWM_DIM_MODE_LOWER_THRESHOLD_V + PWM_DIM_MODE_UPPER_THRESHOLD_V) / 2) / RPI_OUTPUT_V
 
 # To ensure linear dimming performance, PWM must be <1kHz (see datasheet pg. 19)
-PWM_DIMMING_MAX_FREQ_HZ = 1000
+PWM_DIMMING_MAX_FREQ_HZ = 40000
 
 # ================ Pressure control constants ================ #
 SERVO_PWM_PIN = 12

@@ -53,6 +53,7 @@ class PressureControl():
         self.duty_cycle = self.min_duty_cycle
 
         # Move servo to default position (minimum, stringe fully extended out)
+        self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
         self._pi.set_PWM_dutycycle(servo_pin, self.duty_cycle)
 
         # Instantiate pressure sensor

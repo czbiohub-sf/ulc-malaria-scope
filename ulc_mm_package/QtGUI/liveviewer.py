@@ -1,10 +1,10 @@
 from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
-
 from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder
 from ulc_mm_package.hardware.pressure_control import PressureControl, PressureControlError
 from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN
+from ulc_mm_package.hardware.zarrwriter import ZarrWriter
 
 import sys
 import traceback
@@ -41,6 +41,7 @@ class CameraThread(QThread):
     liveview = True
     continuous_dir_name = None
     custom_image_prefix = ''
+    zarr_writer = ZarrWriter()
 
     try:
         livecam = ULCMM_Camera()
@@ -54,7 +55,8 @@ class CameraThread(QThread):
             if self.camera_activated:
                 try:
                     for image in self.livecam.yieldImages():
-                        # image = np.flipud(image).copy()
+                        if self.liveview:
+                            image = np.flipud(image).copy()
 
                         if self.single_save:
                             filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.jpg"
@@ -66,9 +68,13 @@ class CameraThread(QThread):
                             if cv2.imwrite(filename, image):
                                 self.im_counter += 1
                         
-                        qimage = gray2qimage(image)
+                        # TODO - check to see if the uint8 cast is necessary
                         if self.scale_image:
-                            qimage = qimage.scaled(LABEL_WIDTH, LABEL_HEIGHT, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                            image = cv2.resize(image.astype('uint8'), (LABEL_WIDTH, LABEL_HEIGHT))
+
+                        qimage = gray2qimage(image)
+                        # if self.scale_image:
+                        #     qimage = qimage.scaled(LABEL_WIDTH, LABEL_HEIGHT, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                         if self.liveview:
                             self.changePixmap.emit(qimage)
                 except Exception as e:
@@ -90,6 +96,11 @@ class CameraThread(QThread):
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
             self.start_time = perf_counter()
             self.im_counter = 0
+
+    def saveImage(self, img):
+        """Function which sets which method to use to save images."""
+
+        pass
 
     def changeBinningMode(self):
         if self.camera_activated:
@@ -119,7 +130,7 @@ class CameraStream(QtWidgets.QMainWindow):
         # Load the ui file 
         uic.loadUi(_UI_FILE_DIR, self)
 
-        self.showMaximized()
+        # self.showMaximized()
 
         # Start the video stream
         self.cameraThread = CameraThread()
@@ -137,13 +148,23 @@ class CameraStream(QtWidgets.QMainWindow):
         try:
             self.led = LED_TPS5420TDDCT()
             self.led.setDutyCycle(0.5)
+            self.vsLED.valueChanged.connect(self.vsLEDHandler())
         except LEDError:
             print("Error instantiating LED. Continuing...")
 
         # Create motor w/ default pins/settings (full step)
         try:
-            self.motor = DRV8825Nema()
+            self.motor = DRV8825Nema(steptype="Half")
             self.motor.homeToLimitSwitches()
+            self.lblFocusMax.setText(f"{self.motor.max_pos}")
+
+            self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
+            self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)
+            self.vsFocus.valueChanged.connect(self.vsFocusHandler)
+            self.txtBoxFocus.editingFinished.connect(self.focusTextBoxHandler)
+            self.vsFocus.setMinimum(self.motor.pos)
+            self.vsFocus.setValue(self.motor.pos)
+            self.vsFocus.setMaximum(self.motor.max_pos)
 
         except MotorControllerError:
             print("Error initializing DRV8825. Disabling focus actuation GUI elements.")
@@ -180,7 +201,7 @@ class CameraStream(QtWidgets.QMainWindow):
         self.btnSnap.clicked.connect(self.btnSnapHandler)
         self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
         self.btnChangeBinning.clicked.connect(self.btnChangeBinningHandler)
-        
+
         # Pressure control
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
         self.btnFlowDown.clicked.connect(self.btnFlowDownHandler)
@@ -227,6 +248,8 @@ class CameraStream(QtWidgets.QMainWindow):
             self.cameraThread.continuous_save = False
             self.btnSnap.setText("Record images")
             self.chkBoxRecord.setEnabled(True)
+            self.chkBoxScaling.setEnabled(True)
+            self.chkBoxMaxFPS.setEnabled(True)
             end_time = perf_counter()
             start_time = self.cameraThread.start_time
             num_images = self.cameraThread.im_counter
@@ -242,6 +265,8 @@ class CameraStream(QtWidgets.QMainWindow):
             self.btnSnap.setText("Stop recording")
             self.recording = True
             self.chkBoxRecord.setEnabled(False)
+            self.chkBoxScaling.setEnabled(False)
+            self.chkBoxMaxFPS.setEnabled(False)
             self.cameraThread.takeImage()
         else:
             self.cameraThread.single_save = True
@@ -256,6 +281,11 @@ class CameraStream(QtWidgets.QMainWindow):
     @pyqtSlot(QImage)
     def updateImage(self, qimage):
         self.lblImage.setPixmap(QPixmap.fromImage(qimage))
+
+    def vsLEDHandler(self):
+        perc = int(self.vsLED.value())
+        self.lblLED.setText(f"{perc}%")
+        self.led.setDutyCycle(perc/100)
 
     def exposureSliderHandler(self):
         exposure = int(self.vsExposure.value())
@@ -278,6 +308,38 @@ class CameraStream(QtWidgets.QMainWindow):
             self.txtBoxExposure.setText(f"{self.vsExposure.value()}")
             return
         self.vsExposure.setValue(exposure)
+
+    def btnFocusUpHandler(self):
+        self.motor.move_rel(dir=Direction.CW, steps=1)
+        self.vsFocus.setValue(self.motor.pos)
+        self.txtBoxFocus.setText(f"{self.motor.pos}")
+
+    def btnFocusDownHandler(self):
+        self.motor.move_rel(dir=Direction.CCW, steps=1)
+        self.vsFocus.setValue(self.motor.pos)
+        self.txtBoxFocus.setText(f"{self.motor.pos}")
+
+    def vsFocusHandler(self):
+        pos = int(self.vsFocus.value())
+        self.motor.move_abs(pos=pos)
+        self.txtBoxFocus.setText(f"{self.motor.pos}")
+
+    def focusTextBoxHandler(self):
+        try:
+            pos = int(float(self.txtBoxFocus.text()))
+        except:
+            print("Error parsing textbox focus position. Continuing...")
+            self.txtBoxFocus.setText(f"{self.vsFocus.value()}")
+            return
+
+        try:
+            self.motor.move_abs(pos)
+        except:
+            print("Invalid position to move the motor.")
+            self.txtBoxFocus.setText(f"{self.vsFocus.value()}")
+            return
+
+        self.vsFocus.setValue(pos)
 
     def btnFlowUpHandler(self):
         self.pressure_control.increaseDutyCycle()
@@ -315,9 +377,9 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def manualFocusWithEncoder(self, increment: int):
         if increment == 1:
-            self.motor.motor_go(dir=Direction.CW, steps=1)
+            self.motor.move_rel(dir=Direction.CW, steps=1)
         elif increment == -1:
-            self.motor.motor_go(dir=Direction.CCW, steps=1)
+            self.motor.move_rel(dir=Direction.CCW, steps=1)
         sleep(0.01)
 
     def changeExposureWithEncoder(self, increment):

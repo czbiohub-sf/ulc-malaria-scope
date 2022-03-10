@@ -4,10 +4,9 @@
 Datasheet:
     https://www.ti.com/lit/ds/symlink/drv8825.pdf
     
-*Taken and adpated from Gavin Lyons' RPiMotorLib repository (https://github.com/gavinlyonsrepo/RpiMotorLib/blob/master/RpiMotorLib/RpiMotorLib.py)
+*Adapted from Gavin Lyons' RPiMotorLib repository (https://github.com/gavinlyonsrepo/RpiMotorLib/blob/master/RpiMotorLib/RpiMotorLib.py)
 """
 
-import sys
 import enum
 import time
 import pigpio
@@ -88,7 +87,7 @@ class DRV8825Nema():
         self.lim1 = lim1
         self.lim2 = lim2
         self.steptype = steptype
-        self.pos = 0
+        self.pos = -1e6
         self.homed = False
         self.stop_motor = False
 
@@ -102,10 +101,11 @@ class DRV8825Nema():
                         '1/64': 0.028125,
                         '1/128': 0.0140625}
         self.step_degree = degree_value[steptype]
+        self.microstepping = 1.8/self.step_degree # 1, 2, 4, 8, 16, 32
         self.dist_per_step_um = self.step_degree / degree_value['Full'] * FULL_STEP_TO_TRAVEL_DIST_UM
 
         # TODO Calculate the max position allowable based on stepping mode and actual travel distance on the scope
-        self.max_pos = max_pos if max_pos != None else 1e6
+        self.max_pos = max_pos if max_pos != None else 450*self.microstepping
 
         # Set up GPIO
         self._pi = pi if pi != None else pigpio.pi()
@@ -117,13 +117,21 @@ class DRV8825Nema():
         self._pi.set_mode(direction_pin, pigpio.OUTPUT)
         self._pi.set_mode(step_pin, pigpio.OUTPUT)
         self._pi.set_mode(self.lim1, pigpio.INPUT)
+        self._pi.set_pull_up_down(self.lim1, pigpio.PUD_UP)
 
         self._pi.write(self.enable_pin, False)
         self._pi.write(self.sleep_pin, True)
         self._pi.write(self.reset_pin, True)
 
         # Limit switch callbacks
-        self._pi.callback(self.lim1, pigpio.RISING_EDGE, self.motor_stop)
+        self._pi.callback(self.lim1, pigpio.FALLING_EDGE, self.motor_stop)
+
+        # Move motor up to ensure it isn't hitting the limit switch
+        self._move_rel_steps(steps=int(ZERO_OFFSET_STEPS*self.microstepping), dir=Direction.CW)
+
+    def close(self):
+        self._pi.write(self.sleep_pin, False)
+        self._pi.write(self.reset_pin, False)
 
     def degree_calc(self, steps):
         """calculate and returns size of turn in degree, passed number of steps and steptype"""
@@ -158,26 +166,29 @@ class DRV8825Nema():
         If a second limit switch is present, move to that one and set the max position.
         """
 
+        print("Homing motor, please wait...")
         try:
             # Move the motor until it hits the CCW limit switch
             try:
-                print("CCW")
-                self.motor_go(dir=Direction.CCW, steps=1e6)
+                self.move_rel(dir=Direction.CCW, steps=self.max_pos)
             except StopMotorInterrupt:
-                # Add slight offset to zero position
-                self.motor_go(dir=Direction.CW, steps=ZERO_OFFSET_STEPS)
+                # Move slightly until the limit switch is no longer active
+                while not self._pi.read(self.lim1):
+                    self._move_rel_steps(dir=Direction.CW, steps=1)
                 self.pos = 0
 
             if self.lim2 != None:
                 # Move to the CW limit switch
                 try:
-                    self.motor_go(dir=Direction.CW, steps=1e6)
+                    self.move_rel(dir=Direction.CW, steps=self.max_pos)
                 except StopMotorInterrupt:
-                    self.motor_go(dir=Direction.CCW, steps=ZERO_OFFSET_STEPS)
+                    while not self._pi.read(self.lim1):
+                        self._move_rel_steps(dir=Direction.CCW, steps=1)
                     self.max_pos = self.pos
         except:
             raise HomingError()
-            
+        
+        print("Done homing.")
         self.homed = True
 
     def motor_stop(self, *args):
@@ -185,9 +196,22 @@ class DRV8825Nema():
 
         self.stop_motor = True
 
-    def motor_go(self, dir=Direction.CCW,
-                 steps=200, stepdelay=.005, verbose=False, initdelay=.05):
-        """motor_go,  moves stepper motor based on 6 inputs
+    def _move_rel_steps(self, steps: int, dir=Direction.CCW, stepdelay=.005):
+        
+        # set direction
+        self._pi.write(self.direction_pin, dir.value)
+
+        step_increment = 1 if dir else -1
+        for i in range(steps):
+            self._pi.write(self.step_pin, True)
+            time.sleep(stepdelay)
+            self._pi.write(self.step_pin, False)
+            time.sleep(stepdelay)
+            self.pos += step_increment
+
+    def move_rel(self, dir=Direction.CCW,
+                 steps: int=200, stepdelay=.005, verbose=False, initdelay=.05):
+        """Move the motor a relative number of steps (if the move is valid).
 
         Parameters
         ----------
@@ -201,17 +225,91 @@ class DRV8825Nema():
             Intial delay after GPIO pins initialized but before motor is moved
         """
 
-        dir = dir.value
         self.stop_motor = False
         steps = int(steps)
-        step_increment = 1 if dir else -1
+        step_increment = 1 if dir.value else -1
 
-        # set direction
-        self._pi.write(self.direction_pin, dir)
+        # Set direction
+        self._pi.write(self.direction_pin, dir.value)
 
         if self.homed:
             if not self.isMoveValid(dir, steps):
-                direction = "CW (+)" if dir else "CCW (-)"
+                direction = "CW (+)" if dir.value else "CCW (-)"
+                raise InvalidMove(f"""
+                =======INVALID MOVE, OUT OF RANGE=======
+                Current position: {self.pos}\n
+                Attempted direction: {direction}\n
+                Attempted steps: {steps}\n
+                Allowable range: 0 <= steps <= {self.max_pos}\n
+                Attempted move would result in: {self.pos + step_increment*steps}
+                """)
+        try:
+            time.sleep(initdelay)
+            start_pos = self.pos
+
+            for i in range(steps):
+                if self.stop_motor:
+                    raise StopMotorInterrupt()
+                else:
+                    self._pi.write(self.step_pin, True)
+                    time.sleep(stepdelay)
+                    self._pi.write(self.step_pin, False)
+                    time.sleep(stepdelay)
+                    self.pos += step_increment
+                    if verbose:
+                        print(f"Steps {i} \ Position: {self.pos}")
+
+        except KeyboardInterrupt:
+            print("User Keyboard Interrupt")
+        except StopMotorInterrupt:
+            raise
+        except Exception:
+            print("RpiMotorLib  : Unexpected error:")
+            raise
+
+        finally:
+            # Cleanup
+            self._pi.write(self.step_pin, False)
+            self._pi.write(self.direction_pin, False)
+
+            # Print report status
+            if verbose:
+                print("\nRpiMotorLib, Motor Run finished, Details:.\n")
+                print("Motor type = {}".format(self.motor_type))
+                print("Direction = {}".format(dir))
+                print("Step Type = {}".format(self.steptype))
+                print("Number of steps = {}".format(self.pos - start_pos))
+                print("Step Delay = {}".format(stepdelay))
+                print("Intial delay = {}".format(initdelay))
+                print("Size of turn in degrees = {}"
+                      .format(self.degree_calc(steps)))
+
+    def move_abs(self, pos: int=200, stepdelay=.005, verbose=False, initdelay=.05):
+        """Move the motor to the given position (if valid).
+
+        Parameters
+        ----------
+        pos : int
+            Number of steps Default is 200 (one revolution in Full mode)
+        stepdelay : float 
+            Time to wait (in seconds) between steps
+        verbose : bool
+        initdelay : float
+            Intial delay after GPIO pins initialized but before motor is moved
+        """
+
+        self.stop_motor = False
+        step_increment = 1 if self.pos < pos else -1
+
+        # Set direction
+        dir = Direction.CW if step_increment == 1 else Direction.CCW
+        self._pi.write(self.direction_pin, dir.value)
+
+        # Calculate steps to take and check if valid
+        steps = (pos-self.pos)*step_increment
+        if self.homed:
+            if not self.isMoveValid(dir, steps):
+                direction = "CW (+)" if step_increment==1 else "CCW (-)"
                 raise InvalidMove(f"""
                 =======INVALID MOVE, OUT OF RANGE=======
                 Current position: {self.pos}\n
@@ -227,9 +325,8 @@ class DRV8825Nema():
 
             for i in range(steps):
                 if self.stop_motor:
-                    raise StopMotorInterrupt("Limit switch hit.")
+                    raise StopMotorInterrupt()
                 else:
-                    print("Running ", self.step_pin)
                     self._pi.write(self.step_pin, True)
                     time.sleep(stepdelay)
                     self._pi.write(self.step_pin, False)
@@ -241,17 +338,17 @@ class DRV8825Nema():
         except KeyboardInterrupt:
             print("User Keyboard Interrupt")
         except StopMotorInterrupt:
-            print("Stop Motor Interrupt")
+            raise
         except Exception:
             print("RpiMotorLib  : Unexpected error:")
             raise
 
         finally:
-            # cleanup
+            # Cleanup
             self._pi.write(self.step_pin, False)
             self._pi.write(self.direction_pin, False)
 
-            # print report status
+            # Print report status
             if verbose:
                 print("\nRpiMotorLib, Motor Run finished, Details:.\n")
                 print("Motor type = {}".format(self.motor_type))
@@ -262,27 +359,6 @@ class DRV8825Nema():
                 print("Intial delay = {}".format(initdelay))
                 print("Size of turn in degrees = {}"
                       .format(self.degree_calc(steps)))
-
-    def move_distance(self, distance_um: float, dir: Direction, allow_rounding: bool=False):
-        """Convert a distance to a stepper motor move.
-
-        Parameters
-        ----------
-        distance_um : float
-            Desired travel distance to move (i.e assembly motion)
-        dir : Direction enum
-        allow_rounding : bool=False
-            Toggle whether to raise an error when the attempted move is not a multiple of the step distance
-        """
-        if (not allow_rounding and distance_um % self.dist_per_step_um != 0) or distance_um > self.dist_per_step_um:
-            raise InvalidMove(f"\
-                    Minimum step distance: {self.dist_per_step_um}\n \
-                    Attempted move: {distance_um}\n \
-                    Warning: Move will be off by {distance_um % self.dist_per_step_um}")
-
-        steps = int(distance_um / self.dist_per_step_um)
-        self.motor_go(dir=dir, steps=steps)
-    
 
 if __name__ == "__main__":
     print("Instantiating motor...")

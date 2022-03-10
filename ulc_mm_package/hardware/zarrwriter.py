@@ -10,6 +10,7 @@ import zarr
 from os import listdir, path
 import cv2
 from time import perf_counter
+from numcodecs import Zstd
 
 # ==================== Custom errors ===============================
 class AttemptingWriteWithoutFile(Exception):
@@ -26,6 +27,7 @@ class ZarrWriter():
         self.store = None
         self.group = None
         self.arr_counter = 0
+        self.compressor = Zstd(level=7)
 
     def createNewFile(self, filename: str, overwrite: bool=False):
         """Create a new zarr file.
@@ -51,7 +53,7 @@ class ZarrWriter():
 
     def writeSingleArray(self, data):
         try:
-            self.group.create_dataset(f"{self.arr_counter}", data=data)
+            self.group.create_dataset(f"{self.arr_counter}", data=data, compressor=self.compressor)
             self.arr_counter += 1
         except Exception:
             raise AttemptingWriteWithoutFile()
@@ -66,24 +68,18 @@ class ZarrWriter():
             self.store.close()
 
 if __name__ == "__main__":
+    from tqdm import tqdm
+
     writer = ZarrWriter()
     writer.createNewFile("experiment1")
-    dir = "../images/"
+    dir = "../raw_images_nofocus/"
     start = perf_counter()
-    for i, img in enumerate(listdir(dir)):
+    for img in tqdm(listdir(dir)):
         if "tif" in img:
-            if i % 1000 == 0:
-                print(i)
             img = path.join(dir, img)
             arr = cv2.imread(img, 0)
             writer.writeSingleArray(arr)
     runtime = perf_counter() - start
-    print(f"Num images: {i} Runtime: {runtime}")
-    # writer.writeSingleArray([1, 2, 3])
-
-    # zdf = zarr.open("experiment1.zip", mode="r")
-    # for z in zdf:
-    #     cv2.imshow("Temp", zdf[z][:, :])
-    #     cv2.waitKey(0)
+    print(f"Num images: {len(listdir(dir))} Runtime: {runtime}")
 
     writer.closeFile()
