@@ -177,13 +177,12 @@ class CameraStream(QtWidgets.QMainWindow):
         try:
             self.pressure_control = PressureControl()
             self.vsFlow.setMinimum(self.pressure_control.getMinDutyCycle())
-            print(self.pressure_control.getCurrentDutyCycle())
-            self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
             self.lblMinFlow.setText(f"{self.pressure_control.getMinDutyCycle()}")
             self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle())
             self.lblMaxFlow.setText(f"{self.pressure_control.getMaxDutyCycle()}")
             self.vsFlow.setTickInterval(self.pressure_control.min_step_size)
             self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
+            self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
         except PressureControlError:
             print("Error initializing Pressure Controller. Disabling flow GUI elements.")
             # self.btnFlowUp.setEnabled(False)
