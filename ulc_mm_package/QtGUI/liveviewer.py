@@ -88,7 +88,7 @@ class CameraThread(QThread):
 
     def takeImage(self):
         if self.main_dir == None:
-            self.main_dir = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+            self.main_dir = "/media/pi/T7/" + datetime.now().strftime("%Y-%m-%d-%H%M%S")
             mkdir(self.main_dir)
 
         if self.continuous_save:
