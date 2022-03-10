@@ -80,7 +80,7 @@
    <widget class="QPushButton" name="btnFlowUp">
     <property name="geometry">
      <rect>
-      <x>1110</x>
+      <x>1100</x>
       <y>290</y>
       <width>71</width>
       <height>32</height>
@@ -113,7 +113,7 @@
    <widget class="QPushButton" name="btnFlowDown">
     <property name="geometry">
      <rect>
-      <x>1110</x>
+      <x>1100</x>
       <y>320</y>
       <width>71</width>
       <height>32</height>
@@ -171,7 +171,7 @@
    <widget class="QLineEdit" name="txtBoxFlow">
     <property name="geometry">
      <rect>
-      <x>1120</x>
+      <x>1110</x>
       <y>360</y>
       <width>51</width>
       <height>21</height>
