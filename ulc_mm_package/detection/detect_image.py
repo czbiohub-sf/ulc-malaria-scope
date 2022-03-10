@@ -33,7 +33,7 @@ from constants_ulc import (
     DEFAULT_FILTER_AREA,
     DEFAULT_IMAGE_FORMAT,
 )
-
+# import matplotlib.pyplot as plt
 
 def detect_images(
     model,
@@ -48,7 +48,7 @@ def detect_images(
     area_filter,
     filter_background_bboxes,
 ):
-    df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
+    # df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
     output = os.path.abspath(output)
     utils.create_dir_if_not_exists(output)
     labels = utils.load_labels(labels) if labels else {}
@@ -111,9 +111,9 @@ def detect_images(
         for _ in range(count):
             start = time.perf_counter()
             interpreter.invoke()
-            inference_time = time.perf_counter() - start
+            # _, _, _, _ = detect.get_output_no_objs(interpreter, threshold, scale)
+            # inference_time = time.perf_counter() - start
             objs = detect.get_output(interpreter, threshold, scale)
-            print("%.2f ms" % (inference_time * 1000))
         filtered_objs = []
         for obj in objs:
             xmin, xmax, ymin, ymax = (
@@ -130,32 +130,32 @@ def detect_images(
             if obj.bbox.area < area_filter:
                 if filter_background_bboxes:
                     if utils.check_if_bbox_not_background(bbox, thresholded_image):
-                        df = df.append(
-                            {
-                                "image_id": input_image,
-                                "xmin": xmin,
-                                "xmax": xmax,
-                                "ymin": ymin,
-                                "ymax": ymax,
-                                "label": labels.get(obj.id, obj.id),
-                                "prob": obj.score,
-                            },
-                            ignore_index=True,
-                        )
+                        # df = df.append(
+                        #     {
+                        #         "image_id": input_image,
+                        #         "xmin": xmin,
+                        #         "xmax": xmax,
+                        #         "ymin": ymin,
+                        #         "ymax": ymax,
+                        #         "label": labels.get(obj.id, obj.id),
+                        #         "prob": obj.score,
+                        #     },
+                        #     ignore_index=True,
+                        # )
                         filtered_objs.append(obj)
                 else:
-                    df = df.append(
-                        {
-                            "image_id": input_image,
-                            "xmin": xmin,
-                            "xmax": xmax,
-                            "ymin": ymin,
-                            "ymax": ymax,
-                            "label": labels.get(obj.id, obj.id),
-                            "prob": obj.score,
-                        },
-                        ignore_index=True,
-                    )
+                    # df = df.append(
+                    #     {
+                    #         "image_id": input_image,
+                    #         "xmin": xmin,
+                    #         "xmax": xmax,
+                    #         "ymin": ymin,
+                    #         "ymax": ymax,
+                    #         "label": labels.get(obj.id, obj.id),
+                    #         "prob": obj.score,
+                    #     },
+                    #     ignore_index=True,
+                    # )
                     filtered_objs.append(obj)
         print("{} {} {}".format(index, input_image, len(filtered_objs)))
         if overlaid:

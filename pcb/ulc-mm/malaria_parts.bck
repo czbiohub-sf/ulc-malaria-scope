@@ -1,0 +1,39 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP IRLML6344TRPbF
+D 38A Id, 20V Vds, 0.75mOhm Rds, N-Channel MOSFET, DirectFET MD
+K N-Channel MOSFET
+F https://www.infineon.com/dgdl/irl6283mpbf.pdf?fileId=5546d462533600a40153565fe9452573
+$ENDCMP
+#
+$CMP MPR_Pressure_Breakout_Conn
+D Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)
+K connector
+F ~
+$ENDCMP
+#
+$CMP TCN0MA1A
+D Light emitting diode
+K LED diode
+F ~
+$ENDCMP
+#
+$CMP TPS54201DDCT
+D 3A, 4.5 to 28V Input, EMI Friendly integrated switch synchronous step-down regulator, pulse-skipping, SOT-23-6
+K switching buck converter power-supply voltage regulator emi spread spectrum
+F http://www.ti.com/lit/ds/symlink/tps54302.pdf
+$ENDCMP
+#
+$CMP TPS54202DDC
+D 2A, 4.5 to 28V Input, EMI Friendly integrated switch synchronous step-down regulator, pulse-skipping, SOT-23-6
+K switching buck converter power-supply voltage regulator emi spread spectrum
+F http://www.ti.com/lit/ds/symlink/tps54202.pdf
+$ENDCMP
+#
+$CMP TPS54308
+D 3A, 4.5 to 28V Input, EMI Friendly integrated switch synchronous step-down regulator, continuous-conduction, SOT-23-6
+K switching buck converter power-supply voltage regulator emi spread spectrum FCCM
+F http://www.ti.com/lit/ds/symlink/tps54308.pdf
+$ENDCMP
+#
+#End Doc Library

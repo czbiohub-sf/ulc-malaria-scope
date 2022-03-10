@@ -171,3 +171,13 @@ def get_output(interpreter, score_threshold, image_scale=(1.0, 1.0)):
         )
 
     return [make(i) for i in range(count) if scores[i] >= score_threshold]
+
+def get_output_no_objs(interpreter, score_threshold, image_scale=(1.0, 1.0)):
+    """Returns four numpy arrays with information about the image."""
+
+    boxes = output_tensor(interpreter, 0)
+    class_ids = output_tensor(interpreter, 1)
+    scores = output_tensor(interpreter, 2)
+    count = int(output_tensor(interpreter, 3))
+
+    return boxes, class_ids, scores, count
