@@ -69,12 +69,9 @@ class CameraThread(QThread):
                             if cv2.imwrite(filename, image):
                                 self.im_counter += 1
                         
-                        # TODO - check to see if the uint8 cast is necessary
                         if self.scale_image:
                             image = cv2.resize(image.astype('uint8'), (LABEL_WIDTH, LABEL_HEIGHT))
 
-                        # if self.scale_image:
-                        #     qimage = qimage.scaled(LABEL_WIDTH, LABEL_HEIGHT, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                         if self.liveview:
                             qimage = gray2qimage(image)
                             self.changePixmap.emit(qimage)
