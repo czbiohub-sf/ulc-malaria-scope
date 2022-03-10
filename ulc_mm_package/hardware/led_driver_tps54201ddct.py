@@ -24,22 +24,17 @@ class LED_TPS5420TDDCT():
     """An LED driver class for the TPS5420TDDCT and sets the dimming mode to PWM on initialization."""
     def __init__(self, pi: pigpio.pi=None, pwm_pin: int=LED_PWM_PIN):
         self.pwm_pin = pwm_pin
-        self.pwm_freq = int(PWM_DIMMING_MAX_FREQ_HZ / 2)
+        self.pwm_freq = int(PWM_DIMMING_MAX_FREQ_HZ)
         self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(PWM_DIM_MODE_DUTYCYCLE)
         self._pi = pi if pi != None else pigpio.pi()
         self._pi = pigpio.pi()
 
-        # Increase the resolution of the pigpio duty cycle range (default is an integer between [0-255])
-        self._pi.set_PWM_range(self.pwm_pin, DUTY_CYCLE_RESOLUTION)
-
         # Set the dimming mode to PWM (see datasheet, page 17). 
         # On boot and until a mode is initially selected, the
         # device polls every 300us
-        self._pi.set_PWM_frequency(self.pwm_pin, self.pwm_freq)
-        self._pi.set_PWM_dutycycle(self.pwm_pin, self.pwm_duty_cycle)
+        self._pi.hardware_PWM(self.pwm_pin, 1000, self.pwm_duty_cycle)
         sleep(0.0005)
-        self._pi.set_PWM_frequency(self.pwm_pin, 0)
-        self._pi.set_PWM_dutycycle(self.pwm_pin, 0)
+        self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, 0)
 
     def close(self):
         self._pi.set_PWM_dutycycle(self.pwm_pin, 0)
@@ -47,7 +42,7 @@ class LED_TPS5420TDDCT():
         sleep(0.5)
 
     def _convertDutyCyclePercentToPWMVal(self, duty_cycle_percentage: float):
-        return int(duty_cycle_percentage * DUTY_CYCLE_RESOLUTION)
+        return int(1e6*duty_cycle_percentage)
 
     def setDutyCycle(self, duty_cycle_perc: float):
         """Set the duty cycle to a desired percentage.
@@ -61,6 +56,6 @@ class LED_TPS5420TDDCT():
         """
         try:
             pwm_val = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
-            self._pi.set_PWM_dutycycle(self.pwm_pin, pwm_val)
+            self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, pwm_val)
         except Exception:
             raise LEDError()

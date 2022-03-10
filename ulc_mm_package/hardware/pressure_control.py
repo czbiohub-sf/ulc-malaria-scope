@@ -34,27 +34,20 @@ class PressureControl():
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
-        # Frequency must be larger than the pulse width range expected by the servo (i.e > 2ms)
-        self.frequency = 200
-
-        # pigpio rounds to the nearest available frequency, see: https://abyz.me.uk/rpi/pigpio/python.html#set_PWM_frequency
-        self.frequency = self._pi.set_PWM_frequency(servo_pin, self.frequency)
-        freq_width_us = 1/self.frequency * 10**6
-
         # The three values below (dead_bandwidth, min_width, max_width) are taken from the datasheet
         self.dead_bandwidth_us = 5
         self.min_width_us = 1500 + 200 # adding some padding
         self.max_width_us = 2250
 
         # Convert to valid PWM value
-        self.min_step_size = 5 * self.dead_bandwidth_us / freq_width_us * 255 # Times 5 to add some padding
-        self.min_duty_cycle = self.min_width_us / freq_width_us * 255
-        self.max_duty_cycle = self.max_width_us / freq_width_us * 255
-        self.duty_cycle = self.min_duty_cycle
+        self.min_step_size = 50
+        self.min_duty_cycle = 1500
+        self.max_duty_cycle = 2200
+        self.duty_cycle = self.max_duty_cycle
 
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
-        self._pi.set_PWM_dutycycle(servo_pin, self.duty_cycle)
+        self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
 
         # Instantiate pressure sensor
         # TODO: uncomment this after. Commented out for now so that the servo will work
@@ -82,12 +75,12 @@ class PressureControl():
     def increaseDutyCycle(self):
         if self.duty_cycle < self.max_duty_cycle - self.min_step_size:
             self.duty_cycle += self.min_step_size
-            self._pi.set_PWM_dutycycle(self.servo_pin, self.duty_cycle)
+            self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
 
     def decreaseDutyCycle(self):
         if self.duty_cycle > self.min_duty_cycle + self.min_step_size:
             self.duty_cycle -= self.min_step_size
-            self._pi.set_PWM_dutycycle(self.servo_pin, self.duty_cycle)
+            self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
 
     def setDutyCycle(self, duty_cycle):
         if self.min_duty_cycle <= duty_cycle <= self.max_duty_cycle:
