@@ -395,7 +395,6 @@ class CameraStream(QtWidgets.QMainWindow):
         msgBox.setText("Please remove the flow cell now. Only press okay after the flow cell has been removed.")
         msgBox.setWindowTitle("Exit procedure")
         msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
-        msgBox.buttonClicked.connect(self.exitOk)
         retval = msgBox.exec()
 
         if retval == QtWidgets.QMessageBox.Ok:
