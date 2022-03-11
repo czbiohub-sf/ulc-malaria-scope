@@ -60,6 +60,23 @@ def takeZStack(camera: ULCMM_Camera, motor: DRV8825Nema, steps_per_image: int=1,
     best_focus_position = np.argmax(focus_metrics)*steps_per_image
     return best_focus_position, focus_metrics
 
+def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_image: int=1, delay=0):
+    # Re-home the motor to the limit switch
+    motor.homed = False
+    motor.homeToLimitSwitches()
+    step_counter = 0
+    max_steps = motor.max_pos
+    focus_metrics = []
+    while step_counter < max_steps:
+        img = yield img
+        focus_metrics.append(getLaplacianFocusMetric(img))
+        motor.move_rel(steps=steps_per_image, dir=Direction.CW)
+        sleep(delay)
+        step_counter += steps_per_image
+
+    best_focus_position = np.argmax(focus_metrics)*steps_per_image
+    motor.move_abs(best_focus_position)
+    print(best_focus_position)
 if __name__ == "__main__":
     print("===Initiating z-stack.===\n")
 

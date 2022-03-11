@@ -6,6 +6,8 @@ from ulc_mm_package.hardware.pressure_control import PressureControl, PressureCo
 from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN
 from ulc_mm_package.hardware.zarrwriter import ZarrWriter
 
+from ulc_mm_package.image_processing.zstack import takeZStackCoroutine
+
 import sys
 import traceback
 from time import perf_counter, sleep
@@ -34,12 +36,14 @@ else:
 
 class CameraThread(QThread):
     changePixmap = pyqtSignal(QImage)
+    motorPosChanged = pyqtSignal(int)
     camera_activated = False
     main_dir = None
     single_save = False
     continuous_save = False
     scale_image = True
     liveview = True
+    takeZStack = False
     continuous_dir_name = None
     custom_image_prefix = ''
     zarr_writer = ZarrWriter()
@@ -69,12 +73,24 @@ class CameraThread(QThread):
                             if cv2.imwrite(filename, image):
                                 self.im_counter += 1
                         
+                        if self.takeZStack:
+                            try:
+                                self.zstack.send(image)
+                            except StopIteration:
+                                self.takeZStack = False
+                                self.motorPosChanged.emit(self.motor.pos)
+                            except ValueError:
+                                # Occurs if an image is sent while the function is still moving the motor
+                                pass
+
                         if self.scale_image:
                             image = cv2.resize(image.astype('uint8'), (LABEL_WIDTH, LABEL_HEIGHT))
 
                         if self.liveview:
                             qimage = gray2qimage(image)
                             self.changePixmap.emit(qimage)
+                            
+                            
                 except Exception as e:
                     # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
                     # Once that happens, this can be swapped to catch the PyCameraException
@@ -108,6 +124,12 @@ class CameraThread(QThread):
             self.livecam.setBinning(bin_factor=2, mode="Average")
         
         self.camera_activated = True
+    
+    def runZStack(self, motor):
+        self.takeZStack = True
+        self.motor = motor
+        self.zstack = takeZStackCoroutine(None, motor, steps_per_image=10)
+        self.zstack.send(None)
 
 class CameraStream(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -149,12 +171,16 @@ class CameraStream(QtWidgets.QMainWindow):
         try:
             self.motor = DRV8825Nema(steptype="Half")
             self.motor.homeToLimitSwitches()
+            while not self.motor.homed:
+                pass
+            sleep(0.5)
             self.lblFocusMax.setText(f"{self.motor.max_pos}")
 
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
             self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)
             self.vsFocus.valueChanged.connect(self.vsFocusHandler)
             self.txtBoxFocus.editingFinished.connect(self.focusTextBoxHandler)
+            self.btnZStack.clicked.connect(self.btnZStackHandler)
             self.vsFocus.setMinimum(self.motor.pos)
             self.vsFocus.setValue(self.motor.pos)
             self.vsFocus.setMaximum(self.motor.max_pos)
@@ -187,6 +213,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
         # Camera
         self.cameraThread.changePixmap.connect(self.updateImage)
+        self.cameraThread.motorPosChanged.connect(self.updateMotorPosition)
         self.txtBoxExposure.editingFinished.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxRecordHandler)
         self.chkBoxScaling.stateChanged.connect(self.checkBoxScalingHandler)
@@ -275,6 +302,11 @@ class CameraStream(QtWidgets.QMainWindow):
     def updateImage(self, qimage):
         self.lblImage.setPixmap(QPixmap.fromImage(qimage))
 
+    @pyqtSlot(int)
+    def updateMotorPosition(self, val):
+        self.vsFocus.setValue(val)
+        self.txtBoxFocus.setText(f"{val}")
+
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
         self.lblLED.setText(f"{perc}%")
@@ -303,12 +335,20 @@ class CameraStream(QtWidgets.QMainWindow):
         self.vsExposure.setValue(exposure)
 
     def btnFocusUpHandler(self):
-        self.motor.move_rel(dir=Direction.CW, steps=1)
+        try:
+            self.motor.move_rel(dir=Direction.CW, steps=1)
+        except MotorControllerError as e:
+            print(e)
+            
         self.vsFocus.setValue(self.motor.pos)
         self.txtBoxFocus.setText(f"{self.motor.pos}")
 
     def btnFocusDownHandler(self):
-        self.motor.move_rel(dir=Direction.CCW, steps=1)
+        try:
+            self.motor.move_rel(dir=Direction.CCW, steps=1)
+        except MotorControllerError as e:
+            print(e)
+
         self.vsFocus.setValue(self.motor.pos)
         self.txtBoxFocus.setText(f"{self.motor.pos}")
 
@@ -333,6 +373,18 @@ class CameraStream(QtWidgets.QMainWindow):
             return
 
         self.vsFocus.setValue(pos)
+
+    def btnZStackHandler(self):
+        msgBox = QtWidgets.QMessageBox()
+        msgBox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+        msgBox.setText("Press okay to sweep the motor and automatically find and move to the focal position.")
+        msgBox.setWindowTitle("ZStack and Move to Focus")
+        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        retval = msgBox.exec()
+
+        if retval == QtWidgets.QMessageBox.Ok:
+            # Move syringe back and de-energize
+            self.cameraThread.runZStack(self.motor)
 
     def btnFlowUpHandler(self):
         self.pressure_control.increaseDutyCycle()
