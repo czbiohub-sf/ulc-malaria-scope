@@ -24,6 +24,7 @@ QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 BIG_SCREEN = True
 MIN_EXPOSURE_US = 100
 EXTERNAL_DIR = "/media/pi/T7/"
+WRITE_NUMPY = True
 
 if BIG_SCREEN:
     _UI_FILE_DIR = "liveview_big.ui"
@@ -47,6 +48,7 @@ class CameraThread(QThread):
     continuous_dir_name = None
     custom_image_prefix = ''
     zarr_writer = ZarrWriter()
+    binning = 2
 
     try:
         livecam = ULCMM_Camera()
@@ -69,9 +71,12 @@ class CameraThread(QThread):
                             self.single_save = False
 
                         if self.continuous_save and self.continuous_dir_name != None:
-                            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}{self.im_counter:05}.tiff"
-                            if cv2.imwrite(filename, image):
-                                self.im_counter += 1
+                            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}{self.im_counter:05}"
+                            if WRITE_NUMPY:
+                                np.save(filename+".npy", image)
+                            else:
+                                cv2.imwrite(filename+".tiff", image)
+                            self.im_counter += 1
                         
                         if self.takeZStack:
                             try:
@@ -118,9 +123,11 @@ class CameraThread(QThread):
         
         if self.livecam.camera.BinningHorizontal.GetValue() == 2:
             print("Changing to 1x1 binning.")
+            self.binning = 1
             self.livecam.setBinning(bin_factor=1, mode="Average")
         else:
             print("Changing to 2x2 binning.")
+            self.binning = 2
             self.livecam.setBinning(bin_factor=2, mode="Average")
         
         self.camera_activated = True
