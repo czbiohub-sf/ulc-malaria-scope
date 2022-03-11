@@ -78,10 +78,12 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_image: int=1, delay=0
     motor.move_abs(best_focus_position)
     print(best_focus_position)
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
+
     print("===Initiating z-stack.===\n")
 
     # Turn on LED
-    from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
     led = LED_TPS5420TDDCT()
     led.setDutyCycle(0.5)
     # Instantiate camera
@@ -98,7 +100,13 @@ if __name__ == "__main__":
     except MotorControllerError as e:
         print(f"Motorcontroller error, encountered: \n{e}")
 
-    most_focused, metrics = takeZStack(camera=camera, motor=motor, steps_per_image=10, save_images=True)
+    steps_per_image = 10
+    most_focused, metrics = takeZStack(camera=camera, motor=motor, steps_per_image=steps_per_image, save_images=True)
     print(f"\n=======Most focused image is likely: {most_focused:03d}.jpg=======\n")
+
+    plt.plot(range(0, motor.max_pos, steps_per_image), metrics, 'o', markersize=2, color='#2CBDFE')
+    plt.title("Focus metric vs. motor position (um)")
+    plt.xlabel("Motor position (um)")
+    plt.ylabel("Focus metric")
     led.close()
     motor.close()
