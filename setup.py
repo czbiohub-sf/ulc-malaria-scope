@@ -37,6 +37,6 @@ setup(name='ulc_mm_package',
                           'py_cameras @ git+https://github.com/czbiohub/pyCameras@master',
                           'pymotors @ git+https://github.com/czbiohub/PyMotors@master',
                           'typer',
-                          ]
+                          ],
       classifiers = ["CZ Biohub :: Bioengineering"],
 )
