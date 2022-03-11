@@ -104,9 +104,10 @@ if __name__ == "__main__":
     most_focused, metrics = takeZStack(camera=camera, motor=motor, steps_per_image=steps_per_image, save_images=True)
     print(f"\n=======Most focused image is likely: {most_focused:03d}.jpg=======\n")
 
-    plt.plot(range(0, motor.max_pos, steps_per_image), metrics, 'o', markersize=2, color='#2CBDFE')
+    plt.plot(range(0, int(motor.max_pos), steps_per_image), metrics, 'o', markersize=2, color='#2CBDFE')
     plt.title("Focus metric vs. motor position (um)")
     plt.xlabel("Motor position (um)")
     plt.ylabel("Focus metric")
+    plt.show()
     led.close()
     motor.close()
