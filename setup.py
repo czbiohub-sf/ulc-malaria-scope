@@ -35,6 +35,8 @@ setup(name='ulc_mm_package',
                           'pimoroni-ioexpander',
                           'qimage2ndarray',
                           'py_cameras @ git+https://github.com/czbiohub/pyCameras@master',
-                          'pymotors @ git+https://github.com/czbiohub/PyMotors@master'],
+                          'pymotors @ git+https://github.com/czbiohub/PyMotors@master',
+                          'typer',
+                          ]
       classifiers = ["CZ Biohub :: Bioengineering"],
 )

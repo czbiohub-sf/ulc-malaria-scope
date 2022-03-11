@@ -9,6 +9,8 @@ import typer
 import numpy as np
 import cv2
 
+import typer_utils
+
 EXTERNAL_DIR = "/media/pi/T7/"
 
 def time_file_open(img_path):
@@ -17,21 +19,7 @@ def time_file_open(img_path):
     return perf_counter() - start
 
 def main():
-    dirs = [x for x in sorted(os.listdir(EXTERNAL_DIR)) if os.path.isdir(x)]
-
-    typer.echo("The following folders were found: ")
-    for i, dir in enumerate(dirs):
-        typer.echo(f"{i}.\t{dir}/")
-
-    num = -1
-    while num not in list(range(len(dirs))):
-        try:
-            num = int(typer.prompt("Pick which directory you would like to view (enter the index number)"))
-        except:
-            pass
-    
-    chosen_dir = dirs[num]
-    files = [os.path.join(chosen_dir, x) for x in os.listdir(chosen_dir)]
+    files = typer_utils.choose_dir_get_files(EXTERNAL_DIR)
     time_to_open = time_file_open(files[0])
 
     fps_choices = [15, 30, 60]
@@ -53,6 +41,6 @@ def main():
                 cv2.imshow('Images', img)
                 cv2.waitKey(int(1 / fps * 1000))
     
-    
+
 if __name__ == "__main__":
     typer.run(main)
