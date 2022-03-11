@@ -82,5 +82,6 @@ if __name__ == "__main__":
         print(f"Motorcontroller error, encountered: \n{e}")
 
     most_focused, metrics = takeZStack(camera=camera, motor=motor, steps_per_image=10, save_images=True)
-    print(f"Most focused image is likely: {most_focused:03d}.jpg")
+    print(f"\n=======Most focused image is likely: {most_focused:03d}.jpg=======\n")
+    led.close()
     motor.close()
