@@ -6,6 +6,7 @@ from time import sleep
 
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
 from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
+from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
 
 def radial_average(arr):
     w, h = arr.shape[1], arr.shape[0]
@@ -63,6 +64,9 @@ def takeZStack(camera: ULCMM_Camera, motor: DRV8825Nema, steps_per_image: int=1,
 if __name__ == "__main__":
     print("===Initiating z-stack.===\n")
 
+    # Turn on LED
+    led = LED_TPS5420TDDCT()
+    led.setDutyCycle(0.5)
     # Instantiate camera
     try:
         camera = ULCMM_Camera()
