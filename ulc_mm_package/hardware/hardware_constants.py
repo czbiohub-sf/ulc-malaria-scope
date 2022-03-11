@@ -35,11 +35,12 @@ ROT_SWITCH = 22
 # ================ LED Driver constants ================ #
 LED_PWM_PIN = 13
 
-# To activate PWM dimming mode, the voltage must be between the following bounds. For the analog 
+# To activate analog dimming mode, the voltage must be between the following bounds. For the analog 
 # dimming mode, the voltage must be higher than the upper bound listed below.
 PWM_DIM_MODE_LOWER_THRESHOLD_V = 1
 PWM_DIM_MODE_UPPER_THRESHOLD_V = 2.07
 PWM_DIM_MODE_DUTYCYCLE = ((PWM_DIM_MODE_LOWER_THRESHOLD_V + PWM_DIM_MODE_UPPER_THRESHOLD_V) / 2) / RPI_OUTPUT_V
+ANALOG_DIM_MODE_DUTYCYCLE = 1
 
 # To ensure linear dimming performance, PWM must be <1kHz (see datasheet pg. 19)
 PWM_DIMMING_MAX_FREQ_HZ = 40000

@@ -7,7 +7,7 @@ Datasheet:
 
 from ulc_mm_package.hardware.hardware_constants import (
     LED_PWM_PIN,
-    PWM_DIM_MODE_DUTYCYCLE,
+    ANALOG_DIM_MODE_DUTYCYCLE,
     PWM_DIMMING_MAX_FREQ_HZ
 )
 import pigpio
@@ -25,7 +25,7 @@ class LED_TPS5420TDDCT():
     def __init__(self, pi: pigpio.pi=None, pwm_pin: int=LED_PWM_PIN):
         self.pwm_pin = pwm_pin
         self.pwm_freq = int(PWM_DIMMING_MAX_FREQ_HZ)
-        self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(PWM_DIM_MODE_DUTYCYCLE)
+        self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(ANALOG_DIM_MODE_DUTYCYCLE)
         self._pi = pi if pi != None else pigpio.pi()
         self._pi = pigpio.pi()
 
