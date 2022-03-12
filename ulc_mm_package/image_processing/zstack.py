@@ -49,7 +49,7 @@ def takeZStack(camera: ULCMM_Camera, motor: DRV8825Nema, steps_per_image: int=1,
         image = np.ascontiguousarray(np.flipud(image))
         focus_metrics.append(getLaplacianFocusMetric(image))
         if save_images:
-            cv2.imwrite(save_dir + f"{step_counter:03d}.jpg", image)
+            cv2.imwrite(save_dir + f"{step_counter:03d}.tiff", image)
         motor.move_rel(steps=steps_per_image, dir=Direction.CW)
         sleep(delay)
         step_counter += steps_per_image
@@ -77,6 +77,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_image: int=1, delay=0
     best_focus_position = np.argmax(focus_metrics)*steps_per_image
     motor.move_abs(best_focus_position)
     print(best_focus_position)
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
