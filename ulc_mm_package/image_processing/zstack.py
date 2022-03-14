@@ -4,31 +4,9 @@ import cv2
 import numpy as np
 from time import sleep
 
+from ulc_mm_package.image_processing.focus_metrics import *
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
 from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
-
-def radial_average(arr):
-    w, h = arr.shape[1], arr.shape[0]
-    cx, cy = w // 2, h // 2
-
-    # Create centered radius matrix
-    x, y = np.meshgrid(np.arange(w) - cx, np.arange(h) - cy)
-    R = np.sqrt(x**2 + y**2)
-
-    # Compute radial mean 
-    rm = lambda r: arr[(R >= r - 0.5) & (R <= r + 0.5)].mean()
-    r = np.linspace(1, int(np.max(R)))
-    radial_mean = np.vectorize(rm)(r)
-
-    return radial_mean
-
-def logPowerSpectrumRadialAverageSum(img):
-    power_spectrum = np.fft.fftshift(np.fft.fft2(img))
-    log_ps = np.log(np.abs(power_spectrum))
-    return np.sum(radial_average(log_ps))
-
-def getLaplacianFocusMetric(img):
-    return cv2.Laplacian(img, cv2.CV_64F).var()
 
 def takeZStack(camera: ULCMM_Camera, motor: DRV8825Nema, steps_per_image: int=1, delay=0, save_images=True):
     timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
@@ -47,7 +25,7 @@ def takeZStack(camera: ULCMM_Camera, motor: DRV8825Nema, steps_per_image: int=1,
     focus_metrics = []
     for image in camera.yieldImages():
         image = np.ascontiguousarray(np.flipud(image))
-        focus_metrics.append(getLaplacianFocusMetric(image))
+        focus_metrics.append(gradientAverage(image))
         if save_images:
             cv2.imwrite(save_dir + f"{step_counter:03d}.tiff", image)
         motor.move_rel(steps=steps_per_image, dir=Direction.CW)
@@ -69,7 +47,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_image: int=1, delay=0
     focus_metrics = []
     while step_counter < max_steps:
         img = yield img
-        focus_metrics.append(getLaplacianFocusMetric(img))
+        focus_metrics.append(gradientAverage(img))
         motor.move_rel(steps=steps_per_image, dir=Direction.CW)
         sleep(delay)
         step_counter += steps_per_image
@@ -79,7 +57,6 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_image: int=1, delay=0
     print(best_focus_position)
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
     from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
 
     print("===Initiating z-stack.===\n")
@@ -103,7 +80,7 @@ if __name__ == "__main__":
 
     steps_per_image = 10
     most_focused, metrics = takeZStack(camera=camera, motor=motor, steps_per_image=steps_per_image, save_images=True)
-    print(f"\n=======Most focused image is likely: {most_focused:03d}.jpg=======\n")
+    print(f"\n=======Most focused image is likely: {most_focused:03d}.tiff=======\n")
 
     plt.plot(range(0, int(motor.max_pos), steps_per_image), metrics, 'o', markersize=2, color='#2CBDFE')
     plt.title("Focus metric vs. motor position (um)")
