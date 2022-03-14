@@ -63,9 +63,8 @@ class CameraThread(QThread):
             if self.camera_activated:
                 try:
                     for image in self.livecam.yieldImages():
-                        self.updatePressure.emit(self.pressure_sensor.pressure)
-                        if self.liveview:
-                            image = np.flipud(image).copy()
+                        if self.pressure_sensor != None:
+                            self.updatePressure.emit(self.pressure_sensor.pressure)
 
                         if self.single_save:
                             filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
@@ -137,7 +136,7 @@ class CameraThread(QThread):
     def runZStack(self, motor):
         self.takeZStack = True
         self.motor = motor
-        self.zstack = takeZStackCoroutine(None, motor, steps_per_image=10)
+        self.zstack = takeZStackCoroutine(None, motor)
         self.zstack.send(None)
 
 class CameraStream(QtWidgets.QMainWindow):
