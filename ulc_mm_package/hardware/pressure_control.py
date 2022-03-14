@@ -88,5 +88,3 @@ class PressureControl():
                 while self.duty_cycle >= duty_cycle + self.min_step_size:
                     self.decreaseDutyCycle()
                     sleep(0.01)
-            # self.duty_cycle = duty_cycle
-            # self._pi.set_PWM_dutycycle(self.servo_pin, duty_cycle)

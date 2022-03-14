@@ -38,6 +38,7 @@ else:
 class CameraThread(QThread):
     changePixmap = pyqtSignal(QImage)
     motorPosChanged = pyqtSignal(int)
+    updatePressure = pyqtSignal(float)
     camera_activated = False
     main_dir = None
     single_save = False
@@ -48,7 +49,7 @@ class CameraThread(QThread):
     continuous_dir_name = None
     custom_image_prefix = ''
     zarr_writer = ZarrWriter()
-    binning = 2
+    pressure_sensor = None
 
     try:
         livecam = ULCMM_Camera()
@@ -62,6 +63,7 @@ class CameraThread(QThread):
             if self.camera_activated:
                 try:
                     for image in self.livecam.yieldImages():
+                        self.updatePressure.emit(self.pressure_sensor.pressure)
                         if self.liveview:
                             image = np.flipud(image).copy()
 
@@ -211,16 +213,18 @@ class CameraStream(QtWidgets.QMainWindow):
             self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
         except PressureControlError:
             print("Error initializing Pressure Controller. Disabling flow GUI elements.")
-            # self.btnFlowUp.setEnabled(False)
-            # self.btnFlowDown.setEnabled(False)
-            # self.vsFlow.setEnabled(False)
-            # self.txtBoxFlow.setEnabled(False)
+            self.btnFlowUp.setEnabled(False)
+            self.btnFlowDown.setEnabled(False)
+            self.vsFlow.setEnabled(False)
+            self.txtBoxFlow.setEnabled(False)
 
         ### Connect UI elements to actions ###
 
-        # Camera
+        # Acquisition thread
         self.cameraThread.changePixmap.connect(self.updateImage)
         self.cameraThread.motorPosChanged.connect(self.updateMotorPosition)
+        self.cameraThread.updatePressure.connect(self.updatePressureLabel)
+        self.cameraThread.pressure_sensor = self.pressure_control.mpr
         self.txtBoxExposure.editingFinished.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxRecordHandler)
         self.chkBoxScaling.stateChanged.connect(self.checkBoxScalingHandler)
@@ -313,6 +317,10 @@ class CameraStream(QtWidgets.QMainWindow):
     def updateMotorPosition(self, val):
         self.vsFocus.setValue(val)
         self.txtBoxFocus.setText(f"{val}")
+
+    @pyqtSlot(float)
+    def updatePressureLabel(self, val):
+        self.lblPressure.setText(f"{val} hPa")
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
