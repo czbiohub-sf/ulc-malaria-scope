@@ -38,23 +38,36 @@ def takeZStack(camera: ULCMM_Camera, motor: DRV8825Nema, steps_per_image: int=1,
     best_focus_position = np.argmax(focus_metrics)*steps_per_image
     return best_focus_position, focus_metrics
 
-def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_image: int=1, delay=0):
+def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps_per_fine: int=1):
     # Re-home the motor to the limit switch
     motor.homed = False
     motor.homeToLimitSwitches()
     step_counter = 0
     max_steps = motor.max_pos
     focus_metrics = []
+
+    # Do an initial, large-step through from 0-max position
     while step_counter < max_steps:
         img = yield img
         focus_metrics.append(gradientAverage(img))
-        motor.move_rel(steps=steps_per_image, dir=Direction.CW)
-        sleep(delay)
-        step_counter += steps_per_image
-
-    best_focus_position = np.argmax(focus_metrics)*steps_per_image
+        motor.move_rel(steps=steps_per_coarse, dir=Direction.CW)
+        step_counter += steps_per_coarse
+    
+    # Do a 1um sweep closer to where the true focus is
+    focus_metrics_fine = []
+    step_counter = 0
+    best_focus_position = np.argmax(focus_metrics)*steps_per_coarse
+    start = best_focus_position - steps_per_coarse
+    end = best_focus_position + steps_per_coarse
+    motor.move_abs(start)
+    step_counter = start
+    while step_counter < end:
+        img = yield img
+        focus_metrics_fine.append(gradientAverage(img))
+        motor.move_rel(steps=steps_per_fine, dir=Direction.CW)
+        step_counter += steps_per_fine
+    best_focus_position = start + np.argmax(focus_metrics_fine)*steps_per_fine
     motor.move_abs(best_focus_position)
-    print(best_focus_position)
 
 if __name__ == "__main__":
     from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
