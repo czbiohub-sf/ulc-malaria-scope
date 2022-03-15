@@ -43,7 +43,7 @@ class CameraThread(QThread):
     updatePressure = pyqtSignal(float)
     fps = pyqtSignal(int)
     update_counter = 0
-    num_loops = 100
+    num_loops = 50
     camera_activated = False
     main_dir = None
     single_save = False

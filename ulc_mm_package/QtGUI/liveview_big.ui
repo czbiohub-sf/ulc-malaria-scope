@@ -565,10 +565,10 @@
            <number>1</number>
           </property>
           <property name="value">
-           <number>49</number>
+           <number>0</number>
           </property>
           <property name="sliderPosition">
-           <number>49</number>
+           <number>0</number>
           </property>
           <property name="orientation">
            <enum>Qt::Vertical</enum>
