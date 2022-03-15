@@ -42,13 +42,13 @@ class CameraThread(QThread):
     zStackFinished = pyqtSignal(int)
     updatePressure = pyqtSignal(float)
     fps = pyqtSignal(int)
+    update_liveview = 1
     update_counter = 0
     num_loops = 50
     camera_activated = False
     main_dir = None
     single_save = False
     continuous_save = False
-    scale_image = True
     liveview = True
     takeZStack = False
     continuous_dir_name = None
@@ -58,7 +58,6 @@ class CameraThread(QThread):
 
     try:
         livecam = ULCMM_Camera()
-        livecam.print()
         camera_activated = True
     except CameraError:
         camera_activated = False
@@ -102,10 +101,7 @@ class CameraThread(QThread):
                                 # Occurs if an image is sent while the function is still moving the motor
                                 pass
 
-                        # if self.scale_image:
-                        #     image = cv2.resize(image.astype('uint8'), (LABEL_WIDTH, LABEL_HEIGHT))
-
-                        if self.liveview:
+                        if self.liveview and self.update_counter % self.update_liveview == 0:
                             qimage = gray2qimage(image)
                             self.changePixmap.emit(qimage)
                             
@@ -242,7 +238,6 @@ class CameraStream(QtWidgets.QMainWindow):
         self.cameraThread.pressure_sensor = self.pressure_control.mpr
         self.txtBoxExposure.editingFinished.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxRecordHandler)
-        self.chkBoxScaling.stateChanged.connect(self.checkBoxScalingHandler)
         self.chkBoxMaxFPS.stateChanged.connect(self.checkBoxMaxFPSHandler)
         self.btnSnap.clicked.connect(self.btnSnapHandler)
         self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
@@ -273,20 +268,11 @@ class CameraStream(QtWidgets.QMainWindow):
         else:
             self.btnSnap.setText("Take image")
 
-    def checkBoxScalingHandler(self):
-        if self.chkBoxScaling.checkState():
-            # Disable image scaling
-            self.cameraThread.scale_image = False
-        else:
-            self.cameraThread.scale_image = True
-
     def checkBoxMaxFPSHandler(self):
         if self.chkBoxMaxFPS.checkState():
-            self.cameraThread.liveview = False
-            self.cameraThread.scale_image = False
+            self.cameraThread.update_liveview = 99
         else:
-            self.cameraThread.liveview = True
-            self.cameraThread.scale_image = True
+            self.cameraThread.update_liveview = 1
 
     def btnSnapHandler(self):
         if self.recording:
@@ -294,7 +280,6 @@ class CameraStream(QtWidgets.QMainWindow):
             self.cameraThread.continuous_save = False
             self.btnSnap.setText("Record images")
             self.chkBoxRecord.setEnabled(True)
-            self.chkBoxScaling.setEnabled(True)
             self.chkBoxMaxFPS.setEnabled(True)
             end_time = perf_counter()
             start_time = self.cameraThread.start_time
@@ -311,7 +296,6 @@ class CameraStream(QtWidgets.QMainWindow):
             self.btnSnap.setText("Stop recording")
             self.recording = True
             self.chkBoxRecord.setEnabled(False)
-            self.chkBoxScaling.setEnabled(False)
             self.chkBoxMaxFPS.setEnabled(False)
             self.cameraThread.takeImage()
         else:
@@ -497,6 +481,8 @@ class CameraStream(QtWidgets.QMainWindow):
             # Turn off camera
             if self.cameraThread != None:
                 self.cameraThread.camera_activated = False
+            # Turn off encoder
+            self.encoder.close()
             quit()
 
     def closeEvent(self, event):

@@ -138,48 +138,6 @@
       </item>
       <item row="2" column="0" colspan="2">
        <layout class="QGridLayout" name="grdCameraOptions">
-        <item row="5" column="0" colspan="2">
-         <widget class="QPushButton" name="btnSnap">
-          <property name="maximumSize">
-           <size>
-            <width>150</width>
-            <height>160</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Take a single image (or continuously record if the checkbox is checked)</string>
-          </property>
-          <property name="text">
-           <string>Take Image</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0" colspan="2">
-         <widget class="QPushButton" name="btnChangeBinning">
-          <property name="maximumSize">
-           <size>
-            <width>160</width>
-            <height>100</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Switch the pixel binning mode of the camera</string>
-          </property>
-          <property name="text">
-           <string>Change to 1X binning</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QCheckBox" name="chkBoxScaling">
-          <property name="toolTip">
-           <string>The image will be shown at its native resolution. This improves FPS.</string>
-          </property>
-          <property name="text">
-           <string>Disable scaling?</string>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="1">
          <widget class="QLineEdit" name="txtBoxCustomFilename">
           <property name="maximumSize">
@@ -245,7 +203,7 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0" colspan="2">
+        <item row="2" column="1">
          <widget class="QCheckBox" name="chkBoxMaxFPS">
           <property name="maximumSize">
            <size>
@@ -258,6 +216,38 @@
           </property>
           <property name="text">
            <string>Maximize fps for image acquisition?</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QPushButton" name="btnSnap">
+          <property name="maximumSize">
+           <size>
+            <width>150</width>
+            <height>160</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Take a single image (or continuously record if the checkbox is checked)</string>
+          </property>
+          <property name="text">
+           <string>Take Image</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QPushButton" name="btnChangeBinning">
+          <property name="maximumSize">
+           <size>
+            <width>160</width>
+            <height>100</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Switch the pixel binning mode of the camera</string>
+          </property>
+          <property name="text">
+           <string>Change to 1X binning</string>
           </property>
          </widget>
         </item>
