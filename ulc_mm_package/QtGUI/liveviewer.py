@@ -1,3 +1,4 @@
+from re import S
 from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
@@ -158,7 +159,7 @@ class CameraStream(QtWidgets.QMainWindow):
         self.cameraThread = None
         self.motor = None
         self.pressure_control = None
-        self.encoder = None
+        self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
         self.led = None
 
         # Load the ui file 
@@ -457,11 +458,19 @@ class CameraStream(QtWidgets.QMainWindow):
         self.vsFlow.setValue(flow_duty_cycle)
 
     def manualFocusWithEncoder(self, increment: int):
-        if increment == 1:
-            self.motor.move_rel(dir=Direction.CW, steps=1)
-        elif increment == -1:
-            self.motor.move_rel(dir=Direction.CCW, steps=1)
-        sleep(0.01)
+        try:
+            if increment == 1:
+                self.motor.move_rel(dir=Direction.CW, steps=5)
+            elif increment == -1:
+                self.motor.move_rel(dir=Direction.CCW, steps=5)
+            sleep(0.01)
+            self.updateMotorPosition(self.motor.pos)
+        except MotorControllerError:
+            print("Invalid move.")
+            self.encoder.setColor(255, 0, 0)
+            sleep(0.1)
+            self.encoder.setColor(12, 159, 217)
+
 
     def changeExposureWithEncoder(self, increment):
         if increment == 1:
