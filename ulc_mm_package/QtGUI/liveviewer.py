@@ -28,8 +28,8 @@ WRITE_NUMPY = True
 
 if BIG_SCREEN:
     _UI_FILE_DIR = "liveview_big.ui"
-    LABEL_WIDTH = 1040
-    LABEL_HEIGHT = 780
+    LABEL_WIDTH = 1307
+    LABEL_HEIGHT = 980
 else:
     _UI_FILE_DIR = "liveview.ui"
     LABEL_WIDTH = 480
@@ -39,6 +39,9 @@ class CameraThread(QThread):
     changePixmap = pyqtSignal(QImage)
     motorPosChanged = pyqtSignal(int)
     updatePressure = pyqtSignal(float)
+    fps = pyqtSignal(int)
+    update_counter = 0
+    num_loops = 100
     camera_activated = False
     main_dir = None
     single_save = False
@@ -61,10 +64,16 @@ class CameraThread(QThread):
     def run(self):
         while True:
             if self.camera_activated:
+                start = perf_counter()
                 try:
                     for image in self.livecam.yieldImages():
-                        if self.pressure_sensor != None:
-                            self.updatePressure.emit(self.pressure_sensor.pressure)
+                        self.update_counter += 1
+                        if self.update_counter % self.num_loops == 0:
+                            self.update_counter = 0
+                            if self.pressure_sensor != None:
+                                self.updatePressure.emit(self.pressure_sensor.pressure)
+                            self.fps.emit(int(self.num_loops / (perf_counter() - start)))
+                            start = perf_counter()
 
                         if self.single_save:
                             filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
@@ -95,7 +104,6 @@ class CameraThread(QThread):
                         if self.liveview:
                             qimage = gray2qimage(image)
                             self.changePixmap.emit(qimage)
-                            
                             
                 except Exception as e:
                     # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
@@ -186,7 +194,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
             self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)
-            self.vsFocus.valueChanged.connect(self.vsFocusHandler)
+            self.vsFocus.sliderReleased.connect(self.vsFocusHandler)
             self.txtBoxFocus.editingFinished.connect(self.focusTextBoxHandler)
             self.btnZStack.clicked.connect(self.btnZStackHandler)
             self.vsFocus.setMinimum(self.motor.pos)
@@ -223,6 +231,7 @@ class CameraStream(QtWidgets.QMainWindow):
         self.cameraThread.changePixmap.connect(self.updateImage)
         self.cameraThread.motorPosChanged.connect(self.updateMotorPosition)
         self.cameraThread.updatePressure.connect(self.updatePressureLabel)
+        self.cameraThread.fps.connect(self.updateFPS)
         self.cameraThread.pressure_sensor = self.pressure_control.mpr
         self.txtBoxExposure.editingFinished.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxRecordHandler)
@@ -319,7 +328,10 @@ class CameraStream(QtWidgets.QMainWindow):
 
     @pyqtSlot(float)
     def updatePressureLabel(self, val):
-        self.lblPressure.setText(f"{val} hPa")
+        self.lblPressure.setText(f"{val:.2f} hPa")
+
+    def updateFPS(self, val):
+        self.lblFPS.setText(f"{val}fps")
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
