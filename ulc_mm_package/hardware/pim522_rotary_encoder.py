@@ -37,7 +37,7 @@ class PIM522RotaryEncoder():
         BRIGHTNESS = 1                  # Effectively the maximum fraction of the period that the LED will be on
         PERIOD = int(255 / BRIGHTNESS)  # Add a period large enough to get 0-255 steps at the desired brightness
 
-        ioe = io.IOE(i2c_addr=self.I2C_ADDR, interrupt_pin=4)
+        ioe = io.IOE(i2c_addr=self.I2C_ADDR, interrupt_pin=17)
 
         # Swap the interrupt pin for the Rotary Encoder breakout
         if self.I2C_ADDR == 0x0F:
@@ -56,8 +56,12 @@ class PIM522RotaryEncoder():
         self.ioe = ioe
         self.count = self.ioe.read_rotary_encoder(1)
 
+        self.enableInterrupt()
+        self.setInterruptCallback(callback_func)
+        self.setColor(12, 159, 217) # Biohub blue
+
     def __del__(self):
-        self.set_color(0, 0, 0)
+        self.setColor(0, 0, 0)
         sleep(0.5)
     
     def disableInterrupt(self):
@@ -78,7 +82,6 @@ class PIM522RotaryEncoder():
                 self.ioe.clear_interrupt()
         self.ioe.on_interrupt(callback=callback)
         self.ioe.clear_interrupt()
-            
 
     def getCount(self):
         return self.count
@@ -96,8 +99,6 @@ if __name__ == "__main__":
         print(f"Bye: {dir}")
 
     enc = PIM522RotaryEncoder(callback_func=hi)
-    enc.enableInterrupt()
-    enc.setInterruptCallback(hi)
     try:
         from time import sleep
         while True:
