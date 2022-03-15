@@ -170,7 +170,7 @@ class DRV8825Nema():
         try:
             # Move the motor until it hits the CCW limit switch
             try:
-                self.move_rel(dir=Direction.CCW, steps=self.max_pos)
+                self.move_rel(dir=Direction.CCW, steps=1e6)
             except StopMotorInterrupt:
                 # Move slightly until the limit switch is no longer active
                 while not self._pi.read(self.lim1):
@@ -180,7 +180,7 @@ class DRV8825Nema():
             if self.lim2 != None:
                 # Move to the CW limit switch
                 try:
-                    self.move_rel(dir=Direction.CW, steps=self.max_pos)
+                    self.move_rel(dir=Direction.CW, steps=1e6)
                 except StopMotorInterrupt:
                     while not self._pi.read(self.lim1):
                         self._move_rel_steps(dir=Direction.CCW, steps=1)
