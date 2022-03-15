@@ -38,6 +38,7 @@ else:
 class CameraThread(QThread):
     changePixmap = pyqtSignal(QImage)
     motorPosChanged = pyqtSignal(int)
+    zStackFinished = pyqtSignal(int)
     updatePressure = pyqtSignal(float)
     fps = pyqtSignal(int)
     update_counter = 0
@@ -91,15 +92,17 @@ class CameraThread(QThread):
                         if self.takeZStack:
                             try:
                                 self.zstack.send(image)
+                                self.motorPosChanged.emit(self.motor.pos)
                             except StopIteration:
                                 self.takeZStack = False
                                 self.motorPosChanged.emit(self.motor.pos)
+                                self.zStackFinished.emit(1)
                             except ValueError:
                                 # Occurs if an image is sent while the function is still moving the motor
                                 pass
 
-                        if self.scale_image:
-                            image = cv2.resize(image.astype('uint8'), (LABEL_WIDTH, LABEL_HEIGHT))
+                        # if self.scale_image:
+                        #     image = cv2.resize(image.astype('uint8'), (LABEL_WIDTH, LABEL_HEIGHT))
 
                         if self.liveview:
                             qimage = gray2qimage(image)
@@ -230,6 +233,7 @@ class CameraStream(QtWidgets.QMainWindow):
         # Acquisition thread
         self.cameraThread.changePixmap.connect(self.updateImage)
         self.cameraThread.motorPosChanged.connect(self.updateMotorPosition)
+        self.cameraThread.zStackFinished.connect(self.zStackFinished)
         self.cameraThread.updatePressure.connect(self.updatePressureLabel)
         self.cameraThread.fps.connect(self.updateFPS)
         self.cameraThread.pressure_sensor = self.pressure_control.mpr
@@ -409,8 +413,14 @@ class CameraStream(QtWidgets.QMainWindow):
         retval = msgBox.exec()
 
         if retval == QtWidgets.QMessageBox.Ok:
-            # Move syringe back and de-energize
+            self.vsFocus.blockSignals(True)
+            self.txtBoxFocus.blockSignals(True)
             self.cameraThread.runZStack(self.motor)
+
+    @pyqtSlot(int)
+    def zStackFinished(self, val):
+        self.vsFocus.blockSignals(False)
+        self.txtBoxFocus.blockSignals(False)
 
     def btnFlowUpHandler(self):
         self.pressure_control.increaseDutyCycle()
