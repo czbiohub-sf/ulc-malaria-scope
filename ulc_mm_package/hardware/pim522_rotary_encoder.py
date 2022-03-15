@@ -60,7 +60,7 @@ class PIM522RotaryEncoder():
         self.setInterruptCallback(callback_func)
         self.setColor(12, 159, 217) # Biohub blue
 
-    def __del__(self):
+    def close(self):
         self.setColor(0, 0, 0)
         sleep(0.5)
     
