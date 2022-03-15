@@ -8,6 +8,7 @@ Datasheet:
 from ulc_mm_package.hardware.hardware_constants import (
     LED_PWM_PIN,
     ANALOG_DIM_MODE_DUTYCYCLE,
+    PWM_DIM_MODE_DUTYCYCLE,
     PWM_DIMMING_MAX_FREQ_HZ
 )
 import pigpio
@@ -29,10 +30,8 @@ class LED_TPS5420TDDCT():
         self._pi = pi if pi != None else pigpio.pi()
         self._pi = pigpio.pi()
 
-        # Set the dimming mode to PWM (see datasheet, page 17). 
-        # On boot and until a mode is initially selected, the
-        # device polls every 300us
-        self._pi.hardware_PWM(self.pwm_pin, 1000, self.pwm_duty_cycle)
+        # Set the dimming mode (see datasheet, page 17)
+        self._pi.hardware_PWM(self.pwm_pin, 5000, self.pwm_duty_cycle)
         sleep(0.0005)
         self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, 0)
 
