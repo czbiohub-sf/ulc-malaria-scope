@@ -27,7 +27,7 @@ class ZarrWriter():
         self.store = None
         self.group = None
         self.arr_counter = 0
-        self.compressor = Zstd(level=7)
+        self.compressor = Zstd(level=1)
 
     def createNewFile(self, filename: str, overwrite: bool=False):
         """Create a new zarr file.
