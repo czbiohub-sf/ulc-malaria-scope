@@ -14,9 +14,6 @@ from ulc_mm_package.hardware.hardware_constants import (
 import pigpio
 from time import sleep
 
-# Set default resolution to 1000 (i.e three decimal points, e.g 0.499 -> 499, but 0.4991 -> 499.1 and would be rounded)
-DUTY_CYCLE_RESOLUTION = 1000 # valid range is 25-40000 (see http://abyz.me.uk/rpi/pigpio/python.html#set_PWM_range)
-
 class LEDError(Exception):
     """Base class for catching LED errors."""
     pass

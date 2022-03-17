@@ -49,7 +49,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
     while step_counter < max_steps:
         img = yield img
         focus_metrics.append(gradientAverage(img))
-        motor.move_rel(steps=steps_per_coarse, dir=Direction.CW)
+        motor.move_rel(steps=steps_per_coarse, dir=Direction.CW, stepdelay=0.001)
         step_counter += steps_per_coarse
     
     # Do a 1um sweep closer to where the true focus is
@@ -138,7 +138,7 @@ def symmetricZStackCoroutine(motor: DRV8825Nema, start_point: int, num_steps: in
     while step_counter < max_pos:
         image = yield image
         focus_metrics.append(gradientAverage(image))
-        motor.move_rel(steps=steps_per_image, dir=Direction.CW)
+        motor.move_rel(steps=steps_per_image, dir=Direction.CW, stepdelay=0.001)
         if save_images:
             cv2.imwrite(save_dir + f"{step_counter:03d}.tiff", image)
         step_counter += steps_per_image

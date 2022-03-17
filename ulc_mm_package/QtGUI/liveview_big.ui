@@ -378,7 +378,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="btnZStack">
+           <widget class="QPushButton" name="btnFullZStack">
             <property name="maximumSize">
              <size>
               <width>150</width>
@@ -386,7 +386,20 @@
              </size>
             </property>
             <property name="text">
-             <string>Focus</string>
+             <string>Global ZStack</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnLocalZStack">
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Local ZStack</string>
             </property>
            </widget>
           </item>

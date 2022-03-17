@@ -7,7 +7,7 @@ from ulc_mm_package.hardware.pressure_control import PressureControl, PressureCo
 from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN
 from ulc_mm_package.hardware.zarrwriter import ZarrWriter
 
-from ulc_mm_package.image_processing.zstack import takeZStackCoroutine
+from ulc_mm_package.image_processing.zstack import takeZStackCoroutine, symmetricZStackCoroutine
 
 import sys
 import traceback
@@ -141,10 +141,16 @@ class CameraThread(QThread):
         
         self.camera_activated = True
     
-    def runZStack(self, motor):
+    def runFullZStack(self, motor):
         self.takeZStack = True
         self.motor = motor
         self.zstack = takeZStackCoroutine(None, motor)
+        self.zstack.send(None)
+
+    def runLocalZStack(self, motor):
+        self.takeZStack = True
+        self.motor = motor
+        self.zstack = symmetricZStackCoroutine(None, motor)
         self.zstack.send(None)
 
 class CameraStream(QtWidgets.QMainWindow):
@@ -198,7 +204,8 @@ class CameraStream(QtWidgets.QMainWindow):
             self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)
             self.vsFocus.sliderReleased.connect(self.vsFocusHandler)
             self.txtBoxFocus.editingFinished.connect(self.focusTextBoxHandler)
-            self.btnZStack.clicked.connect(self.btnZStackHandler)
+            self.btnFullZStack.clicked.connect(self.btnFullZStackHandler)
+            self.btnLocalZStack.clicked.connect(self.btnLocalZStackHandler)
             self.vsFocus.setMinimum(self.motor.pos)
             self.vsFocus.setValue(self.motor.pos)
             self.vsFocus.setMaximum(self.motor.max_pos)
@@ -391,21 +398,40 @@ class CameraStream(QtWidgets.QMainWindow):
 
         self.vsFocus.setValue(pos)
 
-    def btnZStackHandler(self):
+    def btnFullZStackHandler(self):
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-        msgBox.setText("Press okay to sweep the motor and automatically find and move to the focal position.")
-        msgBox.setWindowTitle("ZStack and Move to Focus")
+        msgBox.setText("Press okay to sweep the motor over its entire range and automatically find and move to the focal position.")
+        msgBox.setWindowTitle("Full Range ZStack")
         msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         retval = msgBox.exec()
 
         if retval == QtWidgets.QMessageBox.Ok:
             self.vsFocus.blockSignals(True)
             self.txtBoxFocus.blockSignals(True)
-            self.cameraThread.runZStack(self.motor)
+            self.btnLocalStack.enable(False)
+            self.btnFullZStack.enable(False)
+            self.cameraThread.runFullZStack(self.motor)
+
+    def btnLocalZStackHandler(self):
+        msgBox = QtWidgets.QMessageBox()
+        msgBox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+        msgBox.setText("Press okay to sweep the motor over its current nearby vicinity and move to the focal position.")
+        msgBox.setWindowTitle("Local Range ZStack")
+        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        retval = msgBox.exec()
+
+        if retval == QtWidgets.QMessageBox.Ok:
+            self.vsFocus.blockSignals(True)
+            self.txtBoxFocus.blockSignals(True)
+            self.btnLocalStack.enable(False)
+            self.btnFullZStack.enable(False)
+            self.cameraThread.runLocalZStack(self.motor)
 
     @pyqtSlot(int)
     def zStackFinished(self, val):
+        self.btnLocalStack.enable(False)
+        self.btnFullZStack.enable(False)
         self.vsFocus.blockSignals(False)
         self.txtBoxFocus.blockSignals(False)
 
