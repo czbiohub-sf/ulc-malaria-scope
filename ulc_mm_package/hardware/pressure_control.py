@@ -35,7 +35,7 @@ class PressureControl():
         self.servo_pin = servo_pin
 
         # Convert to valid PWM value
-        self.min_step_size = 50
+        self.min_step_size = 10
         self.min_duty_cycle = 1600
         self.max_duty_cycle = 2200
         self.duty_cycle = self.max_duty_cycle
