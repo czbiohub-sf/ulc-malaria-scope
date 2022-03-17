@@ -432,8 +432,10 @@ class CameraStream(QtWidgets.QMainWindow):
     
     @pyqtSlot(int)
     def zStackFinished(self, val):
-        self.btnLocalZStack.enable(False)
-        self.btnFullZStack.enable(False)
+        self.btnFocusUp.setEnabled(True)
+        self.btnFocusDown.setEnabled(True)
+        self.btnLocalZStack.setEnabled(True)
+        self.btnFullZStack.setEnabled(True)
         self.vsFocus.blockSignals(False)
         self.txtBoxFocus.blockSignals(False)
 
