@@ -9,9 +9,25 @@ Datasheet:
 
 import enum
 import time
+import functools
+import threading
 import pigpio
 
 from ulc_mm_package.hardware.hardware_constants import *
+
+MOTOR_LOCK = threading.Lock()
+
+def lockNoBlock(lock):
+	def lockDecorator(func):
+		@functools.wraps(func)
+
+		def wrapper(*args, **kwargs):
+			if not lock.locked():
+				with lock:
+					return func(*args, **kwargs)
+
+		return wrapper
+	return lockDecorator
 
 # ==================== Custom errors ===============================
 
@@ -27,8 +43,16 @@ class StopMotorInterrupt(MotorControllerError):
     """ Stop the motor. """
     pass
 
+class MotorInMotion(MotorControllerError):
+    pass
+
 class InvalidMove(MotorControllerError):
     """Error raised if an invalid move is attempted."""
+    pass
+
+class InMotion(MotorControllerError):
+    """Error raised if the motor is already in motion
+    when another move command is called."""
     pass
 
 # ==================== Convenience enum for readability ===============================
@@ -209,6 +233,7 @@ class DRV8825Nema():
             time.sleep(stepdelay)
             self.pos += step_increment
 
+    @lockNoBlock(MOTOR_LOCK)
     def move_rel(self, dir=Direction.CCW,
                  steps: int=200, stepdelay=.005, verbose=False, initdelay=.05):
         """Move the motor a relative number of steps (if the move is valid).
@@ -284,6 +309,7 @@ class DRV8825Nema():
                 print("Size of turn in degrees = {}"
                       .format(self.degree_calc(steps)))
 
+    @lockNoBlock(MOTOR_LOCK)
     def move_abs(self, pos: int=200, stepdelay=.005, verbose=False, initdelay=.05):
         """Move the motor to the given position (if valid).
 
@@ -359,6 +385,18 @@ class DRV8825Nema():
                 print("Intial delay = {}".format(initdelay))
                 print("Size of turn in degrees = {}"
                       .format(self.degree_calc(steps)))
+
+    def threaded_move_rel(self, *args, **kwargs):
+        if not MOTOR_LOCK.locked:
+            threading.Thread(target=self.move_rel, args=args, kwargs=kwargs).start()
+        else:
+            raise MotorInMotion
+
+    def threaded_move_abs(self, *args, **kwargs):
+        if not MOTOR_LOCK.locked:
+            threading.Thread(target=self.move_abs, args=args, kwargs=kwargs).start()
+        else:
+            raise MotorInMotion
 
 if __name__ == "__main__":
     print("Instantiating motor...")

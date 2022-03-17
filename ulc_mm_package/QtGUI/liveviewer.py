@@ -360,7 +360,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def btnFocusUpHandler(self):
         try:
-            self.motor.move_rel(dir=Direction.CW, steps=1)
+            self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
         except MotorControllerError as e:
             print(e)
             
@@ -369,7 +369,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def btnFocusDownHandler(self):
         try:
-            self.motor.move_rel(dir=Direction.CCW, steps=1)
+            self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
         except MotorControllerError as e:
             print(e)
 
@@ -378,7 +378,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def vsFocusHandler(self):
         pos = int(self.vsFocus.value())
-        self.motor.move_abs(pos=pos)
+        self.motor.threaded_move_abs(pos=pos)
         self.txtBoxFocus.setText(f"{self.motor.pos}")
 
     def focusTextBoxHandler(self):
@@ -390,7 +390,7 @@ class CameraStream(QtWidgets.QMainWindow):
             return
 
         try:
-            self.motor.move_abs(pos)
+            self.motor.threaded_move_abs(pos)
         except:
             print("Invalid position to move the motor.")
             self.txtBoxFocus.setText(f"{self.vsFocus.value()}")
@@ -476,9 +476,9 @@ class CameraStream(QtWidgets.QMainWindow):
     def manualFocusWithEncoder(self, increment: int):
         try:
             if increment == 1:
-                self.motor.move_rel(dir=Direction.CW, steps=5)
+                self.motor.threaded_move_rel(dir=Direction.CW, steps=5)
             elif increment == -1:
-                self.motor.move_rel(dir=Direction.CCW, steps=5)
+                self.motor.threaded_move_rel(dir=Direction.CCW, steps=5)
             sleep(0.01)
             self.updateMotorPosition(self.motor.pos)
         except MotorControllerError:
