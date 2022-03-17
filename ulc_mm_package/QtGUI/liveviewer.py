@@ -35,12 +35,15 @@ else:
     LABEL_HEIGHT = 360
 
 class AcquisitionThread(QThread):
+    # Qt signals must be defined at the class-level (not instance-level)
+    changePixmap = pyqtSignal(QImage)
+    motorPosChanged = pyqtSignal(int)
+    zStackFinished = pyqtSignal(int)
+    updatePressure = pyqtSignal(float)
+    fps = pyqtSignal(int)
+
     def __init__(self):
-        self.changePixmap = pyqtSignal(QImage)
-        self.motorPosChanged = pyqtSignal(int)
-        self.zStackFinished = pyqtSignal(int)
-        self.updatePressure = pyqtSignal(float)
-        self.fps = pyqtSignal(int)
+        super().__init__()
         self.update_liveview = 1
         self.update_counter = 0
         self.num_loops = 50
@@ -212,7 +215,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.vsFocus.sliderReleased.connect(self.vsFocusHandler)
             self.vsFocus.sliderPressed.connect(self.vsFocusClickHandler)
             self.txtBoxFocus.editingFinished.connect(self.focusTextBoxHandler)
-            self.txtBoxFocus.clicked.connect(self.txtBoxFocusClickHandler)
+            self.txtBoxFocus.gotFocus.connect(self.txtBoxFocusGotFocus)
             self.btnFullZStack.clicked.connect(self.btnFullZStackHandler)
             self.btnLocalZStack.clicked.connect(self.btnLocalZStackHandler)
             self.vsFocus.setMinimum(self.motor.pos)
@@ -279,7 +282,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.lblMinExposure.setText(f"{min_exposure_us} us")
         self.lblMaxExposure.setText(f"{max_exposure_us} us")
 
-    def txtBoxFocusClickHandler(self):
+    def txtBoxFocusGotFocus(self):
         self.acquisitionThread.updateMotorPos = False
 
     def vsFocusClickHandler(self):
