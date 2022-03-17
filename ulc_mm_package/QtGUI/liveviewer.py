@@ -409,7 +409,7 @@ class CameraStream(QtWidgets.QMainWindow):
         if retval == QtWidgets.QMessageBox.Ok:
             self.vsFocus.blockSignals(True)
             self.txtBoxFocus.blockSignals(True)
-            self.btnLocalStack.enable(False)
+            self.btnLocalZStack.enable(False)
             self.btnFullZStack.enable(False)
             self.cameraThread.runFullZStack(self.motor)
 
@@ -424,7 +424,7 @@ class CameraStream(QtWidgets.QMainWindow):
         if retval == QtWidgets.QMessageBox.Ok:
             self.vsFocus.blockSignals(True)
             self.txtBoxFocus.blockSignals(True)
-            self.btnLocalStack.enable(False)
+            self.btnLocalZStack.enable(False)
             self.btnFullZStack.enable(False)
             self.cameraThread.runLocalZStack(self.motor)
 
