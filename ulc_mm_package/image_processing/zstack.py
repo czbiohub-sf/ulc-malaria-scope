@@ -137,10 +137,10 @@ def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_step
     focus_metrics = []
     while step_counter < max_pos:
         img = yield img
-        focus_metrics.append(gradientAverage(image))
+        focus_metrics.append(gradientAverage(img))
         motor.move_rel(steps=steps_per_image, dir=Direction.CW, stepdelay=0.001)
         if save_images:
-            cv2.imwrite(save_dir + f"{step_counter:03d}.tiff", image)
+            cv2.imwrite(save_dir + f"{step_counter:03d}.tiff", img)
         step_counter += steps_per_image
         if step_counter > max_pos:
             break
