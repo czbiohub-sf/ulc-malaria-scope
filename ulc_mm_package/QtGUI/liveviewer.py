@@ -407,30 +407,32 @@ class CameraStream(QtWidgets.QMainWindow):
         retval = msgBox.exec()
 
         if retval == QtWidgets.QMessageBox.Ok:
-            self.vsFocus.blockSignals(True)
-            self.txtBoxFocus.blockSignals(True)
-            self.btnLocalZStack.setEnabled(False)
-            self.btnFullZStack.setEnabled(False)
+            self.disableMotorUIElements()
             self.cameraThread.runFullZStack(self.motor)
 
     def btnLocalZStackHandler(self):
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QtWidgets.QMessageBox.Icon.Information)
         msgBox.setText("Press okay to sweep the motor over its current nearby vicinity and move to the focal position.")
-        msgBox.setWindowTitle("Local Range ZStack")
+        msgBox.setWindowTitle("Local Vicinity ZStack")
         msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         retval = msgBox.exec()
 
         if retval == QtWidgets.QMessageBox.Ok:
-            self.vsFocus.blockSignals(True)
-            self.txtBoxFocus.blockSignals(True)
-            self.btnLocalZStack.setEnabled(False)
-            self.btnFullZStack.setEnabled(False)
+            self.disableMotorUIElements()
             self.cameraThread.runLocalZStack(self.motor)
 
+    def disableMotorUIElements(self):
+        self.vsFocus.blockSignals(True)
+        self.txtBoxFocus.blockSignals(True)
+        self.btnFocusUp.setEnabled(False)
+        self.btnFocusDown.setEnabled(False)
+        self.btnLocalZStack.setEnabled(False)
+        self.btnFullZStack.setEnabled(False)
+    
     @pyqtSlot(int)
     def zStackFinished(self, val):
-        self.btnLocalStack.enable(False)
+        self.btnLocalZStack.enable(False)
         self.btnFullZStack.enable(False)
         self.vsFocus.blockSignals(False)
         self.txtBoxFocus.blockSignals(False)
