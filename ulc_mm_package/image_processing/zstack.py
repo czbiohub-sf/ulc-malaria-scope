@@ -117,7 +117,7 @@ def symmetricZStack(camera: ULCMM_Camera, motor: DRV8825Nema, start_point: int, 
     best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
     return best_focus_position, focus_metrics
 
-def symmetricZStackCoroutine(motor: DRV8825Nema, start_point: int, num_steps: int=30, steps_per_image: int=1, save_images=True):
+def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_steps: int=30, steps_per_image: int=1, save_images=True):
     """The coroutine companion to symmetricZStack"""
 
     timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")

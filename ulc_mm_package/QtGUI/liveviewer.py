@@ -141,16 +141,16 @@ class CameraThread(QThread):
         
         self.camera_activated = True
     
-    def runFullZStack(self, motor):
+    def runFullZStack(self, motor: DRV8825Nema):
         self.takeZStack = True
         self.motor = motor
         self.zstack = takeZStackCoroutine(None, motor)
         self.zstack.send(None)
 
-    def runLocalZStack(self, motor):
+    def runLocalZStack(self, motor: DRV8825Nema, start_point: int):
         self.takeZStack = True
         self.motor = motor
-        self.zstack = symmetricZStackCoroutine(None, motor)
+        self.zstack = symmetricZStackCoroutine(None, motor, start_point)
         self.zstack.send(None)
 
 class CameraStream(QtWidgets.QMainWindow):
@@ -420,7 +420,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
         if retval == QtWidgets.QMessageBox.Ok:
             self.disableMotorUIElements()
-            self.cameraThread.runLocalZStack(self.motor)
+            self.cameraThread.runLocalZStack(self.motor, self.motor.pos)
 
     def disableMotorUIElements(self):
         self.vsFocus.blockSignals(True)
