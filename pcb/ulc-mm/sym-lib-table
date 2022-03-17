@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name malaria_parts)(type Legacy)(uri ${KIPRJMOD}/malaria_parts.lib)(options "")(descr ""))
+  (lib (name ulc-mm)(type Legacy)(uri ${KIPRJMOD}/ulc-mm.lib)(options "")(descr ""))
+)
