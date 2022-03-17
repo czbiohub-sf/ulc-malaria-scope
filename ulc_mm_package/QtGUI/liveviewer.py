@@ -1,11 +1,9 @@
-from re import S
 from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
-from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
+from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError, MotorInMotion
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder
 from ulc_mm_package.hardware.pressure_control import PressureControl, PressureControlError
-from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN
-from ulc_mm_package.hardware.zarrwriter import ZarrWriter
+from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 
 from ulc_mm_package.image_processing.zstack import takeZStackCoroutine, symmetricZStackCoroutine
 
@@ -36,83 +34,82 @@ else:
     LABEL_WIDTH = 480
     LABEL_HEIGHT = 360
 
-class CameraThread(QThread):
-    changePixmap = pyqtSignal(QImage)
-    motorPosChanged = pyqtSignal(int)
-    zStackFinished = pyqtSignal(int)
-    updatePressure = pyqtSignal(float)
-    fps = pyqtSignal(int)
-    update_liveview = 1
-    update_counter = 0
-    num_loops = 50
-    camera_activated = False
-    main_dir = None
-    single_save = False
-    continuous_save = False
-    liveview = True
-    takeZStack = False
-    continuous_dir_name = None
-    custom_image_prefix = ''
-    zarr_writer = ZarrWriter()
-    pressure_sensor = None
+class AcquisitionThread(QThread):
+    def __init__(self):
+        self.changePixmap = pyqtSignal(QImage)
+        self.motorPosChanged = pyqtSignal(int)
+        self.zStackFinished = pyqtSignal(int)
+        self.updatePressure = pyqtSignal(float)
+        self.fps = pyqtSignal(int)
+        self.update_liveview = 1
+        self.update_counter = 0
+        self.num_loops = 50
+        self.camera_activated = False
+        self.main_dir = None
+        self.single_save = False
+        self.continuous_save = False
+        self.liveview = True
+        self.takeZStack = False
+        self.continuous_dir_name = None
+        self.custom_image_prefix = ''
+        self.zarr_writer = ZarrWriter()
+        self.pressure_sensor = None
+        self.motor = None
+        self.updateMotorPos = True
+        self.start_time = perf_counter()
 
-    try:
-        livecam = ULCMM_Camera()
-        camera_activated = True
-    except CameraError:
-        camera_activated = False
+        try:
+            self.camera = ULCMM_Camera()
+            self.camera_activated = True
+        except CameraError:
+            self.camera_activated = False
 
     def run(self):
         while True:
             if self.camera_activated:
-                start = perf_counter()
                 try:
-                    for image in self.livecam.yieldImages():
-                        self.update_counter += 1
-                        if self.update_counter % self.num_loops == 0:
-                            self.update_counter = 0
-                            if self.pressure_sensor != None:
-                                self.updatePressure.emit(self.pressure_sensor.pressure)
-                            self.fps.emit(int(self.num_loops / (perf_counter() - start)))
-                            start = perf_counter()
-
-                        if self.single_save:
-                            filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
-                            cv2.imwrite(filename, image)
-                            self.single_save = False
-
-                        if self.continuous_save and self.continuous_dir_name != None:
-                            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}{self.im_counter:05}"
-                            if WRITE_NUMPY:
-                                np.save(filename+".npy", image)
-                            else:
-                                cv2.imwrite(filename+".tiff", image)
-                            self.im_counter += 1
-                        
-                        if self.takeZStack:
-                            try:
-                                self.zstack.send(image)
-                                self.motorPosChanged.emit(self.motor.pos)
-                            except StopIteration:
-                                self.takeZStack = False
-                                self.motorPosChanged.emit(self.motor.pos)
-                                self.zStackFinished.emit(1)
-                            except ValueError:
-                                # Occurs if an image is sent while the function is still moving the motor
-                                pass
+                    for image in self.camera.yieldImages():
+                        self.updateGUIElements()
+                        self.save(image)
+                        self.zStack(image)
 
                         if self.liveview and self.update_counter % self.update_liveview == 0:
                             qimage = gray2qimage(image)
                             self.changePixmap.emit(qimage)
-                            
                 except Exception as e:
                     # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
                     # Once that happens, this can be swapped to catch the PyCameraException
                     print(e)
                     print(traceback.format_exc())
 
+    def save(self, image):
+        if self.single_save:
+            filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
+            cv2.imwrite(filename, image)
+            self.single_save = False
+
+        if self.continuous_save and self.continuous_dir_name != None:
+            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}{self.im_counter:05}"
+            if WRITE_NUMPY:
+                np.save(filename+".npy", image)
+            else:
+                cv2.imwrite(filename+".tiff", image)
+            self.im_counter += 1
+
+    def updateGUIElements(self):
+        self.update_counter += 1
+        if self.updateMotorPos:
+            self.motorPosChanged.emit(self.motor.pos)
+
+        if self.update_counter % self.num_loops == 0:
+            self.update_counter = 0
+            if self.pressure_sensor != None:
+                self.updatePressure.emit(self.pressure_sensor.pressure)
+            self.fps.emit(int(self.num_loops / (perf_counter() - self.start_time)))
+            self.start_time = perf_counter()
+
     def updateExposure(self, exposure):
-        self.livecam.exposureTime_ms = exposure
+        self.camera.exposureTime_ms = exposure
 
     def takeImage(self):
         if self.main_dir == None:
@@ -127,17 +124,17 @@ class CameraThread(QThread):
 
     def changeBinningMode(self):
         if self.camera_activated:
-            self.livecam.stopAcquisition()
+            self.camera.stopAcquisition()
             self.camera_activated = False
         
-        if self.livecam.camera.BinningHorizontal.GetValue() == 2:
+        if self.camera.camera.BinningHorizontal.GetValue() == 2:
             print("Changing to 1x1 binning.")
             self.binning = 1
-            self.livecam.setBinning(bin_factor=1, mode="Average")
+            self.camera.setBinning(bin_factor=1, mode="Average")
         else:
             print("Changing to 2x2 binning.")
             self.binning = 2
-            self.livecam.setBinning(bin_factor=2, mode="Average")
+            self.camera.setBinning(bin_factor=2, mode="Average")
         
         self.camera_activated = True
     
@@ -153,12 +150,25 @@ class CameraThread(QThread):
         self.zstack = symmetricZStackCoroutine(None, motor, start_point)
         self.zstack.send(None)
 
-class CameraStream(QtWidgets.QMainWindow):
+    def zStack(self, image):
+        if self.takeZStack:
+            try:
+                self.zstack.send(image)
+                self.motorPosChanged.emit(self.motor.pos)
+            except StopIteration:
+                self.takeZStack = False
+                self.motorPosChanged.emit(self.motor.pos)
+                self.zStackFinished.emit(1)
+            except ValueError:
+                # Occurs if an image is sent while the function is still moving the motor
+                pass
+
+class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
-        super(CameraStream, self).__init__(*args, **kwargs)
+        super(MalariaScopeGUI, self).__init__(*args, **kwargs)
         
         # List hardware components
-        self.cameraThread = None
+        self.acquisitionThread = None
         self.motor = None
         self.pressure_control = None
         self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
@@ -167,14 +177,11 @@ class CameraStream(QtWidgets.QMainWindow):
         # Load the ui file 
         uic.loadUi(_UI_FILE_DIR, self)
 
-        # self.showMaximized()
-
         # Start the video stream
-        self.cameraThread = CameraThread()
-        self.cameraThread.start()
+        self.acquisitionThread = AcquisitionThread()
         self.recording = False
         
-        if not self.cameraThread.camera_activated:
+        if not self.acquisitionThread.camera_activated:
             print(f"Error initializing Basler camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
@@ -203,7 +210,9 @@ class CameraStream(QtWidgets.QMainWindow):
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
             self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)
             self.vsFocus.sliderReleased.connect(self.vsFocusHandler)
+            self.vsFocus.sliderPressed.connect(self.vsFocusClickHandler)
             self.txtBoxFocus.editingFinished.connect(self.focusTextBoxHandler)
+            self.txtBoxFocus.clicked.connect(self.txtBoxFocusClickHandler)
             self.btnFullZStack.clicked.connect(self.btnFullZStackHandler)
             self.btnLocalZStack.clicked.connect(self.btnLocalZStackHandler)
             self.vsFocus.setMinimum(self.motor.pos)
@@ -237,18 +246,20 @@ class CameraStream(QtWidgets.QMainWindow):
         ### Connect UI elements to actions ###
 
         # Acquisition thread
-        self.cameraThread.changePixmap.connect(self.updateImage)
-        self.cameraThread.motorPosChanged.connect(self.updateMotorPosition)
-        self.cameraThread.zStackFinished.connect(self.zStackFinished)
-        self.cameraThread.updatePressure.connect(self.updatePressureLabel)
-        self.cameraThread.fps.connect(self.updateFPS)
-        self.cameraThread.pressure_sensor = self.pressure_control.mpr
+        self.acquisitionThread.changePixmap.connect(self.updateImage)
+        self.acquisitionThread.motorPosChanged.connect(self.updateMotorPosition)
+        self.acquisitionThread.motor = self.motor
+        self.acquisitionThread.zStackFinished.connect(self.enableMotorUIElements)
+        self.acquisitionThread.updatePressure.connect(self.updatePressureLabel)
+        self.acquisitionThread.fps.connect(self.updateFPS)
+        self.acquisitionThread.pressure_sensor = self.pressure_control.mpr
         self.txtBoxExposure.editingFinished.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxRecordHandler)
         self.chkBoxMaxFPS.stateChanged.connect(self.checkBoxMaxFPSHandler)
         self.btnSnap.clicked.connect(self.btnSnapHandler)
         self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
         self.btnChangeBinning.clicked.connect(self.btnChangeBinningHandler)
+        self.acquisitionThread.start()
 
         # Pressure control
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
@@ -268,6 +279,12 @@ class CameraStream(QtWidgets.QMainWindow):
         self.lblMinExposure.setText(f"{min_exposure_us} us")
         self.lblMaxExposure.setText(f"{max_exposure_us} us")
 
+    def txtBoxFocusClickHandler(self):
+        self.acquisitionThread.updateMotorPos = False
+
+    def vsFocusClickHandler(self):
+        self.acquisitionThread.updateMotorPos = False
+        
     def checkBoxRecordHandler(self):
         if self.chkBoxRecord.checkState():
             # Continuously record images to a new subfolder
@@ -277,41 +294,41 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def checkBoxMaxFPSHandler(self):
         if self.chkBoxMaxFPS.checkState():
-            self.cameraThread.update_liveview = 99
+            self.acquisitionThread.update_liveview = 99
         else:
-            self.cameraThread.update_liveview = 1
+            self.acquisitionThread.update_liveview = 1
 
     def btnSnapHandler(self):
         if self.recording:
             self.recording = False
-            self.cameraThread.continuous_save = False
+            self.acquisitionThread.continuous_save = False
             self.btnSnap.setText("Record images")
             self.chkBoxRecord.setEnabled(True)
             self.chkBoxMaxFPS.setEnabled(True)
             end_time = perf_counter()
-            start_time = self.cameraThread.start_time
-            num_images = self.cameraThread.im_counter
+            start_time = self.acquisitionThread.start_time
+            num_images = self.acquisitionThread.im_counter
             print(f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)")
             return
 
         # Set custom name
         custom_filename = '_' + self.txtBoxCustomFilename.text().replace(' ', '')
-        self.cameraThread.custom_image_prefix = custom_filename if custom_filename != '_' else ''
+        self.acquisitionThread.custom_image_prefix = custom_filename if custom_filename != '_' else ''
         
         if self.chkBoxRecord.checkState():    
-            self.cameraThread.continuous_save = True
+            self.acquisitionThread.continuous_save = True
             self.btnSnap.setText("Stop recording")
             self.recording = True
             self.chkBoxRecord.setEnabled(False)
             self.chkBoxMaxFPS.setEnabled(False)
-            self.cameraThread.takeImage()
+            self.acquisitionThread.takeImage()
         else:
-            self.cameraThread.single_save = True
-            self.cameraThread.takeImage()
+            self.acquisitionThread.single_save = True
+            self.acquisitionThread.takeImage()
 
     def btnChangeBinningHandler(self):
-        self.cameraThread.changeBinningMode()
-        curr_binning_mode = self.cameraThread.livecam.camera.BinningHorizontal.GetValue()
+        self.acquisitionThread.changeBinningMode()
+        curr_binning_mode = self.acquisitionThread.camera.camera.BinningHorizontal.GetValue()
         change_to = 1 if curr_binning_mode == 2 else 2
         self.btnChangeBinning.setText(f"Change to {change_to}X binning")
 
@@ -323,7 +340,7 @@ class CameraStream(QtWidgets.QMainWindow):
     def updateMotorPosition(self, val):
         self.vsFocus.setValue(val)
         self.txtBoxFocus.setText(f"{val}")
-
+    
     @pyqtSlot(float)
     def updatePressureLabel(self, val):
         self.lblPressure.setText(f"{val:.2f} hPa")
@@ -338,7 +355,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def exposureSliderHandler(self):
         exposure = int(self.vsExposure.value())
-        self.cameraThread.updateExposure(exposure / 1000) # Exposure time us -> ms
+        self.acquisitionThread.updateExposure(exposure / 1000) # Exposure time us -> ms
         self.txtBoxExposure.setText(f"{exposure}")
 
     def exposureTextBoxHandler(self):
@@ -351,7 +368,7 @@ class CameraStream(QtWidgets.QMainWindow):
             self.txtBoxExposure.setText(f"{self.vsExposure.value()}")
             return
         try:
-            self.cameraThread.updateExposure(exposure / 1000) # Exposure time us -> ms
+            self.acquisitionThread.updateExposure(exposure / 1000) # Exposure time us -> ms
         except:
             print("Invalid exposure, ignoring and continuing...")
             self.txtBoxExposure.setText(f"{self.vsExposure.value()}")
@@ -361,7 +378,7 @@ class CameraStream(QtWidgets.QMainWindow):
     def btnFocusUpHandler(self):
         try:
             self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
-        except MotorControllerError as e:
+        except MotorInMotion as e:
             print(e)
             
         self.vsFocus.setValue(self.motor.pos)
@@ -370,7 +387,7 @@ class CameraStream(QtWidgets.QMainWindow):
     def btnFocusDownHandler(self):
         try:
             self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
-        except MotorControllerError as e:
+        except MotorInMotion as e:
             print(e)
 
         self.vsFocus.setValue(self.motor.pos)
@@ -378,8 +395,13 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def vsFocusHandler(self):
         pos = int(self.vsFocus.value())
-        self.motor.threaded_move_abs(pos=pos)
+        try:
+            self.motor.threaded_move_abs(pos=pos)
+        except MotorInMotion:
+            print(f"Motor already in motion.")
+            
         self.txtBoxFocus.setText(f"{self.motor.pos}")
+        self.acquisitionThread.updateMotorPos = True
 
     def focusTextBoxHandler(self):
         try:
@@ -391,12 +413,13 @@ class CameraStream(QtWidgets.QMainWindow):
 
         try:
             self.motor.threaded_move_abs(pos)
-        except:
-            print("Invalid position to move the motor.")
+        except MotorInMotion:
+            print("Motor already in motion.")
             self.txtBoxFocus.setText(f"{self.vsFocus.value()}")
             return
 
         self.vsFocus.setValue(pos)
+        self.acquisitionThread.updateMotorPos = True
 
     def btnFullZStackHandler(self):
         msgBox = QtWidgets.QMessageBox()
@@ -408,7 +431,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
         if retval == QtWidgets.QMessageBox.Ok:
             self.disableMotorUIElements()
-            self.cameraThread.runFullZStack(self.motor)
+            self.acquisitionThread.runFullZStack(self.motor)
 
     def btnLocalZStackHandler(self):
         msgBox = QtWidgets.QMessageBox()
@@ -420,7 +443,7 @@ class CameraStream(QtWidgets.QMainWindow):
 
         if retval == QtWidgets.QMessageBox.Ok:
             self.disableMotorUIElements()
-            self.cameraThread.runLocalZStack(self.motor, self.motor.pos)
+            self.acquisitionThread.runLocalZStack(self.motor, self.motor.pos)
 
     def disableMotorUIElements(self):
         self.vsFocus.blockSignals(True)
@@ -431,7 +454,7 @@ class CameraStream(QtWidgets.QMainWindow):
         self.btnFullZStack.setEnabled(False)
     
     @pyqtSlot(int)
-    def zStackFinished(self, val):
+    def enableMotorUIElements(self, _):
         self.btnFocusUp.setEnabled(True)
         self.btnFocusDown.setEnabled(True)
         self.btnLocalZStack.setEnabled(True)
@@ -509,8 +532,8 @@ class CameraStream(QtWidgets.QMainWindow):
             # Turn off the LED
             self.led.close()
             # Turn off camera
-            if self.cameraThread != None:
-                self.cameraThread.camera_activated = False
+            if self.acquisitionThread != None:
+                self.acquisitionThread.camera_activated = False
             # Turn off encoder
             self.encoder.close()
             quit()
@@ -521,6 +544,6 @@ class CameraStream(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    main_window = CameraStream()
+    main_window = MalariaScopeGUI()
     main_window.show()
     sys.exit(app.exec_())

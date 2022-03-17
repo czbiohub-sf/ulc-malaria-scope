@@ -18,16 +18,18 @@ from ulc_mm_package.hardware.hardware_constants import *
 MOTOR_LOCK = threading.Lock()
 
 def lockNoBlock(lock):
-	def lockDecorator(func):
-		@functools.wraps(func)
+    def lockDecorator(func):
+        @functools.wraps(func)
 
-		def wrapper(*args, **kwargs):
-			if not lock.locked():
-				with lock:
-					return func(*args, **kwargs)
+        def wrapper(*args, **kwargs):
+            if not lock.locked():
+                with lock:
+                    return func(*args, **kwargs)
+            else:
+                raise MotorInMotion
 
-		return wrapper
-	return lockDecorator
+        return wrapper
+    return lockDecorator
 
 # ==================== Custom errors ===============================
 
@@ -48,11 +50,6 @@ class MotorInMotion(MotorControllerError):
 
 class InvalidMove(MotorControllerError):
     """Error raised if an invalid move is attempted."""
-    pass
-
-class InMotion(MotorControllerError):
-    """Error raised if the motor is already in motion
-    when another move command is called."""
     pass
 
 # ==================== Convenience enum for readability ===============================
@@ -387,13 +384,13 @@ class DRV8825Nema():
                       .format(self.degree_calc(steps)))
 
     def threaded_move_rel(self, *args, **kwargs):
-        if not MOTOR_LOCK.locked:
+        if not MOTOR_LOCK.locked():
             threading.Thread(target=self.move_rel, args=args, kwargs=kwargs).start()
         else:
             raise MotorInMotion
 
     def threaded_move_abs(self, *args, **kwargs):
-        if not MOTOR_LOCK.locked:
+        if not MOTOR_LOCK.locked():
             threading.Thread(target=self.move_abs, args=args, kwargs=kwargs).start()
         else:
             raise MotorInMotion

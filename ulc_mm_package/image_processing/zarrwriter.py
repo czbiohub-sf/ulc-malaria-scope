@@ -51,9 +51,11 @@ class ZarrWriter():
         except AttributeError:
             raise IOError(f"Error creating {filename}.zip")
 
-    def writeSingleArray(self, data):
+    def writeSingleArray(self, data, metadata={}):
         try:
-            self.group.create_dataset(f"{self.arr_counter}", data=data, compressor=self.compressor)
+            ds = self.group.create_dataset(f"{self.arr_counter}", data=data, compressor=self.compressor)
+            for key in metadata.keys():
+                ds.attrs[key] = metadata[key]
             self.arr_counter += 1
         except Exception:
             raise AttemptingWriteWithoutFile()
