@@ -92,10 +92,10 @@ class PressureControl():
     def sweepAndGetPressures(self):
         """Sweep the syringe and read pressure values."""
         min, max = self.getMinDutyCycle(), self.getMaxDutyCycle()
-        self.setDutyCycle(min)
+        self.setDutyCycle(max)
         pressure_readings_hpa = []
-        while self.duty_cycle < max:
+        while self.duty_cycle > min:
             pressure_readings_hpa.append(self.mpr.pressure)
             sleep(0.5)
-            self.increaseDutyCycle()
+            self.decreaseDutyCycle()
         return pressure_readings_hpa
