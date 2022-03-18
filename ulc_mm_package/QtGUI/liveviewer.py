@@ -85,6 +85,20 @@ class AcquisitionThread(QThread):
                     print(e)
                     print(traceback.format_exc())
 
+    def getMetaData(self):
+        """Required metadata:
+        - Measurement type (actual diagnostic experiment or data collection)
+        - Sample type / sample name (i.e dataset name)
+        - Motor position
+        - Syringe position
+        - Pressure reading
+        - Ambient temperature (updated every N Frames)
+        - RPi CPU temperature (updated every N frames)
+        - Focus metric (updated every N frames)
+        - LED power
+        -
+        """
+        pass
     def save(self, image):
         if self.single_save:
             filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
@@ -144,13 +158,13 @@ class AcquisitionThread(QThread):
     def runFullZStack(self, motor: DRV8825Nema):
         self.takeZStack = True
         self.motor = motor
-        self.zstack = takeZStackCoroutine(None, motor)
+        self.zstack = takeZStackCoroutine(None, motor, save_loc=EXTERNAL_DIR)
         self.zstack.send(None)
 
     def runLocalZStack(self, motor: DRV8825Nema, start_point: int):
         self.takeZStack = True
         self.motor = motor
-        self.zstack = symmetricZStackCoroutine(None, motor, start_point)
+        self.zstack = symmetricZStackCoroutine(None, motor, start_point, save_loc=EXTERNAL_DIR)
         self.zstack.send(None)
 
     def zStack(self, image):
@@ -212,7 +226,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
             self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)
-            self.vsFocus.sliderReleased.connect(self.vsFocusHandler)
+            self.vsFocus.valueChanged.connect(self.vsFocusValueChangedHandler)
+            self.vsFocus.sliderReleased.connect(self.vsFocusSliderReleasedHandler)
             self.vsFocus.sliderPressed.connect(self.vsFocusClickHandler)
             self.txtBoxFocus.editingFinished.connect(self.focusTextBoxHandler)
             self.txtBoxFocus.gotFocus.connect(self.txtBoxFocusGotFocus)
@@ -396,7 +411,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsFocus.setValue(self.motor.pos)
         self.txtBoxFocus.setText(f"{self.motor.pos}")
 
-    def vsFocusHandler(self):
+    def vsFocusValueChangedHandler(self):
+        pos = int(self.vsFocus.value())
+        self.txtBoxFocus.setText(f"{pos}")
+
+    def vsFocusSliderReleasedHandler(self):
         pos = int(self.vsFocus.value())
         try:
             self.motor.threaded_move_abs(pos=pos)
