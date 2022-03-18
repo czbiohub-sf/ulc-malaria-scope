@@ -12,7 +12,7 @@ def takeZStack(camera: ULCMM_Camera, motor: DRV8825Nema, steps_per_image: int=1,
 
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        save_dir = os.path.join(save_loc, timestamp + '-zstack/')
+        save_dir = os.path.join(save_loc, timestamp + '-global_zstack/')
         try:
             os.mkdir(save_dir)
         except Exception as e:
@@ -42,7 +42,7 @@ def takeZStack(camera: ULCMM_Camera, motor: DRV8825Nema, steps_per_image: int=1,
 def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps_per_fine: int=1, save_loc=None):
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        save_dir = os.path.join(save_loc, timestamp + '-zstack/')
+        save_dir = os.path.join(save_loc, timestamp + '-global_zstack/')
         try:
             os.mkdir(save_dir)
         except Exception as e:
@@ -106,7 +106,7 @@ def symmetricZStack(camera: ULCMM_Camera, motor: DRV8825Nema, start_point: int, 
 
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        save_dir = os.path.join(save_loc, timestamp + '-zstack/')
+        save_dir = os.path.join(save_loc, timestamp + '-local_zstack/')
         try:
             os.mkdir(save_dir)
         except Exception as e:
@@ -136,7 +136,7 @@ def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_step
 
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        save_dir = os.path.join(save_loc, timestamp + '-zstack/')
+        save_dir = os.path.join(save_loc, timestamp + '-local_zstack/')
         try:
             os.mkdir(save_dir)
         except Exception as e:
