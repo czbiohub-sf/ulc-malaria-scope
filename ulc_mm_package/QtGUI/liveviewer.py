@@ -138,7 +138,7 @@ class AcquisitionThread(QThread):
         if self.continuous_save:
             self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S") + f"{self.custom_image_prefix}"
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
-            self.start_time = perf_counter()
+            self.fps_timer = perf_counter()
             self.im_counter = 0
 
     def changeBinningMode(self):
@@ -326,7 +326,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.chkBoxRecord.setEnabled(True)
             self.chkBoxMaxFPS.setEnabled(True)
             end_time = perf_counter()
-            start_time = self.acquisitionThread.start_time
+            start_time = self.acquisitionThread.fps_timer
             num_images = self.acquisitionThread.im_counter
             print(f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)")
             return
