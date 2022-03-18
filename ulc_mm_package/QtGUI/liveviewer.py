@@ -100,6 +100,7 @@ class AcquisitionThread(QThread):
         -
         """
         pass
+
     def save(self, image):
         if self.single_save:
             filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
@@ -107,7 +108,7 @@ class AcquisitionThread(QThread):
             self.single_save = False
 
         if self.continuous_save and self.continuous_dir_name != None:
-            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}{self.im_counter:05}"
+            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}_{self.im_counter:05}"
             if WRITE_NUMPY:
                 np.save(filename+".npy", image)
             else:
