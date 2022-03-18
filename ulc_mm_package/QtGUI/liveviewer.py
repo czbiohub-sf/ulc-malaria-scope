@@ -22,7 +22,6 @@ from qimage2ndarray import gray2qimage
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 BIG_SCREEN = True
 MIN_EXPOSURE_US = 100
-EXTERNAL_DIR = "/media/pi/" + listdir("/media/pi/")[0] + "/"
 WRITE_NUMPY = True
 
 if BIG_SCREEN:
@@ -42,7 +41,7 @@ class AcquisitionThread(QThread):
     updatePressure = pyqtSignal(float)
     fps = pyqtSignal(int)
 
-    def __init__(self):
+    def __init__(self, external_dir):
         super().__init__()
         self.update_liveview = 1
         self.im_counter = 0
@@ -61,6 +60,7 @@ class AcquisitionThread(QThread):
         self.motor = None
         self.updateMotorPos = True
         self.start_time = perf_counter()
+        self.external_dir = external_dir
 
         try:
             self.camera = ULCMM_Camera()
@@ -132,7 +132,7 @@ class AcquisitionThread(QThread):
 
     def takeImage(self):
         if self.main_dir == None:
-            self.main_dir = EXTERNAL_DIR + datetime.now().strftime("%Y-%m-%d-%H%M%S")
+            self.main_dir = self.external_dir + datetime.now().strftime("%Y-%m-%d-%H%M%S")
             mkdir(self.main_dir)
 
         if self.continuous_save:
@@ -160,13 +160,13 @@ class AcquisitionThread(QThread):
     def runFullZStack(self, motor: DRV8825Nema):
         self.takeZStack = True
         self.motor = motor
-        self.zstack = takeZStackCoroutine(None, motor, save_loc=EXTERNAL_DIR)
+        self.zstack = takeZStackCoroutine(None, motor, save_loc=self.external_dir)
         self.zstack.send(None)
 
     def runLocalZStack(self, motor: DRV8825Nema, start_point: int):
         self.takeZStack = True
         self.motor = motor
-        self.zstack = symmetricZStackCoroutine(None, motor, start_point, save_loc=EXTERNAL_DIR)
+        self.zstack = symmetricZStackCoroutine(None, motor, start_point, save_loc=self.external_dir)
         self.zstack.send(None)
 
     def zStack(self, image):
@@ -186,6 +186,19 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
         
+        try:
+            self.external_dir = "/media/pi/" + listdir("/media/pi/")[0] + "/"
+        except IndexError:
+            msgBox = QtWidgets.QMessageBox()
+            msgBox = QtWidgets.QMessageBox()
+            msgBox.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+            msgBox.setText("ERROR! No external harddrive / SSD detected. Press OK to close the application.")
+            msgBox.setWindowTitle("Error - harddrive not detected.")
+            msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            retval = msgBox.exec()
+            if retval == QtWidgets.QMessageBox.Ok:
+                quit()
+
         # List hardware components
         self.acquisitionThread = None
         self.motor = None
@@ -197,7 +210,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         uic.loadUi(_UI_FILE_DIR, self)
 
         # Start the video stream
-        self.acquisitionThread = AcquisitionThread()
+        self.acquisitionThread = AcquisitionThread(self.external_dir)
         self.recording = False
         
         if not self.acquisitionThread.camera_activated:
