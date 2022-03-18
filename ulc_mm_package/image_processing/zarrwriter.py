@@ -29,7 +29,7 @@ class ZarrWriter():
         self.arr_counter = 0
         self.compressor = Zstd(level=1)
 
-    def createNewFile(self, filename: str, overwrite: bool=False):
+    def createNewFile(self, filename: str, metadata={}, overwrite: bool=False):
         """Create a new zarr file.
         
         Parameters
@@ -53,7 +53,7 @@ class ZarrWriter():
 
     def writeSingleArray(self, data, metadata={}):
         try:
-            ds = self.group.create_dataset(f"{self.arr_counter}", data=data, compressor=self.compressor)
+            ds = self.group.array(f"{self.arr_counter}", data=data, compressor=self.compressor)
             for key in metadata.keys():
                 ds.attrs[key] = metadata[key]
             self.arr_counter += 1
