@@ -45,6 +45,7 @@ class AcquisitionThread(QThread):
     def __init__(self):
         super().__init__()
         self.update_liveview = 1
+        self.im_counter = 0
         self.update_counter = 0
         self.num_loops = 50
         self.camera_activated = False
