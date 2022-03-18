@@ -523,9 +523,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def manualFocusWithEncoder(self, increment: int):
         try:
             if increment == 1:
-                self.motor.threaded_move_rel(dir=Direction.CW, steps=5)
+                self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
             elif increment == -1:
-                self.motor.threaded_move_rel(dir=Direction.CCW, steps=5)
+                self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
             sleep(0.01)
             self.updateMotorPosition(self.motor.pos)
         except MotorControllerError:
