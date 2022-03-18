@@ -76,7 +76,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
         focus_metrics_fine.append(gradientAverage(img))
         motor.move_rel(steps=steps_per_fine, dir=Direction.CW)
         if save_loc != None:
-            cv2.imwrite(save_dir + f"{motor.pos:03d}.tiff", image)
+            cv2.imwrite(save_dir + f"{motor.pos:03d}.tiff", img)
         step_counter += steps_per_fine
     best_focus_position = start + np.argmax(focus_metrics_fine)*steps_per_fine
     motor.move_abs(best_focus_position)
