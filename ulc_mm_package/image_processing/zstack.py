@@ -71,6 +71,9 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
     best_focus_position = np.argmax(focus_metrics)*steps_per_coarse
     start = best_focus_position - steps_per_coarse
     end = best_focus_position + steps_per_coarse
+    start = start if start >= 0 else 0
+    end = end if end <= motor.max_pos else motor.max_pos
+    
     motor.move_abs(start)
     step_counter = start
     while step_counter < end:
