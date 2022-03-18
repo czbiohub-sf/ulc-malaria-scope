@@ -10,7 +10,7 @@ from ulc_mm_package.image_processing.zstack import takeZStackCoroutine, symmetri
 import sys
 import traceback
 from time import perf_counter, sleep
-from os import path, mkdir
+from os import listdir, mkdir, path
 from datetime import datetime
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
@@ -22,7 +22,7 @@ from qimage2ndarray import gray2qimage
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 BIG_SCREEN = True
 MIN_EXPOSURE_US = 100
-EXTERNAL_DIR = "/media/pi/T7/"
+EXTERNAL_DIR = "/media/pi/" + listdir("/media/pi/")[0] + "/"
 WRITE_NUMPY = True
 
 if BIG_SCREEN:
