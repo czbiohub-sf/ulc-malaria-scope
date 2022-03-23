@@ -15,6 +15,7 @@
 """Functions to work with detection models."""
 
 import collections
+import cv2
 import numpy as np
 
 Object = collections.namedtuple("Object", ["id", "score", "bbox"])
@@ -172,6 +173,7 @@ def get_output(interpreter, score_threshold, image_scale=(1.0, 1.0)):
 
     return [make(i) for i in range(count) if scores[i] >= score_threshold]
 
+
 def get_output_no_objs(interpreter, score_threshold, image_scale=(1.0, 1.0)):
     """Returns four numpy arrays with information about the image."""
 
@@ -181,3 +183,46 @@ def get_output_no_objs(interpreter, score_threshold, image_scale=(1.0, 1.0)):
     count = int(output_tensor(interpreter, 3))
 
     return boxes, class_ids, scores, count
+
+
+def post_process(img, outputs, conf, classes):
+    np.random.seed(42)
+    colors = np.random.randint(0, 255, size=(len(classes), 3), dtype='uint8')
+    H, W = img.shape[:2]
+
+    boxes = []
+    scores = []
+    class_ids = []
+    objects = []
+    for output in outputs:
+        scores = output[5:]
+        class_id = np.argmax(scores)
+        confidence = scores[class_id]
+        if confidence > conf:
+            x, y, w, h = output[:4] * np.array([W, H, W, H])
+            p0 = tuple((int(x - w // 2), int(y - h // 2)))
+            p1 = tuple((int(x + w // 2), int(y + h // 2)))
+            boxes.append([p0[0], p0[1], int(w), int(h)])
+            obj = {
+                "xmin": p0[0],
+                "xmax": p1[0],
+                "ymin": p0[1],
+                "ymax": p1[1],
+                "class": class_id,
+                "prob": confidence}
+            objects.append(obj)
+            scores.append(float(confidence))
+            class_ids.append(class_id)
+
+    indices = cv2.dnn.NMSBoxes(boxes, scores, conf, conf - 0.1)
+    if len(indices) > 0:
+        for i in indices.flatten():
+            (x, y) = (boxes[i][0], boxes[i][1])
+            (w, h) = (boxes[i][2], boxes[i][3])
+            color = [int(c) for c in colors[class_ids[i]]]
+            cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
+            text = "{}: {:.4f}".format(classes[class_ids[i]], scores[i])
+            cv2.putText(
+                img, text, (x, y - 5),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+    return objects
