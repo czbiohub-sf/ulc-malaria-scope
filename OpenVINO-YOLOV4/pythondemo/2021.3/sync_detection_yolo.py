@@ -18,7 +18,6 @@ from openvino.inference_engine import IECore
 import numpy as np
 import pandas as pd
 import ngraph as ng
-from scipy import ndimage
 
 logging.basicConfig(format="[ %(levelname)s ] %(message)s", level=logging.INFO, stream=sys.stdout)
 log = logging.getLogger()

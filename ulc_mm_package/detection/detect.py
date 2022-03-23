@@ -189,17 +189,18 @@ def post_process(img, outputs, conf, classes):
     np.random.seed(42)
     colors = np.random.randint(0, 255, size=(len(classes), 3), dtype='uint8')
     H, W = img.shape[:2]
-
     boxes = []
-    scores = []
+    confidences = []
     class_ids = []
     objects = []
-    for output in outputs:
+    len_outputs = outputs[0].shape[1]
+    for i in range(len_outputs):
+        output = outputs[0][:, i, :][0]
         scores = output[5:]
         class_id = np.argmax(scores)
         confidence = scores[class_id]
         if confidence > conf:
-            x, y, w, h = output[:4] * np.array([W, H, W, H])
+            x, y, w, h = output[:4]
             p0 = tuple((int(x - w // 2), int(y - h // 2)))
             p1 = tuple((int(x + w // 2), int(y + h // 2)))
             boxes.append([p0[0], p0[1], int(w), int(h)])
@@ -208,21 +209,23 @@ def post_process(img, outputs, conf, classes):
                 "xmax": p1[0],
                 "ymin": p0[1],
                 "ymax": p1[1],
-                "class": class_id,
+                "class_id": class_id,
                 "prob": confidence}
             objects.append(obj)
-            scores.append(float(confidence))
+            confidences.append(float(confidence))
             class_ids.append(class_id)
-
-    indices = cv2.dnn.NMSBoxes(boxes, scores, conf, conf - 0.1)
+    print(len(objects))
+    indices = cv2.dnn.NMSBoxes(boxes, confidences, conf, conf - 0.1)
     if len(indices) > 0:
         for i in indices.flatten():
             (x, y) = (boxes[i][0], boxes[i][1])
             (w, h) = (boxes[i][2], boxes[i][3])
             color = [int(c) for c in colors[class_ids[i]]]
             cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
-            text = "{}: {:.4f}".format(classes[class_ids[i]], scores[i])
+            text = "{}: {:.4f}".format(classes[class_ids[i]], confidences[i])
             cv2.putText(
                 img, text, (x, y - 5),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-    return objects
+    nms_objects = [objects[index] for index in indices.flatten()]
+    print(len(nms_objects))
+    return nms_objects

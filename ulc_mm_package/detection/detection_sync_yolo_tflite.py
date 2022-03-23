@@ -11,6 +11,7 @@ import sys
 import time
 from argparse import ArgumentParser, SUPPRESS
 from time import perf_counter
+import importlib
 import tensorflow as tf
 
 import cv2
@@ -32,7 +33,7 @@ def build_argparser():
     args.add_argument("-m", "--model",
                       help="Required. Path to an .xml file with a trained model.",
                       type=str)
-    args.add_argument("--labels", help="Optional. Labels mapping file", default='obj.names', type=str)
+    args.add_argument("--labels", help="Optional. Labels mapping files", type=str)
 
     args.add_argument('-h', '--help', action='help', default=SUPPRESS, help='Show this help message and exit.')
     args.add_argument("-t", "--prob_threshold", help="Optional. Probability threshold for detections filtering",
@@ -71,7 +72,35 @@ def create_dir_if_not_exists(path):
 
 if __name__ == '__main__':
     args = build_argparser().parse_args()
-    interpreter = tf.lite.Interpreter(model_path=args.model)
+    # Import TensorFlow libraries
+    # If tflite_runtime is installed, import interpreter from tflite_runtime,
+    # else import from regular tensorflow
+    # If using Coral Edge TPU, import the load_delegate library
+    pkg = importlib.util.find_spec("tflite_runtime")
+    use_tpu = args.edgetpu
+    model = args.model
+    if pkg:
+        from tflite_runtime.interpreter import Interpreter
+        print("tflite_runtime package is present")
+        if use_tpu:
+            from tflite_runtime.interpreter import load_delegate
+    else:
+        from tensorflow.lite.python.interpreter import Interpreter
+
+        if use_tpu:
+            from tensorflow.lite.python.interpreter import load_delegate
+    if use_tpu:
+        model, *device = model.split("@")  # noqa
+        interpreter = Interpreter(
+            model_path=model,
+            experimental_delegates=[
+                load_delegate(
+                    EDGETPU_SHARED_LIB, {"device": device[0]} if device else {}
+                )
+            ],
+        )
+    else:
+        interpreter = Interpreter(model_path=model)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -161,7 +190,7 @@ if __name__ == '__main__':
             objects = detect.post_process(frame, pred, conf, labels_map)
             all_time = perf_counter() - start_time
             parsing_time = time.time() - parsing_time_begins
-            print('The processing time of one frame is', all_time)
+            print('The processing time of one frame is {} ms'.format(all_time))
             cv2.imwrite(output_img_name, frame)
             count_frame = count_frame + 1
             print("FPS is", count_frame / (perf_counter() - last_start_time))
