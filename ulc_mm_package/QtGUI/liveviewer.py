@@ -39,6 +39,7 @@ class AcquisitionThread(QThread):
     motorPosChanged = pyqtSignal(int)
     zStackFinished = pyqtSignal(int)
     updatePressure = pyqtSignal(float)
+    measurementTime = pyqtSignal(float)
     fps = pyqtSignal(int)
 
     def __init__(self, external_dir):
@@ -59,6 +60,7 @@ class AcquisitionThread(QThread):
         self.pressure_sensor = None
         self.motor = None
         self.updateMotorPos = True
+        self.fps_timer = perf_counter()
         self.start_time = perf_counter()
         self.external_dir = external_dir
 
@@ -113,6 +115,7 @@ class AcquisitionThread(QThread):
                 np.save(filename+".npy", image)
             else:
                 cv2.imwrite(filename+".tiff", image)
+            self.measurementTime.emit(int(perf_counter() - self.start_time))
             self.im_counter += 1
 
     def updateGUIElements(self):
@@ -123,9 +126,13 @@ class AcquisitionThread(QThread):
         if self.update_counter % self.num_loops == 0:
             self.update_counter = 0
             if self.pressure_sensor != None:
-                self.updatePressure.emit(self.pressure_sensor.pressure)
-            self.fps.emit(int(self.num_loops / (perf_counter() - self.start_time)))
-            self.start_time = perf_counter()
+                try:
+                    pressure = self.pressure_sensor.pressure
+                    self.updatePressure.emit(pressure)
+                except IOError:
+                    print("Error getting pressure. Continuing...")
+            self.fps.emit(int(self.num_loops / (perf_counter() - self.fps_timer)))
+            self.fps_timer = perf_counter()
 
     def updateExposure(self, exposure):
         self.camera.exposureTime_ms = exposure
@@ -285,6 +292,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.zStackFinished.connect(self.enableMotorUIElements)
         self.acquisitionThread.updatePressure.connect(self.updatePressureLabel)
         self.acquisitionThread.fps.connect(self.updateFPS)
+        self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressure_sensor = self.pressure_control.mpr
         self.txtBoxExposure.editingFinished.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxRecordHandler)
@@ -339,7 +347,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.chkBoxRecord.setEnabled(True)
             self.chkBoxMaxFPS.setEnabled(True)
             end_time = perf_counter()
-            start_time = self.acquisitionThread.fps_timer
+            start_time = self.acquisitionThread.start_time
             num_images = self.acquisitionThread.im_counter
             print(f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)")
             return
@@ -378,8 +386,13 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def updatePressureLabel(self, val):
         self.lblPressure.setText(f"{val:.2f} hPa")
 
+    @pyqtSlot(int)
     def updateFPS(self, val):
         self.lblFPS.setText(f"{val}fps")
+
+    @pyqtSlot(int)
+    def updateMeasurementTimer(self, val):
+        self.lblTimer.setText(f"{str(datetime.timedelta(seconds=val))}")
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
