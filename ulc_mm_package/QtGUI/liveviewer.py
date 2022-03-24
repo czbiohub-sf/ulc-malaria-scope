@@ -11,7 +11,7 @@ import sys
 import traceback
 from time import perf_counter, sleep
 from os import listdir, mkdir, path
-from datetime import datetime
+from datetime import datetime, timedelta
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
@@ -39,7 +39,7 @@ class AcquisitionThread(QThread):
     motorPosChanged = pyqtSignal(int)
     zStackFinished = pyqtSignal(int)
     updatePressure = pyqtSignal(float)
-    measurementTime = pyqtSignal(float)
+    measurementTime = pyqtSignal(int)
     fps = pyqtSignal(int)
 
     def __init__(self, external_dir):
@@ -145,6 +145,7 @@ class AcquisitionThread(QThread):
         if self.continuous_save:
             self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S") + f"{self.custom_image_prefix}"
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
+            self.start_time = perf_counter()
             self.fps_timer = perf_counter()
             self.im_counter = 0
 
@@ -335,7 +336,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     def checkBoxMaxFPSHandler(self):
         if self.chkBoxMaxFPS.checkState():
-            self.acquisitionThread.update_liveview = 99
+            self.acquisitionThread.update_liveview = 45
         else:
             self.acquisitionThread.update_liveview = 1
 
@@ -392,7 +393,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(int)
     def updateMeasurementTimer(self, val):
-        self.lblTimer.setText(f"{str(datetime.timedelta(seconds=val))}")
+        self.lblTimer.setText(f"{str(timedelta(seconds=val))}")
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
