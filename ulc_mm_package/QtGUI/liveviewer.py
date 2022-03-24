@@ -3,6 +3,7 @@ from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, Moto
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder
 from ulc_mm_package.hardware.pressure_control import PressureControl, PressureControlError
+from ulc_mm_package.hardware.fan import Fan
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 
 from ulc_mm_package.image_processing.zstack import takeZStackCoroutine, symmetricZStackCoroutine
@@ -213,6 +214,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.pressure_control = None
         self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
         self.led = None
+        self.fan = Fan()
 
         # Load the ui file 
         uic.loadUi(_UI_FILE_DIR, self)
@@ -310,6 +312,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsFlow.valueChanged.connect(self.vsFlowHandler)
 
         # Misc
+        self.fan.turn_on()
         self.btnExit.clicked.connect(self.exit)
 
         # Set slider min/max
@@ -580,13 +583,19 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         if retval == QtWidgets.QMessageBox.Ok:
             # Move syringe back and de-energize
             self.pressure_control.close()
+
             # Turn off the LED
             self.led.close()
+
             # Turn off camera
             if self.acquisitionThread != None:
                 self.acquisitionThread.camera_activated = False
             # Turn off encoder
             self.encoder.close()
+
+            # Turn off fan
+            self.fan.turn_off()
+            
             quit()
 
     def closeEvent(self, event):
