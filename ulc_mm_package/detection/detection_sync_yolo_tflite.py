@@ -79,6 +79,7 @@ if __name__ == '__main__':
     pkg = importlib.util.find_spec("tflite_runtime")
     use_tpu = args.edgetpu
     model = args.model
+    iou_threshold = args.iou_threshold
     if pkg:
         from tflite_runtime.interpreter import Interpreter
         print("tflite_runtime package is present")
@@ -147,7 +148,8 @@ if __name__ == '__main__':
             pred = [interpreter.get_tensor(output_details[i]['index']) for i in range(len(output_details))]
             inference_time = time.time() - start_time
             parsing_time_begins = time.time()
-            objects = detect.post_process(frame, pred, conf, labels_map)
+            objects = detect.handle_predictions(pred[0], conf, iou_threshold)
+            print(objects)
             all_time = perf_counter() - start_time
             parsing_time = time.time() - parsing_time_begins
             all_time = perf_counter() - start_time
@@ -187,7 +189,7 @@ if __name__ == '__main__':
             pred = [interpreter.get_tensor(output_details[i]['index']) for i in range(len(output_details))]
             inference_time = time.time() - start_time
             parsing_time_begins = time.time()
-            objects = detect.post_process(frame, pred, conf, labels_map)
+            objects = detect.handle_predictions(pred[0], conf, iou_threshold)
             all_time = perf_counter() - start_time
             parsing_time = time.time() - parsing_time_begins
             print('The processing time of one frame is {} ms'.format(all_time))

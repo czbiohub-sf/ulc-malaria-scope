@@ -236,6 +236,8 @@ class ObjectDetection(object):
             start_time = time()
             for layer_name, out_blob in output.items():
                 out_blob = out_blob.buffer.reshape(self.net.outputs[layer_name].shape)
+                print(out_blob.shape)
+                print(out_blob)
                 params = [x._get_attributes() for x in self.function.get_ordered_ops() if x.get_friendly_name() == layer_name][0]
                 layer_params = YoloParams(params, out_blob.shape[2])
                 log.info("Layer {} parameters: ".format(layer_name))
