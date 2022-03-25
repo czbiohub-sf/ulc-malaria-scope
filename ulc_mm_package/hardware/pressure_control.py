@@ -95,7 +95,23 @@ class PressureControl():
         self.setDutyCycle(max)
         pressure_readings_hpa = []
         while self.duty_cycle > min:
-            pressure_readings_hpa.append(self.mpr.pressure)
+            pressure_readings_hpa.append(self.getPressure())
             sleep(0.5)
             self.decreaseDutyCycle()
         return pressure_readings_hpa
+
+    def getPressure(self):
+        """The pressure sensor can raise an I/O error sometimes.
+
+        To mitigate a crash if that is the case, we attempt to read the 
+        pressure sensor a few times until a valid value is returned. If a valid value is not received
+        after `max_attempts`, then a -1 flag is returned. 
+        """
+
+        max_attempts = 3
+        while max_attempts > 0:
+            try:
+                return self.mpr.pressure
+            except IOError:
+                max_attempts -= 1
+        return -1

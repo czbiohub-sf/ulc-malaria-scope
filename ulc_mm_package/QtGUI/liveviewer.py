@@ -12,6 +12,7 @@ import sys
 import traceback
 from time import perf_counter, sleep
 from os import listdir, mkdir, path
+from csv import DictWriter
 from datetime import datetime, timedelta
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
@@ -64,6 +65,7 @@ class AcquisitionThread(QThread):
         self.fps_timer = perf_counter()
         self.start_time = perf_counter()
         self.external_dir = external_dir
+        self.metadata_file = None
         self.click_to_advance = False
 
         try:
@@ -95,10 +97,11 @@ class AcquisitionThread(QThread):
                     print(e)
                     print(traceback.format_exc())
 
-    def getMetaData(self):
+    def getMetadata(self):
         """Required metadata:
         - Measurement type (actual diagnostic experiment or data collection)
         - Sample type / sample name (i.e dataset name)
+        - Timestamp
         - Motor position
         - Syringe position
         - Pressure reading
@@ -106,9 +109,17 @@ class AcquisitionThread(QThread):
         - RPi CPU temperature (updated every N frames)
         - Focus metric (updated every N frames)
         - LED power
-        -
         """
-        pass
+
+        return {
+            'im_counter': self.im_counter,
+            'measurement_type': 'placeholder',
+            'sample_type': 'placeholder',
+            'timestamp': datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+            'motor_pos': self.motor.pos,
+            'pressure_hpa': self.pressure_sensor.getPressure(),
+            'syringe_pos': self.pressure_sensor.getCurrentDutyCycle(),
+        }
 
     def save(self, image):
         if self.single_save:
@@ -117,6 +128,7 @@ class AcquisitionThread(QThread):
             self.single_save = False
 
         if self.continuous_save and self.continuous_dir_name != None:
+            self.metadata_writer.writerow(self.getMetadata())
             filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}_{self.im_counter:05}"
             if WRITE_NUMPY:
                 np.save(filename+".npy", image)
@@ -134,7 +146,7 @@ class AcquisitionThread(QThread):
             self.update_counter = 0
             if self.pressure_sensor != None:
                 try:
-                    pressure = self.pressure_sensor.pressure
+                    pressure = self.pressure_sensor.getPressure()
                     self.updatePressure.emit(pressure)
                 except IOError:
                     print("Error getting pressure. Continuing...")
@@ -152,6 +164,13 @@ class AcquisitionThread(QThread):
         if self.continuous_save:
             self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S") + f"{self.custom_image_prefix}"
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
+
+            if self.metadata_file is not None:
+                self.metadata_file.close()
+            self.metadata_file = open(path.join(self.main_dir, self.continuous_dir_name) + 'metadata.csv', 'w')
+            self.metadata_writer = DictWriter(self.metadata_file, fieldnames=self.getMetadata().keys())
+            self.metadata_writer.writeheader()
+
             self.start_time = perf_counter()
             self.fps_timer = perf_counter()
             self.im_counter = 0
@@ -304,7 +323,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.updatePressure.connect(self.updatePressureLabel)
         self.acquisitionThread.fps.connect(self.updateFPS)
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
-        self.acquisitionThread.pressure_sensor = self.pressure_control.mpr
+        self.acquisitionThread.pressure_sensor = self.pressure_control
         self.txtBoxExposure.editingFinished.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxRecordHandler)
         self.chkBoxMaxFPS.stateChanged.connect(self.checkBoxMaxFPSHandler)
