@@ -66,6 +66,7 @@ class AcquisitionThread(QThread):
         self.start_time = perf_counter()
         self.external_dir = external_dir
         self.metadata_file = None
+        self.metadata_writer = None
         self.click_to_advance = False
 
         try:
@@ -128,7 +129,8 @@ class AcquisitionThread(QThread):
             self.single_save = False
 
         if self.continuous_save and self.continuous_dir_name != None:
-            self.metadata_writer.writerow(self.getMetadata())
+            if self.metadata_writer is not None:
+                self.metadata_writer.writerow(self.getMetadata())
             filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}_{self.im_counter:05}"
             if WRITE_NUMPY:
                 np.save(filename+".npy", image)
@@ -165,8 +167,6 @@ class AcquisitionThread(QThread):
             self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S") + f"{self.custom_image_prefix}"
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
 
-            if self.metadata_file is not None:
-                self.metadata_file.close()
             self.metadata_file = open(path.join(self.main_dir, self.continuous_dir_name) + 'metadata.csv', 'w')
             self.metadata_writer = DictWriter(self.metadata_file, fieldnames=self.getMetadata().keys())
             self.metadata_writer.writeheader()
@@ -377,6 +377,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnSnap.setText("Record images")
             self.chkBoxRecord.setEnabled(True)
             self.chkBoxMaxFPS.setEnabled(True)
+            sleep(0.1)
+            self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
             num_images = self.acquisitionThread.im_counter
