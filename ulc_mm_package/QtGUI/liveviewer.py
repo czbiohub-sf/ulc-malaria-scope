@@ -64,6 +64,7 @@ class AcquisitionThread(QThread):
         self.fps_timer = perf_counter()
         self.start_time = perf_counter()
         self.external_dir = external_dir
+        self.click_to_advance = False
 
         try:
             self.camera = ULCMM_Camera()
@@ -80,9 +81,14 @@ class AcquisitionThread(QThread):
                         self.save(image)
                         self.zStack(image)
 
-                        if self.liveview and self.update_counter % self.update_liveview == 0:
+                        if self.liveview:
+                            if self.update_counter % self.update_liveview == 0:
+                                qimage = gray2qimage(image)
+                                self.changePixmap.emit(qimage)
+                        elif self.click_to_advance:
                             qimage = gray2qimage(image)
                             self.changePixmap.emit(qimage)
+                            self.click_to_advance = False
                 except Exception as e:
                     # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
                     # Once that happens, this can be swapped to catch the PyCameraException
@@ -251,6 +257,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
             self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)
+            self.chkBoxFreeze.stateChanged.connect(self.chkBoxFreezeHandler)
+            self.btnNextImage.clicked.connect(self.btnNextImageHandler)
             self.vsFocus.valueChanged.connect(self.vsFocusValueChangedHandler)
             self.vsFocus.sliderReleased.connect(self.vsFocusSliderReleasedHandler)
             self.vsFocus.sliderPressed.connect(self.vsFocusClickHandler)
@@ -443,6 +451,17 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsFocus.setValue(self.motor.pos)
         self.txtBoxFocus.setText(f"{self.motor.pos}")
 
+    def chkBoxFreezeHandler(self):
+        if self.chkBoxFreeze.checkState():
+            self.acquisitionThread.liveview = False
+            self.btnNextImage.setEnabled(True)
+        else:
+            self.acquisitionThread.liveview = True
+            self.btnNextImage.setEnabled(False)
+
+    def btnNextImageHandler(self):
+        self.acquisitionThread.click_to_advance = True
+
     def vsFocusValueChangedHandler(self):
         pos = int(self.vsFocus.value())
         self.txtBoxFocus.setText(f"{pos}")
@@ -559,7 +578,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             sleep(0.01)
             self.updateMotorPosition(self.motor.pos)
         except MotorControllerError:
-            print("Invalid move.")
             self.encoder.setColor(255, 0, 0)
             sleep(0.1)
             self.encoder.setColor(12, 159, 217)
@@ -595,7 +613,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
             # Turn off fan
             self.fan.turn_off()
-            
+
             quit()
 
     def closeEvent(self, event):
