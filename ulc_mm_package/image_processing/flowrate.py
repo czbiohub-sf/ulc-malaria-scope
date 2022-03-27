@@ -2,15 +2,16 @@ import numpy as np
 
 X_TOL = 15
 
+
 def getFlowRateInPixels(prev_bboxes, curr_bboxes):
     """
     Returns the flow rate in number of pixels based on the previous and current frame bounding boxes
-    
+
     Parameters
     ----------
     prev_bboxes : List[BBox]
         A list of BBox objects from the previous frame
-    curr_bboxes : List[BBox] 
+    curr_bboxes : List[BBox]
         A list of BBox objects from the current frame
 
     Returns
@@ -26,7 +27,7 @@ def getFlowRateInPixels(prev_bboxes, curr_bboxes):
     curr_xmin = np.asarray([bbox.xmin for bbox in curr_bboxes])
     curr_ymin = np.asarray([bbox.ymin for bbox in curr_bboxes])
     curr_xmax = np.asarray([bbox.xmax for bbox in curr_bboxes])
-    
+
     all_displacements = []
 
     for i, (c_xmin, c_xmax) in enumerate(zip(curr_xmin, curr_xmax)):
@@ -35,10 +36,14 @@ def getFlowRateInPixels(prev_bboxes, curr_bboxes):
             continue
 
         # Find the bounding box in the previous frame corresponding to the current box
-        index_xmin_in_prev_frame = np.argwhere( np.isclose(prev_xmin, c_xmin, atol=X_TOL) == True)
-        index_xmax_in_prev_frame = np.argwhere( np.isclose(prev_xmax, c_xmax, atol=X_TOL) == True)
+        index_xmin_in_prev_frame = np.argwhere(
+            np.isclose(prev_xmin, c_xmin, atol=X_TOL) == True
+        )
+        index_xmax_in_prev_frame = np.argwhere(
+            np.isclose(prev_xmax, c_xmax, atol=X_TOL) == True
+        )
 
-        # Ensure there is only one bounding box in the previous frame which corresponds to the current 
+        # Ensure there is only one bounding box in the previous frame which corresponds to the current
         if len(index_xmin_in_prev_frame > 0) and len(index_xmax_in_prev_frame > 0):
             if len(index_xmin_in_prev_frame[0]) == 1:
                 # Find the y displacement
@@ -48,8 +53,9 @@ def getFlowRateInPixels(prev_bboxes, curr_bboxes):
                 if p_ymin < c_ymin:
                     pixel_displacement = c_ymin - p_ymin
                     all_displacements.append(pixel_displacement)
-    
+
     return np.average(all_displacements)
+
 
 def convertPixelToDistance(pixels):
     # TODO

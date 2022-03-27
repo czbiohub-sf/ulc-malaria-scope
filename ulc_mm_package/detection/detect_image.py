@@ -33,7 +33,9 @@ from constants_ulc import (
     DEFAULT_FILTER_AREA,
     DEFAULT_IMAGE_FORMAT,
 )
+
 # import matplotlib.pyplot as plt
+
 
 def detect_images(
     model,
