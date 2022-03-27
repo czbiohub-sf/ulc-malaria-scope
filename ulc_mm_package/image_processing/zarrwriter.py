@@ -21,42 +21,41 @@ class AttemptingWriteWithoutFile(Exception):
         to write an array.
         """
 
-
 # ==================== Main class ===============================
-class ZarrWriter:
+class ZarrWriter():
     def __init__(self):
         self.store = None
         self.group = None
         self.arr_counter = 0
         self.compressor = Zstd(level=1)
 
-    def createNewFile(self, filename: str, overwrite: bool = False):
+    def createNewFile(self, filename: str, metadata={}, overwrite: bool=False):
         """Create a new zarr file.
-
+        
         Parameters
         ----------
-        filename : str
+        filename : str 
             Filename, don't include the extension (i.e pass "new_file" not "new_file.zip").
         overwrite : bool
-            Will overwrite a file with the existing filename if it exists, otherwise will append.
+            Will overwrite a file with the existing filename if it exists, otherwise will append.     
         """
-
+        
         try:
             filename = f"{filename}.zip"
             if overwrite:
-                self.store = zarr.ZipStore(filename, mode="x")
+                self.store = zarr.ZipStore(filename, mode='x')
             else:
-                self.store = zarr.ZipStore(filename, mode="w")
+                self.store = zarr.ZipStore(filename, mode='w')
             self.group = zarr.group(store=self.store)
             self.arr_counter = 0
         except AttributeError:
             raise IOError(f"Error creating {filename}.zip")
 
-    def writeSingleArray(self, data):
+    def writeSingleArray(self, data, metadata={}):
         try:
-            self.group.create_dataset(
-                f"{self.arr_counter}", data=data, compressor=self.compressor
-            )
+            ds = self.group.array(f"{self.arr_counter}", data=data, compressor=self.compressor)
+            for key in metadata.keys():
+                ds.attrs[key] = metadata[key]
             self.arr_counter += 1
         except Exception:
             raise AttemptingWriteWithoutFile()
@@ -69,7 +68,6 @@ class ZarrWriter:
         # If the user did not manually close the storage, close it
         if self.store != None:
             self.store.close()
-
 
 if __name__ == "__main__":
     from tqdm import tqdm

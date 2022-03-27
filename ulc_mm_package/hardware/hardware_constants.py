@@ -1,5 +1,6 @@
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
+FAN_GPIO = 5
 
 # ================ Motor controller constants ================ #
 
