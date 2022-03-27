@@ -403,4 +403,3 @@ if __name__ == "__main__":
     print("Beginning homing...")
     motor.homeToLimitSwitches()
     print("Homing complete.")
-

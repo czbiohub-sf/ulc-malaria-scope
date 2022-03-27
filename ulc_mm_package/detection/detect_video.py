@@ -27,11 +27,17 @@ import numpy as np
 import detect
 import utils
 from constants_ulc import (
+    EDGETPU_SHARED_LIB,
     LUMI_CSV_COLUMNS,
     DEFAULT_CONFIDENCE,
     DEFAULT_INFERENCE_COUNT,
     DEFAULT_FILTER_AREA,
 )
+
+
+def create_dir_if_not_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 def detect_video_file(
@@ -47,7 +53,7 @@ def detect_video_file(
     filter_background_bboxes,
 ):
     output = os.path.abspath(output)
-
+    create_dir_if_not_exists(output)
     labels = utils.load_labels(labels) if labels else {}
     # Import TensorFlow libraries
     # If tflite_runtime is installed, import interpreter from tflite_runtime,
@@ -82,14 +88,17 @@ def detect_video_file(
 
     video_path = os.path.abspath(video)
     video = cv2.VideoCapture(video_path)
+    freq = cv2.getTickFrequency()
 
     frame_count = 0
     df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
-    print("----INFERENCE TIME----")
+    inference_times = []
+    parsing_times = []
     while video.isOpened():
 
         # Acquire frame and resize to expected shape [1xHxWx3]
         ret, image = video.read()
+        t1 = cv2.getTickCount()
         if not ret:
             print("Reached the end of the video!")
             break
@@ -107,16 +116,18 @@ def detect_video_file(
             thresh_value = 128
             thresholded_image[numpy_image < thresh_value] = 1
         for _ in range(count):
-            start = time.perf_counter()
+            # start = time.perf_counter()
+            inf_start = time.time()
             interpreter.invoke()
-            inference_time = time.perf_counter() - start
             objs = detect.get_output(interpreter, threshold, scale)
-            print("%.2f ms" % (inference_time * 1000))
+            inf_end = time.time()
+            det_time = inf_end - inf_start
 
+        start_time = time.time()
+        frame_count += 1
         input_image = os.path.basename(video_path).split(".")[0] + "_{}.png".format(
             frame_count
         )
-        print(input_image)
         filtered_objs = []
         for obj in objs:
             xmin, xmax, ymin, ymax = (
@@ -160,11 +171,32 @@ def detect_video_file(
                         ignore_index=True,
                     )
                     filtered_objs.append(obj)
-        print(len(filtered_objs))
         if overlaid:
             image = image.convert("RGB")
             utils.draw_objects(ImageDraw.Draw(image), filtered_objs, labels)
             image.save(os.path.join(output, os.path.basename(input_image)))
+        t2 = cv2.getTickCount()
+        time1 = (t2 - t1) / freq
+        frame_rate_calc = 1 / time1
+        inference_time = det_time * 1000
+        parsing_time = time.time() - start_time
+        # Draw performance stats
+        print("Inference time: {:.3f} ms".format(inference_time))
+        print("OpenCV parsing time: {:.3f} ms".format(parsing_time))
+        print("FPS: {:.2f}".format(frame_rate_calc))
+        inference_times.append(inference_time)
+        parsing_times.append(parsing_time)
+
+    print(
+        "inference_time average and std is {} and {}".format(
+            np.mean(inference_times), np.std(inference_times)
+        )
+    )
+    print(
+        "parsing_time average and std is {} and {}".format(
+            np.mean(parsing_times), np.std(parsing_times)
+        )
+    )
     path = os.path.join(output, "preds_val.csv")
     print("Saving predictions to csv at {}".format(path))
     df.to_csv(path)
@@ -219,7 +251,7 @@ def main():
     detect_video_file(
         args.model,
         args.edgetpu,
-        args.input,
+        args.video,
         args.labels,
         args.threshold,
         args.output,
