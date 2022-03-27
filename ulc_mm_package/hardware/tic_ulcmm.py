@@ -12,12 +12,21 @@ Datasheet:
 
 from pymotors import TicStage
 
-class TicStageULCMM():
+
+class TicStageULCMM:
     def __init__(self):
-        _TIC_COM_MODE = 'serial'
-        _TIC_COM = '/dev/tty.usbserial-AD0JIXRE'
+        _TIC_COM_MODE = "serial"
+        _TIC_COM = "/dev/tty.usbserial-AD0JIXRE"
         _TIC_BAUDRATE = 9600
         _TIC_DEVICE_NUMBER = 14
-        self.tic_stage = TicStage(_TIC_COM_MODE, [_TIC_COM, _TIC_BAUDRATE], _TIC_DEVICE_NUMBER, 500, 200, micro_step_factor=1, default_step_tol=1)
+        self.tic_stage = TicStage(
+            _TIC_COM_MODE,
+            [_TIC_COM, _TIC_BAUDRATE],
+            _TIC_DEVICE_NUMBER,
+            500,
+            200,
+            micro_step_factor=1,
+            default_step_tol=1,
+        )
         self.tic_stage.enable = True
         self.tic_stage.discoverMotionRange()

@@ -187,8 +187,16 @@ def detect_video_file(
         inference_times.append(inference_time)
         parsing_times.append(parsing_time)
 
-    print("inference_time average and std is {} and {}". format(np.mean(inference_times), np.std(inference_times)))
-    print("parsing_time average and std is {} and {}". format(np.mean(parsing_times), np.std(parsing_times)))
+    print(
+        "inference_time average and std is {} and {}".format(
+            np.mean(inference_times), np.std(inference_times)
+        )
+    )
+    print(
+        "parsing_time average and std is {} and {}".format(
+            np.mean(parsing_times), np.std(parsing_times)
+        )
+    )
     path = os.path.join(output, "preds_val.csv")
     print("Saving predictions to csv at {}".format(path))
     df.to_csv(path)

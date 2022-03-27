@@ -68,24 +68,20 @@ for img_name in tqdm(all_images):
         cv2.IMREAD_GRAYSCALE,
     )
     # save the image one with tiles randomly placed,
-    saved_random_image_path = os.path.join(
-        OUTPUT_DIR, "{}.png".format(image_count)
-    )
+    saved_random_image_path = os.path.join(OUTPUT_DIR, "{}.png".format(image_count))
     # First image, create arrays to place the randomized cells and a mask
     # to set the already occupied cell locations to 255
     if count == 0:
         mosaiced_im = np.ones(IMAGE_SHAPE, dtype=np.uint8) * BACKGROUND_COLOR
-        random_mosaiced_im = (
-            np.ones((IMAGE_SHAPE), dtype=np.uint8) * BACKGROUND_COLOR
-        )
+        random_mosaiced_im = np.ones((IMAGE_SHAPE), dtype=np.uint8) * BACKGROUND_COLOR
         masked_random = np.ones((IMAGE_SHAPE), dtype=np.uint8)
 
         # Set the cell at the x, y tile location
         x, y = indices[count]
         image[image == 255] = BACKGROUND_COLOR
         mosaiced_im[
-            x * TILE_SIZE_X: TILE_SIZE_X * (x + 1),
-            y * TILE_SIZE_Y: TILE_SIZE_Y * (y + 1),
+            x * TILE_SIZE_X : TILE_SIZE_X * (x + 1),
+            y * TILE_SIZE_Y : TILE_SIZE_Y * (y + 1),
         ] = image
         # Binarize the array
         threshold = np.zeros_like(mosaiced_im)
@@ -94,9 +90,7 @@ for img_name in tqdm(all_images):
         threshold = cv2.morphologyEx(threshold, cv2.MORPH_CLOSE, kernel)
 
         # Find the contours for the mosaic image to find the bounding box
-        ctrs, _ = cv2.findContours(
-            threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-        )
+        ctrs, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         assert len(ctrs) == 1
         x, y, w, h = cv2.boundingRect(ctrs[0])
 
@@ -106,16 +100,16 @@ for img_name in tqdm(all_images):
 
         # Get the subset of the randomized extent & test if its already
         # filled
-        subset = masked_random[random_y: random_y + h, random_x: random_x + w]
+        subset = masked_random[random_y : random_y + h, random_x : random_x + w]
 
         # If the subset is not filled
         if subset.sum() == subset.size:
             # Ser the randomized location to the tile
             random_mosaiced_im[
-                random_y: random_y + h, random_x: random_x + w
-            ] = mosaiced_im[y: y + h, x: x + w]
+                random_y : random_y + h, random_x : random_x + w
+            ] = mosaiced_im[y : y + h, x : x + w]
             # Set the filled subset of the array to zero
-            masked_random[random_y: random_y + h, random_x: random_x + w] = 0
+            masked_random[random_y : random_y + h, random_x : random_x + w] = 0
             # Save the location and label in csv file
             dicts.append(
                 {
@@ -133,9 +127,7 @@ for img_name in tqdm(all_images):
             for i in range(NUM_TRIALS):
                 random_x = random.randint(0, IMAGE_SHAPE[1] - w)
                 random_y = random.randint(0, IMAGE_SHAPE[0] - h)
-                subset = masked_random[
-                    random_y: random_y + h, random_x: random_x + w
-                ]
+                subset = masked_random[random_y : random_y + h, random_x : random_x + w]
                 if subset.sum() == subset.size:
                     trial_count += 1
                     break
@@ -146,10 +138,10 @@ for img_name in tqdm(all_images):
             if subset.sum() == subset.size:
                 # Ser the randomized location to the tile
                 random_mosaiced_im[
-                    random_y: random_y + h, random_x: random_x + w
-                ] = mosaiced_im[y: y + h, x: x + w]
+                    random_y : random_y + h, random_x : random_x + w
+                ] = mosaiced_im[y : y + h, x : x + w]
                 # Set the filled subset of the array to zero
-                masked_random[random_y: random_y + h, random_x: random_x + w] = 0
+                masked_random[random_y : random_y + h, random_x : random_x + w] = 0
                 # Save the location and label in csv file
                 dicts.append(
                     {
@@ -167,36 +159,32 @@ for img_name in tqdm(all_images):
         x, y = indices[count]
         image[image == 255] = BACKGROUND_COLOR
         mosaiced_im[
-            x * TILE_SIZE_X: TILE_SIZE_X * (x + 1),
-            y * TILE_SIZE_Y: TILE_SIZE_Y * (y + 1),
+            x * TILE_SIZE_X : TILE_SIZE_X * (x + 1),
+            y * TILE_SIZE_Y : TILE_SIZE_Y * (y + 1),
         ] = image
 
         # Get a mask for the only current cell tile
-        mosaiced_im_current = (
-            np.ones(IMAGE_SHAPE, dtype=np.uint8) * BACKGROUND_COLOR
-        )
+        mosaiced_im_current = np.ones(IMAGE_SHAPE, dtype=np.uint8) * BACKGROUND_COLOR
         mosaiced_im_current[
-            x * TILE_SIZE_X: TILE_SIZE_X * (x + 1),
-            y * TILE_SIZE_Y: TILE_SIZE_Y * (y + 1),
+            x * TILE_SIZE_X : TILE_SIZE_X * (x + 1),
+            y * TILE_SIZE_Y : TILE_SIZE_Y * (y + 1),
         ] = image
         threshold = np.zeros_like(mosaiced_im_current)
         threshold[mosaiced_im_current == BACKGROUND_COLOR] = 0
         threshold[mosaiced_im_current != BACKGROUND_COLOR] = 255
         threshold = cv2.morphologyEx(threshold, cv2.MORPH_CLOSE, kernel)
-        ctrs, _ = cv2.findContours(
-            threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-        )
+        ctrs, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         assert len(ctrs) == 1
         x, y, w, h = cv2.boundingRect(ctrs[0])
 
         random_x = random.randint(0, IMAGE_SHAPE[1] - w)
         random_y = random.randint(0, IMAGE_SHAPE[0] - h)
-        subset = masked_random[random_y: random_y + h, random_x: random_x + w]
+        subset = masked_random[random_y : random_y + h, random_x : random_x + w]
         if subset.sum() == subset.size:
             random_mosaiced_im[
-                random_y: random_y + h, random_x: random_x + w
-            ] = mosaiced_im[y: y + h, x: x + w]
-            masked_random[random_y: random_y + h, random_x: random_x + w] = 0
+                random_y : random_y + h, random_x : random_x + w
+            ] = mosaiced_im[y : y + h, x : x + w]
+            masked_random[random_y : random_y + h, random_x : random_x + w] = 0
             dicts.append(
                 {
                     "image_id": saved_random_image_path,
@@ -212,9 +200,7 @@ for img_name in tqdm(all_images):
             for i in range(NUM_TRIALS):
                 random_x = random.randint(0, IMAGE_SHAPE[1] - w)
                 random_y = random.randint(0, IMAGE_SHAPE[0] - h)
-                subset = masked_random[
-                    random_y: random_y + h, random_x: random_x + w
-                ]
+                subset = masked_random[random_y : random_y + h, random_x : random_x + w]
                 if subset.sum() == subset.size:
                     trial_count += 1
                     break
@@ -223,9 +209,9 @@ for img_name in tqdm(all_images):
             )
             if subset.sum() == subset.size:
                 random_mosaiced_im[
-                    random_y: random_y + h, random_x: random_x + w
-                ] = mosaiced_im[y: y + h, x: x + w]
-                masked_random[random_y: random_y + h, random_x: random_x + w] = 0
+                    random_y : random_y + h, random_x : random_x + w
+                ] = mosaiced_im[y : y + h, x : x + w]
+                masked_random[random_y : random_y + h, random_x : random_x + w] = 0
                 dicts.append(
                     {
                         "image_id": saved_random_image_path,
@@ -246,6 +232,4 @@ for img_name in tqdm(all_images):
 # last image
 cv2.imwrite(saved_random_image_path, random_mosaiced_im)
 output_random_df = pd.DataFrame(dicts)
-output_random_df.to_csv(
-    os.path.join(OUTPUT_DIR, "bb_labels.csv")
-)
+output_random_df.to_csv(os.path.join(OUTPUT_DIR, "bb_labels.csv"))

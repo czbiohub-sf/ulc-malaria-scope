@@ -9,24 +9,30 @@ from ulc_mm_package.hardware.hardware_constants import (
     LED_PWM_PIN,
     ANALOG_DIM_MODE_DUTYCYCLE,
     PWM_DIM_MODE_DUTYCYCLE,
-    PWM_DIMMING_MAX_FREQ_HZ
+    PWM_DIMMING_MAX_FREQ_HZ,
 )
 import pigpio
 from time import sleep
 
 # Set default resolution to 1000 (i.e three decimal points, e.g 0.499 -> 499, but 0.4991 -> 499.1 and would be rounded)
-DUTY_CYCLE_RESOLUTION = 1000 # valid range is 25-40000 (see http://abyz.me.uk/rpi/pigpio/python.html#set_PWM_range)
+DUTY_CYCLE_RESOLUTION = 1000  # valid range is 25-40000 (see http://abyz.me.uk/rpi/pigpio/python.html#set_PWM_range)
+
 
 class LEDError(Exception):
     """Base class for catching LED errors."""
+
     pass
 
-class LED_TPS5420TDDCT():
+
+class LED_TPS5420TDDCT:
     """An LED driver class for the TPS5420TDDCT and sets the dimming mode to PWM on initialization."""
-    def __init__(self, pi: pigpio.pi=None, pwm_pin: int=LED_PWM_PIN):
+
+    def __init__(self, pi: pigpio.pi = None, pwm_pin: int = LED_PWM_PIN):
         self.pwm_pin = pwm_pin
         self.pwm_freq = int(PWM_DIMMING_MAX_FREQ_HZ)
-        self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(ANALOG_DIM_MODE_DUTYCYCLE)
+        self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(
+            ANALOG_DIM_MODE_DUTYCYCLE
+        )
         self._pi = pi if pi != None else pigpio.pi()
         self._pi = pigpio.pi()
 
@@ -41,7 +47,7 @@ class LED_TPS5420TDDCT():
         sleep(0.5)
 
     def _convertDutyCyclePercentToPWMVal(self, duty_cycle_percentage: float):
-        return int(1e6*duty_cycle_percentage)
+        return int(1e6 * duty_cycle_percentage)
 
     def setDutyCycle(self, duty_cycle_perc: float):
         """Set the duty cycle to a desired percentage.
@@ -50,7 +56,7 @@ class LED_TPS5420TDDCT():
         ----------
         duty_cycle_perc: float
             To run at 50%, the argument passed must be 0.5. Note that the default duty cycle
-            resolution is at 1000, i.e values such as 0.501 would be set correctly (501), 
+            resolution is at 1000, i.e values such as 0.501 would be set correctly (501),
             however 0.5018 would be subject to rounding (502).
         """
         try:

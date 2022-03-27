@@ -1,9 +1,16 @@
 from re import S
 from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
-from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
+from ulc_mm_package.hardware.motorcontroller import (
+    DRV8825Nema,
+    Direction,
+    MotorControllerError,
+)
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder
-from ulc_mm_package.hardware.pressure_control import PressureControl, PressureControlError
+from ulc_mm_package.hardware.pressure_control import (
+    PressureControl,
+    PressureControlError,
+)
 from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN
 from ulc_mm_package.hardware.zarrwriter import ZarrWriter
 
@@ -36,6 +43,7 @@ else:
     LABEL_WIDTH = 480
     LABEL_HEIGHT = 360
 
+
 class CameraThread(QThread):
     changePixmap = pyqtSignal(QImage)
     motorPosChanged = pyqtSignal(int)
@@ -52,7 +60,7 @@ class CameraThread(QThread):
     liveview = True
     takeZStack = False
     continuous_dir_name = None
-    custom_image_prefix = ''
+    custom_image_prefix = ""
     zarr_writer = ZarrWriter()
     pressure_sensor = None
 
@@ -73,22 +81,37 @@ class CameraThread(QThread):
                             self.update_counter = 0
                             if self.pressure_sensor != None:
                                 self.updatePressure.emit(self.pressure_sensor.pressure)
-                            self.fps.emit(int(self.num_loops / (perf_counter() - start)))
+                            self.fps.emit(
+                                int(self.num_loops / (perf_counter() - start))
+                            )
                             start = perf_counter()
 
                         if self.single_save:
-                            filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
+                            filename = (
+                                path.join(
+                                    self.main_dir,
+                                    datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+                                )
+                                + f"{self.custom_image_prefix}.tiff"
+                            )
                             cv2.imwrite(filename, image)
                             self.single_save = False
 
                         if self.continuous_save and self.continuous_dir_name != None:
-                            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}{self.im_counter:05}"
+                            filename = (
+                                path.join(
+                                    self.main_dir,
+                                    self.continuous_dir_name,
+                                    datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+                                )
+                                + f"{self.custom_image_prefix}{self.im_counter:05}"
+                            )
                             if WRITE_NUMPY:
-                                np.save(filename+".npy", image)
+                                np.save(filename + ".npy", image)
                             else:
-                                cv2.imwrite(filename+".tiff", image)
+                                cv2.imwrite(filename + ".tiff", image)
                             self.im_counter += 1
-                        
+
                         if self.takeZStack:
                             try:
                                 self.zstack.send(image)
@@ -101,10 +124,13 @@ class CameraThread(QThread):
                                 # Occurs if an image is sent while the function is still moving the motor
                                 pass
 
-                        if self.liveview and self.update_counter % self.update_liveview == 0:
+                        if (
+                            self.liveview
+                            and self.update_counter % self.update_liveview == 0
+                        ):
                             qimage = gray2qimage(image)
                             self.changePixmap.emit(qimage)
-                            
+
                 except Exception as e:
                     # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
                     # Once that happens, this can be swapped to catch the PyCameraException
@@ -120,7 +146,10 @@ class CameraThread(QThread):
             mkdir(self.main_dir)
 
         if self.continuous_save:
-            self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S") + f"{self.custom_image_prefix}"
+            self.continuous_dir_name = (
+                datetime.now().strftime("%Y-%m-%d-%H%M%S")
+                + f"{self.custom_image_prefix}"
+            )
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
             self.start_time = perf_counter()
             self.im_counter = 0
@@ -129,7 +158,7 @@ class CameraThread(QThread):
         if self.camera_activated:
             self.livecam.stopAcquisition()
             self.camera_activated = False
-        
+
         if self.livecam.camera.BinningHorizontal.GetValue() == 2:
             print("Changing to 1x1 binning.")
             self.binning = 1
@@ -138,19 +167,20 @@ class CameraThread(QThread):
             print("Changing to 2x2 binning.")
             self.binning = 2
             self.livecam.setBinning(bin_factor=2, mode="Average")
-        
+
         self.camera_activated = True
-    
+
     def runZStack(self, motor):
         self.takeZStack = True
         self.motor = motor
         self.zstack = takeZStackCoroutine(None, motor)
         self.zstack.send(None)
 
+
 class CameraStream(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(CameraStream, self).__init__(*args, **kwargs)
-        
+
         # List hardware components
         self.cameraThread = None
         self.motor = None
@@ -158,7 +188,7 @@ class CameraStream(QtWidgets.QMainWindow):
         self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
         self.led = None
 
-        # Load the ui file 
+        # Load the ui file
         uic.loadUi(_UI_FILE_DIR, self)
 
         # self.showMaximized()
@@ -167,7 +197,7 @@ class CameraStream(QtWidgets.QMainWindow):
         self.cameraThread = CameraThread()
         self.cameraThread.start()
         self.recording = False
-        
+
         if not self.cameraThread.camera_activated:
             print(f"Error initializing Basler camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
@@ -209,7 +239,7 @@ class CameraStream(QtWidgets.QMainWindow):
             self.btnFocusDown.setEnabled(False)
             self.vsFocus.setEnabled(False)
             self.txtBoxFocus.setEnabled(False)
-        
+
         # Create pressure controller (sensor + servo)
         try:
             self.pressure_control = PressureControl()
@@ -221,7 +251,9 @@ class CameraStream(QtWidgets.QMainWindow):
             self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
             self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
         except PressureControlError:
-            print("Error initializing Pressure Controller. Disabling flow GUI elements.")
+            print(
+                "Error initializing Pressure Controller. Disabling flow GUI elements."
+            )
             self.btnFlowUp.setEnabled(False)
             self.btnFlowDown.setEnabled(False)
             self.vsFlow.setEnabled(False)
@@ -255,7 +287,7 @@ class CameraStream(QtWidgets.QMainWindow):
         # Set slider min/max
         min_exposure_us = 100
         max_exposure_us = 10000
-        self.vsExposure.setMinimum(min_exposure_us) 
+        self.vsExposure.setMinimum(min_exposure_us)
         self.vsExposure.setMaximum(max_exposure_us)
         self.vsExposure.setValue(500)
         self.lblMinExposure.setText(f"{min_exposure_us} us")
@@ -284,14 +316,18 @@ class CameraStream(QtWidgets.QMainWindow):
             end_time = perf_counter()
             start_time = self.cameraThread.start_time
             num_images = self.cameraThread.im_counter
-            print(f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)")
+            print(
+                f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
+            )
             return
 
         # Set custom name
-        custom_filename = '_' + self.txtBoxCustomFilename.text().replace(' ', '')
-        self.cameraThread.custom_image_prefix = custom_filename if custom_filename != '_' else ''
-        
-        if self.chkBoxRecord.checkState():    
+        custom_filename = "_" + self.txtBoxCustomFilename.text().replace(" ", "")
+        self.cameraThread.custom_image_prefix = (
+            custom_filename if custom_filename != "_" else ""
+        )
+
+        if self.chkBoxRecord.checkState():
             self.cameraThread.continuous_save = True
             self.btnSnap.setText("Stop recording")
             self.recording = True
@@ -304,7 +340,9 @@ class CameraStream(QtWidgets.QMainWindow):
 
     def btnChangeBinningHandler(self):
         self.cameraThread.changeBinningMode()
-        curr_binning_mode = self.cameraThread.livecam.camera.BinningHorizontal.GetValue()
+        curr_binning_mode = (
+            self.cameraThread.livecam.camera.BinningHorizontal.GetValue()
+        )
         change_to = 1 if curr_binning_mode == 2 else 2
         self.btnChangeBinning.setText(f"Change to {change_to}X binning")
 
@@ -327,11 +365,11 @@ class CameraStream(QtWidgets.QMainWindow):
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
         self.lblLED.setText(f"{perc}%")
-        self.led.setDutyCycle(perc/100)
+        self.led.setDutyCycle(perc / 100)
 
     def exposureSliderHandler(self):
         exposure = int(self.vsExposure.value())
-        self.cameraThread.updateExposure(exposure / 1000) # Exposure time us -> ms
+        self.cameraThread.updateExposure(exposure / 1000)  # Exposure time us -> ms
         self.txtBoxExposure.setText(f"{exposure}")
 
     def exposureTextBoxHandler(self):
@@ -344,7 +382,7 @@ class CameraStream(QtWidgets.QMainWindow):
             self.txtBoxExposure.setText(f"{self.vsExposure.value()}")
             return
         try:
-            self.cameraThread.updateExposure(exposure / 1000) # Exposure time us -> ms
+            self.cameraThread.updateExposure(exposure / 1000)  # Exposure time us -> ms
         except:
             print("Invalid exposure, ignoring and continuing...")
             self.txtBoxExposure.setText(f"{self.vsExposure.value()}")
@@ -356,7 +394,7 @@ class CameraStream(QtWidgets.QMainWindow):
             self.motor.move_rel(dir=Direction.CW, steps=1)
         except MotorControllerError as e:
             print(e)
-            
+
         self.vsFocus.setValue(self.motor.pos)
         self.txtBoxFocus.setText(f"{self.motor.pos}")
 
@@ -394,9 +432,13 @@ class CameraStream(QtWidgets.QMainWindow):
     def btnZStackHandler(self):
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-        msgBox.setText("Press okay to sweep the motor and automatically find and move to the focal position.")
+        msgBox.setText(
+            "Press okay to sweep the motor and automatically find and move to the focal position."
+        )
         msgBox.setWindowTitle("ZStack and Move to Focus")
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        msgBox.setStandardButtons(
+            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+        )
         retval = msgBox.exec()
 
         if retval == QtWidgets.QMessageBox.Ok:
@@ -440,7 +482,7 @@ class CameraStream(QtWidgets.QMainWindow):
             print("Invalid duty cycle, ignoring and continuing...")
             self.txtBoxFlow.setText(f"{self.vsFlow.value()}")
             return
-        
+
         self.vsFlow.setValue(flow_duty_cycle)
 
     def manualFocusWithEncoder(self, increment: int):
@@ -457,7 +499,6 @@ class CameraStream(QtWidgets.QMainWindow):
             sleep(0.1)
             self.encoder.setColor(12, 159, 217)
 
-
     def changeExposureWithEncoder(self, increment):
         if increment == 1:
             self.vsExposure.setValue(self.vsExposure.value() + 10)
@@ -468,9 +509,13 @@ class CameraStream(QtWidgets.QMainWindow):
     def exit(self):
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-        msgBox.setText("Please remove the flow cell now. Only press okay after the flow cell has been removed. The syringe will move into the topmost position after pressing okay.")
+        msgBox.setText(
+            "Please remove the flow cell now. Only press okay after the flow cell has been removed. The syringe will move into the topmost position after pressing okay."
+        )
         msgBox.setWindowTitle("Exit procedure")
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        msgBox.setStandardButtons(
+            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+        )
         retval = msgBox.exec()
 
         if retval == QtWidgets.QMessageBox.Ok:
@@ -489,7 +534,8 @@ class CameraStream(QtWidgets.QMainWindow):
         print("Cleaning up and exiting the application.")
         self.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     main_window = CameraStream()
     main_window.show()

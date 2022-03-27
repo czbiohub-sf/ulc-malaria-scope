@@ -15,22 +15,28 @@ import board
 import adafruit_mprls
 from ulc_mm_package.hardware.hardware_constants import *
 
+
 class PressureControlError(Exception):
     """Base class for catching all pressure control related errors."""
+
     pass
+
 
 class PressureSensorNotInstantiated(PressureControlError):
     """Raised when the Adafruit MPRLS can not be instantiated."""
+
     def __init__(self):
         super().__init__("Could not instantiate pressure sensor.")
 
-class PressureControl():
-    """Class that deals with monitoring and adjusting the pressure. 
+
+class PressureControl:
+    """Class that deals with monitoring and adjusting the pressure.
 
     Interfaces with an Adafruit MPRLS pressure sensor to get the readings (valid for 0-25 bar). Uses a
     PWM-driven Servo motor (Pololu HD-1810MG) to adjust the position of the syringe (thereby adjusting the pressure).
     """
-    def __init__(self, servo_pin: int=SERVO_PWM_PIN, pi: pigpio.pi=None):
+
+    def __init__(self, servo_pin: int = SERVO_PWM_PIN, pi: pigpio.pi = None):
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
@@ -88,7 +94,7 @@ class PressureControl():
                 while self.duty_cycle >= duty_cycle + self.min_step_size:
                     self.decreaseDutyCycle()
                     sleep(0.01)
-    
+
     def sweepAndGetPressures(self):
         """Sweep the syringe and read pressure values."""
         min, max = self.getMinDutyCycle(), self.getMaxDutyCycle()

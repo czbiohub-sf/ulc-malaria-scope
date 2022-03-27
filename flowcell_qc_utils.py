@@ -11,7 +11,9 @@ gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 edges = cv2.Canny(gray, 50, 200)
 max_slider = 0
 # Detect points that form a line
-lines = cv2.HoughLinesP(edges, 1, np.pi/180, max_slider, minLineLength=10, maxLineGap=250)
+lines = cv2.HoughLinesP(
+    edges, 1, np.pi / 180, max_slider, minLineLength=10, maxLineGap=250
+)
 # Draw lines on the image
 for line in lines:
     x1, y1, x2, y2 = line[0]
@@ -30,4 +32,4 @@ for threshold in range(1, 10):
     loc = np.where(res >= threshold)
     for pt in zip(*loc[::-1]):
         cv2.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
-    cv2.imwrite('res_{}.png'.format(threshold), img_rgb)
+    cv2.imwrite("res_{}.png".format(threshold), img_rgb)
