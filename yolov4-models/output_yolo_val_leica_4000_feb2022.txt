@@ -1,0 +1,29 @@
+Overall composition error {'healthy': 0.0007553685119240372, 'ring': -0.00010790978741771762, 'schizont': 0.004963850221215064, 'troph': -0.005611308945721372}
+
+Confusion matrix before normalization
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+confidence_threshold: 0.5
+Where Unmatched in Groundtruth means False Positive and Unmatched in Prediction means False Negative.
+                                                       Prediction
+                        [  healthy] [     ring] [ schizont] [    troph] [Unmatched] [    Total] 
+            [  healthy]        8033          32           0           9           1        8075 
+            [     ring]          31         709           0          35           2         777 
+            [ schizont]           0           0          20          56           2          78 
+Groundtruth [    troph]           3          35          10         294           3         345 
+            [Unmatched]           2           3           0           1           0           0 
+            [    Total]        8069         779          30         395           0           0 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Confusion matrix after normalization
+
+Note: Normalized by number of elements in each class in all groundtruth, includes both matched and unmatched
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+confidence_threshold: 0.5
+Where Unmatched in Groundtruth means False Positive and Unmatched in Prediction means False Negative.
+                                        Prediction
+                       [ healthy] [    ring] [schizont] [   troph] 
+            [ healthy]      0.996      0.041      0.000      0.023 
+            [    ring]      0.004      0.910      0.000      0.089 
+Groundtruth [schizont]      0.000      0.000      0.667      0.142 
+            [   troph]      0.000      0.045      0.333      0.744 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

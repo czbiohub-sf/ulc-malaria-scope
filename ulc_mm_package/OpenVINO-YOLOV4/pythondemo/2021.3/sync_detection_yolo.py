@@ -1,0 +1,613 @@
+#!/usr/bin/env python
+"""
+    openvino sync
+"""
+from __future__ import print_function, division
+
+import colorsys
+import glob
+import logging
+import os
+import random
+import sys
+from argparse import ArgumentParser, SUPPRESS
+from math import exp as exp
+from time import time
+from time import perf_counter
+
+import cv2
+from skimage.io import imread, imsave
+from openvino.inference_engine import IECore
+import numpy as np
+import pandas as pd
+import ngraph as ng
+
+logging.basicConfig(
+    format="[ %(levelname)s ] %(message)s", level=logging.INFO, stream=sys.stdout
+)
+log = logging.getLogger()
+
+VIDEO_EXTS = [".avi", ".m4v", ".mkv", ".mp4"]
+IMAGE_EXTS = [".png", ".jpg", ".tif", ".tiff"]
+
+
+def build_argparser():
+    parser = ArgumentParser(add_help=False)
+    args = parser.add_argument_group("Options")
+    args.add_argument(
+        "-m",
+        "--model",
+        default="yolov4-tiny-obj_best.xml",
+        help="Required. Path to an .xml file with a trained model.",
+        type=str,
+    )
+    args.add_argument(
+        "--labels", help="Optional. Labels mapping file", default="obj.names", type=str
+    )
+
+    args.add_argument(
+        "-h",
+        "--help",
+        action="help",
+        default=SUPPRESS,
+        help="Show this help message and exit.",
+    )
+    args.add_argument(
+        "-d",
+        "--device",
+        help="Optional. Specify the target device to infer on; CPU, GPU, FPGA, HDDL or MYRIAD is"
+        " acceptable. The sample will look for a suitable plugin for device specified. "
+        "Default value is CPU",
+        default="CPU",
+        type=str,
+    )
+    args.add_argument(
+        "-t",
+        "--prob_threshold",
+        help="Optional. Probability threshold for detections filtering",
+        default=0.2,
+        type=float,
+    )
+    args.add_argument(
+        "-iout",
+        "--iou_threshold",
+        help="Optional. Intersection over union threshold for overlapping "
+        "detections filtering",
+        default=0.3,
+        type=float,
+    )
+    args.add_argument(
+        "-ni",
+        "--number_iter",
+        help="Optional. Number of inference iterations",
+        default=1,
+        type=int,
+    )
+    args.add_argument(
+        "-pc",
+        "--perf_counts",
+        help="Optional. Report performance counters",
+        default=False,
+        action="store_true",
+    )
+    args.add_argument(
+        "-r",
+        "--raw_output_message",
+        help="Optional. Output inference results raw values showing",
+        default=False,
+        action="store_true",
+    )
+    args.add_argument(
+        "-i",
+        "--input",
+        help="Path to video file or image or a folder of images. Default webcam i.e 'cam'",
+        default="cam",
+        type=str,
+    )
+    args.add_argument(
+        "-o",
+        "--output",
+        help="File path for the result image with annotations and csv file containing bboxes, annotations",
+    )
+    args.add_argument(
+        "-f", "--format", type=str, default=".jpg", help="Format of image"
+    )
+    return parser
+
+
+class YoloParams:
+    # ------------------------------------------- Extracting layer parameters ------------------------------------------
+    # Magic numbers are copied from yolo samples
+    def __init__(self, param, side):
+        self.num = 3 if "num" not in param else int(param["num"])
+        self.coords = 4 if "coords" not in param else int(param["coords"])
+        self.classes = 4 if "classes©" not in param else int(param["classes"])
+        self.anchors = (
+            [10.0, 14.0, 23.0, 27.0, 37.0, 58.0, 81.0, 82.0, 135.0, 169.0, 344.0, 319.0]
+            if "anchors" not in param
+            else [float(a) for a in param["anchors"]]
+        )
+
+        if "mask" in param:
+            mask = [int(idx) for idx in param["mask"]]
+            self.num = len(mask)
+
+            maskedAnchors = []
+            for idx in mask:
+                maskedAnchors += [self.anchors[idx * 2], self.anchors[idx * 2 + 1]]
+            self.anchors = maskedAnchors
+
+        self.side = side
+        self.isYoloV3 = "mask" in param  # Weak way to determine but the only one.
+
+    def log_params(self):
+        params_to_print = {
+            "classes": self.classes,
+            "num": self.num,
+            "coords": self.coords,
+            "anchors": self.anchors,
+        }
+        [
+            log.info("         {:8}: {}".format(param_name, param))
+            for param_name, param in params_to_print.items()
+        ]
+
+
+def entry_index(side, coord, classes, location, entry):
+    side_power_2 = side**2
+    n = location // side_power_2
+    loc = location % side_power_2
+    return int(side_power_2 * (n * (coord + classes + 1) + entry) + loc)
+
+
+def scale_bbox(x, y, h, w, class_id, confidence, h_scale, w_scale):
+    xmin = int((x - w / 2) * w_scale)
+    ymin = int((y - h / 2) * h_scale)
+    xmax = int(xmin + w * w_scale)
+    ymax = int(ymin + h * h_scale)
+    return dict(
+        xmin=xmin,
+        xmax=xmax,
+        ymin=ymin,
+        ymax=ymax,
+        class_id=class_id,
+        confidence=confidence,
+    )
+
+
+def parse_yolo_region(blob, resized_image_shape, original_im_shape, params, threshold):
+    # ------------------------------------------ Validating output parameters ------------------------------------------
+    _, _, out_blob_h, out_blob_w = blob.shape
+    assert out_blob_w == out_blob_h, (
+        "Invalid size of output blob. It sould be in NCHW layout and height should "
+        "be equal to width. Current height = {}, current width = {}"
+        "".format(out_blob_h, out_blob_w)
+    )
+
+    # ------------------------------------------ Extracting layer parameters -------------------------------------------
+    orig_im_h, orig_im_w = original_im_shape
+    resized_image_h, resized_image_w = resized_image_shape
+    objects = list()
+    predictions = blob.flatten()
+    side_square = params.side * params.side
+
+    # ------------------------------------------- Parsing YOLO Region output -------------------------------------------
+    for i in range(side_square):
+        row = i // params.side
+        col = i % params.side
+        for n in range(params.num):
+            obj_index = entry_index(
+                params.side,
+                params.coords,
+                params.classes,
+                n * side_square + i,
+                params.coords,
+            )
+            scale = predictions[obj_index]
+            if scale < threshold:
+                continue
+            box_index = entry_index(
+                params.side, params.coords, params.classes, n * side_square + i, 0
+            )
+            # Network produces location predictions in absolute coordinates of feature maps.
+            # Scale it to relative coordinates.
+            x = (col + predictions[box_index + 0 * side_square]) / params.side
+            y = (row + predictions[box_index + 1 * side_square]) / params.side
+            # Value for exp is very big number in some cases so following construction is using here
+            try:
+                w_exp = exp(predictions[box_index + 2 * side_square])
+                h_exp = exp(predictions[box_index + 3 * side_square])
+            except OverflowError:
+                continue
+            # Depends on topology we need to normalize sizes by feature maps (up to YOLOv3) or by input shape (YOLOv3)
+            w = (
+                w_exp
+                * params.anchors[2 * n]
+                / (resized_image_w if params.isYoloV3 else params.side)
+            )
+            h = (
+                h_exp
+                * params.anchors[2 * n + 1]
+                / (resized_image_h if params.isYoloV3 else params.side)
+            )
+            for j in range(params.classes):
+                class_index = entry_index(
+                    params.side,
+                    params.coords,
+                    params.classes,
+                    n * side_square + i,
+                    params.coords + 1 + j,
+                )
+                confidence = scale * predictions[class_index]
+                if confidence < threshold:
+                    continue
+                objects.append(
+                    scale_bbox(
+                        x=x,
+                        y=y,
+                        h=h,
+                        w=w,
+                        class_id=j,
+                        confidence=confidence,
+                        h_scale=orig_im_h,
+                        w_scale=orig_im_w,
+                    )
+                )
+    return objects
+
+
+def intersection_over_union(box_1, box_2):
+    width_of_overlap_area = min(box_1["xmax"], box_2["xmax"]) - max(
+        box_1["xmin"], box_2["xmin"]
+    )
+    height_of_overlap_area = min(box_1["ymax"], box_2["ymax"]) - max(
+        box_1["ymin"], box_2["ymin"]
+    )
+    if width_of_overlap_area < 0 or height_of_overlap_area < 0:
+        area_of_overlap = 0
+    else:
+        area_of_overlap = width_of_overlap_area * height_of_overlap_area
+    box_1_area = (box_1["ymax"] - box_1["ymin"]) * (box_1["xmax"] - box_1["xmin"])
+    box_2_area = (box_2["ymax"] - box_2["ymin"]) * (box_2["xmax"] - box_2["xmin"])
+    area_of_union = box_1_area + box_2_area - area_of_overlap
+    if area_of_union == 0:
+        return 0
+    return area_of_overlap / area_of_union
+
+
+class ObjectDetection(object):
+    def __init__(self, args):
+        self.args = args
+
+        model_xml = self.args.model
+        model_bin = os.path.splitext(model_xml)[0] + ".bin"
+
+        # ------------- 1. Plugin initialization for specified device and load extensions library if specified -------------
+        log.info("Creating Inference Engine...")
+        ie = IECore()
+        # -------------------- 2. Reading the IR generated by the Model Optimizer (.xml and .bin files) --------------------
+        log.info("Loading network files:\n\t{}\n\t{}".format(model_xml, model_bin))
+        # net = IENetwork(model=model_xml, weights=model_bin)
+        self.net = IECore().read_network(model=model_xml, weights=model_bin)
+        self.function = ng.function_from_cnn(self.net)
+
+        # ---------------------------------------------- 3. Preparing inputs -----------------------------------------------
+        log.info("Preparing inputs")
+        self.input_blob = next(iter(self.net.input_info))
+
+        #  Defaulf batch_size is 1
+        self.net.batch_size = 1
+
+        if self.args.labels:
+            with open(self.args.labels, "r") as f:
+                self.labels_map = [x.strip() for x in f]
+        else:
+            self.labels_map = None
+
+        # ----------------------------------------- 4. Loading model to the plugin -----------------------------------------
+        log.info("Loading model to the plugin")
+        self.exec_net = ie.load_network(
+            network=self.net, num_requests=2, device_name=self.args.device
+        )
+        num_classes = len(self.labels_map)
+        hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
+        self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+        self.colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), self.colors))
+
+        random.seed(0)
+        random.shuffle(self.colors)
+        random.seed(None)
+
+    def inference(self, frame):
+        """
+
+        :param frame:
+        :return:
+        """
+        cur_request_id = 0
+        parsing_time = 0
+        # ----------------------------------------------- 5. Doing inference -----------------------------------------------
+        is_async_mode = False
+        # Here is the first asynchronous point: in the Async mode, we capture frame to populate the NEXT infer request
+        # in the regular mode, we capture frame to the CURRENT infer request
+
+        # Read and pre-process input images
+        n, c, h, w = self.net.input_info[self.input_blob].input_data.shape
+
+        request_id = cur_request_id
+        in_frame = cv2.resize(frame, (w, h))
+
+        # resize input_frame to network size
+        in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
+        in_frame = in_frame.reshape((n, c, h, w))
+        # Start inference
+        infer_time = time()
+        self.exec_net.start_async(
+            request_id=request_id, inputs={self.input_blob: in_frame}
+        )
+        # exec_net.infer(inputs={self.input_blob: in_frame})
+        det_time = time() - infer_time
+
+        # Collecting object detection results
+        objects = list()
+        if self.exec_net.requests[cur_request_id].wait(-1) == 0:
+            output = self.exec_net.requests[cur_request_id].output_blobs
+            start_time = time()
+            for layer_name, out_blob in output.items():
+                out_blob = out_blob.buffer.reshape(self.net.outputs[layer_name].shape)
+                params = [
+                    x._get_attributes()
+                    for x in self.function.get_ordered_ops()
+                    if x.get_friendly_name() == layer_name
+                ][0]
+                layer_params = YoloParams(params, out_blob.shape[2])
+                # log.info("Layer {} parameters: ".format(layer_name))
+                # layer_params.log_params()
+                objects += parse_yolo_region(
+                    out_blob,
+                    in_frame.shape[2:],
+                    frame.shape[:-1],
+                    layer_params,
+                    self.args.prob_threshold,
+                )
+            parsing_time = time() - start_time
+
+        # Filtering overlapping boxes with respect to the --iou_threshold CLI parameter
+        objects = sorted(objects, key=lambda obj: obj["confidence"], reverse=True)
+        for i in range(len(objects)):
+            if objects[i]["confidence"] == 0:
+                continue
+            for j in range(i + 1, len(objects)):
+                if (
+                    intersection_over_union(objects[i], objects[j])
+                    > self.args.iou_threshold
+                ):
+                    objects[j]["confidence"] = 0
+
+        # Drawing objects with respect to the --prob_threshold CLI parameter
+        objects = [
+            obj for obj in objects if obj["confidence"] >= self.args.prob_threshold
+        ]
+
+        if len(objects) and self.args.raw_output_message:
+            log.info("\nDetected boxes for batch {}:".format(1))
+            log.info(" Class ID | Confidence | XMIN | YMIN | XMAX | YMAX | COLOR ")
+
+        origin_im_size = frame.shape[:-1]
+        image_h, image_w, _ = frame.shape
+        for obj in objects:
+            # Validation bbox of detected object
+            if (
+                obj["xmax"] > origin_im_size[1]
+                or obj["ymax"] > origin_im_size[0]
+                or obj["xmin"] < 0
+                or obj["ymin"] < 0
+            ):
+                continue
+            color = (
+                int(min(obj["class_id"] * 12.5, 255)),
+                min(obj["class_id"] * 7, 255),
+                min(obj["class_id"] * 5, 255),
+            )
+            det_label = (
+                self.labels_map[obj["class_id"]]
+                if self.labels_map and len(self.labels_map) >= obj["class_id"]
+                else str(obj["class_id"])
+            )
+
+            if self.args.raw_output_message:
+                log.info(
+                    "{:^9} | {:10f} | {:4} | {:4} | {:4} | {:4} | {} ".format(
+                        det_label,
+                        obj["confidence"],
+                        obj["xmin"],
+                        obj["ymin"],
+                        obj["xmax"],
+                        obj["ymax"],
+                        color,
+                    )
+                )
+
+            cv2.rectangle(
+                frame, (obj["xmin"], obj["ymin"]), (obj["xmax"], obj["ymax"]), color, 2
+            )
+            c1 = (obj["xmin"], obj["ymin"])
+            fontScale = 0.5
+            score = obj["confidence"]
+            bbox_color = self.colors[obj["class_id"]]
+            bbox_thick = int(0.6 * (image_h + image_w) / 600)
+            score = round(obj["confidence"], 2)
+            bbox_mess = '%s: %.2f' % (self.labels_map[obj["class_id"]].split(" ")[1], score)
+            t_size = cv2.getTextSize(bbox_mess, 0, fontScale, thickness=bbox_thick // 2)[0]
+            c3 = (c1[0] + t_size[0], c1[1] - t_size[1] - 3)
+            cv2.rectangle(frame, c1, (int(c3[0]), int(c3[1])), bbox_color, -1) #filled
+
+            cv2.putText(frame, bbox_mess, (c1[0], int(c1[1] - 2)), cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale, (0, 0, 0), bbox_thick // 2, lineType=cv2.LINE_AA)
+
+        # # Draw performance stats over frame
+        # inf_time_message = (
+        #     "" if is_async_mode else "Inference time: {:.3f} ms".format(det_time * 1e3)
+        # )
+        # async_mode_message = (
+        #     "sync mode is on. Processing request {}".format(cur_request_id)
+        #     if is_async_mode
+        #     else ""
+        # )
+        # parsing_message = "parsing time is {:.3f} ms".format(parsing_time * 1e3)
+
+        # cv2.putText(
+        #     frame,
+        #     inf_time_message,
+        #     (15, 15),
+        #     cv2.FONT_HERSHEY_COMPLEX,
+        #     0.5,
+        #     (200, 10, 10),
+        #     1,
+        # )
+        # cv2.putText(
+        #     frame,
+        #     async_mode_message,
+        #     (10, int(origin_im_size[0] - 20)),
+        #     cv2.FONT_HERSHEY_COMPLEX,
+        #     0.5,
+        #     (10, 10, 200),
+        #     1,
+        # )
+        # cv2.putText(
+        #     frame,
+        #     parsing_message,
+        #     (15, 30),
+        #     cv2.FONT_HERSHEY_COMPLEX,
+        #     0.5,
+        #     (10, 10, 200),
+        #     1,
+        # )
+        return frame, objects, det_time * 1e3, parsing_time * 1e3
+
+
+def create_dir_if_not_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+if __name__ == "__main__":
+    args = build_argparser().parse_args()
+    yolo = ObjectDetection(args)
+    input_images = []
+    video_file = False
+    if args.input == "cam":
+        input_stream = 0
+        cap = cv2.VideoCapture(input_stream)
+        video_file = True
+    if args.format in VIDEO_EXTS:
+        input_stream = args.input
+        cap = cv2.VideoCapture(input_stream)
+        assert os.path.isfile(args.input), "Specified input file doesn't exist"
+        video_file = True
+    cv2.namedWindow("frame", cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+    last_start_time = perf_counter()
+    count_frame = 0
+    fps_time = 0
+    dfs = []
+    if args.labels:
+        with open(args.labels, "r") as f:
+            labels_map = [x.strip() for x in f]
+    else:
+        labels_map = None
+
+    create_dir_if_not_exists(args.output)
+    inference_times = []
+    parsing_times = []
+    exec_times = []
+    if video_file:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            output_img_name = os.path.join(
+                os.path.abspath(args.output), "result_{}.jpg".format(count_frame)
+            )
+            if not ret:
+                break
+            start_time = perf_counter()
+            out_frame, objects, inference_time, parsing_time = yolo.inference(frame)
+            exec_time = (perf_counter() - start_time) * 1000
+            print("The processing time of one frame is", exec_time)
+            cv2.imwrite(output_img_name, frame)
+            count_frame = count_frame + 1
+            print("FPS is", count_frame / (perf_counter() - last_start_time))
+            cv2.imshow("frame", frame)
+            for obj in objects:
+                dfs.append(
+                    pd.DataFrame.from_records(
+                        [
+                            {
+                                "image_id": output_img_name,
+                                "xmin": obj["xmin"],
+                                "xmax": obj["xmax"],
+                                "ymin": obj["ymin"],
+                                "ymax": obj["ymax"],
+                                "label": labels_map[obj["class_id"]].split(" ")[1],
+                                "prob": obj["confidence"]
+                            }
+                        ]
+                    )
+                )
+            inference_times.append(inference_time)
+            parsing_times.append(parsing_time)
+            exec_times.append(exec_time)
+
+            key = cv2.waitKey(3)
+            if key == 27:
+                break
+    else:
+        input_images = glob.glob(os.path.join(args.input, "*" + args.format))
+        for img_name in input_images:
+            frame = imread(img_name)
+            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+            print(frame.shape)
+            output_img_name = os.path.join(os.path.abspath(args.output), os.path.basename(img_name))
+            start_time = perf_counter()
+            out_frame, objects, inference_time, parsing_time = yolo.inference(frame)
+            exec_time = (perf_counter() - start_time) * 1000
+            print("The processing time of one frame is", exec_time)
+            imsave(output_img_name, frame)
+            count_frame = count_frame + 1
+            print("FPS is", count_frame / (perf_counter() - last_start_time))
+            cv2.imshow("frame", frame)
+            for obj in objects:
+                dfs.append(
+                    pd.DataFrame.from_records(
+                        [
+                            {
+                                "image_id": output_img_name,
+                                "xmin": obj["xmin"],
+                                "xmax": obj["xmax"],
+                                "ymin": obj["ymin"],
+                                "ymax": obj["ymax"],
+                                "label": labels_map[obj["class_id"]].split(" ")[1],
+                                "prob": obj["confidence"]
+                            }
+                        ]
+                    )
+                )
+            inference_times.append(inference_time)
+            parsing_times.append(parsing_time)
+            exec_times.append(exec_time)
+
+            key = cv2.waitKey(3)
+            if key == 27:
+                break
+    # print(
+    #     "inference_time average and std is {} and {}".format(
+    #         np.mean(inference_times), np.std(inference_times)
+    #     )
+    # )
+    print(
+        "exec_time average and std is {} and {}".format(
+            np.mean(exec_times), np.std(exec_times)
+        )
+    )
+
+    df = pd.concat(dfs)
+    df.to_csv(os.path.join(os.path.abspath(args.output), "bb_labels.csv"), index=False)
+    cv2.destroyAllWindows()
