@@ -14,8 +14,10 @@ from py_cameras import Basler, GrabStrategy
 # ------ CONSTANTS ------ #
 _DEFAULT_EXPOSURE_MS = 1
 
+
 class CameraError(Exception):
     """Base class for catching camera errors."""
+
     # Note this is temporary until the pyCameras improved exception-handling PR is merged.
     # Once that is merged, we can simply raise the PyCameras error.
 

@@ -29,6 +29,7 @@ from ulc_mm_package.detection.constants_ulc import (
     DEFAULT_FILTER_AREA,
 )
 
+
 def detect_image(
     model,
     use_tpu,
@@ -40,7 +41,7 @@ def detect_image(
     area_filter=DEFAULT_FILTER_AREA,
     filter_background_bboxes=True,
 ):
-    
+
     labels = utils.load_labels(labels) if labels else {}
     # Import TensorFlow libraries
     # If tflite_runtime is installed, import interpreter from tflite_runtime,
@@ -103,11 +104,7 @@ def detect_image(
             xmin, xmax, ymin, ymax, org_width, org_height
         )
         bbox = detect.BBox(xmin, ymin, xmax, ymax)
-        obj = detect.Object(
-            id=obj.id,
-            score=obj.score,
-            bbox=bbox
-        )
+        obj = detect.Object(id=obj.id, score=obj.score, bbox=bbox)
         if obj.bbox.area < area_filter:
             if filter_background_bboxes:
                 if utils.check_if_bbox_not_background(bbox, thresholded_image):
@@ -121,8 +118,10 @@ def detect_image(
 
     return filtered_objs
 
-class MLDetection():
-    def __init__(self, 
+
+class MLDetection:
+    def __init__(
+        self,
         model,
         use_tpu,
         labels,
@@ -159,17 +158,20 @@ class MLDetection():
         interpreter.allocate_tensors()
         self.interpreter = interpreter
 
-    def detect(self,
+    def detect(
+        self,
         input_image,
         threshold=DEFAULT_CONFIDENCE,
         count=DEFAULT_INFERENCE_COUNT,
         area_filter=DEFAULT_FILTER_AREA,
-        filter_background_bboxes=True
+        filter_background_bboxes=True,
     ):
 
         image = input_image
         scale = detect.set_input(
-            self.interpreter, image.size, lambda size: image.resize(size, Image.ANTIALIAS)
+            self.interpreter,
+            image.size,
+            lambda size: image.resize(size, Image.ANTIALIAS),
         )
         numpy_image = np.array(image)
         if filter_background_bboxes:
@@ -198,11 +200,7 @@ class MLDetection():
                 xmin, xmax, ymin, ymax, org_width, org_height
             )
             bbox = detect.BBox(xmin, ymin, xmax, ymax)
-            obj = detect.Object(
-                id=obj.id,
-                score=obj.score,
-                bbox=bbox
-            )
+            obj = detect.Object(id=obj.id, score=obj.score, bbox=bbox)
             if obj.bbox.area < area_filter:
                 if filter_background_bboxes:
                     if utils.check_if_bbox_not_background(bbox, thresholded_image):
