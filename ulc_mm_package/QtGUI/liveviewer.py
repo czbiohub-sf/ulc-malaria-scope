@@ -1,4 +1,4 @@
-from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
+from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError, MotorInMotion
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder
@@ -70,7 +70,7 @@ class AcquisitionThread(QThread):
         self.click_to_advance = False
 
         try:
-            self.camera = ULCMM_Camera()
+            self.camera = AVTCamera()
             self.camera_activated = True
         except CameraError:
             self.camera_activated = False
@@ -180,7 +180,7 @@ class AcquisitionThread(QThread):
             self.camera.stopAcquisition()
             self.camera_activated = False
         
-        if self.camera.camera.BinningHorizontal.GetValue() == 2:
+        if self.camera.getBinning() == 2:
             print("Changing to 1x1 binning.")
             self.binning = 1
             self.camera.setBinning(bin_factor=1, mode="Average")
@@ -402,7 +402,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     def btnChangeBinningHandler(self):
         self.acquisitionThread.changeBinningMode()
-        curr_binning_mode = self.acquisitionThread.camera.camera.BinningHorizontal.GetValue()
+        curr_binning_mode = self.acquisitionThread.camera.getBinning()
         change_to = 1 if curr_binning_mode == 2 else 2
         self.btnChangeBinning.setText(f"Change to {change_to}X binning")
 
