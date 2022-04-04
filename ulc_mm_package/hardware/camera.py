@@ -9,7 +9,6 @@ Basler PyPlon Library:
     https://github.com/basler/pypylon
 """
 
-import threading
 from py_cameras import Basler, GrabStrategy
 
 # ------ CONSTANTS ------ #
@@ -21,22 +20,6 @@ class CameraError(Exception):
 
     # Note this is temporary until the pyCameras improved exception-handling PR is merged.
     # Once that is merged, we can simply raise the PyCameras error.
-
-
-class StoppableThread(threading.Thread):
-    """Thread class which can be stopped"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._stop_event = threading.Event()
-        self.daemon = True
-
-    def stop(self):
-        self._stop_event.set()
-
-    def isStopped(self):
-        return self._stop_event.is_set()
-
 
 class ULCMM_Camera(Basler):
     """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""
