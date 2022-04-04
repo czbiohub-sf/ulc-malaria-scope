@@ -24,7 +24,7 @@ class CameraError(Exception):
     # Note this is temporary until the pyCameras improved exception-handling PR is merged.
     # Once that is merged, we can simply raise the PyCameras error.
 
-class ULCMM_Camera(Basler):
+class BaslerCamera(Basler):
     """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""
 
     def __init__(self):
