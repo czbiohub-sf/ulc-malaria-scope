@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from skimage.draw import rectangle
+import cv2
 
 
 def create_dir_if_not_exists(path):
@@ -50,16 +51,27 @@ def load_labels(path, encoding="utf-8"):
         return {index: line.strip() for index, line in enumerate(lines)}
 
 
-def draw_objects(draw, objs, labels):
+def draw_objects(frame, objs, labels, colors):
     """Draws the bounding box and label for each object."""
+    image_h, image_w, _ = frame.shape
     for obj in objs:
-        bbox = obj.bbox
-        draw.rectangle([(bbox.xmin, bbox.ymin), (bbox.xmax, bbox.ymax)], outline="red")
-        draw.text(
-            (bbox.xmin + 10, bbox.ymin + 10),
-            "%s\n%.2f" % (labels.get(obj.id, obj.id), obj.score),
-            fill="red",
+        fontScale = 0.5
+        score = obj.score
+        class_ind = obj.id
+        bbox_color = colors[class_ind]
+        cv2.rectangle(
+            frame, (obj.bbox.xmin, obj.bbox.ymin), (obj.bbox.xmax, obj.bbox.ymax), bbox_color, 2
         )
+        c1 = (obj.bbox.xmin, obj.bbox.ymin)
+        fontScale = 0.5
+        bbox_thick = int(0.6 * (image_h + image_w) / 600)
+        bbox_mess = '%s: %.2f' % (labels.get(class_ind), score)
+        t_size = cv2.getTextSize(bbox_mess, 0, fontScale, thickness=bbox_thick // 2)[0]
+        c3 = (c1[0] + t_size[0], c1[1] - t_size[1] - 3)
+        cv2.rectangle(frame, c1, (int(c3[0]), int(c3[1])), bbox_color, -1)  #filled
+        cv2.putText(frame, bbox_mess, (c1[0], int(c1[1] - 2)), cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale, (0, 0, 0), bbox_thick // 2, lineType=cv2.LINE_AA)
+    return frame
 
 
 def check_if_bbox_not_background(bbox, thresholded_image):

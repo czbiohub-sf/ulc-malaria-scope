@@ -15,14 +15,16 @@
 """Example using TF Lite to detect objects in a given image."""
 
 import argparse
+import colorsys
 import importlib
+import random
 import time
 import glob
 import os
 import numpy as np
 import pandas as pd
 from PIL import Image
-from PIL import ImageDraw
+from skimage.io import imsave
 import detect
 import utils
 from constants_ulc import (
@@ -97,6 +99,13 @@ def detect_images(
             "loading the model into Edge TPU memory.",
         )
     print(len(input_images))
+    num_classes = len(labels)
+    hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
+    colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+    colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
+    random.seed(0)
+    random.shuffle(colors)
+    random.seed(None)
     for index, input_image in enumerate(input_images):
         image = Image.open(input_image)
         scale = detect.set_input(
@@ -161,9 +170,8 @@ def detect_images(
                     filtered_objs.append(obj)
         print("{} {} {}".format(index, input_image, len(filtered_objs)))
         if overlaid:
-            image = image.convert("RGB")
-            utils.draw_objects(ImageDraw.Draw(image), filtered_objs, labels)
-            image.save(os.path.join(output, os.path.basename(input_image)))
+            overlaid_image = utils.draw_objects(numpy_image, filtered_objs, labels, colors)
+            imsave(os.path.join(output, os.path.basename(input_image)), overlaid_image)
     path = os.path.join(output, "bb_labels.csv")
     print("wrote the detections to csv file {}".format(path))
     df.to_csv(path)

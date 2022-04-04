@@ -15,12 +15,15 @@
 """Example using TF Lite to detect objects in a given image."""
 
 import argparse
+import colorsys
 import importlib
+import random
 import time
 import os
 import pandas as pd
 from PIL import Image
 from PIL import ImageDraw
+from skimage.io import imsave
 import cv2
 import numpy as np
 
@@ -94,6 +97,13 @@ def detect_video_file(
     df = pd.DataFrame(columns=LUMI_CSV_COLUMNS)
     inference_times = []
     parsing_times = []
+    num_classes = len(labels)
+    hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
+    colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+    colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
+    random.seed(0)
+    random.shuffle(colors)
+    random.seed(None)
     while video.isOpened():
 
         # Acquire frame and resize to expected shape [1xHxWx3]
@@ -102,8 +112,8 @@ def detect_video_file(
         if not ret:
             print("Reached the end of the video!")
             break
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = Image.fromarray(image)
+        np_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(np_image)
         scale = detect.set_input(
             interpreter, image.size, lambda size: image.resize(size, Image.ANTIALIAS)
         )
@@ -172,9 +182,8 @@ def detect_video_file(
                     )
                     filtered_objs.append(obj)
         if overlaid:
-            image = image.convert("RGB")
-            utils.draw_objects(ImageDraw.Draw(image), filtered_objs, labels)
-            image.save(os.path.join(output, os.path.basename(input_image)))
+            overlaid_image = utils.draw_objects(np_image, filtered_objs, labels, colors)
+            imsave(os.path.join(output, os.path.basename(input_image)), overlaid_image)
         t2 = cv2.getTickCount()
         time1 = (t2 - t1) / freq
         frame_rate_calc = 1 / time1

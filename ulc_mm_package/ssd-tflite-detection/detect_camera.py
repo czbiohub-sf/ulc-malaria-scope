@@ -15,15 +15,16 @@
 """Example using TF Lite to detect objects in a given image."""
 
 import argparse
+import colorsys
 import importlib
+import random
 import time
 import os
 import cv2
 import numpy as np
 import pandas as pd
 from PIL import Image
-from PIL import ImageDraw
-
+from skimage.io import imsave
 import detect
 import utils
 from rpi_videostream import VideoStream
@@ -91,6 +92,13 @@ def detect_stream(
     # Initialize frame count calculation
     frame_count = 0
     print("----INFERENCE TIME----")
+    num_classes = len(labels)
+    hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
+    colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+    colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
+    random.seed(0)
+    random.shuffle(colors)
+    random.seed(None)
     while True:
 
         # Grab frame from video stream
@@ -111,6 +119,7 @@ def detect_stream(
             inference_time = time.perf_counter() - start
             objs = detect.get_output(interpreter, threshold, scale)
             print("%.2f ms" % (inference_time * 1000))
+
         input_image = "frame_{}.png".format(frame_count)
         print(input_image)
         numpy_image = np.array(image)
@@ -167,10 +176,9 @@ def detect_stream(
         print(len(filtered_objs))
         frame_count += 1
         if overlaid:
-            image = image.convert("RGB")
-            utils.draw_objects(ImageDraw.Draw(image), objs, labels)
-            image.save(os.path.join(os.path.abspath(output), input_image))
-            image.show()
+            overlaid_image = utils.draw_objects(numpy_image, objs, labels, colors)
+            imave(os.path.join(os.path.abspath(output), input_image), overlaid_image)
+            cv2.imshow("frame", overlaid_image)
     df.to_csv(os.path.join(os.path.abspath(output), "preds_val.csv"))
 
 

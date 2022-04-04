@@ -404,11 +404,7 @@ class ObjectDetection(object):
                 or obj["ymin"] < 0
             ):
                 continue
-            color = (
-                int(min(obj["class_id"] * 12.5, 255)),
-                min(obj["class_id"] * 7, 255),
-                min(obj["class_id"] * 5, 255),
-            )
+            bbox_color = self.colors[obj["class_id"]]
             det_label = (
                 self.labels_map[obj["class_id"]]
                 if self.labels_map and len(self.labels_map) >= obj["class_id"]
@@ -424,17 +420,16 @@ class ObjectDetection(object):
                         obj["ymin"],
                         obj["xmax"],
                         obj["ymax"],
-                        color,
+                        bbox_color,
                     )
                 )
 
             cv2.rectangle(
-                frame, (obj["xmin"], obj["ymin"]), (obj["xmax"], obj["ymax"]), color, 2
+                frame, (obj["xmin"], obj["ymin"]), (obj["xmax"], obj["ymax"]), bbox_color, 2
             )
             c1 = (obj["xmin"], obj["ymin"])
             fontScale = 0.5
             score = obj["confidence"]
-            bbox_color = self.colors[obj["class_id"]]
             bbox_thick = int(0.6 * (image_h + image_w) / 600)
             score = round(obj["confidence"], 2)
             bbox_mess = '%s: %.2f' % (self.labels_map[obj["class_id"]].split(" ")[1], score)
