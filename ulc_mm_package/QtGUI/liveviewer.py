@@ -629,6 +629,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             # Turn off camera
             if self.acquisitionThread != None:
                 self.acquisitionThread.camera_activated = False
+                self.acquisitionThread.camera.deactivateCamera()
+            
             # Turn off encoder
             self.encoder.close()
 

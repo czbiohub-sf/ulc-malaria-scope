@@ -64,7 +64,7 @@ class AVTCamera:
         self.camera.__enter__()
         self._camera_setup()
 
-    def disconnect(self) -> None:
+    def deactivateCamera(self) -> None:
         self.vimba.__exit__(*sys.exc_info())
     
     def _frame_handler(self, cam, frame):
@@ -173,7 +173,7 @@ class AVTCamera:
 if __name__ == "__main__":
     import pickle
     import time
-    cam = ULCMM_Camera()
+    cam = BaslerCamera()
     def temperatureMonitor(bin_factor):
         total_runtime_s = 1200
         temperatures = []
