@@ -86,7 +86,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
     best_focus_position = start + np.argmax(focus_metrics_fine)*steps_per_fine
     motor.move_abs(best_focus_position)
 
-def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int=10, steps_per_image: int=1, save_loc=None):
+def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int=20, steps_per_image: int=1, save_loc=None):
     """Take a symmetric z-stack about a given motor position.
 
     Parameters
@@ -136,7 +136,7 @@ def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int
     best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
     return best_focus_position, focus_metrics
 
-def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_steps: int=10, steps_per_image: int=1, save_loc=None):
+def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_steps: int=20, steps_per_image: int=1, save_loc=None):
     """The coroutine companion to symmetricZStack"""
 
     if save_loc != None:
