@@ -150,7 +150,7 @@ class AcquisitionThread(QThread):
                 try:
                     pressure = self.pressure_sensor.getPressure()
                     self.updatePressure.emit(pressure)
-                except IOError:
+                except Exception:
                     print("Error getting pressure. Continuing...")
             self.fps.emit(int(self.num_loops / (perf_counter() - self.fps_timer)))
             self.fps_timer = perf_counter()
