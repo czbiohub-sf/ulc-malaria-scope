@@ -6,9 +6,9 @@ from time import sleep
 
 from ulc_mm_package.image_processing.focus_metrics import *
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
-from ulc_mm_package.hardware.camera import CameraError, ULCMM_Camera
+from ulc_mm_package.hardware.camera import CameraError, BaslerCamera
 
-def takeZStack(camera: ULCMM_Camera, motor: DRV8825Nema, steps_per_image: int=1, save_loc=None):
+def takeZStack(camera: BaslerCamera, motor: DRV8825Nema, steps_per_image: int=1, save_loc=None):
 
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
@@ -86,13 +86,13 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
     best_focus_position = start + np.argmax(focus_metrics_fine)*steps_per_fine
     motor.move_abs(best_focus_position)
 
-def symmetricZStack(camera: ULCMM_Camera, motor: DRV8825Nema, start_point: int, num_steps: int=10, steps_per_image: int=1, save_loc=None):
+def symmetricZStack(camera: BaslerCamera, motor: DRV8825Nema, start_point: int, num_steps: int=10, steps_per_image: int=1, save_loc=None):
     """Take a symmetric z-stack about a given motor position.
 
     Parameters
     ----------
-    camera: ULCMM_Camera:
-        An instance of the ULCMM_Camera object (defined in /hardware/camera.py)
+    camera: BaslerCamera:
+        An instance of the BaslerCamera object (defined in /hardware/camera.py)
     motor: DRV8825Nema()
         An instance of the DRV8825Nema motor driver object (defined in /hardware/motorcontroller.py).
     start_point: int
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     led.setDutyCycle(0.5)
     # Instantiate camera
     try:
-        camera = ULCMM_Camera()
+        camera = BaslerCamera()
         camera.exposureTime_ms = 3
     except CameraError as e:
         print(f"Could not instantiate camera, encountered: \n{e}")

@@ -19,7 +19,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 import cv2
 import numpy as np
-from qimage2ndarray import gray2qimage
+from qimage2ndarray import gray2qimage, array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 BIG_SCREEN = True
@@ -86,10 +86,10 @@ class AcquisitionThread(QThread):
 
                         if self.liveview:
                             if self.update_counter % self.update_liveview == 0:
-                                qimage = gray2qimage(image)
+                                qimage = array2qimage(image)
                                 self.changePixmap.emit(qimage)
                         elif self.click_to_advance:
-                            qimage = gray2qimage(image)
+                            qimage = array2qimage(image)
                             self.changePixmap.emit(qimage)
                             self.click_to_advance = False
                 except Exception as e:
