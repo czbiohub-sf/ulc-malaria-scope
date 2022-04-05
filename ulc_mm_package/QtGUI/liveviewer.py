@@ -19,7 +19,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 import cv2
 import numpy as np
-from qimage2ndarray import gray2qimage, array2qimage
+from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 BIG_SCREEN = True
@@ -629,6 +629,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             # Turn off camera
             if self.acquisitionThread != None:
                 self.acquisitionThread.camera_activated = False
+                self.acquisitionThread.camera.stopAcquisition()
                 self.acquisitionThread.camera.deactivateCamera()
             
             # Turn off encoder

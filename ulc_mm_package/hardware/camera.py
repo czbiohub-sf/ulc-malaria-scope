@@ -61,6 +61,12 @@ class AVTCamera:
             cams = vimba.get_all_cameras()
             return cams[0]
 
+    def _camera_setup(self):
+        self.camera.ExposureAuto.set("Off")
+        self.camera.ExposureTime.set(500)
+        self.setBinning(bin_factor=2)
+        self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
+
     def connect(self) -> None:
         self.camera = self._get_camera()
         self.camera.__enter__()
@@ -73,8 +79,7 @@ class AVTCamera:
         if self.queue.full():
             self.queue.get_nowait()
         if frame.get_status() == vimba.FrameStatus.Complete:
-            timestamp = time.time()
-            self.queue.put((frame.as_numpy_ndarray(), timestamp))
+            self.queue.put(frame.as_numpy_ndarray())
         cam.queue_frame(frame)
     
     def _flush_queue(self):
@@ -95,13 +100,7 @@ class AVTCamera:
             self.startAcquisition()
 
         while self.camera.is_streaming():
-            yield self.queue.get()[0]
-
-    def _camera_setup(self):
-        self.camera.ExposureAuto.set("Off")
-        self.camera.ExposureTime.set(500)
-        self.setBinning(bin_factor=1)
-        self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
+            yield self.queue.get()[:, :, 0]
 
     def setBinning(self, mode: str="Average", bin_factor=1):
         while self.camera.is_streaming():
