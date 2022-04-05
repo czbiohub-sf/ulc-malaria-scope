@@ -23,7 +23,8 @@ def logPowerSpectrumRadialAverageSum(img):
 
 
 def gradientAverage(img):
-    gx, gy = np.gradient(img)
+    """Returns the normalized gradient average (in x and y)"""
+    gx, gy = np.gradient(img) / np.max(img)
     return np.average(np.sqrt(gx**2 + gy**2))
 
 
