@@ -119,7 +119,7 @@ class AVTCamera:
         self.camera.Height.set(self.camera.HeightMax.get())
 
     def getBinning(self):
-        return self.camera.BinningHorizontalMode.get()
+        return self.camera.BinningHorizontal.get()
     
     def _getTemperature(self):
         try:
