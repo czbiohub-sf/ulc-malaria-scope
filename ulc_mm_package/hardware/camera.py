@@ -9,10 +9,12 @@ Basler PyPlon Library:
     https://github.com/basler/pypylon
 """
 
+import sys
+import time
+import queue
 from py_cameras import Basler, GrabStrategy
 import vimba
 from vimba import Vimba
-import queue
 
 # ------ CONSTANTS ------ #
 _DEFAULT_EXPOSURE_MS = 1
@@ -116,6 +118,9 @@ class AVTCamera:
         self.camera.Width.set(self.camera.WidthMax.get())
         self.camera.Height.set(self.camera.HeightMax.get())
 
+    def getBinning(self):
+        return self.camera.BinningHorizontalMode.get()
+    
     def _getTemperature(self):
         try:
             return self.camera.DeviceTemperature.get()
