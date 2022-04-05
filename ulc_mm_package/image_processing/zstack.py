@@ -8,7 +8,7 @@ from ulc_mm_package.image_processing.focus_metrics import *
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
 from ulc_mm_package.hardware.camera import CameraError, BaslerCamera
 
-def takeZStack(camera: BaslerCamera, motor: DRV8825Nema, steps_per_image: int=1, save_loc=None):
+def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int=1, save_loc=None):
 
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
@@ -86,7 +86,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
     best_focus_position = start + np.argmax(focus_metrics_fine)*steps_per_fine
     motor.move_abs(best_focus_position)
 
-def symmetricZStack(camera: BaslerCamera, motor: DRV8825Nema, start_point: int, num_steps: int=10, steps_per_image: int=1, save_loc=None):
+def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int=10, steps_per_image: int=1, save_loc=None):
     """Take a symmetric z-stack about a given motor position.
 
     Parameters
