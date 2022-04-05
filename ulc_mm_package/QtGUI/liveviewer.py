@@ -70,7 +70,7 @@ class AcquisitionThread(QThread):
         self.click_to_advance = False
 
         try:
-            self.camera = AVTCamera()
+            self.camera = BaslerCamera()
             self.camera_activated = True
         except CameraError:
             self.camera_activated = False
@@ -249,7 +249,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.recording = False
         
         if not self.acquisitionThread.camera_activated:
-            print(f"Error initializing Basler camera. Disabling camera GUI elements.")
+            print(f"Error initializing camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
             self.txtBoxExposure.setEnabled(False)
