@@ -9,10 +9,18 @@ from tqdm import tqdm
 EXTERNAL_DIR = "../experiments"
 
 
+def loader(img_name):
+    if ".tiff" in img_name:
+        return cv2.imread(img_name, 0)
+    elif ".npy" in img_name:
+        return np.load(img_name)
+
 def main():
+    typer.echo(f"{'='*20}")
     typer.echo(
-        "This utility converts files within a folder to a .mp4 video. You will be prompted to pick a top-level directory (TLD). All subfolders within that TLD which have `.npy` files will be converted to have an .mp4 file."
+        "This utility converts files within a folder to a .mp4 video. You will be prompted to pick a top-level directory (TLD). All subfolders within that TLD which have `.npy` or '.tiff' files will be converted to have an .mp4 file."
     )
+    typer.echo(f"{'='*20}\n")
 
     def get_time_stamp(filename):
         filename = filename[filename.rfind("/") + 1 :]
@@ -21,7 +29,7 @@ def main():
         time_vals = datetime.datetime(*time.strptime(time_str, "%H%M%S")[:6])
         return time_vals
 
-    dirs = [os.path.join(EXTERNAL_DIR, x) for x in sorted(os.listdir(EXTERNAL_DIR))]
+    dirs = [os.path.join(EXTERNAL_DIR, x) for x in sorted(os.listdir(EXTERNAL_DIR)) if os.path.isdir(os.path.join(EXTERNAL_DIR, x))]
     typer.echo("The following folders were found: ")
     for i, dir in enumerate(dirs):
         typer.echo(f"{i}.\t{dir}/")
@@ -44,18 +52,26 @@ def main():
     )
     typer.echo(f"\nThe following sub-folders were found\n{'='*10}")
     for i, dir in enumerate(subfolders):
-        typer.echo(f"{i}.\t{dir}/")
+        try:
+            end_val = dir.rfind('/', dir.rfind('/'))
+            cleaned = dir[end_val:]
+        except:
+            cleaned = dir
+        
+        typer.echo(f"{i}.\t{cleaned}/")
 
     for folder in tqdm(subfolders):
         files = [
-            os.path.join(folder, x) for x in sorted(os.listdir(folder)) if ".npy" in x
+            os.path.join(folder, x) for x in sorted(os.listdir(folder)) if ".npy" in x or '.tiff' in x
         ]
-        start, end = get_time_stamp(files[0]), get_time_stamp(files[-1])
-        runtime_s = (end - start).total_seconds()
-        fps = int(len(files) / runtime_s)
+        try:
+            start, end = get_time_stamp(files[0]), get_time_stamp(files[-1])
+            runtime_s = (end - start).total_seconds()
+            fps = int(len(files) / runtime_s)
+        except:
+            fps = 10
 
-        width, height = np.load(files[0]).shape
-        filepath = os.path.join(folder, f"{folder}_video.mp4")
+        width, height = loader(files[0]).shape
         writer = cv2.VideoWriter(
             f"{folder}_vid.mp4",
             fourcc=cv2.VideoWriter_fourcc(*"mp4v"),
@@ -65,7 +81,7 @@ def main():
         )
 
         for img in tqdm(files):
-            img = np.load(img)
+            img = loader(img)
             writer.write(img)
         writer.release()
 
