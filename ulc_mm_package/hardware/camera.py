@@ -172,36 +172,3 @@ class AVTCamera:
                 print(f"Failed to set exposure'")
         else:
             raise ValueError
-
-
-if __name__ == "__main__":
-    import pickle
-    import time
-    cam = BaslerCamera()
-    def temperatureMonitor(bin_factor):
-        total_runtime_s = 1200
-        temperatures = []
-        times = []
-
-        cam.stopAcquisition()
-        cam.setBinning(bin_factor)
-        
-        print(f"{'='*10}Temperature monitor")
-        print(f"Binning factor: {bin_factor}")
-        print(f"Image dimensions: {cam.camera.Height.GetValue()}, {cam.camera.Width.GetValue()}")
-        
-        start = time.perf_counter()
-        for img in cam.yieldImages():
-            temp = cam._getTemperature()
-            elapsed = time.perf_counter() - start
-            temperatures.append(temp)
-            times.append(elapsed)
-            print(f"Camera temperature: {temp}C, Elapsed time: {elapsed:.2f}, Remaining: {total_runtime_s - elapsed:.2f}")
-            if elapsed > total_runtime_s:
-                with open("temperatures.pkl", "wb") as file:
-                    pickle.dump(temperatures, file)
-                with open("times.pkl", "wb") as file:
-                    pickle.dump(times, file)
-                break
-    print(cam._getTemperature())
-    temperatureMonitor(1)
