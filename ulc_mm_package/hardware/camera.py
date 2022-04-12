@@ -17,7 +17,7 @@ import vimba
 from vimba import Vimba
 
 # ------ CONSTANTS ------ #
-_DEFAULT_EXPOSURE_MS = 1
+_DEFAULT_EXPOSURE_MS = 0.5
 
 
 class CameraError(Exception):
