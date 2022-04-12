@@ -4,6 +4,7 @@ from ulc_mm_package.hardware.pressure_control import *
 
 if __name__ == "__main__":
     pc = PressureControl()
+    pc.setDutyCycle(pc.getMinDutyCycle())
     runtime_s = 1200 # 20 minutes
     pressure_readings = []
     start = perf_counter()
