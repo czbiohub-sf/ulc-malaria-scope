@@ -6,7 +6,7 @@ import numpy as np
 import typer
 from tqdm import tqdm
 
-EXTERNAL_DIR = "../experiments"
+EXTERNAL_DIR = "experiments/"
 
 
 def loader(img_name):
@@ -46,7 +46,7 @@ def main():
     dir = dirs[num]
 
     subfolders = sorted(
-        os.path.join(EXTERNAL_DIR, dir, x)
+        os.path.join(dir, x)
         for x in os.listdir(dir)
         if os.path.isdir(os.path.join(dir, x))
     )
