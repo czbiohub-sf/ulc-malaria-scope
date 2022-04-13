@@ -257,7 +257,7 @@ AR Path="/64D22535/64DF0568" Ref="#J26"  Part="1"
 F 0 "#J26" H 7528 1455 50  0000 C CNN
 F 1 "STEPPER" H 7528 1546 50  0000 C CNN
 F 2 "" H 7610 1880 50  0001 C CNN
-F 3 "https://www.molex.com/molex/products/part-detail/cable_assemblies/0151340400" H 7610 1880 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0151340400/6198146" H 7610 1880 50  0001 C CNN
 	1    7610 1880
 	1    0    0    1   
 $EndComp
@@ -339,8 +339,6 @@ Wire Wire Line
 	8860 3310 9285 3310
 Wire Wire Line
 	9285 3310 9285 3115
-Text Notes 7820 1350 2    39   ~ 0
-Motor comes with male molex 4pin 1.25mm
 $Comp
 L Connector_Generic:Conn_01x05 #J?
 U 1 1 64DF0595
@@ -621,10 +619,10 @@ J2_RUN
 Wire Wire Line
 	4490 2110 4490 2355
 $Comp
-L power:GND #PWR?
+L power:GND #PWR0127
 U 1 1 61E8BEC9
 P 4470 2755
-F 0 "#PWR?" H 4470 2505 50  0001 C CNN
+F 0 "#PWR0127" H 4470 2505 50  0001 C CNN
 F 1 "GND" H 4475 2582 50  0000 C CNN
 F 2 "" H 4470 2755 50  0001 C CNN
 F 3 "" H 4470 2755 50  0001 C CNN
@@ -634,4 +632,6 @@ $EndComp
 Connection ~ 4470 2755
 Wire Wire Line
 	4470 2755 4750 2755
+Text Notes 3665 3115 0    39   ~ 0
+Momentary push button gets directly wired to J2 (RUN / GND) on the RPi. \nShort them together by pushing the button to wake the Pi.
 $EndSCHEMATC

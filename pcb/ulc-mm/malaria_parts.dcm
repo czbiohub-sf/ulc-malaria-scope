@@ -26,6 +26,12 @@ K N-Channel MOSFET
 F https://www.infineon.com/dgdl/irl6283mpbf.pdf?fileId=5546d462533600a40153565fe9452573
 $ENDCMP
 #
+$CMP LTPL-C034UVH405
+D 940nm, 20 deg, Infrared LED, 1206
+K IR LED
+F http://www.everlight.com/file/ProductFile/IR26-21C-L110-TR8.pdf
+$ENDCMP
+#
 $CMP MPR_Pressure_Breakout_Conn
 D Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)
 K connector
@@ -65,6 +71,12 @@ $CMP TPS54308
 D 3A, 4.5 to 28V Input, EMI Friendly integrated switch synchronous step-down regulator, continuous-conduction, SOT-23-6
 K switching buck converter power-supply voltage regulator emi spread spectrum FCCM
 F http://www.ti.com/lit/ds/symlink/tps54308.pdf
+$ENDCMP
+#
+$CMP UV_LED
+D RGB LED with integrated controller, 5mm/8mm LED package
+K RGB LED NeoPixel addressable
+F https://www.adafruit.com/product/1938
 $ENDCMP
 #
 #End Doc Library

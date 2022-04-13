@@ -1,3 +1,4 @@
 (fp_lib_table
   (lib (name ulc-mm)(type KiCad)(uri ${KIPRJMOD}/ulc-mm.pretty)(options "")(descr ""))
+  (lib (name 794120-1)(type KiCad)(uri /Users/emily.huynh/Downloads/794120-1)(options "")(descr ""))
 )
