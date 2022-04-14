@@ -460,8 +460,6 @@ F 3 "https://www.cuidevices.com/product/resource/pj-065b.pdf" H 6420 4325 50  00
 	1    6370 4365
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	6830 4265 6670 4265
 $Comp
 L power:GND #PWR071
 U 1 1 6605384F
@@ -475,17 +473,6 @@ F 3 "" H 6825 4465 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	6825 4465 6670 4465
-$Comp
-L power:+12VA #PWR072
-U 1 1 66296184
-P 6830 4265
-F 0 "#PWR072" H 6830 4115 50  0001 C CNN
-F 1 "+12VA" H 6845 4438 50  0000 C CNN
-F 2 "" H 6830 4265 50  0001 C CNN
-F 3 "" H 6830 4265 50  0001 C CNN
-	1    6830 4265
-	1    0    0    -1  
-$EndComp
 $Comp
 L Connector_Generic:Conn_01x02 #J?
 U 1 1 616521FB
@@ -521,40 +508,6 @@ $EndComp
 Wire Wire Line
 	4245 1490 4670 1490
 $Comp
-L ODMeter-cache:Switch_SW_Push SW?
-U 1 1 616FEA8C
-P 4175 2555
-AR Path="/616FEA8C" Ref="SW?"  Part="1" 
-AR Path="/64D22535/616FEA8C" Ref="#SW5"  Part="1" 
-F 0 "#SW5" V 4221 2703 50  0000 L CNN
-F 1 "GPIO_WAKE" V 4130 2703 50  0000 L CNN
-F 2 "" H 4175 2755 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/e-switch/LP1OA1AB/1984638" H 4175 2755 50  0001 C CNN
-	1    4175 2555
-	0    -1   -1   0   
-$EndComp
-$Comp
-L Connector_Generic:Conn_01x02 #J?
-U 1 1 61701810
-P 4950 2485
-AR Path="/61701810" Ref="#J?"  Part="1" 
-AR Path="/64D22535/61701810" Ref="#J20"  Part="1" 
-F 0 "#J20" H 5030 2477 50  0000 L CNN
-F 1 "GPIO_WAKE" H 5030 2386 50  0000 L CNN
-F 2 "" H 4950 2485 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/9685337" H 4950 2485 50  0001 C CNN
-	1    4950 2485
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	4175 2355 4490 2355
-Wire Wire Line
-	4750 2355 4750 2485
-Wire Wire Line
-	4175 2755 4470 2755
-Wire Wire Line
-	4750 2755 4750 2585
-$Comp
 L Connector_Generic:Conn_01x02 #J?
 U 1 1 6165AC7C
 P 3330 1625
@@ -579,10 +532,7 @@ F 3 "https://www.digikey.com/en/products/detail/molex/0039012020/61315?s=N4IgTCB
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6830 4265 7160 4265
-Wire Wire Line
 	7160 4265 7160 4335
-Connection ~ 6830 4265
 Wire Wire Line
 	7160 4435 7160 4465
 Wire Wire Line
@@ -611,27 +561,20 @@ Wire Wire Line
 	7250 3370 7435 3370
 Wire Wire Line
 	7250 3470 7435 3470
-Connection ~ 4490 2355
 Wire Wire Line
-	4490 2355 4750 2355
-Text Label 4490 2110 3    39   ~ 0
-J2_RUN
-Wire Wire Line
-	4490 2110 4490 2355
+	6670 4265 6825 4265
 $Comp
-L power:GND #PWR0127
-U 1 1 61E8BEC9
-P 4470 2755
-F 0 "#PWR0127" H 4470 2505 50  0001 C CNN
-F 1 "GND" H 4475 2582 50  0000 C CNN
-F 2 "" H 4470 2755 50  0001 C CNN
-F 3 "" H 4470 2755 50  0001 C CNN
-	1    4470 2755
+L power:+12V #PWR0134
+U 1 1 625BA266
+P 6825 4265
+F 0 "#PWR0134" H 6825 4115 50  0001 C CNN
+F 1 "+12V" H 6840 4438 50  0000 C CNN
+F 2 "" H 6825 4265 50  0001 C CNN
+F 3 "" H 6825 4265 50  0001 C CNN
+	1    6825 4265
 	1    0    0    -1  
 $EndComp
-Connection ~ 4470 2755
+Connection ~ 6825 4265
 Wire Wire Line
-	4470 2755 4750 2755
-Text Notes 3665 3115 0    39   ~ 0
-Momentary push button gets directly wired to J2 (RUN / GND) on the RPi. \nShort them together by pushing the button to wake the Pi.
+	6825 4265 7160 4265
 $EndSCHEMATC

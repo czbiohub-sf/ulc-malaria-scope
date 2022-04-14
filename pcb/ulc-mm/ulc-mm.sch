@@ -521,7 +521,7 @@ $EndComp
 Text Label 6400 6795 0    39   ~ 0
 DRV_Vref
 Text Label 10610 2680 2    39   ~ 0
-PGood_LED_5V
+PGood_Rem_5V
 Wire Wire Line
 	9215 2180 9390 2180
 NoConn ~ 10190 2480
@@ -1540,7 +1540,7 @@ F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866
 	-1   0    0    1   
 $EndComp
 Text Label 13970 5515 0    39   ~ 0
-PGood_LED_5V
+PGood_Rem_5V
 Text Notes 12955 4365 0    39   ~ 0
 Vf = 2.15V, If (ideal) = approx. 20mA
 $Comp
@@ -2390,7 +2390,7 @@ L Device:R_Small R10
 U 1 1 62427096
 P 13335 8975
 F 0 "R10" V 13260 8975 50  0000 C CNN
-F 1 "1k" V 13330 8975 39  0000 C CNN
+F 1 "10k" V 13330 8975 39  0000 C CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 13335 8975 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD100R/2240086" H 13335 8975 50  0001 C CNN
 	1    13335 8975
@@ -2689,10 +2689,8 @@ F 3 "" H 8605 10535 60  0001 C CNN
 	1    8605 10535
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	13340 8205 13115 8205
-Text Label 13115 8205 0    39   ~ 0
-FAN1
+Text Label 13030 8205 0    39   ~ 0
+R_CAM_FAN1
 $Comp
 L Connector_Generic:Conn_01x02 J14
 U 1 1 6255AB66
@@ -2705,10 +2703,8 @@ F 4 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/968
 	1    13540 8105
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	14230 8215 14005 8215
-Text Label 14005 8215 0    39   ~ 0
-FAN2
+Text Label 13920 8215 0    39   ~ 0
+R_CAM_FAN2
 $Comp
 L Connector_Generic:Conn_01x02 J15
 U 1 1 625FF4F3
@@ -2721,14 +2717,12 @@ F 4 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/968
 	1    14430 8115
 	1    0    0    -1  
 $EndComp
-Text Label 11140 9595 0    39   ~ 0
-FAN1
-Wire Wire Line
-	11365 9595 11140 9595
+Text Label 11055 9595 0    39   ~ 0
+R_CAM_FAN1
 Wire Wire Line
 	11865 9495 12360 9495
 Text Label 12275 9595 2    39   ~ 0
-FAN2
+R_CAM_FAN2
 Wire Wire Line
 	11865 9595 12275 9595
 $Comp
@@ -2748,7 +2742,7 @@ Wire Wire Line
 Wire Wire Line
 	2610 7970 2610 8080
 Text Label 2525 8070 2    39   ~ 0
-R_FAN2
+CAM_FAN2
 Wire Wire Line
 	2115 8070 2525 8070
 $Comp
@@ -2776,7 +2770,7 @@ $EndComp
 Text Notes 9375 10380 0    50   ~ 0
 Remote PCB\n
 Text Label 11855 6750 0    39   ~ 0
-R_FAN_1_GPIO
+CAM_FAN_1_GPIO
 $Comp
 L power:GND #PWR0114
 U 1 1 625CD23D
@@ -2829,7 +2823,7 @@ F 3 "https://www.infineon.com/dgdl/Infineon-BSS214NW-DS-v02_02-en.pdf?fileId=db3
 	1    0    0    -1  
 $EndComp
 Text Label 12880 6355 3    39   ~ 0
-R_FAN1
+CAM_FAN1
 $Comp
 L Device:R_Small R27
 U 1 1 625CD25B
@@ -2844,7 +2838,7 @@ $EndComp
 Wire Wire Line
 	12880 6355 12880 6550
 Text Label 13170 6760 0    39   ~ 0
-R_FAN_2_GPIO
+CAM_FAN_2_GPIO
 $Comp
 L power:GND #PWR0115
 U 1 1 6260B9AE
@@ -2897,7 +2891,7 @@ F 3 "https://www.infineon.com/dgdl/Infineon-BSS214NW-DS-v02_02-en.pdf?fileId=db3
 	1    0    0    -1  
 $EndComp
 Text Label 14195 6365 3    39   ~ 0
-R_FAN2
+CAM_FAN2
 $Comp
 L Device:R_Small R29
 U 1 1 6260B9CB
@@ -2986,23 +2980,23 @@ Wire Wire Line
 Wire Wire Line
 	14010 8115 14010 8110
 Text Label 3875 2075 2    50   ~ 0
-R_FAN1_GPIO
+CAM_FAN1_GPIO
 Wire Wire Line
 	3875 2075 2725 2075
 Text Label 3875 2175 2    50   ~ 0
-R_FAN2_GPIO
+CAM_FAN2_GPIO
 Wire Wire Line
 	3875 2175 2725 2175
-Text Notes 3395 9655 0    98   ~ 0
+Text Notes 3315 9590 0    98   ~ 0
 LED Board
-Text Label 3255 10290 0    39   ~ 0
+Text Label 4240 10040 2    39   ~ 0
 R_Vled+
-Text Label 4335 10290 2    39   ~ 0
+Text Label 3160 10040 0    39   ~ 0
 R_Vled-
 Text Label 15300 2250 3    39   ~ 0
 Vled-
 Text Label 1390 8070 0    39   ~ 0
-R_FAN1
+CAM_FAN1
 Wire Wire Line
 	1615 8070 1390 8070
 Wire Wire Line
@@ -3065,9 +3059,9 @@ Wire Wire Line
 Text Label 1075 1675 0    50   ~ 0
 LED_IND
 Wire Wire Line
-	4090 10290 4335 10290
+	3405 10040 3160 10040
 Wire Wire Line
-	3255 10290 3490 10290
+	4240 10040 4005 10040
 $Comp
 L Mechanical:Mounting_Hole MK10
 U 1 1 62617E48
@@ -3114,26 +3108,14 @@ F 3 "" H 11160 10940 60  0001 C CNN
 	1    11160 10940
 	1    0    0    -1  
 $EndComp
-$Comp
-L Connector_Generic:Conn_01x02 J13
-U 1 1 6291CB8D
-P 4195 10910
-F 0 "J13" H 4275 10902 50  0000 L CNN
-F 1 "UV_LED" H 4275 10811 50  0000 L CNN
-F 2 "Connector_PinSocket_2.54mm:PinSocket_1x02_P2.54mm_Vertical" H 4195 10910 50  0001 C CNN
-F 3 "" H 4195 10910 50  0001 C CNN
-F 4 "" H 4195 10910 50  0001 C CNN "Cable Assm"
-	1    4195 10910
-	1    0    0    -1  
-$EndComp
-Text Label 3760 10910 0    39   ~ 0
+Text Label 3655 10900 0    39   ~ 0
 R_Vled+
 Wire Wire Line
-	3760 10910 3995 10910
-Text Label 3750 11010 0    39   ~ 0
+	3655 10900 3890 10900
+Text Label 3645 11065 0    39   ~ 0
 R_Vled-
 Wire Wire Line
-	3995 11010 3750 11010
+	3890 11065 3645 11065
 $Comp
 L Mechanical:Heatsink_Pad HS1
 U 1 1 62B39959
@@ -3148,27 +3130,25 @@ $EndComp
 $Comp
 L malaria_parts:UV_LED D5
 U 1 1 62830CD0
-P 3790 10290
-F 0 "D5" V 3515 10290 50  0000 C CNN
-F 1 "UV_LED" V 3424 10290 50  0000 C CNN
-F 2 "ulc-mm:LED_Cree-XHP35" H 3840 9990 50  0001 L TNN
-F 3 "https://www.adafruit.com/product/1938" H 3890 9915 50  0001 L TNN
-	1    3790 10290
-	0    -1   -1   0   
+P 3705 10040
+F 0 "D5" V 3430 10040 50  0000 C CNN
+F 1 "UV_LED" V 3339 10040 50  0000 C CNN
+F 2 "ulc-mm:LED_Cree-XHP35" H 3755 9740 50  0001 L TNN
+F 3 "https://www.adafruit.com/product/1938" H 3805 9665 50  0001 L TNN
+	1    3705 10040
+	0    1    1    0   
 $EndComp
-Text Label 3790 9745 3    39   ~ 0
+Text Label 3705 10585 1    39   ~ 0
 THERMAL
-Wire Wire Line
-	3790 9745 3790 9990
 Text Label 3595 10920 2    39   ~ 0
 THERMAL
 Wire Wire Line
 	3595 10920 3350 10920
 $Comp
-L Mechanical:Mounting_Hole MK?
+L Mechanical:Mounting_Hole MK11
 U 1 1 62E55A76
 P 10435 10750
-F 0 "MK?" H 10535 10796 50  0000 L CNN
+F 0 "MK11" H 10535 10796 50  0000 L CNN
 F 1 "#2" H 10535 10705 50  0000 L CNN
 F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10435 10750 60  0001 C CNN
 F 3 "" H 10435 10750 60  0001 C CNN
@@ -3176,10 +3156,10 @@ F 3 "" H 10435 10750 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Mechanical:Mounting_Hole MK?
+L Mechanical:Mounting_Hole MK12
 U 1 1 62E74326
 P 10830 10540
-F 0 "MK?" H 10930 10586 50  0000 L CNN
+F 0 "MK12" H 10930 10586 50  0000 L CNN
 F 1 "#2" H 10930 10495 50  0000 L CNN
 F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10830 10540 60  0001 C CNN
 F 3 "" H 10830 10540 60  0001 C CNN
@@ -3187,14 +3167,44 @@ F 3 "" H 10830 10540 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Mechanical:Mounting_Hole MK?
+L Mechanical:Mounting_Hole MK13
 U 1 1 62E92BEC
 P 10830 10745
-F 0 "MK?" H 10930 10791 50  0000 L CNN
+F 0 "MK13" H 10930 10791 50  0000 L CNN
 F 1 "#2" H 10930 10700 50  0000 L CNN
 F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10830 10745 60  0001 C CNN
 F 3 "" H 10830 10745 60  0001 C CNN
 	1    10830 10745
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	3705 10585 3705 10340
+$Comp
+L Connector_Generic:Conn_01x01 J13
+U 1 1 626CF0BA
+P 4090 10900
+F 0 "J13" H 4170 10942 50  0000 L CNN
+F 1 "Vled+" H 4170 10851 50  0000 L CNN
+F 2 "ulc-mm:WirePad" H 4090 10900 50  0001 C CNN
+F 3 "~" H 4090 10900 50  0001 C CNN
+	1    4090 10900
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J16
+U 1 1 626D009C
+P 4090 11065
+F 0 "J16" H 4170 11107 50  0000 L CNN
+F 1 "Vled-" H 4170 11016 50  0000 L CNN
+F 2 "ulc-mm:WirePad" H 4090 11065 50  0001 C CNN
+F 3 "~" H 4090 11065 50  0001 C CNN
+	1    4090 11065
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	13030 8205 13340 8205
+Wire Wire Line
+	13920 8215 14230 8215
+Wire Wire Line
+	11055 9595 11365 9595
 $EndSCHEMATC
