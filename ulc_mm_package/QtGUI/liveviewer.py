@@ -603,14 +603,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             sleep(0.1)
             self.encoder.setColor(12, 159, 217)
 
-
-    def changeExposureWithEncoder(self, increment):
-        if increment == 1:
-            self.vsExposure.setValue(self.vsExposure.value() + 10)
-        elif increment == -1:
-            self.vsExposure.setValue(self.vsExposure.value() - 10)
-        sleep(0.01)
-
     def exit(self):
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QtWidgets.QMessageBox.Icon.Warning)

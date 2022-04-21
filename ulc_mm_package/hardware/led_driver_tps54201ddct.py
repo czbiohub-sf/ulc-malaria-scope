@@ -38,6 +38,10 @@ class LED_TPS5420TDDCT():
         sleep(0.5)
 
     def _convertDutyCyclePercentToPWMVal(self, duty_cycle_percentage: float):
+        """See the pigpio documentation here (https://abyz.me.uk/rpi/pigpio/python.html#hardware_PWM)
+
+        0 is off (0%), 1,000,000 is on 100% for the PWM duty cycle.
+        """
         return int(1e6*duty_cycle_percentage)
 
     def setDutyCycle(self, duty_cycle_perc: float):

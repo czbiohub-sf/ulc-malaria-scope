@@ -34,11 +34,11 @@ class PressureControl():
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
-        # Convert to valid PWM value
         self.min_step_size = 10
         self.min_duty_cycle = 1600
         self.max_duty_cycle = 2200
         self.duty_cycle = self.max_duty_cycle
+        self.io_error_counter = 0
 
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
@@ -53,8 +53,6 @@ class PressureControl():
 
     def close(self):
         self.setDutyCycle(self.max_duty_cycle)
-        sleep(0.1)
-        self.setDutyCycle(0)
         sleep(0.5)
         self._pi.stop()
         sleep(0.5)
@@ -101,17 +99,20 @@ class PressureControl():
         return pressure_readings_hpa
 
     def getPressure(self):
-        """The pressure sensor can raise an I/O error sometimes.
+        """The pressure sensor is not always reliable. It may raise I/O or Runtime
+        errors intermittently.
 
         To mitigate a crash if that is the case, we attempt to read the 
         pressure sensor a few times until a valid value is returned. If a valid value is not received
         after `max_attempts`, then a -1 flag is returned. 
         """
-
-        max_attempts = 3
+        max_attempts = 6
         while max_attempts > 0:
             try:
                 return self.mpr.pressure
             except IOError:
                 max_attempts -= 1
+            except RuntimeError:
+                max_attempts -= 1
+        self.io_error_counter += 1
         return -1
