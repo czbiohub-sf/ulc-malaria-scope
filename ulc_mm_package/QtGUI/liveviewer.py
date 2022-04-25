@@ -17,23 +17,12 @@ from datetime import datetime, timedelta
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
-import cv2
+from cv2 import imwrite
 import numpy as np
 from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-BIG_SCREEN = True
-MIN_EXPOSURE_US = 100
-WRITE_NUMPY = True
-
-if BIG_SCREEN:
-    _UI_FILE_DIR = "liveview_big.ui"
-    LABEL_WIDTH = 1307
-    LABEL_HEIGHT = 980
-else:
-    _UI_FILE_DIR = "liveview.ui"
-    LABEL_WIDTH = 480
-    LABEL_HEIGHT = 360
+_UI_FILE_DIR = "liveview.ui"
 
 class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
@@ -125,17 +114,14 @@ class AcquisitionThread(QThread):
     def save(self, image):
         if self.single_save:
             filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
-            cv2.imwrite(filename, image)
+            imwrite(filename, image)
             self.single_save = False
 
         if self.continuous_save and self.continuous_dir_name != None:
             if self.metadata_writer is not None:
                 self.metadata_writer.writerow(self.getMetadata())
             filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}_{self.im_counter:05}"
-            if WRITE_NUMPY:
-                np.save(filename+".npy", image)
-            else:
-                cv2.imwrite(filename+".tiff", image)
+            np.save(filename+".npy", image)
             self.measurementTime.emit(int(perf_counter() - self.start_time))
             self.im_counter += 1
 
@@ -343,13 +329,13 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnExit.clicked.connect(self.exit)
 
         # Set slider min/max
-        min_exposure_us = 100
-        max_exposure_us = 10000
-        self.vsExposure.setMinimum(min_exposure_us) 
-        self.vsExposure.setMaximum(max_exposure_us)
+        self.min_exposure_us = 100
+        self.max_exposure_us = 10000
+        self.vsExposure.setMinimum(self.min_exposure_us) 
+        self.vsExposure.setMaximum(self.max_exposure_us)
         self.vsExposure.setValue(500)
-        self.lblMinExposure.setText(f"{min_exposure_us} us")
-        self.lblMaxExposure.setText(f"{max_exposure_us} us")
+        self.lblMinExposure.setText(f"{self.min_exposure_us} us")
+        self.lblMaxExposure.setText(f"{self.max_exposure_us} us")
 
     def txtBoxFocusGotFocus(self):
         self.acquisitionThread.updateMotorPos = False
@@ -440,7 +426,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def exposureTextBoxHandler(self):
         try:
             exposure = int(float(self.txtBoxExposure.text()))
-            if exposure < MIN_EXPOSURE_US:
+            if exposure < self.min_exposure_us or exposure > self.max_exposure_us:
                 raise
         except:
             print("Error parsing textbox exposure time input. Continuing...")
