@@ -191,7 +191,7 @@ AR Path="/64D22535/64DF0549" Ref="#D5"  Part="1"
 F 0 "#D5" V 1314 1754 50  0000 L CNN
 F 1 "LED" V 1223 1754 50  0000 L CNN
 F 2 "" H 1275 1675 50  0001 C CNN
-F 3 "TCN0MA1A" H 1275 1675 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/lite-on-inc/LTPL-C034UVH405/5414489" H 1275 1675 50  0001 C CNN
 	1    1275 1675
 	0    -1   -1   0   
 $EndComp
@@ -474,39 +474,18 @@ $EndComp
 Wire Wire Line
 	6825 4465 6670 4465
 $Comp
-L Connector_Generic:Conn_01x02 #J?
-U 1 1 616521FB
-P 4870 1595
-AR Path="/616521FB" Ref="#J?"  Part="1" 
-AR Path="/64D22535/616521FB" Ref="#J19"  Part="1" 
-F 0 "#J19" H 4950 1587 50  0000 L CNN
-F 1 "12V_SWITCH" H 4950 1496 50  0000 L CNN
-F 2 "" H 4870 1595 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/molex/0039012020/61315?s=N4IgTCBcDaIMwE4AMBGMT0gLoF8g" H 4870 1595 50  0001 C CNN
-	1    4870 1595
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	4245 1890 4670 1890
-Wire Wire Line
-	4670 1890 4670 1695
-Wire Wire Line
-	4670 1490 4670 1595
-$Comp
 L Switch:SW_SPST SW?
 U 1 1 61673018
-P 4245 1690
+P 7125 4265
 AR Path="/61673018" Ref="SW?"  Part="1" 
 AR Path="/64D22535/61673018" Ref="#SW6"  Part="1" 
-F 0 "#SW6" V 4295 1980 50  0000 R CNN
-F 1 "12V_SWITCH" V 4220 2225 50  0000 R CNN
-F 2 "" H 4245 1690 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/switch-components/RF1-1A-DC-2-R-1/11492837" H 4245 1690 50  0001 C CNN
-	1    4245 1690
-	0    -1   -1   0   
+F 0 "#SW6" V 7175 4555 50  0000 R CNN
+F 1 "12V_SWITCH" V 7100 4800 50  0000 R CNN
+F 2 "" H 7125 4265 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/switch-components/RF1-1A-DC-2-R-1/11492837" H 7125 4265 50  0001 C CNN
+	1    7125 4265
+	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	4245 1490 4670 1490
 $Comp
 L Connector_Generic:Conn_01x02 #J?
 U 1 1 6165AC7C
@@ -523,21 +502,18 @@ $EndComp
 $Comp
 L Connector_Generic:Conn_01x02 #J29
 U 1 1 616CBECB
-P 7360 4335
-F 0 "#J29" H 7278 4552 50  0000 C CNN
-F 1 "12V_WALL_CONN" H 7278 4461 50  0000 C CNN
-F 2 "" H 7360 4335 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/molex/0039012020/61315?s=N4IgTCBcDaIMwE4AMBGMT0gLoF8g" H 7360 4335 50  0001 C CNN
-	1    7360 4335
+P 7890 4335
+F 0 "#J29" H 7808 4552 50  0000 C CNN
+F 1 "12V_WALL_CONN" H 7808 4461 50  0000 C CNN
+F 2 "" H 7890 4335 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0039012020/61315?s=N4IgTCBcDaIMwE4AMBGMT0gLoF8g" H 7890 4335 50  0001 C CNN
+	1    7890 4335
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	7160 4265 7160 4335
+	7690 4265 7690 4335
 Wire Wire Line
-	7160 4435 7160 4465
-Wire Wire Line
-	7160 4465 6825 4465
-Connection ~ 6825 4465
+	7690 4435 7690 4465
 $Comp
 L Connector_Generic:Conn_01x05 #J?
 U 1 1 6323F68B
@@ -574,7 +550,12 @@ F 3 "" H 6825 4265 50  0001 C CNN
 	1    6825 4265
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	6925 4265 6825 4265
 Connection ~ 6825 4265
 Wire Wire Line
-	6825 4265 7160 4265
+	7325 4265 7690 4265
+Wire Wire Line
+	6825 4465 7690 4465
+Connection ~ 6825 4465
 $EndSCHEMATC

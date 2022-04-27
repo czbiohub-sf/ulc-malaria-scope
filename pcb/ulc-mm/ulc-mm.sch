@@ -1910,7 +1910,7 @@ P 13450 4910
 F 0 "R18" V 13375 4910 50  0000 C CNN
 F 1 "1k" V 13445 4910 39  0000 C CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 13450 4910 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD100R/2240086" H 13450 4910 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD1K00/2240106" H 13450 4910 50  0001 C CNN
 	1    13450 4910
 	1    0    0    -1  
 $EndComp
@@ -1921,7 +1921,7 @@ P 15125 4915
 F 0 "R22" V 15050 4915 50  0000 C CNN
 F 1 "1k" V 15120 4915 39  0000 C CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 15125 4915 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD100R/2240086" H 15125 4915 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD1K00/2240106" H 15125 4915 50  0001 C CNN
 	1    15125 4915
 	1    0    0    -1  
 $EndComp
@@ -2557,9 +2557,9 @@ L Device:R_Small R19
 U 1 1 612E191F
 P 15300 2575
 F 0 "R19" V 15225 2525 50  0000 L CNN
-F 1 "800m" V 15300 2500 33  0000 L CNN
+F 1 "750m" V 15300 2500 33  0000 L CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 15300 2575 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/yageo/RL0603FR-070R4L/3885512" H 15300 2575 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/rohm-semiconductor/UCR03EVPFLR750/4053602" H 15300 2575 50  0001 C CNN
 	1    15300 2575
 	1    0    0    -1  
 $EndComp
@@ -2568,9 +2568,9 @@ L Device:L_Small L2
 U 1 1 612AD659
 P 14250 2000
 F 0 "L2" V 14435 2000 50  0000 C CNN
-F 1 "68 uH" V 14344 2000 50  0000 C CNN
+F 1 "100 uH" V 14344 2000 50  0000 C CNN
 F 2 "Inductor_SMD:L_Wuerth_WE-PDF_Handsoldering" H 14250 2000 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/w%C3%BCrth-elektronik/7447798111/2268615" H 14250 2000 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/w%C3%BCrth-elektronik/74477720/9859301" H 14250 2000 50  0001 C CNN
 	1    14250 2000
 	0    -1   -1   0   
 $EndComp

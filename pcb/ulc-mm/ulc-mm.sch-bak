@@ -1910,7 +1910,7 @@ P 13450 4910
 F 0 "R18" V 13375 4910 50  0000 C CNN
 F 1 "1k" V 13445 4910 39  0000 C CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 13450 4910 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD100R/2240086" H 13450 4910 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD1K00/2240106" H 13450 4910 50  0001 C CNN
 	1    13450 4910
 	1    0    0    -1  
 $EndComp
@@ -1921,7 +1921,7 @@ P 15125 4915
 F 0 "R22" V 15050 4915 50  0000 C CNN
 F 1 "1k" V 15120 4915 39  0000 C CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 15125 4915 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD100R/2240086" H 15125 4915 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD1K00/2240106" H 15125 4915 50  0001 C CNN
 	1    15125 4915
 	1    0    0    -1  
 $EndComp
@@ -2557,9 +2557,9 @@ L Device:R_Small R19
 U 1 1 612E191F
 P 15300 2575
 F 0 "R19" V 15225 2525 50  0000 L CNN
-F 1 "800m" V 15300 2500 33  0000 L CNN
+F 1 "750m" V 15300 2500 33  0000 L CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 15300 2575 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/yageo/RL0603FR-070R4L/3885512" H 15300 2575 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/rohm-semiconductor/UCR03EVPFLR750/4053602" H 15300 2575 50  0001 C CNN
 	1    15300 2575
 	1    0    0    -1  
 $EndComp
@@ -2568,9 +2568,9 @@ L Device:L_Small L2
 U 1 1 612AD659
 P 14250 2000
 F 0 "L2" V 14435 2000 50  0000 C CNN
-F 1 "68 uH" V 14344 2000 50  0000 C CNN
+F 1 "100 uH" V 14344 2000 50  0000 C CNN
 F 2 "Inductor_SMD:L_Wuerth_WE-PDF_Handsoldering" H 14250 2000 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/w%C3%BCrth-elektronik/7447798111/2268615" H 14250 2000 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/w%C3%BCrth-elektronik/74477720/9859301" H 14250 2000 50  0001 C CNN
 	1    14250 2000
 	0    -1   -1   0   
 $EndComp
@@ -3019,36 +3019,25 @@ $EndComp
 Text Notes 10525 10385 0    50   ~ 0
 LED PCB
 $Comp
-L Mechanical:Mounting_Hole MK15
-U 1 1 626B4AD1
-P 11160 10540
-F 0 "MK15" H 11260 10586 50  0000 L CNN
-F 1 "Dowel_1mm" H 11260 10495 50  0000 L CNN
-F 2 "ulc-mm:DowelPin_1mm" H 11160 10540 60  0001 C CNN
-F 3 "" H 11160 10540 60  0001 C CNN
-	1    11160 10540
-	1    0    0    -1  
-$EndComp
-$Comp
 L Mechanical:Mounting_Hole MK14
 U 1 1 626D397E
-P 11155 10735
-F 0 "MK14" H 11255 10781 50  0000 L CNN
-F 1 "Dowel_1mm" H 11255 10690 50  0000 L CNN
-F 2 "ulc-mm:DowelPin_1mm" H 11155 10735 60  0001 C CNN
-F 3 "" H 11155 10735 60  0001 C CNN
-	1    11155 10735
+P 11235 10535
+F 0 "MK14" H 11335 10581 50  0000 L CNN
+F 1 "Dowel_1mm" H 11335 10490 50  0000 L CNN
+F 2 "ulc-mm:DowelPin_1mm" H 11235 10535 60  0001 C CNN
+F 3 "" H 11235 10535 60  0001 C CNN
+	1    11235 10535
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:Mounting_Hole MK16
 U 1 1 626F123E
-P 11160 10940
-F 0 "MK16" H 11260 10986 50  0000 L CNN
-F 1 "Dowel_1mm" H 11260 10895 50  0000 L CNN
-F 2 "ulc-mm:DowelPin_1mm" H 11160 10940 60  0001 C CNN
-F 3 "" H 11160 10940 60  0001 C CNN
-	1    11160 10940
+P 11240 10740
+F 0 "MK16" H 11340 10786 50  0000 L CNN
+F 1 "Dowel_1mm" H 11340 10695 50  0000 L CNN
+F 2 "ulc-mm:DowelPin_1mm" H 11240 10740 60  0001 C CNN
+F 3 "" H 11240 10740 60  0001 C CNN
+	1    11240 10740
 	1    0    0    -1  
 $EndComp
 Text Label 3825 10575 0    39   ~ 0
@@ -3242,11 +3231,6 @@ F 3 "" H 8235 10605 50  0001 C CNN
 	1    8235 10605
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	7785 10605 8235 10605
-Connection ~ 8235 10605
-Wire Wire Line
-	8235 10605 8615 10605
 $Comp
 L power:GND #PWR0138
 U 1 1 62710436
@@ -3264,25 +3248,30 @@ Wire Wire Line
 	8235 10955 8455 10955
 Connection ~ 8235 10955
 $Comp
-L Mechanical:MountingHole_Pad MK?
+L Mechanical:MountingHole_Pad MK3
 U 1 1 62819BE4
-P 8235 10510
-F 0 "MK?" H 8335 10556 50  0000 L CNN
-F 1 "M2.5" H 8335 10465 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 8235 10510 60  0001 C CNN
-F 3 "" H 8235 10510 60  0001 C CNN
-	1    8235 10510
+P 8235 10505
+F 0 "MK3" H 8335 10551 50  0000 L CNN
+F 1 "M2.5" H 8335 10460 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 8235 10505 60  0001 C CNN
+F 3 "" H 8235 10505 60  0001 C CNN
+	1    8235 10505
 	1    0    0    -1  
 $EndComp
 $Comp
-L Mechanical:MountingHole_Pad MK?
+L Mechanical:MountingHole_Pad MK4
 U 1 1 62839588
 P 8455 10855
-F 0 "MK?" H 8555 10901 50  0000 L CNN
+F 0 "MK4" H 8555 10901 50  0000 L CNN
 F 1 "M2.5" H 8555 10810 50  0000 L CNN
 F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 8455 10855 60  0001 C CNN
 F 3 "" H 8455 10855 60  0001 C CNN
 	1    8455 10855
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	7785 10605 8235 10605
+Connection ~ 8235 10605
+Wire Wire Line
+	8235 10605 8615 10605
 $EndSCHEMATC

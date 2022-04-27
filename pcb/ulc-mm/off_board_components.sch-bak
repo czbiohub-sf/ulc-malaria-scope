@@ -191,7 +191,7 @@ AR Path="/64D22535/64DF0549" Ref="#D5"  Part="1"
 F 0 "#D5" V 1314 1754 50  0000 L CNN
 F 1 "LED" V 1223 1754 50  0000 L CNN
 F 2 "" H 1275 1675 50  0001 C CNN
-F 3 "TCN0MA1A" H 1275 1675 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/lite-on-inc/LTPL-C034UVH405/5414489" H 1275 1675 50  0001 C CNN
 	1    1275 1675
 	0    -1   -1   0   
 $EndComp
