@@ -209,13 +209,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         try:
             self.external_dir = "/media/pi/" + listdir("/media/pi/")[0] + "/"
         except IndexError:
-            msgBox = QtWidgets.QMessageBox()
-            msgBox = QtWidgets.QMessageBox()
-            msgBox.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-            msgBox.setText("ERROR! No external harddrive / SSD detected. Press OK to close the application.")
-            msgBox.setWindowTitle("Error - harddrive not detected.")
-            msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            retval = msgBox.exec()
+            retval = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Critical,
+                "Error - harddrive not detected.",
+                "ERROR! No external harddrive / SSD detected. Press OK to close the application.",
+                cancel=False
+            )
             if retval == QtWidgets.QMessageBox.Ok:
                 quit()
 
@@ -289,7 +288,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.lblMinFlow.setText(f"{self.pressure_control.getMinDutyCycle()}")
             self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle())
             self.lblMaxFlow.setText(f"{self.pressure_control.getMaxDutyCycle()}")
-            self.vsFlow.setTickInterval(self.pressure_control.min_step_size)
+            self.vsFlow.setSingleStep(self.pressure_control.min_step_size)
             self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
             self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
         except PressureControlError:
@@ -336,6 +335,17 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsExposure.setValue(500)
         self.lblMinExposure.setText(f"{self.min_exposure_us} us")
         self.lblMaxExposure.setText(f"{self.max_exposure_us} us")
+
+    def _displayMessageBox(self, icon, title, text, cancel):
+        msgBox = QtWidgets.QMessageBox()
+        msgBox.setIcon(icon)
+        msgBox.setWindowTitle(f"{title}")
+        msgBox.setText(f"{text}")
+        if cancel:
+            msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        else:
+            msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        return msgBox.exec()
 
     def txtBoxFocusGotFocus(self):
         self.acquisitionThread.updateMotorPos = False
@@ -502,24 +512,24 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.updateMotorPos = True
 
     def btnFullZStackHandler(self):
-        msgBox = QtWidgets.QMessageBox()
-        msgBox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-        msgBox.setText("Press okay to sweep the motor over its entire range and automatically find and move to the focal position.")
-        msgBox.setWindowTitle("Full Range ZStack")
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
-        retval = msgBox.exec()
+        retval = self._displayMessageBox(
+            QtWidgets.QMessageBox.Icon.Information,
+            "Full Range ZStack",
+            "Press okay to sweep the motor over its entire range and automatically find and move to the focal position.",
+            cancel=True
+        )
 
         if retval == QtWidgets.QMessageBox.Ok:
             self.disableMotorUIElements()
             self.acquisitionThread.runFullZStack(self.motor)
 
     def btnLocalZStackHandler(self):
-        msgBox = QtWidgets.QMessageBox()
-        msgBox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-        msgBox.setText("Press okay to sweep the motor over its current nearby vicinity and move to the focal position.")
-        msgBox.setWindowTitle("Local Vicinity ZStack")
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
-        retval = msgBox.exec()
+        retval = self._displayMessageBox(
+            QtWidgets.QMessageBox.Icon.Information,
+            "Local Vicinity ZStack",
+            "Press okay to sweep the motor over its current nearby vicinity and move to the focal position.",
+            cancel=True
+        )
 
         if retval == QtWidgets.QMessageBox.Ok:
             self.disableMotorUIElements()
@@ -541,6 +551,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnFullZStack.setEnabled(True)
         self.vsFocus.blockSignals(False)
         self.txtBoxFocus.blockSignals(False)
+
+    def flowControlBtnHandler(self):
+        pass
 
     def btnFlowUpHandler(self):
         self.pressure_control.increaseDutyCycle()
@@ -590,12 +603,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.encoder.setColor(12, 159, 217)
 
     def exit(self):
-        msgBox = QtWidgets.QMessageBox()
-        msgBox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-        msgBox.setText("Please remove the flow cell now. Only press okay after the flow cell has been removed. The syringe will move into the topmost position after pressing okay.")
-        msgBox.setWindowTitle("Exit procedure")
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
-        retval = msgBox.exec()
+        retval = self._displayMessageBox(
+            QtWidgets.QMessageBox.Icon.Warning,
+            "Exit application",
+            "Please remove the flow cell now. Only press okay after the flow cell has been removed. The syringe will move into the topmost position after pressing okay.",
+            cancel=True
+        )
 
         if retval == QtWidgets.QMessageBox.Ok:
             # Move syringe back and de-energize
