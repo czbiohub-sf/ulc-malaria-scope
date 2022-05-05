@@ -1,12 +1,23 @@
 from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
-from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError, MotorInMotion
+from ulc_mm_package.hardware.motorcontroller import (
+    DRV8825Nema,
+    Direction,
+    MotorControllerError,
+    MotorInMotion,
+)
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder
-from ulc_mm_package.hardware.pressure_control import PressureControl, PressureControlError
+from ulc_mm_package.hardware.pressure_control import (
+    PressureControl,
+    PressureControlError,
+    PressureLeak
+)
 from ulc_mm_package.hardware.fan import Fan
-from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 
-from ulc_mm_package.image_processing.zstack import takeZStackCoroutine, symmetricZStackCoroutine
+from ulc_mm_package.image_processing.zstack import (
+    takeZStackCoroutine,
+    symmetricZStackCoroutine,
+)
 
 import sys
 import traceback
@@ -32,6 +43,7 @@ class AcquisitionThread(QThread):
     updatePressure = pyqtSignal(float)
     measurementTime = pyqtSignal(int)
     fps = pyqtSignal(int)
+    pressureLeakDetected = pyqtSignal(int)
 
     def __init__(self, external_dir):
         super().__init__()
@@ -46,9 +58,8 @@ class AcquisitionThread(QThread):
         self.liveview = True
         self.takeZStack = False
         self.continuous_dir_name = None
-        self.custom_image_prefix = ''
-        self.zarr_writer = ZarrWriter()
-        self.pressure_sensor = None
+        self.custom_image_prefix = ""
+        self.pressure_control = None
         self.motor = None
         self.updateMotorPos = True
         self.fps_timer = perf_counter()
@@ -57,6 +68,9 @@ class AcquisitionThread(QThread):
         self.metadata_file = None
         self.metadata_writer = None
         self.click_to_advance = False
+
+        self.pressure_control_enabled = False
+        self.active_autofocus = False
 
         try:
             self.camera = BaslerCamera()
@@ -72,6 +86,7 @@ class AcquisitionThread(QThread):
                         self.updateGUIElements()
                         self.save(image)
                         self.zStack(image)
+                        self.activePressureControl()
 
                         if self.liveview:
                             if self.update_counter % self.update_liveview == 0:
@@ -102,26 +117,36 @@ class AcquisitionThread(QThread):
         """
 
         return {
-            'im_counter': self.im_counter,
-            'measurement_type': 'placeholder',
-            'sample_type': 'placeholder',
-            'timestamp': datetime.now().strftime("%Y-%m-%d-%H%M%S"),
-            'motor_pos': self.motor.pos,
-            'pressure_hpa': self.pressure_sensor.getPressure(),
-            'syringe_pos': self.pressure_sensor.getCurrentDutyCycle(),
+            "im_counter": self.im_counter,
+            "measurement_type": "placeholder",
+            "sample_type": "placeholder",
+            "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+            "motor_pos": self.motor.pos,
+            "pressure_hpa": self.pressure_control.getPressure(),
+            "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
         }
 
     def save(self, image):
         if self.single_save:
-            filename = path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}.tiff"
+            filename = (
+                path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S"))
+                + f"{self.custom_image_prefix}.tiff"
+            )
             imwrite(filename, image)
             self.single_save = False
 
         if self.continuous_save and self.continuous_dir_name != None:
             if self.metadata_writer is not None:
                 self.metadata_writer.writerow(self.getMetadata())
-            filename = path.join(self.main_dir, self.continuous_dir_name, datetime.now().strftime("%Y-%m-%d-%H%M%S")) + f"{self.custom_image_prefix}_{self.im_counter:05}"
-            np.save(filename+".npy", image)
+            filename = (
+                path.join(
+                    self.main_dir,
+                    self.continuous_dir_name,
+                    datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+                )
+                + f"{self.custom_image_prefix}_{self.im_counter:05}"
+            )
+            np.save(filename + ".npy", image)
             self.measurementTime.emit(int(perf_counter() - self.start_time))
             self.im_counter += 1
 
@@ -132,9 +157,9 @@ class AcquisitionThread(QThread):
 
         if self.update_counter % self.num_loops == 0:
             self.update_counter = 0
-            if self.pressure_sensor != None:
+            if self.pressure_control != None:
                 try:
-                    pressure = self.pressure_sensor.getPressure()
+                    pressure = self.pressure_control.getPressure()
                     self.updatePressure.emit(pressure)
                 except Exception:
                     print("Error getting pressure. Continuing...")
@@ -146,15 +171,24 @@ class AcquisitionThread(QThread):
 
     def takeImage(self):
         if self.main_dir == None:
-            self.main_dir = self.external_dir + datetime.now().strftime("%Y-%m-%d-%H%M%S")
+            self.main_dir = self.external_dir + datetime.now().strftime(
+                "%Y-%m-%d-%H%M%S"
+            )
             mkdir(self.main_dir)
 
         if self.continuous_save:
-            self.continuous_dir_name = datetime.now().strftime("%Y-%m-%d-%H%M%S") + f"{self.custom_image_prefix}"
+            self.continuous_dir_name = (
+                datetime.now().strftime("%Y-%m-%d-%H%M%S")
+                + f"{self.custom_image_prefix}"
+            )
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
 
-            self.metadata_file = open(path.join(self.main_dir, self.continuous_dir_name) + 'metadata.csv', 'w')
-            self.metadata_writer = DictWriter(self.metadata_file, fieldnames=self.getMetadata().keys())
+            self.metadata_file = open(
+                path.join(self.main_dir, self.continuous_dir_name) + "metadata.csv", "w"
+            )
+            self.metadata_writer = DictWriter(
+                self.metadata_file, fieldnames=self.getMetadata().keys()
+            )
             self.metadata_writer.writeheader()
 
             self.start_time = perf_counter()
@@ -165,7 +199,7 @@ class AcquisitionThread(QThread):
         if self.camera_activated:
             self.camera.stopAcquisition()
             self.camera_activated = False
-        
+
         if self.camera.getBinning() == 2:
             print("Changing to 1x1 binning.")
             self.binning = 1
@@ -174,9 +208,9 @@ class AcquisitionThread(QThread):
             print("Changing to 2x2 binning.")
             self.binning = 2
             self.camera.setBinning(bin_factor=2, mode="Average")
-        
+
         self.camera_activated = True
-    
+
     def runFullZStack(self, motor: DRV8825Nema):
         self.takeZStack = True
         self.motor = motor
@@ -186,7 +220,9 @@ class AcquisitionThread(QThread):
     def runLocalZStack(self, motor: DRV8825Nema, start_point: int):
         self.takeZStack = True
         self.motor = motor
-        self.zstack = symmetricZStackCoroutine(None, motor, start_point, save_loc=self.external_dir)
+        self.zstack = symmetricZStackCoroutine(
+            None, motor, start_point, save_loc=self.external_dir
+        )
         self.zstack.send(None)
 
     def zStack(self, image):
@@ -201,11 +237,40 @@ class AcquisitionThread(QThread):
             except ValueError:
                 # Occurs if an image is sent while the function is still moving the motor
                 pass
+    
+    def setDesiredPressure(self, pressure: float):
+        self.target_pressure = pressure
+        self.pressure_control_enabled = True
+
+    def stopActivePressureControl(self):
+        self.pressure_control_enabled = False
+
+    def activePressureControl(self):
+        if self.pressure_control_enabled:
+            try:
+                self.pressure_control.holdPressure(self.target_pressure)
+            except PressureLeak:
+                try:
+                    pressure = self.pressure_control.getPressure()
+                except:
+                    pressure = 'INVALID READ'
+                print(
+                        f'''A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.
+                        The current pressure is {pressure} and the syringe is already at its maximum position 
+                        ({self.pressure_control.getCurrentgetCurrentDutyCycle()}). Active pressure control
+                        is now disabled.
+                        '''
+                    )
+                self.pressureLeakDetected.emit(1)
+
+    # def activeAutoFocus(self):
+    #     if self.active_autofocus and not self.takeZStack:
+    #         if self.prev_focus
 
 class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
-        
+
         try:
             self.external_dir = "/media/pi/" + listdir("/media/pi/")[0] + "/"
         except IndexError:
@@ -213,7 +278,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.Icon.Critical,
                 "Error - harddrive not detected.",
                 "ERROR! No external harddrive / SSD detected. Press OK to close the application.",
-                cancel=False
+                cancel=False,
             )
             if retval == QtWidgets.QMessageBox.Ok:
                 quit()
@@ -226,13 +291,13 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.led = None
         self.fan = Fan()
 
-        # Load the ui file 
+        # Load the ui file
         uic.loadUi(_UI_FILE_DIR, self)
 
         # Start the video stream
         self.acquisitionThread = AcquisitionThread(self.external_dir)
         self.recording = False
-        
+
         if not self.acquisitionThread.camera_activated:
             print(f"Error initializing camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
@@ -280,7 +345,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnFocusDown.setEnabled(False)
             self.vsFocus.setEnabled(False)
             self.txtBoxFocus.setEnabled(False)
-        
+
         # Create pressure controller (sensor + servo)
         try:
             self.pressure_control = PressureControl()
@@ -292,7 +357,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
             self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
         except PressureControlError:
-            print("Error initializing Pressure Controller. Disabling flow GUI elements.")
+            print(
+                "Error initializing Pressure Controller. Disabling flow GUI elements."
+            )
             self.btnFlowUp.setEnabled(False)
             self.btnFlowDown.setEnabled(False)
             self.vsFlow.setEnabled(False)
@@ -303,19 +370,24 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Acquisition thread
         self.acquisitionThread.changePixmap.connect(self.updateImage)
         self.acquisitionThread.motorPosChanged.connect(self.updateMotorPosition)
-        self.acquisitionThread.motor = self.motor
         self.acquisitionThread.zStackFinished.connect(self.enableMotorUIElements)
         self.acquisitionThread.updatePressure.connect(self.updatePressureLabel)
         self.acquisitionThread.fps.connect(self.updateFPS)
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
-        self.acquisitionThread.pressure_sensor = self.pressure_control
+        self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
+
+        self.acquisitionThread.motor = self.motor
+        self.acquisitionThread.pressure_control = self.pressure_control
+        
+        self.acquisitionThread.start()
+
+        # GUI element signals
         self.txtBoxExposure.editingFinished.connect(self.exposureTextBoxHandler)
         self.chkBoxRecord.stateChanged.connect(self.checkBoxRecordHandler)
         self.chkBoxMaxFPS.stateChanged.connect(self.checkBoxMaxFPSHandler)
         self.btnSnap.clicked.connect(self.btnSnapHandler)
         self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
         self.btnChangeBinning.clicked.connect(self.btnChangeBinningHandler)
-        self.acquisitionThread.start()
 
         # Pressure control
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
@@ -330,7 +402,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Set slider min/max
         self.min_exposure_us = 100
         self.max_exposure_us = 10000
-        self.vsExposure.setMinimum(self.min_exposure_us) 
+        self.vsExposure.setMinimum(self.min_exposure_us)
         self.vsExposure.setMaximum(self.max_exposure_us)
         self.vsExposure.setValue(500)
         self.lblMinExposure.setText(f"{self.min_exposure_us} us")
@@ -342,7 +414,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         msgBox.setWindowTitle(f"{title}")
         msgBox.setText(f"{text}")
         if cancel:
-            msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+            msgBox.setStandardButtons(
+                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+            )
         else:
             msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
         return msgBox.exec()
@@ -352,7 +426,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     def vsFocusClickHandler(self):
         self.acquisitionThread.updateMotorPos = False
-        
+
     def checkBoxRecordHandler(self):
         if self.chkBoxRecord.checkState():
             # Continuously record images to a new subfolder
@@ -378,14 +452,18 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
             num_images = self.acquisitionThread.im_counter
-            print(f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)")
+            print(
+                f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
+            )
             return
 
         # Set custom name
-        custom_filename = '_' + self.txtBoxCustomFilename.text().replace(' ', '')
-        self.acquisitionThread.custom_image_prefix = custom_filename if custom_filename != '_' else ''
-        
-        if self.chkBoxRecord.checkState():    
+        custom_filename = "_" + self.txtBoxCustomFilename.text().replace(" ", "")
+        self.acquisitionThread.custom_image_prefix = (
+            custom_filename if custom_filename != "_" else ""
+        )
+
+        if self.chkBoxRecord.checkState():
             self.acquisitionThread.continuous_save = True
             self.btnSnap.setText("Stop recording")
             self.recording = True
@@ -410,7 +488,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def updateMotorPosition(self, val):
         self.vsFocus.setValue(val)
         self.txtBoxFocus.setText(f"{val}")
-    
+
     @pyqtSlot(float)
     def updatePressureLabel(self, val):
         self.lblPressure.setText(f"{val:.2f} hPa")
@@ -426,11 +504,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
         self.lblLED.setText(f"{perc}%")
-        self.led.setDutyCycle(perc/100)
+        self.led.setDutyCycle(perc / 100)
 
     def exposureSliderHandler(self):
         exposure = int(self.vsExposure.value())
-        self.acquisitionThread.updateExposure(exposure / 1000) # Exposure time us -> ms
+        self.acquisitionThread.updateExposure(exposure / 1000)  # Exposure time us -> ms
         self.txtBoxExposure.setText(f"{exposure}")
 
     def exposureTextBoxHandler(self):
@@ -443,7 +521,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.txtBoxExposure.setText(f"{self.vsExposure.value()}")
             return
         try:
-            self.acquisitionThread.updateExposure(exposure / 1000) # Exposure time us -> ms
+            self.acquisitionThread.updateExposure(
+                exposure / 1000
+            )  # Exposure time us -> ms
         except:
             print("Invalid exposure, ignoring and continuing...")
             self.txtBoxExposure.setText(f"{self.vsExposure.value()}")
@@ -455,7 +535,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
         except MotorInMotion as e:
             print(e)
-            
+
         self.vsFocus.setValue(self.motor.pos)
         self.txtBoxFocus.setText(f"{self.motor.pos}")
 
@@ -489,7 +569,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.motor.threaded_move_abs(pos=pos)
         except MotorInMotion:
             print(f"Motor already in motion.")
-            
+
         self.txtBoxFocus.setText(f"{self.motor.pos}")
         self.acquisitionThread.updateMotorPos = True
 
@@ -516,7 +596,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.Icon.Information,
             "Full Range ZStack",
             "Press okay to sweep the motor over its entire range and automatically find and move to the focal position.",
-            cancel=True
+            cancel=True,
         )
 
         if retval == QtWidgets.QMessageBox.Ok:
@@ -528,12 +608,19 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.Icon.Information,
             "Local Vicinity ZStack",
             "Press okay to sweep the motor over its current nearby vicinity and move to the focal position.",
-            cancel=True
+            cancel=True,
         )
 
         if retval == QtWidgets.QMessageBox.Ok:
             self.disableMotorUIElements()
             self.acquisitionThread.runLocalZStack(self.motor, self.motor.pos)
+
+    def chkBoxActiveAutofocusHandler(self):
+        if self.chkBoxActiveAutofocus.checkState():
+            self.disableMotorUIElements()
+
+        else:
+            self.enableMotorUIElements()
 
     def disableMotorUIElements(self):
         self.vsFocus.blockSignals(True)
@@ -542,7 +629,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnFocusDown.setEnabled(False)
         self.btnLocalZStack.setEnabled(False)
         self.btnFullZStack.setEnabled(False)
-    
+
     @pyqtSlot(int)
     def enableMotorUIElements(self, _):
         self.btnFocusUp.setEnabled(True)
@@ -553,7 +640,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFocus.blockSignals(False)
 
     def flowControlBtnHandler(self):
-        pass
+        retval = self._displayMessageBox(
+            QtWidgets.QMessageBox.Icon.Information,
+            "Closed-loop pressure control",
+            "This will start closed-loop pressure feeedback.",
+        )
+        
+        if retval == QtWidgets.QMessageBox.Ok:
+            self.acquisitionThread.setDesiredPressure()
 
     def btnFlowUpHandler(self):
         self.pressure_control.increaseDutyCycle()
@@ -586,8 +680,47 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             print("Invalid duty cycle, ignoring and continuing...")
             self.txtBoxFlow.setText(f"{self.vsFlow.value()}")
             return
-        
+
         self.vsFlow.setValue(flow_duty_cycle)
+
+    def chkBoxPressureControlHandler(self):
+        if self.chkBoxPressureControl.checkState():
+            target_pressure = self.pressure_control.getPressure()
+            retval = self._displayMessageBox(
+            QtWidgets.QMessageBox.Icon.Information,
+            "Active pressure control (APS)",
+            f"The APS will attempt to maintain a pressure of: {target_pressure}. Press okay to confirm.",
+            cancel=True,
+        )
+            if retval == QtWidgets.QMessageBox.Ok:
+                self.disablePressureUIElements()
+                self.acquisitionThread.setDesiredPressure(self.pressure_control.getPressure())
+        else:
+            self.acquisitionThread.stopActivePressureControl()
+            self.enablePressureUIElements()
+
+    def enablePressureUIElements(self):
+        self.vsFlow.blockSignals(False)
+        self.txtBoxFlow.blockSignals(False)
+        self.btnFlowUp.setEnabled(True)
+        self.btnFlowDown.setEnabled(True)
+
+    def disablePressureUIElements(self):
+        self.vsFlow.blockSignals(True)
+        self.txtBoxFlow.blockSignals(True)
+        self.btnFlowUp.setEnabled(False)
+        self.btnFlowDown.setEnabled(False)
+
+    @pyqtSlot(int)
+    def pressureLeak(self, _):
+        self.acquisitionThread.stopActivePressureControl()
+        self.enablePressureUIElements()
+        _ = self._displayMessageBox(
+            QtWidgets.QMessageBox.Icon.Warning,
+            "Leak - Active pressure controlled stopped",
+            f"The target pressure ({self.acquisitionThread.target_pressure}hPa), can no longer be attained.",
+            cancel=False,
+        )
 
     def manualFocusWithEncoder(self, increment: int):
         try:
@@ -607,7 +740,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.Icon.Warning,
             "Exit application",
             "Please remove the flow cell now. Only press okay after the flow cell has been removed. The syringe will move into the topmost position after pressing okay.",
-            cancel=True
+            cancel=True,
         )
 
         if retval == QtWidgets.QMessageBox.Ok:
@@ -622,7 +755,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
                 self.acquisitionThread.camera_activated = False
                 self.acquisitionThread.camera.stopAcquisition()
                 self.acquisitionThread.camera.deactivateCamera()
-            
+
             # Turn off encoder
             self.encoder.close()
 
@@ -635,7 +768,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         print("Cleaning up and exiting the application.")
         self.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     main_window = MalariaScopeGUI()
     main_window.show()

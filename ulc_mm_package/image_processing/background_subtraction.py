@@ -12,7 +12,6 @@ import numpy as np
 # ========================== CONSTANTS ======================
 INSIDE_BBOX_FLAG = 0
 
-
 class PatchyBackgroundSubtraction:
     def _maskBoxedRegions(
         self,
@@ -176,14 +175,26 @@ class MedianBGSubtraction:
     def __init__(
         self, img_height: int = 0, img_width: int = 0, num_frames_in_memory: int = 100
     ):
+        """
+        A class which stores a fixed number of images (which can be overwritten)
+        which returns the pixel-wise median.
+
+        Parameters
+        ----------
+        img_width : int
+            x dimension of the images to be stored
+        img_height : int
+            y dimension of the images to be stored
+        num_frames_in_memory : int
+            Number of images to retain in memory.
+
+        """
         self._num_frames_in_memory = num_frames_in_memory
-        self.frame_storage = np.full(
-            (img_height, img_width, num_frames_in_memory), INSIDE_BBOX_FLAG
-        )
+        self.frame_storage = np.zeros((img_height, img_width, num_frames_in_memory))
         self._oldest_frame_ptr = 0
         self._backgroundMedian = 0
 
-    def _addImageToMemory(self, img_arr):
+    def _addImageToMemory(self, img_arr: np.ndarray):
         """Writes over the array where the pointer is. Updates the pointer location.
 
         Slicing in numpy is fast which is why this approach of maintaining a pointer
@@ -201,3 +212,7 @@ class MedianBGSubtraction:
     def getMedian(self):
         self._backgroundMedian = np.median(self.frame_storage, axis=2)
         return self._backgroundMedian
+
+    def getVariance(self):
+        self._backgroundVariance = np.var(self.frame_storage, axis=2)
+        return self._backgroundVariance

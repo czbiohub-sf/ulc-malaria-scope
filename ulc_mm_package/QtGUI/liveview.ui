@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1440</width>
+    <width>1271</width>
     <height>855</height>
    </rect>
   </property>
@@ -156,6 +156,13 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QCheckBox" name="chkBoxPressureControl">
+            <property name="text">
+             <string>Active control?</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
         <item row="0" column="1">
@@ -194,7 +201,7 @@
            <number>1500</number>
           </property>
           <property name="singleStep">
-           <number>10</number>
+           <number>5</number>
           </property>
           <property name="value">
            <number>100</number>
@@ -356,7 +363,7 @@
            <string>Check to enable continuous recording of images</string>
           </property>
           <property name="text">
-           <string>Continuous save?</string>
+           <string>Record?</string>
           </property>
          </widget>
         </item>
@@ -451,6 +458,54 @@
       </item>
       <item row="1" column="2">
        <layout class="QGridLayout" name="gridLayout_3">
+        <item row="3" column="4">
+         <widget class="QLabel" name="lblFocusMin">
+          <property name="text">
+           <string>0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QCheckBox" name="chkBoxFreeze">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>120</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Freeze frame?</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QPushButton" name="btnNextImage">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Next</string>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="4">
          <widget class="QLabel" name="lblFocusMax">
           <property name="maximumSize">
@@ -581,51 +636,10 @@
           </item>
          </layout>
         </item>
-        <item row="3" column="1">
-         <widget class="QPushButton" name="btnNextImage">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>32</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>100</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Next</string>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="1">
-         <widget class="QCheckBox" name="chkBoxFreeze">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>120</width>
-            <height>16777215</height>
-           </size>
-          </property>
+         <widget class="QCheckBox" name="chkBoxActiveAutofocus">
           <property name="text">
-           <string>Freeze frame?</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="4">
-         <widget class="QLabel" name="lblFocusMin">
-          <property name="text">
-           <string>0</string>
+           <string>Active autofocus?</string>
           </property>
          </widget>
         </item>
