@@ -394,6 +394,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnFlowDown.clicked.connect(self.btnFlowDownHandler)
         self.txtBoxFlow.editingFinished.connect(self.flowTextBoxHandler)
         self.vsFlow.valueChanged.connect(self.vsFlowHandler)
+        self.chkBoxPressureControl.stateChanged.connect(self.chkBoxPressureControlHandler)
 
         # Misc
         self.fan.turn_on()
