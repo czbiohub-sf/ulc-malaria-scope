@@ -124,6 +124,7 @@ class AcquisitionThread(QThread):
             "motor_pos": self.motor.pos,
             "pressure_hpa": self.pressure_control.getPressure(),
             "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
+            "APC_on": self.pressure_control_enabled
         }
 
     def save(self, image):
@@ -680,14 +681,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Active pressure control (APS)",
-            f"The APS will attempt to maintain a pressure of: {target_pressure}. Press okay to confirm.",
+            f"The APS will attempt to maintain a pressure of: {target_pressure:.2f}. Press okay to confirm.",
             cancel=True,
         )
             if retval == QtWidgets.QMessageBox.Ok:
                 self.disablePressureUIElements()
                 target_pressure = self.pressure_control.getPressure()
                 self.lblTargetPressure.setText(f"{target_pressure:.2f}")
-                self.acquisitionThread.setDesiredPressure()
+                self.acquisitionThread.setDesiredPressure(target_pressure)
         else:
             self.acquisitionThread.stopActivePressureControl()
             self.lblTargetPressure.setText("")
@@ -695,6 +696,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     def enablePressureUIElements(self):
         self.vsFlow.blockSignals(False)
+        self.vsFlow.setEnabled(True)
         self.txtBoxFlow.blockSignals(False)
         self.btnFlowUp.setEnabled(True)
         self.btnFlowDown.setEnabled(True)
@@ -715,7 +717,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         _ = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,
             "Leak - Active pressure controlled stopped",
-            f"The target pressure ({self.acquisitionThread.target_pressure}hPa), can no longer be attained.",
+            f"The target pressure ({self.acquisitionThread.target_pressure}hPa), can not be attained.",
             cancel=False,
         )
 
