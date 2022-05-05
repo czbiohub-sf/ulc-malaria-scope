@@ -255,9 +255,9 @@ class AcquisitionThread(QThread):
                 except:
                     pressure = 'INVALID READ'
                 print(
-                        f'''A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.
-                        The current pressure is {pressure} and the syringe is already at its maximum position 
-                        ({self.pressure_control.getCurrentgetCurrentDutyCycle()}). Active pressure control
+                        f'''A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.\n
+                        The current pressure is {pressure} and the syringe is already at its maximum position\n
+                        ({self.pressure_control.getCurrentDutyCycle():.1f}). Active pressure control\n
                         is now disabled.
                         '''
                     )
@@ -640,16 +640,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsFocus.blockSignals(False)
         self.txtBoxFocus.blockSignals(False)
 
-    def flowControlBtnHandler(self):
-        retval = self._displayMessageBox(
-            QtWidgets.QMessageBox.Icon.Information,
-            "Closed-loop pressure control",
-            "This will start closed-loop pressure feeedback.",
-        )
-        
-        if retval == QtWidgets.QMessageBox.Ok:
-            self.acquisitionThread.setDesiredPressure()
-
     def btnFlowUpHandler(self):
         self.pressure_control.increaseDutyCycle()
         duty_cycle = self.pressure_control.duty_cycle
@@ -695,9 +685,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         )
             if retval == QtWidgets.QMessageBox.Ok:
                 self.disablePressureUIElements()
-                self.acquisitionThread.setDesiredPressure(self.pressure_control.getPressure())
+                target_pressure = self.pressure_control.getPressure()
+                self.lblTargetPressure.setText(f"{target_pressure:.2f}")
+                self.acquisitionThread.setDesiredPressure()
         else:
             self.acquisitionThread.stopActivePressureControl()
+            self.lblTargetPressure.setText("")
             self.enablePressureUIElements()
 
     def enablePressureUIElements(self):
@@ -708,6 +701,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     def disablePressureUIElements(self):
         self.vsFlow.blockSignals(True)
+        self.vsFlow.setEnabled(False)
         self.txtBoxFlow.blockSignals(True)
         self.btnFlowUp.setEnabled(False)
         self.btnFlowDown.setEnabled(False)
@@ -715,6 +709,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     @pyqtSlot(int)
     def pressureLeak(self, _):
         self.acquisitionThread.stopActivePressureControl()
+        self.chkBoxPressureControl.setChecked(False)
+        self.lblTargetPressure.setText("")
         self.enablePressureUIElements()
         _ = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,

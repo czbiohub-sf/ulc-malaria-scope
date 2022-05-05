@@ -16,7 +16,7 @@ import adafruit_mprls
 from ulc_mm_package.hardware.hardware_constants import *
 
 INVALID_READ_FLAG = -1
-TOL_hPa = 2
+TOL_hPa = 1
 
 class PressureControlError(Exception):
     """Base class for catching all pressure control related errors."""
