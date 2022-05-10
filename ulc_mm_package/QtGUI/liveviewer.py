@@ -140,19 +140,8 @@ class AcquisitionThread(QThread):
             self.single_save = False
 
         if self.continuous_save and self.continuous_dir_name != None:
-            if self.metadata_writer is not None:
-                self.metadata_writer.writerow(self.getMetadata())
-            # filename = (
-            #     path.join(
-            #         self.main_dir,
-            #         self.continuous_dir_name,
-            #         datetime.now().strftime("%Y-%m-%d-%H%M%S"),
-            #     )
-            #     + f"{self.custom_image_prefix}_{self.im_counter:05}"
-            # )
-            # np.save(filename + ".npy", image)
-            if self.zw:
-                self.zw.writeSingleArray(image)
+            if self.zw and self.zw.store:
+                self.zw.writeSingleArray(image, self.getMetadata())
             self.measurementTime.emit(int(perf_counter() - self.start_time))
             self.im_counter += 1
 
@@ -188,14 +177,6 @@ class AcquisitionThread(QThread):
                 + f"{self.custom_image_prefix}"
             )
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
-
-            self.metadata_file = open(
-                path.join(self.main_dir, self.continuous_dir_name) + "metadata.csv", "w"
-            )
-            self.metadata_writer = DictWriter(
-                self.metadata_file, fieldnames=self.getMetadata().keys()
-            )
-            self.metadata_writer.writeheader()
 
             filename = (
                 path.join(
