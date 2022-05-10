@@ -2,9 +2,12 @@ import time
 import datetime
 import os
 import cv2
+import zarr
 import numpy as np
 import typer
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import pickle
 
 EXTERNAL_DIR = "experiments/"
 
@@ -21,6 +24,27 @@ def get_time_stamp(filename):
         time_str = time_str[:6]
         time_vals = datetime.datetime(*time.strptime(time_str, "%H%M%S")[:6])
         return time_vals
+
+def get_zarr_image_size(zarr_store):
+    return zarr_store[0].shape
+
+def open_zarr(folder):
+    file = [os.path.join(folder, x) for x in sorted(os.listdir(folder)) if ".zip" in x[-4:]][0]
+    return zarr.open(file)
+
+def get_zarr_metadata(zarr_store):
+    all_metadata = {}
+    for key in zarr_store[0].attrs.keys():
+        all_metadata[key] = [zarr_store[x].attrs[key] for x in zarr_store]
+    return all_metadata
+
+def save_metadata(filename: str, metadata: dict):
+    with open(f"{filename}", "wb") as f:
+        pickle.dump(metadata, f)
+
+def zarr_image_generator(zarr_store):
+    for i in zarr_store:
+        yield zarr_store[i][:]
 
 def main(path: str=typer.Option("", help="Path of the top-evel folder containing subfolders of experiments. Each subfolder should have .npy files.")):
     if path == "":
@@ -73,30 +97,37 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
             quit()
 
     try:
-        output_dir = os.path.join(path, "Videos")
-        os.mkdir(output_dir)
+        output_dir = os.path.join(path, "Output")
+        video_dir = os.path.join(output_dir, "Videos")
+        metadata_dir = os.path.join(output_dir, "Metadata")
+        for dir in [output_dir, video_dir, metadata_dir]:
+            os.mkdir(dir)
     except:
         pass
 
     for folder in tqdm(subfolders):
-        files = [
-            os.path.join(folder, x) for x in sorted(os.listdir(folder)) if ".npy" in x or '.tiff' in x
-        ]
-        if len(files) == 0:
+        try:
+            zstore = open_zarr(folder)
+            metadata = get_zarr_metadata(zstore)
+        except:
             typer.echo(f"\n{'='*20}")
-            typer.echo(f"No '.npy' or '.tiff' files found in folder {folder}. Skipping and continuing...")
+            typer.echo(f"Error finding/opening the Zarr zipstore in folder {folder}. Skipping and continuing...")
             typer.echo(f"{'='*20}\n")
             continue
         try:
-            start, end = get_time_stamp(files[0]), get_time_stamp(files[-1])
+            start, end = metadata['timestamp'][0], metadata['timestamp'][-1]
             runtime_s = (end - start).total_seconds()
-            fps = int(len(files) / runtime_s)
+            fps = int(len(zstore) / runtime_s)
         except:
-            fps = 10
+            fps = 30
 
-        width, height = loader(files[0]).shape
-        filename = folder[folder.rfind("/")+1:]+"_vid.mp4"
-        output_path = os.path.join(path, "Videos", filename)
+        width, height = get_zarr_image_size(zstore)
+        file_root = folder[folder.rfind("/")+1:]
+        filename = file_root+"_vid.mp4"
+        metadata_output_path = os.path.join(metadata_dir, file_root+"_metadata.pkl")
+        output_path = os.path.join(video_dir, filename)
+        save_metadata(metadata_output_path, metadata)
+
         writer = cv2.VideoWriter(
             f"{output_path}",
             fourcc=cv2.VideoWriter_fourcc(*"mp4v"),
@@ -105,12 +136,12 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
             isColor=False,
         )
 
-        for img in tqdm(files):
-            img = loader(img)
+        img_gen = zarr_image_generator(zstore)
+        for i, img in enumerate(tqdm(range(len(zstore)))):
+            img = next(img_gen)
             if img is not None:
                 writer.write(img)
         writer.release()
-
 
 if __name__ == "__main__":
     typer.run(main)

@@ -14,6 +14,8 @@ from ulc_mm_package.hardware.pressure_control import (
 )
 from ulc_mm_package.hardware.fan import Fan
 
+from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
+
 from ulc_mm_package.image_processing.zstack import (
     takeZStackCoroutine,
     symmetricZStackCoroutine,
@@ -68,6 +70,7 @@ class AcquisitionThread(QThread):
         self.metadata_file = None
         self.metadata_writer = None
         self.click_to_advance = False
+        self.zw = ZarrWriter()
 
         self.pressure_control_enabled = False
         self.active_autofocus = False
@@ -139,15 +142,17 @@ class AcquisitionThread(QThread):
         if self.continuous_save and self.continuous_dir_name != None:
             if self.metadata_writer is not None:
                 self.metadata_writer.writerow(self.getMetadata())
-            filename = (
-                path.join(
-                    self.main_dir,
-                    self.continuous_dir_name,
-                    datetime.now().strftime("%Y-%m-%d-%H%M%S"),
-                )
-                + f"{self.custom_image_prefix}_{self.im_counter:05}"
-            )
-            np.save(filename + ".npy", image)
+            # filename = (
+            #     path.join(
+            #         self.main_dir,
+            #         self.continuous_dir_name,
+            #         datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+            #     )
+            #     + f"{self.custom_image_prefix}_{self.im_counter:05}"
+            # )
+            # np.save(filename + ".npy", image)
+            if self.zw:
+                self.zw.writeSingleArray(image)
             self.measurementTime.emit(int(perf_counter() - self.start_time))
             self.im_counter += 1
 
@@ -191,6 +196,16 @@ class AcquisitionThread(QThread):
                 self.metadata_file, fieldnames=self.getMetadata().keys()
             )
             self.metadata_writer.writeheader()
+
+            filename = (
+                path.join(
+                    self.main_dir,
+                    self.continuous_dir_name,
+                    datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+                )
+                + f"{self.custom_image_prefix}_{self.im_counter:05}"
+            )
+            self.zw.createNewFile(filename)
 
             self.start_time = perf_counter()
             self.fps_timer = perf_counter()
@@ -450,6 +465,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.chkBoxRecord.setEnabled(True)
             self.chkBoxMaxFPS.setEnabled(True)
             sleep(0.1)
+            self.acquisitionThread.zw.closeFile()
             self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
@@ -687,7 +703,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             if retval == QtWidgets.QMessageBox.Ok:
                 self.disablePressureUIElements()
                 target_pressure = self.pressure_control.getPressure()
-                self.lblTargetPressure.setText(f"{target_pressure:.2f}")
+                self.lblTargetPressure.setText(f"{target_pressure:.2f} hPa")
                 self.acquisitionThread.setDesiredPressure(target_pressure)
         else:
             self.acquisitionThread.stopActivePressureControl()

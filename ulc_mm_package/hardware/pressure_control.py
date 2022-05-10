@@ -50,7 +50,7 @@ class PressureControl():
         self.prev_pressure = 0
         self.io_error_counter = 0
         self.prev_time_s = 0
-        self.control_delay_s = 0.1
+        self.control_delay_s = 0.2
 
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
@@ -131,7 +131,7 @@ class PressureControl():
         return INVALID_READ_FLAG
 
     def isPressureReadValid(self, pressure: float) -> bool:
-        if pressure == INVALID_READ_FLAG:
+        if pressure < 0:
             return False
         return True
 

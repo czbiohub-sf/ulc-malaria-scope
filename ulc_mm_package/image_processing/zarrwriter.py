@@ -6,11 +6,11 @@ Library Documentation:
     
 """
 
-import zarr
 from os import listdir, path
-import cv2
 from time import perf_counter
-from numcodecs import Zstd
+import cv2
+import zarr
+import numpy as np
 
 # ==================== Custom errors ===============================
 class AttemptingWriteWithoutFile(Exception):
@@ -27,7 +27,7 @@ class ZarrWriter():
         self.store = None
         self.group = None
         self.arr_counter = 0
-        self.compressor = Zstd(level=1)
+        self.compressor = None
 
     def createNewFile(self, filename: str, metadata={}, overwrite: bool=False):
         """Create a new zarr file.
@@ -52,6 +52,14 @@ class ZarrWriter():
             raise IOError(f"Error creating {filename}.zip")
 
     def writeSingleArray(self, data, metadata={}):
+        """Write a single array and optional metadata to the Zarr store.
+
+        Parameters
+        ----------
+        data : np.ndarray
+        metadata : dict
+            A dictionary of keys to values to be associated with the given data.
+        """
         try:
             ds = self.group.array(f"{self.arr_counter}", data=data, compressor=self.compressor)
             for key in metadata.keys():
