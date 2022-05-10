@@ -67,7 +67,6 @@ class AcquisitionThread(QThread):
         self.fps_timer = perf_counter()
         self.start_time = perf_counter()
         self.external_dir = external_dir
-        self.metadata_file = None
         self.metadata_writer = None
         self.click_to_advance = False
         self.zw = ZarrWriter()
@@ -447,7 +446,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.chkBoxMaxFPS.setEnabled(True)
             sleep(0.1)
             self.acquisitionThread.zw.closeFile()
-            self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
             num_images = self.acquisitionThread.im_counter
