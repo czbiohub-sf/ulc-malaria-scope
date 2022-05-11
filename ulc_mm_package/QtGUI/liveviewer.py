@@ -25,7 +25,6 @@ import sys
 import traceback
 from time import perf_counter, sleep
 from os import listdir, mkdir, path
-from csv import DictWriter
 from datetime import datetime, timedelta
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
@@ -122,7 +121,8 @@ class AcquisitionThread(QThread):
             "im_counter": self.im_counter,
             "measurement_type": "placeholder",
             "sample_type": "placeholder",
-            "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+            "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
+            "exposure": self.camera.exposureTime_ms,
             "motor_pos": self.motor.pos,
             "pressure_hpa": self.pressure_control.getPressure(),
             "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
@@ -318,6 +318,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             while not self.motor.homed:
                 pass
             sleep(0.5)
+            self.motor.move_abs(int(self.motor.max_pos // 2))
             self.lblFocusMax.setText(f"{self.motor.max_pos}")
 
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
@@ -331,7 +332,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.txtBoxFocus.gotFocus.connect(self.txtBoxFocusGotFocus)
             self.btnFullZStack.clicked.connect(self.btnFullZStackHandler)
             self.btnLocalZStack.clicked.connect(self.btnLocalZStackHandler)
-            self.vsFocus.setMinimum(self.motor.pos)
+            self.vsFocus.setMinimum(0)
             self.vsFocus.setValue(self.motor.pos)
             self.vsFocus.setMaximum(self.motor.max_pos)
 

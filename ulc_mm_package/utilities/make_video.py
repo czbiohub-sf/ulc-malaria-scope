@@ -35,7 +35,7 @@ def open_zarr(folder):
 def get_zarr_metadata(zarr_store):
     all_metadata = {}
     for key in zarr_store[0].attrs.keys():
-        all_metadata[key] = [zarr_store[x].attrs[key] for x in zarr_store]
+        all_metadata[key] = [zarr_store[x].attrs[key] for x in range(len(zarr_store))]
     return all_metadata
 
 def save_metadata(filename: str, metadata: dict):
@@ -43,7 +43,7 @@ def save_metadata(filename: str, metadata: dict):
         pickle.dump(metadata, f)
 
 def zarr_image_generator(zarr_store):
-    for i in zarr_store:
+    for i in range(len(zarr_store)):
         yield zarr_store[i][:]
 
 def main(path: str=typer.Option("", help="Path of the top-evel folder containing subfolders of experiments. Each subfolder should have .npy files.")):
