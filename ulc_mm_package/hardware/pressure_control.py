@@ -111,7 +111,7 @@ class PressureControl():
             self.decreaseDutyCycle()
         return pressure_readings_hpa
 
-    def getPressure(self):
+    def getPressure(self, apc_on: bool=False):
         """The pressure sensor is not always reliable. It may raise I/O or Runtime
         errors intermittently.
 
@@ -119,6 +119,13 @@ class PressureControl():
         pressure sensor a few times until a valid value is returned. If a valid value is not received
         after `max_attempts`, then a -1 flag is returned. 
         """
+        
+        if apc_on:
+            return self.curr_pressure
+        else:
+            return self._getPressure()
+
+    def _getPressure(self):
         max_attempts = 6
         while max_attempts > 0:
             try:
@@ -158,13 +165,13 @@ class PressureControl():
         if perf_counter() - self.prev_time_s < self.control_delay_s:
             return
 
-        curr_pressure = self.getPressure()
+        self.curr_pressure = self.getPressure()
 
-        if self.isPressureReadValid(curr_pressure):
-            if self.pressureWithinTol(curr_pressure, target_pressure):
+        if self.isPressureReadValid(self.curr_pressure):
+            if self.pressureWithinTol(self.curr_pressure, target_pressure):
                 return
 
-            diff = target_pressure - curr_pressure
+            diff = target_pressure - self.curr_pressure
             if diff > 0:
                 self.increaseDutyCycle()
             elif diff < 0:
@@ -179,5 +186,5 @@ class PressureControl():
                 elif abs(diff) < abs(new_diff) and diff < 0:
                     self.increaseDutyCycle()
             self.prev_time_s = perf_counter()
-            if self.isLeak(curr_pressure, target_pressure):
+            if self.isLeak(self.curr_pressure, target_pressure):
                 raise PressureLeak
