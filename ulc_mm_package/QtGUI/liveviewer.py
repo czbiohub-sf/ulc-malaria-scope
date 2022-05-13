@@ -72,19 +72,6 @@ class AcquisitionThread(QThread):
 
         self.pressure_control_enabled = False
         self.active_autofocus = False
-        self.gui_s = 0
-        self. g = []
-
-        self.save_s = 0
-        self.s = []
-
-        self.z_s = 0
-        self.z = []
-
-        self.apc_s = 0
-        self.apc = []
-
-        self.l = []
 
         try:
             self.camera = BaslerCamera()
@@ -97,27 +84,11 @@ class AcquisitionThread(QThread):
             if self.camera_activated:
                 try:
                     for image in self.camera.yieldImages():
-                        self.gui_s = perf_counter()
                         self.updateGUIElements()
-                        self.gui_s = perf_counter() - self.gui_s
-                        self.g.append(self.gui_s)
-
-                        self.save_s = perf_counter()
                         self.save(image)
-                        self.save_s = perf_counter() - self.save_s
-                        self.s.append(self.save_s)
-
-                        self.z_s = perf_counter()
                         self.zStack(image)
-                        self.z_s = perf_counter() - self.z_s
-                        self.z.append(self.z_s)
-
-                        self.apc_s = perf_counter()
                         self.activePressureControl()
-                        self.apc_s = perf_counter() - self.apc_s
-                        self.apc.append(self.apc_s)
 
-                        self.liveview_s = perf_counter()
                         if self.liveview:
                             if self.update_counter % self.update_liveview == 0:
                                 qimage = array2qimage(image)
@@ -126,15 +97,6 @@ class AcquisitionThread(QThread):
                             qimage = array2qimage(image)
                             self.changePixmap.emit(qimage)
                             self.click_to_advance = False
-                        self.liveview_s = perf_counter() - self.liveview_s
-                        self.l.append(self.liveview_s)
-
-                        print(f"g: {self.gui_s}")
-                        print(f"s: {self.save_s}")
-                        print(f"z: {self.z_s}")
-                        print(f"a: {self.apc_s}")
-                        print(f"l: {self.liveview_s}")
-                        
                 except Exception as e:
                     # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
                     # Once that happens, this can be swapped to catch the PyCameraException
@@ -162,7 +124,7 @@ class AcquisitionThread(QThread):
             "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
             "exposure": self.camera.exposureTime_ms,
             "motor_pos": self.motor.pos,
-            #"pressure_hpa": self.pressure_control.getPressure(),
+            "pressure_hpa": self.pressure_control.getPressure(),
             "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
             "APC_on": self.pressure_control_enabled
         }
@@ -432,7 +394,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.chkBoxPressureControl.stateChanged.connect(self.chkBoxPressureControlHandler)
 
         # Misc
-        self.fan.turn_off()
+        self.fan.turn_on()
         self.btnExit.clicked.connect(self.exit)
 
         # Set slider min/max
@@ -795,25 +757,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             # Turn off fan
             self.fan.turn_off()
 
-            import matplotlib.pyplot as plt
-            plt.plot(self.acquisitionThread.g)
-            plt.savefig("g.png")
-            plt.clf()
-            
-            plt.plot(self.acquisitionThread.s)
-            plt.savefig("s.png")
-            plt.clf()
-
-            plt.plot(self.acquisitionThread.z)
-            plt.savefig("z.png")
-            plt.clf()
-
-            plt.plot(self.acquisitionThread.apc)
-            plt.savefig("apc.png")
-            plt.clf()
-
-            plt.plot(self.acquisitionThread.l)
-            plt.savefig('l.png')
             quit()
 
     def closeEvent(self, event):
