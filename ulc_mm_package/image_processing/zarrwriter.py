@@ -28,6 +28,7 @@ class ZarrWriter():
         self.group = None
         self.arr_counter = 0
         self.compressor = None
+        self.writable = False
 
     def createNewFile(self, filename: str, metadata={}, overwrite: bool=False):
         """Create a new zarr file.
@@ -48,6 +49,7 @@ class ZarrWriter():
                 self.store = zarr.ZipStore(filename, mode='w')
             self.group = zarr.group(store=self.store)
             self.arr_counter = 0
+            self.writable = True
         except AttributeError:
             raise IOError(f"Error creating {filename}.zip")
 
@@ -71,6 +73,7 @@ class ZarrWriter():
     def closeFile(self):
         self.store.close()
         self.store = None
+        self.writable = False
 
     def __del__(self):
         # If the user did not manually close the storage, close it

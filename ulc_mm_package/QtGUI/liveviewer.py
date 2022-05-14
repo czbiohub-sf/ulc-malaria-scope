@@ -139,7 +139,7 @@ class AcquisitionThread(QThread):
             self.single_save = False
 
         if self.continuous_save and self.continuous_dir_name != None:
-            if self.zw and self.zw.store:
+            if self.zw.writable:
                 self.zw.writeSingleArray(image, self.getMetadata())
             self.measurementTime.emit(int(perf_counter() - self.start_time))
             self.im_counter += 1
