@@ -1,5 +1,5 @@
 import time
-import datetime
+from datetime import datetime
 import os
 import cv2
 import zarr
@@ -18,12 +18,8 @@ def loader(img_name):
         return np.load(img_name)
     return None
 
-def get_time_stamp(filename):
-        filename = filename[filename.rfind("/") + 1 :]
-        time_str = filename[filename.rfind("-") + 1 : filename.find(".") - 5]
-        time_str = time_str[:6]
-        time_vals = datetime.datetime(*time.strptime(time_str, "%H%M%S")[:6])
-        return time_vals
+def get_timestamp(timestamp_str):
+        return datetime.strptime(timestamp_str, "%Y-%m-%d-%H%M%S_%f")
 
 def get_zarr_image_size(zarr_store):
     return zarr_store[0].shape
@@ -35,7 +31,10 @@ def open_zarr(folder):
 def get_zarr_metadata(zarr_store):
     all_metadata = {}
     for key in zarr_store[0].attrs.keys():
-        all_metadata[key] = [zarr_store[x].attrs[key] for x in range(len(zarr_store))]
+        all_metadata[key] = [0]*len(zarr_store)
+    for i in tqdm(range(len(zarr_store))):
+        for key in zarr_store[0].attrs.keys():
+            all_metadata[key][i] = zarr_store[i].attrs[key]
     return all_metadata
 
 def save_metadata(filename: str, metadata: dict):
@@ -108,6 +107,7 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
     for folder in tqdm(subfolders):
         try:
             zstore = open_zarr(folder)
+            typer.echo("Extracting metadata...")
             metadata = get_zarr_metadata(zstore)
         except:
             typer.echo(f"\n{'='*20}")
@@ -115,10 +115,12 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
             typer.echo(f"{'='*20}\n")
             continue
         try:
-            start, end = metadata['timestamp'][0], metadata['timestamp'][-1]
+            start, end = get_timestamp(metadata['timestamp'][0]), get_timestamp(metadata['timestamp'][-1])
             runtime_s = (end - start).total_seconds()
             fps = int(len(zstore) / runtime_s)
-        except:
+        except Exception as e:
+            print("Error parsing timestamps and setting fps. Defaulting to fps=30\n")
+            print(e)
             fps = 30
 
         width, height = get_zarr_image_size(zstore)
@@ -128,6 +130,7 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
         output_path = os.path.join(video_dir, filename)
         save_metadata(metadata_output_path, metadata)
 
+        typer.echo("Generating video...")
         writer = cv2.VideoWriter(
             f"{output_path}",
             fourcc=cv2.VideoWriter_fourcc(*"mp4v"),
