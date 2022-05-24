@@ -1,4 +1,5 @@
 from re import L
+from typing import Tuple
 import numpy as np
 import cv2
 
@@ -8,7 +9,7 @@ class FlowRateEstimatorError(Exception):
 
 class FlowRateEstimator:
 
-    def __init__(self, img_width: int=800, img_height: int=600, num_image_pairs: int=30):
+    def __init__(self, img_height: int=600, img_width: int=800, num_image_pairs: int=12):
         """A class for estimating the flow rate of cells.
         The class holds two images at a time in `frame_storage`. To use this class,
         a user needs only to provide a single image at a time. Every two images, 
@@ -38,41 +39,48 @@ class FlowRateEstimator:
 
         self.dx = [0] * num_image_pairs
         self.dy = [0] * num_image_pairs
+        self.timestamps = [0, 0]
         self.frame_storage = np.zeros((img_height, img_width, 2), dtype=np.uint8)
         self._frame_counter = 0
         self._calc_idx = 0
 
-    def _getAverageDisplacements(self):
+    def _getAverageDisplacements(self) -> Tuple[float, float]:
         """Internal function - return the mean of the dx and dy displacement arrays"""
-        return np.average(self.dx), np.average(self.dy)
+        return (np.average(self.dx), np.average(self.dy))
 
-    def getAverageAndReset(self):
+    def getAverageAndReset(self) -> Tuple[float, float]:
         """Get the average of all the values in the displacement arrays and reset the calculation counter.
         A user caling this function should only call it once `isFull` returns True.
 
         Once `_calc_idx` is reset, it will overwrite previous displacement values stored in dx and dy.
         The `isFull` function will return false until `num_image_pairs' calculations have been done again.
         """
-        self._calc_idx = 0
+        self._calc_idx = 0 
         return self._getAverageDisplacements()
 
-    def _addImage(self, img_arr: np.ndarray):
-        """Internal function - add image to the storage.
+    def _addImage(self, img_arr: np.ndarray, timestamp: int):
+        """Internal function - add image to the storage with the given timestamp.
 
-        The oldest image is overwritten and the pointer is incremented.
+        Parameters
+        ----------
+        img_arr : np.ndarray
+            Image to store
+        timestamp : int
+            Timestamp of when the image was taken (units left to the user)
         """
         self.frame_storage[:, :, self._frame_counter] = img_arr
+        self.timestamps[self._frame_counter] = timestamp
         self._frame_counter = (self._frame_counter + 1) % 2
 
     def _calculatePairDisplacement(self):
         if self._frame_counter == 0 and not self.isFull():
             dx, dy = getFlowrateWithCrossCorrelation(self.frame_storage[:, :, 0], self.frame_storage[:, :, 1])
-
+            time_diff = self.timestamps[1] - self.timestamps[0]
             if self.isValidDisplacement(dx, dy):
-                self.dx[self._calc_idx], self.dy[self._calc_idx] = dx, dy
+                self.dx[self._calc_idx], self.dy[self._calc_idx] = dx / time_diff, dy / time_diff
                 self._calc_idx += 1
 
-    def isValidDisplacement(self, dx, dy):
+    def isValidDisplacement(self, dx, dy) -> bool:
         """A function to check for valid displacement values.
 
         For now, this function is very simple (i.e only checking for non-negative y-displacement).
@@ -81,20 +89,27 @@ class FlowRateEstimator:
         if dy > 0:
             return True
 
-    def isFull(self):
+    def isFull(self) -> bool:
         """Returns True when the calculation (dx, dy) arrays are full.
 
         The size of `dx` is set during class initialization by the `num_image_pairs` parameter.
         """
         return self._calc_idx >= len(self.dx)
 
-    def addImageAndCalculatePair(self, img: np.ndarray):
+    def addImageAndCalculatePair(self, img: np.ndarray, timestamp: int):
         """A convenience function to add an image and perform a displacement calculation.
 
         `_calculatePairDisplacement` only runs if two images have been past since the last calculation.
         (I.e there is no chance that two non-temporally-sequential images will be run together).
+
+        Parameters
+        ----------
+        img_arr : np.ndarray
+            Image to store
+        timestamp : int
+            Timestamp of when the image was taken (units left to the user)
         """
-        self._addImage(img)
+        self._addImage(img, timestamp)
         self._calculatePairDisplacement()
 
 

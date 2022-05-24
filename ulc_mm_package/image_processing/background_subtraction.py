@@ -45,7 +45,7 @@ class PatchyBackgroundSubtraction:
 
 class PatchyBackgroundSubtractionFixedNum(PatchyBackgroundSubtraction):
     def __init__(
-        self, img_width: int = 0, img_height: int = 0, num_frames_in_memory: int = 100
+        self, img_height: int = 0, img_width: int = 0, num_frames_in_memory: int = 100
     ):
         """A class to store a fixed number of images and continuously update an average background pixel value array.
 
@@ -129,7 +129,7 @@ class PatchyBackgroundSubtractionFixedNum(PatchyBackgroundSubtraction):
 
 
 class PatchyBackgroundSubtractionContinuous(PatchyBackgroundSubtraction):
-    def __init__(self, img_width: int = 0, img_height: int = 0):
+    def __init__(self, img_height: int = 0, img_width: int = 0, ):
         """A class to continuously update an average background pixel value array.
 
         Parameters
@@ -216,3 +216,6 @@ class MedianBGSubtraction:
     def getVariance(self):
         self._backgroundVariance = np.var(self.frame_storage, axis=2)
         return self._backgroundVariance
+
+    def isPrimed(self) -> bool:
+        pass
