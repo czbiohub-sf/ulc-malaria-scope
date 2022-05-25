@@ -53,5 +53,5 @@ PWM_DIMMING_MAX_FREQ_HZ = 40000
 
 # ================ Pressure control constants ================ #
 SERVO_5V_PIN = 17
-SERVO_PWM_PIN = 32
+SERVO_PWM_PIN = 12
 VALVE_PIN = 8
