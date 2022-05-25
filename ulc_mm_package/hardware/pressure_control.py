@@ -60,6 +60,9 @@ class PressureControl():
         self.prev_afc_time_s = 0
         self.afc_delay_s = 30
 
+        # Toggle 5V line
+        self._pi.write(SERVO_5V_PIN, 1)
+        
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
         self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
@@ -222,7 +225,7 @@ class PressureControl():
 
     def adjustPressure(self, flow_diff: float, cov_y: float):
         """Adjust the syringe position based on the flow rate error"""
-        
+
         if flow_diff < 0:
             self.decreaseDutyCycle()
             self.afc_delay_s = 0.1

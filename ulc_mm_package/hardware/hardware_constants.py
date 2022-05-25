@@ -1,17 +1,20 @@
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 FAN_GPIO = 5
+BOARD_STATUS_INDICATOR = 4
 
 # ================ Motor controller constants ================ #
 
 # Pin numbers in BCM, see https://pinout.xyz/
-MOTOR_SLEEP = 6
-MOTOR_FAULT_PIN = 16
-MOTOR_STEP_PIN = 19
-MOTOR_DIR_PIN = 20
+MOTOR_ENABLE = 6
+MOTOR_SLEEP = 26
 MOTOR_RESET = 21
-MOTOR_LIMIT_SWITCH1 = 24
-MOTOR_ENABLE = 26
+MOTOR_STEP_PIN = 19
+MOTOR_DIR_PIN = 16
+MOTOR_FAULT_PIN = 20
+MOTOR_LIMIT_SWITCH1 = 18
+MOTOR_LIMIT_SWITCH2 = 15
+
 ZERO_OFFSET_STEPS = 20
 
 # DRR8825 stepping mode reference
@@ -27,16 +30,16 @@ RESOLUTION = {
 # ================ Motor constants ================ #
 FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
 
-
 # ================ Encoder constants ================ #
-ROT_A_PIN = 17
-ROT_B_PIN = 27
-ROT_SWITCH = 22
+ROT_INTERRUPT_PIN = 27
+ROT_A_PIN = 12
+ROT_B_PIN = 3
+ROT_C_PIN = 11
 
 # ================ LED Driver constants ================ #
 LED_PWM_PIN = 13
 
-# To activate analog dimming mode, the voltage must be between the following bounds. For the analog
+# To activate analog dimming mode, the voltage must be between the following bounds. For analog
 # dimming mode, the voltage must be higher than the upper bound listed below.
 PWM_DIM_MODE_LOWER_THRESHOLD_V = 1
 PWM_DIM_MODE_UPPER_THRESHOLD_V = 2.07
@@ -49,5 +52,6 @@ ANALOG_DIM_MODE_DUTYCYCLE = 1
 PWM_DIMMING_MAX_FREQ_HZ = 40000
 
 # ================ Pressure control constants ================ #
-SERVO_PWM_PIN = 12
-VALVE_PIN = 16
+SERVO_5V_PIN = 17
+SERVO_PWM_PIN = 32
+VALVE_PIN = 8

@@ -12,6 +12,7 @@ Encoder Dimensions:
 from time import perf_counter, sleep
 from typing import Callable
 import ioexpander as io
+from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN, ROT_C_PIN, ROT_INTERRUPT_PIN
 
 
 class PIM522RotaryEncoder:
@@ -31,9 +32,9 @@ class PIM522RotaryEncoder:
         self.pin_green = 7
         self.pin_blue = 2
 
-        POT_ENC_A = 12
-        POT_ENC_B = 3
-        POT_ENC_C = 11
+        POT_ENC_A = ROT_A_PIN
+        POT_ENC_B = ROT_B_PIN
+        POT_ENC_C = ROT_C_PIN
 
         BRIGHTNESS = (
             1  # Effectively the maximum fraction of the period that the LED will be on
@@ -42,13 +43,13 @@ class PIM522RotaryEncoder:
             255 / BRIGHTNESS
         )  # Add a period large enough to get 0-255 steps at the desired brightness
 
-        ioe = io.IOE(i2c_addr=self.I2C_ADDR, interrupt_pin=17)
+        ioe = io.IOE(i2c_addr=self.I2C_ADDR, interrupt_pin=ROT_INTERRUPT_PIN)
 
         # Swap the interrupt pin for the Rotary Encoder breakout
         if self.I2C_ADDR == 0x0F:
             ioe.enable_interrupt_out(pin_swap=True)
 
-        ioe.setup_rotary_encoder(1, POT_ENC_A, POT_ENC_B, pin_c=POT_ENC_C)
+        ioe.setup_rotary_encoder(1, POT_ENC_A, POT_ENC_B, POT_ENC_C)
 
         ioe.set_pwm_period(PERIOD)
         ioe.set_pwm_control(divider=2)  # PWM as fast as we can to avoid LED flicker
