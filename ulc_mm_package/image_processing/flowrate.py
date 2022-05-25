@@ -1,4 +1,3 @@
-from re import L
 from typing import Tuple
 import numpy as np
 import cv2
@@ -9,7 +8,7 @@ class FlowRateEstimatorError(Exception):
 
 class FlowRateEstimator:
 
-    def __init__(self, img_height: int=600, img_width: int=800, num_image_pairs: int=12):
+    def __init__(self, img_height: int=600, img_width: int=800, num_image_pairs: int=12, scale_factor: int=10):
         """A class for estimating the flow rate of cells.
         The class holds two images at a time in `frame_storage`. To use this class,
         a user needs only to provide a single image at a time. Every two images, 
@@ -40,23 +39,40 @@ class FlowRateEstimator:
         self.dx = [0] * num_image_pairs
         self.dy = [0] * num_image_pairs
         self.timestamps = [0, 0]
+        self.img_height, self.img_width = img_height, img_width
         self.frame_storage = np.zeros((img_height, img_width, 2), dtype=np.uint8)
         self._frame_counter = 0
         self._calc_idx = 0
+        self.scale_factor = scale_factor
 
-    def _getAverageDisplacements(self) -> Tuple[float, float]:
-        """Internal function - return the mean of the dx and dy displacement arrays"""
+    def _getAverage(self) -> Tuple[float, float]:
+        """Return the mean of the dx and dy displacement arrays"""
         return (np.average(self.dx), np.average(self.dy))
 
-    def getAverageAndReset(self) -> Tuple[float, float]:
-        """Get the average of all the values in the displacement arrays and reset the calculation counter.
-        A user caling this function should only call it once `isFull` returns True.
+    def _getStandardDeviation(self) -> Tuple[float, float]:
+        """Return the standard deviation of the dx and dy displacement arrays"""
+        return (np.std(self.dx), np.std(self.dy))
+
+    def getStatsAndReset(self) -> Tuple[float, float, float, float, float, float]:
+        """Returns the means and standard deviations of all the values in the x and y displacement arrays
+        and then resets the calculation counter.
+
+        A user calling this function should only call it once `isFull` returns True.
 
         Once `_calc_idx` is reset, it will overwrite previous displacement values stored in dx and dy.
         The `isFull` function will return false until `num_image_pairs' calculations have been done again.
+
+        Returns
+        -------
+        (float, float, float, float, float, float):
+            A tuple of mean (x, y), SD (x, y), and coefficient of variation (cov_x, cov_y)
         """
-        self._calc_idx = 0 
-        return self._getAverageDisplacements()
+        self._calc_idx = 0
+        mx, my = self._getAverage()
+        sd_x, sd_y = self._getStandardDeviation()
+        cov_x, cov_y = sd_x / mx, sd_y / my
+
+        return (mx, my, sd_x, sd_y, cov_x, cov_y)
 
     def _addImage(self, img_arr: np.ndarray, timestamp: int):
         """Internal function - add image to the storage with the given timestamp.
@@ -74,10 +90,11 @@ class FlowRateEstimator:
 
     def _calculatePairDisplacement(self):
         if self._frame_counter == 0 and not self.isFull():
-            dx, dy = getFlowrateWithCrossCorrelation(self.frame_storage[:, :, 0], self.frame_storage[:, :, 1])
+            dx, dy = getFlowrateWithCrossCorrelation(self.frame_storage[:, :, 0], self.frame_storage[:, :, 1], self.scale_factor)
             time_diff = self.timestamps[1] - self.timestamps[0]
             if self.isValidDisplacement(dx, dy):
-                self.dx[self._calc_idx], self.dy[self._calc_idx] = dx / time_diff, dy / time_diff
+                self.dx[self._calc_idx] = (dx / time_diff) / (self.img_width / self.scale_factor)
+                self.dy[self._calc_idx] = (dy / time_diff) / (self.img_height / self.scale_factor)
                 self._calc_idx += 1
 
     def isValidDisplacement(self, dx, dy) -> bool:

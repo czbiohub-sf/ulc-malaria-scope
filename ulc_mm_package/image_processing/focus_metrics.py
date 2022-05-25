@@ -30,33 +30,3 @@ def gradientAverage(img):
 
 def varianceOfLaplacian(img):
     return cv2.Laplacian(img, cv2.CV_64F).var()
-
-
-if __name__ == "__main__":
-    import sys
-    import os
-    import inspect
-    import matplotlib.pyplot as plt
-
-    funcs = [
-        obj
-        for _, obj in inspect.getmembers(sys.modules[__name__])
-        if (inspect.isfunction(obj))
-    ]
-    metrics = [[] for _ in range(len(funcs))]
-    imgs = [
-        cv2.imread("test_images/2022-03-11-145013-zstack/" + img, 0)
-        for img in sorted(os.listdir("test_images/2022-03-11-145013-zstack"))
-        if ".jpg" in img
-    ]
-
-    for i, func in enumerate(funcs):
-        for img in imgs:
-            metrics[i].append(func(img))
-    for i, metric in enumerate(metrics):
-        plt.figure()
-        plt.plot(range(0, 900, 10), metric, "o", markersize=2, color="#2CBDFE")
-        plt.title(f"{funcs[i].__name__}")
-        plt.xlabel("Motor position (um)")
-        plt.ylabel("Focus metric")
-    plt.show()

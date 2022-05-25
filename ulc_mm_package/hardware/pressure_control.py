@@ -13,7 +13,10 @@ from time import sleep, perf_counter
 import pigpio
 import board
 import adafruit_mprls
+
+import numpy as np
 from ulc_mm_package.hardware.hardware_constants import *
+from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 
 INVALID_READ_FLAG = -1
 TOL_hPa = 1
@@ -51,6 +54,11 @@ class PressureControl():
         self.io_error_counter = 0
         self.prev_time_s = 0
         self.control_delay_s = 0.2
+
+        # Active flow control variables
+        self.flowrate_target = 0
+        self.prev_afc_time_s = 0
+        self.afc_delay_s = 30
 
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
@@ -188,3 +196,50 @@ class PressureControl():
             self.prev_time_s = perf_counter()
             if self.isLeak(self.curr_pressure, target_pressure):
                 raise PressureLeak
+
+    def initializeActiveFlowControl(self, img: np.ndarray):
+        """Initialize the FlowRateEstimator with the correct image shape."""
+        h, w = img.shape
+        self.fre = FlowRateEstimator(h, w, num_image_pairs=12)
+        self.flowrate_target = None
+
+    def activeFlowControl(self, img: np.ndarray):
+        # Step 1 - continuously acquire images to set the desired flow rate
+        if self.flowrate_target == None:
+            self.fre.addImageAndCalculatePair(img, perf_counter())
+            if self.fre.isFull():
+                _, self.flowrate_target, _, _, _, _ = self.fre.getStatsAndReset()
+
+        # Step 2. Check flow periodically
+        else:
+            if perf_counter() - self.prev_afc_time_s > self.afc_delay_s:
+                if not self.fre.isFull():
+                    self.fre.addImageAndCalculatePair(img, perf_counter())
+                else:
+                    dx, dy, _, _, _, cov_y = self.fre.getStatsAndReset()
+                    flow_err = self.getFlowrateError(self.flowrate_target, dy)
+                    self.adjustPressure(flow_err, cov_y)
+
+    def adjustPressure(self, flow_diff: float, cov_y: float):
+        """Adjust the syringe position based on the flow rate error"""
+        
+        if flow_diff < 0:
+            self.decreaseDutyCycle()
+            self.afc_delay_s = 0.1
+        elif flow_diff > 0:
+            self.increaseDutyCycle()
+            self.afc_delay_s = 0.1
+        else:
+            self.afc_delay_s = 30
+
+    def getFlowrateError(self, desired_flowrate: float, current_flowrate: float, noiseTolPerc: float=0.05) -> float:
+        """Returns the difference between the target and current flowrate, if the difference is above a noise tolerance."""
+
+        error = desired_flowrate - current_flowrate
+        if error/desired_flowrate <= noiseTolPerc:
+            return 0
+        return error
+
+    def pid(self, error: float, prev_error: float, p: int=5, i: int=0, d: int=0):
+        pidGain = (p*error) + (i*error + i) + (d*(error - prev_error))
+        print(pidGain)
