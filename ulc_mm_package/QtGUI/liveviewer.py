@@ -72,6 +72,7 @@ class AcquisitionThread(QThread):
 
         self.pressure_control_enabled = False
         self.initializeFlowControl = False
+        self.flowcontrol_enabled = False
         self.active_autofocus = False
 
         try:
