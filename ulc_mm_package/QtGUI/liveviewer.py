@@ -10,7 +10,7 @@ from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder
 from ulc_mm_package.hardware.pressure_control import (
     PressureControl,
     PressureControlError,
-    PressureLeak
+    PressureLeak,
 )
 from ulc_mm_package.hardware.fan import Fan
 
@@ -35,6 +35,7 @@ from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 _UI_FILE_DIR = "liveview.ui"
+
 
 class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
@@ -128,7 +129,8 @@ class AcquisitionThread(QThread):
             "motor_pos": self.motor.pos,
             "pressure_hpa": self.pressure_control.getPressure(),
             "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
-            "APC_on": self.pressure_control_enabled
+            "flowrate_target": self.pressure_control.flowrate_target,
+            "current_flowrate": self.pressure_control.flow_rate_y,
         }
 
     def save(self, image):
@@ -235,7 +237,7 @@ class AcquisitionThread(QThread):
             except ValueError:
                 # Occurs if an image is sent while the function is still moving the motor
                 pass
-    
+
     def setDesiredPressure(self, pressure: float):
         self.target_pressure = pressure
         self.pressure_control_enabled = True
@@ -251,14 +253,14 @@ class AcquisitionThread(QThread):
                 try:
                     pressure = self.pressure_control.getPressure()
                 except:
-                    pressure = 'INVALID READ'
+                    pressure = "INVALID READ"
                 print(
-                        f'''A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.\n
+                    f"""A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.\n
                         The current pressure is {pressure} and the syringe is already at its maximum position\n
                         ({self.pressure_control.getCurrentDutyCycle():.1f}). Active pressure control\n
                         is now disabled.
-                        '''
-                    )
+                        """
+                )
                 self.pressureLeakDetected.emit(1)
 
     def initializeActiveFlowControl(self, img: np.ndarray):
@@ -268,6 +270,8 @@ class AcquisitionThread(QThread):
 
     def stopActiveFlowControl(self):
         self.flowcontrol_enabled = False
+        self.pressure_control.flowrate_target = 0
+        self.pressure_control.flow_rate_y = 0
 
     def activeFlowControl(self, img: np.ndarray):
         if self.initializeFlowControl:
@@ -278,11 +282,12 @@ class AcquisitionThread(QThread):
                 self.pressure_control.activeFlowControl(img)
             except PressureLeak:
                 print(
-                        f'''The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
+                    f"""The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
                         Active flow control is now disabled.
-                        '''
-                    )
+                        """
+                )
                 self.pressureLeakDetected.emit(1)
+
 
 class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -396,7 +401,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pressure_control = self.pressure_control
-        
+
         self.acquisitionThread.start()
 
         # GUI element signals
@@ -712,11 +717,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         if self.chkBoxPressureControl.checkState():
             target_pressure = self.pressure_control.getPressure()
             retval = self._displayMessageBox(
-            QtWidgets.QMessageBox.Icon.Information,
-            "Active pressure control (APC)",
-            f"The APS will attempt to maintain a pressure of: {target_pressure:.2f}. Press okay to confirm.",
-            cancel=True,
-        )
+                QtWidgets.QMessageBox.Icon.Information,
+                "Active pressure control (APC)",
+                f"The APS will attempt to maintain a pressure of: {target_pressure:.2f}. Press okay to confirm.",
+                cancel=True,
+            )
             if retval == QtWidgets.QMessageBox.Ok:
                 self.disablePressureUIElements()
                 target_pressure = self.pressure_control.getPressure()

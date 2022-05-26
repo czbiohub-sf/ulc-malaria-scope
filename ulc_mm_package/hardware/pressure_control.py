@@ -51,6 +51,8 @@ class PressureControl():
         self.max_duty_cycle = 2200
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
+        self.polling_time_s = 3
+        self.prev_poll_time_s = 0
         self.prev_pressure = 0
         self.io_error_counter = 0
         self.prev_time_s = 0
@@ -58,6 +60,7 @@ class PressureControl():
 
         # Active flow control variables
         self.flowrate_target = 0
+        self.flow_rate_y = 0
         self.prev_afc_time_s = 0
         self.afc_delay_s = DEFAULT_AFC_DELAY_S
 
@@ -124,12 +127,7 @@ class PressureControl():
         return pressure_readings_hpa
 
     def getPressure(self, apc_on: bool=False):
-        """The pressure sensor is not always reliable. It may raise I/O or Runtime
-        errors intermittently.
-
-        To mitigate a crash if that is the case, we attempt to read the 
-        pressure sensor a few times until a valid value is returned. If a valid value is not received
-        after `max_attempts`, then a -1 flag is returned. 
+        """
         """
         
         if apc_on:
@@ -138,16 +136,32 @@ class PressureControl():
             return self._getPressure()
 
     def _getPressure(self):
-        max_attempts = 6
-        while max_attempts > 0:
-            try:
-                return self.mpr.pressure
-            except IOError:
-                max_attempts -= 1
-            except RuntimeError:
-                max_attempts -= 1
-        self.io_error_counter += 1
-        return INVALID_READ_FLAG
+        """Read and return the latest pressure value if it has been at least `polling_time_s` seconds,
+        otherwise return the most recent pressure read. This is done because calls to the pressure sensor
+        are somewhat slow.
+        
+        Additionally, the pressure sensor may raise I/O or Runtime errors intermittently.
+
+        To mitigate a crash if that is the case, we attempt to read the 
+        pressure sensor a few times until a valid value is returned. If a valid value is not received
+        after `max_attempts`, then a -1 flag is returned. 
+        """
+
+        if perf_counter() - self.prev_poll_time_s > self.polling_time_s:
+            max_attempts = 6
+            while max_attempts > 0:
+                try:
+                    new_pressure = self.mpr.pressure
+                    self.prev_pressure = new_pressure
+                    return new_pressure
+                except IOError:
+                    max_attempts -= 1
+                except RuntimeError:
+                    max_attempts -= 1
+            self.io_error_counter += 1
+            return INVALID_READ_FLAG
+        else:
+            return self.prev_pressure
 
     def isPressureReadValid(self, pressure: float) -> bool:
         if pressure < 0:
@@ -203,6 +217,7 @@ class PressureControl():
 
     def initializeActiveFlowControl(self, img: np.ndarray):
         """Initialize the FlowRateEstimator with the correct image shape."""
+
         h, w = img.shape
         self.fre = FlowRateEstimator(h, w, num_image_pairs=12)
         self.flowrate_target = None
@@ -221,6 +236,7 @@ class PressureControl():
                     self.fre.addImageAndCalculatePair(img, perf_counter())
                 else:
                     dx, dy, _, _, _, _ = self.fre.getStatsAndReset()
+                    self.flow_rate_y = dy
                     flow_err = self.getFlowrateError(self.flowrate_target, dy)
                     self.adjustPressure(flow_err)
 
