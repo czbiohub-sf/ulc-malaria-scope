@@ -60,7 +60,7 @@ class AcquisitionThread(QThread):
         self.takeZStack = False
         self.continuous_dir_name = None
         self.custom_image_prefix = ""
-        self.pressure_control = None
+        self.pressure_control: PressureControl = None
         self.motor = None
         self.updateMotorPos = True
         self.fps_timer = perf_counter()
@@ -71,6 +71,7 @@ class AcquisitionThread(QThread):
         self.zw = ZarrWriter()
 
         self.pressure_control_enabled = False
+        self.initializeFlowControl = False
         self.active_autofocus = False
 
         try:
@@ -87,7 +88,7 @@ class AcquisitionThread(QThread):
                         self.updateGUIElements()
                         self.save(image)
                         self.zStack(image)
-                        self.activePressureControl()
+                        self.activeFlowControl(image)
 
                         if self.liveview:
                             if self.update_counter % self.update_liveview == 0:
@@ -259,9 +260,28 @@ class AcquisitionThread(QThread):
                     )
                 self.pressureLeakDetected.emit(1)
 
-    # def activeAutoFocus(self):
-    #     if self.active_autofocus and not self.takeZStack:
-    #         if self.prev_focus
+    def initializeActiveFlowControl(self, img: np.ndarray):
+        self.pressure_control.initializeActiveFlowControl(img)
+        self.flowcontrol_enabled = True
+        self.initializeFlowControl = False
+
+    def stopActiveFlowControl(self):
+        self.flowcontrol_enabled = False
+
+    def activeFlowControl(self, img: np.ndarray):
+        if self.initializeFlowControl:
+            self.initializeActiveFlowControl(img)
+
+        if self.flowcontrol_enabled:
+            try:
+                self.pressure_control.activeFlowControl(img)
+            except PressureLeak:
+                print(
+                        f'''The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
+                        Active flow control is now disabled.
+                        '''
+                    )
+                self.pressureLeakDetected.emit(1)
 
 class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -391,7 +411,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnFlowDown.clicked.connect(self.btnFlowDownHandler)
         self.txtBoxFlow.editingFinished.connect(self.flowTextBoxHandler)
         self.vsFlow.valueChanged.connect(self.vsFlowHandler)
-        self.chkBoxPressureControl.stateChanged.connect(self.chkBoxPressureControlHandler)
+        self.chkBoxPressureControl.stateChanged.connect(self.activeFlowControlHandler)
 
         # Misc
         self.fan.turn_on()
@@ -671,12 +691,28 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         self.vsFlow.setValue(flow_duty_cycle)
 
+    def activeFlowControlHandler(self):
+        if self.chkBoxPressureControl.checkState():
+            retval = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Information,
+                "Active flow control (AFC)",
+                f"The AFC will attempt to maintain a the current flow rate. Press okay to confirm.",
+                cancel=True,
+            )
+
+            if retval == QtWidgets.QMessageBox.Ok:
+                self.acquisitionThread.initializeFlowControl = True
+                self.disablePressureUIElements()
+        else:
+            self.acquisitionThread.stopActiveFlowControl()
+            self.enablePressureUIElements()
+
     def chkBoxPressureControlHandler(self):
         if self.chkBoxPressureControl.checkState():
             target_pressure = self.pressure_control.getPressure()
             retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
-            "Active pressure control (APS)",
+            "Active pressure control (APC)",
             f"The APS will attempt to maintain a pressure of: {target_pressure:.2f}. Press okay to confirm.",
             cancel=True,
         )

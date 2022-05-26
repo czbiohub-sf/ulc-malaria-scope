@@ -20,6 +20,7 @@ from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 
 INVALID_READ_FLAG = -1
 TOL_hPa = 1
+DEFAULT_AFC_DELAY_S = 10
 
 class PressureControlError(Exception):
     """Base class for catching all pressure control related errors."""
@@ -58,7 +59,7 @@ class PressureControl():
         # Active flow control variables
         self.flowrate_target = 0
         self.prev_afc_time_s = 0
-        self.afc_delay_s = 30
+        self.afc_delay_s = DEFAULT_AFC_DELAY_S
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
@@ -219,21 +220,46 @@ class PressureControl():
                 if not self.fre.isFull():
                     self.fre.addImageAndCalculatePair(img, perf_counter())
                 else:
-                    dx, dy, _, _, _, cov_y = self.fre.getStatsAndReset()
+                    dx, dy, _, _, _, _ = self.fre.getStatsAndReset()
                     flow_err = self.getFlowrateError(self.flowrate_target, dy)
-                    self.adjustPressure(flow_err, cov_y)
+                    self.adjustPressure(flow_err)
 
-    def adjustPressure(self, flow_diff: float, cov_y: float):
-        """Adjust the syringe position based on the flow rate error"""
+    def isMovePossible(self, move_dir: int) -> bool:
+        """Return true if the syringe can still move in the specified direction."""
+        
+        # Cannot move the syringe up
+        if self.duty_cycle == self.max_duty_cycle and move_dir == 1:
+                return False
+                
+        # Cannot move the syringe down
+        elif self.duty_cycle == self.min_duty_cycle and move_dir == -1:
+            return False
+
+        return True
+
+    def adjustPressure(self, flow_diff: float):
+        """Adjust the syringe position based on the flow rate error.
+
+        If the actual flow rate is not the target and the syringe is already at the limit of its motion,
+        this function raises a "PressureLeak()" error.
+        """
 
         if flow_diff < 0:
-            self.decreaseDutyCycle()
-            self.afc_delay_s = 0.1
+            if self.isMovePossible(move_dir=-1):
+                self.decreaseDutyCycle()
+                self.afc_delay_s = 0.1
+            else:
+                raise PressureLeak()
+
         elif flow_diff > 0:
-            self.increaseDutyCycle()
-            self.afc_delay_s = 0.1
+            if self.isMovePossible(move_dir=1):
+                self.increaseDutyCycle()
+                self.afc_delay_s = 0.1
+            else:
+                raise PressureLeak()
+
         else:
-            self.afc_delay_s = 30
+            self.afc_delay_s = DEFAULT_AFC_DELAY_S
 
     def getFlowrateError(self, desired_flowrate: float, current_flowrate: float, noiseTolPerc: float=0.05) -> float:
         """Returns the difference between the target and current flowrate, if the difference is above a noise tolerance."""
