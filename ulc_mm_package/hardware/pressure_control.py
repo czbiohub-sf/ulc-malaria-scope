@@ -153,6 +153,7 @@ class PressureControl():
                 try:
                     new_pressure = self.mpr.pressure
                     self.prev_pressure = new_pressure
+                    self.prev_poll_time_s = perf_counter()
                     return new_pressure
                 except IOError:
                     max_attempts -= 1
