@@ -136,7 +136,7 @@ def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int
     best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
     return best_focus_position, focus_metrics
 
-def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_steps: int=20, steps_per_image: int=1, save_loc=None):
+def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_steps: int=30, steps_per_image: int=1, save_loc=None):
     """The coroutine companion to symmetricZStack"""
 
     if save_loc != None:
@@ -151,21 +151,28 @@ def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_step
     max_pos = int(start_point + num_steps)
     min_pos = int(min_pos) if min_pos >= 0 else 0
     max_pos = int(max_pos) if max_pos <= motor.max_pos else motor.max_pos
+    
+    start_pos = motor.pos
 
     motor.move_abs(min_pos)
     step_counter = min_pos
     focus_metrics = []
+    num_images = 30
+
     while step_counter < max_pos:
-        img = yield img
-        focus_metrics.append(gradientAverage(img))
+    
+        for i in range(num_images):
+            img = yield img
+            if save_loc != None:
+                cv2.imwrite(save_dir + f"{motor.pos:03d}_{i}.png", img)
+        
         motor.move_rel(steps=steps_per_image, dir=Direction.CW, stepdelay=0.001)
-        if save_loc != None:
-            cv2.imwrite(save_dir + f"{motor.pos:03d}.tiff", img)
         step_counter += steps_per_image
         if step_counter > max_pos:
             break
-    best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
-    motor.move_abs(best_focus_position)
+
+    # best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
+    motor.move_abs(start_pos)
 
 if __name__ == "__main__":
     from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
