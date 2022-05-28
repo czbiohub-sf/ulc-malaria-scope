@@ -263,14 +263,14 @@ class PressureControl():
 
         if flow_diff < 0:
             if self.isMovePossible(move_dir=-1):
-                self.decreaseDutyCycle()
+                self.increaseDutyCycle()
                 self.afc_delay_s = 0.1
             else:
                 raise PressureLeak()
 
         elif flow_diff > 0:
             if self.isMovePossible(move_dir=1):
-                self.increaseDutyCycle()
+                self.decreaseDutyCycle()
                 self.afc_delay_s = 0.1
             else:
                 raise PressureLeak()
