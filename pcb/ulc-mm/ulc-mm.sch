@@ -993,7 +993,7 @@ L Device:R_Small R7
 U 1 1 65181848
 P 8325 6340
 F 0 "R7" V 8250 6290 50  0000 L CNN
-F 1 "2.49" V 8330 6275 39  0000 L CNN
+F 1 "2" V 8325 6315 39  0000 L CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 8325 6340 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/bourns-inc/CRT0603-BY-10R0ELF/1775018" H 8325 6340 50  0001 C CNN
 	1    8325 6340
@@ -1819,9 +1819,9 @@ L Device:R_Small R8
 U 1 1 61689AD0
 P 8325 6440
 F 0 "R8" V 8400 6395 50  0000 L CNN
-F 1 "2.49" V 8330 6375 39  0000 L CNN
+F 1 "2" V 8325 6410 39  0000 L CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 8325 6440 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/bourns-inc/CRT0603-BY-10R0ELF/1775018" H 8325 6440 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS06032R00FKEA/5868183" H 8325 6440 50  0001 C CNN
 	1    8325 6440
 	0    1    1    0   
 $EndComp
