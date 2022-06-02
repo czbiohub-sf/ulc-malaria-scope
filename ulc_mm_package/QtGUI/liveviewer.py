@@ -343,6 +343,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.motor.homeToLimitSwitches()
             while not self.motor.homed:
                 pass
+            print("Moving motor to the middle.")
             sleep(0.5)
             self.motor.move_abs(int(self.motor.max_pos // 2))
             self.lblFocusMax.setText(f"{self.motor.max_pos}")
