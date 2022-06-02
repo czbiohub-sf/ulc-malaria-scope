@@ -288,4 +288,3 @@ class PressureControl():
 
     def pid(self, error: float, prev_error: float, p: int=5, i: int=0, d: int=0):
         pidGain = (p*error) + (i*error + i) + (d*(error - prev_error))
-        print(pidGain)

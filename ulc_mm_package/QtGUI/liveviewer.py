@@ -270,7 +270,6 @@ class AcquisitionThread(QThread):
 
     def stopActiveFlowControl(self):
         self.flowcontrol_enabled = False
-        self.pressure_control.flowrate_target = 0
         self.pressure_control.flow_rate_y = 0
 
     def activeFlowControl(self, img: np.ndarray):
@@ -756,7 +755,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         _ = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,
             "Leak - Active pressure controlled stopped",
-            f"The target pressure ({self.acquisitionThread.target_pressure}hPa), can not be attained.",
+            f"The target flowrate can not be attained, stopping active flow control.",
             cancel=False,
         )
 
