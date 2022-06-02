@@ -282,7 +282,7 @@ class PressureControl():
         """Returns the difference between the target and current flowrate, if the difference is above a noise tolerance."""
 
         error = desired_flowrate - current_flowrate
-        if error/desired_flowrate <= noiseTolPerc:
+        if abs(error/desired_flowrate) <= noiseTolPerc:
             return 0
         return error
 
