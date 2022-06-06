@@ -21,6 +21,7 @@ class LEDError(Exception):
 class LED_TPS5420TDDCT():
     """An LED driver class for the TPS5420TDDCT and sets the dimming mode to PWM on initialization."""
     def __init__(self, pi: pigpio.pi=None, pwm_pin: int=LED_PWM_PIN):
+        self._isOn = False
         self.pwm_pin = pwm_pin
         self.pwm_freq = int(PWM_DIMMING_MAX_FREQ_HZ)
         self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(ANALOG_DIM_MODE_DUTYCYCLE)
@@ -55,7 +56,15 @@ class LED_TPS5420TDDCT():
             however 0.5018 would be subject to rounding (502).
         """
         try:
-            pwm_val = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
-            self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, pwm_val)
+            if self._isOn:
+                pwm_val = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
+                self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, pwm_val)
         except Exception:
             raise LEDError()
+
+    def turnOn(self):
+        self._isOn = True
+
+    def turnOff(self):
+        self.setDutyCycle(0)
+        self._isOn = False

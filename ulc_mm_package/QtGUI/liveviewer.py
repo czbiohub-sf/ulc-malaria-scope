@@ -46,6 +46,7 @@ class AcquisitionThread(QThread):
     measurementTime = pyqtSignal(int)
     fps = pyqtSignal(int)
     pressureLeakDetected = pyqtSignal(int)
+    syringePosChanged = pyqtSignal(int)
 
     def __init__(self, external_dir):
         super().__init__()
@@ -279,6 +280,7 @@ class AcquisitionThread(QThread):
         if self.flowcontrol_enabled:
             try:
                 self.pressure_control.activeFlowControl(img)
+                self.syringePosChanged.emit(1)
             except PressureLeak:
                 print(
                     f"""The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
@@ -329,10 +331,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Create the LED
         try:
             self.led = LED_TPS5420TDDCT()
+            self.led.turnOn()
             self.led.setDutyCycle(0)
             self.vsLED.setValue(0)
             self.lblLED.setText(f"{int(self.vsLED.value())}%")
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
+            self.btnLEDToggle.connect(self.btnLEDToggleHandler)
         except LEDError:
             print("Error instantiating LED. Continuing...")
 
@@ -398,6 +402,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.fps.connect(self.updateFPS)
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
+        self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
 
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pressure_control = self.pressure_control
@@ -513,6 +518,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsFocus.setValue(val)
         self.txtBoxFocus.setText(f"{val}")
 
+    @pyqtSlot(int)
+    def updateSyringePos(self, _):
+        self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
+
     @pyqtSlot(float)
     def updatePressureLabel(self, val):
         self.lblPressure.setText(f"{val:.2f} hPa")
@@ -524,6 +533,17 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     @pyqtSlot(int)
     def updateMeasurementTimer(self, val):
         self.lblTimer.setText(f"{str(timedelta(seconds=val))}")
+
+    def btnLEDToggleHandler(self):
+        if self.led._isOn:
+            self.led.turnOff()
+            self.vsFlow.blockSignals(True)
+            self.vsFlow.setEnabled(False)
+        else:
+            self.vsFlow.blockSignals(False)
+            self.vsFlow.setEnabled(True)
+            self.led.turnOn()
+            self.led.setDutyCycle(int(self.vsLED.value()) / 100)
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
