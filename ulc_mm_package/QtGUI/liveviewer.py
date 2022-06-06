@@ -336,7 +336,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.vsLED.setValue(0)
             self.lblLED.setText(f"{int(self.vsLED.value())}%")
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
-            self.btnLEDToggle.connect(self.btnLEDToggleHandler)
+            self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
         except LEDError:
             print("Error instantiating LED. Continuing...")
 
@@ -537,13 +537,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def btnLEDToggleHandler(self):
         if self.led._isOn:
             self.led.turnOff()
-            self.vsFlow.blockSignals(True)
-            self.vsFlow.setEnabled(False)
+            self.vsLED.blockSignals(True)
+            self.vsLED.setEnabled(False)
+            self.btnLEDToggle.setText(f"Turn on")
         else:
-            self.vsFlow.blockSignals(False)
-            self.vsFlow.setEnabled(True)
+            self.vsLED.blockSignals(False)
+            self.vsLED.setEnabled(True)
             self.led.turnOn()
             self.led.setDutyCycle(int(self.vsLED.value()) / 100)
+            self.btnLEDToggle.setText(f"Turn off")
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
