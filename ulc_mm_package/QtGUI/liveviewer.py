@@ -335,6 +335,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.setDutyCycle(0)
             self.vsLED.setValue(0)
             self.lblLED.setText(f"{int(self.vsLED.value())}%")
+            self.btnLEDToggle.setText(f"Turn off")
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
             self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
         except LEDError:
