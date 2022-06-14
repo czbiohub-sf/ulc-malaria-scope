@@ -21,6 +21,7 @@ from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 INVALID_READ_FLAG = -1
 TOL_hPa = 1
 DEFAULT_AFC_DELAY_S = 10
+FASTER_FEEDBACK_DELAY_S = 1
 
 class PressureControlError(Exception):
     """Base class for catching all pressure control related errors."""
@@ -164,58 +165,6 @@ class PressureControl():
         else:
             return self.prev_pressure
 
-    def isPressureReadValid(self, pressure: float) -> bool:
-        if pressure < 0:
-            return False
-        return True
-
-    def pressureWithinTol(self, pressure: float, target_pressure: float) -> bool:
-        if abs(target_pressure-pressure) < TOL_hPa:
-            return True
-        return False
-
-    def isLeak(self, pressure: float, target_pressure: float) -> bool:
-        """
-        If the current pressure is not at or near the target pressure
-        and there is no additional room for the syringe to move, then 
-        some vacuum has been lost.
-        """
-        if not self.pressureWithinTol(pressure, target_pressure):
-            if self.duty_cycle == self.max_duty_cycle and target_pressure > pressure:
-                return True
-            elif self.duty_cycle == self.min_duty_cycle and target_pressure < pressure:
-                return True
-            return False
-
-    def holdPressure(self, target_pressure: float):
-        # Limit the polling frequency
-        if perf_counter() - self.prev_time_s < self.control_delay_s:
-            return
-
-        self.curr_pressure = self.getPressure()
-
-        if self.isPressureReadValid(self.curr_pressure):
-            if self.pressureWithinTol(self.curr_pressure, target_pressure):
-                return
-
-            diff = target_pressure - self.curr_pressure
-            if diff > 0:
-                self.increaseDutyCycle()
-            elif diff < 0:
-                self.decreaseDutyCycle()
-            else:
-                return
-            new_pressure = self.getPressure()
-            if self.isPressureReadValid(new_pressure):
-                new_diff = target_pressure - new_pressure
-                if abs(diff) < abs(new_diff) and diff > 0:
-                    self.decreaseDutyCycle()
-                elif abs(diff) < abs(new_diff) and diff < 0:
-                    self.increaseDutyCycle()
-            self.prev_time_s = perf_counter()
-            if self.isLeak(self.curr_pressure, target_pressure):
-                raise PressureLeak
-
     def initializeActiveFlowControl(self, img: np.ndarray):
         """Initialize the FlowRateEstimator with the correct image shape."""
 
@@ -224,6 +173,18 @@ class PressureControl():
         self.flowrate_target = None
 
     def activeFlowControl(self, img: np.ndarray):
+        """Active flow control stabilization
+
+        This function attempts to stabilize the flowrate using the
+        FlowRateEstimator. The function performs in two steps:
+
+        1. If the flow control was just initialized (i.e using `initializeActiveFlowControl`),
+        the function continuously measures the first N images to acquire the target flowrate.
+
+        2. After the target flowrate has been acquired, the function accepts a set of images periodically
+        and assesses the average displacement among all the pairs
+        """
+
         # Step 1 - continuously acquire images to set the desired flow rate
         if self.flowrate_target == None:
             self.fre.addImageAndCalculatePair(img, perf_counter())
@@ -235,8 +196,9 @@ class PressureControl():
             if perf_counter() - self.prev_afc_time_s > self.afc_delay_s:
                 if not self.fre.isFull():
                     self.fre.addImageAndCalculatePair(img, perf_counter())
+                    self.prev_afc_time_s = perf_counter()   
                 else:
-                    dx, dy, _, _, _, _ = self.fre.getStatsAndReset()
+                    _, dy, _, _, _, _ = self.fre.getStatsAndReset()
                     self.flow_rate_y = dy
                     flow_err = self.getFlowrateError(self.flowrate_target, dy)
                     self.adjustPressure(flow_err)
@@ -264,14 +226,14 @@ class PressureControl():
         if flow_diff < 0:
             if self.isMovePossible(move_dir=-1):
                 self.increaseDutyCycle()
-                self.afc_delay_s = 0.1
+                self.afc_delay_s = FASTER_FEEDBACK_DELAY_S
             else:
                 raise PressureLeak()
 
         elif flow_diff > 0:
             if self.isMovePossible(move_dir=1):
                 self.decreaseDutyCycle()
-                self.afc_delay_s = 0.1
+                self.afc_delay_s = FASTER_FEEDBACK_DELAY_S
             else:
                 raise PressureLeak()
 
@@ -285,6 +247,3 @@ class PressureControl():
         if abs(error/desired_flowrate) <= noiseTolPerc:
             return 0
         return error
-
-    def pid(self, error: float, prev_error: float, p: int=5, i: int=0, d: int=0):
-        pidGain = (p*error) + (i*error + i) + (d*(error - prev_error))

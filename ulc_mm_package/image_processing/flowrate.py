@@ -9,10 +9,12 @@ class FlowRateEstimatorError(Exception):
 class FlowRateEstimator:
 
     def __init__(self, img_height: int=600, img_width: int=800, num_image_pairs: int=12, scale_factor: int=10, coeff_of_var_thresh: float=0.8):
-        """A class for estimating the flow rate of cells.
+        """A class for estimating the flow rate of cells using a 2D cross-correlation.
         The class holds two images at a time in `frame_storage`. To use this class,
         a user needs only to provide a single image at a time. Every two images, 
-        the class calculates the displacement them.
+        the class calculates the displacement between those two.
+
+        Once the specified number of pairs 
 
         Eaxmple usage (pseudocode)
         ---------------------------
@@ -72,6 +74,7 @@ class FlowRateEstimator:
         mx, my = self._getAverage()
         sd_x, sd_y = self._getStandardDeviation()
         cov_x, cov_y = sd_x / mx, sd_y / my
+
 
         if cov_y >= self.coeff_of_var_thresh:
             my = 1
