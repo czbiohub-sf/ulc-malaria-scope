@@ -52,7 +52,6 @@ class InvalidMove(MotorControllerError):
     """Error raised if an invalid move is attempted."""
     pass
 
-# ==================== Convenience enum for readability ===============================
 class Direction(enum.Enum):
     CW = True
     CCW = False
@@ -154,6 +153,12 @@ class DRV8825Nema():
         self._pi.write(self.sleep_pin, False)
         self._pi.write(self.reset_pin, False)
 
+    def deactivate(self):
+        self._pi.write(self.sleep_pin, False)
+    
+    def activate(self):
+        self._pi.write(self.sleep_pin, True)
+
     def degree_calc(self, steps):
         """calculate and returns size of turn in degree, passed number of steps and steptype"""
     
@@ -246,7 +251,8 @@ class DRV8825Nema():
         initdelay : float
             Intial delay after GPIO pins initialized but before motor is moved
         """
-
+        
+        self.activate()
         self.stop_motor = False
         steps = int(steps)
         step_increment = 1 if dir.value else -1
@@ -293,6 +299,7 @@ class DRV8825Nema():
             # Cleanup
             self._pi.write(self.step_pin, False)
             self._pi.write(self.direction_pin, False)
+            self.deactivate()
 
             # Print report status
             if verbose:
@@ -320,7 +327,8 @@ class DRV8825Nema():
         initdelay : float
             Intial delay after GPIO pins initialized but before motor is moved
         """
-
+        
+        self.activate()
         self.stop_motor = False
         step_increment = 1 if self.pos < pos else -1
 
@@ -370,7 +378,8 @@ class DRV8825Nema():
             # Cleanup
             self._pi.write(self.step_pin, False)
             self._pi.write(self.direction_pin, False)
-
+            self.deactivate()
+            
             # Print report status
             if verbose:
                 print("\nRpiMotorLib, Motor Run finished, Details:.\n")

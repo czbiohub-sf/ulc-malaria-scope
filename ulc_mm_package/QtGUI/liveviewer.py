@@ -820,7 +820,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.encoder.close()
 
             # Turn off fan
-            self.fan.turn_off()
+            #self.fan.turn_off()
 
             quit()
 
