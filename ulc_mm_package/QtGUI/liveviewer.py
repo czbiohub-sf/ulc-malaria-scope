@@ -16,6 +16,7 @@ from ulc_mm_package.hardware.pressure_control import (
 from ulc_mm_package.hardware.fan import Fan
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
+from ulc_mm_package.image_processing.autobrightness import Autobrightness
 
 from ulc_mm_package.image_processing.zstack import (
     takeZStackCoroutine,
@@ -36,6 +37,7 @@ from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 _UI_FILE_DIR = "liveview.ui"
+_EXPERIMENT_FORM_PATH = "experimentform.ui"
 
 
 class AcquisitionThread(QThread):
@@ -48,6 +50,7 @@ class AcquisitionThread(QThread):
     fps = pyqtSignal(int)
     pressureLeakDetected = pyqtSignal(int)
     syringePosChanged = pyqtSignal(int)
+    autobrightnessDone = pyqtSignal(int)
 
     def __init__(self, external_dir):
         super().__init__()
@@ -72,11 +75,13 @@ class AcquisitionThread(QThread):
         self.metadata_writer = None
         self.click_to_advance = False
         self.zw = ZarrWriter()
-
+        
         self.pressure_control_enabled = False
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
         self.active_autofocus = False
+        self.autobrightness: Autobrightness = None
+        self.autobrightness_on = False
 
         try:
             self.camera = BaslerCamera()
@@ -93,6 +98,7 @@ class AcquisitionThread(QThread):
                         self.save(image)
                         self.zStack(image)
                         self.activeFlowControl(image)
+                        self._autobrightness(image)
 
                         if self.liveview:
                             if self.update_counter % self.update_liveview == 0:
@@ -240,6 +246,13 @@ class AcquisitionThread(QThread):
                 # Occurs if an image is sent while the function is still moving the motor
                 pass
 
+    def _autobrightness(self, img: np.ndarray):
+        if self.autobrightness_on:
+            done = self.autobrightness.runAutobrightness(img)
+            if done:
+                self.autobrightness_on = False
+                self.autobrightnessDone.emit(1)
+
     def initializeActiveFlowControl(self, img: np.ndarray):
         self.pressure_control.initializeActiveFlowControl(img)
         self.flowcontrol_enabled = True
@@ -265,6 +278,83 @@ class AcquisitionThread(QThread):
                 )
                 self.pressureLeakDetected.emit(1)
 
+class ExperimentSetupGUI(QtWidgets.QDialog):
+    """Form to input experiment parameters"""
+    def __init__(self, *args, **kwargs):
+        super(ExperimentSetupGUI, self).__init__(*args, **kwargs)
+
+        # Load the ui file
+        uic.loadUi(_EXPERIMENT_FORM_PATH, self)
+
+        # Set the focus order
+        self.setTabOrder(self.txtExperimentName, self.txtFlowCellID)
+        self.setTabOrder(self.txtFlowCellID, self.radBtn1x1)
+        self.setTabOrder(self.radBtn1x1, self.radBtn2x2)
+        self.setTabOrder(self.radBtn2x2, self.chkBoxAutobrightness)
+        self.setTabOrder(self.chkBoxAutobrightness, self.chkBoxAutofocus)
+        self.setTabOrder(self.chkBoxAutofocus, self.chkBoxFlowControl)
+        self.setTabOrder(self.chkBoxFlowControl, self.sbExperimentSetupMinutes)
+        
+        self.txtExperimentName.setFocus()
+
+        # Parameters
+        self.experiment_name = ""
+        self.flowcell_id = ""
+        self.binningMode = 2
+        self.autobrightness = False
+        self.autofocus = False
+        self.autoflowcontrol = False
+        # Set up event handlers 
+        self.txtExperimentName.editingFinished.connect(self.txtExperimentNameHandler)
+        self.txtFlowCellID.editingFinished.connect(self.flowCellIDHandler)
+        self.radBtn1x1.toggled.connect(self.binningModeHandler)
+        self.radBtn2x2.toggled.connect(self.binningModeHandler)
+        self.chkBoxAutobrightness.stateChanged.connect(self.chkBoxAutobrightnessHandler)
+        self.chkBoxAutofocus.stateChanged.connect(self.chkBoxAutofocusHandler)
+        self.chkBoxFlowControl.stateChanged.connect(self.chkBoxFlowControlHandler)
+        self.sbExperimentSetupMinutes.valueChanged.connect(self.sbTimerHandler)
+        self.btnExperimentSetupAbort.clicked.connect(self.btnAbortHandler)
+        self.btnStartExperiment.clicked.connect(self.btnStartExperimentHandler)
+
+    def txtExperimentNameHandler(self):
+        self.experiment_name = self.txtExperimentName.text()
+        print(self.experiment_name)
+    
+    def flowCellIDHandler(self):
+        self.flowcell_id = self.txtFlowCellID.text()
+        print(self.flowcell_id)
+    
+    def binningModeHandler(self):
+        if self.radBtn1x1.isChecked():
+            self.radBtn2x2.setChecked(False)
+            self.binningMode = 1
+        elif self.radBtn2x2.isChecked():
+            self.radBtn1x1.setChecked(False)
+            self.binningMode = 2
+        print(f"Binning mode: {self.binningMode}")
+    
+    def chkBoxAutobrightnessHandler(self):
+        self.autobrightness = True if self.chkBoxAutobrightness.checkState() else False
+        print(self.autobrightness)
+
+    def chkBoxAutofocusHandler(self):
+        self.autofocus = True if self.chkBoxAutofocus.checkState() else False
+        print(self.autofocus)
+    
+    def chkBoxFlowControlHandler(self):
+        self.autoflowcontrol = True if self.chkBoxFlowControl.checkState() else False
+        print(self.autoflowcontrol)
+
+    def sbTimerHandler(self):
+        self.time_mins = self.sbExperimentSetupMinutes.value()
+        print(self.time_mins)
+
+    def btnAbortHandler(self):
+        print("Aborting experiment setup...")
+        self.close()
+    
+    def btnStartExperimentHandler(self):
+        print("Something interesting will happen here eventually...")
 
 class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -314,6 +404,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnLEDToggle.setText(f"Turn off")
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
             self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
+            self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
         except LEDError:
             print("Error instantiating LED. Continuing...")
 
@@ -386,9 +477,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
         self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
+        self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
 
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pressure_control = self.pressure_control
+        self.acquisitionThread.autobrightness = Autobrightness(self.led)
 
         self.acquisitionThread.start()
 
@@ -529,6 +622,24 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.turnOn()
             self.led.setDutyCycle(int(self.vsLED.value()) / 100)
             self.btnLEDToggle.setText(f"Turn off")
+
+    def btnAutobrightnessHandler(self):
+        self.acquisitionThread.autobrightness.reset()
+        self.btnAutobrightness.setEnabled(False)
+        self.btnLEDToggle.setEnabled(False)
+        self.vsLED.blockSignals(True)
+        self.vsLED.setEnabled(False)
+        self.acquisitionThread.autobrightness_on = True
+
+    @pyqtSlot(int)
+    def autobrightnessDone(self, val):
+        self.btnAutobrightness.setEnabled(True)
+        self.btnLEDToggle.setEnabled(True)
+        self.vsLED.blockSignals(False)
+        self.vsLED.setEnabled(True)
+        new_val = int(self.led._convertPWMValToDutyCyclePerc(self.led.pwm_duty_cycle)*100)
+        self.vsLED.setValue(new_val)
+        self.lblLED.setText(f"{new_val}%")
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
@@ -779,7 +890,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
                 self.acquisitionThread.camera.deactivateCamera()
 
             # Turn off encoder
-            self.encoder.close()
+            if self.encoder:
+                self.encoder.close()
 
             # Turn off fan
             #self.fan.turn_off()

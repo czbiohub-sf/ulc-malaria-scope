@@ -439,8 +439,39 @@
         </item>
         <item>
          <widget class="QPushButton" name="btnLEDToggle">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>350</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="text">
            <string>Turn LED On</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnAutobrightness">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>350</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Auto-set</string>
           </property>
          </widget>
         </item>

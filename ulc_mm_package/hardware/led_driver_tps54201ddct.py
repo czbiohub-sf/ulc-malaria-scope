@@ -65,8 +65,8 @@ class LED_TPS5420TDDCT():
 
         try:
             if self._isOn:
-                pwm_val = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
-                self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, pwm_val)
+                self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
+                self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, self.pwm_duty_cycle)
         except Exception as e:
             raise LEDError(e)
 
