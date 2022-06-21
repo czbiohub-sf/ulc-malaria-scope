@@ -1,4 +1,4 @@
-from re import T
+from typing import Dict
 from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
 from ulc_mm_package.hardware.motorcontroller import (
     DRV8825Nema,
@@ -304,6 +304,8 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
         self.autobrightness = False
         self.autofocus = False
         self.autoflowcontrol = False
+        self.time_mins = None
+
         # Set up event handlers 
         self.txtExperimentName.editingFinished.connect(self.txtExperimentNameHandler)
         self.txtFlowCellID.editingFinished.connect(self.flowCellIDHandler)
@@ -355,7 +357,20 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
     
     def btnStartExperimentHandler(self):
         print("Something interesting will happen here eventually...")
+        parameters = self.getAllParameters()
+        
 
+    def getAllParameters(self) -> Dict:
+        return {
+            "experiment_name": self.experiment_name,
+            "flowcell_id": self.flowcell_id,
+            "binningMode": self.binningMode,
+            "autobrightness": self.autobrightness,
+            "autofocus": self.autofocus,
+            "autoflowcontrol": self.autoflowcontrol,
+            "time_mins": self.time_mins
+        }
+    
 class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
@@ -382,6 +397,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         # Load the ui file
         uic.loadUi(_UI_FILE_DIR, self)
+
+        # Experiment parameter form dialog
+        self.experiment_form_dialog = ExperimentSetupGUI(self)
 
         # Start the video stream
         self.acquisitionThread = AcquisitionThread(self.external_dir)
@@ -412,8 +430,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         try:
             self.motor = DRV8825Nema(steptype="Half")
             self.motor.homeToLimitSwitches()
-            while not self.motor.homed:
-                pass
             print("Moving motor to the middle.")
             sleep(0.5)
             self.motor.move_abs(int(self.motor.max_pos // 2))
@@ -492,6 +508,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnSnap.clicked.connect(self.btnSnapHandler)
         self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
         self.btnChangeBinning.clicked.connect(self.btnChangeBinningHandler)
+        self.btnExperimentSetup.clicked.connect(self.experimentSetupHandler)
 
         # Pressure control
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
@@ -584,6 +601,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         curr_binning_mode = self.acquisitionThread.camera.getBinning()
         change_to = 1 if curr_binning_mode == 2 else 2
         self.btnChangeBinning.setText(f"Change to {change_to}X binning")
+
+    def experimentSetupHandler(self):
+        self.btnAbortExperiment.setEnabled(True)
+        self.experiment_form_dialog.show()
 
     @pyqtSlot(QImage)
     def updateImage(self, qimage):
