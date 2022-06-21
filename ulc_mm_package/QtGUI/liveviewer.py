@@ -16,7 +16,7 @@ from ulc_mm_package.hardware.pressure_control import (
 from ulc_mm_package.hardware.fan import Fan
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
-from ulc_mm_package.image_processing.autobrightness import Autobrightness
+from ulc_mm_package.image_processing.autobrightness import Autobrightness, AutobrightnessError
 
 from ulc_mm_package.image_processing.zstack import (
     takeZStackCoroutine,
@@ -248,7 +248,14 @@ class AcquisitionThread(QThread):
 
     def _autobrightness(self, img: np.ndarray):
         if self.autobrightness_on:
-            done = self.autobrightness.runAutobrightness(img)
+            try:
+                done = self.autobrightness.runAutobrightness(img)
+            except AutobrightnessError as e:
+                print(e)
+                self.autobrightness_on = False
+                self.autobrightnessDone.emit(1)
+                return
+                
             if done:
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
@@ -358,7 +365,7 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
     def btnStartExperimentHandler(self):
         print("Something interesting will happen here eventually...")
         parameters = self.getAllParameters()
-        
+
 
     def getAllParameters(self) -> Dict:
         return {

@@ -14,8 +14,8 @@ class AB(enum.Enum):
 class AutobrightnessError(Exception):
     """Base class for catching Autobrightness errors."""
     
-    def __init__(self):
-        super().__init__("Error setting the LED brightness.")
+    def __init__(self, msg: str):
+        super().__init__(f"{msg}")
 
 def assessBrightness(img: np.ndarray, top_perc: float):
     """Returns the mean value of the top N pixels in a given image.
@@ -65,6 +65,8 @@ class Autobrightness():
         self.led = led
         self.step_size_perc = step_size_perc
         self.default_step_size_perc = step_size_perc
+        self.timeout_steps = 100
+        self.step_counter = 0
     
     def runAutobrightness(self, img: np.ndarray):
         curr_brightness_enum = adjustBrightness(img, self.target_pixel_val, self.led, self.step_size_perc)
@@ -73,6 +75,11 @@ class Autobrightness():
                 self.step_size_perc /= 2
 
         self.prev_brightness_enum = curr_brightness_enum
+        self.step_counter += 1
+
+        if self.step_counter >= self.timeout_steps:
+            self.led.setDutyCycle(0)
+            raise AutobrightnessError(f"Unable to achieve the target brightness within {self.timeout_steps} steps. Is the LED working?") 
 
         if curr_brightness_enum == AB.JUST_RIGHT:
             return True
@@ -82,3 +89,4 @@ class Autobrightness():
     def reset(self):
         self.prev_brightness_enum = None
         self.step_size_perc = self.default_step_size_perc
+        self.step_counter = 0
