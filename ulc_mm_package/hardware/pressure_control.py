@@ -21,7 +21,7 @@ from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 INVALID_READ_FLAG = -1
 TOL_hPa = 1
 DEFAULT_AFC_DELAY_S = 10
-FASTER_FEEDBACK_DELAY_S = 1
+FASTER_FEEDBACK_DELAY_S = 3
 
 class PressureControlError(Exception):
     """Base class for catching all pressure control related errors."""
