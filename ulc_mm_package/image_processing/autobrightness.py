@@ -79,7 +79,7 @@ class Autobrightness():
 
         if self.step_counter >= self.timeout_steps:
             self.led.setDutyCycle(0)
-            raise AutobrightnessError(f"Unable to achieve the target brightness within {self.timeout_steps} steps. Is the LED working?") 
+            raise AutobrightnessError(f"Unable to achieve the target brightness within {self.timeout_steps} steps. The exposure may be too low (and the target pixel value too high), or there may be an issue with the LED.") 
 
         if curr_brightness_enum == AB.JUST_RIGHT:
             return True
