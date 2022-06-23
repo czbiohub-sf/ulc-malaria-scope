@@ -330,6 +330,7 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
         print(self.experiment_name)
     
     def flowCellIDHandler(self):
+        """TODO: Validate the flowcell ID"""
         self.flowcell_id = self.txtFlowCellID.text()
         print(self.flowcell_id)
     

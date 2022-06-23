@@ -173,36 +173,3 @@ def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_step
 
     # best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
     motor.move_abs(start_pos)
-
-if __name__ == "__main__":
-    from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
-
-    print("===Initiating z-stack.===\n")
-
-    # Turn on LED
-    led = LED_TPS5420TDDCT()
-    led.setDutyCycle(0.5)
-    # Instantiate camera
-    try:
-        camera = BaslerCamera()
-        camera.exposureTime_ms = 3
-    except CameraError as e:
-        print(f"Could not instantiate camera, encountered: \n{e}")
-
-    # Instantiate motor
-    try:
-        motor = DRV8825Nema(steptype="Half")
-        motor.homeToLimitSwitches()
-    except MotorControllerError as e:
-        print(f"Motorcontroller error, encountered: \n{e}")
-
-    most_focused, metrics = symmetricZStack(camera=camera, motor=motor, start_point=450, save_loc='.')
-    print(f"\n=======Most focused image is likely: {most_focused:03d}.tiff=======\n")
-
-    plt.plot(range(0, int(motor.max_pos), steps_per_image), metrics, 'o', markersize=2, color='#2CBDFE')
-    plt.title("Focus metric vs. motor position (um)")
-    plt.xlabel("Motor position (um)")
-    plt.ylabel("Focus metric")
-    plt.show()
-    led.close()
-    motor.close()
