@@ -49,7 +49,7 @@ PWM_DIM_MODE_DUTYCYCLE = (
 ANALOG_DIM_MODE_DUTYCYCLE = 1
 
 # To ensure linear dimming performance, PWM must be <1kHz (see datasheet pg. 19)
-PWM_DIMMING_MAX_FREQ_HZ = 40000
+PWM_DIMMING_MAX_FREQ_HZ = 50000
 
 # ================ Pressure control constants ================ #
 SERVO_5V_PIN = 17
