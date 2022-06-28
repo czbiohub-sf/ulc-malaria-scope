@@ -205,7 +205,8 @@ class AcquisitionThread(QThread):
             if self.md_writer:
                 self.metadata_file.close()
             self.metadata_file = open(f"{filename}_metadata.csv", "w")
-            self.md_writer = csv.DictWriter(self.metadata_file, self.getMetadata().keys())
+            self.md_writer = csv.DictWriter(self.metadata_file, fieldnames=self.getMetadata().keys())
+            self.md_writer.writeheader()
 
             self.zw.createNewFile(filename)
 
