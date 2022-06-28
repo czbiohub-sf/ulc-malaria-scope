@@ -1,4 +1,3 @@
-from typing import Dict
 from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
 from ulc_mm_package.hardware.motorcontroller import (
     DRV8825Nema,
@@ -24,7 +23,9 @@ from ulc_mm_package.image_processing.zstack import (
 )
 
 import sys
+import csv
 import traceback
+from typing import Dict
 from time import perf_counter, sleep
 from os import listdir, mkdir, path
 from datetime import datetime, timedelta
@@ -75,6 +76,8 @@ class AcquisitionThread(QThread):
         self.metadata_writer = None
         self.click_to_advance = False
         self.zw = ZarrWriter()
+        self.md_writer = None
+        self.metadata_file = None
         
         self.pressure_control_enabled = False
         self.initializeFlowControl = False
@@ -114,7 +117,7 @@ class AcquisitionThread(QThread):
                     print(e)
                     print(traceback.format_exc())
 
-    def getMetadata(self):
+    def getMetadata(self) -> Dict:
         """Required metadata:
         - Measurement type (actual diagnostic experiment or data collection)
         - Sample type / sample name (i.e dataset name)
@@ -152,7 +155,9 @@ class AcquisitionThread(QThread):
 
         if self.continuous_save and self.continuous_dir_name != None:
             if self.zw.writable:
-                self.zw.writeSingleArray(image, self.getMetadata())
+                self.zw.writeSingleArray(image)
+                self.md_writer.writerow(self.getMetadata())
+
             self.measurementTime.emit(int(perf_counter() - self.start_time))
             self.im_counter += 1
 
@@ -195,13 +200,19 @@ class AcquisitionThread(QThread):
                     self.continuous_dir_name,
                     datetime.now().strftime("%Y-%m-%d-%H%M%S"),
                 )
-                + f"{self.custom_image_prefix}_{self.im_counter:05}"
+                + f"{self.custom_image_prefix}"
             )
+            if self.md_writer:
+                self.metadata_file.close()
+            self.metadata_file = open(f"{filename}_metadata.csv", "w")
+            self.md_writer = csv.DictWriter(self.metadata_file, self.getMetadata().keys())
+
             self.zw.createNewFile(filename)
 
             self.start_time = perf_counter()
-            self.fps_timer = perf_counter()
+            # self.fps_timer = perf_counter()
             self.im_counter = 0
+            self.timings = []
 
     def changeBinningMode(self):
         if self.camera_activated:
@@ -579,6 +590,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.chkBoxMaxFPS.setEnabled(True)
             sleep(0.1)
             self.acquisitionThread.zw.closeFile()
+            self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
             num_images = self.acquisitionThread.im_counter
