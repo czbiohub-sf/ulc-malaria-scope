@@ -211,7 +211,7 @@ class AcquisitionThread(QThread):
             self.zw.createNewFile(filename)
 
             self.start_time = perf_counter()
-            # self.fps_timer = perf_counter()
+
             self.im_counter = 0
             self.timings = []
 
