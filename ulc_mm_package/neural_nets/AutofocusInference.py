@@ -19,6 +19,7 @@ from openvino.runtime import Core, Layout, Type, InferRequest, AsyncInferQueue
 - type!
 - All the performance things!
 - Create ABC for Autofocus, obj detect
+- best place to put autofocus.xml && autofocus.bin? root dir?
 
 See https://github.com/czbiohub/ulc-malaria-autofocus#openvino-performance-optimizations for
 more performance things I want to do
