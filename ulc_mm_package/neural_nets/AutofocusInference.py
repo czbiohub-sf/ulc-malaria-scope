@@ -61,11 +61,12 @@ class AutoFocus:
 
         ppp = PrePostProcessor(model)
         # TODO double check these layouts! NHWC vs NCHW! We train on NHWC, why do we set model layout ot NCHW?
+        # ahh https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
         ppp.input().tensor().set_shape(input_tensor_shape).set_element_type(
             Type.u8
         ).set_layout(Layout("NHWC"))
-        ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)
         ppp.input().model().set_layout(Layout("NCHW"))
+        ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)
         ppp.output().tensor().set_element_type(Type.f32)
         model = ppp.build()
 
