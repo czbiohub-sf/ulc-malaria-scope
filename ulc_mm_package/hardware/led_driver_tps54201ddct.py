@@ -9,7 +9,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     LED_PWM_PIN,
     ANALOG_DIM_MODE_DUTYCYCLE,
     PWM_DIM_MODE_DUTYCYCLE,
-    PWM_DIMMING_MAX_FREQ_HZ
+    LED_FREQ
 )
 import pigpio
 from time import sleep
@@ -20,9 +20,11 @@ class LEDError(Exception):
 
 class LED_TPS5420TDDCT():
     """An LED driver class for the TPS5420TDDCT and sets the dimming mode to PWM on initialization."""
+
     def __init__(self, pi: pigpio.pi=None, pwm_pin: int=LED_PWM_PIN):
+        self._isOn = False
         self.pwm_pin = pwm_pin
-        self.pwm_freq = int(PWM_DIMMING_MAX_FREQ_HZ)
+        self.pwm_freq = int(LED_FREQ)
         self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(ANALOG_DIM_MODE_DUTYCYCLE)
         self._pi = pi if pi != None else pigpio.pi()
         self._pi = pigpio.pi()
@@ -37,12 +39,18 @@ class LED_TPS5420TDDCT():
         self._pi.stop()
         sleep(0.5)
 
-    def _convertDutyCyclePercentToPWMVal(self, duty_cycle_percentage: float):
+    def _convertDutyCyclePercentToPWMVal(self, duty_cycle_percentage: float) -> int:
         """See the pigpio documentation here (https://abyz.me.uk/rpi/pigpio/python.html#hardware_PWM)
 
-        0 is off (0%), 1,000,000 is on 100% for the PWM duty cycle.
+        0 is off (0%), 1,000,000 is on (100%) for the PWM duty cycle.
         """
+
         return int(1e6*duty_cycle_percentage)
+
+    def _convertPWMValToDutyCyclePerc(self, pwm_val: int) -> float:
+        """Converts the raw pigpio PWM value to a duty cycle percentage (0 - 100%)"""
+
+        return pwm_val / 1e6
 
     def setDutyCycle(self, duty_cycle_perc: float):
         """Set the duty cycle to a desired percentage.
@@ -54,8 +62,17 @@ class LED_TPS5420TDDCT():
             resolution is at 1000, i.e values such as 0.501 would be set correctly (501), 
             however 0.5018 would be subject to rounding (502).
         """
+
         try:
-            pwm_val = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
-            self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, pwm_val)
-        except Exception:
-            raise LEDError()
+            if self._isOn:
+                self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
+                self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, self.pwm_duty_cycle)
+        except Exception as e:
+            raise LEDError(e)
+
+    def turnOn(self):
+        self._isOn = True
+
+    def turnOff(self):
+        self.setDutyCycle(0)
+        self._isOn = False

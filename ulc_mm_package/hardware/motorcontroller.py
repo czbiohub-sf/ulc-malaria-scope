@@ -52,7 +52,6 @@ class InvalidMove(MotorControllerError):
     """Error raised if an invalid move is attempted."""
     pass
 
-# ==================== Convenience enum for readability ===============================
 class Direction(enum.Enum):
     CW = True
     CCW = False

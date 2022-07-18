@@ -8,18 +8,20 @@ class FlowRateEstimatorError(Exception):
 
 class FlowRateEstimator:
 
-    def __init__(self, img_height: int=600, img_width: int=800, num_image_pairs: int=12, scale_factor: int=10):
-        """A class for estimating the flow rate of cells.
+    def __init__(self, img_height: int=600, img_width: int=800, num_image_pairs: int=12, scale_factor: int=10, coeff_of_var_thresh: float=0.8):
+        """A class for estimating the flow rate of cells using a 2D cross-correlation.
         The class holds two images at a time in `frame_storage`. To use this class,
         a user needs only to provide a single image at a time. Every two images, 
-        the class calculates the displacement them.
+        the class calculates the displacement between those two.
+
+        Once the specified number of pairs 
 
         Eaxmple usage (pseudocode)
         ---------------------------
 
             fre = FlowRateEstimator()
 
-            while im in camera..yieldImages():
+            while im in camera.yieldImages():
                 fre.addImageAndCalculatePair()
 
             if fre.isFull():
@@ -44,6 +46,7 @@ class FlowRateEstimator:
         self._frame_counter = 0
         self._calc_idx = 0
         self.scale_factor = scale_factor
+        self.coeff_of_var_thresh = coeff_of_var_thresh
 
     def _getAverage(self) -> Tuple[float, float]:
         """Return the mean of the dx and dy displacement arrays"""
@@ -71,6 +74,10 @@ class FlowRateEstimator:
         mx, my = self._getAverage()
         sd_x, sd_y = self._getStandardDeviation()
         cov_x, cov_y = sd_x / mx, sd_y / my
+
+
+        if cov_y >= self.coeff_of_var_thresh:
+            my = 1
 
         return (mx, my, sd_x, sd_y, cov_x, cov_y)
 
@@ -227,22 +234,28 @@ def getTemplateRegion(img: np.ndarray, x1_perc: float=0.05, y1_perc: float=0.05,
 
     return img[ys:yf, xs:xf], (xs, xf), (ys, yf)
 
-def getFlowrateWithCrossCorrelation(prev_img: np.ndarray, next_img: np.ndarray, scale_factor: int=10, debug: bool=False):
-    """Find the displacement of a subregion of an image with another, temporally adjacent, image
+def getFlowrateWithCrossCorrelation(prev_img: np.ndarray, next_img: np.ndarray, scale_factor: int=10, temp_x1_perc: float=0.05,
+temp_y1_perc: float=0.05, temp_x2_perc: float=0.45, temp_y2_perc: float=0.85, debug: bool=False) -> Tuple[float, float]:
+
+    """Find the displacement of a subregion of an image with another, temporally adjacent, image.
     
     Parameters
     ----------
-        img : np.ndarray
-            An image (i.e a numpy array)
-        x1_perc : float
+        prev_img : np.ndarray
+            First image
+        next_img: np.ndarray
+            Subsequent imag
+        scale_factor : int
+            Factor to use for downsampling the images
+        temp_x1_perc : float
             What percentage of the image the start of the subregion should begin at.
-            For example, x1_perc=0.05 of an input image with shape (600, 800) would mean the 
+            For example, x1_perc=0.05 of an input image with shape (600, 800) would mean the
             subregion would begin at 0.05*600=30.
-        y1_perc: float
+        temp_y1_perc: float
             See x1_perc
-        x2_perc: float
+        temp_x2_perc: float
             See x1_perc
-        y2_perc: float
+        temp_y2_perc: float
             See x1_perc
 
     Returns

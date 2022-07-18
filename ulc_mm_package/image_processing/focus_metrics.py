@@ -3,19 +3,18 @@ import cv2
 
 
 def logPowerSpectrumRadialAverageSum(img):
-    def radial_average(arr):
-        w, h = arr.shape[1], arr.shape[0]
-        cx, cy = w // 2, h // 2
+    def radial_average(data):
+        data = data / np.max(data)
+        h, w = data.shape[0], data.shape[1]
+        center = (w // 2, h // 2)
+        y, x = np.indices((data.shape))
+        r = np.sqrt((x - center[0])**2 + (y - center[1])**2)
+        r = r.astype(int)
 
-        # Create centered radius matrix
-        x, y = np.meshgrid(np.arange(w) - cx, np.arange(h) - cy)
-        R = np.sqrt(x**2 + y**2)
-
-        # Compute radial mean
-        rm = lambda r: arr[(R >= r - 0.5) & (R <= r + 0.5)].mean()
-        r = np.linspace(1, int(np.max(R)))
-        radial_mean = np.vectorize(rm)(r)
-        return radial_mean
+        tbin = np.bincount(r.ravel(), data.ravel())
+        nr = np.bincount(r.ravel())
+        radialprofile = tbin / nr
+        return radialprofile
 
     power_spectrum = np.fft.fftshift(np.fft.fft2(img))
     log_ps = np.log(np.abs(power_spectrum))

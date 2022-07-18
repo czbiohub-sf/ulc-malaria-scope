@@ -19,7 +19,8 @@ from ulc_mm_package.hardware.hardware_constants import *
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 
 INVALID_READ_FLAG = -1
-TOL_hPa = 1
+DEFAULT_AFC_DELAY_S = 10
+FASTER_FEEDBACK_DELAY_S = 3
 
 class PressureControlError(Exception):
     """Base class for catching all pressure control related errors."""
@@ -50,6 +51,8 @@ class PressureControl():
         self.max_duty_cycle = 2200
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
+        self.polling_time_s = 3
+        self.prev_poll_time_s = 0
         self.prev_pressure = 0
         self.io_error_counter = 0
         self.prev_time_s = 0
@@ -57,8 +60,9 @@ class PressureControl():
 
         # Active flow control variables
         self.flowrate_target = 0
+        self.flow_rate_y = 0
         self.prev_afc_time_s = 0
-        self.afc_delay_s = 30
+        self.afc_delay_s = DEFAULT_AFC_DELAY_S
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
@@ -123,12 +127,7 @@ class PressureControl():
         return pressure_readings_hpa
 
     def getPressure(self, apc_on: bool=False):
-        """The pressure sensor is not always reliable. It may raise I/O or Runtime
-        errors intermittently.
-
-        To mitigate a crash if that is the case, we attempt to read the 
-        pressure sensor a few times until a valid value is returned. If a valid value is not received
-        after `max_attempts`, then a -1 flag is returned. 
+        """
         """
         
         if apc_on:
@@ -137,76 +136,54 @@ class PressureControl():
             return self._getPressure()
 
     def _getPressure(self):
-        max_attempts = 6
-        while max_attempts > 0:
-            try:
-                return self.mpr.pressure
-            except IOError:
-                max_attempts -= 1
-            except RuntimeError:
-                max_attempts -= 1
-        self.io_error_counter += 1
-        return INVALID_READ_FLAG
+        """Read and return the latest pressure value if it has been at least `polling_time_s` seconds,
+        otherwise return the most recent pressure read. This is done because calls to the pressure sensor
+        are somewhat slow.
+        
+        Additionally, the pressure sensor may raise I/O or Runtime errors intermittently.
 
-    def isPressureReadValid(self, pressure: float) -> bool:
-        if pressure < 0:
-            return False
-        return True
-
-    def pressureWithinTol(self, pressure: float, target_pressure: float) -> bool:
-        if abs(target_pressure-pressure) < TOL_hPa:
-            return True
-        return False
-
-    def isLeak(self, pressure: float, target_pressure: float) -> bool:
+        To mitigate a crash if that is the case, we attempt to read the
+        pressure sensor a few times until a valid value is returned. If a valid value is not received
+        after `max_attempts`, then a -1 flag is returned. 
         """
-        If the current pressure is not at or near the target pressure
-        and there is no additional room for the syringe to move, then 
-        some vacuum has been lost.
-        """
-        if not self.pressureWithinTol(pressure, target_pressure):
-            if self.duty_cycle == self.max_duty_cycle and target_pressure > pressure:
-                return True
-            elif self.duty_cycle == self.min_duty_cycle and target_pressure < pressure:
-                return True
-            return False
 
-    def holdPressure(self, target_pressure: float):
-        # Limit the polling frequency
-        if perf_counter() - self.prev_time_s < self.control_delay_s:
-            return
-
-        self.curr_pressure = self.getPressure()
-
-        if self.isPressureReadValid(self.curr_pressure):
-            if self.pressureWithinTol(self.curr_pressure, target_pressure):
-                return
-
-            diff = target_pressure - self.curr_pressure
-            if diff > 0:
-                self.increaseDutyCycle()
-            elif diff < 0:
-                self.decreaseDutyCycle()
-            else:
-                return
-            new_pressure = self.getPressure()
-            if self.isPressureReadValid(new_pressure):
-                new_diff = target_pressure - new_pressure
-                if abs(diff) < abs(new_diff) and diff > 0:
-                    self.decreaseDutyCycle()
-                elif abs(diff) < abs(new_diff) and diff < 0:
-                    self.increaseDutyCycle()
-            self.prev_time_s = perf_counter()
-            if self.isLeak(self.curr_pressure, target_pressure):
-                raise PressureLeak
+        if perf_counter() - self.prev_poll_time_s > self.polling_time_s:
+            max_attempts = 6
+            while max_attempts > 0:
+                try:
+                    new_pressure = self.mpr.pressure
+                    self.prev_pressure = new_pressure
+                    self.prev_poll_time_s = perf_counter()
+                    return new_pressure
+                except IOError:
+                    max_attempts -= 1
+                except RuntimeError:
+                    max_attempts -= 1
+            self.io_error_counter += 1
+            return INVALID_READ_FLAG
+        else:
+            return self.prev_pressure
 
     def initializeActiveFlowControl(self, img: np.ndarray):
         """Initialize the FlowRateEstimator with the correct image shape."""
+
         h, w = img.shape
         self.fre = FlowRateEstimator(h, w, num_image_pairs=12)
         self.flowrate_target = None
 
     def activeFlowControl(self, img: np.ndarray):
+        """Active flow control stabilization
+
+        This function attempts to stabilize the flowrate using the
+        FlowRateEstimator. The function performs in two steps:
+
+        1. If the flow control was just initialized (i.e using `initializeActiveFlowControl`),
+        the function continuously measures the first N images to acquire the target flowrate.
+
+        2. After the target flowrate has been acquired, the function accepts a set of images periodically
+        and assesses the average displacement among all the pairs
+        """
+
         # Step 1 - continuously acquire images to set the desired flow rate
         if self.flowrate_target == None:
             self.fre.addImageAndCalculatePair(img, perf_counter())
@@ -219,30 +196,53 @@ class PressureControl():
                 if not self.fre.isFull():
                     self.fre.addImageAndCalculatePair(img, perf_counter())
                 else:
-                    dx, dy, _, _, _, cov_y = self.fre.getStatsAndReset()
+                    self.prev_afc_time_s = perf_counter()
+                    _, dy, _, _, _, _ = self.fre.getStatsAndReset()
+                    self.flow_rate_y = dy
                     flow_err = self.getFlowrateError(self.flowrate_target, dy)
-                    self.adjustPressure(flow_err, cov_y)
+                    self.adjustPressure(flow_err)
 
-    def adjustPressure(self, flow_diff: float, cov_y: float):
-        """Adjust the syringe position based on the flow rate error"""
+    def isMovePossible(self, move_dir: int) -> bool:
+        """Return true if the syringe can still move in the specified direction."""
+        
+        # Cannot move the syringe up
+        if self.duty_cycle == self.max_duty_cycle and move_dir == 1:
+                return False
+                
+        # Cannot move the syringe down
+        elif self.duty_cycle == self.min_duty_cycle and move_dir == -1:
+            return False
+
+        return True
+
+    def adjustPressure(self, flow_diff: float):
+        """Adjust the syringe position based on the flow rate error.
+
+        If the actual flow rate is not the target and the syringe is already at the limit of its motion,
+        this function raises a "PressureLeak()" error.
+        """
 
         if flow_diff < 0:
-            self.decreaseDutyCycle()
-            self.afc_delay_s = 0.1
+            if self.isMovePossible(move_dir=-1):
+                self.increaseDutyCycle()
+                self.afc_delay_s = FASTER_FEEDBACK_DELAY_S
+            else:
+                raise PressureLeak()
+
         elif flow_diff > 0:
-            self.increaseDutyCycle()
-            self.afc_delay_s = 0.1
+            if self.isMovePossible(move_dir=1):
+                self.decreaseDutyCycle()
+                self.afc_delay_s = FASTER_FEEDBACK_DELAY_S
+            else:
+                raise PressureLeak()
+
         else:
-            self.afc_delay_s = 30
+            self.afc_delay_s = DEFAULT_AFC_DELAY_S
 
     def getFlowrateError(self, desired_flowrate: float, current_flowrate: float, noiseTolPerc: float=0.05) -> float:
         """Returns the difference between the target and current flowrate, if the difference is above a noise tolerance."""
 
         error = desired_flowrate - current_flowrate
-        if error/desired_flowrate <= noiseTolPerc:
+        if abs(error/desired_flowrate) <= noiseTolPerc:
             return 0
         return error
-
-    def pid(self, error: float, prev_error: float, p: int=5, i: int=0, d: int=0):
-        pidGain = (p*error) + (i*error + i) + (d*(error - prev_error))
-        print(pidGain)

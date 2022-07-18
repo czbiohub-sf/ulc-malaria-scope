@@ -14,6 +14,8 @@ from typing import Callable
 import ioexpander as io
 from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN, ROT_C_PIN, ROT_INTERRUPT_PIN
 
+class EncoderI2CError(Exception):
+    pass
 
 class PIM522RotaryEncoder:
     def __init__(self, callback_func: Callable):
@@ -43,28 +45,31 @@ class PIM522RotaryEncoder:
             255 / BRIGHTNESS
         )  # Add a period large enough to get 0-255 steps at the desired brightness
 
-        ioe = io.IOE(i2c_addr=self.I2C_ADDR, interrupt_pin=ROT_INTERRUPT_PIN)
+        try:
+            ioe = io.IOE(i2c_addr=self.I2C_ADDR, interrupt_pin=ROT_INTERRUPT_PIN)
 
-        # Swap the interrupt pin for the Rotary Encoder breakout
-        if self.I2C_ADDR == 0x0F:
-            ioe.enable_interrupt_out(pin_swap=True)
+            # Swap the interrupt pin for the Rotary Encoder breakout
+            if self.I2C_ADDR == 0x0F:
+                ioe.enable_interrupt_out(pin_swap=True)
 
-        ioe.setup_rotary_encoder(1, POT_ENC_A, POT_ENC_B, POT_ENC_C)
+            ioe.setup_rotary_encoder(1, POT_ENC_A, POT_ENC_B, POT_ENC_C)
 
-        ioe.set_pwm_period(PERIOD)
-        ioe.set_pwm_control(divider=2)  # PWM as fast as we can to avoid LED flicker
+            ioe.set_pwm_period(PERIOD)
+            ioe.set_pwm_control(divider=2)  # PWM as fast as we can to avoid LED flicker
 
-        ioe.set_mode(self.pin_red, io.PWM, invert=True)
-        ioe.set_mode(self.pin_green, io.PWM, invert=True)
-        ioe.set_mode(self.pin_blue, io.PWM, invert=True)
-        ioe.clear_interrupt()
+            ioe.set_mode(self.pin_red, io.PWM, invert=True)
+            ioe.set_mode(self.pin_green, io.PWM, invert=True)
+            ioe.set_mode(self.pin_blue, io.PWM, invert=True)
+            ioe.clear_interrupt()
 
-        self.ioe = ioe
-        self.count = self.ioe.read_rotary_encoder(1)
+            self.ioe = ioe
+            self.count = self.ioe.read_rotary_encoder(1)
 
-        self.enableInterrupt()
-        self.setInterruptCallback(callback_func)
-        self.setColor(12, 159, 217)  # Biohub blue
+            self.enableInterrupt()
+            self.setInterruptCallback(callback_func)
+            self.setColor(12, 159, 217)  # Biohub blue
+        except Exception as e:
+            raise EncoderI2CError(e)
 
     def close(self):
         self.setColor(0, 0, 0)
