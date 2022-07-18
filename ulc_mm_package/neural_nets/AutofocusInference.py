@@ -92,7 +92,6 @@ class AutoFocus:
         return list(results.values())
 
     def _default_callback(self, infer_request: InferRequest, *args, **kwargs) -> None:
-        t1 = time.perf_counter()
         newval = next(iter(infer_request.results.values()))
         self.async_results.append(newval)
 
@@ -116,7 +115,6 @@ class AutoFocus:
             self.infer_queue = AsyncInferQueue(self.model, len(input_tensors))
             self.infer_queue.set_callback(self._default_callback)
 
-        self.t0 = time.perf_counter()
         for i, input_tensor in enumerate(input_tensors):
             self.infer_queue.start_async({0: input_tensor})
 
