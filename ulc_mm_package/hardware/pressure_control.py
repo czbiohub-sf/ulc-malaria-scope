@@ -19,7 +19,6 @@ from ulc_mm_package.hardware.hardware_constants import *
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 
 INVALID_READ_FLAG = -1
-TOL_hPa = 1
 DEFAULT_AFC_DELAY_S = 10
 FASTER_FEEDBACK_DELAY_S = 3
 
@@ -143,7 +142,7 @@ class PressureControl():
         
         Additionally, the pressure sensor may raise I/O or Runtime errors intermittently.
 
-        To mitigate a crash if that is the case, we attempt to read the 
+        To mitigate a crash if that is the case, we attempt to read the
         pressure sensor a few times until a valid value is returned. If a valid value is not received
         after `max_attempts`, then a -1 flag is returned. 
         """

@@ -100,3 +100,6 @@ Pipfile.lock
 /logs
 /models
 /jobs
+
+# Test data
+media/

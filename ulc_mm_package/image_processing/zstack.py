@@ -5,8 +5,7 @@ import numpy as np
 from time import sleep
 
 from ulc_mm_package.image_processing.focus_metrics import *
-from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction, MotorControllerError
-from ulc_mm_package.hardware.camera import CameraError, BaslerCamera
+from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction
 
 def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int=1, save_loc=None):
 
@@ -91,8 +90,8 @@ def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int
 
     Parameters
     ----------
-    camera: BaslerCamera:
-        An instance of the BaslerCamera object (defined in /hardware/camera.py)
+    camera: BaslerCamera/AVTCamera
+        An instance of the BaslerCamera/AVTCamera object (defined in /hardware/camera.py)
     motor: DRV8825Nema()
         An instance of the DRV8825Nema motor driver object (defined in /hardware/motorcontroller.py).
     start_point: int
