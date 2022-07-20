@@ -1,6 +1,3 @@
-# TEMP
-import cv2
-
 simulation = True
 
 if not simulation:
@@ -18,7 +15,7 @@ if not simulation:
     from ulc_mm_package.hardware.pressure_control import (
         PressureControl,
         PressureControlError,
-        PressureLeak
+        PressureLeak,
     )
     from ulc_mm_package.hardware.fan import Fan
 
@@ -27,15 +24,18 @@ else:
 
     from ulc_mm_package.hardware.simulation import *
 
-    from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
+from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
+from ulc_mm_package.image_processing.autobrightness import Autobrightness, AutobrightnessError
 
-    from ulc_mm_package.image_processing.zstack import (
-        takeZStackCoroutine,
-        symmetricZStackCoroutine,
+from ulc_mm_package.image_processing.zstack import (
+    takeZStackCoroutine,
+    symmetricZStackCoroutine,
 )
 
 import sys
+import csv
 import traceback
+from typing import Dict
 from time import perf_counter, sleep
 from os import listdir, mkdir, path
 from datetime import datetime, timedelta
@@ -48,6 +48,7 @@ from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 _UI_FILE_DIR = "liveview.ui"
+_EXPERIMENT_FORM_PATH = "experimentform.ui"
 
 class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
@@ -58,6 +59,8 @@ class AcquisitionThread(QThread):
     measurementTime = pyqtSignal(int)
     fps = pyqtSignal(int)
     pressureLeakDetected = pyqtSignal(int)
+    syringePosChanged = pyqtSignal(int)
+    autobrightnessDone = pyqtSignal(int)
 
     def __init__(self, external_dir):
         super().__init__()
@@ -73,7 +76,8 @@ class AcquisitionThread(QThread):
         self.takeZStack = False
         self.continuous_dir_name = None
         self.custom_image_prefix = ""
-        self.pressure_control = None
+        self.pressure_control: PressureControl = None
+        # self.pressure_control = None
         self.motor = None
         self.updateMotorPos = True
         self.fps_timer = perf_counter()
@@ -82,16 +86,21 @@ class AcquisitionThread(QThread):
         self.metadata_writer = None
         self.click_to_advance = False
         self.zw = ZarrWriter()
+        self.md_writer = None
+        self.metadata_file = None
 
         self.pressure_control_enabled = False
         self.active_autofocus = False
+        self.initializeFlowControl = False
+        self.flowcontrol_enabled = False
+        self.autobrightness: Autobrightness = None
+        self.autobrightness_on = False
 
         try:
             self.camera = BaslerCamera()
             self.camera_activated = True
         except CameraError as e:
             print("Error activating camera")
-            print(e)
             self.camera_activated = False
 
     def run(self):
@@ -102,7 +111,9 @@ class AcquisitionThread(QThread):
                         self.updateGUIElements()
                         self.save(image)
                         self.zStack(image)
-                        self.activePressureControl()
+                        # self.activePressureControl()
+                        self.activeFlowControl(image)
+                        self._autobrightness(image)
 
                         if self.liveview:
                             if self.update_counter % self.update_liveview == 0:
@@ -118,7 +129,7 @@ class AcquisitionThread(QThread):
                     print(e)
                     print(traceback.format_exc())
 
-    def getMetadata(self):
+    def getMetadata(self) -> Dict:
         """Required metadata:
         - Measurement type (actual diagnostic experiment or data collection)
         - Sample type / sample name (i.e dataset name)
@@ -141,7 +152,9 @@ class AcquisitionThread(QThread):
             "motor_pos": self.motor.pos,
             "pressure_hpa": self.pressure_control.getPressure(),
             "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
-            "APC_on": self.pressure_control_enabled
+            "flowrate_target": self.pressure_control.flowrate_target,
+            "current_flowrate": self.pressure_control.flow_rate_y,
+            # "APC_on": self.pressure_control_enabled,
         }
 
     def save(self, image):
@@ -155,7 +168,8 @@ class AcquisitionThread(QThread):
 
         if self.continuous_save and self.continuous_dir_name != None:
             if self.zw.writable:
-                self.zw.writeSingleArray(image, self.getMetadata())
+                self.zw.writeSingleArray(image)
+                self.md_writer.writerow(self.getMetadata())
             self.measurementTime.emit(int(perf_counter() - self.start_time))
             self.im_counter += 1
 
@@ -198,13 +212,20 @@ class AcquisitionThread(QThread):
                     self.continuous_dir_name,
                     datetime.now().strftime("%Y-%m-%d-%H%M%S"),
                 )
-                + f"{self.custom_image_prefix}_{self.im_counter:05}"
+                + f"{self.custom_image_prefix}"
             )
+            if self.md_writer:
+                self.metadata_file.close()
+            self.metadata_file = open(f"{filename}_metadata.csv", "w")
+            self.md_writer = csv.DictWriter(self.metadata_file, fieldnames=self.getMetadata().keys())
+            self.md_writer.writeheader()
+
             self.zw.createNewFile(filename)
 
             self.start_time = perf_counter()
-            self.fps_timer = perf_counter()
+            # self.fps_timer = perf_counter()
             self.im_counter = 0
+            self.timings = []
 
     def changeBinningMode(self):
         if self.camera_activated:
@@ -248,35 +269,179 @@ class AcquisitionThread(QThread):
             except ValueError:
                 # Occurs if an image is sent while the function is still moving the motor
                 pass
-    
-    def setDesiredPressure(self, pressure: float):
-        self.target_pressure = pressure
-        self.pressure_control_enabled = True
 
-    def stopActivePressureControl(self):
-        self.pressure_control_enabled = False
-
-    def activePressureControl(self):
-        if self.pressure_control_enabled:
+    def _autobrightness(self, img: np.ndarray):
+        if self.autobrightness_on:
             try:
-                self.pressure_control.holdPressure(self.target_pressure)
+                done = self.autobrightness.runAutobrightness(img)
+            except AutobrightnessError as e:
+                print(e)
+                self.autobrightness_on = False
+                self.autobrightnessDone.emit(1)
+                return
+                
+            if done:
+                self.autobrightness_on = False
+                self.autobrightnessDone.emit(1)
+
+    def initializeActiveFlowControl(self, img: np.ndarray):
+        self.pressure_control.initializeActiveFlowControl(img)
+        self.flowcontrol_enabled = True
+        self.initializeFlowControl = False
+
+    def stopActiveFlowControl(self):
+        self.flowcontrol_enabled = False
+        self.pressure_control.flow_rate_y = 0
+
+    def activeFlowControl(self, img: np.ndarray):
+        if self.initializeFlowControl:
+            self.initializeActiveFlowControl(img)
+
+        if self.flowcontrol_enabled:
+            try:
+                self.pressure_control.activeFlowControl(img)
+                self.syringePosChanged.emit(1)
             except PressureLeak:
-                try:
-                    pressure = self.pressure_control.getPressure()
-                except:
-                    pressure = 'INVALID READ'
                 print(
-                        f'''A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.\n
-                        The current pressure is {pressure} and the syringe is already at its maximum position\n
-                        ({self.pressure_control.getCurrentDutyCycle():.1f}). Active pressure control\n
-                        is now disabled.
-                        '''
-                    )
+                    f"""The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
+                        Active flow control is now disabled.
+                        """         
+                )       
+                # try:
+                #     pressure = self.pressure_control.getPressure()
+                # except:
+                #     pressure = 'INVALID READ'
+                # print(                  
+                #     f'''A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.\n
+                #         The current pressure is {pressure} and the syringe is already at its maximum position\n
+                #         ({self.pressure_control.getCurrentDutyCycle():.1f}). Active pressure control\n
+                #         is now disabled.
+                #        '''
+                # )
                 self.pressureLeakDetected.emit(1)
+
+    # def setDesiredPressure(self, pressure: float):
+    #     self.target_pressure = pressure
+    #     self.pressure_control_enabled = True
+
+    # def stopActivePressureControl(self):
+    #     self.pressure_control_enabled = False
+
+    # def activePressureControl(self):
+    #     if self.pressure_control_enabled:
+    #         try:
+    #             self.pressure_control.holdPressure(self.target_pressure)
+    #         except PressureLeak:
+    #             try:
+    #                 pressure = self.pressure_control.getPressure()
+    #             except:
+    #                 pressure = 'INVALID READ'
+    #             print(
+    #                     f'''A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.\n
+    #                     The current pressure is {pressure} and the syringe is already at its maximum position\n
+    #                     ({self.pressure_control.getCurrentDutyCycle():.1f}). Active pressure control\n
+    #                     is now disabled.
+    #                     '''
+    #                 )
+    #             self.pressureLeakDetected.emit(1)
 
     # def activeAutoFocus(self):
     #     if self.active_autofocus and not self.takeZStack:
     #         if self.prev_focus
+
+class ExperimentSetupGUI(QtWidgets.QDialog):
+    """Form to input experiment parameters"""
+    def __init__(self, *args, **kwargs):
+        super(ExperimentSetupGUI, self).__init__(*args, **kwargs)
+
+        # Load the ui file
+        uic.loadUi(_EXPERIMENT_FORM_PATH, self)
+
+        # Set the focus order
+        self.setTabOrder(self.txtExperimentName, self.txtFlowCellID)
+        self.setTabOrder(self.txtFlowCellID, self.radBtn1x1)
+        self.setTabOrder(self.radBtn1x1, self.radBtn2x2)
+        self.setTabOrder(self.radBtn2x2, self.chkBoxExperimentSetupAutobrightness)
+        self.setTabOrder(self.chkBoxExperimentSetupAutobrightness, self.chkBoxExperimentSetupAutofocus)
+        self.setTabOrder(self.chkBoxExperimentSetupAutofocus, self.chkBoxExperimentSetupFlowControl)
+        self.setTabOrder(self.chkBoxExperimentSetupFlowControl, self.sbExperimentSetupMinutes)
+        
+        self.txtExperimentName.setFocus()
+
+        # Parameters
+        self.experiment_name = ""
+        self.flowcell_id = ""
+        self.binningMode = 2
+        self.autobrightness = False
+        self.autofocus = False
+        self.autoflowcontrol = False
+        self.time_mins = None
+
+        # Set up event handlers 
+        self.txtExperimentName.editingFinished.connect(self.txtExperimentNameHandler)
+        self.txtFlowCellID.editingFinished.connect(self.flowCellIDHandler)
+        self.radBtn1x1.toggled.connect(self.binningModeHandler)
+        self.radBtn2x2.toggled.connect(self.binningModeHandler)
+        self.chkBoxExperimentSetupAutobrightness.stateChanged.connect(self.chkBoxAutobrightnessHandler)
+        self.chkBoxExperimentSetupAutofocus.stateChanged.connect(self.chkBoxAutofocusHandler)
+        self.chkBoxExperimentSetupFlowControl.stateChanged.connect(self.chkBoxFlowControlHandler)
+        self.sbExperimentSetupMinutes.valueChanged.connect(self.sbTimerHandler)
+        self.btnExperimentSetupAbort.clicked.connect(self.btnAbortHandler)
+        self.btnStartExperiment.clicked.connect(self.btnStartExperimentHandler)
+
+    def txtExperimentNameHandler(self):
+        self.experiment_name = self.txtExperimentName.text()
+        print(self.experiment_name)
+    
+    def flowCellIDHandler(self):
+        """TODO: Validate the flowcell ID"""
+        self.flowcell_id = self.txtFlowCellID.text()
+        print(self.flowcell_id)
+    
+    def binningModeHandler(self):
+        if self.radBtn1x1.isChecked():
+            self.radBtn2x2.setChecked(False)
+            self.binningMode = 1
+        elif self.radBtn2x2.isChecked():
+            self.radBtn1x1.setChecked(False)
+            self.binningMode = 2
+        print(f"Binning mode: {self.binningMode}")
+    
+    def chkBoxAutobrightnessHandler(self):
+        self.autobrightness = True if self.chkBoxAutobrightness.checkState() else False
+        print(self.autobrightness)
+
+    def chkBoxAutofocusHandler(self):
+        self.autofocus = True if self.chkBoxAutofocus.checkState() else False
+        print(self.autofocus)
+    
+    def chkBoxFlowControlHandler(self):
+        self.autoflowcontrol = True if self.chkBoxFlowControl.checkState() else False
+        print(self.autoflowcontrol)
+
+    def sbTimerHandler(self):
+        self.time_mins = self.sbExperimentSetupMinutes.value()
+        print(self.time_mins)
+
+    def btnAbortHandler(self):
+        print("Aborting experiment setup...")
+        self.close()
+    
+    def btnStartExperimentHandler(self):
+        print("Something interesting will happen here eventually...")
+        parameters = self.getAllParameters()
+
+
+    def getAllParameters(self) -> Dict:
+        return {
+            "experiment_name": self.experiment_name,
+            "flowcell_id": self.flowcell_id,
+            "binningMode": self.binningMode,
+            "autobrightness": self.autobrightness,
+            "autofocus": self.autofocus,
+            "autoflowcontrol": self.autoflowcontrol,
+            "time_mins": self.time_mins,
+        }
 
 class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -298,12 +463,16 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread = None
         self.motor = None
         self.pressure_control = None
-        self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
+        self.encoder = None
+        # self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
         self.led = None
         self.fan = Fan()
 
         # Load the ui file
         uic.loadUi(_UI_FILE_DIR, self)
+
+        # Experiment parameter form dialog
+        self.experiment_form_dialog = ExperimentSetupGUI(self)
 
         # Start the video stream
         self.acquisitionThread = AcquisitionThread(self.external_dir)
@@ -319,10 +488,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Create the LED
         try:
             self.led = LED_TPS5420TDDCT()
+            self.led.turnOn()
             self.led.setDutyCycle(0)
             self.vsLED.setValue(0)
             self.lblLED.setText(f"{int(self.vsLED.value())}%")
+            self.btnLEDToggle.setText(f"Turn off")
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
+            self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
+            self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
+
         except LEDError:
             print("Error instantiating LED. Continuing...")
 
@@ -330,8 +504,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         try:
             self.motor = DRV8825Nema(steptype="Half")
             self.motor.homeToLimitSwitches()
-            while not self.motor.homed:
-                pass
+            print("Moving motor to the middle.")
+            # while not self.motor.homed:
+            #     pass
             sleep(0.5)
             self.motor.move_abs(int(self.motor.max_pos // 2))
             self.lblFocusMax.setText(f"{self.motor.max_pos}")
@@ -351,9 +526,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.vsFocus.setValue(self.motor.pos)
             self.vsFocus.setMaximum(self.motor.max_pos)
 
-        except MotorControllerError as e:
+
+        except MotorControllerError:
             print("Error initializing DRV8825. Disabling focus actuation GUI elements.")
-            print(e)
             self.btnFocusUp.setEnabled(False)
             self.btnFocusDown.setEnabled(False)
             self.vsFocus.setEnabled(False)
@@ -363,10 +538,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         try:
             self.pressure_control = PressureControl()
             self.vsFlow.setMinimum(self.pressure_control.getMinDutyCycle())
-            self.lblMinFlow.setText(f"{self.pressure_control.getMinDutyCycle()}")
+            # self.lblMinFlow.setText(f"{self.pressure_control.getMinDutyCycle()}")
             self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle())
-            self.lblMaxFlow.setText(f"{self.pressure_control.getMaxDutyCycle()}")
             self.vsFlow.setSingleStep(self.pressure_control.min_step_size)
+            # self.lblMaxFlow.setText(f"{self.pressure_control.getMaxDutyCycle()}")
+            # self.vsFlow.setSingleStep(self.pressure_control.min_step_size)
             self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
             self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
         except PressureControlError:
@@ -378,6 +554,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.vsFlow.setEnabled(False)
             self.txtBoxFlow.setEnabled(False)
 
+        # Connect the encoder
+        try:
+            self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
+        except EncoderI2CError as e:
+            print(f"ENCODER I2C ERROR: {e}")
+
         ### Connect UI elements to actions ###
 
         # Acquisition thread
@@ -388,9 +570,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.fps.connect(self.updateFPS)
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
+        self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
+        self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
 
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pressure_control = self.pressure_control
+        self.acquisitionThread.autobrightness = Autobrightness(self.led)
         
         self.acquisitionThread.start()
 
@@ -401,12 +586,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnSnap.clicked.connect(self.btnSnapHandler)
         self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
         self.btnChangeBinning.clicked.connect(self.btnChangeBinningHandler)
+        self.btnExperimentSetup.clicked.connect(self.experimentSetupHandler)
 
         # Pressure control
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
         self.btnFlowDown.clicked.connect(self.btnFlowDownHandler)
         self.txtBoxFlow.editingFinished.connect(self.flowTextBoxHandler)
         self.vsFlow.valueChanged.connect(self.vsFlowHandler)
+        self.chkBoxFlowControl.stateChanged.connect(self.activeFlowControlHandler)
         # self.chkBoxPressureControl.stateChanged.connect(self.chkBoxPressureControlHandler) # TODO check this
 
         # Misc
@@ -463,6 +650,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.chkBoxMaxFPS.setEnabled(True)
             sleep(0.1)
             self.acquisitionThread.zw.closeFile()
+            self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
             num_images = self.acquisitionThread.im_counter
@@ -494,6 +682,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         change_to = 1 if curr_binning_mode == 2 else 2
         self.btnChangeBinning.setText(f"Change to {change_to}X binning")
 
+    def experimentSetupHandler(self):
+        self.btnAbortExperiment.setEnabled(True)
+        self.experiment_form_dialog.show()
+
     @pyqtSlot(QImage)
     def updateImage(self, qimage):
         self.lblImage.setPixmap(QPixmap.fromImage(qimage))
@@ -502,6 +694,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def updateMotorPosition(self, val):
         self.vsFocus.setValue(val)
         self.txtBoxFocus.setText(f"{val}")
+
+    @pyqtSlot(int)
+    def updateSyringePos(self, _):
+        self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
 
     @pyqtSlot(float)
     def updatePressureLabel(self, val):
@@ -514,6 +710,37 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     @pyqtSlot(int)
     def updateMeasurementTimer(self, val):
         self.lblTimer.setText(f"{str(timedelta(seconds=val))}")
+
+    def btnLEDToggleHandler(self):
+        if self.led._isOn:
+            self.led.turnOff()
+            self.vsLED.blockSignals(True)
+            self.vsLED.setEnabled(False)
+            self.btnLEDToggle.setText(f"Turn on")
+        else:
+            self.vsLED.blockSignals(False)
+            self.vsLED.setEnabled(True)
+            self.led.turnOn()
+            self.led.setDutyCycle(int(self.vsLED.value()) / 100)
+            self.btnLEDToggle.setText(f"Turn off")
+
+    def btnAutobrightnessHandler(self):
+        self.acquisitionThread.autobrightness.reset()
+        self.btnAutobrightness.setEnabled(False)
+        self.btnLEDToggle.setEnabled(False)
+        self.vsLED.blockSignals(True)
+        self.vsLED.setEnabled(False)
+        self.acquisitionThread.autobrightness_on = True
+
+    @pyqtSlot(int)
+    def autobrightnessDone(self, val):
+        self.btnAutobrightness.setEnabled(True)
+        self.btnLEDToggle.setEnabled(True)
+        self.vsLED.blockSignals(False)
+        self.vsLED.setEnabled(True)
+        new_val = int(self.led._convertPWMValToDutyCyclePerc(self.led.pwm_duty_cycle)*100)
+        self.vsLED.setValue(new_val)
+        self.lblLED.setText(f"{new_val}%")
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
@@ -581,6 +808,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         pos = int(self.vsFocus.value())
         try:
             self.motor.threaded_move_abs(pos=pos)
+            # TODO change back to this
+            # self.motor.threaded_move_abs(pos)
         except MotorInMotion:
             print(f"Motor already in motion.")
 
@@ -597,6 +826,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         try:
             self.motor.threaded_move_abs(pos=pos)
+            # TODO change to below
+            # self.motor.threaded_move_abs(pos)
         except MotorInMotion:
             print("Motor already in motion.")
             self.txtBoxFocus.setText(f"{self.vsFocus.value()}")
@@ -687,23 +918,29 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         self.vsFlow.setValue(flow_duty_cycle)
 
-    def chkBoxPressureControlHandler(self):
-        if self.chkBoxPressureControl.checkState():
-            target_pressure = self.pressure_control.getPressure()
+    def activeFlowControlHandler(self):
+        if self.chkBoxFlowControl.checkState():
+    # def chkBoxPressureControlHandler(self):
+    #     if self.chkBoxPressureControl.checkState():
+            # target_pressure = self.pressure_control.getPressure()
             retval = self._displayMessageBox(
-            QtWidgets.QMessageBox.Icon.Information,
-            "Active pressure control (APS)",
-            f"The APS will attempt to maintain a pressure of: {target_pressure:.2f}. Press okay to confirm.",
-            cancel=True,
-        )
+                QtWidgets.QMessageBox.Icon.Information,
+                "Active flow control (AFC)",
+                f"The AFC will attempt to maintain a the current flow rate. Press okay to confirm.",
+                # "Active pressure control (APS)",
+                # f"The APS will attempt to maintain a pressure of: {target_pressure:.2f}. Press okay to confirm.",
+                cancel=True,
+            )
             if retval == QtWidgets.QMessageBox.Ok:
+                self.acquisitionThread.initializeFlowControl = True
                 self.disablePressureUIElements()
-                target_pressure = self.pressure_control.getPressure()
-                self.lblTargetPressure.setText(f"{target_pressure:.2f} hPa")
-                self.acquisitionThread.setDesiredPressure(target_pressure)
+                # target_pressure = self.pressure_control.getPressure()
+                # self.lblTargetPressure.setText(f"{target_pressure:.2f} hPa")
+                # self.acquisitionThread.setDesiredPressure(target_pressure)
         else:
-            self.acquisitionThread.stopActivePressureControl()
-            self.lblTargetPressure.setText("")
+            self.acquisitionThread.stopActiveFlowControl()
+            # self.acquisitionThread.stopActivePressureControl()
+            # self.lblTargetPressure.setText("")
             self.enablePressureUIElements()
 
     def enablePressureUIElements(self):
@@ -722,14 +959,16 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(int)
     def pressureLeak(self, _):
-        self.acquisitionThread.stopActivePressureControl()
-        self.chkBoxPressureControl.setChecked(False)
+        self.chkBoxFlowControl.setChecked(False)
+        # self.acquisitionThread.stopActivePressureControl()
+        # self.chkBoxPressureControl.setChecked(False)
         self.lblTargetPressure.setText("")
         self.enablePressureUIElements()
         _ = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,
             "Leak - Active pressure controlled stopped",
-            f"The target pressure ({self.acquisitionThread.target_pressure}hPa), can not be attained.",
+            f"The target flowrate can not be attained, stopping active flow control.",
+            # f"The target pressure ({self.acquisitionThread.target_pressure}hPa), can not be attained.",
             cancel=False,
         )
 
@@ -768,10 +1007,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
                 self.acquisitionThread.camera.deactivateCamera()
 
             # Turn off encoder
-            self.encoder.close()
+            if self.encoder:
+                self.encoder.close()
 
             # Turn off fan
-            self.fan.turn_off()
+            # self.fan.turn_off()
 
             quit()
 
