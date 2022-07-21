@@ -342,7 +342,7 @@ class AcquisitionThread(QThread):
                 print("Model inference error.")
             try:
                 dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-                self.motor.move_rel(dir=dir, steps=steps_from_focus)
+                self.motor.threaded_move_rel(dir=dir, steps=steps_from_focus)
             except MotorControllerError:
                 print("Error moving motor after receiving steps from the SSAF model.")
 
