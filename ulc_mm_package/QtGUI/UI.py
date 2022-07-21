@@ -104,6 +104,7 @@ class AcquisitionThread(QThread):
             self.camera_activated = False
 
     def run(self):
+
         while True:
             if self.camera_activated:
                 try:
@@ -807,9 +808,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def vsFocusSliderReleasedHandler(self):
         pos = int(self.vsFocus.value())
         try:
-            self.motor.threaded_move_abs(pos=pos)
-            # TODO change back to this
-            # self.motor.threaded_move_abs(pos)
+            # self.motor.threaded_move_abs(pos=pos)
+            # # TODO change back to this
+            self.motor.threaded_move_abs(pos)
         except MotorInMotion:
             print(f"Motor already in motion.")
 
@@ -825,9 +826,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             return
 
         try:
-            self.motor.threaded_move_abs(pos=pos)
+            # self.motor.threaded_move_abs(pos=pos)
             # TODO change to below
-            # self.motor.threaded_move_abs(pos)
+            self.motor.threaded_move_abs(pos)
         except MotorInMotion:
             print("Motor already in motion.")
             self.txtBoxFocus.setText(f"{self.vsFocus.value()}")

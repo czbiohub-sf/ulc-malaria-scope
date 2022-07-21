@@ -107,6 +107,11 @@ class MotorInMotion(MotorControllerError):
     pass
 
 
+class Direction(enum.Enum):
+    CW = True
+    CCW = False
+
+
 class DRV8825Nema():
     def __init__(
                     self,
@@ -161,8 +166,16 @@ class DRV8825Nema():
         print("Done homing.")
         self.homed = True
 
-    def move_abs(self, pos):
+    def move_abs(self, pos: int=200, stepdelay=.005, verbose=False, initdelay=.05):
         self.pos = int(pos)
+
+    # TODO figure out why different keyword arguments?
+    def move_rel(self, steps: int=200, 
+                dir=Direction.CCW, stepdelay=.005, verbose=False, initdelay=.05):
+        if dir.value:
+            self.pos = int(self.pos + self.button_step*steps)
+        else:
+            self.pos = int(self.pos - self.button_step*steps)
 
     def threaded_move_rel(self, *args, **kwargs):
         if kwargs['dir'].value:
@@ -171,12 +184,7 @@ class DRV8825Nema():
             self.pos = int(self.pos - self.button_step*kwargs['steps'])
 
     def threaded_move_abs(self, *args, **kwargs):
-        self.pos = int(kwargs['pos'])
-
-
-class Direction(enum.Enum):
-    CW = True
-    CCW = False
+        self.pos = int(args[0])
 
 
 ################## led_driver_tps54201ddct.py ##################
@@ -204,6 +212,13 @@ class LED_TPS5420TDDCT():
 
     def _convertDutyCyclePercentToPWMVal(self, duty_cycle_percentage: float) -> int:
         return int(1e6*duty_cycle_percentage)
+
+    def turnOn(self):
+        self._isOn = True
+
+    def turnOff(self):
+        self.setDutyCycle(0)
+        self._isOn = False
 
 
 ################## pim522_rotary_encoder.py ##################
