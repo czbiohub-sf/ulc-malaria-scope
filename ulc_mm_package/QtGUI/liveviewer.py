@@ -114,6 +114,7 @@ class AcquisitionThread(QThread):
         self.autofocus_model = AutoFocus(AUTOFOCUS_MODEL_DIR)
         self.active_autofocus = False
         self.prev_autofocus_time = 0
+        self.af_adjustment_done = False
 
     def run(self):
         while True:
@@ -166,6 +167,7 @@ class AcquisitionThread(QThread):
             "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
             "flowrate_target": self.pressure_control.flowrate_target,
             "current_flowrate": self.pressure_control.flow_rate_y,
+            "focus_adjustment": self.af_adjustment_done,
         }
 
     def save(self, image):
@@ -322,6 +324,7 @@ class AcquisitionThread(QThread):
                 self.pressureLeakDetected.emit(1)
 
     def autofocusWrapper(self, img: np.ndarray):
+        self.af_adjustment_done = False
         if perf_counter() - self.prev_autofocus_time > ssaf_constants.AF_FREQUENCY_S:
             self.autofocus(img)
             self.prev_autofocus_time = perf_counter()
@@ -334,6 +337,7 @@ class AcquisitionThread(QThread):
             try:
                 steps_from_focus = int(self.autofocus_model(img)[0][0][0])
                 print(type(steps_from_focus), steps_from_focus)
+                self.af_adjustment_done = True
             except Exception as e:
                 print("Model inference error.")
             try:
