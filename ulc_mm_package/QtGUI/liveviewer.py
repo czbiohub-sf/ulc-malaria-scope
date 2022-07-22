@@ -335,7 +335,7 @@ class AcquisitionThread(QThread):
         if self.active_autofocus:
             print("Autofocusing!")
             try:
-                steps_from_focus = int(self.autofocus_model(img)[0][0][0])
+                steps_from_focus = -int(self.autofocus_model(img)[0][0][0])
                 print(type(steps_from_focus), steps_from_focus)
                 self.af_adjustment_done = True
             except Exception as e:
