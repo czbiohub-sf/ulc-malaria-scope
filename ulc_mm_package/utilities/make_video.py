@@ -107,8 +107,7 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
     try:
         output_dir = os.path.join(path, "Output")
         video_dir = os.path.join(output_dir, "Videos")
-        metadata_dir = os.path.join(output_dir, "Metadata")
-        for dir in [output_dir, video_dir, metadata_dir]:
+        for dir in [output_dir, video_dir]:
             os.mkdir(dir)
     except:
         pass
