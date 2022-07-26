@@ -1,8 +1,8 @@
 import argparse 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--sim', action='store_true', help="Simulates hardware objects")
-parser.add_argument('-d', '--dev', action='store_true', help="Manual control of hardware")
+parser.add_argument('-s', '--sim', action='store_true', help="simulation mode")
+parser.add_argument('-d', '--dev', action='store_true', help="developer mode")
 mode = parser.parse_args()
 
 if not mode.sim:
