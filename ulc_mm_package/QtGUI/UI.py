@@ -20,7 +20,7 @@ if not _SIMULATION:
     from ulc_mm_package.hardware.fan import Fan
 
 else:
-    PI_PATH = "./media/pi/"
+    PI_PATH = "./sim_media/pi/"
 
     from ulc_mm_package.hardware.simulation import *
 
@@ -35,6 +35,8 @@ from ulc_mm_package.image_processing.zstack import (
 import sys
 import csv
 import traceback
+import numpy as np
+
 from typing import Dict
 from time import perf_counter, sleep
 from os import listdir, mkdir, path
@@ -43,7 +45,6 @@ from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 from cv2 import imwrite
-import numpy as np
 from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
@@ -104,7 +105,6 @@ class AcquisitionThread(QThread):
             self.camera_activated = False
 
     def run(self):
-
         while True:
             if self.camera_activated:
                 try:
@@ -448,6 +448,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
 
+        if _SIMULATION:
+            if not path.exists(VIDEO_PATH):
+                print("Error - no sample video exists. \
+                        \nTo add your own video, save it under " + VIDEO_PATH)
+                quit()
         try:
             self.external_dir = PI_PATH + listdir(PI_PATH)[0] + "/"
         except IndexError:

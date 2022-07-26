@@ -102,5 +102,5 @@ Pipfile.lock
 /jobs
 
 # Test data
-ulc_mm_package/QtGUI/media/pi/data/*
-ulc_mm_package/QtGUI/media/*.avi
+ulc_mm_package/QtGUI/sim_media/pi/data/*
+ulc_mm_package/QtGUI/sim_media/*.avi

@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 import scipy
 
+from os import path
 from py_cameras import PyCamera
 from ulc_mm_package.hardware.hardware_constants import *
 
@@ -25,9 +26,6 @@ _DEFAULT_EXPOSURE_MS = 0.5
 INVALID_READ_FLAG = -1
 DEFAULT_AFC_DELAY_S = 10
 FASTER_FEEDBACK_DELAY_S = 3
-
-# Simulation specific constants
-VIDEO_PATH = "./media/sample.avi"
 
 
 # ------------------------------camera.py------------------------------

@@ -55,3 +55,5 @@ LED_FREQ = 50000
 SERVO_5V_PIN = 17
 SERVO_PWM_PIN = 12
 VALVE_PIN = 8
+
+VIDEO_PATH = "./sim_media/sample.avi"
