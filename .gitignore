@@ -102,12 +102,5 @@ Pipfile.lock
 /jobs
 
 # Test data
-# sample.avi
-QtGUI/media/**/*.tiff
-QtGUI/media/**/*.png
-QtGUI/media/**/*.avi
-
-# !QtGUI/media/pi
-# QtGUI/media/pi/*
-# QtGUI/media/pi/data/*
-# !QtGUI/media/pi/data
+ulc_mm_package/QtGUI/media/pi/data/*
+ulc_mm_package/QtGUI/media/*.avi
