@@ -1,6 +1,11 @@
-_SIMULATION = True
+import argparse 
 
-if not _SIMULATION:
+parser = argparse.ArgumentParser()
+parser.add_argument('-s', '--sim', action='store_true', help="Simulates hardware objects")
+parser.add_argument('-d', '--dev', action='store_true', help="Manual control of hardware")
+mode = parser.parse_args()
+
+if not mode.sim:
     PI_PATH = "/media/pi/"
 
     from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
@@ -448,11 +453,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
 
-        if _SIMULATION:
+        if mode.sim:
+            print("---------------------\n|  SIMULATION MODE  |\n---------------------")
             if not path.exists(VIDEO_PATH):
-                print("Error - no sample video exists. \
-                        \nTo add your own video, save it under " + VIDEO_PATH)
+                print("Error - no sample video exists. To add your own video, save it under " 
+                        + VIDEO_PATH  + "\nRecommended video: " + VIDEO_REC )
                 quit()
+        elif mode.dev:
+            print("--------------------\n|  DEVELOPER MODE  |\n--------------------")
+
         try:
             self.external_dir = PI_PATH + listdir(PI_PATH)[0] + "/"
         except IndexError:
@@ -484,7 +493,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread = AcquisitionThread(self.external_dir)
         self.recording = False
 
-        if not self.acquisitionThread.camera_activated and not _SIMULATION:
+        if not self.acquisitionThread.camera_activated and not mode.sim:
             print(f"Error initializing camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
@@ -1007,7 +1016,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.close()
 
             # Turn off camera
-            if self.acquisitionThread != None and not _SIMULATION:
+            if self.acquisitionThread != None and not mode.sim:
                 self.acquisitionThread.camera_activated = False
                 self.acquisitionThread.camera.stopAcquisition()
                 self.acquisitionThread.camera.deactivateCamera()
