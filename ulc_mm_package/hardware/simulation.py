@@ -1,4 +1,10 @@
-""" Dummy functions simulating hardware objects for UI testing
+# -*- coding: utf-8 -*-
+"""
+
+@author: mwlkhoo
+
+Purpose: Dummy functions simulating hardware objects for UI testing
+
 """
 
 import enum
@@ -6,6 +12,7 @@ import cv2
 import numpy as np
 import scipy
 
+from py_cameras import PyCamera
 from ulc_mm_package.hardware.hardware_constants import *
 
 from typing import Callable
@@ -20,16 +27,16 @@ DEFAULT_AFC_DELAY_S = 10
 FASTER_FEEDBACK_DELAY_S = 3
 
 # Simulation specific constants
-VIDEO_PATH = "./media/2022-01-21.avi"
+VIDEO_PATH = "./media/sample.avi"
 
 
-################## camera.py ##################
+# ------------------------------camera.py------------------------------
 
 class CameraError(Exception):
     pass
 
 
-class BaslerCamera():
+class BaslerCamera(PyCamera):
     def __init__(self):
         try:
             self.binning = 1
@@ -43,16 +50,17 @@ class BaslerCamera():
             self.fps = self.video.get(cv2.CAP_PROP_FPS)
 
             success, frame = self.video.read() 
-            self.frames = np.zeros((self.frame_count - 1, frame.shape[0], frame.shape[1]))
+            self.frames = np.zeros((self.frame_count, frame.shape[0], frame.shape[1]))
 
             success = True
-            # first frame previously opened already
-            index = 0
+            self.index = 0
 
-            while success and index < self.frame_count - 1:
+            while success and self.index < self.frame_count:
+                self.frames[self.index] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
                 success, frame = self.video.read()
-                self.frames[index] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
-                index += 1
+                self.index += 1
+
+            self.index = 0
 
         except Exception as e:
             print(e)
@@ -67,37 +75,39 @@ class BaslerCamera():
 
     # Custom methods
     def yieldImages(self):
-        index = 0
-
         while True:
-            yield self.frames[index]
-            index += 1
-            if index == self.frame_count - 1:
-                index = 0
+            yield self.frames[self.index]
+            self.index += 1
+            if self.index == self.frame_count - 1:
+                self.index = 0
             sleep(1 / self.fps)
 
+    def snapImage(self):
+        return self.frames[self.index]
+
+    def preview(self):
+        try:
+            while True:
+                frame = self.yieldImages()
+                cv2.imshow("preview", frame)
+                cv2.waitKey(1)
+        except KeyboardInterrupt:
+            pass
+
+    def print(self):
+        print("This is a simulated camera")
+
     def stopAcquisition(self):
+        pass
+
+    def activateCamera(self):
         pass
 
     def deactivateCamera(self):
         pass
 
 
-# class AVTCamera:
-
-
-class CameraIterator:
-    def __init__(self, camera):
-        self._camera = camera
-        self._index = 0
-
-    def __next__(self):
-        if self._index < len(self._team._images):
-            return self._camera._images[self._images]
-        raise StopIteration
-
-
-################## motorcontroller.py ##################
+# ------------------------------motorcontroller.py------------------------------
 
 class MotorControllerError(Exception):
     pass
@@ -187,7 +197,7 @@ class DRV8825Nema():
         self.pos = int(args[0])
 
 
-################## led_driver_tps54201ddct.py ##################
+# ------------------------------led_driver_tps54201ddct.py------------------------------
 
 class LEDError(Exception):
     pass
@@ -221,7 +231,7 @@ class LED_TPS5420TDDCT():
         self._isOn = False
 
 
-################## pim522_rotary_encoder.py ##################
+# ------------------------------pim522_rotary_encoder.py------------------------------
 
 class PIM522RotaryEncoder:
     def __init__(self, callback_func: Callable):
@@ -239,7 +249,7 @@ class PIM522RotaryEncoder:
         pass
 
 
-################## pressure_control.py ##################
+# ------------------------------pressure_control.py------------------------------
 
 class PressureControlError(Exception):
     pass
@@ -317,7 +327,7 @@ class PressureControl():
         pass
 
 
-################## fan.py ##################
+# ------------------------------fan.py------------------------------
 
 class Fan():
     def __init__(self, fan_pin: int=FAN_GPIO):

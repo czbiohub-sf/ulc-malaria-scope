@@ -1,6 +1,6 @@
-simulation = True
+_SIMULATION = True
 
-if not simulation:
+if not _SIMULATION:
     PI_PATH = "/media/pi/"
 
     from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
@@ -479,7 +479,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread = AcquisitionThread(self.external_dir)
         self.recording = False
 
-        if not self.acquisitionThread.camera_activated and not simulation:
+        if not self.acquisitionThread.camera_activated and not _SIMULATION:
             print(f"Error initializing camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
@@ -1002,7 +1002,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.close()
 
             # Turn off camera
-            if self.acquisitionThread != None:
+            if self.acquisitionThread != None and not _SIMULATION:
                 self.acquisitionThread.camera_activated = False
                 self.acquisitionThread.camera.stopAcquisition()
                 self.acquisitionThread.camera.deactivateCamera()
