@@ -162,7 +162,7 @@ class AcquisitionThread(QThread):
         if self.single_save:
             filename = (
                 path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S"))
-                + f"{self.custom_image_prefix}.tiff"
+                + f"{self.custom_image_prefix}.png"
             )
             imwrite(filename, image)
             self.single_save = False
