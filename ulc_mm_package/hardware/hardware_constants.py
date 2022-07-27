@@ -2,6 +2,8 @@
 RPI_OUTPUT_V = 3.3
 FAN_GPIO = 5
 BOARD_STATUS_INDICATOR = 4
+DEFAULT_DIR = "/media/pi/"
+ALT_DIR = "./sim_media/pi/"
 
 # ================ Motor controller constants ================ #
 
@@ -56,5 +58,6 @@ SERVO_5V_PIN = 17
 SERVO_PWM_PIN = 12
 VALVE_PIN = 8
 
+# ================ Simulation constants ================ #
 VIDEO_PATH = "./sim_media/sample.avi"
 VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"

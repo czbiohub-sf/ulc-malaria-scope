@@ -6,8 +6,6 @@ parser.add_argument('-d', '--dev', action='store_true', help="developer mode")
 mode = parser.parse_args()
 
 if not mode.sim:
-    PI_PATH = "/media/pi/"
-
     from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
     from ulc_mm_package.hardware.motorcontroller import (
         DRV8825Nema,
@@ -25,8 +23,6 @@ if not mode.sim:
     from ulc_mm_package.hardware.fan import Fan
 
 else:
-    PI_PATH = "./sim_media/pi/"
-
     from ulc_mm_package.hardware.simulation import *
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
@@ -453,17 +449,25 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
 
+        media_dir = DEFAULT_DIR
+
+        if mode.dev:
+            print("--------------------\n|  DEVELOPER MODE  |\n--------------------")
+
         if mode.sim:
             print("---------------------\n|  SIMULATION MODE  |\n---------------------")
+
             if not path.exists(VIDEO_PATH):
                 print("Error - no sample video exists. To add your own video, save it under " 
                         + VIDEO_PATH  + "\nRecommended video: " + VIDEO_REC )
                 quit()
-        elif mode.dev:
-            print("--------------------\n|  DEVELOPER MODE  |\n--------------------")
+
+            if not path.exists(media_dir):
+                media_dir = ALT_DIR
+                print("No external harddrive / SSD detected. Saving media to " + media_dir)
 
         try:
-            self.external_dir = PI_PATH + listdir(PI_PATH)[0] + "/"
+            self.external_dir = media_dir + listdir(media_dir)[0] + "/"
         except IndexError:
             retval = self._displayMessageBox(
                 QtWidgets.QMessageBox.Icon.Critical,
