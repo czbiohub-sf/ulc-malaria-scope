@@ -1,10 +1,12 @@
 import argparse 
 
+# Select operation mode
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--sim', action='store_true', help="simulation mode")
 parser.add_argument('-d', '--dev', action='store_true', help="developer mode")
 mode = parser.parse_args()
 
+# Use real hardware objects
 if not mode.sim:
     from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
     from ulc_mm_package.hardware.motorcontroller import (
@@ -22,6 +24,7 @@ if not mode.sim:
     )
     from ulc_mm_package.hardware.fan import Fan
 
+# Use simulated hardware objects
 else:
     from ulc_mm_package.hardware.simulation import *
 
@@ -79,7 +82,6 @@ class AcquisitionThread(QThread):
         self.continuous_dir_name = None
         self.custom_image_prefix = ""
         self.pressure_control: PressureControl = None
-        # self.pressure_control = None
         self.motor = None
         self.updateMotorPos = True
         self.fps_timer = perf_counter()
@@ -156,7 +158,6 @@ class AcquisitionThread(QThread):
             "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
             "flowrate_target": self.pressure_control.flowrate_target,
             "current_flowrate": self.pressure_control.flow_rate_y,
-            # "APC_on": self.pressure_control_enabled,
         }
 
     def save(self, image):
@@ -309,47 +310,8 @@ class AcquisitionThread(QThread):
                         Active flow control is now disabled.
                         """         
                 )       
-                # try:
-                #     pressure = self.pressure_control.getPressure()
-                # except:
-                #     pressure = 'INVALID READ'
-                # print(                  
-                #     f'''A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.\n
-                #         The current pressure is {pressure} and the syringe is already at its maximum position\n
-                #         ({self.pressure_control.getCurrentDutyCycle():.1f}). Active pressure control\n
-                #         is now disabled.
-                #        '''
-                # )
                 self.pressureLeakDetected.emit(1)
 
-    # def setDesiredPressure(self, pressure: float):
-    #     self.target_pressure = pressure
-    #     self.pressure_control_enabled = True
-
-    # def stopActivePressureControl(self):
-    #     self.pressure_control_enabled = False
-
-    # def activePressureControl(self):
-    #     if self.pressure_control_enabled:
-    #         try:
-    #             self.pressure_control.holdPressure(self.target_pressure)
-    #         except PressureLeak:
-    #             try:
-    #                 pressure = self.pressure_control.getPressure()
-    #             except:
-    #                 pressure = 'INVALID READ'
-    #             print(
-    #                     f'''A pressure leak has been detected. The target pressure: {self.target_pressure} cannot be reached.\n
-    #                     The current pressure is {pressure} and the syringe is already at its maximum position\n
-    #                     ({self.pressure_control.getCurrentDutyCycle():.1f}). Active pressure control\n
-    #                     is now disabled.
-    #                     '''
-    #                 )
-    #             self.pressureLeakDetected.emit(1)
-
-    # def activeAutoFocus(self):
-    #     if self.active_autofocus and not self.takeZStack:
-    #         if self.prev_focus
 
 class ExperimentSetupGUI(QtWidgets.QDialog):
     """Form to input experiment parameters"""
@@ -483,7 +445,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.motor = None
         self.pressure_control = None
         self.encoder = None
-        # self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
         self.led = None
         self.fan = Fan()
 
@@ -515,6 +476,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
             self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
 
+            # Don't enable autobrightness in simulation mode
             if not mode.sim:
                 self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
 
@@ -526,8 +488,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.motor = DRV8825Nema(steptype="Half")
             self.motor.homeToLimitSwitches()
             print("Moving motor to the middle.")
-            # while not self.motor.homed:
-            #     pass
             sleep(0.5)
             self.motor.move_abs(int(self.motor.max_pos // 2))
             self.lblFocusMax.setText(f"{self.motor.max_pos}")
@@ -559,11 +519,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         try:
             self.pressure_control = PressureControl()
             self.vsFlow.setMinimum(self.pressure_control.getMinDutyCycle())
-            # self.lblMinFlow.setText(f"{self.pressure_control.getMinDutyCycle()}")
             self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle())
             self.vsFlow.setSingleStep(self.pressure_control.min_step_size)
-            # self.lblMaxFlow.setText(f"{self.pressure_control.getMaxDutyCycle()}")
-            # self.vsFlow.setSingleStep(self.pressure_control.min_step_size)
             self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
             self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
         except PressureControlError:
@@ -615,7 +572,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.editingFinished.connect(self.flowTextBoxHandler)
         self.vsFlow.valueChanged.connect(self.vsFlowHandler)
         self.chkBoxFlowControl.stateChanged.connect(self.activeFlowControlHandler)
-        # self.chkBoxPressureControl.stateChanged.connect(self.chkBoxPressureControlHandler) # TODO check this
 
         # Misc
         self.fan.turn_on()
@@ -828,8 +784,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def vsFocusSliderReleasedHandler(self):
         pos = int(self.vsFocus.value())
         try:
-            # self.motor.threaded_move_abs(pos=pos)
-            # # TODO change back to this
             self.motor.threaded_move_abs(pos)
         except MotorInMotion:
             print(f"Motor already in motion.")
@@ -846,8 +800,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             return
 
         try:
-            # self.motor.threaded_move_abs(pos=pos)
-            # TODO change to below
             self.motor.threaded_move_abs(pos)
         except MotorInMotion:
             print("Motor already in motion.")
@@ -941,27 +893,17 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     def activeFlowControlHandler(self):
         if self.chkBoxFlowControl.checkState():
-    # def chkBoxPressureControlHandler(self):
-    #     if self.chkBoxPressureControl.checkState():
-            # target_pressure = self.pressure_control.getPressure()
             retval = self._displayMessageBox(
                 QtWidgets.QMessageBox.Icon.Information,
                 "Active flow control (AFC)",
                 f"The AFC will attempt to maintain a the current flow rate. Press okay to confirm.",
-                # "Active pressure control (APS)",
-                # f"The APS will attempt to maintain a pressure of: {target_pressure:.2f}. Press okay to confirm.",
                 cancel=True,
             )
             if retval == QtWidgets.QMessageBox.Ok:
                 self.acquisitionThread.initializeFlowControl = True
                 self.disablePressureUIElements()
-                # target_pressure = self.pressure_control.getPressure()
-                # self.lblTargetPressure.setText(f"{target_pressure:.2f} hPa")
-                # self.acquisitionThread.setDesiredPressure(target_pressure)
         else:
             self.acquisitionThread.stopActiveFlowControl()
-            # self.acquisitionThread.stopActivePressureControl()
-            # self.lblTargetPressure.setText("")
             self.enablePressureUIElements()
 
     def enablePressureUIElements(self):
@@ -981,15 +923,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     @pyqtSlot(int)
     def pressureLeak(self, _):
         self.chkBoxFlowControl.setChecked(False)
-        # self.acquisitionThread.stopActivePressureControl()
-        # self.chkBoxPressureControl.setChecked(False)
         self.lblTargetPressure.setText("")
         self.enablePressureUIElements()
         _ = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,
             "Leak - Active pressure controlled stopped",
             f"The target flowrate can not be attained, stopping active flow control.",
-            # f"The target pressure ({self.acquisitionThread.target_pressure}hPa), can not be attained.",
             cancel=False,
         )
 
@@ -1030,9 +969,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             # Turn off encoder
             if self.encoder:
                 self.encoder.close()
-
-            # Turn off fan
-            # self.fan.turn_off()
 
             quit()
 
