@@ -14,9 +14,9 @@ Welcome to the ULC Malaria Scope! We are developing a barebones optical microsco
 
 ### Flexure-based autofocus
 
-## GUI Operation
+## Software operation
 
-### Dependencies
+### Installing dependencies
 In the root folder, run <code>pip install -e .</code> to install all dependencies.
 
 ### Starting the GUI
