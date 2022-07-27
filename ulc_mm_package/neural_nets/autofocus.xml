@@ -557,7 +557,7 @@
 			<extensions value="DIR"/>
 			<framework value="onnx"/>
 			<freeze_placeholder_with_value value="{}"/>
-			<input_model value="DIR/autofocus.onnx"/>
+			<input_model value="DIR/efficient-donkey-final.onnx"/>
 			<input_model_is_text value="False"/>
 			<k value="DIR/CustomLayersMapping.xml"/>
 			<layout value="()"/>
@@ -566,7 +566,7 @@
 			<log_level value="ERROR"/>
 			<mean_scale_values value="{}"/>
 			<mean_values value="()"/>
-			<model_name value="autofocus"/>
+			<model_name value="efficient-donkey-final"/>
 			<output_dir value="DIR"/>
 			<placeholder_data_types value="{}"/>
 			<progress value="False"/>

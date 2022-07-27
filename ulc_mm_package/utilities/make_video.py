@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 import os
 import cv2
@@ -6,8 +5,7 @@ import zarr
 import numpy as np
 import typer
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-import pickle
+import pandas as pd
 
 EXTERNAL_DIR = "experiments/"
 
@@ -25,8 +23,23 @@ def get_zarr_image_size(zarr_store):
     return zarr_store[0].shape
 
 def open_zarr(folder):
+    """Returns the .zip file (i.e the Zarr file) in the given folder"""
     file = [os.path.join(folder, x) for x in sorted(os.listdir(folder)) if ".zip" in x[-4:]][0]
     return zarr.open(file)
+
+def get_csv_file(folder):
+    """Returns the .csv file in the given folder"""
+    file = [os.path.join(folder, x) for x in sorted(os.listdir(folder)) if ".csv" in x[-4:]][0]
+    return file
+
+def get_fps_from_csv_timestamps(csv_file):
+    """Reads a csv file and determines what the average framerate was based on timestamps"""
+    df = pd.read_csv(csv_file)
+    start = get_timestamp(df['timestamp'][0])
+    end = get_timestamp(df['timestamp'][len(df['timestamp'])-1])
+    tdiff = (end - start).total_seconds()
+
+    return len(df['timestamp'])/tdiff
 
 def get_zarr_metadata(zarr_store):
     all_metadata = {}
@@ -36,10 +49,6 @@ def get_zarr_metadata(zarr_store):
         for key in zarr_store[0].attrs.keys():
             all_metadata[key][i] = zarr_store[i].attrs[key]
     return all_metadata
-
-def save_metadata(filename: str, metadata: dict):
-    with open(f"{filename}", "wb") as f:
-        pickle.dump(metadata, f)
 
 def zarr_image_generator(zarr_store):
     for i in range(len(zarr_store)):
@@ -98,26 +107,24 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
     try:
         output_dir = os.path.join(path, "Output")
         video_dir = os.path.join(output_dir, "Videos")
-        metadata_dir = os.path.join(output_dir, "Metadata")
-        for dir in [output_dir, video_dir, metadata_dir]:
+        for dir in [output_dir, video_dir]:
             os.mkdir(dir)
     except:
         pass
 
     for folder in tqdm(subfolders):
         try:
+            print("Opening the Zarr file...")
             zstore = open_zarr(folder)
-            typer.echo("Extracting metadata...")
-            metadata = get_zarr_metadata(zstore)
         except:
             typer.echo(f"\n{'='*20}")
             typer.echo(f"Error finding/opening the Zarr zipstore in folder {folder}. Skipping and continuing...")
             typer.echo(f"{'='*20}\n")
             continue
         try:
-            start, end = get_timestamp(metadata['timestamp'][0]), get_timestamp(metadata['timestamp'][-1])
-            runtime_s = (end - start).total_seconds()
-            fps = int(len(zstore) / runtime_s)
+            csv_path = get_csv_file(folder)
+            fps = int(get_fps_from_csv_timestamps(csv_path))
+            print(f"Video at average framerate of: {fps}")
         except Exception as e:
             print("Error parsing timestamps and setting fps. Defaulting to fps=30\n")
             print(e)
@@ -126,9 +133,7 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
         width, height = get_zarr_image_size(zstore)
         file_root = folder[folder.rfind("/")+1:]
         filename = file_root+"_vid.mp4"
-        metadata_output_path = os.path.join(metadata_dir, file_root+"_metadata.pkl")
         output_path = os.path.join(video_dir, filename)
-        save_metadata(metadata_output_path, metadata)
 
         typer.echo("Generating video...")
         writer = cv2.VideoWriter(

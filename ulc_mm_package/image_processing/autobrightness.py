@@ -2,7 +2,7 @@ import enum
 import numpy as np
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
 
-
+TOP_PERC_TARGET_VAL = 245
 TOP_PERC = 0.03
 TOL = 0.01
 
@@ -59,7 +59,7 @@ def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDD
         return AB.JUST_RIGHT
 
 class Autobrightness():
-    def __init__(self, led: LED_TPS5420TDDCT, target_pixel_val: int=235, step_size_perc: float=0.01):
+    def __init__(self, led: LED_TPS5420TDDCT, target_pixel_val: int=TOP_PERC_TARGET_VAL, step_size_perc: float=0.01):
         self.prev_brightness_enum = None
         self.target_pixel_val = target_pixel_val
         self.led = led

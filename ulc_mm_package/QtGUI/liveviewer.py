@@ -22,6 +22,11 @@ from ulc_mm_package.image_processing.zstack import (
     symmetricZStackCoroutine,
 )
 
+from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
+
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
+import ulc_mm_package.neural_nets.ssaf_constants as ssaf_constants
+
 import sys
 import csv
 import traceback
@@ -37,9 +42,12 @@ import numpy as np
 from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+
 _UI_FILE_DIR = "liveview.ui"
 _EXPERIMENT_FORM_PATH = "experimentform.ui"
 
+#TODO: Better way to reference files in a module?
+AUTOFOCUS_MODEL_DIR =  "../neural_nets/autofocus.xml"
 
 class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
@@ -55,6 +63,19 @@ class AcquisitionThread(QThread):
 
     def __init__(self, external_dir):
         super().__init__()
+        self._initializeAttributes(external_dir)
+
+        try:
+            self.camera = BaslerCamera()
+            self.camera_activated = True
+        except CameraError:
+            self.camera_activated = False
+
+    def _initializeAttributes(self, external_dir: str):
+        """Initialize attributes (variables, flags, references to hardware peripherals)
+        in this function to make the __init__ more readable."""
+
+        # Flags and counters
         self.update_liveview = 1
         self.im_counter = 0
         self.update_counter = 0
@@ -67,30 +88,33 @@ class AcquisitionThread(QThread):
         self.takeZStack = False
         self.continuous_dir_name = None
         self.custom_image_prefix = ""
-        self.pressure_control: PressureControl = None
-        self.motor = None
+
         self.updateMotorPos = True
         self.fps_timer = perf_counter()
         self.start_time = perf_counter()
         self.external_dir = external_dir
         self.metadata_writer = None
         self.click_to_advance = False
-        self.zw = ZarrWriter()
+
         self.md_writer = None
         self.metadata_file = None
+
+        # Hardware/imaging peripherals
+        self.motor = None
+        self.pressure_control: PressureControl = None
+        self.zw = ZarrWriter()
         
-        self.pressure_control_enabled = False
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
-        self.active_autofocus = False
+
         self.autobrightness: Autobrightness = None
         self.autobrightness_on = False
 
-        try:
-            self.camera = BaslerCamera()
-            self.camera_activated = True
-        except CameraError:
-            self.camera_activated = False
+        # Single-shot autofocus
+        self.autofocus_model = AutoFocus(AUTOFOCUS_MODEL_DIR)
+        self.active_autofocus = False
+        self.prev_autofocus_time = 0
+        self.af_adjustment_done = False
 
     def run(self):
         while True:
@@ -102,6 +126,7 @@ class AcquisitionThread(QThread):
                         self.zStack(image)
                         self.activeFlowControl(image)
                         self._autobrightness(image)
+                        self.autofocusWrapper(image)
 
                         if self.liveview:
                             if self.update_counter % self.update_liveview == 0:
@@ -142,6 +167,7 @@ class AcquisitionThread(QThread):
             "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
             "flowrate_target": self.pressure_control.flowrate_target,
             "current_flowrate": self.pressure_control.flow_rate_y,
+            "focus_adjustment": self.af_adjustment_done,
         }
 
     def save(self, image):
@@ -297,6 +323,29 @@ class AcquisitionThread(QThread):
                 )
                 self.pressureLeakDetected.emit(1)
 
+    def autofocusWrapper(self, img: np.ndarray):
+        self.af_adjustment_done = False
+        if perf_counter() - self.prev_autofocus_time > ssaf_constants.AF_FREQUENCY_S:
+            self.autofocus(img)
+            self.prev_autofocus_time = perf_counter()
+
+    def autofocus(self, img: np.ndarray):
+        """Takes in a single image and determines the number of steps
+        to move the motor to the peak focus"""
+        if self.active_autofocus:
+            print("Autofocusing!")
+            try:
+                steps_from_focus = -int(self.autofocus_model(img)[0][0][0])
+                print(type(steps_from_focus), steps_from_focus)
+                self.af_adjustment_done = True
+            except Exception as e:
+                print("Model inference error.")
+            try:
+                dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
+                self.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
+            except MotorControllerError:
+                print("Error moving motor after receiving steps from the SSAF model.")
+
 class ExperimentSetupGUI(QtWidgets.QDialog):
     """Form to input experiment parameters"""
     def __init__(self, *args, **kwargs):
@@ -343,6 +392,11 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
     
     def flowCellIDHandler(self):
         """TODO: Validate the flowcell ID"""
+        text = self.txtFlowCellID.text()
+        if is_luhn_valid(text):
+            self.flowcell_id = self.txtFlowCellID.text()
+        else:
+            pass
         self.flowcell_id = self.txtFlowCellID.text()
         print(self.flowcell_id)
     
@@ -466,6 +520,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.txtBoxFocus.gotFocus.connect(self.txtBoxFocusGotFocus)
             self.btnFullZStack.clicked.connect(self.btnFullZStackHandler)
             self.btnLocalZStack.clicked.connect(self.btnLocalZStackHandler)
+            self.chkBoxActiveAutofocus.stateChanged.connect(self.chkBoxActiveAutofocusHandler)
             self.vsFocus.setMinimum(0)
             self.vsFocus.setValue(self.motor.pos)
             self.vsFocus.setMaximum(self.motor.max_pos)
@@ -797,9 +852,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     def chkBoxActiveAutofocusHandler(self):
         if self.chkBoxActiveAutofocus.checkState():
+            print("Autofocus enabled")
             self.disableMotorUIElements()
-
+            self.acquisitionThread.active_autofocus = True
         else:
+            self.acquisitionThread.active_autofocus = False
             self.enableMotorUIElements()
 
     def disableMotorUIElements(self):
@@ -811,7 +868,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnFullZStack.setEnabled(False)
 
     @pyqtSlot(int)
-    def enableMotorUIElements(self, _):
+    def enableMotorUIElements(self, val=None):
         self.btnFocusUp.setEnabled(True)
         self.btnFocusDown.setEnabled(True)
         self.btnLocalZStack.setEnabled(True)
