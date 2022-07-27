@@ -53,6 +53,9 @@ from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 _UI_FILE_DIR = "liveview.ui"
+# SSD directory
+DEFAULT_SSD = "/media/pi/"
+ALT_SSD = "./sim_media/pi/"
 _EXPERIMENT_FORM_PATH = "experimentform.ui"
 
 class AcquisitionThread(QThread):
@@ -411,7 +414,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
 
-        media_dir = DEFAULT_DIR
+        media_dir = DEFAULT_SSD
 
         if mode.dev:
             print("--------------------\n|  DEVELOPER MODE  |\n--------------------")
@@ -425,7 +428,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
                 quit()
 
             if not path.exists(media_dir):
-                media_dir = ALT_DIR
+                media_dir = ALT_SSD
                 print("No external harddrive / SSD detected. Saving media to " + media_dir)
 
         try:
