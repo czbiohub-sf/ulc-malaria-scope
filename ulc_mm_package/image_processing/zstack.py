@@ -58,7 +58,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
     # Do an initial, large-step through from 0-max position
     while step_counter < max_steps:
         img = yield img
-        focus_metrics.append(gradientAverage(img))
+        focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
         motor.move_rel(steps=steps_per_coarse, dir=Direction.CW, stepdelay=0.001)
         if save_loc != None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.tiff", img)
@@ -77,7 +77,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
     step_counter = start
     while step_counter < end:
         img = yield img
-        focus_metrics_fine.append(gradientAverage(img))
+        focus_metrics_fine.append(logPowerSpectrumRadialAverageSum(img))
         motor.move_rel(steps=steps_per_fine, dir=Direction.CW)
         if save_loc != None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.tiff", img)
