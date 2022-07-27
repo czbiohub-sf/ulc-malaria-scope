@@ -725,6 +725,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsLED.blockSignals(True)
         self.vsLED.setEnabled(False)
         self.acquisitionThread.autobrightness_on = True
+        self.btnLEDToggle.setText(f"Turn off")
 
     @pyqtSlot(int)
     def autobrightnessDone(self, val):
