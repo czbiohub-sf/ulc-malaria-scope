@@ -514,7 +514,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnLEDToggle.setText(f"Turn off")
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
             self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
-            self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
+
+            if not mode.sim:
+                self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
 
         except LEDError:
             print("Error instantiating LED. Continuing...")
