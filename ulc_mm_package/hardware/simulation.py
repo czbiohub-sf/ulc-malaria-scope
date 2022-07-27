@@ -46,16 +46,7 @@ class BaslerCamera(PyCamera):
             self.frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
             self.fps = self.video.get(cv2.CAP_PROP_FPS)
 
-            success, frame = self.video.read() 
-            self.frames = np.zeros((self.frame_count, frame.shape[0], frame.shape[1]))
-            self.index = 0
-
-            while success and self.index < self.frame_count:
-                self.frames[self.index] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
-                success, frame = self.video.read()
-                self.index += 1
-
-            self.index = 0
+            success = True
 
         except Exception as e:
             print(e)
@@ -69,10 +60,12 @@ class BaslerCamera(PyCamera):
 
     def yieldImages(self):
         while True:
-            yield self.frames[self.index]
-            self.index += 1
-            if self.index == self.frame_count - 1:
-                self.index = 0
+            success, frame = self.video.read() 
+            # Reload video
+            if not success:
+                self.video = cv2.VideoCapture(VIDEO_PATH)
+                success, frame = self.video.read() 
+            yield cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
             sleep(1 / self.fps)
 
     def snapImage(self):
