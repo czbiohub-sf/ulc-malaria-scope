@@ -3,7 +3,9 @@
 
 @author: mwlkhoo
 
-Purpose: Dummy functions simulating hardware objects for UI testing
+Purpose: Dummy functions simulating hardware objects for UI testing. 
+         See relevant hardware object files for more info on methods.
+         The class methods and variables are a barebones imitation of the actual hardware.
 
 """
 
@@ -15,7 +17,6 @@ import scipy
 from os import path
 from py_cameras import PyCamera
 from ulc_mm_package.hardware.hardware_constants import *
-
 from typing import Callable
 from time import sleep
 
@@ -39,18 +40,14 @@ class BaslerCamera(PyCamera):
         try:
             self.binning = 1
             self.exposureTime_ms = _DEFAULT_EXPOSURE_MS
-            # self.camera.PixelFormat.SetValue("Mono8")
-            # self.grabStrategy = GrabStrategy.LATEST_IMAGE_ONLY
 
-            # Simulation specific
+            # Setup simulated video stream
             self.video = cv2.VideoCapture(VIDEO_PATH)
             self.frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
             self.fps = self.video.get(cv2.CAP_PROP_FPS)
 
             success, frame = self.video.read() 
             self.frames = np.zeros((self.frame_count, frame.shape[0], frame.shape[1]))
-
-            success = True
             self.index = 0
 
             while success and self.index < self.frame_count:
@@ -64,14 +61,12 @@ class BaslerCamera(PyCamera):
             print(e)
             raise CameraError("Camera could not be instantiated.")
 
-    # Superclass methods
     def setBinning(self, bin_factor=1, mode="Average"):
         self.binning = bin_factor
 
     def getBinning(self):
         return self.binning
 
-    # Custom methods
     def yieldImages(self):
         while True:
             yield self.frames[self.index]
@@ -162,10 +157,7 @@ class DRV8825Nema():
         self.step_degree = degree_value[steptype]
         self.microstepping = 1.8/self.step_degree # 1, 2, 4, 8, 16, 32 
         self.dist_per_step_um = self.step_degree / degree_value['Full'] * FULL_STEP_TO_TRAVEL_DIST_UM
-
-        # simulation specific variable
         self.button_step = 10
-
         self.max_pos = int(max_pos if max_pos != None else 450*self.microstepping)
 
     def homeToLimitSwitches(self):
@@ -177,7 +169,6 @@ class DRV8825Nema():
     def move_abs(self, pos: int=200, stepdelay=.005, verbose=False, initdelay=.05):
         self.pos = int(pos)
 
-    # TODO figure out why different keyword arguments?
     def move_rel(self, steps: int=200, 
                 dir=Direction.CCW, stepdelay=.005, verbose=False, initdelay=.05):
         if dir.value:
@@ -185,14 +176,14 @@ class DRV8825Nema():
         else:
             self.pos = int(self.pos - self.button_step*steps)
 
+    def threaded_move_abs(self, *args, **kwargs):
+        self.pos = int(args[0])
+
     def threaded_move_rel(self, *args, **kwargs):
         if kwargs['dir'].value:
             self.pos = int(self.pos + self.button_step*kwargs['steps'])
         else:
             self.pos = int(self.pos - self.button_step*kwargs['steps'])
-
-    def threaded_move_abs(self, *args, **kwargs):
-        self.pos = int(args[0])
 
 
 # ------------------------------led_driver_tps54201ddct.py------------------------------
@@ -210,7 +201,6 @@ class LED_TPS5420TDDCT():
 
     def close(self):
         self.pwm_duty_cycle = 0
-        # sleep(0.5)
 
     def _convertPWMValToDutyCyclePerc(self, pwm_val: int) -> float:
         return pwm_val / 1e6
@@ -242,8 +232,6 @@ class PIM522RotaryEncoder:
         pass
 
     def close(self):
-        # self.setColor(0, 0, 0)
-        # sleep(0.5)
         pass
 
 
@@ -260,9 +248,7 @@ class PressureLeak(PressureControlError):
 
 class PressureControl():
     def __init__(self, servo_pin: int=SERVO_PWM_PIN):
-        # self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
-
         self.min_step_size = 10
         self.min_duty_cycle = 1600
         self.max_duty_cycle = 2200
@@ -274,15 +260,13 @@ class PressureControl():
         self.io_error_counter = 0
         self.prev_time_s = 0
         self.control_delay_s = 0.2
+        self.curr_pressure = self.prev_pressure
 
         # Active flow control variables
         self.flowrate_target = 0
         self.flow_rate_y = 0
         self.prev_afc_time_s = 0
         self.afc_delay_s = DEFAULT_AFC_DELAY_S
-
-        # Added variables 
-        self.curr_pressure = self.prev_pressure
 
     def getPressure(self, apc_on: bool=False):
         return self.curr_pressure
@@ -317,10 +301,7 @@ class PressureControl():
 
     def close(self):
         self.setDutyCycle(self.max_duty_cycle)
-        # sleep(0.5)
-        # sleep(0.5)
 
-    # no implemented function in hardware object?
     def holdPressure(target_pressure):
         pass
 

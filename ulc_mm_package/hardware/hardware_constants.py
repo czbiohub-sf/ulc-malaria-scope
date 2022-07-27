@@ -2,8 +2,6 @@
 RPI_OUTPUT_V = 3.3
 FAN_GPIO = 5
 BOARD_STATUS_INDICATOR = 4
-DEFAULT_DIR = "/media/pi/"
-ALT_DIR = "./sim_media/pi/"
 
 # ================ Motor controller constants ================ #
 
