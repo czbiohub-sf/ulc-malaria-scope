@@ -14,7 +14,14 @@ Welcome to the ULC Malaria Scope! We are developing a barebones optical microsco
 
 ### Flexure-based autofocus
 
-## Running the GUI
+## GUI Operation
+
+### Dependencies
+In the root folder, run ~~~pip install -e .~~~ to install all dependencies.
+
+### Starting the GUI
 Navigate to ulc_mm_package/QtQUI and run ~~~python3 UI.py~~~. Use optional flags to enable operation modes:
 * ~~~-s~~~ or ~~~--sim~~~: Simulation mode (dummy functions replace hardware objects)
 * ~~~-d~~~ or ~~~--dev~~~: Developer mode (manual control of hardware objects)
+
+Note: The original GUI was activated by liveviewer.py, which is now obsolete. Use UI.py instead.
