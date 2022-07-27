@@ -52,7 +52,7 @@ from cv2 import imwrite
 from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-_UI_FILE_DIR = "liveview.ui"
+_UI_FILE_DIR = "expUI.ui"
 # SSD directory
 DEFAULT_SSD = "/media/pi/"
 ALT_SSD = "./sim_media/pi/"
@@ -530,8 +530,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             print(
                 "Error initializing Pressure Controller. Disabling flow GUI elements."
             )
-            self.btnFlowUp.setEnabled(False)
-            self.btnFlowDown.setEnabled(False)
+            # self.btnFlowUp.setEnabled(False)
+            # self.btnFlowDown.setEnabled(False)
             self.vsFlow.setEnabled(False)
             self.txtBoxFlow.setEnabled(False)
 
@@ -570,8 +570,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnExperimentSetup.clicked.connect(self.experimentSetupHandler)
 
         # Pressure control
-        self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
-        self.btnFlowDown.clicked.connect(self.btnFlowDownHandler)
+        # self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
+        # self.btnFlowDown.clicked.connect(self.btnFlowDownHandler)
         self.txtBoxFlow.editingFinished.connect(self.flowTextBoxHandler)
         self.vsFlow.valueChanged.connect(self.vsFlowHandler)
         self.chkBoxFlowControl.stateChanged.connect(self.activeFlowControlHandler)
@@ -913,15 +913,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsFlow.blockSignals(False)
         self.vsFlow.setEnabled(True)
         self.txtBoxFlow.blockSignals(False)
-        self.btnFlowUp.setEnabled(True)
-        self.btnFlowDown.setEnabled(True)
+        # self.btnFlowUp.setEnabled(True)
+        # self.btnFlowDown.setEnabled(True)
 
     def disablePressureUIElements(self):
         self.vsFlow.blockSignals(True)
         self.vsFlow.setEnabled(False)
         self.txtBoxFlow.blockSignals(True)
-        self.btnFlowUp.setEnabled(False)
-        self.btnFlowDown.setEnabled(False)
+        # self.btnFlowUp.setEnabled(False)
+        # self.btnFlowDown.setEnabled(False)
 
     @pyqtSlot(int)
     def pressureLeak(self, _):
