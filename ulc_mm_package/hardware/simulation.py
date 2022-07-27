@@ -150,7 +150,7 @@ class DRV8825Nema():
         self.step_degree = degree_value[steptype]
         self.microstepping = 1.8/self.step_degree # 1, 2, 4, 8, 16, 32 
         self.dist_per_step_um = self.step_degree / degree_value['Full'] * FULL_STEP_TO_TRAVEL_DIST_UM
-        self.button_step = 10
+        self.button_step = 1
         self.max_pos = int(max_pos if max_pos != None else 450*self.microstepping)
 
     def homeToLimitSwitches(self):
