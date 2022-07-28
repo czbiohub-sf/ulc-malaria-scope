@@ -19,8 +19,7 @@ from ulc_mm_package.hardware.hardware_constants import *
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 
 INVALID_READ_FLAG = -1
-DEFAULT_AFC_DELAY_S = 10
-FASTER_FEEDBACK_DELAY_S = 3
+DEFAULT_AFC_DELAY_S = 1
 
 class PressureControlError(Exception):
     """Base class for catching all pressure control related errors."""
@@ -168,7 +167,7 @@ class PressureControl():
         """Initialize the FlowRateEstimator with the correct image shape."""
 
         h, w = img.shape
-        self.fre = FlowRateEstimator(h, w, num_image_pairs=12)
+        self.fre = FlowRateEstimator(h, w, num_image_pairs=120)
         self.flowrate_target = None
 
     def activeFlowControl(self, img: np.ndarray):
@@ -225,14 +224,14 @@ class PressureControl():
         if flow_diff < 0:
             if self.isMovePossible(move_dir=-1):
                 self.increaseDutyCycle()
-                self.afc_delay_s = FASTER_FEEDBACK_DELAY_S
+                self.afc_delay_s = DEFAULT_AFC_DELAY_S
             else:
                 raise PressureLeak()
 
         elif flow_diff > 0:
             if self.isMovePossible(move_dir=1):
                 self.decreaseDutyCycle()
-                self.afc_delay_s = FASTER_FEEDBACK_DELAY_S
+                self.afc_delay_s = DEFAULT_AFC_DELAY_S
             else:
                 raise PressureLeak()
 
