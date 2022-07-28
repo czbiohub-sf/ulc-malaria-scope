@@ -1,4 +1,11 @@
-19401874828825943
+19413481798219348
+794120-1
+TE_794120-1
+
+
+0
+2
+2
 Battery
 BatteryHolder_Bulgin_BX0036_1xC
 Bulgin Battery Holder, BX0036, Battery Type C (https://www.bulgin.com/products/pub/media/bulgin/data/Battery_holders.pdf)
@@ -55258,13 +55265,6 @@ LED Cree PLCC-6
 6
 6
 LED_SMD
-LED_Cree-XB
-http://www.cree.com/~/media/Files/Cree/LED-Components-and-Modules/XLamp/Data-and-Binning/XLampXBD.pdf
-LED Cree XB
-0
-5
-3
-LED_SMD
 LED_Cree-XH
 http://www.cree.com/~/media/Files/Cree/LED-Components-and-Modules/XLamp/Data-and-Binning/ds-XHB.pdf
 LED Cree XH
@@ -85316,6 +85316,20 @@ Zigbee_Module_MRF24J40MD
 12
 12
 ulc-mm
+15MMX15MM_Heatsink
+
+
+0
+1
+1
+ulc-mm
+Adafruit_JST_PH_2.0mm_SMT
+JST PH series connector, B2B-PH-SM4-TB (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf), generated with kicad-footprint-generator
+connector JST PH side entry
+0
+4
+3
+ulc-mm
 Battery_Panasonic_CR1220-VCN_Vertical_CircularHoles
 Panasonic CR-1220/VCN battery, https://industrial.panasonic.com/cdbs/www-data/pdf2/AAA4000/AAA4000D140.pdf
 battery CR-1220 coin cell vertical
@@ -85330,11 +85344,32 @@ capacitor tantalum
 2
 2
 ulc-mm
+DFN-8-1EP_2x2mm_P0.5mm_EP1.05x1.75mm
+DFN8 2x2, 0.5P; CASE 506CN (see ON Semiconductor 506CN.PDF)
+DFN 0.5
+0
+11
+9
+ulc-mm
+DowelPin_1mm
+DowelPin_1mm
+DowelPin_1mm
+0
+0
+0
+ulc-mm
+LED_Cree-XHP35
+http://www.cree.com/~/media/Files/Cree/LED-Components-and-Modules/XLamp/Data-and-Binning/ds--XHP35.pdf
+LED Cree XHP35
+0
+16
+3
+ulc-mm
 L_Bourns_SRP1245A
 Bourns SRP1245A series SMD inductor http://www.bourns.com/docs/Product-Datasheets/SRP1245A.pdf
 Bourns SRP1245A SMD inductor
 0
-4
+2
 2
 ulc-mm
 L_WE-PBF_7.8x4.75mm
@@ -85344,9 +85379,23 @@ Shielded Inductors Bourns SMD SRP7028A
 2
 2
 ulc-mm
+MountingHole_#2_CloseFit
+MountingHole_#2_CloseFit
+MountingHole_#2_CloseFit
+0
+0
+0
+ulc-mm
 PinSocket_1x02_P2.54mm_Vertical
 Through hole straight socket strip, 1x02, 2.54mm pitch, single row (from Kicad 4.0.7), script generated
 Through hole socket strip THT 1x02 2.54mm single row
 0
 2
 2
+ulc-mm
+WirePad
+
+
+0
+1
+1
