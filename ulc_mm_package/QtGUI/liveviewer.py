@@ -39,7 +39,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 from cv2 import imwrite
 import numpy as np
-from qimage2ndarray import array2qimage
+from qimage2ndarray import gray2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
@@ -144,10 +144,10 @@ class AcquisitionThread(QThread):
 
                         if self.liveview:
                             if self.update_counter % self.update_liveview == 0:
-                                qimage = array2qimage(image)
+                                qimage = gray2qimage(image)
                                 self.changePixmap.emit(qimage)
                         elif self.click_to_advance:
-                            qimage = array2qimage(image)
+                            qimage = gray2qimage(image)
                             self.changePixmap.emit(qimage)
                             self.click_to_advance = False
                 except Exception as e:
