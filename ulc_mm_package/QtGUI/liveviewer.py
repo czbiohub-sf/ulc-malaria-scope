@@ -43,11 +43,20 @@ from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
+
+# Camera Selection
+CAMERA_SELECTION = 0 # 0 = Basler, 1 = AVT
+
+# Qt GUI Files
 _UI_FILE_DIR = "liveview.ui"
 _EXPERIMENT_FORM_PATH = "experimentform.ui"
 
 #TODO: Better way to reference files in a module?
 AUTOFOCUS_MODEL_DIR =  "../neural_nets/autofocus.xml"
+
+class ApplicationError(Exception):
+    """Catch-all exception for misc errors not caught by the peripheral classes."""
+    pass
 
 class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
@@ -66,7 +75,12 @@ class AcquisitionThread(QThread):
         self._initializeAttributes(external_dir)
 
         try:
-            self.camera = BaslerCamera()
+            if CAMERA_SELECTION == 0:
+                self.camera = BaslerCamera()
+            elif CAMERA_SELECTION == 1:
+                self.camera = AVTCamera()
+            else:
+                raise ApplicationError(f"Invalid camera selection: must be 0 (Basler) or 1 (AVT). It is currently {CAMERA_SELECTION}.")
             self.camera_activated = True
         except CameraError:
             self.camera_activated = False
