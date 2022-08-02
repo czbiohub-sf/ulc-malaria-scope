@@ -170,7 +170,7 @@ class PneumaticModule():
         else:
             return self.prev_pressure
 
-    def isMovePossible(self, move_dir: MoveDir) -> bool:
+    def isMovePossible(self, move_dir: SyringeDirection) -> bool:
         """Return true if the syringe can still move in the specified direction."""
         
         # Cannot move the syringe up
