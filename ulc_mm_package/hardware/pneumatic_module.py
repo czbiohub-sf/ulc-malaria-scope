@@ -20,23 +20,23 @@ from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 
 INVALID_READ_FLAG = -1
 DEFAULT_AFC_DELAY_S = 1
-AFC_NUM_IMAGE_PAIRS = 120
+AFC_NUM_IMAGE_PAIRS = 12
 
-class PressureControlError(Exception):
+class PneumaticModuleError(Exception):
     """Base class for catching all pressure control related errors."""
     pass
 
-class PressureSensorNotInstantiated(PressureControlError):
+class PressureSensorNotInstantiated(PneumaticModuleError):
     """Raised when the Adafruit MPRLS can not be instantiated."""
     def __init__(self):
         super().__init__("Could not instantiate pressure sensor.")
 
-class PressureLeak(PressureControlError):
+class PressureLeak(PneumaticModuleError):
     """Raised when a pressure leak is detected."""
     def __init__(self):
         super().__init__("Pressure leak detected.")
 
-class PressureControl():
+class PneumaticModule():
     """Class that deals with monitoring and adjusting the pressure. 
 
     Interfaces with an Adafruit MPRLS pressure sensor to get the readings (valid for 0-25 bar). Uses a

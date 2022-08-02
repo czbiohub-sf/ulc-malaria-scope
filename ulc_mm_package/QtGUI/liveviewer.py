@@ -7,9 +7,9 @@ from ulc_mm_package.hardware.motorcontroller import (
 )
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder, EncoderI2CError
-from ulc_mm_package.hardware.pressure_control import (
-    PressureControl,
-    PressureControlError,
+from ulc_mm_package.hardware.pneumatic_module import (
+    PneumaticModule,
+    PneumaticModuleError,
     PressureLeak,
 )
 from ulc_mm_package.hardware.fan import Fan
@@ -115,7 +115,7 @@ class AcquisitionThread(QThread):
 
         # Hardware/imaging peripherals
         self.motor = None
-        self.pressure_control: PressureControl = None
+        self.pneumatic_module: PneumaticModule = None
         self.zw = ZarrWriter()
         
         self.initializeFlowControl = False
@@ -177,10 +177,10 @@ class AcquisitionThread(QThread):
             "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
             "exposure": self.camera.exposureTime_ms,
             "motor_pos": self.motor.pos,
-            "pressure_hpa": self.pressure_control.getPressure(),
-            "syringe_pos": self.pressure_control.getCurrentDutyCycle(),
-            "flowrate_target": self.pressure_control.flowrate_target,
-            "current_flowrate": self.pressure_control.flow_rate_y,
+            "pressure_hpa": self.pneumatic_module.getPressure(),
+            "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
+            "flowrate_target": self.pneumatic_module.flowrate_target,
+            "current_flowrate": self.pneumatic_module.flow_rate_y,
             "focus_adjustment": self.af_adjustment_done,
         }
 
@@ -208,9 +208,9 @@ class AcquisitionThread(QThread):
 
         if self.update_counter % self.num_loops == 0:
             self.update_counter = 0
-            if self.pressure_control != None:
+            if self.pneumatic_module != None:
                 try:
-                    pressure = self.pressure_control.getPressure()
+                    pressure = self.pneumatic_module.getPressure()
                     self.updatePressure.emit(pressure)
                 except Exception:
                     print("Error getting pressure. Continuing...")
@@ -313,13 +313,13 @@ class AcquisitionThread(QThread):
                 self.autobrightnessDone.emit(1)
 
     def initializeActiveFlowControl(self, img: np.ndarray):
-        self.pressure_control.initializeActiveFlowControl(img)
+        self.pneumatic_module.initializeActiveFlowControl(img)
         self.flowcontrol_enabled = True
         self.initializeFlowControl = False
 
     def stopActiveFlowControl(self):
         self.flowcontrol_enabled = False
-        self.pressure_control.flow_rate_y = 0
+        self.pneumatic_module.flow_rate_y = 0
 
     def activeFlowControl(self, img: np.ndarray):
         if self.initializeFlowControl:
@@ -327,7 +327,7 @@ class AcquisitionThread(QThread):
 
         if self.flowcontrol_enabled:
             try:
-                self.pressure_control.activeFlowControl(img)
+                self.pneumatic_module.activeFlowControl(img)
                 self.syringePosChanged.emit(1)
             except PressureLeak:
                 print(
@@ -478,7 +478,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # List hardware components
         self.acquisitionThread = None
         self.motor = None
-        self.pressure_control = None
+        self.pneumatic_module = None
         self.encoder = None
         self.led = None
         self.fan = Fan()
@@ -548,13 +548,13 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         # Create pressure controller (sensor + servo)
         try:
-            self.pressure_control = PressureControl()
-            self.vsFlow.setMinimum(self.pressure_control.getMinDutyCycle())
-            self.vsFlow.setMaximum(self.pressure_control.getMaxDutyCycle())
-            self.vsFlow.setSingleStep(self.pressure_control.min_step_size)
-            self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
-            self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
-        except PressureControlError:
+            self.pneumatic_module = PneumaticModule()
+            self.vsFlow.setMinimum(self.pneumatic_module.getMinDutyCycle())
+            self.vsFlow.setMaximum(self.pneumatic_module.getMaxDutyCycle())
+            self.vsFlow.setSingleStep(self.pneumatic_module.min_step_size)
+            self.txtBoxFlow.setText(f"{self.pneumatic_module.getCurrentDutyCycle()}")
+            self.vsFlow.setValue(self.pneumatic_module.getCurrentDutyCycle())
+        except PneumaticModuleError:
             print(
                 "Error initializing Pressure Controller. Disabling flow GUI elements."
             )
@@ -583,7 +583,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
 
         self.acquisitionThread.motor = self.motor
-        self.acquisitionThread.pressure_control = self.pressure_control
+        self.acquisitionThread.pneumatic_module = self.pneumatic_module
         self.acquisitionThread.autobrightness = Autobrightness(self.led)
 
         self.acquisitionThread.start()
@@ -705,7 +705,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(int)
     def updateSyringePos(self, _):
-        self.vsFlow.setValue(self.pressure_control.getCurrentDutyCycle())
+        self.vsFlow.setValue(self.pneumatic_module.getCurrentDutyCycle())
 
     @pyqtSlot(float)
     def updatePressureLabel(self, val):
@@ -892,20 +892,20 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFocus.blockSignals(False)
 
     def btnFlowUpHandler(self):
-        self.pressure_control.increaseDutyCycle()
-        duty_cycle = self.pressure_control.duty_cycle
+        self.pneumatic_module.increaseDutyCycle()
+        duty_cycle = self.pneumatic_module.duty_cycle
         self.vsFlow.setValue(duty_cycle)
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
     def btnFlowDownHandler(self):
-        self.pressure_control.decreaseDutyCycle()
-        duty_cycle = self.pressure_control.duty_cycle
+        self.pneumatic_module.decreaseDutyCycle()
+        duty_cycle = self.pneumatic_module.duty_cycle
         self.vsFlow.setValue(duty_cycle)
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
     def vsFlowHandler(self):
         flow_duty_cycle = int(self.vsFlow.value())
-        self.pressure_control.setDutyCycle(flow_duty_cycle)
+        self.pneumatic_module.setDutyCycle(flow_duty_cycle)
         self.txtBoxFlow.setText(f"{flow_duty_cycle}")
 
     def flowTextBoxHandler(self):
@@ -917,7 +917,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             return
 
         try:
-            self.pressure_control.setDutyCycle(flow_duty_cycle)
+            self.pneumatic_module.setDutyCycle(flow_duty_cycle)
         except:
             print("Invalid duty cycle, ignoring and continuing...")
             self.txtBoxFlow.setText(f"{self.vsFlow.value()}")
@@ -990,7 +990,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         if retval == QtWidgets.QMessageBox.Ok:
             # Move syringe back and de-energize
-            self.pressure_control.close()
+            self.pneumatic_module.close()
 
             # Turn off the LED
             self.led.close()
