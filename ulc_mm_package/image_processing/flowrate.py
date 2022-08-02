@@ -2,6 +2,8 @@ from typing import Tuple
 import numpy as np
 import cv2
 
+CORRELATION_THRESH = 0.9
+
 class FlowRateEstimatorError(Exception):
     """Base class for catching all pressure control related errors."""
     pass
@@ -56,7 +58,7 @@ class FlowRateEstimator:
         """Return the standard deviation of the dx and dy displacement arrays"""
         return (np.std(self.dx), np.std(self.dy))
 
-    def getStatsAndReset(self) -> Tuple[float, float, float, float, float, float]:
+    def getStatsAndReset(self) -> Tuple[float, float, float, float]:
         """Returns the means and standard deviations of all the values in the x and y displacement arrays
         and then resets the calculation counter.
 
@@ -68,18 +70,13 @@ class FlowRateEstimator:
         Returns
         -------
         (float, float, float, float, float, float):
-            A tuple of mean (x, y), SD (x, y), and coefficient of variation (cov_x, cov_y)
+            A tuple of mean (x, y) and SD (x, y)
         """
         self._calc_idx = 0
         mx, my = self._getAverage()
         sd_x, sd_y = self._getStandardDeviation()
-        cov_x, cov_y = sd_x / mx, sd_y / my
 
-
-        if cov_y >= self.coeff_of_var_thresh:
-            my = 1
-
-        return (mx, my, sd_x, sd_y, cov_x, cov_y)
+        return (mx, my, sd_x, sd_y)
 
     def _addImage(self, img_arr: np.ndarray, timestamp: int):
         """Internal function - add image to the storage with the given timestamp.
@@ -97,20 +94,24 @@ class FlowRateEstimator:
 
     def _calculatePairDisplacement(self):
         if self._frame_counter == 0 and not self.isFull():
-            dx, dy = getFlowrateWithCrossCorrelation(self.frame_storage[:, :, 0], self.frame_storage[:, :, 1], self.scale_factor)
+            dx, dy, confidence = getFlowrateWithCrossCorrelation(self.frame_storage[:, :, 0], self.frame_storage[:, :, 1], self.scale_factor)
             time_diff = self.timestamps[1] - self.timestamps[0]
-            if self.isValidDisplacement(dx, dy):
+            if self.isValidDisplacement(dx, dy, confidence):
                 self.dx[self._calc_idx] = (dx / time_diff) / (self.img_width / self.scale_factor)
                 self.dy[self._calc_idx] = (dy / time_diff) / (self.img_height / self.scale_factor)
                 self._calc_idx += 1
 
-    def isValidDisplacement(self, dx, dy) -> bool:
+    def isValidDisplacement(self, dx, dy, confidence) -> bool:
         """A function to check for valid displacement values.
 
         For now, this function is very simple (i.e only checking for non-negative y-displacement).
         However, if additional logic needs to be implemented, it can go here.
         """
-        if dy > 0:
+
+        if confidence <= CORRELATION_THRESH:
+            return False
+            
+        if dy >= 0:
             return True
 
     def isFull(self) -> bool:
@@ -274,14 +275,14 @@ temp_y1_perc: float=0.05, temp_x2_perc: float=0.45, temp_y2_perc: float=0.85, de
     template_result = cv2.matchTemplate(im2_ds, im1_ds_subregion, cv2.TM_CCOEFF_NORMED)
 
     # Find the point with the maximum value (i.e highest match) and caclulate the displacement
-    _, _, _, max_loc = cv2.minMaxLoc(template_result)
+    _, max_val, _, max_loc = cv2.minMaxLoc(template_result)
     dx, dy = max_loc[0] - x_offset[0], max_loc[1] - y_offset[0]
 
     # If debug mode is on, run `plot_cc` which saves images of the cross-correlation calculation.
     if debug:
         plot_cc(im1_ds, im2_ds, im1_ds_subregion, template_result, (x_offset[0], y_offset[0]), (x_offset[1], y_offset[1]), max_loc[0], max_loc[1], dx, dy)
 
-    return dx, dy
+    return dx, dy, max_val
 
 
 def plot_cc(im1, im2, im1_subregion, template_result, xy1, xy2, max_x, max_y, dx, dy):
@@ -309,6 +310,6 @@ def plot_cc(im1, im2, im1_subregion, template_result, xy1, xy2, max_x, max_y, dx
     ax[1, 1].imshow(im2_subregion, cmap='gray')
     ax[1, 1].text(0, 0, f"{dx, dy}", bbox={'facecolor': 'white', 'pad': 2})
     ax[2, 0].imshow(template_result)
-    plt.show(block=False)
-    plt.pause(0.01)
-    plt.close()
+    plt.show()
+    # plt.pause(0.01)
+    # plt.close()

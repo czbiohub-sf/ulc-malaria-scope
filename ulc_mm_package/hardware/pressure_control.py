@@ -188,7 +188,7 @@ class PressureControl():
         if self.flowrate_target == None:
             self.fre.addImageAndCalculatePair(img, perf_counter())
             if self.fre.isFull():
-                _, self.flowrate_target, _, _, _, _ = self.fre.getStatsAndReset()
+                _, self.flowrate_target, _, _ = self.fre.getStatsAndReset()
 
         # Step 2. Check flow periodically
         else:
@@ -197,7 +197,7 @@ class PressureControl():
                     self.fre.addImageAndCalculatePair(img, perf_counter())
                 else:
                     self.prev_afc_time_s = perf_counter()
-                    _, dy, _, _, _, _ = self.fre.getStatsAndReset()
+                    _, dy, _, _ = self.fre.getStatsAndReset()
                     self.flow_rate_y = dy
                     flow_err = self.getFlowrateError(self.flowrate_target, dy)
                     self.adjustPressure(flow_err)
