@@ -119,7 +119,7 @@ class AcquisitionThread(QThread):
         self.pneumatic_module: PneumaticModule = None
         self.zw = ZarrWriter()
         
-        self.flow_controller: FlowController = None
+        self.flow_controller: FlowController = FlowController(self.pneumatic_module, 600, 800) # default shell
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
 
@@ -181,8 +181,9 @@ class AcquisitionThread(QThread):
             "motor_pos": self.motor.pos,
             "pressure_hpa": self.pneumatic_module.getPressure(),
             "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
-            "flowrate_target": self.pneumatic_module.flowrate_target,
-            "current_flowrate": self.pneumatic_module.flow_rate_y,
+            "flow_control_on": self.flowcontrol_enabled,
+            "flowrate_target": self.flow_controller.target_flowrate,
+            "current_flowrate": self.flow_controller.curr_flowrate,
             "focus_adjustment": self.af_adjustment_done,
         }
 

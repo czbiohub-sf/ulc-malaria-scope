@@ -39,7 +39,7 @@ class FlowController:
 
         self._idx = 0
         self.target_flowrate: float = None
-        self.curr_flowrate = 0
+        self.curr_flowrate: float = None
 
     def _addImage(self, img: np.ndarray, time: float):
         """Adds an image to the FlowRateEsimator and retrives the flowrate if the FRE window is full."""

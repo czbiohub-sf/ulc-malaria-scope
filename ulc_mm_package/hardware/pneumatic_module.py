@@ -61,14 +61,6 @@ class PneumaticModule():
         self.prev_poll_time_s = 0
         self.prev_pressure = 0
         self.io_error_counter = 0
-        self.prev_time_s = 0
-        self.control_delay_s = 0.2
-
-        # Active flow control variables
-        self.flowrate_target = 0
-        self.flow_rate_y = 0
-        self.prev_afc_time_s = 0
-        self.afc_delay_s = DEFAULT_AFC_DELAY_S
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
@@ -133,8 +125,7 @@ class PneumaticModule():
         return pressure_readings_hpa
 
     def getPressure(self, apc_on: bool=False):
-        """
-        """
+        """_getPressure() wrapper."""
         
         if apc_on:
             return self.curr_pressure
