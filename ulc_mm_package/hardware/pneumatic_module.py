@@ -36,6 +36,11 @@ class PressureLeak(PneumaticModuleError):
     def __init__(self):
         super().__init__("Pressure leak detected.")
 
+class SyringeDirection(enum.Enum):
+    """Enum for the direction of the syringe."""
+    UP = 1
+    DOWN = -1
+
 class PneumaticModule():
     """Class that deals with monitoring and adjusting the pressure. 
 
@@ -164,45 +169,7 @@ class PneumaticModule():
         else:
             return self.prev_pressure
 
-    def initializeActiveFlowControl(self, img: np.ndarray):
-        """Initialize the FlowRateEstimator with the correct image shape."""
-
-        h, w = img.shape
-        self.fre = FlowRateEstimator(h, w, num_image_pairs=AFC_NUM_IMAGE_PAIRS)
-        self.flowrate_target = None
-
-    def activeFlowControl(self, img: np.ndarray):
-        """Active flow control stabilization
-
-        This function attempts to stabilize the flowrate using the
-        FlowRateEstimator. The function performs in two steps:
-
-        1. If the flow control was just initialized (i.e using `initializeActiveFlowControl`),
-        the function continuously measures the first N images to acquire the target flowrate.
-
-        2. After the target flowrate has been acquired, the function accepts a set of images periodically
-        and assesses the average displacement among all the pairs
-        """
-
-        # Step 1 - continuously acquire images to set the desired flow rate
-        if self.flowrate_target == None:
-            self.fre.addImageAndCalculatePair(img, perf_counter())
-            if self.fre.isFull():
-                _, self.flowrate_target, _, _ = self.fre.getStatsAndReset()
-
-        # Step 2. Check flow periodically
-        else:
-            if perf_counter() - self.prev_afc_time_s > self.afc_delay_s:
-                if not self.fre.isFull():
-                    self.fre.addImageAndCalculatePair(img, perf_counter())
-                else:
-                    self.prev_afc_time_s = perf_counter()
-                    _, dy, _, _ = self.fre.getStatsAndReset()
-                    self.flow_rate_y = dy
-                    flow_err = self.getFlowrateError(self.flowrate_target, dy)
-                    self.adjustPressure(flow_err)
-
-    def isMovePossible(self, move_dir: int) -> bool:
+    def isMovePossible(self, move_dir: MoveDir) -> bool:
         """Return true if the syringe can still move in the specified direction."""
         
         # Cannot move the syringe up
@@ -214,30 +181,3 @@ class PneumaticModule():
             return False
 
         return True
-
-    def adjustPressure(self, flow_diff: float):
-        """Adjust the syringe position based on the flow rate error.
-
-        If the actual flow rate is not the target and the syringe is already at the limit of its motion,
-        this function raises a "PressureLeak()" error.
-        """
-
-        if flow_diff < 0:
-            if self.isMovePossible(move_dir=-1):
-                self.increaseDutyCycle()
-            else:
-                raise PressureLeak()
-
-        elif flow_diff > 0:
-            if self.isMovePossible(move_dir=1):
-                self.decreaseDutyCycle()
-            else:
-                raise PressureLeak()
-
-    def getFlowrateError(self, desired_flowrate: float, current_flowrate: float, noiseTolPerc: float=0.05) -> float:
-        """Returns the difference between the target and current flowrate, if the difference is above a noise tolerance."""
-
-        error = desired_flowrate - current_flowrate
-        if abs(error/desired_flowrate) <= noiseTolPerc:
-            return 0
-        return error

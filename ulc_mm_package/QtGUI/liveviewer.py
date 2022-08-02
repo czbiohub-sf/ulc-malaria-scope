@@ -16,6 +16,7 @@ from ulc_mm_package.hardware.fan import Fan
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.autobrightness import Autobrightness, AutobrightnessError
+from ulc_mm_package.image_processing.flow_control import FlowController
 
 from ulc_mm_package.image_processing.zstack import (
     takeZStackCoroutine,
@@ -113,11 +114,12 @@ class AcquisitionThread(QThread):
         self.md_writer = None
         self.metadata_file = None
 
-        # Hardware/imaging peripherals
+        # Hardware peripherals
         self.motor = None
         self.pneumatic_module: PneumaticModule = None
         self.zw = ZarrWriter()
         
+        self.flow_controller: FlowController = None
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
 
@@ -303,7 +305,7 @@ class AcquisitionThread(QThread):
             try:
                 done = self.autobrightness.runAutobrightness(img)
             except AutobrightnessError as e:
-                print(e)
+                print(f"AutobrightnessError encountered: {e}. Stopping autobrightness and continuing...")
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
                 return
@@ -313,7 +315,8 @@ class AcquisitionThread(QThread):
                 self.autobrightnessDone.emit(1)
 
     def initializeActiveFlowControl(self, img: np.ndarray):
-        self.pneumatic_module.initializeActiveFlowControl(img)
+        h, w = img.shape
+        self.flow_controller = FlowController(self.pneumatic_module, h, w)
         self.flowcontrol_enabled = True
         self.initializeFlowControl = False
 
@@ -327,7 +330,7 @@ class AcquisitionThread(QThread):
 
         if self.flowcontrol_enabled:
             try:
-                self.pneumatic_module.activeFlowControl(img)
+                self.flow_controller.controlFlow(img)
                 self.syringePosChanged.emit(1)
             except PressureLeak:
                 print(
@@ -706,6 +709,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     @pyqtSlot(int)
     def updateSyringePos(self, _):
         self.vsFlow.setValue(self.pneumatic_module.getCurrentDutyCycle())
+        duty_cycle = self.pneumatic_module.duty_cycle
+        self.txtBoxFlow.setText(f"{duty_cycle}")
 
     @pyqtSlot(float)
     def updatePressureLabel(self, val):
