@@ -10,6 +10,7 @@ Servo Motor Pololu HD-1810MG:
 """
 
 from time import sleep, perf_counter
+import enum
 import pigpio
 import board
 import adafruit_mprls
