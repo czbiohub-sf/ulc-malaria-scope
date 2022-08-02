@@ -2,7 +2,7 @@ from typing import Tuple
 import numpy as np
 import cv2
 
-CORRELATION_THRESH = 0.9
+CORRELATION_THRESH = 0.8
 
 class FlowRateEstimatorError(Exception):
     """Base class for catching all pressure control related errors."""
@@ -104,8 +104,8 @@ class FlowRateEstimator:
     def isValidDisplacement(self, dx, dy, confidence) -> bool:
         """A function to check for valid displacement values.
 
-        For now, this function is very simple (i.e only checking for non-negative y-displacement).
-        However, if additional logic needs to be implemented, it can go here.
+        For now, this function is very simple (i.e only checking for non-negative y-displacement and whether the correlation value
+        is above a threshold). However, if additional logic needs to be implemented, it can go here.
         """
 
         if confidence <= CORRELATION_THRESH:
