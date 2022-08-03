@@ -753,7 +753,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnLEDToggle.setEnabled(True)
         self.vsLED.blockSignals(False)
         self.vsLED.setEnabled(True)
-        new_val = int(self.led._convertPWMValToDutyCyclePerc(self.led.pwm_duty_cycle)*100)
+        new_val = self.led.pwm_duty_cycle*100
         self.vsLED.setValue(new_val)
         self.lblLED.setText(f"{new_val}%")
 

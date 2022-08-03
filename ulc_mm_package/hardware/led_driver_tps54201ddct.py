@@ -10,6 +10,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     ANALOG_DIM_MODE_DUTYCYCLE,
     LED_FREQ
 )
+from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 import pigpio
 from time import sleep
 
@@ -24,32 +25,21 @@ class LED_TPS5420TDDCT():
         self._isOn = False
         self.pwm_pin = pwm_pin
         self.pwm_freq = int(LED_FREQ)
-        self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(ANALOG_DIM_MODE_DUTYCYCLE)
-        self._pi = pi if pi != None else pigpio.pi()
-        self._pi = pigpio.pi()
+        self.pwm_duty_cycle = ANALOG_DIM_MODE_DUTYCYCLE
+        # self._pi = pi if pi != None else pigpio.pi()
+        # self._pi = pigpio.pi()
+        self.pwm = dtoverlay_PWM()
 
         # Set the dimming mode (see datasheet, page 17)
-        self._pi.hardware_PWM(self.pwm_pin, 5000, self.pwm_duty_cycle)
+        self.pwm.setFreq(PWM_CHANNEL.PWM1, 5000)
+        self.pwm.setDutyCycle(PWM_CHANNEL.PWM1, ANALOG_DIM_MODE_DUTYCYCLE)
         sleep(0.0005)
-        self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, 0)
+        self.pwm.setFreq(PWM_CHANNEL.PWM1, self.pwm_freq)
 
     def close(self):
         self._pi.set_PWM_dutycycle(self.pwm_pin, 0)
         self._pi.stop()
         sleep(0.5)
-
-    def _convertDutyCyclePercentToPWMVal(self, duty_cycle_percentage: float) -> int:
-        """See the pigpio documentation here (https://abyz.me.uk/rpi/pigpio/python.html#hardware_PWM)
-
-        0 is off (0%), 1,000,000 is on (100%) for the PWM duty cycle.
-        """
-
-        return int(1e6*duty_cycle_percentage)
-
-    def _convertPWMValToDutyCyclePerc(self, pwm_val: int) -> float:
-        """Converts the raw pigpio PWM value to a duty cycle percentage (0 - 100%)"""
-
-        return pwm_val / 1e6
 
     def setDutyCycle(self, duty_cycle_perc: float):
         """Set the duty cycle to a desired percentage.
@@ -64,8 +54,8 @@ class LED_TPS5420TDDCT():
 
         try:
             if self._isOn:
-                self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
-                self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, self.pwm_duty_cycle)
+                self.pwm_duty_cycle = duty_cycle_perc
+                self.pwm.setDutyCycle(PWM_CHANNEL.PWM1, self.pwm_duty_cycle)
         except Exception as e:
             raise LEDError(e)
 

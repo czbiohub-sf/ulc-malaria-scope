@@ -35,7 +35,7 @@ def assessBrightness(img: np.ndarray, top_perc: float):
 def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float):
     """Adjusts the LED's duty cycle to achieve the target brightness"""
 
-    current_led_pwm_perc = led._convertPWMValToDutyCyclePerc(led.pwm_duty_cycle)
+    current_led_pwm_perc = led.pwm_duty_cycle
     current_brightness = assessBrightness(img, TOP_PERC)
     diff = target_pixel_val - current_brightness
     diff = diff if abs(diff/np.iinfo(str(img.dtype)).max) >= TOL else 0
