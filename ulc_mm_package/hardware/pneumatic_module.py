@@ -51,7 +51,7 @@ class PneumaticModule():
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
-        self.min_step_size = 10
+        self.min_step_size = 10e3
         self.min_duty_cycle = 1600000
         self.max_duty_cycle = 2200000
         self.duty_cycle = self.max_duty_cycle
