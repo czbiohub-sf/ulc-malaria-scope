@@ -26,8 +26,7 @@ class dtoverlay_PWM:
 
     def setDutyCycle(self, duty_cycle_perc: float):
         """duty_cycle_perc between 0 - 1.0"""
-        duty_cycle_val = int(duty_cycle_perc * 1e6)
-        print(f"{self.channel} dutycycle --> {duty_cycle_val}")
+        duty_cycle_val = int(duty_cycle_perc * 1e5)
         cmd = f"echo {duty_cycle_val} > pwm{self.channel}/duty_cycle;"
         subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
 
