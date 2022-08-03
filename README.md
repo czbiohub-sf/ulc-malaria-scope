@@ -17,7 +17,13 @@ Welcome to the ULC Malaria Scope! We are developing a barebones optical microsco
 ## Software operation
 
 ### Installing dependencies
-In the root folder, run <code>pip install -e .</code> to install all dependencies.
+In the root folder, run <code>pip install -e .</code> to install all pip dependencies.
+
+To install Allied Vision's Vimba library:
+# Check that Python 3.7 is installed and verify with <code>python --version</code>
+# Check that pip is up to date and verify with <code>python -m pip --version</code>
+# [Download the SDK](https://www.alliedvision.com/en/products/vimba-sdk/#c1497).
+# Navigate to the "VimbaPython" installation directory in a terminal and run <code>python -m pip install .</code>
 
 ### Starting the GUI
 Navigate to ulc_mm_package/QtQUI and run <code>python3 UI.py</code>. Use optional flags to enable operation modes:
