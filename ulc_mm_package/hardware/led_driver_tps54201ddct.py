@@ -35,10 +35,10 @@ class LED_TPS5420TDDCT():
         self.pwm.setDutyCycle(PWM_CHANNEL.PWM1, ANALOG_DIM_MODE_DUTYCYCLE)
         sleep(0.0005)
         self.pwm.setFreq(PWM_CHANNEL.PWM1, self.pwm_freq)
+        self.pwm.setDutyCycle(PWM_CHANNEL.PWM1, 0)
 
     def close(self):
-        self._pi.set_PWM_dutycycle(self.pwm_pin, 0)
-        self._pi.stop()
+        self.pwm.exit()
         sleep(0.5)
 
     def setDutyCycle(self, duty_cycle_perc: float):
