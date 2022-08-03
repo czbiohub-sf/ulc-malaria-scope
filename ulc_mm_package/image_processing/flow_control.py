@@ -55,6 +55,8 @@ class FlowController:
         
         if self._idx == len(self.flowrates):
             self._idx = 0
+            return True
+        return False
 
     def controlFlow(self, img: np.ndarray):
         """Takes in an image, adjusts flowrate periodically to maintain the target (within tolerance).
@@ -63,7 +65,7 @@ class FlowController:
         multiplied by the number of flowrate measurements to fill the EWMA window. 
 
         For example, if the FlowRateEstimator takes in 12 image pairs (i.e 24 frames), and the EWMA window is 12, 
-        then a total of 144 frames will pass before an adjustment is made.
+        then a total of 288 frames (@30fps, that's every 9.6s) will pass before an adjustment is made.
 
         Parameters
         ----------
@@ -149,4 +151,4 @@ class FlowController:
         mult = data*pw0*scale_arr
         cumsums = mult.cumsum()
         out = offset + cumsums*scale_arr[::-1]
-        return out
+        return out[-1]
