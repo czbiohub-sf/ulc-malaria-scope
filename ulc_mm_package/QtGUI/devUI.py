@@ -1,32 +1,20 @@
-import argparse 
+if __name__ == "__main__":
+    # Select operation mode
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--sim', action='store_true', help="simulation mode")
+    parser.add_argument('-d', '--dev', action='store_true', help="developer mode")
+    mode = parser.parse_args()
 
-# Select operation mode
-parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--sim', action='store_true', help="simulation mode")
-parser.add_argument('-d', '--dev', action='store_true', help="developer mode")
-mode = parser.parse_args()
+    if not mode.sim:
+        # Use real hardware objects
+        from ulc_mm_package.hardware.hw_list import *
+    else: 
+        # Use simulated hardware objects
+        from ulc_mm_package.hardware.simulation import *
 
-# Use real hardware objects
-if not mode.sim:
-    from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
-    from ulc_mm_package.hardware.motorcontroller import (
-        DRV8825Nema,
-        Direction,
-        MotorControllerError,
-        MotorInMotion,
-    )
-    from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
-    from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder
-    from ulc_mm_package.hardware.pressure_control import (
-        PressureControl,
-        PressureControlError,
-        PressureLeak,
-    )
-    from ulc_mm_package.hardware.fan import Fan
-
-# Use simulated hardware objects
 else:
-    from ulc_mm_package.hardware.simulation import *
+    from ulc_mm_package.hardware.hw_list import *
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.autobrightness import Autobrightness, AutobrightnessError
@@ -109,6 +97,7 @@ class AcquisitionThread(QThread):
         except CameraError as e:
             print("Error activating camera")
             self.camera_activated = False
+            quit()
 
     def run(self):
         while True:
