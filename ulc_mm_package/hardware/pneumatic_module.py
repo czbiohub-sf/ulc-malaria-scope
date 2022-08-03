@@ -60,7 +60,7 @@ class PneumaticModule():
         self.prev_poll_time_s = 0
         self.prev_pressure = 0
         self.io_error_counter = 0
-        self.pwm = dtoverlay_PWM()
+        self.pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
@@ -69,7 +69,7 @@ class PneumaticModule():
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
 
         # self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
-        self.pwm.setDutyCycle(PWM_CHANNEL.PWM2, self.duty_cycle)
+        self.pwm.setDutyCycle(self.duty_cycle)
 
         # Instantiate pressure sensor
         try:
@@ -83,7 +83,7 @@ class PneumaticModule():
         self.setDutyCycle(self.max_duty_cycle)
         sleep(0.5)
         self._pi.stop()
-        self.pwm.setDutyCycle(PWM_CHANNEL.PWM2, 0)
+        self.pwm.setDutyCycle(0)
         sleep(0.5)
 
     def getCurrentDutyCycle(self):
@@ -99,14 +99,14 @@ class PneumaticModule():
         if self.duty_cycle <= self.max_duty_cycle - self.min_step_size:
             self.duty_cycle += self.min_step_size
             # self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
-            self.pwm.setDutyCycle(PWM_CHANNEL.PWM2, self.duty_cycle)
+            self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
 
     def decreaseDutyCycle(self):
         if self.duty_cycle >= self.min_duty_cycle + self.min_step_size:
             self.duty_cycle -= self.min_step_size
             # self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
-            self.pwm.setDutyCycle(PWM_CHANNEL.PWM2, self.duty_cycle)
+            self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
 
     def setDutyCycle(self, duty_cycle: int):

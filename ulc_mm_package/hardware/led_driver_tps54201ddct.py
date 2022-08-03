@@ -25,14 +25,14 @@ class LED_TPS5420TDDCT():
         self._isOn = False
         self.pwm_freq = int(LED_FREQ)
         self.pwm_duty_cycle = ANALOG_DIM_MODE_DUTYCYCLE
-        self.pwm = dtoverlay_PWM()
+        self.pwm = dtoverlay_PWM(PWM_CHANNEL.PWM2)
 
         # Set the dimming mode (see datasheet, page 17)
-        self.pwm.setFreq(PWM_CHANNEL.PWM1, 5000)
-        self.pwm.setDutyCycle(PWM_CHANNEL.PWM1, ANALOG_DIM_MODE_DUTYCYCLE)
+        self.pwm.setFreq(5000)
+        self.pwm.setDutyCycle(ANALOG_DIM_MODE_DUTYCYCLE)
         sleep(0.0005)
-        self.pwm.setFreq(PWM_CHANNEL.PWM1, self.pwm_freq)
-        self.pwm.setDutyCycle(PWM_CHANNEL.PWM1, 0)
+        self.pwm.setFreq(self.pwm_freq)
+        self.pwm.setDutyCycle(0)
 
     def close(self):
         self.pwm.exit()
@@ -52,7 +52,7 @@ class LED_TPS5420TDDCT():
         try:
             if self._isOn:
                 self.pwm_duty_cycle = duty_cycle_perc
-                self.pwm.setDutyCycle(PWM_CHANNEL.PWM1, self.pwm_duty_cycle)
+                self.pwm.setDutyCycle(self.pwm_duty_cycle)
         except Exception as e:
             raise LEDError(e)
 
