@@ -43,32 +43,6 @@
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="1" column="0">
          <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0,0,0">
-<!--           <item>
-           <widget class="QPushButton" name="btnFlowUp">
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>UP</string>
-            </property>
-           </widget>
-          </item> -->
-<!--           <item>
-           <widget class="QPushButton" name="btnFlowDown">
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>DOWN</string>
-            </property>
-           </widget>
-          </item> -->
           <item>
            <widget class="QLineEdit" name="txtBoxFlow">
             <property name="maximumSize">
@@ -85,25 +59,6 @@
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="chkBoxFlowControl">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Active control?</string>
             </property>
            </widget>
           </item>
@@ -155,32 +110,6 @@
         <item row="1" column="2">
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
-           <widget class="QPushButton" name="btnFocusUp">
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>UP</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnFocusDown">
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>DOWN</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="ClickableLineEdit" name="txtBoxFocus">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -202,32 +131,6 @@
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnFullZStack">
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Global ZStack</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnLocalZStack">
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Local ZStack</string>
             </property>
            </widget>
           </item>
@@ -312,7 +215,7 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="2">
+<!--         <item row="3" column="2">
          <widget class="QPushButton" name="btnNextImage">
           <property name="enabled">
            <bool>false</bool>
@@ -333,7 +236,7 @@
            <string>Next</string>
           </property>
          </widget>
-        </item>
+        </item> -->
         <item row="3" column="0">
          <widget class="QLabel" name="lblPressure">
           <property name="maximumSize">
@@ -437,7 +340,7 @@
           </property>
          </widget>
         </item>
-        <item>
+  <!--       <item>
          <widget class="QPushButton" name="btnLEDToggle">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -455,7 +358,7 @@
            <string>Turn LED On</string>
           </property>
          </widget>
-        </item>
+        </item> -->
         <item>
          <widget class="QPushButton" name="btnAutobrightness">
           <property name="sizePolicy">
