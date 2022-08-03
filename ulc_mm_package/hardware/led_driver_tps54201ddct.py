@@ -21,13 +21,10 @@ class LEDError(Exception):
 class LED_TPS5420TDDCT():
     """An LED driver class for the TPS5420TDDCT and sets the dimming mode to PWM on initialization."""
 
-    def __init__(self, pi: pigpio.pi=None, pwm_pin: int=LED_PWM_PIN):
+    def __init__(self):
         self._isOn = False
-        self.pwm_pin = pwm_pin
         self.pwm_freq = int(LED_FREQ)
         self.pwm_duty_cycle = ANALOG_DIM_MODE_DUTYCYCLE
-        # self._pi = pi if pi != None else pigpio.pi()
-        # self._pi = pigpio.pi()
         self.pwm = dtoverlay_PWM()
 
         # Set the dimming mode (see datasheet, page 17)

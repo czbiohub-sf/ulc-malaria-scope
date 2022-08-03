@@ -15,9 +15,8 @@ import pigpio
 import board
 import adafruit_mprls
 
-import numpy as np
 from ulc_mm_package.hardware.hardware_constants import *
-from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
+from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 
 INVALID_READ_FLAG = -1
 DEFAULT_AFC_DELAY_S = 1
@@ -53,21 +52,24 @@ class PneumaticModule():
         self.servo_pin = servo_pin
 
         self.min_step_size = 10
-        self.min_duty_cycle = 1600
-        self.max_duty_cycle = 2200
+        self.min_duty_cycle = 1600000
+        self.max_duty_cycle = 2200000
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
         self.polling_time_s = 3
         self.prev_poll_time_s = 0
         self.prev_pressure = 0
         self.io_error_counter = 0
+        self.pwm = dtoverlay_PWM()
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
         
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
-        self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
+
+        # self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
+        self.pwm.setDutyCycle(PWM_CHANNEL.PWM2, self.duty_cycle)
 
         # Instantiate pressure sensor
         try:
@@ -81,6 +83,7 @@ class PneumaticModule():
         self.setDutyCycle(self.max_duty_cycle)
         sleep(0.5)
         self._pi.stop()
+        self.pwm.setDutyCycle(PWM_CHANNEL.PWM2, 0)
         sleep(0.5)
 
     def getCurrentDutyCycle(self):
@@ -95,13 +98,15 @@ class PneumaticModule():
     def increaseDutyCycle(self):
         if self.duty_cycle <= self.max_duty_cycle - self.min_step_size:
             self.duty_cycle += self.min_step_size
-            self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
+            # self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
+            self.pwm.setDutyCycle(PWM_CHANNEL.PWM2, self.duty_cycle)
             sleep(0.01)
 
     def decreaseDutyCycle(self):
         if self.duty_cycle >= self.min_duty_cycle + self.min_step_size:
             self.duty_cycle -= self.min_step_size
-            self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
+            # self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
+            self.pwm.setDutyCycle(PWM_CHANNEL.PWM2, self.duty_cycle)
             sleep(0.01)
 
     def setDutyCycle(self, duty_cycle: int):
