@@ -182,7 +182,7 @@ class AcquisitionThread(QThread):
             "pressure_hpa": self.pneumatic_module.getPressure(),
             "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
             "flow_control_on": self.flowcontrol_enabled,
-            "flowrate_target": self.flow_controller.target_flowrate,
+            "target_flowrate": self.flow_controller.target_flowrate,
             "current_flowrate": self.flow_controller.curr_flowrate,
             "focus_adjustment": self.af_adjustment_done,
         }
