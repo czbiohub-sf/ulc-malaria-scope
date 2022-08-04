@@ -51,9 +51,9 @@ class PneumaticModule():
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
-        self.min_step_size = 10e3
-        self.min_duty_cycle = 1600000
-        self.max_duty_cycle = 2200000
+        self.min_step_size = (0.23 - 0.16) / 60
+        self.min_duty_cycle = 0.16
+        self.max_duty_cycle = 0.23
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
         self.polling_time_s = 3
@@ -99,14 +99,12 @@ class PneumaticModule():
     def increaseDutyCycle(self):
         if self.duty_cycle <= self.max_duty_cycle - self.min_step_size:
             self.duty_cycle += self.min_step_size
-            # self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
             self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
 
     def decreaseDutyCycle(self):
         if self.duty_cycle >= self.min_duty_cycle + self.min_step_size:
             self.duty_cycle -= self.min_step_size
-            # self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
             self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
 

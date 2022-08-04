@@ -28,7 +28,7 @@ class LED_TPS5420TDDCT():
         self.pwm = dtoverlay_PWM(PWM_CHANNEL.PWM2)
 
         # Set the dimming mode (see datasheet, page 17)
-        self.pwm.setFreq(5000)
+        self.pwm.setFreq(50000)
         self.pwm.setDutyCycle(ANALOG_DIM_MODE_DUTYCYCLE)
         sleep(0.0005)
         self.pwm.setFreq(self.pwm_freq)
