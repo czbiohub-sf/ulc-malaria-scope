@@ -11,7 +11,6 @@ from ulc_mm_package.hardware.hardware_constants import (
     LED_FREQ
 )
 from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
-import pigpio
 from time import sleep
 
 class LEDError(Exception):
