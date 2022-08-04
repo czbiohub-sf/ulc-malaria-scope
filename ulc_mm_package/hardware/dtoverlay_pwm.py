@@ -22,7 +22,7 @@ class dtoverlay_PWM:
 
     def setFreq(self, freq: int):
         self.period_ns = int((1 / freq)*1e9)
-        cmd = f"echo {period_ns} > pwm{self.channel}/period;"
+        cmd = f"echo {self.period_ns} > pwm{self.channel}/period;"
         subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
 
     def setDutyCycle(self, duty_cycle_perc: float):
