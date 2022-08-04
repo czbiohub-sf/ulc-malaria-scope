@@ -69,7 +69,7 @@ class PneumaticModule():
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
 
         # self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
-        self.pwm.setFreq(50)
+        self.pwm.setFreq(SERVO_FREQ)
         self.pwm.setDutyCycle(self.duty_cycle)
 
         # Instantiate pressure sensor

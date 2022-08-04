@@ -5,6 +5,14 @@ class PWM_CHANNEL(enum.Enum):
     PWM1 = 0
     PWM2 = 1
 
+class dtoverlay_PWM_Exception(Exception):
+    """Base class for all dtoverlay_PWM exceptions."""
+    pass
+
+class InvalidDutyCyclePerc(dtoverlay_PWM_Exception):
+    """Raised when the duty cycle is not between 0 and 1.0."""
+    pass
+
 class dtoverlay_PWM:
     def __init__(self, channel: PWM_CHANNEL):
         self.channel = channel.value
@@ -21,12 +29,26 @@ class dtoverlay_PWM:
         subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
 
     def setFreq(self, freq: int):
+        """Sets the frequency of the PWM.
+        
+        Internally, converts the frequency to time (in ns) and sets the period.
+        """
         self.period_ns = int((1 / freq)*1e9)
         cmd = f"echo {self.period_ns} > pwm{self.channel}/period;"
         subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
 
     def setDutyCycle(self, duty_cycle_perc: float):
-        """duty_cycle_perc between 0 - 1.0"""
+        """Sets the dutycycle (in ns) given an '% on time'.
+        
+        Parameters
+        ----------
+        duty_cycle_perc: float 
+            Between 0 - 1.0.
+        
+        """
+        if not 0<=duty_cycle_perc<=1:
+            raise InvalidDutyCyclePerc(f"Duty cycle must be between 0 and 1.0. Got {duty_cycle_perc}")
+
         duty_cycle_val = int(duty_cycle_perc * self.period_ns)
         cmd = f"echo {duty_cycle_val} > pwm{self.channel}/duty_cycle;"
         subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
