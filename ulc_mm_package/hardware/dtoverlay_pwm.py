@@ -8,6 +8,7 @@ class PWM_CHANNEL(enum.Enum):
 class dtoverlay_PWM:
     def __init__(self, channel: PWM_CHANNEL):
         self.channel = channel.value
+        self.period_ns = 0
         self._start()
 
     def _start(self):
@@ -20,13 +21,13 @@ class dtoverlay_PWM:
         subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
 
     def setFreq(self, freq: int):
-        period_ns = int((1 / freq)*1e9)
+        self.period_ns = int((1 / freq)*1e9)
         cmd = f"echo {period_ns} > pwm{self.channel}/period;"
         subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
 
     def setDutyCycle(self, duty_cycle_perc: float):
         """duty_cycle_perc between 0 - 1.0"""
-        duty_cycle_val = int(duty_cycle_perc * 1e5)
+        duty_cycle_val = int(duty_cycle_perc * self.period_ns)
         cmd = f"echo {duty_cycle_val} > pwm{self.channel}/duty_cycle;"
         subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
 
