@@ -29,7 +29,7 @@ class LED_TPS5420TDDCT():
         self._pi = pigpio.pi()
 
         # Set the dimming mode (see datasheet, page 17)
-        self._pi.hardware_PWM(self.pwm_pin, 5000, self.pwm_duty_cycle)
+        self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, self.pwm_duty_cycle)
         sleep(0.0005)
         self._pi.hardware_PWM(self.pwm_pin, self.pwm_freq, 0)
 
