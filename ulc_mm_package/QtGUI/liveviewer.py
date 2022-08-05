@@ -771,11 +771,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsLED.setEnabled(True)
         new_val = self.led.pwm_duty_cycle*100
         self.vsLED.setValue(new_val)
-        self.lblLED.setText(f"{new_val}%")
+        self.lblLED.setText(f"{int(new_val)}%")
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
-        self.lblLED.setText(f"{perc}%")
+        self.lblLED.setText(f"{int(perc)}%")
         self.led.setDutyCycle(perc / 100)
 
     def exposureSliderHandler(self):
