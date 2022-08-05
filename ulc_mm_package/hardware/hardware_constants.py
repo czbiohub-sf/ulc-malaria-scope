@@ -1,6 +1,8 @@
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 FAN_GPIO = 5
+CAM_FAN_1 = 23
+CAM_FAN_2 = 24
 BOARD_STATUS_INDICATOR = 4
 
 # ================ Motor controller constants ================ #
