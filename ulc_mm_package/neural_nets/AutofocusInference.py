@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from NCSModel import NCSModel
+from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
 
 class AutoFocus(NCSModel):
     """
