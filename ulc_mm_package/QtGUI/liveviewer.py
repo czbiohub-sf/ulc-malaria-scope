@@ -611,7 +611,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.chkBoxFlowControl.stateChanged.connect(self.activeFlowControlHandler)
 
         # Misc
-        self.fan.turn_on()
+        self.fan.turn_on_all()
         self.btnExit.clicked.connect(self.exit)
 
         # Set slider min/max
@@ -943,7 +943,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             return
 
         try:
-            self.pneumatic_module.threadedSetDutyCycle(flow_duty_cycle)
+            self.pneumatic_module.setDutyCycle(flow_duty_cycle)
         except SyringeInMotion:
             # TODO: Change to logging
             print("Syringe already in motion.")
