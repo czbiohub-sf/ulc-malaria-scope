@@ -84,102 +84,6 @@ Wire Wire Line
 	2140 3940 3655 3940
 Wire Wire Line
 	2140 4140 3655 4140
-Wire Wire Line
-	1640 3940 1415 3940
-Wire Wire Line
-	1640 4040 1415 4040
-Wire Wire Line
-	1640 4240 1415 4240
-Wire Wire Line
-	1640 4340 1415 4340
-Text Label 1415 3940 0    39   ~ 0
-S1
-Text Label 1415 4040 0    39   ~ 0
-S2
-Text Label 1415 4240 0    39   ~ 0
-S3
-Text Label 1415 4340 0    39   ~ 0
-S4
-Wire Wire Line
-	1315 3840 1640 3840
-Wire Wire Line
-	1315 4140 1640 4140
-$Comp
-L power:GND #PWR?
-U 1 1 64DF0520
-P 1315 4740
-AR Path="/64DF0520" Ref="#PWR?"  Part="1" 
-AR Path="/64D22535/64DF0520" Ref="#PWR069"  Part="1" 
-F 0 "#PWR069" H 1315 4490 50  0001 C CNN
-F 1 "GND" H 1315 4590 50  0000 C CNN
-F 2 "" H 1315 4740 50  0001 C CNN
-F 3 "" H 1315 4740 50  0001 C CNN
-	1    1315 4740
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1315 4540 1640 4540
-Wire Wire Line
-	1640 4440 1315 4440
-Connection ~ 1315 4440
-Wire Wire Line
-	1315 4440 1315 4540
-Wire Wire Line
-	1315 3840 1315 4140
-Connection ~ 1315 4140
-Wire Wire Line
-	1315 4140 1315 4440
-Connection ~ 1315 4540
-Wire Wire Line
-	1315 4540 1315 4740
-Wire Wire Line
-	4155 3940 4380 3940
-Wire Wire Line
-	4155 4040 4380 4040
-Wire Wire Line
-	4155 4240 4380 4240
-Wire Wire Line
-	4155 4340 4380 4340
-Text Label 4380 3940 2    39   ~ 0
-S1
-Text Label 4380 4040 2    39   ~ 0
-S2
-Text Label 4380 4240 2    39   ~ 0
-S3
-Text Label 4380 4340 2    39   ~ 0
-S4
-Wire Wire Line
-	4480 3840 4155 3840
-Wire Wire Line
-	4480 4140 4155 4140
-$Comp
-L power:GND #PWR?
-U 1 1 64DF0539
-P 4480 4740
-AR Path="/64DF0539" Ref="#PWR?"  Part="1" 
-AR Path="/64D22535/64DF0539" Ref="#PWR070"  Part="1" 
-F 0 "#PWR070" H 4480 4490 50  0001 C CNN
-F 1 "GND" H 4480 4590 50  0000 C CNN
-F 2 "" H 4480 4740 50  0001 C CNN
-F 3 "" H 4480 4740 50  0001 C CNN
-	1    4480 4740
-	-1   0    0    -1  
-$EndComp
-Wire Wire Line
-	4480 4540 4155 4540
-Wire Wire Line
-	4155 4440 4480 4440
-Connection ~ 4480 4440
-Wire Wire Line
-	4480 4440 4480 4540
-Wire Wire Line
-	4480 3840 4480 4140
-Connection ~ 4480 4140
-Wire Wire Line
-	4480 4140 4480 4440
-Connection ~ 4480 4540
-Wire Wire Line
-	4480 4540 4480 4740
 Text Notes 2025 3450 0    30   ~ 0
 Board to board cable assembly. Female-female IDC headers on a ribbon cable.
 $Comp
@@ -401,8 +305,6 @@ F 3 "https://www.digikey.com/en/products/detail/molex/0901560145/760736" H 2875 
 	1    2875 2625
 	1    0    0    -1  
 $EndComp
-Text Notes 915  2995 0    39   ~ 0
-Use regular P2.54mm male pins on breakout board\n
 Wire Wire Line
 	1820 2425 2675 2425
 Wire Wire Line
@@ -450,15 +352,15 @@ $EndComp
 Text Notes 1935 1110 0    59   ~ 0
 Main Board Components\n
 $Comp
-L Connector:Barrel_Jack #J30
+L Connector:Mini-DIN-4 #J30
 U 1 1 6604EE9C
-P 6370 4365
-F 0 "#J30" H 6405 4690 50  0000 C CNN
-F 1 "Barrel_Jack" H 6427 4599 50  0000 C CNN
-F 2 "" H 6420 4325 50  0001 C CNN
-F 3 "https://www.cuidevices.com/product/resource/pj-065b.pdf" H 6420 4325 50  0001 C CNN
-	1    6370 4365
-	1    0    0    -1  
+P 6275 4310
+F 0 "#J30" H 6310 4635 50  0000 C CNN
+F 1 "Barrel_Jack" H 6332 4544 50  0000 C CNN
+F 2 "" H 6325 4270 50  0001 C CNN
+F 3 "https://www.cuidevices.com/product/resource/pj-065b.pdf" H 6325 4270 50  0001 C CNN
+	1    6275 4310
+	-1   0    0    1   
 $EndComp
 $Comp
 L power:GND #PWR071
@@ -471,8 +373,6 @@ F 3 "" H 6825 4465 50  0001 C CNN
 	1    6825 4465
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	6825 4465 6670 4465
 $Comp
 L Switch:SW_SPST SW?
 U 1 1 61673018
@@ -537,8 +437,6 @@ Wire Wire Line
 	7250 3370 7435 3370
 Wire Wire Line
 	7250 3470 7435 3470
-Wire Wire Line
-	6670 4265 6825 4265
 $Comp
 L power:+12V #PWR0134
 U 1 1 625BA266
@@ -558,4 +456,130 @@ Wire Wire Line
 Wire Wire Line
 	6825 4465 7690 4465
 Connection ~ 6825 4465
+Wire Wire Line
+	1640 3840 1415 3840
+Text Label 1415 3840 0    39   ~ 0
+S1
+Wire Wire Line
+	1640 4040 1415 4040
+Text Label 1415 4040 0    39   ~ 0
+S2
+Wire Wire Line
+	1640 4240 1415 4240
+Text Label 1415 4240 0    39   ~ 0
+S3
+Wire Wire Line
+	1640 4340 1415 4340
+Text Label 1415 4340 0    39   ~ 0
+VALVE
+Wire Wire Line
+	1640 4440 1415 4440
+Text Label 1415 4440 0    39   ~ 0
+S4
+Wire Wire Line
+	1640 4540 1415 4540
+Text Label 1415 4540 0    39   ~ 0
+CAM_FAN1
+$Comp
+L power:GND #PWR?
+U 1 1 631DCF29
+P 1265 4140
+AR Path="/631DCF29" Ref="#PWR?"  Part="1" 
+AR Path="/64D22535/631DCF29" Ref="#PWR?"  Part="1" 
+F 0 "#PWR?" H 1265 3890 50  0001 C CNN
+F 1 "GND" H 1265 3990 50  0000 C CNN
+F 2 "" H 1265 4140 50  0001 C CNN
+F 3 "" H 1265 4140 50  0001 C CNN
+	1    1265 4140
+	-1   0    0    -1  
+$EndComp
+Wire Wire Line
+	1640 4140 1265 4140
+$Comp
+L power:+12V #PWR?
+U 1 1 631E7444
+P 1275 3940
+F 0 "#PWR?" H 1275 3790 50  0001 C CNN
+F 1 "+12V" H 1290 4113 50  0000 C CNN
+F 2 "" H 1275 3940 50  0001 C CNN
+F 3 "" H 1275 3940 50  0001 C CNN
+	1    1275 3940
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1275 3940 1640 3940
+Wire Wire Line
+	4155 3840 4380 3840
+Text Label 4380 3840 2    39   ~ 0
+S1
+Wire Wire Line
+	4155 4040 4380 4040
+Text Label 4380 4040 2    39   ~ 0
+S2
+Wire Wire Line
+	4155 4240 4380 4240
+Text Label 4380 4240 2    39   ~ 0
+S3
+Wire Wire Line
+	4155 4340 4380 4340
+Text Label 4380 4340 2    39   ~ 0
+VALVE
+Wire Wire Line
+	4155 4440 4380 4440
+Text Label 4380 4440 2    39   ~ 0
+S4
+Wire Wire Line
+	4155 4540 4380 4540
+Text Label 4380 4540 2    39   ~ 0
+CAM_FAN1
+$Comp
+L power:GND #PWR?
+U 1 1 631F677B
+P 4530 4140
+AR Path="/631F677B" Ref="#PWR?"  Part="1" 
+AR Path="/64D22535/631F677B" Ref="#PWR?"  Part="1" 
+F 0 "#PWR?" H 4530 3890 50  0001 C CNN
+F 1 "GND" H 4530 3990 50  0000 C CNN
+F 2 "" H 4530 4140 50  0001 C CNN
+F 3 "" H 4530 4140 50  0001 C CNN
+	1    4530 4140
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4155 4140 4530 4140
+$Comp
+L power:+12V #PWR?
+U 1 1 631F6782
+P 4520 3940
+F 0 "#PWR?" H 4520 3790 50  0001 C CNN
+F 1 "+12V" H 4535 4113 50  0000 C CNN
+F 2 "" H 4520 3940 50  0001 C CNN
+F 3 "" H 4520 3940 50  0001 C CNN
+	1    4520 3940
+	-1   0    0    -1  
+$EndComp
+Wire Wire Line
+	4520 3940 4155 3940
+Wire Wire Line
+	6575 4410 6575 4465
+Wire Wire Line
+	6575 4585 5975 4585
+Wire Wire Line
+	5975 4585 5975 4410
+Wire Wire Line
+	6575 4465 6825 4465
+Connection ~ 6575 4465
+Wire Wire Line
+	6575 4465 6575 4585
+Wire Wire Line
+	6575 4265 6575 4310
+Wire Wire Line
+	6575 4265 6825 4265
+Wire Wire Line
+	6575 4265 6575 4090
+Wire Wire Line
+	6575 4090 5975 4090
+Wire Wire Line
+	5975 4090 5975 4310
+Connection ~ 6575 4265
 $EndSCHEMATC

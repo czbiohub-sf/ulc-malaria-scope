@@ -89,17 +89,6 @@ Text Notes 1920 4355 0    39   ~ 0
 Pressure sensor breakout board will be \nmounted separately from the PCB.
 Text Notes 2955 4665 0    30   ~ 0
 I2C addr = 0x18 (unchangeable)
-$Comp
-L ODMeter-cache:+3.3V #PWR08
-U 1 1 6122290A
-P 2850 5050
-F 0 "#PWR08" H 2850 4900 50  0001 C CNN
-F 1 "+3.3V" H 2865 5223 50  0000 C CNN
-F 2 "" H 2850 5050 50  0001 C CNN
-F 3 "" H 2850 5050 50  0001 C CNN
-	1    2850 5050
-	1    0    0    -1  
-$EndComp
 NoConn ~ 3150 5150
 $Comp
 L power:GND #PWR09
@@ -232,17 +221,6 @@ F 1 "+5V" H 8605 8933 50  0000 C CNN
 F 2 "" H 8590 8760 50  0001 C CNN
 F 3 "" H 8590 8760 50  0001 C CNN
 	1    8590 8760
-	1    0    0    -1  
-$EndComp
-$Comp
-L ODMeter-cache:+3.3V #PWR040
-U 1 1 616CF3DC
-P 9190 8760
-F 0 "#PWR040" H 9190 8610 50  0001 C CNN
-F 1 "+3.3V" H 9205 8933 50  0000 C CNN
-F 2 "" H 9190 8760 50  0001 C CNN
-F 3 "" H 9190 8760 50  0001 C CNN
-	1    9190 8760
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -933,7 +911,7 @@ Wire Wire Line
 	8450 6090 8125 6090
 Text Label 9020 6710 2    39   ~ 0
 DRV_FAULT
-Text Notes 13060 3020 2    39   ~ 0
+Text Notes 13040 3070 2    39   ~ 0
 Ven > 2.07 V locks onto analog dimming mode.\nRecommended PWM freq > 10kHz.\nPWM/EN includes internal pulldown.
 Text Notes 15825 3100 2    39   ~ 0
 Rsense = Vref / I_led, Vref = 200mV @ 100% DC
@@ -1392,17 +1370,6 @@ $EndComp
 NoConn ~ 6500 9625
 NoConn ~ 6500 9925
 $Comp
-L ODMeter-cache:+3.3V #PWR022
-U 1 1 65BBE90C
-P 5900 9130
-F 0 "#PWR022" H 5900 8980 50  0001 C CNN
-F 1 "+3.3V" H 5915 9303 50  0000 C CNN
-F 2 "" H 5900 9130 50  0001 C CNN
-F 3 "" H 5900 9130 50  0001 C CNN
-	1    5900 9130
-	1    0    0    -1  
-$EndComp
-$Comp
 L Device:C_Small C5
 U 1 1 65C1B0FF
 P 5690 9190
@@ -1521,39 +1488,11 @@ Text Label 13970 5515 0    39   ~ 0
 PGood_Rem_5V
 Text Notes 12955 4365 0    39   ~ 0
 Vf = 2.15V, If (ideal) = approx. 20mA
-$Comp
-L Device:R_Small R15
-U 1 1 66CC7D2E
-P 14630 5515
-F 0 "R15" V 14555 5515 50  0000 C CNN
-F 1 "330" V 14630 5515 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" H 14630 5515 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 14630 5515 50  0001 C CNN
-	1    14630 5515
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	14730 5515 14825 5515
-$Comp
-L Device:R_Small R16
-U 1 1 66D4542D
-P 14800 5750
-F 0 "R16" V 14865 5700 50  0000 L CNN
-F 1 "10k" V 14800 5675 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 14800 5750 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 14800 5750 50  0001 C CNN
-	1    14800 5750
-	0    -1   -1   0   
-$EndComp
 Wire Wire Line
 	13970 5515 14505 5515
 Wire Wire Line
-	14700 5750 14505 5750
-Wire Wire Line
 	14505 5750 14505 5515
 Connection ~ 14505 5515
-Wire Wire Line
-	14505 5515 14530 5515
 $Comp
 L power:GND #PWR066
 U 1 1 66DDFF11
@@ -1567,8 +1506,6 @@ F 3 "" H 15125 5825 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	15125 5715 15125 5750
-Wire Wire Line
-	14900 5750 15125 5750
 Connection ~ 15125 5750
 Wire Wire Line
 	15125 5750 15125 5825
@@ -1648,39 +1585,11 @@ F 3 "https://www.digikey.com/en/products/detail/american-opto-plus-led/L152L-GC/
 	1    13450 5160
 	0    -1   -1   0   
 $EndComp
-$Comp
-L Device:R_Small R20
-U 1 1 618903A5
-P 12955 5510
-F 0 "R20" V 12880 5510 50  0000 C CNN
-F 1 "330" V 12955 5510 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" H 12955 5510 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 12955 5510 50  0001 C CNN
-	1    12955 5510
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	13055 5510 13150 5510
-$Comp
-L Device:R_Small R21
-U 1 1 618903AC
-P 13125 5745
-F 0 "R21" V 13190 5695 50  0000 L CNN
-F 1 "10k" V 13125 5670 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 13125 5745 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 13125 5745 50  0001 C CNN
-	1    13125 5745
-	0    -1   -1   0   
-$EndComp
 Wire Wire Line
 	12295 5510 12830 5510
 Wire Wire Line
-	13025 5745 12830 5745
-Wire Wire Line
 	12830 5745 12830 5510
 Connection ~ 12830 5510
-Wire Wire Line
-	12830 5510 12855 5510
 $Comp
 L power:GND #PWR0101
 U 1 1 618903B7
@@ -1694,8 +1603,6 @@ F 3 "" H 13450 5820 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	13450 5710 13450 5745
-Wire Wire Line
-	13225 5745 13450 5745
 Connection ~ 13450 5745
 Wire Wire Line
 	13450 5745 13450 5820
@@ -2386,8 +2293,6 @@ F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP06
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	12405 2450 12650 2450
-Wire Wire Line
 	11975 2250 12325 2250
 Wire Wire Line
 	12325 2250 12850 2250
@@ -2568,7 +2473,7 @@ L Device:L_Small L2
 U 1 1 612AD659
 P 14250 2000
 F 0 "L2" V 14435 2000 50  0000 C CNN
-F 1 "100 uH" V 14344 2000 50  0000 C CNN
+F 1 "330 uH" V 14344 2000 50  0000 C CNN
 F 2 "Inductor_SMD:L_Wuerth_WE-PDF_Handsoldering" H 14250 2000 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/w%C3%BCrth-elektronik/74477720/9859301" H 14250 2000 50  0001 C CNN
 	1    14250 2000
@@ -2715,7 +2620,7 @@ $EndComp
 Text Notes 9375 10380 0    50   ~ 0
 Remote PCB\n
 Text Label 11855 6750 0    39   ~ 0
-CAM_FAN_1_GPIO
+CAM_FAN1_GPIO
 $Comp
 L power:GND #PWR0114
 U 1 1 625CD23D
@@ -2783,7 +2688,7 @@ $EndComp
 Wire Wire Line
 	12880 6355 12880 6550
 Text Label 13170 6760 0    39   ~ 0
-CAM_FAN_2_GPIO
+CAM_FAN2_GPIO
 $Comp
 L power:GND #PWR0115
 U 1 1 6260B9AE
@@ -3274,4 +3179,74 @@ Wire Wire Line
 Connection ~ 8235 10605
 Wire Wire Line
 	8235 10605 8615 10605
+$Comp
+L power:+3.3V #PWR?
+U 1 1 62F18437
+P 2850 5050
+F 0 "#PWR?" H 2850 4900 50  0001 C CNN
+F 1 "+3.3V" H 2850 5190 50  0000 C CNN
+F 2 "" H 2850 5050 50  0000 C CNN
+F 3 "" H 2850 5050 50  0000 C CNN
+	1    2850 5050
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3V #PWR?
+U 1 1 62F5987D
+P 9190 8760
+F 0 "#PWR?" H 9190 8610 50  0001 C CNN
+F 1 "+3.3V" H 9190 8900 50  0000 C CNN
+F 2 "" H 9190 8760 50  0000 C CNN
+F 3 "" H 9190 8760 50  0000 C CNN
+	1    9190 8760
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3V #PWR?
+U 1 1 62F9B5B9
+P 5900 9130
+F 0 "#PWR?" H 5900 8980 50  0001 C CNN
+F 1 "+3.3V" H 5900 9270 50  0000 C CNN
+F 2 "" H 5900 9130 50  0000 C CNN
+F 3 "" H 5900 9130 50  0000 C CNN
+	1    5900 9130
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R_Small R?
+U 1 1 62FC37D2
+P 12645 2585
+F 0 "R?" V 12545 2585 50  0000 C CNN
+F 1 "100k" V 12645 2585 39  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" H 12645 2585 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/panasonic-electronic-components/ERJ-PB6D9100V/6213798" H 12645 2585 50  0001 C CNN
+	1    12645 2585
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 63002D7F
+P 12645 2685
+F 0 "#PWR?" H 12645 2435 50  0001 C CNN
+F 1 "GND" H 12650 2512 50  0000 C CNN
+F 2 "" H 12645 2685 50  0001 C CNN
+F 3 "" H 12645 2685 50  0001 C CNN
+	1    12645 2685
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	12830 5745 13450 5745
+Wire Wire Line
+	14505 5750 15125 5750
+Wire Wire Line
+	12830 5510 13150 5510
+Wire Wire Line
+	14505 5515 14825 5515
+Wire Wire Line
+	12405 2450 12645 2450
+Wire Wire Line
+	12645 2485 12645 2450
+Connection ~ 12645 2450
+Wire Wire Line
+	12645 2450 12650 2450
 $EndSCHEMATC
