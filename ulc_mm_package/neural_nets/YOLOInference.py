@@ -2,6 +2,7 @@
 
 from NCSModel import NCSModel
 
+
 class YOLO(NCSModel):
     """
     YOLO Model
@@ -17,6 +18,7 @@ class YOLO(NCSModel):
         >>> Y.get_asyn_results()
         <Bounding Boxes!>
     """
+
     def __init__(self, model_path: str):
         super().__init__(model_path, OptimizationHint.THROUGHPUT)
 

@@ -106,6 +106,7 @@ class NCSModel:
 
 
 if __name__ == "__main__":
+
     def _asyn_calling(model, images):
         print("starting asyncing")
         t0 = time.perf_counter()

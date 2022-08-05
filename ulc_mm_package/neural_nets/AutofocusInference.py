@@ -2,6 +2,7 @@
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
 
+
 class AutoFocus(NCSModel):
     """
     Autofocus Model
