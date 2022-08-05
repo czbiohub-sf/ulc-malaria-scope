@@ -11,6 +11,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PneumaticModule,
     PneumaticModuleError,
     PressureLeak,
+    SyringeInMotion
 )
 from ulc_mm_package.hardware.fan import Fan
 
@@ -63,6 +64,7 @@ class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
     changePixmap = pyqtSignal(QImage)
     motorPosChanged = pyqtSignal(int)
+    syringePosChanged = pyqtSignal(float)
     zStackFinished = pyqtSignal(int)
     updatePressure = pyqtSignal(float)
     measurementTime = pyqtSignal(int)
@@ -105,6 +107,7 @@ class AcquisitionThread(QThread):
         self.custom_image_prefix = ""
 
         self.updateMotorPos = True
+        self.updateSyringePos = True
         self.fps_timer = perf_counter()
         self.start_time = perf_counter()
         self.external_dir = external_dir
@@ -208,6 +211,9 @@ class AcquisitionThread(QThread):
         self.update_counter += 1
         if self.updateMotorPos:
             self.motorPosChanged.emit(self.motor.pos)
+
+        if self.updateSyringePos:
+            self.syringePosChanged.emit(1)
 
         if self.update_counter % self.num_loops == 0:
             self.update_counter = 0
@@ -553,11 +559,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Create pressure controller (sensor + servo)
         try:
             self.pneumatic_module = PneumaticModule()
-            self.vsFlow.setMinimum(self.pneumatic_module.getMinDutyCycle())
-            self.vsFlow.setMaximum(self.pneumatic_module.getMaxDutyCycle())
-            self.vsFlow.setSingleStep(self.pneumatic_module.min_step_size)
+            num_steps = int((self.pneumatic_module.getMaxDutyCycle() - self.pneumatic_module.getMinDutyCycle()) / self.pneumatic_module.min_step_size)
+            self.vsFlow.setMinimum(0)
+            self.vsFlow.setMaximum(num_steps)
+            self.vsFlow.setSingleStep(1)
             self.txtBoxFlow.setText(f"{self.pneumatic_module.getCurrentDutyCycle()}")
-            self.vsFlow.setValue(self.pneumatic_module.getCurrentDutyCycle())
+            self.vsFlow.setValue(self.convertTovsFlowVal(self.pneumatic_module.getCurrentDutyCycle()))
         except PneumaticModuleError:
             print(
                 "Error initializing Pressure Controller. Disabling flow GUI elements."
@@ -578,12 +585,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Acquisition thread
         self.acquisitionThread.changePixmap.connect(self.updateImage)
         self.acquisitionThread.motorPosChanged.connect(self.updateMotorPosition)
+        self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
         self.acquisitionThread.zStackFinished.connect(self.enableMotorUIElements)
         self.acquisitionThread.updatePressure.connect(self.updatePressureLabel)
         self.acquisitionThread.fps.connect(self.updateFPS)
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
-        self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
 
         self.acquisitionThread.motor = self.motor
@@ -605,11 +612,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
         self.btnFlowDown.clicked.connect(self.btnFlowDownHandler)
         self.txtBoxFlow.editingFinished.connect(self.flowTextBoxHandler)
-        self.vsFlow.valueChanged.connect(self.vsFlowHandler)
+        self.txtBoxFlow.gotFocus.connect(self.txtBoxFlowGotFocus)
+        self.vsFlow.valueChanged.connect(self.vsFlowValueChangedHandler)
+        self.vsFlow.sliderReleased.connect(self.vsFlowSliderReleasedHandler)
+        self.vsFlow.sliderPressed.connect(self.vsFlowClickHandler)
         self.chkBoxFlowControl.stateChanged.connect(self.activeFlowControlHandler)
 
         # Misc
-        self.fan.turn_on()
+        self.fan.turn_on_all()
         self.btnExit.clicked.connect(self.exit)
 
         # Set slider min/max
@@ -637,8 +647,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def txtBoxFocusGotFocus(self):
         self.acquisitionThread.updateMotorPos = False
 
+    def txtBoxFlowGotFocus(self):
+        self.acquisitionThread.updateSyringePos = False
+
     def vsFocusClickHandler(self):
         self.acquisitionThread.updateMotorPos = False
+
+    def vsFlowClickHandler(self):
+        self.acquisitionThread.updateSyringePos = False
 
     def checkBoxRecordHandler(self):
         if self.chkBoxRecord.checkState():
@@ -706,10 +722,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def updateMotorPosition(self, val):
         self.vsFocus.setValue(val)
         self.txtBoxFocus.setText(f"{val}")
-
+    
     @pyqtSlot(int)
     def updateSyringePos(self, _):
-        self.vsFlow.setValue(self.pneumatic_module.getCurrentDutyCycle())
+        self.vsFlow.setValue(self.convertTovsFlowVal(self.pneumatic_module.getCurrentDutyCycle()))
         duty_cycle = self.pneumatic_module.duty_cycle
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
@@ -753,13 +769,13 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnLEDToggle.setEnabled(True)
         self.vsLED.blockSignals(False)
         self.vsLED.setEnabled(True)
-        new_val = int(self.led._convertPWMValToDutyCyclePerc(self.led.pwm_duty_cycle)*100)
+        new_val = self.led.pwm_duty_cycle*100
         self.vsLED.setValue(new_val)
-        self.lblLED.setText(f"{new_val}%")
+        self.lblLED.setText(f"{int(new_val)}%")
 
     def vsLEDHandler(self):
         perc = int(self.vsLED.value())
-        self.lblLED.setText(f"{perc}%")
+        self.lblLED.setText(f"{int(perc)}%")
         self.led.setDutyCycle(perc / 100)
 
     def exposureSliderHandler(self):
@@ -898,38 +914,65 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFocus.blockSignals(False)
 
     def btnFlowUpHandler(self):
-        self.pneumatic_module.increaseDutyCycle()
+        try:
+            self.pneumatic_module.threadedIncreaseDutyCycle()
+        except SyringeInMotion:
+            # TODO: Change to logging
+            print("Syringe already in motion.")
         duty_cycle = self.pneumatic_module.duty_cycle
-        self.vsFlow.setValue(duty_cycle)
+        self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
     def btnFlowDownHandler(self):
-        self.pneumatic_module.decreaseDutyCycle()
+        try:
+            self.pneumatic_module.threadedDecreaseDutyCycle()
+        except SyringeInMotion:
+            # TODO: Change to logging
+            print("Syringe already in motion.")
         duty_cycle = self.pneumatic_module.duty_cycle
-        self.vsFlow.setValue(duty_cycle)
+        self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
-    def vsFlowHandler(self):
-        flow_duty_cycle = int(self.vsFlow.value())
-        self.pneumatic_module.setDutyCycle(flow_duty_cycle)
+    def convertFromvsFlowVal(self):
+        return self.vsFlow.value() * self.pneumatic_module.min_step_size + self.pneumatic_module.getMinDutyCycle()
+    
+    def convertTovsFlowVal(self, val):
+        return int((val - self.pneumatic_module.getMinDutyCycle()) / self.pneumatic_module.min_step_size)
+    
+    def vsFlowValueChangedHandler(self):
+        val = self.convertFromvsFlowVal()
+        self.txtBoxFlow.setText(f"{val}")
+
+    def vsFlowSliderReleasedHandler(self):
+        flow_duty_cycle = self.convertFromvsFlowVal()
+        try:
+            self.pneumatic_module.threadedSetDutyCycle(flow_duty_cycle)
+        except SyringeInMotion:
+            # TODO: Change to logging
+            print("Syringe already in motion.")
         self.txtBoxFlow.setText(f"{flow_duty_cycle}")
+        self.acquisitionThread.updateSyringePos = True
 
     def flowTextBoxHandler(self):
         try:
             flow_duty_cycle = int(float(self.txtBoxFlow.text()))
         except:
             print("Error parsing textbox flow PWM input. Continuing...")
-            self.txtBoxFlow.setText(f"{self.vsFlow.value()}")
+            self.txtBoxFlow.setText(f"{self.convertFromvsFlowVal(self.vsFlow.value())}")
             return
 
         try:
-            self.pneumatic_module.setDutyCycle(flow_duty_cycle)
+            self.pneumatic_module.threadedSetDutyCycle(flow_duty_cycle)
+        except SyringeInMotion:
+            # TODO: Change to logging
+            print("Syringe already in motion.")
         except:
             print("Invalid duty cycle, ignoring and continuing...")
-            self.txtBoxFlow.setText(f"{self.vsFlow.value()}")
+            self.txtBoxFlow.setText(f"{self.convertFromvsFlowVal(self.vsFlow.value())}")
             return
 
-        self.vsFlow.setValue(flow_duty_cycle)
+        self.vsFlow.setValue(self.convertTovsFlowVal(flow_duty_cycle))
+        self.acquisitionThread.updateSyringePos = True
 
     def activeFlowControlHandler(self):
         if self.chkBoxFlowControl.checkState():

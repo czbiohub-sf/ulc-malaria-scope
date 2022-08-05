@@ -11,17 +11,33 @@ Servo Motor Pololu HD-1810MG:
 
 from time import sleep, perf_counter
 import enum
+import functools
+import threading
 import pigpio
 import board
 import adafruit_mprls
 
-import numpy as np
 from ulc_mm_package.hardware.hardware_constants import *
-from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
+from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 
+SYRINGE_LOCK = threading.Lock()
 INVALID_READ_FLAG = -1
 DEFAULT_AFC_DELAY_S = 1
 AFC_NUM_IMAGE_PAIRS = 12
+
+def lockNoBlock(lock):
+    def lockDecorator(func):
+        @functools.wraps(func)
+
+        def wrapper(*args, **kwargs):
+            if not lock.locked():
+                with lock:
+                    return func(*args, **kwargs)
+            else:
+                raise SyringeInMotion
+
+        return wrapper
+    return lockDecorator
 
 class PneumaticModuleError(Exception):
     """Base class for catching all pressure control related errors."""
@@ -36,6 +52,9 @@ class PressureLeak(PneumaticModuleError):
     """Raised when a pressure leak is detected."""
     def __init__(self):
         super().__init__("Pressure leak detected.")
+
+class SyringeInMotion(PneumaticModuleError):
+    pass
 
 class SyringeDirection(enum.Enum):
     """Enum for the direction of the syringe."""
@@ -52,22 +71,26 @@ class PneumaticModule():
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
-        self.min_step_size = 10
-        self.min_duty_cycle = 1600
-        self.max_duty_cycle = 2200
+        self.min_step_size = (0.23 - 0.16) / 60
+        self.min_duty_cycle = 0.16
+        self.max_duty_cycle = 0.23
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
         self.polling_time_s = 3
         self.prev_poll_time_s = 0
         self.prev_pressure = 0
         self.io_error_counter = 0
+        self.pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
         
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
-        self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
+
+        # self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
+        self.pwm.setFreq(SERVO_FREQ)
+        self.pwm.setDutyCycle(self.duty_cycle)
 
         # Instantiate pressure sensor
         try:
@@ -81,6 +104,7 @@ class PneumaticModule():
         self.setDutyCycle(self.max_duty_cycle)
         sleep(0.5)
         self._pi.stop()
+        self.pwm.setDutyCycle(0)
         sleep(0.5)
 
     def getCurrentDutyCycle(self):
@@ -95,15 +119,16 @@ class PneumaticModule():
     def increaseDutyCycle(self):
         if self.duty_cycle <= self.max_duty_cycle - self.min_step_size:
             self.duty_cycle += self.min_step_size
-            self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
+            self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
-
+    
     def decreaseDutyCycle(self):
         if self.duty_cycle >= self.min_duty_cycle + self.min_step_size:
             self.duty_cycle -= self.min_step_size
-            self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
+            self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
 
+    @lockNoBlock(SYRINGE_LOCK)
     def setDutyCycle(self, duty_cycle: int):
         if self.min_duty_cycle <= duty_cycle <= self.max_duty_cycle:
             if self.duty_cycle < duty_cycle:
@@ -113,6 +138,24 @@ class PneumaticModule():
                 while self.duty_cycle >= duty_cycle + self.min_step_size:
                     self.decreaseDutyCycle()
     
+    def threadedDecreaseDutyCycle(self, *args, **kwargs):
+        if not SYRINGE_LOCK.locked():
+            threading.Thread(target=self.decreaseDutyCycle, *args, **kwargs).start()
+        else:
+            raise SyringeInMotion
+
+    def threadedIncreaseDutyCycle(self, *args, **kwargs):
+        if not SYRINGE_LOCK.locked():
+            threading.Thread(target=self.increaseDutyCycle, *args, **kwargs).start()
+        else:
+            raise SyringeInMotion
+
+    def threadedSetDutyCycle(self, *args, **kwargs):
+        if not SYRINGE_LOCK.locked():
+            threading.Thread(target=self.setDutyCycle, args=args, kwargs=kwargs).start()
+        else:
+            raise SyringeInMotion
+
     def sweepAndGetPressures(self):
         """Sweep the syringe and read pressure values."""
         min, max = self.getMinDutyCycle(), self.getMaxDutyCycle()

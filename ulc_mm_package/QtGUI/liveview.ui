@@ -70,7 +70,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="txtBoxFlow">
+           <widget class="ClickableLineEdit" name="txtBoxFlow">
             <property name="maximumSize">
              <size>
               <width>150</width>
