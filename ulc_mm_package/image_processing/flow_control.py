@@ -93,7 +93,7 @@ class FlowController:
         float:
             Positive (+) number if the current flowrate is _below_ the target.
             Negative (-) number if the current flowrate is _above_ the target.
-            0 if the current flowrate is within +/- % tolerance of the target.
+            0 if the current flowrate is within +/- % tolerance of the target (as defined by TOL_PERC).
         """
 
         diff = self.target_flowrate - self.curr_flowrate
