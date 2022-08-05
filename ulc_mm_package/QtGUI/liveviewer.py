@@ -64,6 +64,7 @@ class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
     changePixmap = pyqtSignal(QImage)
     motorPosChanged = pyqtSignal(int)
+    syringePosChanged = pyqtSignal(float)
     zStackFinished = pyqtSignal(int)
     updatePressure = pyqtSignal(float)
     measurementTime = pyqtSignal(int)
@@ -106,6 +107,7 @@ class AcquisitionThread(QThread):
         self.custom_image_prefix = ""
 
         self.updateMotorPos = True
+        self.updateSyringePos = True
         self.fps_timer = perf_counter()
         self.start_time = perf_counter()
         self.external_dir = external_dir
@@ -209,6 +211,9 @@ class AcquisitionThread(QThread):
         self.update_counter += 1
         if self.updateMotorPos:
             self.motorPosChanged.emit(self.motor.pos)
+
+        if self.updateSyringePos:
+            self.syringePosChanged.emit(1)
 
         if self.update_counter % self.num_loops == 0:
             self.update_counter = 0
@@ -580,12 +585,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Acquisition thread
         self.acquisitionThread.changePixmap.connect(self.updateImage)
         self.acquisitionThread.motorPosChanged.connect(self.updateMotorPosition)
+        self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
         self.acquisitionThread.zStackFinished.connect(self.enableMotorUIElements)
         self.acquisitionThread.updatePressure.connect(self.updatePressureLabel)
         self.acquisitionThread.fps.connect(self.updateFPS)
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
-        self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
 
         self.acquisitionThread.motor = self.motor
@@ -607,7 +612,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
         self.btnFlowDown.clicked.connect(self.btnFlowDownHandler)
         self.txtBoxFlow.editingFinished.connect(self.flowTextBoxHandler)
-        self.vsFlow.valueChanged.connect(self.vsFlowHandler)
+        self.txtBoxFlow.gotFocus.connect(self.txtBoxFlowGotFocus)
+        self.vsFlow.valueChanged.connect(self.vsFlowValueChangedHandler)
+        self.vsFlow.sliderReleased.connect(self.vsFlowSliderReleasedHandler)
+        self.vsFlow.sliderPressed.connect(self.vsFlowClickHandler)
         self.chkBoxFlowControl.stateChanged.connect(self.activeFlowControlHandler)
 
         # Misc
@@ -639,8 +647,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def txtBoxFocusGotFocus(self):
         self.acquisitionThread.updateMotorPos = False
 
+    def txtBoxFlowGotFocus(self):
+        self.acquisitionThread.updateSyringePos = False
+
     def vsFocusClickHandler(self):
         self.acquisitionThread.updateMotorPos = False
+
+    def vsFlowClickHandler(self):
+        self.acquisitionThread.updateSyringePos = False
 
     def checkBoxRecordHandler(self):
         if self.chkBoxRecord.checkState():
@@ -708,7 +722,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def updateMotorPosition(self, val):
         self.vsFocus.setValue(val)
         self.txtBoxFocus.setText(f"{val}")
-
+    
     @pyqtSlot(int)
     def updateSyringePos(self, _):
         self.vsFlow.setValue(self.convertTovsFlowVal(self.pneumatic_module.getCurrentDutyCycle()))
@@ -924,8 +938,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     
     def convertTovsFlowVal(self, val):
         return int((val - self.pneumatic_module.getMinDutyCycle()) / self.pneumatic_module.min_step_size)
+    
+    def vsFlowValueChangedHandler(self):
+        val = self.convertFromvsFlowVal()
+        self.txtBoxFlow.setText(f"{val}")
 
-    def vsFlowHandler(self):
+    def vsFlowSliderReleasedHandler(self):
         flow_duty_cycle = self.convertFromvsFlowVal()
         try:
             self.pneumatic_module.threadedSetDutyCycle(flow_duty_cycle)
@@ -933,6 +951,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             # TODO: Change to logging
             print("Syringe already in motion.")
         self.txtBoxFlow.setText(f"{flow_duty_cycle}")
+        self.acquisitionThread.updateSyringePos = True
 
     def flowTextBoxHandler(self):
         try:
@@ -943,7 +962,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             return
 
         try:
-            self.pneumatic_module.setDutyCycle(flow_duty_cycle)
+            self.pneumatic_module.threadedSetDutyCycle(flow_duty_cycle)
         except SyringeInMotion:
             # TODO: Change to logging
             print("Syringe already in motion.")
@@ -953,6 +972,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             return
 
         self.vsFlow.setValue(self.convertTovsFlowVal(flow_duty_cycle))
+        self.acquisitionThread.updateSyringePos = True
 
     def activeFlowControlHandler(self):
         if self.chkBoxFlowControl.checkState():

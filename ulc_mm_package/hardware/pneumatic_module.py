@@ -116,14 +116,12 @@ class PneumaticModule():
     def getMinDutyCycle(self):
         return self.min_duty_cycle
 
-    @lockNoBlock(SYRINGE_LOCK)
     def increaseDutyCycle(self):
         if self.duty_cycle <= self.max_duty_cycle - self.min_step_size:
             self.duty_cycle += self.min_step_size
             self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
     
-    @lockNoBlock(SYRINGE_LOCK)
     def decreaseDutyCycle(self):
         if self.duty_cycle >= self.min_duty_cycle + self.min_step_size:
             self.duty_cycle -= self.min_step_size
