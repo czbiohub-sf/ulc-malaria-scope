@@ -8,7 +8,7 @@ class YOLO(NCSModel):
 
     Usage:
         >>> Y = YOLO("model.xml")  # the model.bin file should be in same dir
-        >>> img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+        >>> img = cv2.imread(image)  # our YOLO takes grayscale only so far - I'll take care of it
         >>> Y(img)
         >>> calculate_metrics()
         >>> Y(img)
