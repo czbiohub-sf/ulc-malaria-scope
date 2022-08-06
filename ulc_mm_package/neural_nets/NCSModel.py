@@ -35,15 +35,6 @@ class NCSModel:
 
     Allows you to run a model (defined by an intel intermediate representation of your
     model, e.g. model.xml & model.bin) on the neural compute stick
-
-    Very early in development!
-
-
-    Usage:
-        >>> A = NCSModel("model.xml")  # the model.bin file should be in same dir
-        >>> img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
-        >>> A(img)
-        <steps from 0!>
     """
 
     def __init__(
@@ -60,7 +51,7 @@ class NCSModel:
         self.model = self._compile_model(model_path, optimization_hint)
         self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        self.asyn_results = []
+        self.asyn_results = [] # List of list of tuples - (xcenter, ycenter, width, height, class, confidence)
 
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
         model = self.core.read_model(model_path)
