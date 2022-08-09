@@ -548,8 +548,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.vsFocus.setValue(self.motor.pos)
             self.vsFocus.setMaximum(self.motor.max_pos)
 
-        except MotorControllerError:
-            print("Error initializing DRV8825. Disabling focus actuation GUI elements.")
+        except MotorControllerError as e:
+            print(f"Error initializing DRV8825. Disabling focus actuation GUI elements.\nSpecific error: {e}")
             self.btnFocusUp.setEnabled(False)
             self.btnFocusDown.setEnabled(False)
             self.vsFocus.setEnabled(False)
