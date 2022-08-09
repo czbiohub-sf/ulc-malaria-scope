@@ -329,7 +329,6 @@ class AcquisitionThread(QThread):
 
     def stopActiveFlowControl(self):
         self.flowcontrol_enabled = False
-        self.pneumatic_module.flow_rate_y = 0
 
     def activeFlowControl(self, img: np.ndarray):
         if self.initializeFlowControl:

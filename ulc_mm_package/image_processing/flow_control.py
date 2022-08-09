@@ -59,10 +59,13 @@ class FlowController:
         return False
 
     def controlFlow(self, img: np.ndarray):
-        """Takes in an image, adjusts flowrate periodically to maintain the target (within tolerance).
+        """Takes in an image, calculates and adjusts flowrate periodically to maintain the target (within a tolerance bound).
         
+        If the `self.target_flowrate` attribute is None, the first full measurement is used as the target, and all subsequent measurements
+        will result in adjustments relative to that initial target.
+
         Periodically here is defined as the number of frames it takes for the FlowRateEstimator to fill its window
-        multiplied by the number of flowrate measurements to fill the EWMA window. 
+        multiplied by the number of flowrate measurements to fill the EWMA window.
 
         For example, if the FlowRateEstimator takes in 12 image pairs (i.e 24 frames), and the EWMA window is 12, 
         then a total of 288 frames (@30fps, that's every 9.6s) will pass before an adjustment is made.
