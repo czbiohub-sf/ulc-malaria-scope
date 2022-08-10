@@ -626,7 +626,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.max_exposure_us = 10000
         self.vsExposure.setMinimum(self.min_exposure_us)
         self.vsExposure.setMaximum(self.max_exposure_us)
-        self.vsExposure.setValue(500)
+        self.vsExposure.setValue(250)
         self.lblMinExposure.setText(f"{self.min_exposure_us} us")
         self.lblMaxExposure.setText(f"{self.max_exposure_us} us")
 
