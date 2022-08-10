@@ -2,7 +2,7 @@ from typing import Tuple
 import numpy as np
 import cv2
 
-CORRELATION_THRESH = 0.8
+CORRELATION_THRESH = 0.5
 
 class FlowRateEstimatorError(Exception):
     """Base class for catching all pressure control related errors."""
