@@ -257,7 +257,6 @@ class ExperimentSetupGUI(QDialog):
         uic.loadUi(_EXPERIMENT_FORM_PATH, self)
 
         # Set the focus order
-        #### TODO choose what to do here later
         self.setTabOrder(self.txtExperimentName, self.txtFlowCellID)
         self.setTabOrder(self.txtFlowCellID, self.btnStartExperiment)
         self.txtExperimentName.setFocus()
@@ -269,7 +268,6 @@ class ExperimentSetupGUI(QDialog):
         self.binningMode = 2
 
         # Set up event handlers
-        self.btnStartExperiment.clicked.connect(self.btnStartExperimentHandler)
         self.btnExperimentSetupAbort.clicked.connect(quit)
 
     def getAllParameters(self) -> Dict:
@@ -279,9 +277,19 @@ class ExperimentSetupGUI(QDialog):
             "binningMode": self.binningMode,
         }
 
-    def btnStartExperimentHandler(self):
-        self.experiment_name = self.txtExperimentName.text()
-        self.flowcell_id = self.txtFlowCellID.text()
+
+    def _displayMessageBox(self, icon, title, text, cancel):
+        msgBox = QMessageBox()
+        msgBox.setIcon(icon)
+        msgBox.setWindowTitle(f"{title}")
+        msgBox.setText(f"{text}")
+        if cancel:
+            msgBox.setStandardButtons(
+                QMessageBox.Ok | QMessageBox.Cancel
+            )
+        else:
+            msgBox.setStandardButtons(QMessageBox.Ok)
+        return msgBox.exec()
 
 class MalariaScopeGUI(QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -484,7 +492,7 @@ class MalariaScopeGUI(QMainWindow):
     def updateImage(self, qimage):
         self.liveview_img.setPixmap(QPixmap.fromImage(qimage))
 
-        # # TODO implement parastie thumbnails
+        # # TODO implement parasite thumbnails
         # self.ring_img.setPixmap(QPixmap.fromImage(qimage))
         # self.troph_img.setPixmap(QPixmap.fromImage(qimage))
         # self.schizont_img.setPixmap(QPixmap.fromImage(qimage))
@@ -559,12 +567,36 @@ class MalariaScopeGUI(QMainWindow):
         print("Cleaning up and exiting the application.")
         self.close()
 
+class WindowManager():
+    def __init__(self):
+        self.setup_window = ExperimentSetupGUI()
+        self.setup_window.show()
+
+        # Set up event handler
+        self.setup_window.btnStartExperiment.clicked.connect(self.btnStartExperimentHandler)
+
+    def btnStartExperimentHandler(self):
+
+        self.setup_window.experiment_name = self.setup_window.txtExperimentName.text()
+        self.setup_window.flowcell_id = self.setup_window.txtFlowCellID.text()
+
+        if not self.setup_window.experiment_name or not self.setup_window.flowcell_id:
+            retval = self.setup_window._displayMessageBox(
+                QMessageBox.Icon.Warning,
+                "Insufficient entries",
+                "Please fill out all entries before proceeding.",
+                cancel=False,
+            )
+
+        else:
+            # TODO switch this to close() if getAllParameters() doesn't need to be called
+            self.setup_window.hide()
+
+            self.main_window = MalariaScopeGUI()
+            self.main_window.show()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    if not mode.dev:
-        main_window = MalariaScopeGUI()
-    else:
-        main_window=ExperimentSetupGUI()
-    main_window.show()
+    manager = WindowManager()
     sys.exit(app.exec_())
