@@ -3565,10 +3565,10 @@ U 1 1 6324DA55
 P 1400 5740
 F 0 "Q7" H 1650 5685 50  0000 L CNN
 F 1 "BSS84AK,215" H 1570 5615 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-323_SC-70" H 1400 5740 50  0001 C CIN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 1400 5740 50  0001 C CIN
 F 3 "https://assets.nexperia.com/documents/data-sheet/BSS84AK.pdf" H 1400 5740 50  0001 L CNN
 	1    1400 5740
-	1    0    0    -1  
+	1    0    0    1   
 $EndComp
 Text Label 640  5740 0    39   ~ 0
 3V3_GPIO

@@ -3560,10 +3560,10 @@ F 3 "" H 1910 6090 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Transistor_FET:BSS84 Q8
+L Transistor_FET:BSS84 Q7
 U 1 1 6324DA55
 P 1400 5740
-F 0 "Q8" H 1650 5685 50  0000 L CNN
+F 0 "Q7" H 1650 5685 50  0000 L CNN
 F 1 "BSS84AK,215" H 1570 5615 50  0000 L CNN
 F 2 "Package_TO_SOT_SMD:SOT-323_SC-70" H 1400 5740 50  0001 C CIN
 F 3 "https://assets.nexperia.com/documents/data-sheet/BSS84AK.pdf" H 1400 5740 50  0001 L CNN
@@ -3575,10 +3575,10 @@ Text Label 640  5740 0    39   ~ 0
 Wire Wire Line
 	640  5740 975  5740
 $Comp
-L Device:R_Small R33
+L Device:R_Small R20
 U 1 1 633C7E5A
 P 1175 5585
-F 0 "R33" V 1240 5535 50  0000 L CNN
+F 0 "R20" V 1240 5480 50  0000 L CNN
 F 1 "10k" V 1175 5510 50  0000 L CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 1175 5585 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 1175 5585 50  0001 C CNN
@@ -3594,10 +3594,10 @@ Wire Wire Line
 Wire Wire Line
 	1175 5740 1200 5740
 $Comp
-L Device:R_Small R32
+L Device:R_Small R15
 U 1 1 634F01C2
 P 1075 5740
-F 0 "R32" V 1000 5740 50  0000 C CNN
+F 0 "R15" V 1000 5740 50  0000 C CNN
 F 1 "330" V 1075 5740 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" H 1075 5740 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 1075 5740 50  0001 C CNN
