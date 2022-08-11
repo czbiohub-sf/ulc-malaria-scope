@@ -3316,89 +3316,89 @@ Wire Wire Line
 $Comp
 L Transistor_FET:ZVN3306F Q1
 U 1 1 6298E7D1
-P 1460 4830
-F 0 "Q1" V 1665 4876 50  0000 L CNN
-F 1 "BSS214NWH6327XTSA1" V 1745 4395 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-323_SC-70" H 1460 4830 50  0001 C CIN
-F 3 "https://www.infineon.com/dgdl/Infineon-BSS214NW-DS-v02_02-en.pdf?fileId=db3a30431b3e89eb011b695aebc01bde" H 1460 4830 50  0001 L CNN
-	1    1460 4830
+P 1685 4775
+F 0 "Q1" V 1890 4821 50  0000 L CNN
+F 1 "BSS214NWH6327XTSA1" V 1970 4340 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-323_SC-70" H 1685 4775 50  0001 C CIN
+F 3 "https://www.infineon.com/dgdl/Infineon-BSS214NW-DS-v02_02-en.pdf?fileId=db3a30431b3e89eb011b695aebc01bde" H 1685 4775 50  0001 L CNN
+	1    1685 4775
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1410 5055 1560 5055
+	1635 5000 1785 5000
 $Comp
 L Device:R_Small R2
 U 1 1 66944006
-P 1310 5055
-F 0 "R2" V 1375 5005 50  0000 L CNN
-F 1 "10k" V 1310 4980 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 1310 5055 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 1310 5055 50  0001 C CNN
-	1    1310 5055
+P 1535 5000
+F 0 "R2" V 1600 4950 50  0000 L CNN
+F 1 "10k" V 1535 4925 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 1535 5000 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 1535 5000 50  0001 C CNN
+	1    1535 5000
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	1560 4455 1560 4630
+	1785 4400 1785 4575
 Text Notes 1885 4355 2    59   ~ 0
 Valve Switch
 Wire Wire Line
-	910  5055 1210 5055
+	1135 5000 1435 5000
 Wire Wire Line
-	910  4830 535  4830
-Connection ~ 910  4830
+	1135 4775 760  4775
+Connection ~ 1135 4775
 Wire Wire Line
-	985  4830 910  4830
+	1210 4775 1135 4775
 Wire Wire Line
-	1260 4830 1185 4830
+	1485 4775 1410 4775
 $Comp
 L Device:R_Small R1
 U 1 1 63CC0AEB
-P 1085 4830
-F 0 "R1" V 1010 4830 50  0000 C CNN
-F 1 "330" V 1085 4830 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" H 1085 4830 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 1085 4830 50  0001 C CNN
-	1    1085 4830
+P 1310 4775
+F 0 "R1" V 1235 4775 50  0000 C CNN
+F 1 "330" V 1310 4775 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" H 1310 4775 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 1310 4775 50  0001 C CNN
+	1    1310 4775
 	0    1    1    0   
 $EndComp
-Text Label 1560 4455 3    39   ~ 0
+Text Label 1785 4400 3    39   ~ 0
 VALVE
 Wire Wire Line
-	1560 5055 1560 5130
-Connection ~ 1560 5055
+	1785 5000 1785 5075
+Connection ~ 1785 5000
 Wire Wire Line
-	910  5055 910  4830
+	1135 5000 1135 4775
 Wire Wire Line
-	1560 5030 1560 5055
+	1785 4975 1785 5000
 $Comp
 L power:GND #PWR03
 U 1 1 63CC0ACF
-P 1560 5130
-F 0 "#PWR03" H 1560 4880 50  0001 C CNN
-F 1 "GND" H 1565 4957 50  0000 C CNN
-F 2 "" H 1560 5130 50  0001 C CNN
-F 3 "" H 1560 5130 50  0001 C CNN
-	1    1560 5130
+P 1785 5075
+F 0 "#PWR03" H 1785 4825 50  0001 C CNN
+F 1 "GND" H 1790 4902 50  0000 C CNN
+F 2 "" H 1785 5075 50  0001 C CNN
+F 3 "" H 1785 5075 50  0001 C CNN
+	1    1785 5075
 	1    0    0    -1  
 $EndComp
-Text Label 535  4830 0    39   ~ 0
+Text Label 760  4775 0    39   ~ 0
 VALVE_GPIO
-Text Notes 2120 5575 2    59   ~ 0
+Text Notes 2755 5805 2    59   ~ 0
 Main Board Connector
 Wire Wire Line
-	1865 6010 1740 6010
+	2245 6190 2120 6190
 Wire Wire Line
-	1865 6110 1740 6110
-Text Label 1740 6010 0    39   ~ 0
+	2245 6290 2120 6290
+Text Label 2120 6190 0    39   ~ 0
 SCL
-Text Label 1740 6110 0    39   ~ 0
+Text Label 2120 6290 0    39   ~ 0
 SDA
-Text Label 1495 6210 0    39   ~ 0
+Text Label 1875 6390 0    39   ~ 0
 MPRLS_RST
 Wire Wire Line
-	1865 6210 1495 6210
+	2245 6390 1875 6390
 Wire Wire Line
-	1865 5910 1530 5910
+	2245 6090 1910 6090
 Text Label 3285 6065 1    39   ~ 0
 R_MPRLS_GND
 Wire Notes Line
@@ -3426,12 +3426,12 @@ nSLEEP and nRESET must be high for the driver to be enabled.
 $Comp
 L malaria_parts:MPR_Pressure_Breakout_Conn J2
 U 1 1 633DCB3D
-P 2065 6010
-F 0 "J2" H 2150 5900 50  0000 L CNN
-F 1 "MPR_Pressure_Breakout_Conn" H 2140 5825 50  0000 L CNN
-F 2 "Connector_Molex:Molex_PicoBlade_53047-0510_1x05_P1.25mm_Vertical" H 2065 6010 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/molex/0530470510/242856" H 2065 6010 50  0001 C CNN
-	1    2065 6010
+P 2445 6190
+F 0 "J2" H 2405 5875 50  0000 L CNN
+F 1 "MPR_Pressure_Breakout_Conn" H 1900 5810 50  0000 L CNN
+F 2 "Connector_Molex:Molex_PicoBlade_53047-0510_1x05_P1.25mm_Vertical" H 2445 6190 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0530470510/242856" H 2445 6190 50  0001 C CNN
+	1    2445 6190
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -3548,85 +3548,79 @@ F 3 "~" H 4400 6010 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	3600 5940 3980 5940
-Wire Wire Line
-	1755 5810 1865 5810
-$Comp
-L power:+3.3V #PWR0148
-U 1 1 63B9BE93
-P 1755 5810
-F 0 "#PWR0148" H 1755 5660 50  0001 C CNN
-F 1 "+3.3V" H 1755 5950 50  0000 C CNN
-F 2 "" H 1755 5810 50  0000 C CNN
-F 3 "" H 1755 5810 50  0000 C CNN
-	1    1755 5810
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1530 5835 1370 5835
-Wire Wire Line
-	1530 5910 1530 5835
-Text Label 1865 5910 2    39   ~ 0
-MPRLS_GND
-Wire Wire Line
-	520  6035 810  6035
-Text Label 520  6035 0    39   ~ 0
-3V3_GPIO
-Wire Wire Line
-	810  6275 1010 6275
-Wire Wire Line
-	810  6035 810  6275
-Wire Wire Line
-	1070 6035 1010 6035
-Connection ~ 810  6035
-$Comp
-L Device:R_Small R15
-U 1 1 631D6CFC
-P 910 6035
-F 0 "R15" V 835 6035 50  0000 C CNN
-F 1 "330" V 910 6035 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" H 910 6035 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 910 6035 50  0001 C CNN
-	1    910  6035
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	1370 6275 1370 6320
-Wire Wire Line
-	1210 6275 1370 6275
-$Comp
-L Device:R_Small R20
-U 1 1 63195CD2
-P 1110 6275
-F 0 "R20" V 1175 6225 50  0000 L CNN
-F 1 "10k" V 1110 6200 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 1110 6275 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 1110 6275 50  0001 C CNN
-	1    1110 6275
-	0    -1   -1   0   
-$EndComp
-Connection ~ 1370 6275
-Wire Wire Line
-	1370 6235 1370 6275
-$Comp
-L Transistor_FET:ZVN3306F Q7
-U 1 1 6302910A
-P 1270 6035
-F 0 "Q7" H 1475 5760 50  0000 L CNN
-F 1 "BSS214NWH6327XTSA1" H 1465 5690 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-323_SC-70" H 1270 6035 50  0001 C CIN
-F 3 "https://www.infineon.com/dgdl/Infineon-BSS214NW-DS-v02_02-en.pdf?fileId=db3a30431b3e89eb011b695aebc01bde" H 1270 6035 50  0001 L CNN
-	1    1270 6035
-	1    0    0    -1  
-$EndComp
 $Comp
 L power:GND #PWR09
 U 1 1 6122663C
-P 1370 6320
-F 0 "#PWR09" H 1370 6070 50  0001 C CNN
-F 1 "GND" H 1375 6147 50  0000 C CNN
-F 2 "" H 1370 6320 50  0001 C CNN
-F 3 "" H 1370 6320 50  0001 C CNN
-	1    1370 6320
+P 1910 6090
+F 0 "#PWR09" H 1910 5840 50  0001 C CNN
+F 1 "GND" H 1915 5917 50  0000 C CNN
+F 2 "" H 1910 6090 50  0001 C CNN
+F 3 "" H 1910 6090 50  0001 C CNN
+	1    1910 6090
 	1    0    0    -1  
 $EndComp
+$Comp
+L Transistor_FET:BSS84 Q7
+U 1 1 6324DA55
+P 1400 5740
+F 0 "Q7" H 1650 5685 50  0000 L CNN
+F 1 "BSS84AK,215" H 1570 5615 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-323_SC-70" H 1400 5740 50  0001 C CIN
+F 3 "https://assets.nexperia.com/documents/data-sheet/BSS84AK.pdf" H 1400 5740 50  0001 L CNN
+	1    1400 5740
+	1    0    0    -1  
+$EndComp
+Text Label 640  5740 0    39   ~ 0
+3V3_GPIO
+Wire Wire Line
+	640  5740 975  5740
+$Comp
+L Device:R_Small R20
+U 1 1 633C7E5A
+P 1175 5585
+F 0 "R20" V 1240 5480 50  0000 L CNN
+F 1 "10k" V 1175 5510 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 1175 5585 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 1175 5585 50  0001 C CNN
+	1    1175 5585
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	1175 5465 1175 5485
+Wire Wire Line
+	1500 5465 1500 5540
+Wire Wire Line
+	1175 5685 1175 5740
+Wire Wire Line
+	1175 5740 1200 5740
+$Comp
+L Device:R_Small R15
+U 1 1 634F01C2
+P 1075 5740
+F 0 "R15" V 1000 5740 50  0000 C CNN
+F 1 "330" V 1075 5740 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" H 1075 5740 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 1075 5740 50  0001 C CNN
+	1    1075 5740
+	0    1    1    0   
+$EndComp
+Connection ~ 1175 5740
+$Comp
+L power:+3.3V #PWR0141
+U 1 1 635756BB
+P 1500 5465
+F 0 "#PWR0141" H 1500 5315 50  0001 C CNN
+F 1 "+3.3V" H 1500 5605 50  0000 C CNN
+F 2 "" H 1500 5465 50  0000 C CNN
+F 3 "" H 1500 5465 50  0000 C CNN
+	1    1500 5465
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1175 5465 1500 5465
+Connection ~ 1500 5465
+Wire Wire Line
+	1500 5940 1500 5990
+Wire Wire Line
+	1500 5990 2245 5990
 $EndSCHEMATC
