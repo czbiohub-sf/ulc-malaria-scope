@@ -450,10 +450,10 @@ Wire Wire Line
 	6825 4465 7690 4465
 Connection ~ 6825 4465
 $Comp
-L Connector:Mini-DIN-4 J19
+L Connector:Mini-DIN-4 #J19
 U 1 1 62F0B693
 P 6280 4415
-F 0 "J19" H 6280 4782 50  0000 C CNN
+F 0 "#J19" H 6280 4782 50  0000 C CNN
 F 1 "Mini-DIN-4" H 6280 4691 50  0000 C CNN
 F 2 "" H 6280 4415 50  0001 C CNN
 F 3 "http://service.powerdynamics.com/ec/Catalog17/Section%2011.pdf" H 6280 4415 50  0001 C CNN

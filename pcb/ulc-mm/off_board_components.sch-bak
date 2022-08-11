@@ -450,10 +450,10 @@ Wire Wire Line
 	6825 4465 7690 4465
 Connection ~ 6825 4465
 $Comp
-L Connector:Mini-DIN-4 J?
+L Connector:Mini-DIN-4 #J19
 U 1 1 62F0B693
 P 6280 4415
-F 0 "J?" H 6280 4782 50  0000 C CNN
+F 0 "#J19" H 6280 4782 50  0000 C CNN
 F 1 "Mini-DIN-4" H 6280 4691 50  0000 C CNN
 F 2 "" H 6280 4415 50  0001 C CNN
 F 3 "http://service.powerdynamics.com/ec/Catalog17/Section%2011.pdf" H 6280 4415 50  0001 C CNN
@@ -487,8 +487,8 @@ L Motor:Fan #M?
 U 1 1 62F1D246
 P 8830 4550
 AR Path="/62F1D246" Ref="#M?"  Part="1" 
-AR Path="/64D22535/62F1D246" Ref="#M?"  Part="1" 
-F 0 "#M?" H 8672 4646 50  0000 R CNN
+AR Path="/64D22535/62F1D246" Ref="#M4"  Part="1" 
+F 0 "#M4" H 8672 4646 50  0000 R CNN
 F 1 "Fan" H 8672 4555 50  0000 R CNN
 F 2 "" H 8830 4560 50  0001 C CNN
 F 3 "https://www.mechatronics.com/pdf/B5020.pdf" H 8830 4560 50  0001 C CNN
@@ -508,8 +508,8 @@ L Connector_Generic:Conn_01x02 #J?
 U 1 1 62F1D250
 P 9510 4450
 AR Path="/62F1D250" Ref="#J?"  Part="1" 
-AR Path="/64D22535/62F1D250" Ref="#J?"  Part="1" 
-F 0 "#J?" H 9590 4442 50  0000 L CNN
+AR Path="/64D22535/62F1D250" Ref="#J2"  Part="1" 
+F 0 "#J2" H 9590 4442 50  0000 L CNN
 F 1 "CAM_FAN1" H 9590 4351 50  0000 L CNN
 F 2 "" H 9510 4450 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/molex/0510210200/242842?utm_adgroup=Connectors%20%26%20Interconnects&utm_source=google&utm_medium=cpc&utm_campaign=Dynamic%20Search_EN_Product&utm_term=&utm_content=Connectors%20%26%20Interconnects&gclid=CjwKCAjwtfqKBhBoEiwAZuesiFsxfBKkBfunjHFEX8ndclfE03LpsQ0aJ1bUUSo-KliiUNP-btW6HxoC67MQAvD_BwE" H 9510 4450 50  0001 C CNN
@@ -521,8 +521,8 @@ L Motor:Fan #M?
 U 1 1 62F21820
 P 8830 5215
 AR Path="/62F21820" Ref="#M?"  Part="1" 
-AR Path="/64D22535/62F21820" Ref="#M?"  Part="1" 
-F 0 "#M?" H 8672 5311 50  0000 R CNN
+AR Path="/64D22535/62F21820" Ref="#M5"  Part="1" 
+F 0 "#M5" H 8672 5311 50  0000 R CNN
 F 1 "Fan" H 8672 5220 50  0000 R CNN
 F 2 "" H 8830 5225 50  0001 C CNN
 F 3 "https://www.mechatronics.com/pdf/B5020.pdf" H 8830 5225 50  0001 C CNN
@@ -542,9 +542,9 @@ L Connector_Generic:Conn_01x02 #J?
 U 1 1 62F2182A
 P 9510 5115
 AR Path="/62F2182A" Ref="#J?"  Part="1" 
-AR Path="/64D22535/62F2182A" Ref="#J?"  Part="1" 
-F 0 "#J?" H 9590 5107 50  0000 L CNN
-F 1 "CAM_FAN1" H 9590 5016 50  0000 L CNN
+AR Path="/64D22535/62F2182A" Ref="#J3"  Part="1" 
+F 0 "#J3" H 9590 5107 50  0000 L CNN
+F 1 "CAM_FAN2" H 9590 5016 50  0000 L CNN
 F 2 "" H 9510 5115 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/molex/0510210200/242842?utm_adgroup=Connectors%20%26%20Interconnects&utm_source=google&utm_medium=cpc&utm_campaign=Dynamic%20Search_EN_Product&utm_term=&utm_content=Connectors%20%26%20Interconnects&gclid=CjwKCAjwtfqKBhBoEiwAZuesiFsxfBKkBfunjHFEX8ndclfE03LpsQ0aJ1bUUSo-KliiUNP-btW6HxoC67MQAvD_BwE" H 9510 5115 50  0001 C CNN
 	1    9510 5115
@@ -575,10 +575,10 @@ Wire Wire Line
 Text Label 1415 4540 0    39   ~ 0
 CAM_FAN1
 $Comp
-L power:+12V #PWR?
+L power:+12V #PWR0139
 U 1 1 62F4F166
 P 1300 3940
-F 0 "#PWR?" H 1300 3790 50  0001 C CNN
+F 0 "#PWR0139" H 1300 3790 50  0001 C CNN
 F 1 "+12V" H 1315 4113 50  0000 C CNN
 F 2 "" H 1300 3940 50  0001 C CNN
 F 3 "" H 1300 3940 50  0001 C CNN
@@ -588,10 +588,10 @@ $EndComp
 Wire Wire Line
 	1300 3940 1640 3940
 $Comp
-L power:GND #PWR?
+L power:GND #PWR0145
 U 1 1 62F54951
 P 1305 4140
-F 0 "#PWR?" H 1305 3890 50  0001 C CNN
+F 0 "#PWR0145" H 1305 3890 50  0001 C CNN
 F 1 "GND" H 1310 3967 50  0000 C CNN
 F 2 "" H 1305 4140 50  0001 C CNN
 F 3 "" H 1305 4140 50  0001 C CNN
@@ -625,10 +625,10 @@ Wire Wire Line
 Text Label 4380 4540 2    39   ~ 0
 CAM_FAN1
 $Comp
-L power:+12V #PWR?
+L power:+12V #PWR0146
 U 1 1 62F65746
 P 4495 3940
-F 0 "#PWR?" H 4495 3790 50  0001 C CNN
+F 0 "#PWR0146" H 4495 3790 50  0001 C CNN
 F 1 "+12V" H 4510 4113 50  0000 C CNN
 F 2 "" H 4495 3940 50  0001 C CNN
 F 3 "" H 4495 3940 50  0001 C CNN
@@ -638,10 +638,10 @@ $EndComp
 Wire Wire Line
 	4495 3940 4155 3940
 $Comp
-L power:GND #PWR?
+L power:GND #PWR0147
 U 1 1 62F6574D
 P 4490 4140
-F 0 "#PWR?" H 4490 3890 50  0001 C CNN
+F 0 "#PWR0147" H 4490 3890 50  0001 C CNN
 F 1 "GND" H 4495 3967 50  0000 C CNN
 F 2 "" H 4490 4140 50  0001 C CNN
 F 3 "" H 4490 4140 50  0001 C CNN
