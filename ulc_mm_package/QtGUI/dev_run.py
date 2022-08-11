@@ -3,18 +3,18 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--sim', action='store_true', help="simulation mode")
-    parser.add_argument('-d', '--dev', action='store_true', help="developer mode")
+    # parser.add_argument('-d', '--dev', action='store_true', help="developer mode")
     mode = parser.parse_args()
 
     if not mode.sim:
         # Use real hardware objects
-        from ulc_mm_package.hardware.hw_list import *
+        from ulc_mm_package.hardware.hardware_list import *
     else: 
         # Use simulated hardware objects
         from ulc_mm_package.hardware.simulation import *
 
 else:
-    from ulc_mm_package.hardware.hw_list import *
+    from ulc_mm_package.hardware.hardware_list import *
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.autobrightness import Autobrightness, AutobrightnessError
@@ -40,8 +40,8 @@ from cv2 import imwrite
 from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-_UI_FILE_DIR = "devUI.ui"
-_EXPERIMENT_FORM_PATH = "experimentform.ui"
+_UI_FILE_DIR = "dev_run.ui"
+_EXPERIMENT_FORM_PATH = "dev_form.ui"
 # SSD directory
 _DEFAULT_SSD = "/media/pi/"
 _ALT_SSD = "./sim_media/pi/"

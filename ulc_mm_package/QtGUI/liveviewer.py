@@ -43,8 +43,8 @@ from qimage2ndarray import array2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
-_UI_FILE_DIR = "devUI.ui"
-_EXPERIMENT_FORM_PATH = "experimentform.ui"
+_UI_FILE_DIR = "dev_run.ui"
+_EXPERIMENT_FORM_PATH = "dev_form.ui"
 
 #TODO: Better way to reference files in a module?
 AUTOFOCUS_MODEL_DIR =  "../neural_nets/autofocus.xml"
