@@ -34,6 +34,7 @@ from time import perf_counter, sleep
 from os import listdir, mkdir, path
 from datetime import datetime, timedelta
 from PyQt5 import uic        # TODO DELETE THIS 
+# TODO organize these imports
 from PyQt5.QtWidgets import (
     QDialog, QMessageBox,
     QMainWindow, QApplication, QGridLayout, 
@@ -41,15 +42,22 @@ from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QSizePolicy,
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QIcon
 from cv2 import imwrite
 from qimage2ndarray import array2qimage
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-_UI_FILE_DIR = "user_run.ui"
+
+# ================ Misc constants ================ #
+ICON_PATH = "CZB-logo.png"
 _EXPERIMENT_FORM_PATH = "user_form.ui"
+VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
+
+# ================ SSD constants ================ #
 DEFAULT_SSD = "/media/pi/"
 ALT_SSD = "./sim_media/pi/"
+
+# TODO test out all dialog boxes
 
 class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
@@ -278,43 +286,51 @@ class ExperimentSetupGUI(QDialog):
         }
 
 
-    def _displayMessageBox(self, icon, title, text, cancel):
-        msgBox = QMessageBox()
-        msgBox.setIcon(icon)
-        msgBox.setWindowTitle(f"{title}")
-        msgBox.setText(f"{text}")
-        if cancel:
-            msgBox.setStandardButtons(
-                QMessageBox.Ok | QMessageBox.Cancel
-            )
-        else:
-            msgBox.setStandardButtons(QMessageBox.Ok)
-        return msgBox.exec()
+    # def _displayMessageBox(self, icon, title, text, cancel):
+
+    #     msgBox = QMessageBox()
+    #     msgBox.setIcon(icon)
+    #     msgBox.setWindowTitle(f"{title}")
+    #     msgBox.setText(f"{text}")
+    #     if cancel:
+    #         msgBox.setStandardButtons(
+    #             QMessageBox.Ok | QMessageBox.Cancel
+    #         )
+    #     else:
+    #         msgBox.setStandardButtons(QMessageBox.Ok)
+    #     return msgBox.exec()
 
 class MalariaScopeGUI(QMainWindow):
+
     def __init__(self, *args, **kwargs):
+
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
 
         media_dir = DEFAULT_SSD
-
         if mode.sim:
-            print("---------------------\n|  SIMULATION MODE  |\n---------------------")
-
             if not path.exists(VIDEO_PATH):
-                print("ERROR - No sample video exists. To add your own video, save it under " 
-                        + VIDEO_PATH  + "\nRecommended video: " + VIDEO_REC )
-                quit()
+                retval = self._displayMessageBox(
+                    QMessageBox.Icon.Critical,
+                    "Missing sample video",
+                    "Sample video must be saved to " + VIDEO_PATH  
+                        + "\n\nRecommended video: " + VIDEO_REC
+                        + "\n\nPress OK to close the application.",
+                    cancel=False,
+                )
+                if retval == QMessageBox.Ok:
+                    quit()
 
             if not path.exists(media_dir):
                 media_dir = ALT_SSD
-                print("No external harddrive / SSD detected. Saving media to " + media_dir)
+                print("No external harddrive / SSD. Saving media to local directory " + media_dir + " instead.")
+
         try:
             self.external_dir = media_dir + listdir(media_dir)[0] + "/"
         except IndexError:
             retval = self._displayMessageBox(
                 QMessageBox.Icon.Critical,
-                "ERROR - Harddrive not detected.",
-                "ERROR! No external harddrive / SSD detected. Press OK to close the application.",
+                "Harddrive / SSD not detected",
+                "No external harddrive / SSD detected. Press OK to close the application.",
                 cancel=False,
             )
             if retval == QMessageBox.Ok:
@@ -328,12 +344,8 @@ class MalariaScopeGUI(QMainWindow):
         self.led = None
         self.fan = Fan()
 
-        # Load the ui file
-        # uic.loadUi(_UI_FILE_DIR, self)
+        # Load the ui
         self._loadUI()
-
-        # Experiment parameter form dialog
-        self.experiment_form_dialog = ExperimentSetupGUI(self)
 
         # Start the video stream
         self.acquisitionThread = AcquisitionThread(self.external_dir)
@@ -344,8 +356,14 @@ class MalariaScopeGUI(QMainWindow):
             self.led.setDutyCycle(0)
 
         except LEDError:
-            print("ERROR - Could not instantiate LED")
-            quit()
+            retval = self._displayMessageBox(
+                QMessageBox.Icon.Critical,
+                "LED error",
+                "Could not instantiate LED.",
+                cancel=False,
+            )
+            if retval == QMessageBox.Ok:
+                quit()
 
         # Create motor w/ default pins/settings (full step)
         try:
@@ -356,8 +374,14 @@ class MalariaScopeGUI(QMainWindow):
             self.motor.move_abs(int(self.motor.max_pos // 2))
 
         except MotorControllerError:
-            print("ERROR - Could not initialize DRV8825.")
-            quit()
+            retval = self._displayMessageBox(
+                QMessageBox.Icon.Critical,
+                "Motor error",
+                "Could not instantiate motor controller.",
+                cancel=False,
+            )
+            if retval == QMessageBox.Ok:
+                quit()
 
         # Create pressure controller (sensor + servo)
         try:
@@ -365,31 +389,42 @@ class MalariaScopeGUI(QMainWindow):
             # TODO include relevant info
             # self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
         except PressureControlError:
-            print("ERROR - Could not initialize Pressure Controller.")
-            quit()
+            retval = self._displayMessageBox(
+                QMessageBox.Icon.Critical,
+                "Pressure error",
+                "Could not instantiate pressure controller.",
+                cancel=False,
+            )
+            if retval == QMessageBox.Ok:
+                quit()
 
         # Connect the encoder
         try:
             self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
         except EncoderI2CError as e:
-            print(f"ENCODER I2C ERROR: {e}")
-            quit()
+            retval = self._displayMessageBox(
+                QMessageBox.Icon.Critical,
+                "Encoder error",
+                "Could not instantiate encoder.",
+                cancel=False,
+            )
+            if retval == QMessageBox.Ok:
+                quit()
 
-        ### Connect UI elements to actions ###
-
-        # Acquisition thread
+        # Acquisition thread      # TODO sort this out
         self.acquisitionThread.changePixmap.connect(self.updateImage)
-        self.acquisitionThread.fps.connect(self.updateFPS)
+        self.acquisitionThread.fps.connect(self.updateHardwareLbl)
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
 
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pressure_control = self.pressure_control
         self.acquisitionThread.autobrightness = Autobrightness(self.led)
 
-        self.acquisitionThread.start()
-
         # Acquisition thread settings
-        self.acquisitionThread.update_liveview = 45
+        self.acquisitionThread.update_liveview = 1
+        # self.acquisitionThread.update_liveview = 45
+
+        self.acquisitionThread.start()
 
         # Misc
         self.fan.turn_on()
@@ -397,6 +432,7 @@ class MalariaScopeGUI(QMainWindow):
 
     def _displayMessageBox(self, icon, title, text, cancel):
         msgBox = QMessageBox()
+        msgBox.setWindowIcon(QIcon(ICON_PATH))
         msgBox.setIcon(icon)
         msgBox.setWindowTitle(f"{title}")
         msgBox.setText(f"{text}")
@@ -488,6 +524,9 @@ class MalariaScopeGUI(QMainWindow):
         self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnail")
         self.main_layout.addWidget(self.tab_widget, 0, 0)
 
+    def _setup(self):
+        pass
+
     @pyqtSlot(QImage)
     def updateImage(self, qimage):
         self.liveview_img.setPixmap(QPixmap.fromImage(qimage))
@@ -513,15 +552,16 @@ class MalariaScopeGUI(QMainWindow):
         self.lblTargetPressure.setText("")
         self.enablePressureUIElements()
         _ = self._displayMessageBox(
-            QMessageBox.Icon.Warning,
-            "Leak - Active pressure controlled stopped",
-            f"The target flowrate can not be attained, stopping active flow control.",
+            QMessageBox.Icon.Critical,
+            "Pressure leak",
+            """The target flowrate can not be attained. Stopping active flow control. 
+                \n\nPress OK to close the application.""",
             cancel=False,
         )
 
     @pyqtSlot(int)
-    def updateFPS(self, val):
-        self.hardware_lbl.setText(f"FPS: {val}")
+    def updateHardwareLbl(self, fps):
+        self.hardware_lbl.setText(f"FPS: {fps}")
 
     def manualFocusWithEncoder(self, increment: int):
         try:
@@ -538,9 +578,11 @@ class MalariaScopeGUI(QMainWindow):
 
     def exit(self):
         retval = self._displayMessageBox(
-            QMessageBox.Icon.Warning,
+            QMessageBox.Icon.Information,
             "Exit application",
-            "Please remove the flow cell now. Only press okay after the flow cell has been removed. The syringe will move into the topmost position after pressing okay.",
+            """Please remove the flow cell now. 
+                \n\nOnly press OK after the flow cell has been removed,
+                as the syringe will move into the topmost position.""",
             cancel=True,
         )
 
@@ -570,6 +612,7 @@ class MalariaScopeGUI(QMainWindow):
 class WindowManager():
     def __init__(self):
         self.setup_window = ExperimentSetupGUI()
+        self.setup_window.setWindowIcon(QIcon(ICON_PATH))
         self.setup_window.show()
 
         # Set up event handler
@@ -580,23 +623,35 @@ class WindowManager():
         self.setup_window.experiment_name = self.setup_window.txtExperimentName.text()
         self.setup_window.flowcell_id = self.setup_window.txtFlowCellID.text()
 
-        if not self.setup_window.experiment_name or not self.setup_window.flowcell_id:
-            retval = self.setup_window._displayMessageBox(
-                QMessageBox.Icon.Warning,
-                "Insufficient entries",
-                "Please fill out all entries before proceeding.",
-                cancel=False,
-            )
+        # TODO switch this to close() if getAllParameters() doesn't need to be called
+        self.setup_window.hide()
 
-        else:
-            # TODO switch this to close() if getAllParameters() doesn't need to be called
-            self.setup_window.hide()
+        self.main_window = MalariaScopeGUI()
+        self.main_window.setWindowIcon(QIcon(ICON_PATH))
+        self.main_window.show()
 
-            self.main_window = MalariaScopeGUI()
-            self.main_window.show()
+        # if not self.setup_window.experiment_name or not self.setup_window.flowcell_id:
+        #     retval = self.setup_window._displayMessageBox(
+        #         QMessageBox.Icon.Warning,
+        #         "Empty form entries",
+        #         "Please fill out all entries before proceeding.",
+        #         cancel=False,
+        #     )
+
+        # else:
+            # # TODO switch this to close() if getAllParameters() doesn't need to be called
+            # self.setup_window.hide()
+
+            # self.main_window = MalariaScopeGUI()
+            # self.main_window.setWindowIcon(QIcon(ICON_PATH))
+            # self.main_window.show()
 
 
 if __name__ == "__main__":
+
+    if mode.sim:
+        print("---------------------\n|  SIMULATION MODE  |\n---------------------")
+
     app = QApplication(sys.argv)
     manager = WindowManager()
     sys.exit(app.exec_())
