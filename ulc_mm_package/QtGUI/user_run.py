@@ -70,8 +70,9 @@ class AcquisitionThread(QThread):
     fps = pyqtSignal(int)
     pressureLeakDetected = pyqtSignal(int)
 
-    # NOTE for setup operation
-    autobrightnessDone = pyqtSignal(int)
+    # NOTE for error handling
+    cameraFailed = pyqtSignal(str)
+    autobrightnessFailed = pyqtSignal(str)
 
     def __init__(self, external_dir):
         super().__init__()
@@ -110,44 +111,58 @@ class AcquisitionThread(QThread):
         # NOTE autobrightness object
         self.autobrightness: Autobrightness = None
         # NOTE camera object
+        # TODO turn this into an error
         try:
             self.camera = BaslerCamera()
         except CameraError as e:
-            print("ERROR - Camera could not be activated.")
-            quit()
+            cameraFailed.emit("Camera could not be activated.")
+
+        self.pause = False
 
     def run(self):
         while True:
-            if self.setup_done:
-                try:
-                    for image in self.camera.yieldImages():
+            try:
+                # while time < setup_time
+                    # image = self.camera.yieldImages()
+                    # activeflowcontrol
+                    # autobrightness
+                    # no update counter ie. actual live preview
 
-                        self.updateGUIElements()
-                        # TODO add some kind of save here
-                        # self.save(image)
-                        self.zStack(image)
-                        self.activeFlowControl(image)
-                        if not mode.sim:
-                            self._autobrightness(image)
+                # reset time
 
-                        # Always maximize fps for image acquisition
-                        if self.update_counter % self.liveview_update_loops == 0:
-                            qimage = array2qimage(image)
-                            self.changePixmap.emit(qimage)
+                # # SWITCH TO TIME BASED BUFFERING INSTEAD OF COUNT BASED
+                # while time < exp_time
+                    # image = self.camera.yieldImages()
+                    # if update_counter satisfies loop requirement
+                    # get bounding box
+                    # update 
 
-                # except PyCameraException as e:
-                except Exception as e:
-                    # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
-                    # Once that happens, this can be swapped to catch the PyCameraException
-                    print(e)
-                    print(traceback.format_exc())
-                    quit()
-                    # print(e)
-                    # print(traceback.format_exc())
+                while not self.pause:
+                    image = next(self.camera.yieldImages())
 
-            else:
-                # TODO implement this
-                pass
+                    self.updateGUIElements()
+                    # TODO add some kind of save here
+                    # self.save(image)
+                    self.zStack(image)
+                    self.activeFlowControl(image)
+                    self._autobrightness(image)
+                    # if not mode.sim:
+                    #     self._autobrightness(image)
+
+                    # Always maximize fps for image acquisition
+                    if self.update_counter % self.liveview_update_loops == 0:
+                        qimage = array2qimage(image)
+                        self.changePixmap.emit(qimage)
+
+            # except PyCameraException as e:
+            except Exception as e:
+                # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
+                # Once that happens, this can be swapped to catch the PyCameraException
+                print(e)
+                print(traceback.format_exc())
+                quit()
+                # print(e)
+                # print(traceback.format_exc())
 
     def getMetadata(self) -> Dict:
         """Required metadata:
@@ -218,17 +233,18 @@ class AcquisitionThread(QThread):
                 # Occurs if an image is sent while the function is still moving the motor
                 pass
 
-    # NOTE ################# RUNNING AUTO BRIGHTNESS
+    # NOTE ################# RUNNING FLOW CONTROL
 
     def _autobrightness(self, img: np.ndarray):
+        # Start autobrightness
         try:
-            done = self.autobrightness.runAutobrightness(img)
+            autobrightness_done = self.autobrightness.runAutobrightness(img)
         except AutobrightnessError as e:
-            print("ERROR - Could not enable autobrightness\n") 
-            print(e)
-            quit()
+            self.pause = True
+            self.autobrightnessFailed.emit("Could not achieve target brightness.")
+        # TODO figure out whether I should run autobrightness in a loop
 
-    # NOTE ################# RUNNING ZSTACK
+    # NOTE ################# RUNNING FLOW CONTROL
 
     def initializeActiveFlowControl(self, img: np.ndarray):
         self.pressure_control.initializeActiveFlowControl(img)
@@ -285,21 +301,6 @@ class ExperimentSetupGUI(QDialog):
             "binningMode": self.binningMode,
         }
 
-
-    # def _displayMessageBox(self, icon, title, text, cancel):
-
-    #     msgBox = QMessageBox()
-    #     msgBox.setIcon(icon)
-    #     msgBox.setWindowTitle(f"{title}")
-    #     msgBox.setText(f"{text}")
-    #     if cancel:
-    #         msgBox.setStandardButtons(
-    #             QMessageBox.Ok | QMessageBox.Cancel
-    #         )
-    #     else:
-    #         msgBox.setStandardButtons(QMessageBox.Ok)
-    #     return msgBox.exec()
-
 class MalariaScopeGUI(QMainWindow):
 
     def __init__(self, *args, **kwargs):
@@ -309,16 +310,14 @@ class MalariaScopeGUI(QMainWindow):
         media_dir = DEFAULT_SSD
         if mode.sim:
             if not path.exists(VIDEO_PATH):
-                retval = self._displayMessageBox(
+                _ = self._displayMessageBox(
                     QMessageBox.Icon.Critical,
                     "Missing sample video",
                     "Sample video must be saved to " + VIDEO_PATH  
                         + "\n\nRecommended video: " + VIDEO_REC
                         + "\n\nPress OK to close the application.",
-                    cancel=False,
+                    quit_after=True,
                 )
-                if retval == QMessageBox.Ok:
-                    quit()
 
             if not path.exists(media_dir):
                 media_dir = ALT_SSD
@@ -327,14 +326,12 @@ class MalariaScopeGUI(QMainWindow):
         try:
             self.external_dir = media_dir + listdir(media_dir)[0] + "/"
         except IndexError:
-            retval = self._displayMessageBox(
+            _ = self._displayMessageBox(
                 QMessageBox.Icon.Critical,
                 "Harddrive / SSD not detected",
                 "No external harddrive / SSD detected. Press OK to close the application.",
-                cancel=False,
+                quit_after=True,
             )
-            if retval == QMessageBox.Ok:
-                quit()
 
         # List hardware components
         self.acquisitionThread = None
@@ -356,14 +353,12 @@ class MalariaScopeGUI(QMainWindow):
             self.led.setDutyCycle(0)
 
         except LEDError:
-            retval = self._displayMessageBox(
+            _ = self._displayMessageBox(
                 QMessageBox.Icon.Critical,
                 "LED error",
                 "Could not instantiate LED.",
-                cancel=False,
+                quit_after=True,
             )
-            if retval == QMessageBox.Ok:
-                quit()
 
         # Create motor w/ default pins/settings (full step)
         try:
@@ -374,14 +369,12 @@ class MalariaScopeGUI(QMainWindow):
             self.motor.move_abs(int(self.motor.max_pos // 2))
 
         except MotorControllerError:
-            retval = self._displayMessageBox(
+            _ = self._displayMessageBox(
                 QMessageBox.Icon.Critical,
                 "Motor error",
                 "Could not instantiate motor controller.",
-                cancel=False,
+                quit_after=True,
             )
-            if retval == QMessageBox.Ok:
-                quit()
 
         # Create pressure controller (sensor + servo)
         try:
@@ -389,36 +382,36 @@ class MalariaScopeGUI(QMainWindow):
             # TODO include relevant info
             # self.txtBoxFlow.setText(f"{self.pressure_control.getCurrentDutyCycle()}")
         except PressureControlError:
-            retval = self._displayMessageBox(
+            _ = self._displayMessageBox(
                 QMessageBox.Icon.Critical,
                 "Pressure error",
                 "Could not instantiate pressure controller.",
-                cancel=False,
+                quit_after=True,
             )
-            if retval == QMessageBox.Ok:
-                quit()
 
         # Connect the encoder
         try:
             self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
         except EncoderI2CError as e:
-            retval = self._displayMessageBox(
+            _ = self._displayMessageBox(
                 QMessageBox.Icon.Critical,
                 "Encoder error",
                 "Could not instantiate encoder.",
-                cancel=False,
+                quit_after=True,
             )
-            if retval == QMessageBox.Ok:
-                quit()
 
         # Acquisition thread      # TODO sort this out
         self.acquisitionThread.changePixmap.connect(self.updateImage)
         self.acquisitionThread.fps.connect(self.updateHardwareLbl)
-        self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
+        # self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
 
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pressure_control = self.pressure_control
         self.acquisitionThread.autobrightness = Autobrightness(self.led)
+
+        # Acquisition thread failure handling
+        self.acquisitionThread.cameraFailed.connect(self.cameraFailed)
+        self.acquisitionThread.autobrightnessFailed.connect(self.autobrightnessFailed)
 
         # Acquisition thread settings
         self.acquisitionThread.update_liveview = 1
@@ -430,18 +423,27 @@ class MalariaScopeGUI(QMainWindow):
         self.fan.turn_on()
         self.exit_btn.clicked.connect(self.exit)
 
-    def _displayMessageBox(self, icon, title, text, cancel):
+        # Start setup
+        self._setup()
+
+    def _displayMessageBox(self, icon, title, text, cancel=False, quit_after=False):
         msgBox = QMessageBox()
         msgBox.setWindowIcon(QIcon(ICON_PATH))
+        # REMOVE ICON PARAM IF NEEDED
         msgBox.setIcon(icon)
         msgBox.setWindowTitle(f"{title}")
         msgBox.setText(f"{text}")
+
         if cancel:
             msgBox.setStandardButtons(
                 QMessageBox.Ok | QMessageBox.Cancel
             )
         else:
             msgBox.setStandardButtons(QMessageBox.Ok)
+
+        if quit_after and msgBox.exec() == QMessageBox.Ok:
+            quit()
+
         return msgBox.exec()
 
     def _loadUI(self):
@@ -524,8 +526,17 @@ class MalariaScopeGUI(QMainWindow):
         self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnail")
         self.main_layout.addWidget(self.tab_widget, 0, 0)
 
+    # TODO figure out whether this should go in __init__
     def _setup(self):
-        pass
+        # Insert flowcell
+        self.acquisitionThread.pause = True
+        retval = self._displayMessageBox(
+            QMessageBox.Icon.Information,
+            "Insert flow cell",
+            "Click OK once flow cell is inserted.",
+        )
+        if retval == QMessageBox.Ok:
+            self.acquisitionThread.pause = False
 
     @pyqtSlot(QImage)
     def updateImage(self, qimage):
@@ -536,27 +547,35 @@ class MalariaScopeGUI(QMainWindow):
         # self.troph_img.setPixmap(QPixmap.fromImage(qimage))
         # self.schizont_img.setPixmap(QPixmap.fromImage(qimage))
 
-    @pyqtSlot(int)
-    def autobrightnessDone(self, val):
-        self.btnAutobrightness.setEnabled(True)
-        self.btnLEDToggle.setEnabled(True)
-        self.vsLED.blockSignals(False)
-        self.vsLED.setEnabled(True)
-        new_val = int(self.led._convertPWMValToDutyCyclePerc(self.led.pwm_duty_cycle)*100)
-        self.vsLED.setValue(new_val)
-        self.lblLED.setText(f"{new_val}%")
+    @pyqtSlot(str)
+    def cameraFailed(self, msg):
+         _ = self._displayMessageBox(
+            QMessageBox.Icon.Critical,
+            "Camera error",
+            msg,
+            quit_after=True,
+        )
+
+    @pyqtSlot(str)
+    def autobrightnessFailed(self, msg):
+         _ = self._displayMessageBox(
+            QMessageBox.Icon.Critical,
+            "Autobrightness error",
+            msg,
+            quit_after=True,
+        )
 
     @pyqtSlot(int)
-    def pressureLeak(self, _):
+    def pressureLeak(self, val):
         self.chkBoxFlowControl.setChecked(False)
         self.lblTargetPressure.setText("")
         self.enablePressureUIElements()
         _ = self._displayMessageBox(
             QMessageBox.Icon.Critical,
             "Pressure leak",
-            """The target flowrate can not be attained. Stopping active flow control. 
-                \n\nPress OK to close the application.""",
-            cancel=False,
+            "The target flowrate can not be attained. Stopping active flow control." + 
+                "\n\nPress OK to close the application.",
+            quit_after=True,
         )
 
     @pyqtSlot(int)
@@ -580,9 +599,9 @@ class MalariaScopeGUI(QMainWindow):
         retval = self._displayMessageBox(
             QMessageBox.Icon.Information,
             "Exit application",
-            """Please remove the flow cell now. 
-                \n\nOnly press OK after the flow cell has been removed,
-                as the syringe will move into the topmost position.""",
+            "Please remove the flow cell now." +  
+                "\n\nOnly press OK after the flow cell has been removed, " + 
+                "as the syringe will move into the topmost position.",
             cancel=True,
         )
 
