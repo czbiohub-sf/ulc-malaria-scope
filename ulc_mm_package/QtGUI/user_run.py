@@ -58,6 +58,8 @@ DEFAULT_SSD = "/media/pi/"
 ALT_SSD = "./sim_media/pi/"
 
 # TODO test out all dialog boxes
+# TODO get rid of all NOTE comments
+# TODO include consistent exit msg ("Ending run.")
 
 class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
@@ -72,7 +74,9 @@ class AcquisitionThread(QThread):
 
     # NOTE for error handling
     cameraFailed = pyqtSignal(str)
+    pressureSensorFailed = pyqtSignal(str)
     autobrightnessFailed = pyqtSignal(str)
+    pressureLeak = pyqtSignal(str)
 
     def __init__(self, external_dir):
         super().__init__()
@@ -85,7 +89,6 @@ class AcquisitionThread(QThread):
         self.setup_done = True      # TODO implement this
         # NOTE basic operation objects
         self.fps_timer = perf_counter()
-
 
         # NOTE task parameters #
         # NOTE saving data
@@ -111,11 +114,10 @@ class AcquisitionThread(QThread):
         # NOTE autobrightness object
         self.autobrightness: Autobrightness = None
         # NOTE camera object
-        # TODO turn this into an error
         try:
             self.camera = BaslerCamera()
         except CameraError as e:
-            cameraFailed.emit("Camera could not be activated.")
+            cameraFailed.emit("Camera could not be activated. Ending run.")
 
         self.pause = False
 
@@ -144,8 +146,9 @@ class AcquisitionThread(QThread):
                     # TODO add some kind of save here
                     # self.save(image)
                     self.zStack(image)
-                    self.activeFlowControl(image)
                     self._autobrightness(image)
+                    self._activeFlowControl(image)
+                    # ADD a check to turn on pressure then see if cells appear within ten seconds
                     # if not mode.sim:
                     #     self._autobrightness(image)
 
@@ -201,8 +204,7 @@ class AcquisitionThread(QThread):
                     pressure = self.pressure_control.getPressure()
                     self.updatePressure.emit(pressure)
                 except Exception:
-                    print("ERROR - Could not read pressure")
-                    quit()
+                    self.pressureSensorFailed.emit("Could not read pressure. Ending run.")
             self.fps.emit(int(self.pressure_update_loops / (perf_counter() - self.fps_timer)))
             self.fps_timer = perf_counter()
 
@@ -233,7 +235,7 @@ class AcquisitionThread(QThread):
                 # Occurs if an image is sent while the function is still moving the motor
                 pass
 
-    # NOTE ################# RUNNING FLOW CONTROL
+    # NOTE ################# RUNNING AUTOBRIGHTNESS
 
     def _autobrightness(self, img: np.ndarray):
         # Start autobrightness
@@ -241,36 +243,45 @@ class AcquisitionThread(QThread):
             autobrightness_done = self.autobrightness.runAutobrightness(img)
         except AutobrightnessError as e:
             self.pause = True
-            self.autobrightnessFailed.emit("Could not achieve target brightness.")
+            self.autobrightnessFailed.emit("Could not achieve target brightness. Ending run.")
         # TODO figure out whether I should run autobrightness in a loop
 
     # NOTE ################# RUNNING FLOW CONTROL
 
-    def initializeActiveFlowControl(self, img: np.ndarray):
+    def _activeFlowControl(self, img: np.ndarray):
         self.pressure_control.initializeActiveFlowControl(img)
-        self.flowcontrol_enabled = True
-        self.initializeFlowControl = False
 
-    # TODO get rid of this if not necessary for shutoff
-    def stopActiveFlowControl(self):
-        self.flowcontrol_enabled = False
-        self.pressure_control.flow_rate_y = 0
+        try: 
+            self.pressure_control.activeFlowControl(img)
+        except PressureLeak:
+            self.pressureLeak.emit("Could not achieve target flow rate. Ending run.")
 
-    def activeFlowControl(self, img: np.ndarray):
-        if self.initializeFlowControl:
-            self.initializeActiveFlowControl(img)
 
-        if self.flowcontrol_enabled:
-            try:
-                self.pressure_control.activeFlowControl(img)
-                self.syringePosChanged.emit(1)
-            except PressureLeak:
-                print(
-                    f"""The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
-                        Active flow control is now disabled.
-                        """         
-                )       
-                self.pressureLeakDetected.emit(1)
+    # def initializeActiveFlowControl(self, img: np.ndarray):
+    #     self.pressure_control.initializeActiveFlowControl(img)
+    #     self.flowcontrol_enabled = True
+    #     self.initializeFlowControl = False
+
+    # # TODO get rid of this if not necessary for shutoff
+    # def stopActiveFlowControl(self):
+    #     self.flowcontrol_enabled = False
+    #     self.pressure_control.flow_rate_y = 0
+
+    # def activeFlowControl(self, img: np.ndarray):
+    #     if self.initializeFlowControl:
+    #         self.initializeActiveFlowControl(img)
+
+    #     if self.flowcontrol_enabled:
+    #         try:
+    #             self.pressure_control.activeFlowControl(img)
+    #             self.syringePosChanged.emit(1)
+    #         except PressureLeak:
+    #             print(
+    #                 f"""The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
+    #                     Active flow control is now disabled.
+    #                     """         
+    #             )       
+    #             self.pressureLeakDetected.emit(1)
             
 class ExperimentSetupGUI(QDialog):
     """Form to input experiment parameters"""
@@ -288,8 +299,6 @@ class ExperimentSetupGUI(QDialog):
         # Parameters
         self.flowcell_id = ""
         self.experiment_name = ""
-        # TODO choose binning mode later
-        self.binningMode = 2
 
         # Set up event handlers
         self.btnExperimentSetupAbort.clicked.connect(quit)
@@ -298,7 +307,6 @@ class ExperimentSetupGUI(QDialog):
         return {
             "flowcell_id": self.flowcell_id,
             "experiment_name": self.experiment_name,
-            "binningMode": self.binningMode,
         }
 
 class MalariaScopeGUI(QMainWindow):
@@ -410,8 +418,10 @@ class MalariaScopeGUI(QMainWindow):
         self.acquisitionThread.autobrightness = Autobrightness(self.led)
 
         # Acquisition thread failure handling
+        self.acquisitionThread.pressureSensorFailed.connect(self.pressureSensorFailed)
         self.acquisitionThread.cameraFailed.connect(self.cameraFailed)
         self.acquisitionThread.autobrightnessFailed.connect(self.autobrightnessFailed)
+        self.acquisitionThread.pressureLeak.connect(self.pressureLeak)
 
         # Acquisition thread settings
         self.acquisitionThread.update_liveview = 1
@@ -548,6 +558,15 @@ class MalariaScopeGUI(QMainWindow):
         # self.schizont_img.setPixmap(QPixmap.fromImage(qimage))
 
     @pyqtSlot(str)
+    def pressureSensorFailed(self, msg):
+         _ = self._displayMessageBox(
+            QMessageBox.Icon.Critical,
+            "Pressure sensor error",
+            msg,
+            quit_after=True,
+        )
+
+    @pyqtSlot(str)
     def cameraFailed(self, msg):
          _ = self._displayMessageBox(
             QMessageBox.Icon.Critical,
@@ -565,16 +584,15 @@ class MalariaScopeGUI(QMainWindow):
             quit_after=True,
         )
 
-    @pyqtSlot(int)
-    def pressureLeak(self, val):
-        self.chkBoxFlowControl.setChecked(False)
-        self.lblTargetPressure.setText("")
-        self.enablePressureUIElements()
+    @pyqtSlot(str)
+    def pressureLeak(self, msg):
+        # self.chkBoxFlowControl.setChecked(False)
+        # self.lblTargetPressure.setText("")
+        # self.enablePressureUIElements()
         _ = self._displayMessageBox(
             QMessageBox.Icon.Critical,
             "Pressure leak",
-            "The target flowrate can not be attained. Stopping active flow control." + 
-                "\n\nPress OK to close the application.",
+            msg,
             quit_after=True,
         )
 
