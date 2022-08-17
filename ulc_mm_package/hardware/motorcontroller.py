@@ -16,6 +16,7 @@ import pigpio
 from ulc_mm_package.hardware.hardware_constants import *
 
 MOTOR_LOCK = threading.Lock()
+DEFAULT_FULL_STEP_HOMING_TIMEOUT = 15
 
 def lockNoBlock(lock):
     def lockDecorator(func):
@@ -35,22 +36,21 @@ def lockNoBlock(lock):
 
 class MotorControllerError(Exception):
     """ Base class for catching all motor controller related errors. """
-    pass
+
+class MotorMoveTimeout(MotorControllerError):
+    """ Exception raised when a motor motion takes longer than the allotted time."""
 
 class HomingError(MotorControllerError):
     """ Error raised if an issue occurs during the homing procedure. """
-    pass
 
 class StopMotorInterrupt(MotorControllerError):
     """ Stop the motor. """
-    pass
 
 class MotorInMotion(MotorControllerError):
-    pass
+    """ Motor in motion already (i.e in a thread), new motion cannot be started until this one is complete. """
 
 class InvalidMove(MotorControllerError):
-    """Error raised if an invalid move is attempted."""
-    pass
+    """ Error raised if an invalid move is attempted. """
 
 class Direction(enum.Enum):
     CW = True
@@ -186,28 +186,35 @@ class DRV8825Nema():
         If a second limit switch is present, move to that one and set the max position.
         """
 
-        print("Homing motor, please wait...")
-        try:
-            # Move the motor until it hits the CCW limit switch
-            try:
-                self.move_rel(dir=Direction.CCW, steps=1e6)
-            except StopMotorInterrupt:
-                # Move slightly until the limit switch is no longer active
-                while not self._pi.read(self.lim1):
-                    self._move_rel_steps(dir=Direction.CW, steps=1)
-                self.pos = 0
+        # Adjust the timeout based on the microstepping mode
+        homing_timeout = DEFAULT_FULL_STEP_HOMING_TIMEOUT * self.microstepping
 
-            if self.lim2 != None:
-                # Move to the CW limit switch
-                try:
-                    self.move_rel(dir=Direction.CW, steps=1e6)
-                except StopMotorInterrupt:
-                    while not self._pi.read(self.lim1):
-                        self._move_rel_steps(dir=Direction.CCW, steps=1)
-                    self.max_pos = self.pos
-        except:
-            raise HomingError()
+        #TODO: Change to logging
+        print("Homing motor, please wait...")
+
+        # Move the motor until it hits the CCW limit switch
+        try:
+            self.move_rel(dir=Direction.CCW, steps=1e6, timeout_s=homing_timeout)
+        except MotorMoveTimeout:
+            raise HomingError(f"Motor failed to home in the allotted time ({homing_timeout} seconds).")
+        except StopMotorInterrupt:
+            # Move slightly until the limit switch is no longer active
+            while not self._pi.read(self.lim1):
+                self._move_rel_steps(dir=Direction.CW, steps=1)
+            self.pos = 0
+
+        if self.lim2 != None:
+            # Move to the CW limit switch
+            try:
+                self.move_rel(dir=Direction.CW, steps=1e6, timeout_s=homing_timeout)
+            except MotorMoveTimeout:
+                raise HomingError(f"Motor failed to home in the allotted {homing_timeout} seconds.")
+            except StopMotorInterrupt:
+                while not self._pi.read(self.lim1):
+                    self._move_rel_steps(dir=Direction.CCW, steps=1)
+                self.max_pos = self.pos
         
+        #TODO Change to logging
         print("Done homing.")
         self.homed = True
 
@@ -231,7 +238,7 @@ class DRV8825Nema():
 
     @lockNoBlock(MOTOR_LOCK)
     def move_rel(self, dir=Direction.CCW,
-                 steps: int=200, stepdelay=.005, verbose=False, initdelay=.05):
+                 steps: int=200, stepdelay=.005, timeout_s: int=1e6, verbose=False, initdelay=.05):
         """Move the motor a relative number of steps (if the move is valid).
 
         Parameters
@@ -267,6 +274,7 @@ class DRV8825Nema():
         try:
             time.sleep(initdelay)
             start_pos = self.pos
+            start_time = time.perf_counter()
 
             for i in range(steps):
                 if self.stop_motor:
@@ -277,16 +285,20 @@ class DRV8825Nema():
                     self._pi.write(self.step_pin, False)
                     time.sleep(stepdelay)
                     self.pos += step_increment
+
+                    if time.perf_counter() - start_time >= timeout_s:
+                        raise MotorMoveTimeout()
                     if verbose:
                         print(f"Steps {i} \ Position: {self.pos}")
 
         except KeyboardInterrupt:
-            print("User Keyboard Interrupt")
+            raise MotorControllerError("User keyboard interrupt")
         except StopMotorInterrupt:
             raise
-        except Exception:
-            print("RpiMotorLib  : Unexpected error:")
+        except MotorMoveTimeout:
             raise
+        except Exception:
+            raise MotorControllerError("Unexpected error in move_rel")
 
         finally:
             # Cleanup

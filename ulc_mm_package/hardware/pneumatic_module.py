@@ -10,33 +10,58 @@ Servo Motor Pololu HD-1810MG:
 """
 
 from time import sleep, perf_counter
+import enum
+import functools
+import threading
 import pigpio
 import board
 import adafruit_mprls
 
-import numpy as np
 from ulc_mm_package.hardware.hardware_constants import *
-from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
+from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 
+SYRINGE_LOCK = threading.Lock()
 INVALID_READ_FLAG = -1
-DEFAULT_AFC_DELAY_S = 10
-FASTER_FEEDBACK_DELAY_S = 3
+DEFAULT_AFC_DELAY_S = 1
+AFC_NUM_IMAGE_PAIRS = 12
 
-class PressureControlError(Exception):
+def lockNoBlock(lock):
+    def lockDecorator(func):
+        @functools.wraps(func)
+
+        def wrapper(*args, **kwargs):
+            if not lock.locked():
+                with lock:
+                    return func(*args, **kwargs)
+            else:
+                raise SyringeInMotion
+
+        return wrapper
+    return lockDecorator
+
+class PneumaticModuleError(Exception):
     """Base class for catching all pressure control related errors."""
     pass
 
-class PressureSensorNotInstantiated(PressureControlError):
+class PressureSensorNotInstantiated(PneumaticModuleError):
     """Raised when the Adafruit MPRLS can not be instantiated."""
     def __init__(self):
         super().__init__("Could not instantiate pressure sensor.")
 
-class PressureLeak(PressureControlError):
+class PressureLeak(PneumaticModuleError):
     """Raised when a pressure leak is detected."""
     def __init__(self):
         super().__init__("Pressure leak detected.")
 
-class PressureControl():
+class SyringeInMotion(PneumaticModuleError):
+    pass
+
+class SyringeDirection(enum.Enum):
+    """Enum for the direction of the syringe."""
+    UP = 1
+    DOWN = -1
+
+class PneumaticModule():
     """Class that deals with monitoring and adjusting the pressure. 
 
     Interfaces with an Adafruit MPRLS pressure sensor to get the readings (valid for 0-25 bar). Uses a
@@ -46,30 +71,26 @@ class PressureControl():
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
-        self.min_step_size = 10
-        self.min_duty_cycle = 1600
-        self.max_duty_cycle = 2200
+        self.min_step_size = (0.23 - 0.16) / 60 # empircally found the top/bottom vals, ~60 steps between min/max pressure
+        self.min_duty_cycle = 0.16
+        self.max_duty_cycle = 0.23
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
         self.polling_time_s = 3
         self.prev_poll_time_s = 0
         self.prev_pressure = 0
         self.io_error_counter = 0
-        self.prev_time_s = 0
-        self.control_delay_s = 0.2
-
-        # Active flow control variables
-        self.flowrate_target = 0
-        self.flow_rate_y = 0
-        self.prev_afc_time_s = 0
-        self.afc_delay_s = DEFAULT_AFC_DELAY_S
+        self.pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
         
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
-        self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
+
+        # self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
+        self.pwm.setFreq(SERVO_FREQ)
+        self.pwm.setDutyCycle(self.duty_cycle)
 
         # Instantiate pressure sensor
         try:
@@ -83,6 +104,7 @@ class PressureControl():
         self.setDutyCycle(self.max_duty_cycle)
         sleep(0.5)
         self._pi.stop()
+        self.pwm.setDutyCycle(0)
         sleep(0.5)
 
     def getCurrentDutyCycle(self):
@@ -97,15 +119,16 @@ class PressureControl():
     def increaseDutyCycle(self):
         if self.duty_cycle <= self.max_duty_cycle - self.min_step_size:
             self.duty_cycle += self.min_step_size
-            self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
+            self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
-
+    
     def decreaseDutyCycle(self):
         if self.duty_cycle >= self.min_duty_cycle + self.min_step_size:
             self.duty_cycle -= self.min_step_size
-            self._pi.set_servo_pulsewidth(self.servo_pin, self.duty_cycle)
+            self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
 
+    @lockNoBlock(SYRINGE_LOCK)
     def setDutyCycle(self, duty_cycle: int):
         if self.min_duty_cycle <= duty_cycle <= self.max_duty_cycle:
             if self.duty_cycle < duty_cycle:
@@ -115,6 +138,24 @@ class PressureControl():
                 while self.duty_cycle >= duty_cycle + self.min_step_size:
                     self.decreaseDutyCycle()
     
+    def threadedDecreaseDutyCycle(self, *args, **kwargs):
+        if not SYRINGE_LOCK.locked():
+            threading.Thread(target=self.decreaseDutyCycle, *args, **kwargs).start()
+        else:
+            raise SyringeInMotion
+
+    def threadedIncreaseDutyCycle(self, *args, **kwargs):
+        if not SYRINGE_LOCK.locked():
+            threading.Thread(target=self.increaseDutyCycle, *args, **kwargs).start()
+        else:
+            raise SyringeInMotion
+
+    def threadedSetDutyCycle(self, *args, **kwargs):
+        if not SYRINGE_LOCK.locked():
+            threading.Thread(target=self.setDutyCycle, args=args, kwargs=kwargs).start()
+        else:
+            raise SyringeInMotion
+
     def sweepAndGetPressures(self):
         """Sweep the syringe and read pressure values."""
         min, max = self.getMinDutyCycle(), self.getMaxDutyCycle()
@@ -127,8 +168,7 @@ class PressureControl():
         return pressure_readings_hpa
 
     def getPressure(self, apc_on: bool=False):
-        """
-        """
+        """_getPressure() wrapper."""
         
         if apc_on:
             return self.curr_pressure
@@ -164,45 +204,7 @@ class PressureControl():
         else:
             return self.prev_pressure
 
-    def initializeActiveFlowControl(self, img: np.ndarray):
-        """Initialize the FlowRateEstimator with the correct image shape."""
-
-        h, w = img.shape
-        self.fre = FlowRateEstimator(h, w, num_image_pairs=12)
-        self.flowrate_target = None
-
-    def activeFlowControl(self, img: np.ndarray):
-        """Active flow control stabilization
-
-        This function attempts to stabilize the flowrate using the
-        FlowRateEstimator. The function performs in two steps:
-
-        1. If the flow control was just initialized (i.e using `initializeActiveFlowControl`),
-        the function continuously measures the first N images to acquire the target flowrate.
-
-        2. After the target flowrate has been acquired, the function accepts a set of images periodically
-        and assesses the average displacement among all the pairs
-        """
-
-        # Step 1 - continuously acquire images to set the desired flow rate
-        if self.flowrate_target == None:
-            self.fre.addImageAndCalculatePair(img, perf_counter())
-            if self.fre.isFull():
-                _, self.flowrate_target, _, _, _, _ = self.fre.getStatsAndReset()
-
-        # Step 2. Check flow periodically
-        else:
-            if perf_counter() - self.prev_afc_time_s > self.afc_delay_s:
-                if not self.fre.isFull():
-                    self.fre.addImageAndCalculatePair(img, perf_counter())
-                else:
-                    self.prev_afc_time_s = perf_counter()
-                    _, dy, _, _, _, _ = self.fre.getStatsAndReset()
-                    self.flow_rate_y = dy
-                    flow_err = self.getFlowrateError(self.flowrate_target, dy)
-                    self.adjustPressure(flow_err)
-
-    def isMovePossible(self, move_dir: int) -> bool:
+    def isMovePossible(self, move_dir: SyringeDirection) -> bool:
         """Return true if the syringe can still move in the specified direction."""
         
         # Cannot move the syringe up
@@ -214,35 +216,3 @@ class PressureControl():
             return False
 
         return True
-
-    def adjustPressure(self, flow_diff: float):
-        """Adjust the syringe position based on the flow rate error.
-
-        If the actual flow rate is not the target and the syringe is already at the limit of its motion,
-        this function raises a "PressureLeak()" error.
-        """
-
-        if flow_diff < 0:
-            if self.isMovePossible(move_dir=-1):
-                self.increaseDutyCycle()
-                self.afc_delay_s = FASTER_FEEDBACK_DELAY_S
-            else:
-                raise PressureLeak()
-
-        elif flow_diff > 0:
-            if self.isMovePossible(move_dir=1):
-                self.decreaseDutyCycle()
-                self.afc_delay_s = FASTER_FEEDBACK_DELAY_S
-            else:
-                raise PressureLeak()
-
-        else:
-            self.afc_delay_s = DEFAULT_AFC_DELAY_S
-
-    def getFlowrateError(self, desired_flowrate: float, current_flowrate: float, noiseTolPerc: float=0.05) -> float:
-        """Returns the difference between the target and current flowrate, if the difference is above a noise tolerance."""
-
-        error = desired_flowrate - current_flowrate
-        if abs(error/desired_flowrate) <= noiseTolPerc:
-            return 0
-        return error

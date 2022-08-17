@@ -1,6 +1,8 @@
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 FAN_GPIO = 5
+CAM_FAN_1 = 23
+CAM_FAN_2 = 24
 BOARD_STATUS_INDICATOR = 4
 
 # ================ Motor controller constants ================ #
@@ -55,6 +57,7 @@ LED_FREQ = 50000
 SERVO_5V_PIN = 17
 SERVO_PWM_PIN = 12
 VALVE_PIN = 8
+SERVO_FREQ = 100
 
 # ================ Simulation constants ================ #
 VIDEO_PATH = "./sim_media/sample.avi"

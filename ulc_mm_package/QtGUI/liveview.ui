@@ -70,7 +70,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="txtBoxFlow">
+           <widget class="ClickableLineEdit" name="txtBoxFlow">
             <property name="maximumSize">
              <size>
               <width>150</width>
@@ -671,7 +671,7 @@
          </widget>
         </item>
         <item row="4" column="0">
-         <widget class="QPushButton" name="btnExperimentSetup">
+         <widget class="QPushButton" name="btnQCForm">
           <property name="maximumSize">
            <size>
             <width>150</width>
@@ -679,7 +679,7 @@
            </size>
           </property>
           <property name="text">
-           <string>Experiment setup</string>
+           <string>Open QC Form</string>
           </property>
          </widget>
         </item>
