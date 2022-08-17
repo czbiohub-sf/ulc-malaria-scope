@@ -36,6 +36,7 @@ from typing import Dict
 from time import perf_counter, sleep
 from os import listdir, mkdir, path
 from datetime import datetime, timedelta
+import webbrowser
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
@@ -55,6 +56,9 @@ _EXPERIMENT_FORM_PATH = "experimentform.ui"
 
 #TODO: Better way to reference files in a module?
 AUTOFOCUS_MODEL_DIR =  "../neural_nets/autofocus.xml"
+
+# Flowcell QC Form
+FLOWCELL_QC_FORM_LINK = "https://docs.google.com/forms/d/16pOE3TAvOMZG4Yuu3ef73knGYKRdZfXSxg5vZlsR-AM/edit"
 
 class ApplicationError(Exception):
     """Catch-all exception for misc errors not caught by the peripheral classes."""
@@ -564,10 +568,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.vsFlow.setSingleStep(1)
             self.txtBoxFlow.setText(f"{self.pneumatic_module.getCurrentDutyCycle()}")
             self.vsFlow.setValue(self.convertTovsFlowVal(self.pneumatic_module.getCurrentDutyCycle()))
-        except PneumaticModuleError:
-            print(
-                "Error initializing Pressure Controller. Disabling flow GUI elements."
-            )
+        except PneumaticModuleError as e:
+            print(f"Error initializing Pressure Controller. Disabling flow GUI elements. Error: {e}")
             self.btnFlowUp.setEnabled(False)
             self.btnFlowDown.setEnabled(False)
             self.vsFlow.setEnabled(False)
@@ -605,7 +607,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnSnap.clicked.connect(self.btnSnapHandler)
         self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
         self.btnChangeBinning.clicked.connect(self.btnChangeBinningHandler)
-        self.btnExperimentSetup.clicked.connect(self.experimentSetupHandler)
+        self.btnQCForm.clicked.connect(self.btnQCFormHandler)
 
         # Pressure control
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
@@ -684,6 +686,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             print(
                 f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
             )
+
+            retval = self._displayMessageBox(QtWidgets.QMessageBox.Icon.Information,
+                        "Open Flowcell QC Post-run Form?",
+                        "Press okay to open the Google form. A browser window will be opened.",
+                        cancel=True
+                    )
+            if retval == QtWidgets.QMessageBox.Ok:
+                webbrowser.open(FLOWCELL_QC_FORM_LINK, new=1, autoraise=True)
             return
 
         # Set custom name
@@ -708,6 +718,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         curr_binning_mode = self.acquisitionThread.camera.getBinning()
         change_to = 1 if curr_binning_mode == 2 else 2
         self.btnChangeBinning.setText(f"Change to {change_to}X binning")
+
+    def btnQCFormHandler(self):
+        retval = self._displayMessageBox(QtWidgets.QMessageBox.Icon.Information,
+                        "Open Flowcell QC Post-run Form?",
+                        "Press okay to open the Google form. A browser window will be opened.",
+                        cancel=True
+                    )
+        if retval == QtWidgets.QMessageBox.Ok:
+            webbrowser.open(FLOWCELL_QC_FORM_LINK, new=1, autoraise=True)
 
     def experimentSetupHandler(self):
         self.btnAbortExperiment.setEnabled(True)
@@ -1037,6 +1056,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         )
 
         if retval == QtWidgets.QMessageBox.Ok:
+            # Close the camera
+            self.acquisitionThread.camera.deactivateCamera()
+
             # Move syringe back and de-energize
             self.pneumatic_module.close()
 
@@ -1052,9 +1074,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             # Turn off encoder
             if self.encoder:
                 self.encoder.close()
-
-            # Turn off fan
-            #self.fan.turn_off()
 
             quit()
 
