@@ -71,9 +71,9 @@ class PneumaticModule():
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
-        self.min_step_size = (0.23 - 0.16) / 60 # empircally found the top/bottom vals, ~60 steps between min/max pressure
         self.min_duty_cycle = 0.16
         self.max_duty_cycle = 0.23
+        self.min_step_size = (self.max_duty_cycle - self.min_duty_cycle) / 60 # empircally found the top/bottom vals, ~60 steps between min/max pressure
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
         self.polling_time_s = 3

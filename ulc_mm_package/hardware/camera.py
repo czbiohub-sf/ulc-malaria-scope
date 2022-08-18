@@ -52,7 +52,7 @@ class BaslerCamera(Basler):
 class AVTCamera:
     def __init__(self):
         self.vimba = Vimba.get_instance().__enter__()
-        self.queue = queue.Queue()
+        self.queue = queue.Queue(maxsize=1)
         self.connect()
         self.minExposure_ms, self.maxExposure_ms = self.getExposureBoundsMilliseconds()
 
@@ -73,11 +73,12 @@ class AVTCamera:
         self._camera_setup()
 
     def deactivateCamera(self) -> None:
+        self.stopAcquisition()
         self.vimba.__exit__(*sys.exc_info())
     
     def _frame_handler(self, cam, frame):
         if self.queue.full():
-            self.queue.get_nowait()
+            self.queue.get()
         if frame.get_status() == vimba.FrameStatus.Complete:
             self.queue.put(frame.as_numpy_ndarray())
         cam.queue_frame(frame)
