@@ -9,10 +9,16 @@ Encoder Dimensions:
     https://cdn.shopify.com/s/files/1/0174/1800/files/EC12PVF-D-15F-24-24C-03-6H.pdf?v=1601306386    
 """
 
+import ioexpander as io
+
+from ulc_mm_package.hardware.hardware_constants import (
+    ROT_A_PIN,
+    ROT_B_PIN,
+    ROT_C_PIN,
+    ROT_INTERRUPT_PIN,
+)
 from time import perf_counter, sleep
 from typing import Callable
-import ioexpander as io
-from ulc_mm_package.hardware.hardware_constants import ROT_A_PIN, ROT_B_PIN, ROT_C_PIN, ROT_INTERRUPT_PIN
 
 class EncoderI2CError(Exception):
     pass

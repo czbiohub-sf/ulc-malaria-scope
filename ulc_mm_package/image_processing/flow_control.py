@@ -2,14 +2,17 @@
 FlowController
 """
 
-from time import perf_counter
 import numpy as np
+
+from ulc_mm_package.image_processing.processing_constants import (
+    NUM_IMAGE_PAIRS,
+    WINDOW_SIZE,
+    TOL_PERC,
+)
+from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeDirection, PressureLeak
 
-NUM_IMAGE_PAIRS = 12
-WINDOW_SIZE = 12
-TOL_PERC = 0.1
 
 class FlowController:
     def __init__(self, pneumatic_module: PneumaticModule, h: int=600, w: int=800, window_size: int=WINDOW_SIZE):

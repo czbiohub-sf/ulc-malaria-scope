@@ -6,18 +6,19 @@ if __name__ == "__main__":
     mode = parser.parse_args()
 
     if not mode.sim:
-        # Use real hardware objects
-        from ulc_mm_package.hardware.hw_list import *
+        # Use real hardware/image processing objects
+        from ulc_mm_package.hardware.hardware_modules import *
+        from ulc_mm_package.image_processing.processing_modules import *
     else: 
-        # Use simulated hardware objects
-        from ulc_mm_package.hardware.simulation import *
+        # Use simulated hardware/image processing objects
+        from ulc_mm_package.hardware.hardware_simulation import *
+        from ulc_mm_package.image_processing.processing_simulation import *
 
 else:
-    from ulc_mm_package.hardware.hw_list import *
+    from ulc_mm_package.hardware.hardware_modules import *
+    from ulc_mm_package.image_processing.processing_modules import *
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
-from ulc_mm_package.image_processing.autobrightness import Autobrightness, AutobrightnessError
-from ulc_mm_package.image_processing.flow_control import FlowController
 
 from ulc_mm_package.image_processing.zstack import (
     takeZStackCoroutine,

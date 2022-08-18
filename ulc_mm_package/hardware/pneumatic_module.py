@@ -9,7 +9,6 @@ Servo Motor Pololu HD-1810MG:
     https://www.pololu.com/product/1047
 """
 
-from time import sleep, perf_counter
 import enum
 import functools
 import threading
@@ -18,7 +17,11 @@ import board
 import adafruit_mprls
 
 from ulc_mm_package.hardware.hardware_constants import *
-from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
+from ulc_mm_package.hardware.dtoverlay_pwm import (
+    dtoverlay_PWM, 
+    PWM_CHANNEL,
+)
+from time import sleep, perf_counter
 
 SYRINGE_LOCK = threading.Lock()
 INVALID_READ_FLAG = -1

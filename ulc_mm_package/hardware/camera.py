@@ -12,13 +12,13 @@ Basler PyPlon Library:
 import sys
 import time
 import queue
-from py_cameras import Basler, GrabStrategy
 import vimba
+
+from py_cameras import Basler, GrabStrategy
 from vimba import Vimba
 
 # ------ CONSTANTS ------ #
 _DEFAULT_EXPOSURE_MS = 0.25
-
 
 class CameraError(Exception):
     """Base class for catching camera errors."""

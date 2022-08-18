@@ -1,10 +1,13 @@
 import enum
 import numpy as np
+
+from ulc_mm_package.image_processing.processing_constants import (
+    TOP_PERC_TARGET_VAL,
+    TOP_PERC,
+    TOL,
+)
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
 
-TOP_PERC_TARGET_VAL = 245
-TOP_PERC = 0.03
-TOL = 0.01
 
 class AB(enum.Enum):
     TOO_HIGH = 1

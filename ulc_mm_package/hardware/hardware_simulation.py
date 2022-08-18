@@ -230,16 +230,20 @@ class PIM522RotaryEncoder:
 
 # ------------------------------pressure_control.py------------------------------
 
-class PressureControlError(Exception):
+class PneumaticModuleError(Exception):
     pass
 
 
-class PressureLeak(PressureControlError):
+class PressureLeak(PneumaticModuleError):
     def __init__(self):
         super().__init__("Pressure leak detected.")
 
+class SyringeDirection(enum.Enum):
+    """Enum for the direction of the syringe."""
+    UP = 1
+    DOWN = -1
 
-class PressureControl():
+class PneumaticModule():
     def __init__(self, servo_pin: int=SERVO_PWM_PIN):
         self.servo_pin = servo_pin
         self.min_step_size = 10
@@ -291,6 +295,15 @@ class PressureControl():
             else:
                 while self.duty_cycle >= duty_cycle + self.min_step_size:
                     self.decreaseDutyCycle()
+
+    def threadedDecreaseDutyCycle(self, *args, **kwargs):
+        self.decreaseDutyCycle()
+
+    def threadedIncreaseDutyCycle(self, *args, **kwargs):
+        self.increaseDutyCycle()
+
+    def threadedSetDutyCycle(self, *args, **kwargs):
+        self.setDutyCycle()
 
     def close(self):
         self.setDutyCycle(self.max_duty_cycle)

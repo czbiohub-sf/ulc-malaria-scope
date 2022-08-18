@@ -8,10 +8,10 @@ Adafruit's PCF8523 Python library:
 """
 
 import time
-from datetime import date
 import adafruit_pcf8523
 import board
 
+from datetime import date
 
 class RTC_PCF8523:
     """A simplistic (and somewhwat gratuitous) wrapper class for Adafruit's PCF8523 library"""
