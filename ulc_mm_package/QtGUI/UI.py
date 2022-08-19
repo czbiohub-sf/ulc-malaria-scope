@@ -1,3 +1,5 @@
+from gui_constants.py import *
+
 if __name__ == "__main__":
     # Select operation mode
     import argparse
@@ -5,7 +7,8 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--sim', action='store_true', help="simulation mode")
     mode = parser.parse_args()
 
-    if not mode.sim:
+    if not SIMULATION:
+    # if not mode.sim:
         # Use real hardware/image processing objects
         from ulc_mm_package.hardware.hardware_modules import *
         from ulc_mm_package.image_processing.processing_modules import *
@@ -47,23 +50,6 @@ from cv2 import imwrite
 from qimage2ndarray import gray2qimage
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-
-# Camera Selection
-CAMERA_SELECTION = 0 # 0 = Basler, 1 = AVT
-
-# Qt GUI Files
-_UI_FILE_DIR = "liveview.ui"
-_EXPERIMENT_FORM_PATH = "experimentform.ui"
-
-# SSD directory
-DEFAULT_SSD = "/media/pi/"
-ALT_SSD = "./sim_media/pi/"
-
-#TODO: Better way to reference files in a module?
-AUTOFOCUS_MODEL_DIR =  "../neural_nets/autofocus.xml"
-
-# Flowcell QC Form
-FLOWCELL_QC_FORM_LINK = "https://docs.google.com/forms/d/16pOE3TAvOMZG4Yuu3ef73knGYKRdZfXSxg5vZlsR-AM/edit"
 
 class ApplicationError(Exception):
     """Catch-all exception for misc errors not caught by the peripheral classes."""

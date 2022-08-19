@@ -9,7 +9,16 @@ Basler PyPlon Library:
     https://github.com/basler/pypylon
 """
 
-from ulc_mm_package.QtGui.gui_constants import SIMULATION
+import sys
+import time
+import queue
+import vimba
+
+from py_cameras import Basler, GrabStrategy
+from vimba import Vimba
+
+# ------ CONSTANTS ------ #
+_DEFAULT_EXPOSURE_MS = 0.25
 
 class CameraError(Exception):
     """Base class for catching camera errors."""
@@ -17,13 +26,28 @@ class CameraError(Exception):
     # Note this is temporary until the pyCameras improved exception-handling PR is merged.
     # Once that is merged, we can simply raise the PyCameras error.
 
-class BaslerCamera():
-    def __new__(self):
-        if SIMULATION:
-            from hardware_simulation import BaslerCamera
-        else:
-            from hardware_real import BaslerCamera
-        return BaslerCamera()
+class BaslerCamera(Basler):
+    """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""
+
+    def __init__(self):
+        try:
+            super().__init__()
+
+            # 2x2 binning w/ averaging (https://docs.baslerweb.com/binning)
+            # Note that setting the binning mode to "Sum" saturates the values (i.e if
+            # the pixel mode is 8-bit (0-256), summing does NOT increase the maximum value to 512)
+            self.setBinning(bin_factor=2, mode="Average")
+            self.camera.PixelFormat.SetValue("Mono8")
+            self.exposureTime_ms = _DEFAULT_EXPOSURE_MS
+            self.grabStrategy = GrabStrategy.LATEST_IMAGE_ONLY
+        except Exception:
+            raise CameraError("Camera could not be instantiated.")
+
+    def yieldImages(self):
+        return super().yieldImages(self.grabStrategy)
+
+    def _getTemperature(self):
+        return self.camera.DeviceTemperature.GetValue()
 
 class AVTCamera:
     def __init__(self):
