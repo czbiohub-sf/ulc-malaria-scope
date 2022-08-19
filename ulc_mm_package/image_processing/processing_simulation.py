@@ -3,7 +3,7 @@
 
 @author: mwlkhoo
 
-Purpose: Dummy functions simulating image processing objects for UI testing. 
+Purpose: Dummy functions simulating image processing objects for UI testing.
          See relevant image processing files for more info on methods.
          The class methods and variables are a barebones imitation of the actual functions.
 
@@ -50,7 +50,7 @@ class FlowController:
         self.window_size = window_size
         self.pneumatic_module = pneumatic_module
         self.flowrates = np.zeros(self.window_size)
-        self.fre = FlowRateEstimator(h, w, num_image_pairs=NUM_IMAGE_PAIRS)
+        # self.fre = FlowRateEstimator(h, w, num_image_pairs=NUM_IMAGE_PAIRS)
 
         self._idx = 0
         self.target_flowrate: float = None

@@ -9,7 +9,7 @@ if __name__ == "__main__":
         # Use real hardware/image processing objects
         from ulc_mm_package.hardware.hardware_modules import *
         from ulc_mm_package.image_processing.processing_modules import *
-    else: 
+    else:
         # Use simulated hardware/image processing objects
         from ulc_mm_package.hardware.hardware_simulation import *
         from ulc_mm_package.image_processing.processing_simulation import *
@@ -78,7 +78,7 @@ class AcquisitionThread(QThread):
     measurementTime = pyqtSignal(int)
     fps = pyqtSignal(int)
     pressureLeakDetected = pyqtSignal(int)
-    syringePosChanged = pyqtSignal(float)
+    syringePosChanged = pyqtSignal(int)
     autobrightnessDone = pyqtSignal(int)
 
     def __init__(self, external_dir):
@@ -346,8 +346,8 @@ class AcquisitionThread(QThread):
                 print(
                     f"""The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
                         Active flow control is now disabled.
-                        """         
-                )       
+                        """
+                )
                 self.pressureLeakDetected.emit(1)
 
     def autofocusWrapper(self, img: np.ndarray):
@@ -401,7 +401,7 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
         self.autoflowcontrol = False
         self.time_mins = None
 
-        # Set up event handlers 
+        # Set up event handlers
         self.txtExperimentName.editingFinished.connect(self.txtExperimentNameHandler)
         self.txtFlowCellID.editingFinished.connect(self.flowCellIDHandler)
         self.radBtn1x1.toggled.connect(self.binningModeHandler)
@@ -482,11 +482,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             print("---------------------\n|  SIMULATION MODE  |\n---------------------")
 
             if not path.exists(VIDEO_PATH):
-                print("Error - no sample video exists. To add your own video, save it under " 
+                print("Error - no sample video exists. To add your own video, save it under "
                         + VIDEO_PATH  + "\nRecommended video: " + VIDEO_REC )
                 quit()
 
-            if not path.exists(media_dir):
+            if not path.exists(media_dir) or len(listdir(media_dir)) == 0:
                 media_dir = ALT_SSD
                 print("No external harddrive / SSD detected. Saving media to " + media_dir)
 
@@ -634,7 +634,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.gotFocus.connect(self.txtBoxFlowGotFocus)
         self.vsFlow.valueChanged.connect(self.vsFlowValueChangedHandler)
         self.vsFlow.sliderReleased.connect(self.vsFlowSliderReleasedHandler)
-        self.vsFlow.sliderPressed.connect(self.vsFlowClickHandler)        
+        self.vsFlow.sliderPressed.connect(self.vsFlowClickHandler)
         self.chkBoxFlowControl.stateChanged.connect(self.activeFlowControlHandler)
 
         # Misc

@@ -3,7 +3,7 @@
 
 @author: mwlkhoo
 
-Purpose: Dummy functions simulating hardware objects for UI testing. 
+Purpose: Dummy functions simulating hardware objects for UI testing.
          See relevant hardware object files for more info on methods.
          The class methods and variables are a barebones imitation of the actual hardware.
 
@@ -60,12 +60,12 @@ class BaslerCamera(PyCamera):
 
     def yieldImages(self):
         while True:
-            success, frame = self.video.read() 
+            success, frame = self.video.read()
             # Reload video
             if not success:
                 self.video = cv2.VideoCapture(VIDEO_PATH)
-                success, frame = self.video.read() 
-            yield cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
+                success, frame = self.video.read()
+            yield cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             sleep(1 / self.fps)
 
     def snapImage(self):
@@ -148,7 +148,7 @@ class DRV8825Nema():
                         '1/64': 0.028125,
                         '1/128': 0.0140625}
         self.step_degree = degree_value[steptype]
-        self.microstepping = 1.8/self.step_degree # 1, 2, 4, 8, 16, 32 
+        self.microstepping = 1.8/self.step_degree # 1, 2, 4, 8, 16, 32
         self.dist_per_step_um = self.step_degree / degree_value['Full'] * FULL_STEP_TO_TRAVEL_DIST_UM
         self.button_step = 1
         self.max_pos = int(max_pos if max_pos != None else 450*self.microstepping)
@@ -162,7 +162,7 @@ class DRV8825Nema():
     def move_abs(self, pos: int=200, stepdelay=.005, verbose=False, initdelay=.05):
         self.pos = int(pos)
 
-    def move_rel(self, steps: int=200, 
+    def move_rel(self, steps: int=200,
                 dir=Direction.CCW, stepdelay=.005, verbose=False, initdelay=.05):
         if dir.value:
             self.pos = int(self.pos + self.button_step*steps)
@@ -317,9 +317,18 @@ class PneumaticModule():
 class Fan():
     def __init__(self, fan_pin: int=FAN_GPIO):
         pass
-
-    def turn_on(self):
+    
+    def turn_on(self, pin):
+        pass
+    
+    def turn_off(self, pin):
+        pass
+    
+    def setup_pin(self, fan_pin):
         pass
 
-    def turn_off(self):
+    def turn_on_all(self):
+        pass
+
+    def turn_off_all(self):
         pass
