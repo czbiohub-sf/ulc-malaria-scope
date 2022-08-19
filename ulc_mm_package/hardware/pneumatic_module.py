@@ -45,13 +45,9 @@ class PneumaticModuleError(Exception):
 
 class PressureSensorNotInstantiated(PneumaticModuleError):
     """Raised when the Adafruit MPRLS can not be instantiated."""
-    def __init__(self):
-        super().__init__("Could not instantiate pressure sensor.")
 
 class PressureLeak(PneumaticModuleError):
     """Raised when a pressure leak is detected."""
-    def __init__(self):
-        super().__init__("Pressure leak detected.")
 
 class SyringeInMotion(PneumaticModuleError):
     pass
@@ -80,15 +76,16 @@ class PneumaticModule():
         self.prev_poll_time_s = 0
         self.prev_pressure = 0
         self.io_error_counter = 0
-        self.pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
+        self.mpr_enabled = False
+        self.mpr_err_msg = ""
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
-        
+
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
 
-        # self._pi.set_servo_pulsewidth(servo_pin, self.duty_cycle)
+        self.pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
         self.pwm.setFreq(SERVO_FREQ)
         self.pwm.setDutyCycle(self.duty_cycle)
 
@@ -96,8 +93,10 @@ class PneumaticModule():
         try:
             i2c = board.I2C()
             self.mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
-        except Exception:
-            raise PressureSensorNotInstantiated()
+            self.mpr_enabled = True
+        except Exception as e:
+            self.mpr_err_msg = f"{e}"
+            self.mpr_enabled = False
 
     def close(self):
         """Move the servo to its lowest-pressure position and close."""
@@ -188,19 +187,22 @@ class PneumaticModule():
         """
 
         if perf_counter() - self.prev_poll_time_s > self.polling_time_s:
-            max_attempts = 6
-            while max_attempts > 0:
-                try:
-                    new_pressure = self.mpr.pressure
-                    self.prev_pressure = new_pressure
-                    self.prev_poll_time_s = perf_counter()
-                    return new_pressure
-                except IOError:
-                    max_attempts -= 1
-                except RuntimeError:
-                    max_attempts -= 1
-            self.io_error_counter += 1
-            return INVALID_READ_FLAG
+            if self.mpr_enabled:
+                max_attempts = 6
+                while max_attempts > 0:
+                    try:
+                        new_pressure = self.mpr.pressure
+                        self.prev_pressure = new_pressure
+                        self.prev_poll_time_s = perf_counter()
+                        return new_pressure
+                    except IOError:
+                        max_attempts -= 1
+                    except RuntimeError:
+                        max_attempts -= 1
+                self.io_error_counter += 1
+                return INVALID_READ_FLAG
+            else:
+                raise PressureSensorNotInstantiated(self.mpr_err_msg)
         else:
             return self.prev_pressure
 
