@@ -18,6 +18,7 @@ from vimba import Vimba
 
 # ------ CONSTANTS ------ #
 _DEFAULT_EXPOSURE_MS = 0.25
+DEVICELINK_THROUGHPUT = 100000000 # (in Bytes) Reduced from the default of 200000000 to resolve the weird frame-jumbling issue
 
 
 class CameraError(Exception):
@@ -56,12 +57,16 @@ class AVTCamera:
         self.connect()
         self.minExposure_ms, self.maxExposure_ms = self.getExposureBoundsMilliseconds()
 
+    def __del__(self):
+        self.deactivateCamera()
+
     def _get_camera(self):
         with Vimba.get_instance() as vimba:
             cams = vimba.get_all_cameras()
             return cams[0]
 
     def _camera_setup(self):
+        self.setDeviceLinkThroughputLimit(DEVICELINK_THROUGHPUT)
         self.camera.ExposureAuto.set("Off")
         self.camera.ExposureTime.set(500)
         self.setBinning(bin_factor=2)
@@ -121,6 +126,9 @@ class AVTCamera:
     def getBinning(self):
         return self.camera.BinningHorizontal.get()
     
+    def setDeviceLinkThroughputLimit(self, bytes_per_second: int):
+        self.camera.DeviceLinkThroughputLimit.set(bytes_per_second)
+
     def _getTemperature(self):
         try:
             return self.camera.DeviceTemperature.get()
