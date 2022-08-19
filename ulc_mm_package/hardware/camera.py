@@ -18,7 +18,7 @@ from vimba import Vimba
 
 # ------ CONSTANTS ------ #
 _DEFAULT_EXPOSURE_MS = 0.25
-DEVICELINK_THROUGHPUT = 100000000 # (in Bytes) Reduced from the default of 200000000 to resolve the weird frame-jumbling issue
+DEVICELINK_THROUGHPUT = 10000000 # (in Bytes) Reduced from the default of 200000000 to resolve the weird frame-jumbling issue
 
 
 class CameraError(Exception):
