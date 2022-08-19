@@ -5,8 +5,10 @@ CAM_FAN_1 = 23
 CAM_FAN_2 = 24
 BOARD_STATUS_INDICATOR = 4
 
-# ================ Motor controller constants ================ #
+# ================ Camera constants ================ #
+DEFAULT_EXPOSURE_MS = 0.5
 
+# ================ Motor controller constants ================ #
 # Pin numbers in BCM, see https://pinout.xyz/
 MOTOR_ENABLE = 6
 MOTOR_SLEEP = 26
@@ -16,7 +18,6 @@ MOTOR_DIR_PIN = 16
 MOTOR_FAULT_PIN = 20
 MOTOR_LIMIT_SWITCH1 = 18
 MOTOR_LIMIT_SWITCH2 = 15
-
 ZERO_OFFSET_STEPS = 20
 
 # DRR8825 stepping mode reference

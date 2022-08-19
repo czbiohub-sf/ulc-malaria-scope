@@ -1,8 +1,8 @@
 """ daA1600-60um - Basler dart camera
 
--- Important Links -- 
+-- Important Links --
 Basler API:
-    https://docs.baslerweb.com/area-scan-cameras 
+    https://docs.baslerweb.com/area-scan-cameras
         Make sure to select the camera model in the top-right
         Click on "Features" in the menu on the left to view the API functions
 Basler PyPlon Library:
@@ -12,6 +12,7 @@ Basler PyPlon Library:
 import sys
 
 from py_cameras import Basler, GrabStrategy
+from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS
 
 # ------ CONSTANTS ------ #
 _DEFAULT_EXPOSURE_MS = 0.25
@@ -34,7 +35,7 @@ class BaslerCamera(Basler):
             # the pixel mode is 8-bit (0-256), summing does NOT increase the maximum value to 512)
             self.setBinning(bin_factor=2, mode="Average")
             self.camera.PixelFormat.SetValue("Mono8")
-            self.exposureTime_ms = _DEFAULT_EXPOSURE_MS
+            self.exposureTime_ms = DEFAULT_EXPOSURE_MS
             self.grabStrategy = GrabStrategy.LATEST_IMAGE_ONLY
         except Exception:
             raise CameraError("Camera could not be instantiated.")

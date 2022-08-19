@@ -34,7 +34,6 @@ FASTER_FEEDBACK_DELAY_S = 3
 class CameraError(Exception):
     pass
 
-
 class BaslerCamera(PyCamera):
     def __init__(self):
         try:

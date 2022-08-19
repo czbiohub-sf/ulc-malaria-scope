@@ -3,10 +3,6 @@ SIMULATION = True
 # Camera Selection
 CAMERA_SELECTION = 0 # 0 = Basler, 1 = AVT
 
-# Qt GUI Files
-_UI_FILE_DIR = "liveview.ui"
-_EXPERIMENT_FORM_PATH = "experimentform.ui"
-
 # SSD directory
 DEFAULT_SSD = "/media/pi/"
 ALT_SSD = "./sim_media/pi/"
