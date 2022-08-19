@@ -1,0 +1,12 @@
+[Unit]
+Description=Start fan
+After=multi-user.target
+
+[Service]
+WorkingDirectory=/home/pi/
+User=pi
+Type=idle
+ExecStart=/usr/bin/python3 /home/pi/Documents/ulc-malaria-scope/ulc_mm_package/utilities/init_led_pneumatic.py
+
+[Install]
+WantedBy=multi-user.target
