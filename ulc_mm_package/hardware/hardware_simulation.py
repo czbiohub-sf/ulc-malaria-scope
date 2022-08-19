@@ -20,77 +20,10 @@ from ulc_mm_package.hardware.hardware_constants import *
 from typing import Callable
 from time import sleep
 
-# Camera constants
-_DEFAULT_EXPOSURE_MS = 0.5
-
 # Pressure control constants
 INVALID_READ_FLAG = -1
 DEFAULT_AFC_DELAY_S = 10
 FASTER_FEEDBACK_DELAY_S = 3
-
-
-# ------------------------------camera.py------------------------------
-
-class CameraError(Exception):
-    pass
-
-class BaslerCamera(PyCamera):
-    def __init__(self):
-        try:
-            self.binning = 1
-            self.exposureTime_ms = _DEFAULT_EXPOSURE_MS
-
-            # Setup simulated video stream
-            self.video = cv2.VideoCapture(VIDEO_PATH)
-            self.frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.fps = self.video.get(cv2.CAP_PROP_FPS)
-
-            success = True
-
-        except Exception as e:
-            print(e)
-            raise CameraError("Camera could not be instantiated.")
-
-    def setBinning(self, bin_factor=1, mode="Average"):
-        self.binning = bin_factor
-
-    def getBinning(self):
-        return self.binning
-
-    def yieldImages(self):
-        while True:
-            success, frame = self.video.read()
-            # Reload video
-            if not success:
-                self.video = cv2.VideoCapture(VIDEO_PATH)
-                success, frame = self.video.read()
-            yield cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            sleep(1 / self.fps)
-
-    def snapImage(self):
-        return self.frames[self.index]
-
-    def preview(self):
-        try:
-            while True:
-                frame = self.yieldImages()
-                cv2.imshow("preview", frame)
-                cv2.waitKey(1)
-        except KeyboardInterrupt:
-            pass
-
-    def print(self):
-        print("This is a simulated camera")
-
-    def stopAcquisition(self):
-        pass
-
-    def activateCamera(self):
-        pass
-
-    def deactivateCamera(self):
-        pass
-
 
 # ------------------------------motorcontroller.py------------------------------
 

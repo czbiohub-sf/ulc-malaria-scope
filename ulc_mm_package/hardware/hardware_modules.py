@@ -1,4 +1,4 @@
-from ulc_mm_package.hardware.camera import CameraError, BaslerCamera, AVTCamera
+from ulc_mm_package.hardware.camera import CameraError, BaslerCamera
 from ulc_mm_package.hardware.motorcontroller import (
     DRV8825Nema,
     Direction,

@@ -11,12 +11,6 @@ Basler PyPlon Library:
 
 from ulc_mm_package.QtGUI.gui_constants import SIMULATION
 
-class CameraError(Exception):
-    """Base class for catching camera errors."""
-
-    # Note this is temporary until the pyCameras improved exception-handling PR is merged.
-    # Once that is merged, we can simply raise the PyCameras error.
-
 class BaslerCamera():
     def __new__(self):
         if SIMULATION:

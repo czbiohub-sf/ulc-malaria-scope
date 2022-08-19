@@ -16,7 +16,8 @@ if __name__ == "__main__":
         # Use simulated hardware/image processing objects
         from ulc_mm_package.hardware.hardware_simulation import *
         from ulc_mm_package.image_processing.processing_simulation import *
-        from ulc_mm_package.hardware.camera import CameraError, BaslerCamera
+        from ulc_mm_package.hardware.camera import BaslerCamera
+        from ulc_mm_package.hardware.hardware_errors import *
 
 else:
     from ulc_mm_package.hardware.hardware_modules import *
