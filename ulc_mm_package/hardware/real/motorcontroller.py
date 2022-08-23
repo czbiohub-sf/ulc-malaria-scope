@@ -4,6 +4,7 @@ import threading
 import pigpio
 
 from ulc_mm_package.hardware.hardware_constants import (
+    FULL_STEP_TO_TRAVEL_DIST_UM,
     MOTOR_ENABLE,
     MOTOR_SLEEP,
     MOTOR_RESET,

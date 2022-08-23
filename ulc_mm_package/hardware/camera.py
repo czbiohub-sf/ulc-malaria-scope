@@ -3,21 +3,17 @@
 -- Important Links --
 Basler API:
     https://docs.baslerweb.com/area-scan-cameras
-        Make sure to select the camera model in the top-right
+         Make sure to select the camera model in the top-right
         Click on "Features" in the menu on the left to view the API functions
 Basler PyPlon Library:
     https://github.com/basler/pypylon
 """
 
-from ulc_mm_package.QtGUI.gui_constants import SIMULATION
+from ulc_mm_package.hardware.hardware_wrapper import hardware
 
-class BaslerCamera():
-    def __new__(self):
-        if SIMULATION:
-            from ulc_mm_package.hardware.sim.camera_sim import BaslerCamera
-        else:
-            from ulc_mm_package.hardware.real.camera_real import BaslerCamera
-        return BaslerCamera()
+@hardware
+class BaslerCamera:
+    pass
 
 class AVTCamera:
     def __init__(self):

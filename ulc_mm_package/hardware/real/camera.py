@@ -15,15 +15,6 @@ from py_cameras import Basler, GrabStrategy
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS
 from ulc_mm_package.hardware.hardware_errors import CameraError
 
-# ------ CONSTANTS ------ #
-_DEFAULT_EXPOSURE_MS = 0.25
-
-class CameraError(Exception):
-    """Base class for catching camera errors."""
-
-    # Note this is temporary until the pyCameras improved exception-handling PR is merged.
-    # Once that is merged, we can simply raise the PyCameras error.
-
 class BaslerCamera(Basler):
     """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""
 

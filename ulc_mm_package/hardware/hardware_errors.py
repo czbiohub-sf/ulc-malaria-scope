@@ -1,7 +1,6 @@
 # ==================== Camera errors ===============================
 class CameraError(Exception):
     """Base class for catching camera errors."""
-
     # Note this is temporary until the pyCameras improved exception-handling PR is merged.
     # Once that is merged, we can simply raise the PyCameras error.
 
@@ -24,3 +23,8 @@ class MotorInMotion(MotorControllerError):
 
 class InvalidMove(MotorControllerError):
     """ Error raised if an invalid move is attempted. """
+    
+# ==================== LED errors ===============================
+
+class LEDError(Exception):
+    """Base class for catching LED errors."""

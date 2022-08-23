@@ -9,6 +9,7 @@ BOARD_STATUS_INDICATOR = 4
 DEFAULT_EXPOSURE_MS = 0.5
 
 # ================ Motor controller constants ================ #
+FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
 # Pin numbers in BCM, see https://pinout.xyz/
 MOTOR_ENABLE = 6
 MOTOR_SLEEP = 26
@@ -29,9 +30,6 @@ RESOLUTION = {
     "1/16": (0, 0, 1),
     "1/32": (1, 0, 1),
 }
-
-# ================ Motor constants ================ #
-FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
 
 # ================ Encoder constants ================ #
 ROT_INTERRUPT_PIN = 27

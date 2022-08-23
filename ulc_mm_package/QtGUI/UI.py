@@ -17,6 +17,7 @@ if __name__ == "__main__":
         from ulc_mm_package.hardware.hardware_simulation import *
         from ulc_mm_package.image_processing.processing_simulation import *
         from ulc_mm_package.hardware.camera import BaslerCamera
+        from ulc_mm_package.hardware.motorcontroller import DRV8825Nema
         from ulc_mm_package.hardware.hardware_errors import *
 
 else:
