@@ -31,58 +31,14 @@ FASTER_FEEDBACK_DELAY_S = 3
 
 # ------------------------------led_driver_tps54201ddct.py------------------------------
 
-class LEDError(Exception):
-    pass
-
-
-class LED_TPS5420TDDCT():
-    def __init__(self, pwm_pin: int=LED_PWM_PIN):
-        self._isOn = False
-        self.pwm_pin = pwm_pin
-        self.pwm_freq = int(LED_FREQ)
-        self.pwm_duty_cycle = 10
-
-    def close(self):
-        self.pwm_duty_cycle = 0
-
-    def _convertPWMValToDutyCyclePerc(self, pwm_val: int) -> float:
-        return pwm_val / 1e6
-
-    def setDutyCycle(self, duty_cycle_perc: float):
-        self.pwm_duty_cycle = self._convertDutyCyclePercentToPWMVal(duty_cycle_perc)
-
-    def _convertDutyCyclePercentToPWMVal(self, duty_cycle_percentage: float) -> int:
-        return int(1e6*duty_cycle_percentage)
-
-    def turnOn(self):
-        self._isOn = True
-
-    def turnOff(self):
-        self.setDutyCycle(0)
-        self._isOn = False
 
 
 # ------------------------------pim522_rotary_encoder.py------------------------------
-
-class PIM522RotaryEncoder:
-    def __init__(self, callback_func: Callable):
-        self.I2C_ADDR = 0x0F  # 0x18 for IO Expander, 0x0F for the encoder breakout
-        self.pin_red = 1
-        self.pin_green = 7
-        self.pin_blue = 2
-
-    def setColor(self, r, g, b):
-        pass
-
-    def close(self):
-        pass
-
 
 # ------------------------------pressure_control.py------------------------------
 
 class PneumaticModuleError(Exception):
     pass
-
 
 class PressureLeak(PneumaticModuleError):
     def __init__(self):
