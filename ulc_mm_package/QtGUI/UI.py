@@ -1,25 +1,9 @@
 from gui_constants import *
+
 from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC
 from ulc_mm_package.hardware.hardware_modules import *
 
-if __name__ == "__main__":
-    if not SIMULATION:
-    # if not SIMULATION:
-        # Use real hardware/image processing objects
-        from ulc_mm_package.image_processing.processing_modules import *
-    else:
-        # Use simulated hardware/image processing objects
-        from ulc_mm_package.image_processing.processing_simulation import *
-
-else:
-    from ulc_mm_package.image_processing.processing_modules import *
-
-from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
-
-from ulc_mm_package.image_processing.zstack import (
-    takeZStackCoroutine,
-    symmetricZStackCoroutine,
-)
+from ulc_mm_package.image_processing.processing_modules import *
 
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
 
@@ -522,8 +506,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
 
             # Don't enable autobrightness in simulation mode
-            if not SIMULATION:
-                self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
+            # if not SIMULATION:
+            self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
 
         except LEDError:
             print("Error instantiating LED. Continuing...")

@@ -82,7 +82,7 @@ class PneumaticModule():
         self.increaseDutyCycle()
 
     def threadedSetDutyCycle(self, *args, **kwargs):
-        self.setDutyCycle()
+        self.setDutyCycle(*args, **kwargs)
 
     def close(self):
         self.setDutyCycle(self.max_duty_cycle)
