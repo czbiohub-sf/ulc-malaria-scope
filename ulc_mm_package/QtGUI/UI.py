@@ -102,7 +102,10 @@ class AcquisitionThread(QThread):
         self.autobrightness_on = False
 
         # Single-shot autofocus
-        self.autofocus_model = AutoFocus(AUTOFOCUS_MODEL_DIR)
+        try:
+            self.autofocus_model = AutoFocus(AUTOFOCUS_MODEL_DIR)
+        except RuntimeError as e:
+            raise RuntimeError(f'got {str(e)}:\n {subprocess.getoutput("lsusb | grep Myriad")=}')
         self.active_autofocus = False
         self.prev_autofocus_time = 0
         self.af_adjustment_done = False
