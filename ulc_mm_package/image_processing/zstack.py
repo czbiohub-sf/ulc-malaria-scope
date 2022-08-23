@@ -28,7 +28,7 @@ def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int=1, save_loc=None
     for image in camera.yieldImages():
         focus_metrics.append(gradientAverage(image))
         if save_loc != None:
-            cv2.imwrite(save_dir + f"{motor.pos:03d}.tiff", image)
+            cv2.imwrite(save_dir + f"{motor.pos:03d}.png", image)
         motor.move_rel(steps=steps_per_image, dir=Direction.CW)
         step_counter += steps_per_image
 
@@ -61,7 +61,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
         focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
         motor.move_rel(steps=steps_per_coarse, dir=Direction.CW, stepdelay=0.001)
         if save_loc != None:
-            cv2.imwrite(save_dir + f"{motor.pos:03d}.tiff", img)
+            cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         step_counter += steps_per_coarse
     
     # Do a 1um sweep closer to where the true focus is
@@ -80,7 +80,7 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
         focus_metrics_fine.append(logPowerSpectrumRadialAverageSum(img))
         motor.move_rel(steps=steps_per_fine, dir=Direction.CW)
         if save_loc != None:
-            cv2.imwrite(save_dir + f"{motor.pos:03d}.tiff", img)
+            cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         step_counter += steps_per_fine
     best_focus_position = start + np.argmax(focus_metrics_fine)*steps_per_fine
     motor.move_abs(best_focus_position)
@@ -128,7 +128,7 @@ def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int
         focus_metrics.append(gradientAverage(image))
         motor.move_rel(steps=steps_per_image, dir=Direction.CW)
         if save_loc != None:
-            cv2.imwrite(save_dir + f"{motor.pos:03d}.tiff", image)
+            cv2.imwrite(save_dir + f"{motor.pos:03d}.png", image)
         step_counter += steps_per_image
         if step_counter > max_pos:
             break

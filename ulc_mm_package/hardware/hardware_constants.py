@@ -1,11 +1,14 @@
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
-FAN_GPIO = 5
-CAM_FAN_1 = 23
-CAM_FAN_2 = 24
 BOARD_STATUS_INDICATOR = 4
 
+# ================ Camera constants ================ #
+DEFAULT_EXPOSURE_MS = 0.5
+DEVICELINK_THROUGHPUT = 10000000
+
 # ================ Motor controller constants ================ #
+FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
+DEFAULT_FULL_STEP_HOMING_TIMEOUT = 15
 
 # Pin numbers in BCM, see https://pinout.xyz/
 MOTOR_ENABLE = 6
@@ -16,7 +19,6 @@ MOTOR_DIR_PIN = 16
 MOTOR_FAULT_PIN = 20
 MOTOR_LIMIT_SWITCH1 = 18
 MOTOR_LIMIT_SWITCH2 = 15
-
 ZERO_OFFSET_STEPS = 20
 
 # DRR8825 stepping mode reference
@@ -28,9 +30,6 @@ RESOLUTION = {
     "1/16": (0, 0, 1),
     "1/32": (1, 0, 1),
 }
-
-# ================ Motor constants ================ #
-FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
 
 # ================ Encoder constants ================ #
 ROT_INTERRUPT_PIN = 27
@@ -58,3 +57,16 @@ SERVO_5V_PIN = 17
 SERVO_PWM_PIN = 12
 VALVE_PIN = 8
 SERVO_FREQ = 100
+
+INVALID_READ_FLAG = -1
+DEFAULT_AFC_DELAY_S = 1
+AFC_NUM_IMAGE_PAIRS = 12
+
+# ================ Fan constants ================ #
+FAN_GPIO = 5
+CAM_FAN_1 = 23
+CAM_FAN_2 = 24
+
+# ================ Simulation constants ================ #
+VIDEO_PATH = "./sim_media/sample.avi"
+VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"

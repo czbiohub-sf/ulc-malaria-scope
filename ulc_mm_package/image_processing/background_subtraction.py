@@ -5,12 +5,10 @@ Find and average pixel values that lay outside bounding boxes across a series of
 Remove the dependence on the "BBox" object that is used for this project and just generalize to taking inputs to x/y arrays
 """
 
-# ========================== IMPORTS ======================
-from typing import List
 import numpy as np
 
-# ========================== CONSTANTS ======================
-INSIDE_BBOX_FLAG = 0
+from ulc_mm_package.image_processing.processing_constants import INSIDE_BBOX_FLAG
+from typing import List
 
 class PatchyBackgroundSubtraction:
     def _maskBoxedRegions(

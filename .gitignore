@@ -100,3 +100,8 @@ Pipfile.lock
 /logs
 /models
 /jobs
+
+# Simulation mode media
+ulc_mm_package/QtGUI/sim_media/pi/data/*
+ulc_mm_package/QtGUI/sim_media/*.avi
+!ulc_mm_package/QtGUI/sim_media/pi/data/.gitkeep

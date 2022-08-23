@@ -2,7 +2,7 @@ from typing import Tuple
 import numpy as np
 import cv2
 
-CORRELATION_THRESH = 0.5
+from ulc_mm_package.image_processing.processing_constants import CORRELATION_THRESH
 
 class FlowRateEstimatorError(Exception):
     """Base class for catching all pressure control related errors."""

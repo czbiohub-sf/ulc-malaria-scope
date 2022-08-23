@@ -1,6 +1,7 @@
 import subprocess
 import enum
 
+
 class PWM_CHANNEL(enum.Enum):
     PWM1 = 0
     PWM2 = 1
@@ -42,7 +43,7 @@ class dtoverlay_PWM:
         
         Parameters
         ----------
-        duty_cycle_perc: float 
+        duty_cycle_perc: float
             Between 0 - 1.0.
         
         """
