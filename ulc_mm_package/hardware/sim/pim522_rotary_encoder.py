@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+
+@author: mwlkhoo
+
+Purpose: Dummy hardware object simulating encoder.
+         See encoder module under hardware/real/ for info on actual functionality.
+         
+"""
+
 from typing import Callable
 
 from ulc_mm_package.hardware.pim522_rotary_encoder import EncoderI2CError

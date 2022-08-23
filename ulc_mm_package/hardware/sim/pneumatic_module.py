@@ -3,13 +3,13 @@
 
 @author: mwlkhoo
 
-Purpose: Dummy functions simulating hardware objects for UI testing.
-         See relevant hardware object files for more info on methods.
-         The class methods and variables are a barebones imitation of the actual hardware.
-
+Purpose: Dummy hardware object simulating pneumatic module.
+         See pneumatic module under hardware/real/ for info on actual functionality.
+         
 """
 
 from time import sleep
+
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_PWM_PIN,
     INVALID_READ_FLAG,
@@ -20,6 +20,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureLeak,
     SyringeDirection,
 )
+
 
 class PneumaticModule():
     def __init__(self, servo_pin: int=SERVO_PWM_PIN):

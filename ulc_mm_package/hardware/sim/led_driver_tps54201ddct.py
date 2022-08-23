@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+
+@author: mwlkhoo
+
+Purpose: Dummy hardware object simulating LED.
+         See LED module under hardware/real/ for info on actual functionality.
+         
+"""
+
 from ulc_mm_package.hardware.hardware_constants import LED_FREQ, LED_PWM_PIN
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LEDError
 

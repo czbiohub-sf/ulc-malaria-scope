@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+
+@author: mwlkhoo
+
+Purpose: Dummy hardware object simulating motor.
+         See motor module under hardware/real/ for info on actual functionality.
+         
+"""
+
 from ulc_mm_package.hardware.hardware_constants import (
     FULL_STEP_TO_TRAVEL_DIST_UM,
     MOTOR_ENABLE,
