@@ -15,6 +15,7 @@ import csv
 import traceback
 import numpy as np
 import webbrowser
+import subprocess
 
 from typing import Dict
 from time import perf_counter, sleep
@@ -490,7 +491,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread = AcquisitionThread(self.external_dir)
         self.recording = False
 
-        if not self.acquisitionThread.camera_activated and not SIMULATION:
+        if not self.acquisitionThread.camera_activated:
             print(f"Error initializing camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
@@ -1045,8 +1046,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         )
 
         if retval == QtWidgets.QMessageBox.Ok:
-            # Close the camera
-            self.acquisitionThread.camera.deactivateCamera()
 
             # Move syringe back and de-energize
             self.pneumatic_module.close()
@@ -1055,7 +1054,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.close()
 
             # Turn off camera
-            if self.acquisitionThread != None and not SIMULATION:
+            if self.acquisitionThread != None:
                 self.acquisitionThread.camera_activated = False
                 self.acquisitionThread.camera.stopAcquisition()
                 self.acquisitionThread.camera.deactivateCamera()
