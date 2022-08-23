@@ -18,7 +18,7 @@ class FlowController:
     def __init__(self, pneumatic_module: PneumaticModule, h: int=600, w: int=800, window_size: int=WINDOW_SIZE):
         """Flow controller class.
         
-        Wraps the functionality of FlowRateEstimator, PneumaticModule and the flow control algorithm
+        Wraps the functionality of FlowRateEstimator, PneumaticModule, and the flow control algorithm
         together to control the flowrate. Single images are provided to this class via `controlFlow(img)`
         which, using the FlowRateEstimator, and an exponentially weighted moving average (EWMA) to smooth the noise,
         adjusts the syringe to maintain the target flowrate.

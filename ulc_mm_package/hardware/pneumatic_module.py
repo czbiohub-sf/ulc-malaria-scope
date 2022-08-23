@@ -27,13 +27,9 @@ class PneumaticModuleError(Exception):
 
 class PressureSensorNotInstantiated(PneumaticModuleError):
     """Raised when the Adafruit MPRLS can not be instantiated."""
-    def __init__(self):
-        super().__init__("Could not instantiate pressure sensor.")
 
 class PressureLeak(PneumaticModuleError):
     """Raised when a pressure leak is detected."""
-    def __init__(self):
-        super().__init__("Pressure leak detected.")
 
 class SyringeInMotion(PneumaticModuleError):
     pass

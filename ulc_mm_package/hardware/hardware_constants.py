@@ -4,6 +4,7 @@ BOARD_STATUS_INDICATOR = 4
 
 # ================ Camera constants ================ #
 DEFAULT_EXPOSURE_MS = 0.5
+DEVICELINK_THROUGHPUT = 10000000
 
 # ================ Motor controller constants ================ #
 FULL_STEP_TO_TRAVEL_DIST_UM = 0.56

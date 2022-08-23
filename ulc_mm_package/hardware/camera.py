@@ -4,7 +4,14 @@ See camera module under hardware/real/ for more info.
 
 """
 
+import sys
+import queue
+import vimba
+
+from vimba import Vimba
+
 from ulc_mm_package.hardware.hardware_wrapper import hardware
+from ulc_mm_package.hardware.hardware_constants import DEVICELINK_THROUGHPUT
 
 
 class CameraError(Exception):
@@ -19,9 +26,12 @@ class BaslerCamera:
 class AVTCamera:
     def __init__(self):
         self.vimba = Vimba.get_instance().__enter__()
-        self.queue = queue.Queue()
+        self.queue = queue.Queue(maxsize=1)
         self.connect()
         self.minExposure_ms, self.maxExposure_ms = self.getExposureBoundsMilliseconds()
+
+    def __del__(self):
+        self.deactivateCamera()
 
     def _get_camera(self):
         with Vimba.get_instance() as vimba:
@@ -29,6 +39,7 @@ class AVTCamera:
             return cams[0]
 
     def _camera_setup(self):
+        self.setDeviceLinkThroughputLimit(DEVICELINK_THROUGHPUT)
         self.camera.ExposureAuto.set("Off")
         self.camera.ExposureTime.set(500)
         self.setBinning(bin_factor=2)
@@ -40,11 +51,12 @@ class AVTCamera:
         self._camera_setup()
 
     def deactivateCamera(self) -> None:
+        self.stopAcquisition()
         self.vimba.__exit__(*sys.exc_info())
     
     def _frame_handler(self, cam, frame):
         if self.queue.full():
-            self.queue.get_nowait()
+            self.queue.get()
         if frame.get_status() == vimba.FrameStatus.Complete:
             self.queue.put(frame.as_numpy_ndarray())
         cam.queue_frame(frame)
@@ -87,6 +99,9 @@ class AVTCamera:
     def getBinning(self):
         return self.camera.BinningHorizontal.get()
     
+    def setDeviceLinkThroughputLimit(self, bytes_per_second: int):
+        self.camera.DeviceLinkThroughputLimit.set(bytes_per_second)
+
     def _getTemperature(self):
         try:
             return self.camera.DeviceTemperature.get()
