@@ -1,8 +1,5 @@
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
-FAN_GPIO = 5
-CAM_FAN_1 = 23
-CAM_FAN_2 = 24
 BOARD_STATUS_INDICATOR = 4
 
 # ================ Camera constants ================ #
@@ -62,6 +59,11 @@ SERVO_FREQ = 100
 INVALID_READ_FLAG = -1
 DEFAULT_AFC_DELAY_S = 1
 AFC_NUM_IMAGE_PAIRS = 12
+
+# ================ Fan constants ================ #
+FAN_GPIO = 5
+CAM_FAN_1 = 23
+CAM_FAN_2 = 24
 
 # ================ Simulation constants ================ #
 VIDEO_PATH = "./sim_media/sample.avi"
