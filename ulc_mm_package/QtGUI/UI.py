@@ -1,18 +1,10 @@
 from gui_constants import *
+from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC
+from ulc_mm_package.hardware.hardware_modules import *
 
 if __name__ == "__main__":
-    # Select operation mode
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-s', '--sim', action='store_true', help="simulation mode")
-    mode = parser.parse_args()
-    
-    from ulc_mm_package.hardware.hardware_modules import *
-    from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC
-
-
     if not SIMULATION:
-    # if not mode.sim:
+    # if not SIMULATION:
         # Use real hardware/image processing objects
         from ulc_mm_package.image_processing.processing_modules import *
     else:
@@ -20,7 +12,6 @@ if __name__ == "__main__":
         from ulc_mm_package.image_processing.processing_simulation import *
 
 else:
-    from ulc_mm_package.hardware.hardware_modules import *
     from ulc_mm_package.image_processing.processing_modules import *
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
@@ -470,7 +461,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         media_dir = DEFAULT_SSD
 
-        if mode.sim:
+        if SIMULATION:
             print("---------------------\n|  SIMULATION MODE  |\n---------------------")
 
             if not path.exists(VIDEO_PATH):
@@ -512,7 +503,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread = AcquisitionThread(self.external_dir)
         self.recording = False
 
-        if not self.acquisitionThread.camera_activated and not mode.sim:
+        if not self.acquisitionThread.camera_activated and not SIMULATION:
             print(f"Error initializing camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
@@ -531,7 +522,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
 
             # Don't enable autobrightness in simulation mode
-            if not mode.sim:
+            if not SIMULATION:
                 self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
 
         except LEDError:
@@ -1077,7 +1068,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.close()
 
             # Turn off camera
-            if self.acquisitionThread != None and not mode.sim:
+            if self.acquisitionThread != None and not SIMULATION:
                 self.acquisitionThread.camera_activated = False
                 self.acquisitionThread.camera.stopAcquisition()
                 self.acquisitionThread.camera.deactivateCamera()
