@@ -13,6 +13,10 @@ from typing import Callable
 
 from ulc_mm_package.hardware.hardware_wrapper import hardware
 
+
+class EncoderI2CError(Exception):
+    """Base class for catching encoder errors."""
+
 @hardware
 class PIM522RotaryEncoder:
     def __init__(self, callback_func: Callable):
@@ -25,6 +29,7 @@ class PIM522RotaryEncoder:
             since the last read. When the encoder is rotated at a slow/moderate speed, this will usually always be +1/-1.
             If the encoder is spun quickly however, this number may be larger.
         """
+
 
 if __name__ == "__main__":
 

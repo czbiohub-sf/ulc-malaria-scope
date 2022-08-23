@@ -1,4 +1,6 @@
 from ulc_mm_package.hardware.hardware_constants import LED_FREQ, LED_PWM_PIN
+from ulc_mm_package.hardware.led_driver_tps54201ddct import LEDError
+
 
 class LED_TPS5420TDDCT():
     def __init__(self, pwm_pin: int=LED_PWM_PIN):

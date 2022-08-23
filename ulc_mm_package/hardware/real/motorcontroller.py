@@ -15,7 +15,8 @@ from ulc_mm_package.hardware.hardware_constants import (
     MOTOR_LIMIT_SWITCH2,
     ZERO_OFFSET_STEPS,
 )
-from ulc_mm_package.hardware.hardware_errors import (
+from ulc_mm_package.hardware.motorcontroller import (
+    Direction,
     MotorControllerError,
     MotorMoveTimeout,
     HomingError,
@@ -23,7 +24,7 @@ from ulc_mm_package.hardware.hardware_errors import (
     MotorInMotion,
     InvalidMove,
 )
-from ulc_mm_package.hardware.motorcontroller import Direction
+
 
 MOTOR_LOCK = threading.Lock()
 DEFAULT_FULL_STEP_HOMING_TIMEOUT = 15

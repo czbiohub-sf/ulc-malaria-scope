@@ -1,5 +1,8 @@
 from typing import Callable
 
+from ulc_mm_package.hardware.pim522_rotary_encoder import EncoderI2CError
+
+
 class PIM522RotaryEncoder:
     def __init__(self, callback_func: Callable):
         self.I2C_ADDR = 0x0F  # 0x18 for IO Expander, 0x0F for the encoder breakout

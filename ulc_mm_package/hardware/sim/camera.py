@@ -4,7 +4,7 @@ from py_cameras import PyCamera
 from time import sleep
 
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS, VIDEO_PATH
-from ulc_mm_package.hardware.hardware_errors import CameraError
+from ulc_mm_package.hardware.camera import CameraError
 
 class BaslerCamera(PyCamera):
     def __init__(self):

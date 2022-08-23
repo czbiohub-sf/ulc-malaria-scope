@@ -11,6 +11,12 @@ Basler PyPlon Library:
 
 from ulc_mm_package.hardware.hardware_wrapper import hardware
 
+
+class CameraError(Exception):
+    """Base class for catching camera errors."""
+    # Note this is temporary until the pyCameras improved exception-handling PR is merged.
+    # Once that is merged, we can simply raise the PyCameras error.
+
 @hardware
 class BaslerCamera:
     pass

@@ -12,8 +12,9 @@ Basler PyPlon Library:
 import sys
 
 from py_cameras import Basler, GrabStrategy
+
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS
-from ulc_mm_package.hardware.hardware_errors import CameraError
+from ulc_mm_package.hardware.camera import CameraError
 
 class BaslerCamera(Basler):
     """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""

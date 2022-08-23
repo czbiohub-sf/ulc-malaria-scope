@@ -9,7 +9,8 @@ from ulc_mm_package.hardware.hardware_constants import (
     ROT_C_PIN,
     ROT_INTERRUPT_PIN,
 )
-from ulc_mm_package.hardware.hardware_errors import EncoderI2CError
+from ulc_mm_package.hardware.pim522_rotary_encoder import EncoderI2CError
+
 
 class PIM522RotaryEncoder:
     def __init__(self, callback_func: Callable):

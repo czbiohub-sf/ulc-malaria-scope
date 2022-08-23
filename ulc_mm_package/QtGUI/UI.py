@@ -6,21 +6,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--sim', action='store_true', help="simulation mode")
     mode = parser.parse_args()
+    
+    from ulc_mm_package.hardware.hardware_modules import *
+    from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC
+
 
     if not SIMULATION:
     # if not mode.sim:
         # Use real hardware/image processing objects
-        from ulc_mm_package.hardware.hardware_modules import *
         from ulc_mm_package.image_processing.processing_modules import *
     else:
         # Use simulated hardware/image processing objects
-        from ulc_mm_package.hardware.hardware_modules import *
-        from ulc_mm_package.hardware.hardware_simulation import *
         from ulc_mm_package.image_processing.processing_simulation import *
-        # from ulc_mm_package.hardware.camera import BaslerCamera
-        # from ulc_mm_package.hardware.motorcontroller import DRV8825Nema
-        # from ulc_mm_package.hardware.pim522_rotary_encoder import
-        # from ulc_mm_package.hardware.hardware_errors import *
 
 else:
     from ulc_mm_package.hardware.hardware_modules import *

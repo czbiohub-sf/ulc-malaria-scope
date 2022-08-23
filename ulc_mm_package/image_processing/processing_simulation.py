@@ -13,12 +13,6 @@ import numpy as np
 
 from ulc_mm_package.image_processing.processing_constants import *
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
-# from ulc_mm_package.hardware.hardware_simulation import (
-#     # LED_TPS5420TDDCT,
-#     PneumaticModule,
-#     SyringeDirection,
-#     PressureLeak,
-# )
 from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeDirection, PressureLeak
 
 # ------------------------------autobrightness.py------------------------------
