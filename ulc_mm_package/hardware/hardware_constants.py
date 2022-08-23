@@ -10,6 +10,7 @@ DEFAULT_EXPOSURE_MS = 0.5
 
 # ================ Motor controller constants ================ #
 FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
+
 # Pin numbers in BCM, see https://pinout.xyz/
 MOTOR_ENABLE = 6
 MOTOR_SLEEP = 26
@@ -57,6 +58,10 @@ SERVO_5V_PIN = 17
 SERVO_PWM_PIN = 12
 VALVE_PIN = 8
 SERVO_FREQ = 100
+
+INVALID_READ_FLAG = -1
+DEFAULT_AFC_DELAY_S = 1
+AFC_NUM_IMAGE_PAIRS = 12
 
 # ================ Simulation constants ================ #
 VIDEO_PATH = "./sim_media/sample.avi"
