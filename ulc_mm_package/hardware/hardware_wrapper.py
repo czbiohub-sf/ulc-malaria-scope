@@ -1,7 +1,26 @@
-from importlib import import_module
-from os.path import basename
+# -*- coding: utf-8 -*-
+"""
+
+@author: mwlkhoo
+
+Purpose: Decorator for any hardware with a simulated and real object.
+         This decorator decides whether simulated or real hardware objects
+         should be passed to the hardware wrapper.
+         
+Usage:   Define a new hardware class as
+
+            @hardware
+            def HardwareClass():
+                pass
+                
+         There should be a real and simulated version of this class in hardware/real
+         and hardware/sim, respectively. Ensure filenames and class names are identical.
+"""
 
 import inspect
+
+from importlib import import_module
+from os.path import basename
 
 from ulc_mm_package.QtGUI.gui_constants import SIMULATION
 
