@@ -508,9 +508,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnLEDToggle.setText(f"Turn off")
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
             self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
-
-            # Don't enable autobrightness in simulation mode
-            # if not SIMULATION:
             self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
 
         except LEDError:
