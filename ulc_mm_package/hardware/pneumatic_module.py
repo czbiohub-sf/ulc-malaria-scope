@@ -1,12 +1,7 @@
 """ Adafruit MPRLS Ported Pressure Sensor Breakout Board and PWM Servo
 
--- Important Links --
-Adafruit Product Page:
-    https://www.adafruit.com/product/3965
-Adafruit MPRLS Python Library:
-    https://github.com/adafruit/Adafruit_CircuitPython_MPRLS
-Servo Motor Pololu HD-1810MG:
-    https://www.pololu.com/product/1047
+See pneumatic module under hardware/real/ for more info
+
 """
 
 import enum

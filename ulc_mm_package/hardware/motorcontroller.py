@@ -1,10 +1,7 @@
 """ DRV8825 - Stepper Motor Controller IC
 
--- Important Links --
-Datasheet:
-    https://www.ti.com/lit/ds/symlink/drv8825.pdf
-    
-*Adapted from Gavin Lyons' RPiMotorLib repository (https://github.com/gavinlyonsrepo/RpiMotorLib/blob/master/RpiMotorLib/RpiMotorLib.py)
+See motor module under hardware/real/ for more info.
+
 """
 
 import enum

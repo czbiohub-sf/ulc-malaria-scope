@@ -7,6 +7,7 @@ DEFAULT_EXPOSURE_MS = 0.5
 
 # ================ Motor controller constants ================ #
 FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
+DEFAULT_FULL_STEP_HOMING_TIMEOUT = 15
 
 # Pin numbers in BCM, see https://pinout.xyz/
 MOTOR_ENABLE = 6

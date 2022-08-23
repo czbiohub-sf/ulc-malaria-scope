@@ -1,12 +1,7 @@
 """ PIM522 Pimoroni RGB Rotary Encoder w/ Nuvoton microcontroller
 
--- Important Links --
-Pimoroni Product Page:
-    https://shop.pimoroni.com/products/rgb-encoder-breakout
-Python Library:
-    https://github.com/pimoroni/ioe-python
-Encoder Dimensions:
-    https://cdn.shopify.com/s/files/1/0174/1800/files/EC12PVF-D-15F-24-24C-03-6H.pdf?v=1601306386
+See encoder module under hardware/real/ for more info.
+
 """
 
 from typing import Callable

@@ -1,12 +1,7 @@
 """ daA1600-60um - Basler dart camera
 
--- Important Links --
-Basler API:
-    https://docs.baslerweb.com/area-scan-cameras
-         Make sure to select the camera model in the top-right
-        Click on "Features" in the menu on the left to view the API functions
-Basler PyPlon Library:
-    https://github.com/basler/pypylon
+See camera module under hardware/real/ for more info.
+
 """
 
 from ulc_mm_package.hardware.hardware_wrapper import hardware

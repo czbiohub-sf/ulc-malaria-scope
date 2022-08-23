@@ -1,8 +1,7 @@
 """ TPS54201DDCT - Synchronous Buck Mono-Colour/IR LED Driver
 
--- Important Links --
-Datasheet:
-    https://www.ti.com/lit/ds/symlink/tps54201.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1631571231219&ref_url=https%253A%252F%252Fwww.ti.com%252Fgeneral%252Fdocs%252Fsuppproductinfo.tsp%253FdistId%253D10%2526gotoUrl%253Dhttps%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Ftps54201
+See LED module under hardware/real/ for more info.
+
 """
 
 from ulc_mm_package.hardware.hardware_wrapper import hardware

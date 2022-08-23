@@ -1,3 +1,12 @@
+""" DRV8825 - Stepper Motor Controller IC
+
+-- Important Links --
+Datasheet:
+    https://www.ti.com/lit/ds/symlink/drv8825.pdf
+    
+*Adapted from Gavin Lyons' RPiMotorLib repository (https://github.com/gavinlyonsrepo/RpiMotorLib/blob/master/RpiMotorLib/RpiMotorLib.py)
+"""
+
 import time
 import functools
 import threading
@@ -5,6 +14,7 @@ import pigpio
 
 from ulc_mm_package.hardware.hardware_constants import (
     FULL_STEP_TO_TRAVEL_DIST_UM,
+    DEFAULT_FULL_STEP_HOMING_TIMEOUT,
     MOTOR_ENABLE,
     MOTOR_SLEEP,
     MOTOR_RESET,
@@ -27,7 +37,6 @@ from ulc_mm_package.hardware.motorcontroller import (
 
 
 MOTOR_LOCK = threading.Lock()
-DEFAULT_FULL_STEP_HOMING_TIMEOUT = 15
 
 def lockNoBlock(lock):
     def lockDecorator(func):
@@ -42,7 +51,6 @@ def lockNoBlock(lock):
 
         return wrapper
     return lockDecorator
-    
 
     
 class DRV8825Nema():

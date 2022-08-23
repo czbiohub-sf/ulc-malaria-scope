@@ -3,7 +3,7 @@
 -- Important Links --
 Basler API:
     https://docs.baslerweb.com/area-scan-cameras
-        Make sure to select the camera model in the top-right
+         Make sure to select the camera model in the top-right
         Click on "Features" in the menu on the left to view the API functions
 Basler PyPlon Library:
     https://github.com/basler/pypylon
@@ -15,6 +15,7 @@ from py_cameras import Basler, GrabStrategy
 
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS
 from ulc_mm_package.hardware.camera import CameraError
+
 
 class BaslerCamera(Basler):
     """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""
