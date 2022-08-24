@@ -336,13 +336,15 @@ class AcquisitionThread(QThread):
                 steps_from_focus = -int(self.autofocus_model(img)[0][0][0])
                 print(type(steps_from_focus), steps_from_focus)
                 self.af_adjustment_done = True
+
+                try:
+                    dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
+                    self.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
+                except MotorControllerError:
+                    print("Error moving motor after receiving steps from the SSAF model.")
+
             except Exception as e:
-                print("Model inference error.")
-            try:
-                dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-                self.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
-            except MotorControllerError:
-                print("Error moving motor after receiving steps from the SSAF model.")
+                print(f"Generic model inference error: {e}")
 
 class ExperimentSetupGUI(QtWidgets.QDialog):
     """Form to input experiment parameters"""
