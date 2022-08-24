@@ -175,28 +175,6 @@ F 3 "" H 7965 8760 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector:TestPoint TP2
-U 1 1 616B83BB
-P 8590 8760
-F 0 "TP2" V 8544 8948 50  0000 L CNN
-F 1 "5V" V 8635 8948 50  0000 L CNN
-F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8790 8760 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8790 8760 50  0001 C CNN
-	1    8590 8760
-	0    1    1    0   
-$EndComp
-$Comp
-L power:+5V #PWR036
-U 1 1 616C8C69
-P 8590 8760
-F 0 "#PWR036" H 8590 8610 50  0001 C CNN
-F 1 "+5V" H 8605 8933 50  0000 C CNN
-F 2 "" H 8590 8760 50  0001 C CNN
-F 3 "" H 8590 8760 50  0001 C CNN
-	1    8590 8760
-	1    0    0    -1  
-$EndComp
-$Comp
 L Connector:TestPoint TP4
 U 1 1 616E33D0
 P 8020 9190
@@ -734,17 +712,17 @@ R_SERVO_PWM
 $Comp
 L Connector:TestPoint TP6
 U 1 1 6257AF6B
-P 9425 8765
-F 0 "TP6" H 9483 8883 50  0000 L CNN
-F 1 "DRV_VREF" H 9483 8792 50  0000 L CNN
-F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 9625 8765 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 9625 8765 50  0001 C CNN
-	1    9425 8765
+P 8750 8760
+F 0 "TP6" H 8808 8878 50  0000 L CNN
+F 1 "DRV_VREF" H 8808 8787 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8950 8760 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8950 8760 50  0001 C CNN
+	1    8750 8760
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	9100 8765 9425 8765
-Text Label 9100 8765 0    39   ~ 0
+	8425 8760 8750 8760
+Text Label 8425 8760 0    39   ~ 0
 DRV_Vref
 $Comp
 L Connector_Generic:Conn_02x08_Counter_Clockwise J1
@@ -3211,35 +3189,24 @@ MPRLS_RST
 $Comp
 L Connector_Generic:Conn_01x02 J18
 U 1 1 6307B75A
-P 3645 8645
-F 0 "J18" H 3725 8637 50  0000 L CNN
-F 1 "TOUCHSCREEN" H 3725 8546 50  0000 L CNN
-F 2 "Connector_Molex:Molex_Pico-Clasp_501331-0207_1x02-1MP_P1.00mm_Vertical" H 3645 8645 50  0001 C CNN
-F 3 "https://www.molex.com/molex/products/part-detail/pcb_headers/5013310207" H 3645 8645 50  0001 C CNN
-F 4 "https://www.digikey.com/en/products/detail/molex/0151330205/6696992" H 3645 8645 50  0001 C CNN "Mating Conn"
-	1    3645 8645
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+5V #PWR0143
-U 1 1 6307D616
-P 3445 8645
-F 0 "#PWR0143" H 3445 8495 50  0001 C CNN
-F 1 "+5V" H 3460 8818 50  0000 C CNN
-F 2 "" H 3445 8645 50  0001 C CNN
-F 3 "" H 3445 8645 50  0001 C CNN
-	1    3445 8645
+P 3025 8675
+F 0 "J18" H 3105 8667 50  0000 L CNN
+F 1 "TOUCHSCREEN" H 3105 8576 50  0000 L CNN
+F 2 "Connector_Molex:Molex_Pico-Clasp_501331-0207_1x02-1MP_P1.00mm_Vertical" H 3025 8675 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/5013310207/1531471" H 3025 8675 50  0001 C CNN
+F 4 "https://www.digikey.com/en/products/detail/molex/0151330202/6696990" H 3025 8675 50  0001 C CNN "Mating Conn"
+	1    3025 8675
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0144
 U 1 1 6307F407
-P 3445 8745
-F 0 "#PWR0144" H 3445 8495 50  0001 C CNN
-F 1 "GND" H 3450 8572 50  0000 C CNN
-F 2 "" H 3445 8745 50  0001 C CNN
-F 3 "" H 3445 8745 50  0001 C CNN
-	1    3445 8745
+P 2825 8775
+F 0 "#PWR0144" H 2825 8525 50  0001 C CNN
+F 1 "GND" H 2830 8602 50  0000 C CNN
+F 2 "" H 2825 8775 50  0001 C CNN
+F 3 "" H 2825 8775 50  0001 C CNN
+	1    2825 8775
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -3623,4 +3590,49 @@ Wire Wire Line
 	1500 5940 1500 5990
 Wire Wire Line
 	1500 5990 2245 5990
+$Comp
+L Connector_Generic:Conn_01x02 J20
+U 1 1 62FD3BD6
+P 3945 8680
+F 0 "J20" H 4025 8672 50  0000 L CNN
+F 1 "USB" H 4025 8581 50  0000 L CNN
+F 2 "Connector_Molex:Molex_Pico-Clasp_501331-0207_1x02-1MP_P1.00mm_Vertical" H 3945 8680 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/5013310207/1531471" H 3945 8680 50  0001 C CNN
+F 4 "https://www.digikey.com/en/products/detail/molex/0151330202/6696990" H 3945 8680 50  0001 C CNN "Mating Conn"
+	1    3945 8680
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR0148
+U 1 1 62FD3BDC
+P 3745 8680
+F 0 "#PWR0148" H 3745 8530 50  0001 C CNN
+F 1 "+5V" H 3760 8853 50  0000 C CNN
+F 2 "" H 3745 8680 50  0001 C CNN
+F 3 "" H 3745 8680 50  0001 C CNN
+	1    3745 8680
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0149
+U 1 1 62FD3BE2
+P 3745 8780
+F 0 "#PWR0149" H 3745 8530 50  0001 C CNN
+F 1 "GND" H 3750 8607 50  0000 C CNN
+F 2 "" H 3745 8780 50  0001 C CNN
+F 3 "" H 3745 8780 50  0001 C CNN
+	1    3745 8780
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5VP #PWR0143
+U 1 1 630D77A1
+P 2825 8675
+F 0 "#PWR0143" H 2825 8525 50  0001 C CNN
+F 1 "+5VP" H 2840 8848 50  0000 C CNN
+F 2 "" H 2825 8675 50  0001 C CNN
+F 3 "" H 2825 8675 50  0001 C CNN
+	1    2825 8675
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

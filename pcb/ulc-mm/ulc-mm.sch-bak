@@ -3211,35 +3211,24 @@ MPRLS_RST
 $Comp
 L Connector_Generic:Conn_01x02 J18
 U 1 1 6307B75A
-P 3645 8645
-F 0 "J18" H 3725 8637 50  0000 L CNN
-F 1 "TOUCHSCREEN" H 3725 8546 50  0000 L CNN
-F 2 "Connector_Molex:Molex_Pico-Clasp_501331-0207_1x02-1MP_P1.00mm_Vertical" H 3645 8645 50  0001 C CNN
-F 3 "https://www.molex.com/molex/products/part-detail/pcb_headers/5013310207" H 3645 8645 50  0001 C CNN
-F 4 "https://www.digikey.com/en/products/detail/molex/0151330205/6696992" H 3645 8645 50  0001 C CNN "Mating Conn"
-	1    3645 8645
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+5V #PWR0143
-U 1 1 6307D616
-P 3445 8645
-F 0 "#PWR0143" H 3445 8495 50  0001 C CNN
-F 1 "+5V" H 3460 8818 50  0000 C CNN
-F 2 "" H 3445 8645 50  0001 C CNN
-F 3 "" H 3445 8645 50  0001 C CNN
-	1    3445 8645
+P 3025 8675
+F 0 "J18" H 3105 8667 50  0000 L CNN
+F 1 "TOUCHSCREEN" H 3105 8576 50  0000 L CNN
+F 2 "Connector_Molex:Molex_Pico-Clasp_501331-0207_1x02-1MP_P1.00mm_Vertical" H 3025 8675 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/5013310207/1531471" H 3025 8675 50  0001 C CNN
+F 4 "https://www.digikey.com/en/products/detail/molex/0151330202/6696990" H 3025 8675 50  0001 C CNN "Mating Conn"
+	1    3025 8675
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0144
 U 1 1 6307F407
-P 3445 8745
-F 0 "#PWR0144" H 3445 8495 50  0001 C CNN
-F 1 "GND" H 3450 8572 50  0000 C CNN
-F 2 "" H 3445 8745 50  0001 C CNN
-F 3 "" H 3445 8745 50  0001 C CNN
-	1    3445 8745
+P 2825 8775
+F 0 "#PWR0144" H 2825 8525 50  0001 C CNN
+F 1 "GND" H 2830 8602 50  0000 C CNN
+F 2 "" H 2825 8775 50  0001 C CNN
+F 3 "" H 2825 8775 50  0001 C CNN
+	1    2825 8775
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -3565,10 +3554,10 @@ U 1 1 6324DA55
 P 1400 5740
 F 0 "Q7" H 1650 5685 50  0000 L CNN
 F 1 "BSS84AK,215" H 1570 5615 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-323_SC-70" H 1400 5740 50  0001 C CIN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 1400 5740 50  0001 C CIN
 F 3 "https://assets.nexperia.com/documents/data-sheet/BSS84AK.pdf" H 1400 5740 50  0001 L CNN
 	1    1400 5740
-	1    0    0    -1  
+	1    0    0    1   
 $EndComp
 Text Label 640  5740 0    39   ~ 0
 3V3_GPIO
@@ -3623,4 +3612,49 @@ Wire Wire Line
 	1500 5940 1500 5990
 Wire Wire Line
 	1500 5990 2245 5990
+$Comp
+L Connector_Generic:Conn_01x02 J20
+U 1 1 62FD3BD6
+P 3945 8680
+F 0 "J20" H 4025 8672 50  0000 L CNN
+F 1 "USB" H 4025 8581 50  0000 L CNN
+F 2 "Connector_Molex:Molex_Pico-Clasp_501331-0207_1x02-1MP_P1.00mm_Vertical" H 3945 8680 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/5013310207/1531471" H 3945 8680 50  0001 C CNN
+F 4 "https://www.digikey.com/en/products/detail/molex/0151330202/6696990" H 3945 8680 50  0001 C CNN "Mating Conn"
+	1    3945 8680
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR0148
+U 1 1 62FD3BDC
+P 3745 8680
+F 0 "#PWR0148" H 3745 8530 50  0001 C CNN
+F 1 "+5V" H 3760 8853 50  0000 C CNN
+F 2 "" H 3745 8680 50  0001 C CNN
+F 3 "" H 3745 8680 50  0001 C CNN
+	1    3745 8680
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0149
+U 1 1 62FD3BE2
+P 3745 8780
+F 0 "#PWR0149" H 3745 8530 50  0001 C CNN
+F 1 "GND" H 3750 8607 50  0000 C CNN
+F 2 "" H 3745 8780 50  0001 C CNN
+F 3 "" H 3745 8780 50  0001 C CNN
+	1    3745 8780
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5VP #PWR?
+U 1 1 630D77A1
+P 2825 8675
+F 0 "#PWR?" H 2825 8525 50  0001 C CNN
+F 1 "+5VP" H 2840 8848 50  0000 C CNN
+F 2 "" H 2825 8675 50  0001 C CNN
+F 3 "" H 2825 8675 50  0001 C CNN
+	1    2825 8675
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
