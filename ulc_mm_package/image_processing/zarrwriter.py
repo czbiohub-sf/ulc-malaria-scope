@@ -8,9 +8,27 @@ Library Documentation:
 
 from os import listdir, path
 from time import perf_counter
+import functools
+import threading
 import cv2
 import zarr
-import numpy as np
+
+
+WRITE_LOCK = threading.Lock()
+
+def lockNoBlock(lock):
+    def lockDecorator(func):
+        @functools.wraps(func)
+
+        def wrapper(*args, **kwargs):
+            if not lock.locked():
+                with lock:
+                    return func(*args, **kwargs)
+            else:
+                raise WriteInProgress
+
+        return wrapper
+    return lockDecorator
 
 # ==================== Custom errors ===============================
 class AttemptingWriteWithoutFile(Exception):
@@ -20,6 +38,10 @@ class AttemptingWriteWithoutFile(Exception):
         Ensure that 'createNewFile(filename)' has been called before attempting
         to write an array.
         """
+
+class WriteInProgress(Exception):
+    def __str__(self):
+        return "Write in progress."
 
 # ==================== Main class ===============================
 class ZarrWriter():
@@ -53,7 +75,8 @@ class ZarrWriter():
         except AttributeError:
             raise IOError(f"Error creating {filename}.zip")
 
-    def writeSingleArray(self, data, metadata={}):
+    @lockNoBlock(WRITE_LOCK)
+    def writeSingleArray(self, data):
         """Write a single array and optional metadata to the Zarr store.
 
         Parameters
@@ -64,11 +87,13 @@ class ZarrWriter():
         """
         try:
             ds = self.group.array(f"{self.arr_counter}", data=data, compressor=self.compressor)
-            for key in metadata.keys():
-                ds.attrs[key] = metadata[key]
             self.arr_counter += 1
         except Exception:
             raise AttemptingWriteWithoutFile()
+
+    def theadedWriteSingleArray(self, *args, **kwargs):
+        if not WRITE_LOCK.locked():
+            threading.Thread(target=self.writeSingleArray, args=args, kwargs=kwargs).start()
 
     def closeFile(self):
         self.store.close()

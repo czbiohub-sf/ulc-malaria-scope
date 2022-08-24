@@ -7,6 +7,8 @@ import typer
 from tqdm import tqdm
 import pandas as pd
 
+from ulc_mm_package.image_processing.background_subtraction import MedianBGSubtraction
+
 EXTERNAL_DIR = "experiments/"
 
 def loader(img_name):
@@ -54,7 +56,7 @@ def zarr_image_generator(zarr_store):
     for i in range(len(zarr_store)):
         yield zarr_store[i][:]
 
-def main(path: str=typer.Option("", help="Path of the top-evel folder containing subfolders of experiments. Each subfolder should have .npy files.")):
+def main(path: str=typer.Option("", help="Path of the top-evel folder containing subfolders of experiments. Each subfolder should have .npy files."), bg_sub: bool=typer.Option(False, "--bg-sub", help="Whether to perform background subtraction on the images")):
     if path == "":
         typer.echo(f"{'='*20}")
         typer.echo(
@@ -133,6 +135,8 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
         width, height = get_zarr_image_size(zstore)
         file_root = folder[folder.rfind("/")+1:]
         filename = file_root+"_vid.mp4"
+        if bg_sub:
+            filename = file_root + "_bgsubbed_vid.mp4"
         output_path = os.path.join(video_dir, filename)
 
         typer.echo("Generating video...")
@@ -144,9 +148,25 @@ def main(path: str=typer.Option("", help="Path of the top-evel folder containing
             isColor=False,
         )
 
+        # Initialize BG subtraction
+        bg_sub_set = False
+        if bg_sub:
+            if len(zstore) > 200:
+                h, w = zstore[0][:].shape
+                mbg = MedianBGSubtraction(h, w, 200)
+                for i in range(200):
+                    mbg.addImage(zstore[i][:])
+                bg = mbg.getMedian()
+                max_val = 215
+                bg_sub_set = True
+            else:
+                print("Can't BG-sub, fewer than 200 images in the dataset (and the MedianBGSubtraction uses a 200-frame window by default)")
+
         img_gen = zarr_image_generator(zstore)
         for i, img in enumerate(tqdm(range(len(zstore)))):
             img = next(img_gen)
+            if bg_sub and bg_sub_set:
+                img = np.asarray(np.clip(img + (max_val-bg), 0, 255), dtype=np.uint8)
             if img is not None:
                 writer.write(img)
         writer.release()
