@@ -1,3 +1,4 @@
+from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.camera import BaslerCamera, AVTCamera, CameraError
 from ulc_mm_package.hardware.motorcontroller import (
     DRV8825Nema,
@@ -14,3 +15,4 @@ from ulc_mm_package.hardware.pneumatic_module import (
     SyringeInMotion,
 )
 from ulc_mm_package.hardware.fan import Fan
+from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X

@@ -10,6 +10,8 @@ from pathlib import Path
 
 from typing import Any, Callable
 
+from ulc_mm_package.neural_nets.ssaf_constants import IMG_HEIGHT, IMG_WIDTH
+
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import Core, Layout, Type, InferRequest, AsyncInferQueue
 
@@ -56,7 +58,7 @@ class NCSModel:
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
         model = self.core.read_model(model_path)
 
-        input_tensor_shape = (1, 600, 800, 1)
+        input_tensor_shape = (1, IMG_HEIGHT, IMG_WIDTH, 1)
 
         # https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
         ppp = PrePostProcessor(model)
