@@ -40,6 +40,8 @@ def getFocusBoundsCoroutine(mscope: MalariaScope, img: np.ndarray=None):
     search_window_steps = 30
     x_max = np.argmax(hist_standard_deviations)
     lower, upper = x_max - search_window_steps, x_max+search_window_steps
+    lower = lower if lower >= 0
+    upper = upper if upper < mscope.motor.max_pos
 
     return lower, upper
 

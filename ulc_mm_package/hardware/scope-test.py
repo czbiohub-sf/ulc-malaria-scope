@@ -14,6 +14,7 @@ def focusTest(mscope: MalariaScope):
         except StopIteration as e:
             final_brightness = e.value
             print(final_brightness)
+            cv2.destroyAllWindows()
             break
     mscope.camera.stopAcquisition()
 
@@ -21,19 +22,24 @@ def focusTest(mscope: MalariaScope):
     focus_bound_routine = getFocusBoundsCoroutine(mscope)
     focus_bound_routine.send(None)
     for img in mscope.camera.yieldImages():
-        cv2.imshow("bounds", img)
-        cv2.waitKey(2)
+        # cv2.imshow("bounds", img)
+        # cv2.waitKey(2)
+        print(mscope.motor.pos)
         try:
             focus_bound_routine.send(img)
         except StopIteration as e:
+            cv2.destroyAllWindows()
             lower, upper = e.value
+            break
 
     mscope.camera.stopAcquisition()
 
     # Phase 3 - fine focus adjustment
+    print(lower, upper)
     focus_coroutine = focusCoroutine(mscope, lower, upper)
     focus_coroutine.send(None)
     for img in mscope.camera.yieldImages():
+        print(mscope.motor.pos)
         cv2.imshow("focus", img)
         cv2.waitKey(2)
         try:
