@@ -2,6 +2,7 @@ import numpy as np
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.autobrightness import Autobrightness, AutobrightnessError
 from ulc_mm_package.image_processing.focus_metrics import logPowerSpectrumRadialAverageSum
+from ulc_mm_package.hardware.motorcontroller import Direction
 
 class HardwareError(Exception):
     pass
@@ -33,6 +34,7 @@ def getFocusBoundsCoroutine(mscope: MalariaScope, img: np.ndarray=None):
     while mscope.motor.pos < mscope.motor.max_pos:
         img = yield img
         hist_standard_deviations.append(np.std(np.histogram(img)[0]))
+        mscope.motor.move_rel(steps=1, dir=Direction.CW)
     
     # Calculate lower and upper bound
     search_window_steps = 30
@@ -47,6 +49,7 @@ def focusCoroutine(mscope: MalariaScope, lower_bound: int, upper_bound: int, img
     while mscope.motor.pos < upper_bound:
         img = yield img
         focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
+        mscope.motor.move_rel(steps=1, dir=Direction.CW)
     
     best_focus_pos = lower_bound + np.argmax(focus_metrics)
     mscope.motor.move_abs(best_focus_pos)

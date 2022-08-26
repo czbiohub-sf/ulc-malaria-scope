@@ -3,7 +3,20 @@ from ulc_mm_package.hardware.scope_routines import *
 import cv2
 
 def focusTest(mscope: MalariaScope):
-    # Phase 1 - get focus bounds
+    # Phase 1 - autobrightness
+    ab_routine = autobrightnessCoroutine(mscope)
+    ab_routine.send(None)
+    for img in mscope.camera.yieldImages():
+        cv2.imshow("autobrightness", img)
+        cv2.waitKey(2)
+        try:
+            ab_routine.send(img)
+        except StopIteration as e:
+            final_brightness = e.value
+            print(final_brightness)
+    mscope.camera.stopAcquisition()
+
+    # Phase 2 - get focus bounds
     focus_bound_routine = getFocusBoundsCoroutine(mscope)
     focus_bound_routine.send(None)
     for img in mscope.camera.yieldImages():
@@ -16,6 +29,7 @@ def focusTest(mscope: MalariaScope):
 
     mscope.camera.stopAcquisition()
 
+    # Phase 3 - fine focus adjustment
     focus_coroutine = focusCoroutine(mscope, lower, upper)
     focus_coroutine.send(None)
     for img in mscope.camera.yieldImages():
