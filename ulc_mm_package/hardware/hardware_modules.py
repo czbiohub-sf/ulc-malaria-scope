@@ -1,4 +1,3 @@
-from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.camera import BaslerCamera, AVTCamera, CameraError
 from ulc_mm_package.hardware.motorcontroller import (
     DRV8825Nema,
