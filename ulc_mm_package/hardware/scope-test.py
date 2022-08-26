@@ -14,6 +14,7 @@ def focusTest(mscope: MalariaScope):
         except StopIteration as e:
             final_brightness = e.value
             print(final_brightness)
+            break
     mscope.camera.stopAcquisition()
 
     # Phase 2 - get focus bounds
