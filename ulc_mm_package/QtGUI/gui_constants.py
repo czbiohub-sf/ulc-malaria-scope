@@ -1,4 +1,4 @@
-SIMULATION = False
+SIMULATION = True
 
 # Camera Selection
 CAMERA_SELECTION = 0 # 0 = Basler, 1 = AVT

@@ -69,3 +69,4 @@ CAM_FAN_2 = 24
 
 # ================ Simulation constants ================ #
 VIDEO_PATH = "./sim_media/sample.avi"
+VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"

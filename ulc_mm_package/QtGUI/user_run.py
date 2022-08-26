@@ -686,9 +686,6 @@ class WindowManager():
 
 if __name__ == "__main__":
 
-    if mode.sim:
-        print("---------------------\n|  SIMULATION MODE  |\n---------------------")
-
     app = QApplication(sys.argv)
     manager = WindowManager()
     sys.exit(app.exec_())

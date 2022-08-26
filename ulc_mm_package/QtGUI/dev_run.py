@@ -579,7 +579,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
         self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
-        self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
+        # self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
 
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pneumatic_module = self.pneumatic_module
