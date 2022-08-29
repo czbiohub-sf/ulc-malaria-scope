@@ -54,6 +54,10 @@ class MalariaScope:
         self._init_data_storage()
 
     def getComponentStatus(self) -> Dict:
+        """Returns a dictionary of component to initialization status.
+
+        Can be used by the caller of MalariaScope f
+        """
         return {
             Components.MOTOR: self.motor_enabled,
             Components.CAMERA: self.camera_enabled,
