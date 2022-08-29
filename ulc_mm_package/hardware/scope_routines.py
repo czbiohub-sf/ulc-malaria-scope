@@ -29,16 +29,17 @@ def getFocusBoundsCoroutine(mscope: MalariaScope, img: np.ndarray=None):
     mscope.motor.move_abs(0)
 
     hist_standard_deviations = []
+    steps_per_image = 30
 
     # Get image, move motor, get standard deviation of the histogram
     while mscope.motor.pos < mscope.motor.max_pos:
         img = yield img
         hist_standard_deviations.append(np.std(np.histogram(img)[0]))
-        mscope.motor.move_rel(steps=1, dir=Direction.CW)
+        mscope.motor.move_rel(steps=steps_per_image, dir=Direction.CW)
     
     # Calculate lower and upper bound
     search_window_steps = 30
-    x_max = np.argmax(hist_standard_deviations)
+    x_max = np.argmax(hist_standard_deviations)*steps_per_image
     lower, upper = x_max - search_window_steps, x_max+search_window_steps
     lower = lower if lower >= 0 else 0
     upper = upper if upper < mscope.motor.max_pos else mscope.motor.max_pos

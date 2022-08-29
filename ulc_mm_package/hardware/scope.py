@@ -30,6 +30,7 @@ class Components(enum.Enum):
     ENCODER = 5
     HT_SENSOR = 6
     DATA_STORAGE = 7
+    TPU = 8
 
 class MalariaScope:
     def __init__(self):
@@ -41,6 +42,7 @@ class MalariaScope:
         self.encoder_enabled = False
         self.ht_sensor_enabled = False
         self.data_storage_enabled = False
+        self.tpu_enabled = False
 
         # Initialize Components
         self._init_motor()
@@ -61,6 +63,7 @@ class MalariaScope:
             Components.ENCODER: self.encoder_enabled,
             Components.HT_SENSOR: self.ht_sensor_enabled,
             Components.DATA_STORAGE: self.data_storage_enabled,
+            Components.TPU: self.tpu_enabled
         }
 
     def _init_motor(self):
@@ -167,3 +170,6 @@ class MalariaScope:
             self.data_storage_enabled = True
         except DataStorageError as e:
             print(f"Failed to initialize DataStorage: {e}")
+
+    def _init_TPU(self):
+        pass
