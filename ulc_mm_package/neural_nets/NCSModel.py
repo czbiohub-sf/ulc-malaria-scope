@@ -70,11 +70,21 @@ class NCSModel:
         ppp.output().tensor().set_element_type(Type.f32)
         model = ppp.build()
 
-        compiled_model = self.core.compile_model(
-            model, self.device_name, {"PERFORMANCE_HINT": perf_hint.name}
-        )
+        connection_attempts = 3
+        self.connected = False
+        while not self.connected or connection_attempts > 0:
+            try:
+                compiled_model = self.core.compile_model(
+                    model, self.device_name, {"PERFORMANCE_HINT": perf_hint.name}
+                )
+                self.connected = True
+                return compiled_model
+            except Exception as e:
+                print(f"Failed to connect NCS: {e}.\nRemaining connection attempts: {connection_attempts}. Retrying...")
+                connection_attempts -= 1
+                time.sleep(1)
 
-        return compiled_model
+        return -1
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
         self.asyn_results.append(infer_request.output_tensors[0].data)
