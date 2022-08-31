@@ -20,7 +20,7 @@ class AutobrightnessError(Exception):
     def __init__(self, msg: str):
         super().__init__(f"{msg}")
 
-def assessBrightness(img: np.ndarray, top_perc: float):
+def assessBrightness(img: np.ndarray, top_perc: float) -> float:
     """Returns the mean value of the top N pixels in a given image.
 
     Parameters
@@ -35,8 +35,16 @@ def assessBrightness(img: np.ndarray, top_perc: float):
     mean_brightness = np.mean(img.flatten()[np.argpartition(img.flatten(), -int(top_n_perc))[-int(top_n_perc):]])
     return mean_brightness
 
-def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float):
-    """Adjusts the LED's duty cycle to achieve the target brightness"""
+def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float) -> [AB, float]:
+    """Adjusts the LED's duty cycle to achieve the target brightness.
+
+    Returns
+    -------
+    Enum:
+        AB custom enum specifying where the brightness is relative to the target (below/above/on target)
+    float:
+        Mean image-pixel value
+    """
 
     current_led_pwm_perc = led.pwm_duty_cycle
     current_brightness = assessBrightness(img, TOP_PERC)
@@ -49,21 +57,22 @@ def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDD
         step = current_led_pwm_perc + step_size_perc
         step = step if step <= 1.0 else 1.0
         led.setDutyCycle(step)
-        return AB.TOO_LOW
+        return AB.TOO_LOW, current_brightness
 
     elif diff < 0:
         # Decrease brightness 
         step = current_led_pwm_perc - step_size_perc
         step = step if step >= 0.0 else 0.0
         led.setDutyCycle(step)
-        return AB.TOO_HIGH
+        return AB.TOO_HIGH, current_brightness
     else:
         # Brightness achieved within tol 
-        return AB.JUST_RIGHT
+        return AB.JUST_RIGHT, current_brightness
 
 class Autobrightness():
     def __init__(self, led: LED_TPS5420TDDCT, target_pixel_val: int=TOP_PERC_TARGET_VAL, step_size_perc: float=0.01):
         self.prev_brightness_enum = None
+        self.prev_mean_img_brightness = None
         self.target_pixel_val = target_pixel_val
         self.led = led
         self.step_size_perc = step_size_perc
@@ -71,13 +80,14 @@ class Autobrightness():
         self.timeout_steps = 100
         self.step_counter = 0
     
-    def runAutobrightness(self, img: np.ndarray):
-        curr_brightness_enum = adjustBrightness(img, self.target_pixel_val, self.led, self.step_size_perc)
+    def runAutobrightness(self, img: np.ndarray) -> bool:
+        curr_brightness_enum, curr_mean_brightness_val = adjustBrightness(img, self.target_pixel_val, self.led, self.step_size_perc)
         if not self.prev_brightness_enum == None:
             if self.prev_brightness_enum != curr_brightness_enum:
                 self.step_size_perc /= 2
 
         self.prev_brightness_enum = curr_brightness_enum
+        self.prev_mean_img_brightness = curr_mean_brightness_val
         self.step_counter += 1
 
         if self.step_counter >= self.timeout_steps:

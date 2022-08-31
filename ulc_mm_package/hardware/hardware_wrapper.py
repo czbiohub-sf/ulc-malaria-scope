@@ -13,7 +13,7 @@ Usage:   Define a new hardware class as
             def HardwareClass():
                 pass
                 
-         There should be a real and simulated version of this class in hardware/real
+         There should be a real and simulated version of this hardware under hardware/real
          and hardware/sim, respectively. Ensure filenames and class names are identical.
 """
 

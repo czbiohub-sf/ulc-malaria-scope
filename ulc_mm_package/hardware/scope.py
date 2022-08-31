@@ -1,0 +1,169 @@
+"""
+The malaria scope object, containing all the different hardware
+periperhals which make up the malaria scope.
+
+Components
+    - Motorcontroller (DRV8825 Nema)
+    - Camera (Basler / AVT)
+    - Pneumatic module (pressure sensor + servo)
+    - LED (TPS54201DDCT driver)
+    - Cooling fans
+    - Rotary encoder
+    - Real time clock (PCF8523)
+    - Temperature/humidity sensor (SHT31-D)
+"""
+
+import enum
+from time import sleep
+from typing import Dict
+
+from ulc_mm_package.hardware.hardware_modules import *
+from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
+from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
+
+class Components(enum.Enum):
+    MOTOR = 0
+    CAMERA = 1
+    PNEUMATIC_MODULE = 2
+    LED = 3
+    FAN = 4
+    ENCODER = 5
+    HT_SENSOR = 6
+    DATA_STORAGE = 7
+
+class MalariaScope:
+    def __init__(self):
+        self.motor_enabled = False
+        self.camera_enabled = False
+        self.pneumatic_module_enabled = False
+        self.led_enabled = False
+        self.fan_enabled = False
+        self.encoder_enabled = False
+        self.ht_sensor_enabled = False
+        self.data_storage_enabled = False
+
+        # Initialize Components
+        self._init_motor()
+        self._init_camera()
+        self._init_pneumatic_module()
+        self._init_led()
+        self._init_fan()
+        self._init_encoder()
+        self._init_data_storage()
+
+    def getComponentStatus(self) -> Dict:
+        return {
+            Components.MOTOR: self.motor_enabled,
+            Components.CAMERA: self.camera_enabled,
+            Components.PNEUMATIC_MODULE: self.pneumatic_module_enabled,
+            Components.LED: self.led_enabled,
+            Components.FAN: self.fan_enabled,
+            Components.ENCODER: self.encoder_enabled,
+            Components.HT_SENSOR: self.ht_sensor_enabled,
+            Components.DATA_STORAGE: self.data_storage_enabled,
+        }
+
+    def _init_motor(self):
+        # Create motor w/ default pins/settings (full step)
+        try:
+            self.motor = DRV8825Nema(steptype="Half")
+            self.motor.homeToLimitSwitches()
+            print("Moving motor to the middle.")
+            sleep(0.5)
+            self.motor.move_abs(int(self.motor.max_pos // 2))
+            self.motor_enabled = True
+        except MotorControllerError as e:
+            # TODO - change to logging, critical error
+            print(f"Error initializing DRV8825. Disabling focus actuation GUI elements.\nSpecific error: {e}")
+
+    def _init_camera(self):
+        try:
+            if CAMERA_SELECTION == 0:
+                self.camera = BaslerCamera()
+                self.camera_enabled = True
+            elif CAMERA_SELECTION == 1:
+                self.camera = AVTCamera()
+                self.camera_enabled = True
+            else:
+                raise CameraError("Invalid camera selection - must be 0 (Basler) or 1 (AVT)")
+            self.camera_activated = True
+        except CameraError as e:
+            # TODO - change to logging, critical error
+            print(f"Error initializing camera (selection: {CAMERA_SELECTION}), error: {e}")
+
+    def _init_pneumatic_module(self):
+        # Create pressure controller (sensor + servo)
+        try:
+            self.pneumatic_module = PneumaticModule()
+
+            # Check to see if the pressure sensor was successfully instantiated
+            if not self.pneumatic_module.mpr_enabled:
+                # If pressure sensor not created, raises PressureSensorNotInstantiated error 
+                # when calling `pneumatic_module.getPressure()`
+                # TODO - change to logging
+                print(f"Error initializing pressure sensor: {self.pneumatic_module.mpr_err_msg}")
+
+            self.pneumatic_module_enabled = True
+        except PneumaticModuleError as e:
+            # TODO - change to logging, critical error
+            print(f"Error initializing Pressure Controller. Disabling flow GUI elements. Error: {e}")
+
+    def _init_led(self):
+        # Create the LED
+        try:
+            self.led = LED_TPS5420TDDCT()
+            self.led.turnOn()
+            self.led.setDutyCycle(0)
+            self.led_enabled = True
+        except LEDError as e:
+            # TODO - change to logging, critical error
+            print(f"Error instantiating LED driver: {e}")
+
+    def _init_fan(self):
+        # Create and turn on the fans
+        try:
+            self.fan = Fan()
+            self.fan.turn_on_all()
+            self.fan_enabled = True
+        except Exception as e:
+            # TODO - change ot logging
+            print(f"Error initializing fan. Error: {e}")
+
+    def _init_encoder(self):
+        if self.motor_enabled:
+            def manualFocusWithEncoder(self, increment: int):
+                try:
+                    if increment == 1:
+                        self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
+                    elif increment == -1:
+                        self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
+                    sleep(0.01)
+                    self.updateMotorPosition(self.motor.pos)
+                except MotorControllerError:
+                    self.encoder.setColor(255, 0, 0)
+                    sleep(0.1)
+                    self.encoder.setColor(12, 159, 217)
+
+
+            # Connect the encoder
+            try:
+                self.encoder = PIM522RotaryEncoder(manualFocusWithEncoder)
+                self.encoder_enabled = True
+            except EncoderI2CError as e:
+                print(f"ENCODER I2C ERROR: {e}")
+        else:
+            print(f"Motor failed to initialize, encoder will not initialize.")
+
+    def _init_humidity_temp_sensor(self):
+        try:
+            self.ht_sensor = SHT3X()
+            self.ht_sensor_enabled = True
+        except Exception as e:
+            print(f"Failed to initialize temperature/humidity sensor (SHT31D): {e}")
+
+    def _init_data_storage(self):
+        try:
+            self.data_storage = DataStorage()
+            self.data_storage_enabled = True
+        except DataStorageError as e:
+            print(f"Failed to initialize DataStorage: {e}")

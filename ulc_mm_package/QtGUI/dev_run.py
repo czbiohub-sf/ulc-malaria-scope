@@ -324,7 +324,7 @@ class AcquisitionThread(QThread):
 
     def autofocusWrapper(self, img: np.ndarray):
         self.af_adjustment_done = False
-        if perf_counter() - self.prev_autofocus_time > ssaf_constants.AF_FREQUENCY_S:
+        if perf_counter() - self.prev_autofocus_time > ssaf_constants.AF_PERIOD_S:
             self.autofocus(img)
             self.prev_autofocus_time = perf_counter()
 
@@ -337,13 +337,15 @@ class AcquisitionThread(QThread):
                 steps_from_focus = -int(self.autofocus_model(img)[0][0][0])
                 print(type(steps_from_focus), steps_from_focus)
                 self.af_adjustment_done = True
+
+                try:
+                    dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
+                    self.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
+                except MotorControllerError:
+                    print("Error moving motor after receiving steps from the SSAF model.")
+
             except Exception as e:
-                print("Model inference error.")
-            try:
-                dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-                self.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
-            except MotorControllerError:
-                print("Error moving motor after receiving steps from the SSAF model.")
+                print(f"Generic model inference error: {e}")
 
 class ExperimentSetupGUI(QtWidgets.QDialog):
     """Form to input experiment parameters"""
@@ -615,7 +617,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.max_exposure_us = 10000
         self.vsExposure.setMinimum(self.min_exposure_us)
         self.vsExposure.setMaximum(self.max_exposure_us)
-        self.vsExposure.setValue(250)
+        self.vsExposure.setValue(500)
         self.lblMinExposure.setText(f"{self.min_exposure_us} us")
         self.lblMaxExposure.setText(f"{self.max_exposure_us} us")
 
