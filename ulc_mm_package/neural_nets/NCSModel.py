@@ -30,8 +30,6 @@ class OptimizationHint(Enum):
     LATENCY = 1
     THROUGHPUT = 2
 
-class TPUError(Exception):
-    """Generic TPU error in the event we ever use another TPU (e.g the Coral)"""
 
 class NCSModel:
     """
@@ -74,7 +72,7 @@ class NCSModel:
 
         connection_attempts = 3
         self.connected = False
-        while not self.connected and connection_attempts > 0:
+        while not self.connected or connection_attempts > 0:
             try:
                 compiled_model = self.core.compile_model(
                     model, self.device_name, {"PERFORMANCE_HINT": perf_hint.name}
@@ -86,7 +84,7 @@ class NCSModel:
                 connection_attempts -= 1
                 time.sleep(1)
 
-        raise TPUError("Unable to instantiate the Neural Compute Stick")
+        return -1
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
         self.asyn_results.append(infer_request.output_tensors[0].data)
