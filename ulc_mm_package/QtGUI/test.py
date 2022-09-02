@@ -86,8 +86,7 @@ class Oracle(Machine):
             'standby', 
             { 'name': 'precheck', 'on_enter' : ['start_precheck']},
             { 'name': 'form', 'on_enter' : ['open_form'], 'on_exit': ['close_form']},
-            { 'name': 'setup', 'on_enter' : ['open_liveview']},
-            # { 'name': 'setup', 'on_enter' : ['open_liveview', 'start_setup']},
+            { 'name': 'setup', 'on_enter' : ['open_liveview', 'start_setup']},
             { 'name': 'run', 'on_enter': ['open_liveview', 'start_run']},
             ]
         Machine.__init__(self, states=states, queued=True, initial='standby')
@@ -111,11 +110,13 @@ class Oracle(Machine):
         self.standby2precheck()
 
     def start_precheck(self, *args):
-        print(*args)
-        print("TADA PRECHECK")
+        print("TADA PRECHECK IS ALL GOOD")
+        # TBD call dict from scope hardware here
         self.precheck2form()
 
     def start_setup(self, *args):
+        # TBD run autopilot method here
+        print("Autopilot does stuff here!")
         pass 
 
     def start_run(self, *args):
@@ -125,8 +126,9 @@ class Oracle(Machine):
         self.form_window.show()
 
     def save_form(self, *args):
-        # TODO implement actual save here
+        # TBD implement actual save here
         print(self.form_window.get_params())
+        # TODO VALIDATE FORM INPUTS HERE + APPEND DATE IF NEEDED
 
     def close_form(self, *args):
         self.form_window.close()
