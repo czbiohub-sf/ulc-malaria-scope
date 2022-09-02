@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
     QTabWidget, QWidget, QLabel, QPushButton,
     QVBoxLayout, QHBoxLayout, QSizePolicy,
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot, QObject
 from PyQt5.QtGui import QImage, QPixmap, QIcon
 from cv2 import imwrite
 from qimage2ndarray import array2qimage
@@ -29,115 +29,159 @@ _ICON_PATH = "CZB-logo.png"
 _FORM_PATH = "user_form.ui"
 VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 
-#CLEAN UP NOTE??
+# TODOs
+## CLEAN UP NOTE??
+## Use transitions for re-runs
+## Clean up unnecessary imports
 
-class Controller(Machine):
+class ScopeOp(QObject):
+    test = pyqtSignal(int)
+    def __init__(self):
+        super().__init__()
+        self.stop = False
+
+    # @pyqtSlot(int)
+    # def doSomethingWithInt(self, val):
+    #     sleep(1)
+    #     print(f"It's ya boi {val}")
+
+    # def sayHi(self):
+    #     print("Suh dude")
+    #     # sleep(10)
+
+class Acquisition(QThread):
+    test = pyqtSignal(int)
+    def __init__(self):
+        super().__init__()
+        self.stop = False
+    
+    # def run(self):
+    #     while not self.stop:
+    #         self.test.emit(1)
+    #         print("working")
+    #         sleep(0.03)
+
+class Oracle(Machine):
 
     def __init__(self, *args, **kwargs):
 
-        # super(LiveviewGUI, self).__init__(*args, **kwargs)
-
-        # # Load the ui
-        # self._loadUI()
-        # self.exit_btn.clicked.connect(self.exit)
-
-        states = ['standby', 'form entry', 'setup', 'running']
-        Machine.__init__(self, states=states, initial='standby')
-
-        # Initialize the state machine
-        # self.machine = Machine(model=self, states=states, initial='standby')
-
-        # use conditions for re-running with experiment form
-        # Add transitions
-        self.add_transition(trigger='open_form', source='standby', dest='form entry', before="load_form")
-        self.add_transition(trigger='open_liveview', source='form entry', dest='setup', before="load_liveview")
-        self.add_transition(trigger='run', source='setup', dest='running')
-        self.add_transition(trigger='exit', source='*', dest='standby')
-        
+        # Instantiate experiment form window
         self.form_window = FormGUI()
-        self.form_window.btnStartExperiment.clicked.connect(self.open_liveview)
-        
-        try:
-            self.main()
-        except Exception as e:
-            print(e)
-            quit()
-            
-    def main(self):
-        
-        print(self.state)
-        
-        self.open_form()
-        print(self.state)
-        # self.form_window = FormGUI()
-        # self.form_window.hide()
-        # # self.open_form()
-        # quit()
-        # print(self.state)
-        # # self.open_form()
-        
-        # print("Done?")
-        # quit()
 
-        # while True:
-        #     if self.state == 'setup':
-        #         print("setting up")
-                
-        #     if self.state == 'run':
-        #         print("running")
+        # Instantiate liveview window
+        self.liveview_window = LiveviewGUI()
 
-    # def form_to_liveview(self):
-    #     # TODO switch this to close() if getAllParameters() doesn't need to be called
+        # Instantiate scope operator and thread
+        self.scopeOp = ScopeOp()
+        self.scopeOpThread = QThread()
+        self.scopeOp.moveToThread(self.scopeOpThread)
+
+        # Instantiate camera acquisition and thread
+        self.acquisition = Acquisition()
+        self.acquisitionThread = QThread()
+        self.acquisition.moveToThread(self.acquisitionThread)
+
+        # Configure state machine
+        states = [
+            'standby', 
+            { 'name': 'precheck', 'on_enter' : ['start_precheck']},
+            { 'name': 'form', 'on_enter' : ['open_form'], 'on_exit': ['close_form']},
+            { 'name': 'setup', 'on_enter' : ['open_liveview']},
+            # { 'name': 'setup', 'on_enter' : ['open_liveview', 'start_setup']},
+            { 'name': 'run', 'on_enter': ['open_liveview', 'start_run']},
+            ]
+        Machine.__init__(self, states=states, queued=True, initial='standby')
+
+        # TODO use conditions for re-running with experiment form
+        self.add_transition(trigger='standby2precheck', source='standby', dest='precheck')
+        self.add_transition(trigger='precheck2form', source='precheck', dest='form')
+        self.add_transition(trigger='form2setup', source='form', dest='setup', before='save_form')
+        self.add_transition(trigger='setup2run', source='setup', dest='run')
+        # self.add_transition(trigger='form2run', source='form', dest='run', before='open_liveview')
+        self.add_transition(trigger='liveview2standby', source=['setup', 'run'], dest='standby', before='close_liveview')
+        self.add_transition(trigger='end', source='*', dest='standby')
+
+        # Connect experiment form buttons
+        self.form_window.start_btn.clicked.connect(self.form2setup)
+        self.form_window.exit_btn.clicked.connect(self.end)
+
+        # Connect liveview buttons
+        self.liveview_window.exit_btn.clicked.connect(self.liveview2standby)
+
+        self.standby2precheck()
+
+    def start_precheck(self, *args):
+        print(*args)
+        print("TADA PRECHECK")
+        self.precheck2form()
+
+    def start_setup(self, *args):
+        pass 
+
+    def start_run(self, *args):
+        pass
+
+    def open_form(self, *args):
+        self.form_window.show()
+
+    def save_form(self, *args):
+        # TODO implement actual save here
+        print(self.form_window.get_params())
+
+    def close_form(self, *args):
+        self.form_window.close()
+
+    def open_liveview(self, *args):
+        self.liveview_window.show()
+
+    def close_liveview(self, *args):
+        self.liveview_window.close()
+
+    # @pyqtSlot
+    # def setupReceiveImg(self, img):
+    #     self.autopilotThread.runSetup(img)
+    #     # ^ includes autobrightness, autoflow control, autofocus
+    #     self.livewindow.lblImg = img
+    #     # ^ add FPS optimization
+
+    # @pyqtSlot
+    # def runReceiveImg(self, img):
+    #     self.autopilotThread.runRun(img)
+    #     # ^ includes autobrightness, autoflow control, autofocus
+    #     self.livewindow.lblImg = img
+    #     # ^ add FPS optimization
+
+        
+    # def startSetup(self, *args):
+    #     # NOTE figure out why this call inputs an extra parameter
+    #     print(*args)
     #     self.form_window.hide()
     #     print("TADA")
-    #     # self.s
-    #     # TODO switch this to a before transition method
-    #     self.open_liveview()
-        
-        
-    def load_form(self):
-        print(self.state)
-        print("I'm here")
-        self.form_window.show()
-        
-        # sleep(100)
+    #     self.acquisitionThread.img.connect(setupReceiveImg)
 
-        # Set up event handler
-        # self.form_window.btnStartExperiment.clicked.connect(self.open_liveview)
+    #     # PSEUDOCODE
+    #     self.liveview_window.show()
+    #     self.acquisitionThread.start()
 
-    # def btnStartExperimentHandler(self):
+    #     print("TEMP setup tbd here")
+    #     quit()
 
-    #     # self.form_window.experiment_name = self.form_window.txtExperimentName.text()
-    #     # self.form_window.flowcell_id = self.form_window.txtFlowCellID.text()
-
-    #     # TODO switch this to close() if getAllParameters() doesn't need to be called
-    #     self.form_window.hide()
-    #     # TODO switch this to a before transition method
-    #     self.open_liveview()
-        
-    def load_liveview(self, *args):
-        # NOTE WHAT IS THIS ARG???
-        print(*args)
-        self.form_window.hide()
-        print("TADA")
-        # self.s
-    #     # TODO switch this to a before transition method
-        # self.open_liveview()
-        print("TEMP setup tbd here")
-        quit()
+    # def startRun(self, *args):
+    #     print(*args)
+    #     self.acquisitionThread.img.disconnect(setupReceiveImg)
+    #     self.acquisitionThread.img.connect(runReceiveImg)
 
     def exit(self):
         quit()
 
-    def closeEvent(self, event):
-        print("Cleaning up and exiting the application.")
-        self.close()
+    # def closeEvent(self, event):
+    #     print("Cleaning up and exiting the application.")
+    #     self.close()
         
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
     def __init__(self, *args, **kwargs):
         
-        print('init')
         super(FormGUI, self).__init__(*args, **kwargs)
 
         # Load the ui file
@@ -145,37 +189,27 @@ class FormGUI(QDialog):
         self.setWindowIcon(QIcon(_ICON_PATH))
 
         # Set the focus order
-        self.setTabOrder(self.txtExperimentName, self.txtFlowCellID)
-        self.setTabOrder(self.txtFlowCellID, self.btnStartExperiment)
-        self.txtExperimentName.setFocus()
+        # self.experiment_name.setFocus()
+        # self.setTabOrder(self.experiment_name, self.patient_id)
+        # self.setTabOrder(self.patient_id, self.flowcell_id)
+        # self.setTabOrder(self.flowcell_id, self.self.start_btn)
 
-        # Parameters
-        self.flowcell_id = ""
-        self.experiment_name = ""
-
-        # Set up event handlers
-        # TODO change button names
-        self.btnExperimentSetupAbort.clicked.connect(quit)
-        # self.btnStartExperiment.clicked.connect(self.btnStartExperimentHandler)
-        
-        # self.show()
-
-    def getAllParameters(self) -> Dict:
+    def get_params(self) -> Dict:
         return {
-            "flowcell_id": self.flowcell_id,
-            "experiment_name": self.experiment_name,
+            "experiment_name": self.experiment_name.text(),
+            "patient_id": self.patient_id.text(),
+            "flowcell_id": self.flowcell_id.text(),
         }
         
 class LiveviewGUI(QMainWindow):
     
     def __init__(self, *args, **kwargs):
-        super(MalariaScopeGUI, self).__init__(*args, **kwargs)
+        super(LiveviewGUI, self).__init__(*args, **kwargs)
         self._loadUI()
         
     def _loadUI(self):
         self.setWindowTitle('Malaria Scope')
         self.setGeometry(100, 100, 1100, 700)
-        # self.show()
 
         # Set up central layout + widget
         self.main_layout = QGridLayout()
@@ -193,17 +227,23 @@ class LiveviewGUI(QMainWindow):
         self.margin_widget = QWidget()
         self.margin_widget.setLayout(self.margin_layout)
 
-        # self.liveview_img = QLabel()
+        self.liveview_img = QLabel()
         self.status_lbl = QLabel("Setup")
         self.timer_lbl = QLabel("Timer")
         self.exit_btn = QPushButton("Exit")
         self.info_lbl = QLabel()
         self.hardware_lbl = QLabel()
 
-        # self.liveview_img.setAlignment(Qt.AlignCenter)
+        self.liveview_img.setAlignment(Qt.AlignCenter)
         self.status_lbl.setAlignment(Qt.AlignHCenter)
         self.timer_lbl.setAlignment(Qt.AlignHCenter)
 
+        # TODO
+        # resize camera feed as necessary
+        # set minimum column width as necessary
+        # fix initial pixmap size absed on camera feed
+
+        self.liveview_layout.addWidget(self.liveview_img)
         self.liveview_layout.addWidget(self.margin_widget)
 
         self.margin_layout.addWidget(self.status_lbl)
@@ -212,10 +252,39 @@ class LiveviewGUI(QMainWindow):
         self.margin_layout.addWidget(self.info_lbl)
         self.margin_layout.addWidget(self.hardware_lbl)
 
-        self.main_layout.addWidget(self.liveview_widget)
-        
-        self.show()
-        
+        # Set up thumbnail layout + widget
+        self.thumbnail_layout = QGridLayout()
+        self.thumbnail_widget = QWidget()
+        self.thumbnail_widget.setLayout(self.thumbnail_layout)
+
+        # Populate thumbnail tab
+        self.ring_lbl = QLabel("Ring")
+        self.troph_lbl = QLabel("Troph")
+        self.schizont_lbl = QLabel("Schizont")
+        self.ring_img = QLabel()
+        self.troph_img = QLabel()
+        self.schizont_img = QLabel()
+
+        self.ring_lbl.setAlignment(Qt.AlignHCenter)
+        self.troph_lbl.setAlignment(Qt.AlignHCenter)
+        self.schizont_lbl.setAlignment(Qt.AlignHCenter)
+
+        self.ring_img.setScaledContents(True)
+        self.troph_img.setScaledContents(True)
+        self.schizont_img.setScaledContents(True)
+
+        self.thumbnail_layout.addWidget(self.ring_lbl, 0, 0)
+        self.thumbnail_layout.addWidget(self.troph_lbl, 0, 1)
+        self.thumbnail_layout.addWidget(self.schizont_lbl, 0, 2)
+        self.thumbnail_layout.addWidget(self.ring_img, 1, 0)
+        self.thumbnail_layout.addWidget(self.troph_img, 1, 1)
+        self.thumbnail_layout.addWidget(self.schizont_img, 1, 2)
+
+        # Set up tabs
+        self.tab_widget = QTabWidget()
+        self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
+        self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnail")
+        self.main_layout.addWidget(self.tab_widget, 0, 0)
 
 if __name__ == "__main__":
     
@@ -247,6 +316,5 @@ if __name__ == "__main__":
     # # next(t)
 
     app = QApplication(sys.argv)
-    controller = Controller()
-    # manager.show()
+    oracle = Oracle()
     sys.exit(app.exec_())
