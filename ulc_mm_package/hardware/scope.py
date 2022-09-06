@@ -51,7 +51,7 @@ class MalariaScope:
         self._init_encoder()
         self._init_data_storage()
 
-    def getComponentStatus(self) -> Dict:
+    def get_component_status(self) -> Dict:
         return {
             Components.MOTOR: self.motor_enabled,
             Components.CAMERA: self.camera_enabled,

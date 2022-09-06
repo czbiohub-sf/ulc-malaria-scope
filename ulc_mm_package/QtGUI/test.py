@@ -83,25 +83,26 @@ class Oracle(Machine):
 
         # Configure state machine
         states = [
-            'standby', 
-            { 'name': 'precheck', 'on_enter' : ['start_precheck']},
-            { 'name': 'form', 'on_enter' : ['open_form'], 'on_exit': ['close_form']},
-            { 'name': 'setup', 'on_enter' : ['open_liveview', 'start_setup']},
-            { 'name': 'run', 'on_enter': ['open_liveview', 'start_run']},
+            {'name' : 'standby', 'on_enter' : ['reset']},
+            {'name' : 'precheck', 'on_enter' : ['start_precheck']},
+            {'name' : 'form', 'on_enter' : ['open_form'], 'on_exit': ['close_form']},
+            {'name' : 'setup', 'on_enter' : ['open_liveview', 'start_setup']},
+            {'name' : 'run', 'on_enter': ['open_liveview', 'start_run']},
+            # {'name' : 'survey', 'on_enter': ['open_survey']},
             ]
         Machine.__init__(self, states=states, queued=True, initial='standby')
 
-        # TODO use conditions for re-running with experiment form
+        # TODO use conditions for re-running with experiment form (skip setup and precheck?)
+        # self.add_transition(trigger='form2run', source='form', dest='run', before='open_liveview')
         self.add_transition(trigger='standby2precheck', source='standby', dest='precheck')
         self.add_transition(trigger='precheck2form', source='precheck', dest='form')
-        self.add_transition(trigger='form2setup', source='form', dest='setup', before='save_form')
+        self.add_transition(trigger='form2setup', source='form', dest='setup')
         self.add_transition(trigger='setup2run', source='setup', dest='run')
-        # self.add_transition(trigger='form2run', source='form', dest='run', before='open_liveview')
         self.add_transition(trigger='liveview2standby', source=['setup', 'run'], dest='standby', before='close_liveview')
         self.add_transition(trigger='end', source='*', dest='standby')
 
         # Connect experiment form buttons
-        self.form_window.start_btn.clicked.connect(self.form2setup)
+        self.form_window.start_btn.clicked.connect(self.save_form)
         self.form_window.exit_btn.clicked.connect(self.end)
 
         # Connect liveview buttons
@@ -110,16 +111,21 @@ class Oracle(Machine):
         self.standby2precheck()
 
     def start_precheck(self, *args):
-        print("TADA PRECHECK IS ALL GOOD")
-        # TBD call dict from scope hardware here
-        self.precheck2form()
+        self.scope = MalariaScope()
+        # TEMP for testing
+        print(self.scope.get_component_status())
+        if all(status==True for status in self.scope.get_component_status())
+            self.precheck2form()
+        else: 
+            # TODOO print message here
+            self.end()
 
     def start_setup(self, *args):
         # TBD run autopilot method here
-        print("Autopilot does stuff here!")
         pass 
 
     def start_run(self, *args):
+        # TBD run appropriate autopilot method here
         pass
 
     def open_form(self, *args):
@@ -128,6 +134,11 @@ class Oracle(Machine):
     def save_form(self, *args):
         # TBD implement actual save here
         print(self.form_window.get_params())
+        if valid:
+            self.form2setup()
+        else:
+            # TODOO print message here
+            # self.display_msg("Invalid form")
         # TODO VALIDATE FORM INPUTS HERE + APPEND DATE IF NEEDED
 
     def close_form(self, *args):
@@ -138,6 +149,33 @@ class Oracle(Machine):
 
     def close_liveview(self, *args):
         self.liveview_window.close()
+        # TBD pull up survey here
+
+    def open_survey(self, *args):
+        pass
+
+    def reset(self, *args):
+        # delete current scope?
+        pass
+
+    def display_message(self, icon, title, text, cancel=False, quit_after=False):
+        msgBox = QMessageBox()
+        msgBox.setWindowIcon(QIcon(ICON_PATH))
+        msgBox.setIcon(icon)
+        msgBox.setWindowTitle(f"{title}")
+        msgBox.setText(f"{text}")
+
+        if cancel:
+            msgBox.setStandardButtons(
+                QMessageBox.Ok | QMessageBox.Cancel
+            )
+        else:
+            msgBox.setStandardButtons(QMessageBox.Ok)
+
+        if quit_after and msgBox.exec() == QMessageBox.Ok:
+            quit()
+
+        return msgBox.exec()
 
     # @pyqtSlot
     # def setupReceiveImg(self, img):
@@ -175,10 +213,6 @@ class Oracle(Machine):
 
     def exit(self):
         quit()
-
-    # def closeEvent(self, event):
-    #     print("Cleaning up and exiting the application.")
-    #     self.close()
         
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
@@ -191,10 +225,10 @@ class FormGUI(QDialog):
         self.setWindowIcon(QIcon(_ICON_PATH))
 
         # Set the focus order
-        # self.experiment_name.setFocus()
-        # self.setTabOrder(self.experiment_name, self.patient_id)
-        # self.setTabOrder(self.patient_id, self.flowcell_id)
-        # self.setTabOrder(self.flowcell_id, self.self.start_btn)
+        self.experiment_name.setFocus()
+        self.setTabOrder(self.experiment_name, self.patient_id)
+        self.setTabOrder(self.patient_id, self.flowcell_id)
+        self.setTabOrder(self.flowcell_id, self.start_btn)
 
     def get_params(self) -> Dict:
         return {
