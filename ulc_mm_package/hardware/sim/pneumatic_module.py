@@ -37,6 +37,7 @@ class PneumaticModule():
         self.prev_time_s = 0
         self.control_delay_s = 0.2
         self.curr_pressure = self.prev_pressure
+        self.mpr_enabled = True
 
         # Active flow control variables
         self.flowrate_target = 0

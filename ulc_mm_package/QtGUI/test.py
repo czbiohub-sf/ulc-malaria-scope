@@ -16,11 +16,14 @@ from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QGridLayout,
     QTabWidget, QWidget, QLabel, QPushButton,
     QVBoxLayout, QHBoxLayout, QSizePolicy,
+    QLineEdit, QComboBox,
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot, QObject
 from PyQt5.QtGui import QImage, QPixmap, QIcon
 from cv2 import imwrite
 from qimage2ndarray import array2qimage
+
+from ulc_mm_package.hardware.scope import MalariaScope
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
@@ -33,6 +36,7 @@ VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7ch
 ## CLEAN UP NOTE??
 ## Use transitions for re-runs
 ## Clean up unnecessary imports
+## Replace all exit() with end() and go back to pre-experiment dialog
 
 class ScopeOp(QObject):
     test = pyqtSignal(int)
@@ -111,14 +115,22 @@ class Oracle(Machine):
         self.standby2precheck()
 
     def start_precheck(self, *args):
-        self.scope = MalariaScope()
+        self.mscope = MalariaScope()
+        component_status = self.mscope.get_component_status()
         # TEMP for testing
-        print(self.scope.get_component_status())
-        if all(status==True for status in self.scope.get_component_status())
+        if True:
+        # if all([status==True for status in component_status.values()]):
             self.precheck2form()
         else: 
-            # TODOO print message here
-            self.end()
+            failed_components = [comp.name for comp in component_status if component_status.get(comp)==False]
+            _ = self._display_message(
+                QMessageBox.Icon.Critical,
+                "Hardware pre-check failed",
+                "The following component(s) could not be instantiated: {}"
+                    .format((",".join(failed_components)).capitalize()),
+                quit_after=True,
+                )
+            print("Escaped")
 
     def start_setup(self, *args):
         # TBD run autopilot method here
@@ -133,10 +145,13 @@ class Oracle(Machine):
 
     def save_form(self, *args):
         # TBD implement actual save here
-        print(self.form_window.get_params())
+        self.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
+        print(self.form_window.get_form_input())
+        # TODOO add proper boolean here!
         if valid:
             self.form2setup()
         else:
+            pass
             # TODOO print message here
             # self.display_msg("Invalid form")
         # TODO VALIDATE FORM INPUTS HERE + APPEND DATE IF NEEDED
@@ -158,9 +173,9 @@ class Oracle(Machine):
         # delete current scope?
         pass
 
-    def display_message(self, icon, title, text, cancel=False, quit_after=False):
+    def _display_message(self, icon, title, text, cancel=False, quit_after=False):
         msgBox = QMessageBox()
-        msgBox.setWindowIcon(QIcon(ICON_PATH))
+        msgBox.setWindowIcon(QIcon(_ICON_PATH))
         msgBox.setIcon(icon)
         msgBox.setWindowTitle(f"{title}")
         msgBox.setText(f"{text}")
@@ -173,7 +188,7 @@ class Oracle(Machine):
             msgBox.setStandardButtons(QMessageBox.Ok)
 
         if quit_after and msgBox.exec() == QMessageBox.Ok:
-            quit()
+            self.exit()
 
         return msgBox.exec()
 
@@ -212,6 +227,7 @@ class Oracle(Machine):
     #     self.acquisitionThread.img.connect(runReceiveImg)
 
     def exit(self):
+        print("Exiting program")
         quit()
         
 class FormGUI(QDialog):
@@ -219,32 +235,85 @@ class FormGUI(QDialog):
     def __init__(self, *args, **kwargs):
         
         super(FormGUI, self).__init__(*args, **kwargs)
+        self._load_ui()
 
-        # Load the ui file
-        uic.loadUi(_FORM_PATH, self)
+    def _load_ui(self):
+        self.setWindowTitle('Experiment form')
+        self.setGeometry(0, 0, 675, 500)
         self.setWindowIcon(QIcon(_ICON_PATH))
 
-        # Set the focus order
-        self.experiment_name.setFocus()
-        self.setTabOrder(self.experiment_name, self.patient_id)
-        self.setTabOrder(self.patient_id, self.flowcell_id)
-        self.setTabOrder(self.flowcell_id, self.start_btn)
+        # Set up layout + widget
+        self.main_layout = QGridLayout()
+        self.setLayout(self.main_layout)
 
-    def get_params(self) -> Dict:
+        # Labels
+        self.operator_id_lbl = QLabel("Operator ID")
+        self.patient_id_lbl = QLabel("Patient ID")
+        self.flowcell_id_lbl = QLabel("Flowcell ID")
+        self.notes_lbl = QLabel("Comments")
+        self.protocol_lbl = QLabel("Protocol")
+        self.site_lbl = QLabel("Site")
+
+        # Text boxes
+        self.operator_id = QLineEdit()
+        self.patient_id = QLineEdit()
+        self.flowcell_id = QLineEdit()
+        self.notes = QLineEdit()
+
+        # Buttons
+        self.exit_btn = QPushButton("Cancel")
+        self.start_btn = QPushButton("Start")
+
+        # Dropdown menus
+        self.protocol = QComboBox()
+        self.protocol.addItems(["Default"])
+        self.site = QComboBox()
+        self.site.addItems(["Tororo, Uganda"])
+
+        # Place widgets
+        self.main_layout.addWidget(self.operator_id_lbl, 0, 0)
+        self.main_layout.addWidget(self.patient_id_lbl, 1, 0)
+        self.main_layout.addWidget(self.flowcell_id_lbl, 2, 0)
+        self.main_layout.addWidget(self.protocol_lbl, 3, 0)
+        self.main_layout.addWidget(self.site_lbl, 4, 0)
+        self.main_layout.addWidget(self.notes_lbl, 5, 0)
+        self.main_layout.addWidget(self.exit_btn, 6, 0)
+
+        self.main_layout.addWidget(self.operator_id, 0, 1)
+        self.main_layout.addWidget(self.patient_id, 1, 1)
+        self.main_layout.addWidget(self.flowcell_id, 2, 1)
+        self.main_layout.addWidget(self.protocol, 3, 1)
+        self.main_layout.addWidget(self.site, 4, 1)
+        self.main_layout.addWidget(self.notes, 5, 1)
+        self.main_layout.addWidget(self.start_btn, 6, 1)
+
+        # Set the focus order
+        self.operator_id.setFocus()
+        # self.setTabOrder(self.operator_id, self.patient_id)
+        # self.setTabOrder(self.patient_id, self.flowcell_id)
+        # self.setTabOrder(self.flowcell_id, self.protocol)
+        # self.setTabOrder(self.protocol, self.site)
+        # self.setTabOrder(self.site, self.notes)
+        self.setTabOrder(self.notes, self.start_btn)
+
+    def get_form_input(self) -> Dict:
         return {
-            "experiment_name": self.experiment_name.text(),
+            "operator_id": self.operator_id.text(),
             "patient_id": self.patient_id.text(),
             "flowcell_id": self.flowcell_id.text(),
+            "protocol": self.protocol.text(),
+            "site": self.site.text(),
+            "notes": self.notes.text(),
         }
         
 class LiveviewGUI(QMainWindow):
     
     def __init__(self, *args, **kwargs):
         super(LiveviewGUI, self).__init__(*args, **kwargs)
-        self._loadUI()
+        self._load_ui()
         
-    def _loadUI(self):
-        self.setWindowTitle('Malaria Scope')
+    def _load_ui(self):
+        self.setWindowTitle('Malaria scope')
         self.setGeometry(100, 100, 1100, 700)
 
         # Set up central layout + widget
