@@ -128,7 +128,7 @@ class Oracle(Machine):
                 "Hardware pre-check failed",
                 "The following component(s) could not be instantiated: {}"
                     .format((",".join(failed_components)).capitalize()),
-                quit_after=True,
+                exit_after=True,
                 )
             print("Escaped")
 
@@ -144,17 +144,24 @@ class Oracle(Machine):
         self.form_window.show()
 
     def save_form(self, *args):
-        # TBD implement actual save here
-        self.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
+
+        # TEMP delete this print
         print(self.form_window.get_form_input())
-        # TODOO add proper boolean here!
-        if valid:
-            self.form2setup()
-        else:
+        try:
+            # TBD implement actual save here
+            # TODO build input validation into get_form_input()
+            # self.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
             pass
-            # TODOO print message here
-            # self.display_msg("Invalid form")
-        # TODO VALIDATE FORM INPUTS HERE + APPEND DATE IF NEEDED
+        # TODO target correct exception here
+        except Exception as e:
+            _ = self._display_message(
+                QMessageBox.Icon.Warning,
+                "Invalid form input",
+                "The following entries are invalid:",   # Add proper warnings here
+                exit_after=True,
+                )
+
+        self.form2setup()
 
     def close_form(self, *args):
         self.form_window.close()
@@ -173,7 +180,7 @@ class Oracle(Machine):
         # delete current scope?
         pass
 
-    def _display_message(self, icon, title, text, cancel=False, quit_after=False):
+    def _display_message(self, icon, title, text, cancel=False, exit_after=False):
         msgBox = QMessageBox()
         msgBox.setWindowIcon(QIcon(_ICON_PATH))
         msgBox.setIcon(icon)
@@ -187,7 +194,7 @@ class Oracle(Machine):
         else:
             msgBox.setStandardButtons(QMessageBox.Ok)
 
-        if quit_after and msgBox.exec() == QMessageBox.Ok:
+        if exit_after and msgBox.exec() == QMessageBox.Ok:
             self.exit()
 
         return msgBox.exec()
@@ -266,8 +273,14 @@ class FormGUI(QDialog):
 
         # Dropdown menus
         self.protocol = QComboBox()
-        self.protocol.addItems(["Default"])
         self.site = QComboBox()
+
+        # Configure widgets
+        # notes_size_policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # notes_size_policy.setVerticalStretch(1)
+        # self.notes.setSizePolicy(notes_size_policy)
+
+        self.protocol.addItems(["Default"])
         self.site.addItems(["Tororo, Uganda"])
 
         # Place widgets
@@ -301,8 +314,8 @@ class FormGUI(QDialog):
             "operator_id": self.operator_id.text(),
             "patient_id": self.patient_id.text(),
             "flowcell_id": self.flowcell_id.text(),
-            "protocol": self.protocol.text(),
-            "site": self.site.text(),
+            "protocol": self.protocol.currentText(),
+            "site": self.site.currentText(),
             "notes": self.notes.text(),
         }
         
