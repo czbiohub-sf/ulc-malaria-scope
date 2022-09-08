@@ -1,7 +1,9 @@
 import sys
 import csv
+from tkinter import N
 import traceback
 import numpy as np
+import enum
 
 from transitions import Machine
 
@@ -24,6 +26,7 @@ from cv2 import imwrite
 from qimage2ndarray import array2qimage
 
 from ulc_mm_package.hardware.scope import MalariaScope
+from ulc_mm_package.hardware.scope_routines import *
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
@@ -37,27 +40,61 @@ VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7ch
 ## Use transitions for re-runs
 ## Clean up unnecessary imports
 ## Replace all exit() with end() and go back to pre-experiment dialog
+### Implement survey?
+### Send Ilakkiyan experiment form parameters
+### Setup coroutines? 
+
+# class ScopeOpStates(enum.Enum):
+#     AUTOBRIGHTNESS = 1
+#     FOCUS_BOUNDS = 2
+#     AUTOFOCUS = 3
+#     RUN = 4
 
 class ScopeOp(QObject):
-    test = pyqtSignal(int)
-    def __init__(self):
+    setup_done = pyqtSignal()
+
+    def __init__(self, MalariaScope : mscope):
         super().__init__()
-        self.stop = False
+        self.mscope = mscope
+        self.state = ScopeOpStates.AUTOBRIGHTNESS
 
+        self.final_brightness = None
+        self.final_focus_bounds = None
+
+    def start_setup(self, img):
+        self.autobrightness_routine = autobrightnessCoroutine(self.mscope)
+        self.focus_bounds_routine = getFocusBoundsCoroutine(self.mscope)
+        self.autofocus_routine = focusCoroutine(self.mscope)
+
+        self.setup_routines = [ 
+            self.autobrightness_routine,
+            self.focus_bounds_routine,
+            self.autofocus_routine,
+            self.run,
+            ]
+        self.img_processer = self.setup_routines.pop(0)
+
+    def run(self, img):
+        print("I'm running")
+
+    # Update decorator type as needed
     # @pyqtSlot(int)
-    # def doSomethingWithInt(self, val):
-    #     sleep(1)
-    #     print(f"It's ya boi {val}")
-
-    # def sayHi(self):
-    #     print("Suh dude")
-    #     # sleep(10)
+    @pyqtSlot
+    def img_handler(self, img):
+        try:
+            self.img_processer(img)
+        except StopIteration as e:
+            self.img_processer = self.setup_routines.pop(0)
+            if len(self.setup_routines) == 0:
+                self.setup_done.emit()
 
 class Acquisition(QThread):
     test = pyqtSignal(int)
     def __init__(self):
         super().__init__()
         self.stop = False
+
+
     
     # def run(self):
     #     while not self.stop:
@@ -133,8 +170,7 @@ class Oracle(Machine):
             print("Escaped")
 
     def start_setup(self, *args):
-        # TBD run autopilot method here
-        pass 
+        self.ScopeOp.start_setup()
 
     def start_run(self, *args):
         # TBD run appropriate autopilot method here
@@ -406,33 +442,33 @@ class LiveviewGUI(QMainWindow):
 
 if __name__ == "__main__":
     
-    # def test():
-    #     print("Start")
+    def test():
+        print("Start")
         
-    #     i = 0
-    #     while i < 3:
-    #         # print(i)
-    #         i += 1
-    #         yield i
+        i = 0
+        while i < 3:
+            # print(i)
+            i += 1
+            yield i
             
-    #     return("Done")
+        return("Done")
         
-    # t = test()
-    # a = next(t)
-    # print("OK" + str(a))
-    # a = next(t)
-    # print("OK" + str(a))
-    # a = next(t)
-    # print("OK" + str(a))
-    # # next(t)
-    # try:
-    #     print(next(t))
-    # except StopIteration as e:
-    #     print(a)
-    #     pass
-    #     # print(e)
-    # # next(t)
+    t = test()
+    a = next(t)
+    print("OK" + str(a))
+    a = next(t)
+    print("OK" + str(a))
+    a = next(t)
+    print("OK" + str(a))
+    next(t)
+    try:
+        print(next(t))
+    except StopIteration as e:
+        print(a)
+        pass
+        # print(e)
+    # next(t)
 
-    app = QApplication(sys.argv)
-    oracle = Oracle()
-    sys.exit(app.exec_())
+    # app = QApplication(sys.argv)
+    # oracle = Oracle()
+    # sys.exit(app.exec_())
