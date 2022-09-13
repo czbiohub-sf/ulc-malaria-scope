@@ -20,6 +20,8 @@ from typing import Dict
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
+from ulc_mm_package.neural_nets.NCSModel import TPUError
 
 class Components(enum.Enum):
     MOTOR = 0
@@ -133,7 +135,7 @@ class MalariaScope:
             self.fan.turn_on_all()
             self.fan_enabled = True
         except Exception as e:
-            # TODO - change ot logging
+            # TODO - change to logging
             print(f"Error initializing fan. Error: {e}")
 
     def _init_encoder(self):
@@ -157,6 +159,7 @@ class MalariaScope:
                 self.encoder = PIM522RotaryEncoder(manualFocusWithEncoder)
                 self.encoder_enabled = True
             except EncoderI2CError as e:
+                # TODO - change to logging
                 print(f"ENCODER I2C ERROR: {e}")
         else:
             print(f"Motor failed to initialize, encoder will not initialize.")
@@ -166,6 +169,7 @@ class MalariaScope:
             self.ht_sensor = SHT3X()
             self.ht_sensor_enabled = True
         except Exception as e:
+            # TODO - change to logging
             print(f"Failed to initialize temperature/humidity sensor (SHT31D): {e}")
 
     def _init_data_storage(self):
@@ -173,7 +177,13 @@ class MalariaScope:
             self.data_storage = DataStorage()
             self.data_storage_enabled = True
         except DataStorageError as e:
+            # TODO - change to logging
             print(f"Failed to initialize DataStorage: {e}")
 
     def _init_TPU(self):
-        pass
+        try:
+            self.autofocus_model = AutoFocus()
+            self.tpu_enabled = True
+        except TPUError as e:
+            # TODO - change to logging
+            print(f"Failed to initialize the TPU: {e}")
