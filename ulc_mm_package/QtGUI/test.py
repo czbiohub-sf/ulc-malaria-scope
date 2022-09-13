@@ -41,14 +41,7 @@ VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7ch
 ## Clean up unnecessary imports
 ## Replace all exit() with end() and go back to pre-experiment dialog
 ### Implement survey?
-### Send Ilakkiyan experiment form parameters
-### Setup coroutines? 
-
-# class ScopeOpStates(enum.Enum):
-#     AUTOBRIGHTNESS = 1
-#     FOCUS_BOUNDS = 2
-#     AUTOFOCUS = 3
-#     RUN = 4
+### Test with basic mockup coroutines?
 
 class ScopeOp(QObject):
     setup_done = pyqtSignal()
@@ -77,9 +70,7 @@ class ScopeOp(QObject):
     def run(self, img):
         print("I'm running")
 
-    # Update decorator type as needed
-    # @pyqtSlot(int)
-    @pyqtSlot
+    @pyqtSlot(QImage)
     def img_handler(self, img):
         try:
             self.img_processer(img)
@@ -88,19 +79,24 @@ class ScopeOp(QObject):
             if len(self.setup_routines) == 0:
                 self.setup_done.emit()
 
-class Acquisition(QThread):
-    test = pyqtSignal(int)
+class Acquisition(QObject):
+    update_img = pyqtSignal(int)
+
     def __init__(self):
         super().__init__()
-        self.stop = False
 
-
-    
-    # def run(self):
-    #     while not self.stop:
-    #         self.test.emit(1)
-    #         print("working")
-    #         sleep(0.03)
+    def run(self):
+        while True:
+            if self.camera_activated:
+                try:
+                    for image in self.camera.yieldImages():
+                        qimage = gray2qimage(image)
+                        self.update_img.emit(qimage)
+                except Exception as e:
+                    # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
+                    # Once that happens, this can be swapped to catch the PyCameraException
+                    print(e)
+                    print(traceback.format_exc())
 
 class Oracle(Machine):
 
@@ -113,14 +109,14 @@ class Oracle(Machine):
         self.liveview_window = LiveviewGUI()
 
         # Instantiate scope operator and thread
-        self.scopeOp = ScopeOp()
-        self.scopeOpThread = QThread()
-        self.scopeOp.moveToThread(self.scopeOpThread)
+        self.scopeop = ScopeOp()
+        self.scopeop_thread = QThread()
+        self.scopeop.moveToThread(self.scopeop_thread)
 
         # Instantiate camera acquisition and thread
         self.acquisition = Acquisition()
-        self.acquisitionThread = QThread()
-        self.acquisition.moveToThread(self.acquisitionThread)
+        self.acquisition_thread = QThread()
+        self.acquisition.moveToThread(self.acquisition_thread)
 
         # Configure state machine
         states = [
@@ -149,6 +145,11 @@ class Oracle(Machine):
         # Connect liveview buttons
         self.liveview_window.exit_btn.clicked.connect(self.liveview2standby)
 
+        # Connect signals and slots
+        self.acquisition.update_img.connect(self.liveview_window.update_img)
+        self.acquisition.update_img.connect(self.scopeop.img_handler)
+
+        # Trigger first transition
         self.standby2precheck()
 
     def start_precheck(self, *args):
@@ -235,40 +236,6 @@ class Oracle(Machine):
 
         return msgBox.exec()
 
-    # @pyqtSlot
-    # def setupReceiveImg(self, img):
-    #     self.autopilotThread.runSetup(img)
-    #     # ^ includes autobrightness, autoflow control, autofocus
-    #     self.livewindow.lblImg = img
-    #     # ^ add FPS optimization
-
-    # @pyqtSlot
-    # def runReceiveImg(self, img):
-    #     self.autopilotThread.runRun(img)
-    #     # ^ includes autobrightness, autoflow control, autofocus
-    #     self.livewindow.lblImg = img
-    #     # ^ add FPS optimization
-
-        
-    # def startSetup(self, *args):
-    #     # NOTE figure out why this call inputs an extra parameter
-    #     print(*args)
-    #     self.form_window.hide()
-    #     print("TADA")
-    #     self.acquisitionThread.img.connect(setupReceiveImg)
-
-    #     # PSEUDOCODE
-    #     self.liveview_window.show()
-    #     self.acquisitionThread.start()
-
-    #     print("TEMP setup tbd here")
-    #     quit()
-
-    # def startRun(self, *args):
-    #     print(*args)
-    #     self.acquisitionThread.img.disconnect(setupReceiveImg)
-    #     self.acquisitionThread.img.connect(runReceiveImg)
-
     def exit(self):
         print("Exiting program")
         quit()
@@ -291,7 +258,7 @@ class FormGUI(QDialog):
 
         # Labels
         self.operator_id_lbl = QLabel("Operator ID")
-        self.patient_id_lbl = QLabel("Patient ID")
+        self.participant_id_lbl = QLabel("Participant ID")
         self.flowcell_id_lbl = QLabel("Flowcell ID")
         self.notes_lbl = QLabel("Comments")
         self.protocol_lbl = QLabel("Protocol")
@@ -299,7 +266,7 @@ class FormGUI(QDialog):
 
         # Text boxes
         self.operator_id = QLineEdit()
-        self.patient_id = QLineEdit()
+        self.participant_id = QLineEdit()
         self.flowcell_id = QLineEdit()
         self.notes = QLineEdit()
 
@@ -321,7 +288,7 @@ class FormGUI(QDialog):
 
         # Place widgets
         self.main_layout.addWidget(self.operator_id_lbl, 0, 0)
-        self.main_layout.addWidget(self.patient_id_lbl, 1, 0)
+        self.main_layout.addWidget(self.participant_id_lbl, 1, 0)
         self.main_layout.addWidget(self.flowcell_id_lbl, 2, 0)
         self.main_layout.addWidget(self.protocol_lbl, 3, 0)
         self.main_layout.addWidget(self.site_lbl, 4, 0)
@@ -329,7 +296,7 @@ class FormGUI(QDialog):
         self.main_layout.addWidget(self.exit_btn, 6, 0)
 
         self.main_layout.addWidget(self.operator_id, 0, 1)
-        self.main_layout.addWidget(self.patient_id, 1, 1)
+        self.main_layout.addWidget(self.participant_id, 1, 1)
         self.main_layout.addWidget(self.flowcell_id, 2, 1)
         self.main_layout.addWidget(self.protocol, 3, 1)
         self.main_layout.addWidget(self.site, 4, 1)
@@ -338,8 +305,8 @@ class FormGUI(QDialog):
 
         # Set the focus order
         self.operator_id.setFocus()
-        # self.setTabOrder(self.operator_id, self.patient_id)
-        # self.setTabOrder(self.patient_id, self.flowcell_id)
+        # self.setTabOrder(self.operator_id, self.participant_id)
+        # self.setTabOrder(self.participant_id, self.flowcell_id)
         # self.setTabOrder(self.flowcell_id, self.protocol)
         # self.setTabOrder(self.protocol, self.site)
         # self.setTabOrder(self.site, self.notes)
@@ -348,7 +315,7 @@ class FormGUI(QDialog):
     def get_form_input(self) -> Dict:
         return {
             "operator_id": self.operator_id.text(),
-            "patient_id": self.patient_id.text(),
+            "participant_id": self.participant_id.text(),
             "flowcell_id": self.flowcell_id.text(),
             "protocol": self.protocol.currentText(),
             "site": self.site.currentText(),
@@ -360,6 +327,11 @@ class LiveviewGUI(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(LiveviewGUI, self).__init__(*args, **kwargs)
         self._load_ui()
+
+    @pyqtSlot(QImage)
+    def update_img(self, qimage):
+        self.liveview_img.setPixmap(QPixmap.fromImage(qimage))
+        # TODO add FPS handling
         
     def _load_ui(self):
         self.setWindowTitle('Malaria scope')
