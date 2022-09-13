@@ -22,8 +22,12 @@ TARGET_FLOWRATE = 15 # In units of IMG_HEIGHT pixels/second.
 
 # ================ Data storage constants ================ #
 EXPERIMENT_METADATA_KEYS = [
-        "operator_name",
-        "timestamp",
+        "operator_id",
+        "participant_id",
+        "flowcell_id",
+        "protocol",
+        "site",
+        "notes",
         "camera", # AVT / Basler
         "target_flowrate",
         "mean_brightness",

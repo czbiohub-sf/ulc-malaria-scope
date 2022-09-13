@@ -20,8 +20,7 @@ from typing import Dict
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
-from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
-from ulc_mm_package.neural_nets.NCSModel import TPUError
+from ulc_mm_package.neural_nets.neural_network_modules import *
 
 class Components(enum.Enum):
     MOTOR = 0
