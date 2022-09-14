@@ -20,6 +20,7 @@ from typing import Dict
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
+from ulc_mm_package.neural_nets.neural_network_modules import *
 
 class Components(enum.Enum):
     MOTOR = 0
@@ -30,6 +31,7 @@ class Components(enum.Enum):
     ENCODER = 5
     HT_SENSOR = 6
     DATA_STORAGE = 7
+    TPU = 8
 
 class MalariaScope:
     def __init__(self):
@@ -41,6 +43,7 @@ class MalariaScope:
         self.encoder_enabled = False
         self.ht_sensor_enabled = False
         self.data_storage_enabled = False
+        self.tpu_enabled = False
 
         # Initialize Components
         self._init_motor()
@@ -52,6 +55,10 @@ class MalariaScope:
         self._init_data_storage()
 
     def get_component_status(self) -> Dict:
+        """Returns a dictionary of component to initialization status.
+
+        Can be used by the caller of MalariaScope f
+        """
         return {
             Components.MOTOR: self.motor_enabled,
             Components.CAMERA: self.camera_enabled,
@@ -61,6 +68,7 @@ class MalariaScope:
             Components.ENCODER: self.encoder_enabled,
             Components.HT_SENSOR: self.ht_sensor_enabled,
             Components.DATA_STORAGE: self.data_storage_enabled,
+            Components.TPU: self.tpu_enabled
         }
 
     def _init_motor(self):
@@ -126,7 +134,7 @@ class MalariaScope:
             self.fan.turn_on_all()
             self.fan_enabled = True
         except Exception as e:
-            # TODO - change ot logging
+            # TODO - change to logging
             print(f"Error initializing fan. Error: {e}")
 
     def _init_encoder(self):
@@ -150,6 +158,7 @@ class MalariaScope:
                 self.encoder = PIM522RotaryEncoder(manualFocusWithEncoder)
                 self.encoder_enabled = True
             except EncoderI2CError as e:
+                # TODO - change to logging
                 print(f"ENCODER I2C ERROR: {e}")
         else:
             print(f"Motor failed to initialize, encoder will not initialize.")
@@ -159,6 +168,7 @@ class MalariaScope:
             self.ht_sensor = SHT3X()
             self.ht_sensor_enabled = True
         except Exception as e:
+            # TODO - change to logging
             print(f"Failed to initialize temperature/humidity sensor (SHT31D): {e}")
 
     def _init_data_storage(self):
@@ -166,4 +176,13 @@ class MalariaScope:
             self.data_storage = DataStorage()
             self.data_storage_enabled = True
         except DataStorageError as e:
+            # TODO - change to logging
             print(f"Failed to initialize DataStorage: {e}")
+
+    def _init_TPU(self):
+        try:
+            self.autofocus_model = AutoFocus()
+            self.tpu_enabled = True
+        except TPUError as e:
+            # TODO - change to logging
+            print(f"Failed to initialize the TPU: {e}")

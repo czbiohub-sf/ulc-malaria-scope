@@ -45,6 +45,7 @@ class BaslerCamera(Basler):
         
 class AVTCamera:
     def __init__(self):
+        self._isActivated = False
         self.vimba = Vimba.get_instance().__enter__()
         self.queue = queue.Queue(maxsize=1)
         self.connect()
@@ -69,6 +70,7 @@ class AVTCamera:
         self.camera = self._get_camera()
         self.camera.__enter__()
         self._camera_setup()
+        self._isActivated = True
 
     def deactivateCamera(self) -> None:
         self.stopAcquisition()
