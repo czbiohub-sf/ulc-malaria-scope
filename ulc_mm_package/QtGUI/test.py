@@ -33,7 +33,7 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 # ================ Misc constants ================ #
 _ICON_PATH = "CZB-logo.png"
 _FORM_PATH = "user_form.ui"
-VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
+_VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 
 # TODOs
 ## CLEAN UP NOTE??
@@ -41,31 +41,75 @@ VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7ch
 ## Clean up unnecessary imports
 ## Replace all exit() with end() and go back to pre-experiment dialog
 ### Implement survey?
-### Test with basic mockup coroutines?
+
+# !!! when / where to shutoff camera?
+# Implement metadata feed in
+# !!! Test with basic mockup coroutines?
 
 class ScopeOp(QObject):
+    precheck_done = pyqtSignal()
     setup_done = pyqtSignal()
 
-    def __init__(self, MalariaScope : mscope):
+    def __init__(self):
         super().__init__()
-        self.mscope = mscope
-        self.state = ScopeOpStates.AUTOBRIGHTNESS
+        self.mscope = MalariaScope()
 
         self.final_brightness = None
         self.final_focus_bounds = None
 
-    def start_setup(self, img):
+    def start_precheck(self):
+        self.mscope = MalariaScope()
+        component_status = self.mscope.get_component_status()
+        # TEMP for testing
+        if True:
+        # if all([status==True for status in component_status.values()]):
+            self.precheck_done.emit()
+            print("passed precheck")
+        else: 
+            failed_components = [comp.name for comp in component_status if component_status.get(comp)==False]
+            _ = self._display_message(
+                QMessageBox.Icon.Critical,
+                "Hardware pre-check failed",
+                "The following component(s) could not be instantiated: {}"
+                    .format((",".join(failed_components)).capitalize()),
+                exit_after=True,
+                )
+            print("Failed precheck")
+
+    # TODO remove this
+    def autobrightness_routine(self):
+        print("Start")
+        i = 0
+        while i < 3:
+            # print(i)
+            i += 1
+            yield i
+        return("Done")    
+
+    def focus_bounds_routine(self):
+        print("Start")
+        i = 0
+        while i < 3:
+            # print(i)
+            i += 1
+            yield i
+        return("Done")      
+
+    def start_setup(self):
         self.autobrightness_routine = autobrightnessCoroutine(self.mscope)
         self.focus_bounds_routine = getFocusBoundsCoroutine(self.mscope)
         self.autofocus_routine = focusCoroutine(self.mscope)
 
+        self.mscope.camera.startAcquisition()
+        ^ this should also make it so that self.mscope.camera.activated = True
+
         self.setup_routines = [ 
             self.autobrightness_routine,
             self.focus_bounds_routine,
-            self.autofocus_routine,
+            # self.autofocus_routine,
             self.run,
             ]
-        self.img_processer = self.setup_routines.pop(0)
+        self.img_processor = self.setup_routines.pop(0)
 
     def run(self, img):
         print("I'm running")
@@ -73,31 +117,45 @@ class ScopeOp(QObject):
     @pyqtSlot(QImage)
     def img_handler(self, img):
         try:
-            self.img_processer(img)
+            self.img_processor(img)
         except StopIteration as e:
-            self.img_processer = self.setup_routines.pop(0)
+            self.img_processor = self.setup_routines.pop(0)
+            print(self.img_processor)
             if len(self.setup_routines) == 0:
                 self.setup_done.emit()
 
 class Acquisition(QObject):
-    update_img = pyqtSignal(int)
+    new_img = pyqtSignal(QImage)
 
-    def __init__(self):
+    def __init__(self, BaslerCamera : camera):
         super().__init__()
+        self.camera = camera
 
     def run(self):
+        # TODO is there a better way to use this
         while True:
-            if self.camera_activated:
+            # TODO discuss if activated flag can live in Basler camera class
+            # if self.camera.activated:
+            if True:
                 try:
                     for image in self.camera.yieldImages():
                         qimage = gray2qimage(image)
-                        self.update_img.emit(qimage)
+                        self.new_img.emit(qimage)
                 except Exception as e:
                     # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
                     # Once that happens, this can be swapped to catch the PyCameraException
                     print(e)
                     print(traceback.format_exc())
+            else:
+                break
 
+        # i = 0
+        # while i < 50:
+        #     # print(i)
+        #     i += 1
+        #     sleep(1)
+        #     self.new_img.emit(i)
+            
 class Oracle(Machine):
 
     def __init__(self, *args, **kwargs):
@@ -109,12 +167,12 @@ class Oracle(Machine):
         self.liveview_window = LiveviewGUI()
 
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp()
+        self.scopeop = ScopeOp( )
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
         # Instantiate camera acquisition and thread
-        self.acquisition = Acquisition()
+        self.acquisition = Acquisition(self.scopeop.camera)
         self.acquisition_thread = QThread()
         self.acquisition.moveToThread(self.acquisition_thread)
 
@@ -146,34 +204,24 @@ class Oracle(Machine):
         self.liveview_window.exit_btn.clicked.connect(self.liveview2standby)
 
         # Connect signals and slots
-        self.acquisition.update_img.connect(self.liveview_window.update_img)
-        self.acquisition.update_img.connect(self.scopeop.img_handler)
+        self.acquisition.new_img.connect(self.liveview_window.update_img)
+        self.acquisition.new_img.connect(self.scopeop.img_handler)
+
+        self.scopeop.precheck_done.connect(self.precheck2form)
+        self.scopeop.setup_done.connect(self.setup2run)
 
         # Trigger first transition
         self.standby2precheck()
 
     def start_precheck(self, *args):
-        self.mscope = MalariaScope()
-        component_status = self.mscope.get_component_status()
-        # TEMP for testing
-        if True:
-        # if all([status==True for status in component_status.values()]):
-            self.precheck2form()
-        else: 
-            failed_components = [comp.name for comp in component_status if component_status.get(comp)==False]
-            _ = self._display_message(
-                QMessageBox.Icon.Critical,
-                "Hardware pre-check failed",
-                "The following component(s) could not be instantiated: {}"
-                    .format((",".join(failed_components)).capitalize()),
-                exit_after=True,
-                )
-            print("Escaped")
+        self.scopeop.start_precheck()
 
     def start_setup(self, *args):
-        self.ScopeOp.start_setup()
+        self.scopeop.start_setup()
+        self.acquisition.run()
 
     def start_run(self, *args):
+        print("DONE SETUP, STARTING RUN")
         # TBD run appropriate autopilot method here
         pass
 
@@ -205,6 +253,7 @@ class Oracle(Machine):
 
     def open_liveview(self, *args):
         self.liveview_window.show()
+
 
     def close_liveview(self, *args):
         self.liveview_window.close()
@@ -414,33 +463,33 @@ class LiveviewGUI(QMainWindow):
 
 if __name__ == "__main__":
     
-    def test():
-        print("Start")
+    # def test():
+    #     print("Start")
         
-        i = 0
-        while i < 3:
-            # print(i)
-            i += 1
-            yield i
+    #     i = 0
+    #     while i < 3:
+    #         # print(i)
+    #         i += 1
+    #         yield i
             
-        return("Done")
+    #     return("Done")
         
-    t = test()
-    a = next(t)
-    print("OK" + str(a))
-    a = next(t)
-    print("OK" + str(a))
-    a = next(t)
-    print("OK" + str(a))
-    next(t)
-    try:
-        print(next(t))
-    except StopIteration as e:
-        print(a)
-        pass
-        # print(e)
+    # t = test()
+    # a = next(t)
+    # print("OK" + str(a))
+    # a = next(t)
+    # print("OK" + str(a))
+    # a = next(t)
+    # print("OK" + str(a))
     # next(t)
+    # try:
+    #     print(next(t))
+    # except StopIteration as e:
+    #     print(a)
+    #     pass
+    #     # print(e)
+    # # next(t)
 
-    # app = QApplication(sys.argv)
-    # oracle = Oracle()
-    # sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    oracle = Oracle()
+    sys.exit(app.exec_())
