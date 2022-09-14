@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot, QObject
 from PyQt5.QtGui import QImage, QPixmap, QIcon
 from cv2 import imwrite
-from qimage2ndarray import array2qimage
+from qimage2ndarray import array2qimage, gray2qimage
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
@@ -42,9 +42,19 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 ## Replace all exit() with end() and go back to pre-experiment dialog
 ### Implement survey?
 
-# !!! when / where to shutoff camera?
+# try dealing with coroutines
+# deal with thread start/end
+# deal with camera shutoff
+
+# if simulation mode skip coroutines?
 # Implement metadata feed in
-# !!! Test with basic mockup coroutines?
+
+# thread termination?
+        # self.thread.started.connect(self.worker.run)
+        # self.worker.finished.connect(self.thread.quit)
+        # self.worker.finished.connect(self.worker.deleteLater)
+        # self.thread.finished.connect(self.thread.deleteLater)
+        # self.worker.progress.connect(self.reportProgress)
 
 class ScopeOp(QObject):
     precheck_done = pyqtSignal()
@@ -58,8 +68,8 @@ class ScopeOp(QObject):
         self.final_focus_bounds = None
 
     def start_precheck(self):
-        self.mscope = MalariaScope()
         component_status = self.mscope.get_component_status()
+        print(component_status)
         # TEMP for testing
         if True:
         # if all([status==True for status in component_status.values()]):
@@ -98,10 +108,11 @@ class ScopeOp(QObject):
     def start_setup(self):
         self.autobrightness_routine = autobrightnessCoroutine(self.mscope)
         self.focus_bounds_routine = getFocusBoundsCoroutine(self.mscope)
-        self.autofocus_routine = focusCoroutine(self.mscope)
+        # self.autofocus_routine = focusCoroutine(self.mscope)
 
-        self.mscope.camera.startAcquisition()
-        ^ this should also make it so that self.mscope.camera.activated = True
+        # TODO how to start acquisition?
+        # self.mscope.camera.startAcquisition()
+        # ^ this should also make it so that self.mscope.camera.activated = True
 
         self.setup_routines = [ 
             self.autobrightness_routine,
@@ -116,6 +127,8 @@ class ScopeOp(QObject):
 
     @pyqtSlot(QImage)
     def img_handler(self, img):
+        # pass
+        # sleep(1)
         try:
             self.img_processor(img)
         except StopIteration as e:
@@ -124,30 +137,30 @@ class ScopeOp(QObject):
             if len(self.setup_routines) == 0:
                 self.setup_done.emit()
 
-class Acquisition(QObject):
+class Acquisition(QThread):
     new_img = pyqtSignal(QImage)
 
-    def __init__(self, BaslerCamera : camera):
+    def __init__(self, camera):
         super().__init__()
         self.camera = camera
 
     def run(self):
-        # TODO is there a better way to use this
-        while True:
-            # TODO discuss if activated flag can live in Basler camera class
-            # if self.camera.activated:
-            if True:
-                try:
-                    for image in self.camera.yieldImages():
-                        qimage = gray2qimage(image)
-                        self.new_img.emit(qimage)
-                except Exception as e:
-                    # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
-                    # Once that happens, this can be swapped to catch the PyCameraException
-                    print(e)
-                    print(traceback.format_exc())
-            else:
-                break
+        # # TODO is there a better way to use this
+        # while True:
+        #     # TODO discuss if activated flag can live in Basler camera class
+        #     # if self.camera.activated:
+        #     if True:
+        try:
+            for image in self.camera.yieldImages():
+                qimage = gray2qimage(image)
+                self.new_img.emit(qimage) 
+        except Exception as e:
+            # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
+            # Once that happens, this can be swapped to catch the PyCameraException
+            print(e)
+            print(traceback.format_exc())
+            # else:
+            #     break
 
         # i = 0
         # while i < 50:
@@ -172,9 +185,10 @@ class Oracle(Machine):
         self.scopeop.moveToThread(self.scopeop_thread)
 
         # Instantiate camera acquisition and thread
-        self.acquisition = Acquisition(self.scopeop.camera)
+        self.acquisition = Acquisition(self.scopeop.mscope.camera)
         self.acquisition_thread = QThread()
         self.acquisition.moveToThread(self.acquisition_thread)
+        self.acquisition_thread.started.connect(self.acquisition.run)
 
         # Configure state machine
         states = [
@@ -218,7 +232,11 @@ class Oracle(Machine):
 
     def start_setup(self, *args):
         self.scopeop.start_setup()
-        self.acquisition.run()
+        self.scopeop_thread.start()
+        self.acquisition_thread.start()
+        # self.acquisition.run()
+
+        # self.acquisition.start()
 
     def start_run(self, *args):
         print("DONE SETUP, STARTING RUN")
