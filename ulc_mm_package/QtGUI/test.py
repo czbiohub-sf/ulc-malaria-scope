@@ -43,10 +43,14 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 ### Implement survey?
 ### Weird FPS
 
+# use decorator to clean up repetitive start stop connect functions
+# change oracle to also use ordered transitions
 # add flow control
 # try dealing with coroutines
 # deal with thread start/end
 # deal with camera shutoff
+# define types for arg inputs and Nonetype variables
+# make transition functions internal only (_function)
 
 # give yield types
 # if simulation mode skip coroutines?
@@ -68,23 +72,26 @@ class ScopeOp(QObject, Machine):
         super().__init__()
         self.mscope = MalariaScope()
 
+        self.coroutine = None
         self.new_img = acquisition_signal
         self.final_brightness = None
         self.final_fbounds = None
 
         states = [
             {'name' : 'standby'},
-            {'name' : 'autobrightness', 'on_enter' : ['_start_autobrightness'], 'on_exit' : ['_stop_autobrightness']},
-            {'name' : 'fbounds', 'on_enter' : ['_start_fbounds'], 'on_exit' : ['_stop_fbounds']},
-            {'name' : 'autofocus', 'on_enter' : ['_start_autofocus'], 'on_exit' : ['_stop_autofocus']},
-            {'name' : 'experiment', 'on_enter': ['_start_experiment'], 'on_exit' : ['_stop_experiment']},
+            {'name' : 'autobrightness', 'on_enter' : ['_start_autobrightness'], 'on_exit' : ['_stop_autobrightness'], 'slot' : 'run_autobrightness'},
+            {'name' : 'fbounds', 'on_enter' : ['_start_fbounds'], 'on_exit' : ['_stop_fbounds'], 'slot' : 'run_fbounds'},
+            {'name' : 'autofocus', 'on_enter' : ['_start_autofocus'], 'on_exit' : ['_stop_autofocus'], 'slot' : 'run_autofocus'},
+            {'name' : 'experiment', 'on_enter': ['_start_experiment'], 'on_exit' : ['_stop_experiment'], 'slot' : 'run_experiment'},
             ]
-        Machine.__init__(self, states=states, queued=True, initial='standby')
+        input_states = [{key : state[key] for key in state if not key == 'slot'} for state in states]
+        Machine.__init__(self, states=input_states, queued=True, initial='standby')
 
-        self.add_transition(trigger='standby2autobrightness', source='standby', dest='autobrightness')
-        self.add_transition(trigger='autobrightness2fbounds', source='autobrightness', dest='fbounds')
-        self.add_transition(trigger='fbounds2autofocus', source='fbounds', dest='autofocus')
-        self.add_transition(trigger='autofocus2experiment', source='autofocus', dest='experiment')
+        # self.add_transition(trigger='standby2autobrightness', source='standby', dest='autobrightness')
+        # self.add_transition(trigger='autobrightness2fbounds', source='autobrightness', dest='fbounds')
+        # self.add_transition(trigger='fbounds2autofocus', source='fbounds', dest='autofocus')
+        # self.add_transition(trigger='autofocus2experiment', source='autofocus', dest='experiment')
+        self.add_ordered_transitions()
         self.add_transition(trigger='end', source='*', dest='standby')
 
     def precheck(self):
@@ -107,7 +114,26 @@ class ScopeOp(QObject, Machine):
             print("Failed precheck")
 
     def start_setup(self):
-        self.standby2autobrightness()
+        self.next_state()
+
+# ################## TODO FIGURE THIS OUT
+#     def connect(self, func):
+#         self.coroutine = func
+#         self.coroutine.send(None)
+#         # replace with reference to appropriate function to connect based on state dictionary
+#         self.new_img.connect(self.run_autobrightness)
+
+#     def disconnect(self):
+#         self.new_img.disconnect(self.run_autobrightness)
+
+#     @connect
+#     def _start_autobrightness(self):
+#         return autobrightnessCoroutine(self.mscope)
+
+#     @disconnect
+#     def _stop_autobrightness(self):
+#         pass
+# ################## TODO FIGURE THIS OUT
 
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessCoroutine(self.mscope)
@@ -147,7 +173,7 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.final_brightness = e.value
             print(e)
-            self.autobrightness2fbounds()
+            self.next_state()
 
     @pyqtSlot(np.ndarray)
     def run_fbounds(self, img):
@@ -158,14 +184,14 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.final_fbounds = e.value
             print(e)
-            self.fbounds2autofocus()
+            self.next_state()
 
     @pyqtSlot(np.ndarray)
     def run_autofocus(self, img):
         try:
             self.autofocus_routine.send(img)
         except StopIteration as e:
-            self.autofocus2run()
+            self.next_state()
             self.setup_done.emit()
 
     @pyqtSlot(np.ndarray)
@@ -226,7 +252,7 @@ class Oracle(Machine):
         # Configure state machine
         states = [
             {'name' : 'standby', 'on_enter' : ['reset']},
-            {'name' : 'precheck', 'on_enter' : ['precheck']},
+            {'name' : 'precheck', 'on_enter' : ['start_precheck']},
             {'name' : 'form', 'on_enter' : ['open_form'], 'on_exit' : ['close_form']},
             {'name' : 'setup', 'on_enter' : ['open_liveview', 'start_setup']},
             {'name' : 'run', 'on_enter' : ['open_liveview', 'start_run']},
@@ -234,12 +260,13 @@ class Oracle(Machine):
             ]
         Machine.__init__(self, states=states, queued=True, initial='standby')
 
-        # TODO use conditions for re-running with experiment form (skip setup and precheck?)
-        # self.add_transition(trigger='form2run', source='form', dest='run', before='open_liveview')
-        self.add_transition(trigger='standby2precheck', source='standby', dest='precheck')
-        self.add_transition(trigger='precheck2form', source='precheck', dest='form')
-        self.add_transition(trigger='form2setup', source='form', dest='setup')
-        self.add_transition(trigger='setup2run', source='setup', dest='run')
+        # # TODO use conditions for re-running with experiment form (skip setup and precheck?)
+        # # self.add_transition(trigger='form2run', source='form', dest='run', before='open_liveview')
+        # self.add_transition(trigger='standby2precheck', source='standby', dest='precheck')
+        # self.add_transition(trigger='precheck2form', source='precheck', dest='form')
+        # self.add_transition(trigger='form2setup', source='form', dest='setup')
+        # self.add_transition(trigger='setup2run', source='setup', dest='run')
+        self.add_ordered_transitions()
         self.add_transition(trigger='liveview2standby', source=['setup', 'run'], dest='standby', before='close_liveview')
         self.add_transition(trigger='end', source='*', dest='standby')
 
@@ -253,13 +280,13 @@ class Oracle(Machine):
         # Connect signals and slots
         self.acquisition.new_img.connect(self.liveview_window.update_img)
 
-        self.scopeop.precheck_done.connect(self.precheck2form)
-        self.scopeop.setup_done.connect(self.setup2run)
+        self.scopeop.precheck_done.connect(self.next_state)
+        self.scopeop.setup_done.connect(self.next_state)
 
         # Trigger first transition
-        self.standby2precheck()
+        self.next_state()
 
-    def precheck(self, *args):
+    def start_precheck(self, *args):
         self.scopeop.precheck()
         self.acquisition.get_mscope(self.scopeop.mscope)
 
@@ -304,7 +331,6 @@ class Oracle(Machine):
 
     def open_liveview(self, *args):
         self.liveview_window.show()
-
 
     def close_liveview(self, *args):
         self.liveview_window.close()
