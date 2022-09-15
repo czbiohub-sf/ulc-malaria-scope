@@ -1,4 +1,4 @@
-from gui_constants import *
+from ulc_mm_package.QtGUI.gui_constants import *
 
 from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC
 from ulc_mm_package.hardware.hardware_modules import *
