@@ -28,6 +28,8 @@ from qimage2ndarray import array2qimage, gray2qimage
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
+from time import perf_counter
+
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
@@ -77,7 +79,7 @@ class ScopeOp(QObject, Machine):
         self.final_brightness = None
         self.final_fbounds = None
 
-        states = [
+        state_attributes = [
             {'name' : 'standby'},
             {'name' : 'autobrightness', 'on_enter' : ['_start_autobrightness'], 'on_exit' : ['_stop_autobrightness'], 'slot' : 'run_autobrightness'},
             {'name' : 'fbounds', 'on_enter' : ['_start_fbounds'], 'on_exit' : ['_stop_fbounds'], 'slot' : 'run_fbounds'},
@@ -85,8 +87,11 @@ class ScopeOp(QObject, Machine):
             {'name' : 'experiment', 'on_enter': ['_start_experiment'], 'on_exit' : ['_stop_experiment'], 'slot' : 'run_experiment'},
             ]
 
+        state_functions = [{key : state[key] for key in state if key in input_keys} for state in state_attributes if 'slot' in ]
+
         input_keys = ['name', 'on_enter', 'on_exit']
-        input_states = [{key : state[key] for key in state if key in input_keys} for state in states]
+        input_states = [{key : state[key] for key in state if key in input_keys} for state in state_attributes]
+
         Machine.__init__(self, states=input_states, queued=True, initial='standby')
 
         # self.add_transition(trigger='standby2autobrightness', source='standby', dest='autobrightness')
@@ -137,6 +142,8 @@ class ScopeOp(QObject, Machine):
 #         pass
 # ################## TODO FIGURE THIS OUT
 
+# replace all stop methods with disconnect function
+
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessCoroutine(self.mscope)
         # print(self.autobrightness_routine)
@@ -168,12 +175,21 @@ class ScopeOp(QObject, Machine):
     def _stop_experiment(self):
         print("Done experiment now")       
 
+    def block_queue(func):
+          def inner(self, img):
+            self.img_signal.disconnect(self.run_autobrightness)
+            func(self, img)
+            self.img_signal.connect(self.run_autobrightness)
+        return inner
+
     @pyqtSlot(np.ndarray)
+    @block_queue
     def run_autobrightness(self, img):
-        # pass
+
         if img[0] == 1:
             sleep(5)
         print(img)
+
         # try:
         #     self.autobrightness_routine.send(img)
         # except StopIteration as e:
