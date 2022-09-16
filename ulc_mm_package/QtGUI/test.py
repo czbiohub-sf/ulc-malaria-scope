@@ -87,7 +87,7 @@ class ScopeOp(QObject, Machine):
             {'name' : 'experiment', 'on_enter': ['_start_experiment'], 'on_exit' : ['_stop_experiment'], 'slot' : 'run_experiment'},
             ]
 
-        state_functions = [{key : state[key] for key in state if key in input_keys} for state in state_attributes if 'slot' in ]
+        # state_functions = [{key : state[key] for key in state if key in input_keys} for state in state_attributes if 'slot' in ]
 
         input_keys = ['name', 'on_enter', 'on_exit']
         input_states = [{key : state[key] for key in state if key in input_keys} for state in state_attributes]
@@ -175,20 +175,23 @@ class ScopeOp(QObject, Machine):
     def _stop_experiment(self):
         print("Done experiment now")       
 
-    def block_queue(func):
-          def inner(self, img):
-            self.img_signal.disconnect(self.run_autobrightness)
-            func(self, img)
-            self.img_signal.connect(self.run_autobrightness)
-        return inner
+    # def block_queue(func):
+    #       def inner(self, img):
+    #         self.img_signal.disconnect(self.run_autobrightness)
+    #         func(self, img)
+    #         self.img_signal.connect(self.run_autobrightness)
+    #     return inner
 
+    # @pyqtSlot(np.ndarray)
+    # @block_queue
+    # def run_autobrightness(self, img):
+
+    #     if img[0] == 1:
+    #         sleep(5)
+    #     print(img)
     @pyqtSlot(np.ndarray)
-    @block_queue
     def run_autobrightness(self, img):
-
-        if img[0] == 1:
-            sleep(5)
-        print(img)
+        print("Autobrightness")
 
         # try:
         #     self.autobrightness_routine.send(img)
@@ -223,6 +226,9 @@ class ScopeOp(QObject, Machine):
 
 class Acquisition(QObject):
     new_img = pyqtSignal(np.ndarray)
+    # new_img = pyqtSignal(QImage)
+
+    # new_img = pyqtSignal(QImage)
 
     def __init__(self):
         super().__init__()
@@ -238,9 +244,18 @@ class Acquisition(QObject):
         #     # if self.camera.activated:
         #     if True:
         try:
-            for val in range(0, 10):
-                self.new_img.emit(np.array([val, val]))
-            # for image in self.mscope.camera.yieldImages():
+            # for val in range(0, 10):
+            #     t3 = perf_counter()
+            #     self.new_img.emit(np.array([val, val]))
+            #     t4 = perf_counter()
+            #     print(t4-t3)
+            for image in self.mscope.camera.yieldImages():
+                t3 = perf_counter()
+                # print(np.shape(image))
+                # qimage = gray2qimage(image)
+                self.new_img.emit(image) 
+                t4 = perf_counter()
+                print(t4-t3)
                 # # qimage = gray2qimage(image)
                 # # self.new_img.emit(qimage) 
                 # self.new_img.emit(image)
@@ -471,9 +486,13 @@ class LiveviewGUI(QMainWindow):
         self._load_ui()
 
     @pyqtSlot(np.ndarray)
+    # @pyqtSlot(QImage)
     def update_img(self, img):
-        self.status_lbl.setText("OK: {}".format(img))
-        # self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
+        # self.status_lbl.setText("OK: {}".format(img))
+        t1 = perf_counter()
+        self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
+        t2 = perf_counter()
+        print(t2-t1)
         # TODO add FPS handling
         
     def _load_ui(self):
