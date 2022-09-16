@@ -67,13 +67,13 @@ class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
     setup_done = pyqtSignal()
 
-    def __init__(self, acquisition_signal):
+    def __init__(self, img_signal):
         print(super())
         super().__init__()
         self.mscope = MalariaScope()
 
         self.coroutine = None
-        self.new_img = acquisition_signal
+        self.img_signal = img_signal
         self.final_brightness = None
         self.final_fbounds = None
 
@@ -84,7 +84,9 @@ class ScopeOp(QObject, Machine):
             {'name' : 'autofocus', 'on_enter' : ['_start_autofocus'], 'on_exit' : ['_stop_autofocus'], 'slot' : 'run_autofocus'},
             {'name' : 'experiment', 'on_enter': ['_start_experiment'], 'on_exit' : ['_stop_experiment'], 'slot' : 'run_experiment'},
             ]
-        input_states = [{key : state[key] for key in state if not key == 'slot'} for state in states]
+
+        input_keys = ['name', 'on_enter', 'on_exit']
+        input_states = [{key : state[key] for key in state if key in input_keys} for state in states]
         Machine.__init__(self, states=input_states, queued=True, initial='standby')
 
         # self.add_transition(trigger='standby2autobrightness', source='standby', dest='autobrightness')
@@ -139,41 +141,45 @@ class ScopeOp(QObject, Machine):
         self.autobrightness_routine = autobrightnessCoroutine(self.mscope)
         # print(self.autobrightness_routine)
         self.autobrightness_routine.send(None)
-        self.new_img.connect(self.run_autobrightness)
+        self.img_signal.connect(self.run_autobrightness)
 
     def _stop_autobrightness(self):
-        self.new_img.disconnect(self.run_autobrightness)
+        self.img_signal.disconnect(self.run_autobrightness)
 
     def _start_fbounds(self):
         self.fbounds_routine = getFocusBoundsCoroutine(self.mscope)
         self.fbounds_routine.send(None)
-        self.new_img.connect(self.run_fbounds)
+        self.img_signal.connect(self.run_fbounds)
 
     def _stop_fbounds(self):
-        self.new_img.disconnect(self.run_fbounds)  
+        self.img_signal.disconnect(self.run_fbounds)  
 
     def _start_autofocus(self):
         self.autofocus_routine = autofocusCoroutine(self.mscope, self.final_fbounds)
         self.autofocus_routine.send(None)
-        self.new_img.connect(self.run_autofocus)
+        self.img_signal.connect(self.run_autofocus)
 
     def _stop_autofocus(self):
-        self.new_img.disconnect(self.run_autofocus)      
+        self.img_signal.disconnect(self.run_autofocus)      
 
     def _start_experiment(self):
-        self.new_img.connect(self.run_experiment)
+        self.img_signal.connect(self.run_experiment)
 
     def _stop_experiment(self):
         print("Done experiment now")       
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
-        try:
-            self.autobrightness_routine.send(img)
-        except StopIteration as e:
-            self.final_brightness = e.value
-            print(e)
-            self.next_state()
+        # pass
+        if img[0] == 1:
+            sleep(5)
+        print(img)
+        # try:
+        #     self.autobrightness_routine.send(img)
+        # except StopIteration as e:
+        #     self.final_brightness = e.value
+        #     print(e)
+        #     self.next_state()
 
     @pyqtSlot(np.ndarray)
     def run_fbounds(self, img):
@@ -216,10 +222,12 @@ class Acquisition(QObject):
         #     # if self.camera.activated:
         #     if True:
         try:
-            for image in self.mscope.camera.yieldImages():
-                # qimage = gray2qimage(image)
-                # self.new_img.emit(qimage) 
-                self.new_img.emit(image)
+            for val in range(0, 10):
+                self.new_img.emit(np.array([val, val]))
+            # for image in self.mscope.camera.yieldImages():
+                # # qimage = gray2qimage(image)
+                # # self.new_img.emit(qimage) 
+                # self.new_img.emit(image)
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
             # Once that happens, this can be swapped to catch the PyCameraException
@@ -254,8 +262,7 @@ class Oracle(Machine):
             {'name' : 'standby', 'on_enter' : ['reset']},
             {'name' : 'precheck', 'on_enter' : ['start_precheck']},
             {'name' : 'form', 'on_enter' : ['open_form'], 'on_exit' : ['close_form']},
-            {'name' : 'setup', 'on_enter' : ['open_liveview', 'start_setup']},
-            {'name' : 'run', 'on_enter' : ['open_liveview', 'start_run']},
+            {'name' : 'liveview', 'on_enter' : ['open_liveview', 'start_liveview'], 'on_exit' : ['close_liveview']},
             # {'name' : 'survey', 'on_enter' : ['open_survey']},
             ]
         Machine.__init__(self, states=states, queued=True, initial='standby')
@@ -266,8 +273,8 @@ class Oracle(Machine):
         # self.add_transition(trigger='precheck2form', source='precheck', dest='form')
         # self.add_transition(trigger='form2setup', source='form', dest='setup')
         # self.add_transition(trigger='setup2run', source='setup', dest='run')
+        # self.add_transition(trigger='liveview2standby', source=['setup', 'run'], dest='standby', before='close_liveview')
         self.add_ordered_transitions()
-        self.add_transition(trigger='liveview2standby', source=['setup', 'run'], dest='standby', before='close_liveview')
         self.add_transition(trigger='end', source='*', dest='standby')
 
         # Connect experiment form buttons
@@ -275,7 +282,7 @@ class Oracle(Machine):
         self.form_window.exit_btn.clicked.connect(self.end)
 
         # Connect liveview buttons
-        self.liveview_window.exit_btn.clicked.connect(self.liveview2standby)
+        self.liveview_window.exit_btn.clicked.connect(self.end)
 
         # Connect signals and slots
         self.acquisition.new_img.connect(self.liveview_window.update_img)
@@ -290,18 +297,11 @@ class Oracle(Machine):
         self.scopeop.precheck()
         self.acquisition.get_mscope(self.scopeop.mscope)
 
-    def start_setup(self, *args):
-        self.scopeop.start_setup()
+    def start_liveview(self, *args):
         self.scopeop_thread.start()
         self.acquisition_thread.start()
-        # self.acquisition.run()
+        self.scopeop.start_setup()
 
-        # self.acquisition.start()
-
-    def start_run(self, *args):
-        print("DONE SETUP, STARTING RUN")
-        # TBD run appropriate autopilot method here
-        pass
 
     def open_form(self, *args):
         self.form_window.show()
@@ -324,7 +324,7 @@ class Oracle(Machine):
                 exit_after=True,
                 )
 
-        self.form2setup()
+        self.next_state()
 
     def close_form(self, *args):
         self.form_window.close()
@@ -456,7 +456,8 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img):
-        self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
+        self.status_lbl.setText("OK: {}".format(img))
+        # self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
         # TODO add FPS handling
         
     def _load_ui(self):
