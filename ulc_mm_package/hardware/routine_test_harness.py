@@ -79,7 +79,10 @@ def initial_cell_check(mscope):
             fast_flow_routine.send(img)
         except StopIteration as e:
             flow_val = e.value
-            print(f"Flowrate: {flow_val}")
+            if isinstance(flow_val, bool):
+                print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
+            elif isinstance(flow_val, float):
+                print(f"Flowrate: {flow_val}")
             break
 
     # Display for another 10 seconds

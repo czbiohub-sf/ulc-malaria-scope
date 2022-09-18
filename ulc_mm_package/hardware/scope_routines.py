@@ -120,7 +120,7 @@ def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.nda
         img = yield img
         flow_controller.controlFlow(img)
 
-def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
+def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> Union[bool, float]:
     """Faster flowrate feedback for initial flow ramp-up.
 
     See FlowController.fastFlowAdjustment for specifics.
@@ -155,7 +155,10 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
 
     while True:
         img = yield img
-        flow_val = flow_controller.fastFlowAdjustment(img)
+        try:
+            flow_val = flow_controller.fastFlowAdjustment(img)
+        except PressureLeak:
+            return False
 
         # flow_val is False if target not yet achieved, float otherwise
         if isinstance(flow_val, float):
