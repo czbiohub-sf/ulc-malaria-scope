@@ -3,7 +3,27 @@ from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 import cv2
 
+def _displayImage(img: np.ndarray) -> None:
+    """Convenince wrapper to display an image using opencv"""
+
+    cv2.imshow("Display", img)
+    cv2.waitKey(2)
+
 def initial_cell_check(mscope):
+    """Test the cell finding routine and subsequent autofocus
+    
+    Steps
+    -----
+    1. Autobrightness
+    2. Run find_cells_routine (will return False or an int of the motor position where
+    cells were most likely found)
+    3. Run the single-shot autofocus once (using a batch of AF_BATCH_SIZE images (see
+    image_processing.processing_constants.py file))
+    4. Continue streaming images to the display for another 10 seconds to validate
+    how things look.
+    """
+
+
     # Autobrightness
     ab_routine = autobrightnessRoutine(mscope)
     ab_routine.send(None)
@@ -51,10 +71,6 @@ def initial_cell_check(mscope):
         _displayImage(img)
         if perf_counter() - start > 10:
             break
-
-def _displayImage(img: np.ndarray) -> None:
-    cv2.imshow("Display", img)
-    cv2.waitKey(2)
 
 if __name__ == "__main__":
     mscope = MalariaScope()
