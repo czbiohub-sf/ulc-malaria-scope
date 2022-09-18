@@ -137,7 +137,7 @@ class FlowRateEstimator:
         self._addImage(img, timestamp)
         self._calculatePairDisplacement()
 
-def downSampleImage(img: np.ndarray, scale_factor: int):
+def downSampleImage(img: np.ndarray, scale_factor: int) -> np.ndarray:
     """Downsamples an image by `scale_factor`"""
     h, w = img.shape
     return cv2.resize(img, (w // scale_factor, h // scale_factor))

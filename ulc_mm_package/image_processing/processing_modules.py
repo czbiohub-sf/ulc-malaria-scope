@@ -6,3 +6,4 @@ from ulc_mm_package.image_processing.zstack import (
     symmetricZStackCoroutine,
 )
 from ulc_mm_package.image_processing.focus_metrics import logPowerSpectrumRadialAverageSum
+from ulc_mm_package.image_processing.cell_finder import CellFinder
