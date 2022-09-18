@@ -1,3 +1,4 @@
+from time import perf_counter
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 import cv2
