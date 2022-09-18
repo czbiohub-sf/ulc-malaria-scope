@@ -23,8 +23,6 @@ from ulc_mm_package.hardware.hardware_constants import (
     VALVE_PIN,
     SERVO_FREQ,
     INVALID_READ_FLAG,
-    DEFAULT_AFC_DELAY_S,
-    AFC_NUM_IMAGE_PAIRS,
 )
 from ulc_mm_package.hardware.dtoverlay_pwm import (
     dtoverlay_PWM,

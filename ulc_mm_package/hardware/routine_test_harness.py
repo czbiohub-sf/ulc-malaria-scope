@@ -27,7 +27,7 @@ def initial_cell_check(mscope):
     # Autobrightness
     ab_routine = autobrightnessRoutine(mscope)
     ab_routine.send(None)
-    for img in mscope.cam.yieldImages():
+    for img in mscope.camera.yieldImages():
         _displayImage(img)
         try:
             ab_routine.send(img)
@@ -39,7 +39,7 @@ def initial_cell_check(mscope):
     # Pull, check for cells
     find_cells = find_cells_routine(mscope)
     find_cells.send(None)
-    for img in mscope.cam.yieldImages():
+    for img in mscope.camera.yieldImages():
         _displayImage(img)
         try:
             find_cells.send(img)
@@ -57,7 +57,7 @@ def initial_cell_check(mscope):
         mscope.motor.move_abs(res)
         ssaf = singleShotAutofocusRoutine(mscope, None)
         ssaf.send(None)
-        for img in mscope.cam.yieldImages():
+        for img in mscope.camera.yieldImages():
             _displayImage(img)
             try:
                 ssaf.send(img)
@@ -67,7 +67,7 @@ def initial_cell_check(mscope):
 
     # Continue for another 10 seconds just to view what's going on
     start = perf_counter()
-    for img in mscope.cam.yieldImages():
+    for img in mscope.camera.yieldImages():
         _displayImage(img)
         if perf_counter() - start > 10:
             break
