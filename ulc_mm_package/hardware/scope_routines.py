@@ -229,9 +229,12 @@ def find_cells_routine(mscope: MalariaScope, pull_time: int=5, steps_per_image: 
     cross_corr_vals = []
     img = yield img
     
-    # Initial check for cells
+    # Initial check for cells, return current motor position if cells found
     cells_present = cell_finder.checkForCells(cell_finder.getMaxCrossCorrelationVal(img))
+    if cells_present:
+        return mscope.motor.pos
 
+    # While cells not present, pull syringe and look for cells
     while not cells_present:
         """
         1. Pull syringe for 5 seconds
