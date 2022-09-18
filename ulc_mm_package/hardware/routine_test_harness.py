@@ -25,6 +25,7 @@ def initial_cell_check(mscope):
 
 
     # Autobrightness
+    print(f"Running Autobrightness...")
     ab_routine = autobrightnessRoutine(mscope)
     ab_routine.send(None)
     for img in mscope.camera.yieldImages():
@@ -33,10 +34,11 @@ def initial_cell_check(mscope):
             ab_routine.send(img)
         except StopIteration as e:
             final_brightness = e.value
-            print(final_brightness)
+            print(f"Mean pixel val: {final_brightness}")
             break
 
     # Pull, check for cells
+    print("Initiating `find_cells_routine`")
     find_cells = find_cells_routine(mscope)
     find_cells.send(None)
     for img in mscope.camera.yieldImages():
@@ -49,12 +51,15 @@ def initial_cell_check(mscope):
                 print("Unable to find cells")
                 break
             elif isinstance(res, int):
-                print(f"Motor pos: {res}")
+                print(f"Cells found @ motor pos: {res}")
                 break
 
     # Cells found, perform SSAF w/ the motor at the position returned above
     if isinstance(res, int):
+        print(f"Moving motor to {res}")
         mscope.motor.move_abs(res)
+
+        print("Initiating SSAF")
         ssaf = singleShotAutofocusRoutine(mscope, None)
         ssaf.send(None)
         for img in mscope.camera.yieldImages():

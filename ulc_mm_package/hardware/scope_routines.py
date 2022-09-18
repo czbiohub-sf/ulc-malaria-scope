@@ -242,8 +242,10 @@ def find_cells_routine(mscope: MalariaScope, pull_time: int=5, steps_per_image: 
             return False
 
         # Pull the syringe maximally for `pull_time` seconds
+        start = perf_counter()
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
-        sleep(pull_time)
+        while perf_counter() - start < pull_time:
+            img = yield img
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
         # Perform a full focal stack and assess for cells at each step
@@ -255,9 +257,9 @@ def find_cells_routine(mscope: MalariaScope, pull_time: int=5, steps_per_image: 
 
         max_corr = np.max(cross_corr_vals)
         cells_present = cell_finder.checkForCells(max_corr)
-
         if cells_present:
             # Return the motor position where cells were found w/ the highest confidence
-            return np.argmax(cross_corr_vals)*steps_per_image
+            motor_pos = int(np.argmax(cross_corr_vals)*steps_per_image)
+            return motor_pos
         
         max_attempts -=1
