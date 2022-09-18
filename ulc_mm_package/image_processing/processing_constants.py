@@ -51,7 +51,7 @@ PER_IMAGE_METADATA_KEYS = [
     ]
 
 # ================ Cell detection constants ================ #
-RBC_THUMBNAIL_PATH = "thumbnail.png"
+RBC_THUMBNAIL_PATH = "../image_processing/thumbnail.png" #TODO better way to reference file?
 
 # This value was found empirically, looking at several focal stacks with and without cells
 CELLS_FOUND_THRESHOLD = 9000 # It's got to be... OVER 9000!!!!!!
