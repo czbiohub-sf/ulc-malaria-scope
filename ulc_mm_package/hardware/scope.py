@@ -53,7 +53,12 @@ class MalariaScope:
         self._init_fan()
         self._init_encoder()
         self._init_data_storage()
+        self._init_TPU()
 
+    def __del__(self):
+        self.led.turnOff()
+        self.camera.deactivateCamera()
+        
     def getComponentStatus(self) -> Dict:
         """Returns a dictionary of component to initialization status.
 
