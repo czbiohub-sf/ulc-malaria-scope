@@ -25,6 +25,8 @@ See https://github.com/czbiohub/ulc-malaria-autofocus#openvino-performance-optim
 more performance things I want to do
 """
 
+class TPUError(Exception):
+    pass
 
 class OptimizationHint(Enum):
     LATENCY = 1
