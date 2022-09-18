@@ -148,6 +148,7 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
         ...etc
     """
 
+    img = yield img
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(processing_constants.TARGET_FLOWRATE)

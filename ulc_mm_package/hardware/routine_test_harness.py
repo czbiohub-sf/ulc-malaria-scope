@@ -70,7 +70,19 @@ def initial_cell_check(mscope):
                 print(f"SSAF complete, motor moved by: {e.value} steps")
                 break
 
-    # Continue for another 10 seconds just to view what's going on
+    # Do an initial fast flow to get roughly to the target flowrate
+    fast_flow_routine = fastFlowRoutine(mscope, None)
+    fast_flow_routine.send(None)
+    for img in mscope.camera.yieldImages():
+        _displayImage(img)
+        try:
+            fast_flow_routine.send(img)
+        except StopIteration as e:
+            flow_val = e.value
+            print(f"Flowrate: {flow_val}")
+            break
+
+    # Display for another 10 seconds
     start = perf_counter()
     for img in mscope.camera.yieldImages():
         _displayImage(img)
