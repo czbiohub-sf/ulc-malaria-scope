@@ -10,6 +10,7 @@ from os import listdir, path
 from time import perf_counter
 import functools
 import threading
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 import cv2
 import zarr
 
@@ -51,6 +52,8 @@ class ZarrWriter():
         self.arr_counter = 0
         self.compressor = None
         self.writable = False
+        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.futures = []
 
     def createNewFile(self, filename: str, metadata={}, overwrite: bool=False):
         """Create a new zarr file.
@@ -88,14 +91,17 @@ class ZarrWriter():
         try:
             ds = self.group.array(f"{self.arr_counter}", data=data, compressor=self.compressor)
             self.arr_counter += 1
+            return self.arr_counter
         except Exception:
             raise AttemptingWriteWithoutFile()
 
-    def theadedWriteSingleArray(self, *args, **kwargs):
-        if not WRITE_LOCK.locked():
-            threading.Thread(target=self.writeSingleArray, args=args, kwargs=kwargs).start()
+    def threadedWriteSingleArray(self, *args, **kwargs):
+        self.futures.append(self.executor.submit(self.writeSingleArray, (*args)))
+        # if not WRITE_LOCK.locked():
+        #     threading.Thread(target=self.writeSingleArray, args=args, kwargs=kwargs).start()
 
     def closeFile(self):
+        wait(self.futures, return_when=ALL_COMPLETED)
         self.store.close()
         self.store = None
         self.writable = False
