@@ -32,13 +32,15 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 
 # TODOs
 ## CLEAN UP NOTE??
-## Clean up unnecessary imports
-## Replace all exit() with end() and go back to pre-experiment dialog
-## Implement survey and metadata feed 
+## Clean up imports
+
+# NICE TO HAVE
+# define types for arg inputs and Nonetype variables
 ## Validate experiment form inputs
 
+# SHUTOFF
+## Replace all exit() with end() and go back to pre-experiment dialog
 # deal with camera shutoff
-# define types for arg inputs and Nonetype variables
 # thread termination?
         # self.thread.started.connect(self.worker.run)
         # self.worker.finished.connect(self.thread.quit)
@@ -46,17 +48,13 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
         # self.thread.finished.connect(self.thread.deleteLater)
         # self.worker.progress.connect(self.reportProgress)
 
-# make transition functions internal only (_function)
-# Manage procedure
-# Confluence writeup
-# Implement freeze   
-
+# Implement correct setup order after merging
 # Populate info panel
+# Implement survey and metadata feed 
 
-# Automatically define on enter function
-# Change all dicts to callables
-
-# Add camera on/off handler
+# QUESTIONS
+# DO I NEED PYQT SIGNAL
+# How to cleanly freeze and unfreeze
 
 class ScopeOpState(State):
 
@@ -92,6 +90,7 @@ class ScopeOpState(State):
         
 class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
+    freeze_liveview = pyqtSignal(bool)
 
     state_cls = ScopeOpState
 
@@ -229,10 +228,10 @@ class Oracle(Machine):
 
         # Configure state machine
         states = [
-            {'name' : 'standby', 'on_enter' : ['reset']},
-            {'name' : 'precheck', 'on_enter' : ['start_precheck']},
-            {'name' : 'form', 'on_enter' : ['open_form'], 'on_exit' : ['close_form']},
-            {'name' : 'liveview', 'on_enter' : ['open_liveview', 'start_liveview'], 'on_exit' : ['close_liveview']},
+            {'name' : 'standby', 'on_enter' : [self._reset]},
+            {'name' : 'precheck', 'on_enter' : [self._start_precheck]},
+            {'name' : 'form', 'on_enter' : [self.form_window.show], 'on_exit' : [self.form_window.close]},
+            {'name' : 'liveview', 'on_enter' : [self.liveview_window.show, self._start_liveview], 'on_exit' : [self.liveview_window.close]},
             # {'name' : 'survey', 'on_enter' : ['open_survey']},
             ]
 
@@ -250,21 +249,16 @@ class Oracle(Machine):
         # Connect signals and slots
         self.acquisition.new_img.connect(self.liveview_window.update_img)
         self.scopeop.precheck_done.connect(self.next_state)
+        self.scopeop.freeze_liveview.connect(self.freeze_liveview)
 
         # Trigger first transition
         self.next_state()
 
-    def start_precheck(self, *args):
-        self.scopeop.precheck()
-        self.acquisition.get_mscope(self.scopeop.mscope)
-
-    def start_liveview(self, *args):
-        self.scopeop_thread.start()
-        self.acquisition_thread.start()
-        self.scopeop.start_setup()
-
-    def open_form(self, *args):
-        self.form_window.show()
+    def freeze_liveview(self, freeze):
+        if freeze:
+            self.acquisition.new_img.disconnect(self.liveview_window.update_img)
+        else:            
+            self.acquisition.new_img.connect(self.liveview_window.update_img)
 
     def save_form(self, *args):
         try:
@@ -281,29 +275,6 @@ class Oracle(Machine):
                 )
 
         self.next_state()
-
-    def close_form(self, *args):
-        self.form_window.close()
-
-    def open_liveview(self, *args):
-        self.liveview_window.show()
-
-    def close_liveview(self, *args):
-        self.liveview_window.close()
-        # TBD pull up survey here
-
-    def open_survey(self, *args):
-        pass
-
-    def reset(self, *args):
-        # delete current scope?
-        pass
-
-    def freeze_liveview_handler(self, freeze):
-        if freeze:
-            self.acquisition.new_img.disconnect(self.liveview_window.update_img)
-        else:            
-            self.acquisition.new_img.connect(self.liveview_window.update_img)
 
     def _display_message(self, icon, title, text, cancel=False, exit_after=False):
         msgBox = QMessageBox()
@@ -323,6 +294,19 @@ class Oracle(Machine):
             self.exit()
 
         return msgBox.exec()
+
+    def _reset(self, *args):
+        # delete current scope?
+        pass
+
+    def _start_precheck(self, *args):
+        self.scopeop.precheck()
+        self.acquisition.get_mscope(self.scopeop.mscope)
+
+    def _start_liveview(self, *args):
+        self.scopeop_thread.start()
+        self.acquisition_thread.start()
+        self.scopeop.start_setup()
 
     def exit(self):
         print("Exiting program")
@@ -409,11 +393,15 @@ class LiveviewGUI(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(LiveviewGUI, self).__init__(*args, **kwargs)
         self._load_ui()
+        self.fps_scale = 2
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img):
+        # if self.fps % self.fps_scale == 0:
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
-        # TODO add FPS handling
+
+    def set_fps_scale(self, fps_scale):
+        self.fps_scale = fps_scale
         
     def _load_ui(self):
         self.setWindowTitle('Malaria scope')
