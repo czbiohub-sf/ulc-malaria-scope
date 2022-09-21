@@ -1,34 +1,27 @@
 import sys
-import csv
-from tkinter import N
 import traceback
+from xml.sax.handler import property_declaration_handler
 import numpy as np
-import enum
 
-from transitions import Machine
-
+from transitions import Machine, State
 from typing import Dict
 from time import perf_counter, sleep
-from os import listdir, mkdir, path
-from datetime import datetime, timedelta
-from PyQt5 import uic        # TODO DELETE THIS
-# TODO organize these imports
+from qimage2ndarray import gray2qimage
+
 from PyQt5.QtWidgets import (
+    QApplication, QMainWindow,
     QDialog, QMessageBox,
-    QMainWindow, QApplication, QGridLayout,
-    QTabWidget, QWidget, QLabel, QPushButton,
-    QVBoxLayout, QHBoxLayout, QSizePolicy,
-    QLineEdit, QComboBox,
+    QGridLayout, QVBoxLayout, QHBoxLayout,
+    QSizePolicy,
+    QWidget, QTabWidget,   
+    QLabel, QPushButton, QLineEdit, QComboBox,
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot, QObject
+from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap, QIcon
-from cv2 import imwrite
-from qimage2ndarray import array2qimage, gray2qimage
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
-from time import perf_counter
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
@@ -39,25 +32,13 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 
 # TODOs
 ## CLEAN UP NOTE??
-## Use transitions for re-runs
 ## Clean up unnecessary imports
 ## Replace all exit() with end() and go back to pre-experiment dialog
-### Implement survey?
-### Weird FPS
+## Implement survey and metadata feed 
+## Validate experiment form inputs
 
-# use decorator to clean up repetitive start stop connect functions
-# change oracle to also use ordered transitions
-# add flow control
-# try dealing with coroutines
-# deal with thread start/end
 # deal with camera shutoff
 # define types for arg inputs and Nonetype variables
-# make transition functions internal only (_function)
-
-# give yield types
-# if simulation mode skip coroutines?
-# Implement metadata feed in
-
 # thread termination?
         # self.thread.started.connect(self.worker.run)
         # self.worker.finished.connect(self.thread.quit)
@@ -65,50 +46,97 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
         # self.thread.finished.connect(self.thread.deleteLater)
         # self.worker.progress.connect(self.reportProgress)
 
+# make transition functions internal only (_function)
+# Manage procedure
+# Confluence writeup
+# Implement freeze   
+
+# Populate info panel
+
+# Automatically define on enter function
+# Change all dicts to callables
+
+# Add camera on/off handler
+
+class ScopeOpState(State):
+
+    def __init__(self, name, on_enter=None, on_exit=None, 
+                ignore_invalid_triggers=None, 
+                autoconnect=False, signal=None, slot=None):
+
+        # Autoconnect connects signals/slots after "on_enter" functions, and disconnects before "on_exit" functions
+        if autoconnect:
+            if signal == None or slot == None:
+                raise ValueError('Autoconnect is enabled for state "{}" but signal and/or slot specification is missing.'.format(name))
+
+            if on_enter == None:
+                on_enter = self._connect
+            else:
+                on_enter.append(self._connect)
+        
+            if on_exit == None:
+                on_exit = self._disconnect
+            else:
+                on_exit.insert(0, self._disconnect)
+
+        self.signal = signal
+        self.slot = slot
+
+        super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
+
+    def _connect(self):
+        self.signal.connect(self.slot)
+
+    def _disconnect(self):
+        self.signal.disconnect(self.slot)
+        
 class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
-    setup_done = pyqtSignal()
+
+    state_cls = ScopeOpState
 
     def __init__(self, img_signal):
-        print(super())
         super().__init__()
         self.mscope = MalariaScope()
-
-        self.coroutine = None
         self.img_signal = img_signal
+
         self.final_brightness = None
         self.final_fbounds = None
 
-        state_attributes = [
+        states = [
             {'name' : 'standby'},
-            {'name' : 'autobrightness', 'on_enter' : ['_start_autobrightness'], 'on_exit' : ['_stop_autobrightness'], 'slot' : 'run_autobrightness'},
-            {'name' : 'fbounds', 'on_enter' : ['_start_fbounds'], 'on_exit' : ['_stop_fbounds'], 'slot' : 'run_fbounds'},
-            {'name' : 'autofocus', 'on_enter' : ['_start_autofocus'], 'on_exit' : ['_stop_autofocus'], 'slot' : 'run_autofocus'},
-            {'name' : 'experiment', 'on_enter': ['_start_experiment'], 'on_exit' : ['_stop_experiment'], 'slot' : 'run_experiment'},
+            {'name' : 'autobrightness', 
+                'on_enter' : [self._start_autobrightness],
+                'autoconnect' : True, 
+                'signal' : self.img_signal, 
+                'slot' : self.run_autobrightness,
+                },
+            {'name' : 'fbounds', 
+                'on_enter' : [self._start_fbounds],
+                'autoconnect' : True, 
+                'signal' : self.img_signal, 
+                'slot' : self.run_fbounds,
+                },
+            {'name' : 'experiment', 
+                'autoconnect' : True, 
+                'signal' : self.img_signal, 
+                'slot' : self.run_experiment,
+                },
             ]
 
-        # state_functions = [{key : state[key] for key in state if key in input_keys} for state in state_attributes if 'slot' in ]
-
-        input_keys = ['name', 'on_enter', 'on_exit']
-        input_states = [{key : state[key] for key in state if key in input_keys} for state in state_attributes]
-
-        Machine.__init__(self, states=input_states, queued=True, initial='standby')
-
-        # self.add_transition(trigger='standby2autobrightness', source='standby', dest='autobrightness')
-        # self.add_transition(trigger='autobrightness2fbounds', source='autobrightness', dest='fbounds')
-        # self.add_transition(trigger='fbounds2autofocus', source='fbounds', dest='autofocus')
-        # self.add_transition(trigger='autofocus2experiment', source='autofocus', dest='experiment')
+        Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
         self.add_transition(trigger='end', source='*', dest='standby')
 
     def precheck(self):
         component_status = self.mscope.get_component_status()
         print(component_status)
+
         # TEMP for testing
         if True:
         # if all([status==True for status in component_status.values()]):
             self.precheck_done.emit()
-            print("passed precheck")
+            print("Passed precheck")
         else: 
             failed_components = [comp.name for comp in component_status if component_status.get(comp)==False]
             _ = self._display_message(
@@ -123,112 +151,39 @@ class ScopeOp(QObject, Machine):
     def start_setup(self):
         self.next_state()
 
-# ################## TODO FIGURE THIS OUT
-#     def connect(self, func):
-#         self.coroutine = func
-#         self.coroutine.send(None)
-#         # replace with reference to appropriate function to connect based on state dictionary
-#         self.new_img.connect(self.run_autobrightness)
-
-#     def disconnect(self):
-#         self.new_img.disconnect(self.run_autobrightness)
-
-#     @connect
-#     def _start_autobrightness(self):
-#         return autobrightnessCoroutine(self.mscope)
-
-#     @disconnect
-#     def _stop_autobrightness(self):
-#         pass
-# ################## TODO FIGURE THIS OUT
-
-# replace all stop methods with disconnect function
-
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessCoroutine(self.mscope)
-        # print(self.autobrightness_routine)
         self.autobrightness_routine.send(None)
-        self.img_signal.connect(self.run_autobrightness)
-
-    def _stop_autobrightness(self):
-        self.img_signal.disconnect(self.run_autobrightness)
 
     def _start_fbounds(self):
         self.fbounds_routine = getFocusBoundsCoroutine(self.mscope)
         self.fbounds_routine.send(None)
-        self.img_signal.connect(self.run_fbounds)
 
-    def _stop_fbounds(self):
-        self.img_signal.disconnect(self.run_fbounds)  
-
-    def _start_autofocus(self):
-        self.autofocus_routine = autofocusCoroutine(self.mscope, self.final_fbounds)
-        self.autofocus_routine.send(None)
-        self.img_signal.connect(self.run_autofocus)
-
-    def _stop_autofocus(self):
-        self.img_signal.disconnect(self.run_autofocus)      
-
-    def _start_experiment(self):
-        self.img_signal.connect(self.run_experiment)
-
-    def _stop_experiment(self):
-        print("Done experiment now")       
-
-    # def block_queue(func):
-    #       def inner(self, img):
-    #         self.img_signal.disconnect(self.run_autobrightness)
-    #         func(self, img)
-    #         self.img_signal.connect(self.run_autobrightness)
-    #     return inner
-
-    # @pyqtSlot(np.ndarray)
-    # @block_queue
-    # def run_autobrightness(self, img):
-
-    #     if img[0] == 1:
-    #         sleep(5)
-    #     print(img)
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
-        print("Autobrightness")
-
-        # try:
-        #     self.autobrightness_routine.send(img)
-        # except StopIteration as e:
-        #     self.final_brightness = e.value
-        #     print(e)
-        #     self.next_state()
+        try:
+            self.autobrightness_routine.send(img)
+        except StopIteration as e:
+            self.final_brightness = e.value
+            print(self.final_brightness)
+            self.next_state()
 
     @pyqtSlot(np.ndarray)
     def run_fbounds(self, img):
-        # pass
-        # sleep(1)
         try:
             self.fbounds_routine.send(img)
         except StopIteration as e:
             self.final_fbounds = e.value
-            print(e)
+            print(self.final_fbounds)
             self.next_state()
-
-    @pyqtSlot(np.ndarray)
-    def run_autofocus(self, img):
-        try:
-            self.autofocus_routine.send(img)
-        except StopIteration as e:
-            self.next_state()
-            self.setup_done.emit()
 
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
-        print("running experiment")
+        print("Running experiment")
 
 
 class Acquisition(QObject):
     new_img = pyqtSignal(np.ndarray)
-    # new_img = pyqtSignal(QImage)
-
-    # new_img = pyqtSignal(QImage)
 
     def __init__(self):
         super().__init__()
@@ -240,41 +195,25 @@ class Acquisition(QObject):
     def run(self):
         # # TODO is there a better way to use this
         # while True:
-        #     # TODO discuss if activated flag can live in Basler camera class
-        #     # if self.camera.activated:
-        #     if True:
         try:
-            # for val in range(0, 10):
-            #     t3 = perf_counter()
-            #     self.new_img.emit(np.array([val, val]))
-            #     t4 = perf_counter()
-            #     print(t4-t3)
             for image in self.mscope.camera.yieldImages():
-                t3 = perf_counter()
-                # print(np.shape(image))
-                # qimage = gray2qimage(image)
                 self.new_img.emit(image) 
-                t4 = perf_counter()
-                print(t4-t3)
-                # # qimage = gray2qimage(image)
-                # # self.new_img.emit(qimage) 
-                # self.new_img.emit(image)
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
             # Once that happens, this can be swapped to catch the PyCameraException
             print(e)
             print(traceback.format_exc())
-            # else:
-            #     break
+
+    @pyqtSlot(np.ndarray)
+    def update_img(self, img):
+        self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
+        # TODO add FPS handling
             
 class Oracle(Machine):
 
     def __init__(self, *args, **kwargs):
-
-        # Instantiate experiment form window
+        # Instantiate windows
         self.form_window = FormGUI()
-
-        # Instantiate liveview window
         self.liveview_window = LiveviewGUI()
 
         # Instantiate camera acquisition and thread
@@ -296,15 +235,8 @@ class Oracle(Machine):
             {'name' : 'liveview', 'on_enter' : ['open_liveview', 'start_liveview'], 'on_exit' : ['close_liveview']},
             # {'name' : 'survey', 'on_enter' : ['open_survey']},
             ]
-        Machine.__init__(self, states=states, queued=True, initial='standby')
 
-        # # TODO use conditions for re-running with experiment form (skip setup and precheck?)
-        # # self.add_transition(trigger='form2run', source='form', dest='run', before='open_liveview')
-        # self.add_transition(trigger='standby2precheck', source='standby', dest='precheck')
-        # self.add_transition(trigger='precheck2form', source='precheck', dest='form')
-        # self.add_transition(trigger='form2setup', source='form', dest='setup')
-        # self.add_transition(trigger='setup2run', source='setup', dest='run')
-        # self.add_transition(trigger='liveview2standby', source=['setup', 'run'], dest='standby', before='close_liveview')
+        Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
         self.add_transition(trigger='end', source='*', dest='standby')
 
@@ -317,9 +249,7 @@ class Oracle(Machine):
 
         # Connect signals and slots
         self.acquisition.new_img.connect(self.liveview_window.update_img)
-
         self.scopeop.precheck_done.connect(self.next_state)
-        self.scopeop.setup_done.connect(self.next_state)
 
         # Trigger first transition
         self.next_state()
@@ -333,17 +263,12 @@ class Oracle(Machine):
         self.acquisition_thread.start()
         self.scopeop.start_setup()
 
-
     def open_form(self, *args):
         self.form_window.show()
 
     def save_form(self, *args):
-
-        # TEMP delete this print
-        print(self.form_window.get_form_input())
         try:
             # TBD implement actual save here
-            # TODO build input validation into get_form_input()
             # self.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
             pass
         # TODO target correct exception here
@@ -374,6 +299,12 @@ class Oracle(Machine):
         # delete current scope?
         pass
 
+    def freeze_liveview_handler(self, freeze):
+        if freeze:
+            self.acquisition.new_img.disconnect(self.liveview_window.update_img)
+        else:            
+            self.acquisition.new_img.connect(self.liveview_window.update_img)
+
     def _display_message(self, icon, title, text, cancel=False, exit_after=False):
         msgBox = QMessageBox()
         msgBox.setWindowIcon(QIcon(_ICON_PATH))
@@ -400,7 +331,6 @@ class Oracle(Machine):
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
     def __init__(self, *args, **kwargs):
-        
         super(FormGUI, self).__init__(*args, **kwargs)
         self._load_ui()
 
@@ -462,11 +392,6 @@ class FormGUI(QDialog):
 
         # Set the focus order
         self.operator_id.setFocus()
-        # self.setTabOrder(self.operator_id, self.participant_id)
-        # self.setTabOrder(self.participant_id, self.flowcell_id)
-        # self.setTabOrder(self.flowcell_id, self.protocol)
-        # self.setTabOrder(self.protocol, self.site)
-        # self.setTabOrder(self.site, self.notes)
         self.setTabOrder(self.notes, self.start_btn)
 
     def get_form_input(self) -> Dict:
@@ -486,13 +411,8 @@ class LiveviewGUI(QMainWindow):
         self._load_ui()
 
     @pyqtSlot(np.ndarray)
-    # @pyqtSlot(QImage)
     def update_img(self, img):
-        # self.status_lbl.setText("OK: {}".format(img))
-        t1 = perf_counter()
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
-        t2 = perf_counter()
-        print(t2-t1)
         # TODO add FPS handling
         
     def _load_ui(self):
@@ -525,11 +445,6 @@ class LiveviewGUI(QMainWindow):
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.status_lbl.setAlignment(Qt.AlignHCenter)
         self.timer_lbl.setAlignment(Qt.AlignHCenter)
-
-        # TODO
-        # resize camera feed as necessary
-        # set minimum column width as necessary
-        # fix initial pixmap size absed on camera feed
 
         self.liveview_layout.addWidget(self.liveview_img)
         self.liveview_layout.addWidget(self.margin_widget)
@@ -579,4 +494,3 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     oracle = Oracle()
     sys.exit(app.exec_())
-

@@ -37,11 +37,9 @@ def hardware(cls):
 
             if SIMULATION:
                 mod = import_module(PKG_PATH + 'sim.' + mod_name)
-                # from ulc_mm_package.hardware.sim.camera import BaslerCamera
             else:
                 mod = import_module(PKG_PATH + 'real.' + mod_name)
-                # from ulc_mm_package.hardware.real.camera import BaslerCamera
-            # return BaslerCamera()
+
             obj = getattr(mod, obj_name)
             return obj(*args, **kwargs)
             
