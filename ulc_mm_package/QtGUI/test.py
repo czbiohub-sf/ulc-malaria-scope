@@ -31,6 +31,7 @@ _FORM_PATH = "user_form.ui"
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 
 # TODOs
+# TH sensor needs to be simulated too
 ## CLEAN UP NOTE??
 ## Clean up imports
 
@@ -52,6 +53,7 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 # FPS handling < and ^ may be better handled by timer? 
 
 # Implement correct setup order after merging
+# Build in a way to end run from scopeop
 # Populate info panel
 # Implement survey and metadata feed 
 # Implement exception handling for camera
@@ -99,8 +101,9 @@ class ScopeOp(QObject, Machine):
         self.mscope = MalariaScope()
         self.img_signal = img_signal
 
-        self.final_brightness = None
-        self.final_fbounds = None
+        self.autobrightness_result = None
+        self.cellfinder_result = None
+        self.autoflow_result = None
 
         states = [
             {'name' : 'standby'},
@@ -110,11 +113,23 @@ class ScopeOp(QObject, Machine):
                 'signal' : self.img_signal, 
                 'slot' : self.run_autobrightness,
                 },
-            {'name' : 'fbounds', 
-                'on_enter' : [self._start_fbounds],
+            {'name' : 'cellfinder', 
+                'on_enter' : [self._start_cellfinder],
                 'autoconnect' : True, 
                 'signal' : self.img_signal, 
-                'slot' : self.run_fbounds,
+                'slot' : self.run_cellfinder,
+                },
+            {'name' : 'SSAF', 
+                'on_enter' : [self._start_SSAF],
+                'autoconnect' : True, 
+                'signal' : self.img_signal, 
+                'slot' : self.run_SSAF,
+                },
+            {'name' : 'autoflow', 
+                'on_enter' : [self._start_autoflow],
+                'autoconnect' : True, 
+                'signal' : self.img_signal, 
+                'slot' : self.run_autoflow,
                 },
             {'name' : 'experiment', 
                 'autoconnect' : True, 
@@ -152,33 +167,77 @@ class ScopeOp(QObject, Machine):
         self.next_state()
 
     def _start_autobrightness(self):
-        self.autobrightness_routine = autobrightnessCoroutine(self.mscope)
+        self.freeze_liveview.emit(False)
+
+        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
+    def _start_cellfinder(self):
+        self.freeze_liveview.emit(True)
+        
+        self.cellfinder_routine = find_cells_routine(self.mscope)
+        self.cellfinder_routine.send(None)
+
+
+    def _start_SSAF(self):
         self.freeze_liveview.emit(False)
 
-    def _start_fbounds(self):
-        self.fbounds_routine = getFocusBoundsCoroutine(self.mscope)
-        self.fbounds_routine.send(None)
+        print(f"Moving motor to {self.cellfinder_result}")
+        self.mscope.motor.move_abs(self.cellfinder_result)
 
+        self.SSAF_routine = singleShotAutofocusRoutine(self.mscope, None)
+        self.SSAF_routine.send(None)
+
+    def _start_autoflow(self):
         self.freeze_liveview.emit(False)
+
+        self.autoflow_routine = fastFlowRoutine(self.mscope, None)
+        self.autoflow_routine.send(None)
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
         try:
             self.autobrightness_routine.send(img)
         except StopIteration as e:
-            self.final_brightness = e.value
-            print(self.final_brightness)
+            self.autobrightness_result = e.value
+            print(f"Mean pixel val: {self.autobrightness_result}")
+
             self.next_state()
 
     @pyqtSlot(np.ndarray)
-    def run_fbounds(self, img):
+    def run_cellfinder(self, img):
         try:
-            self.fbounds_routine.send(img)
+            self.cellfinder_routine.send(img)
         except StopIteration as e:
-            self.final_fbounds = e.value
-            print(self.final_fbounds)
+            self.cellfinder_result = e.value
+
+            if isinstance(self.cellfinder_result, bool):
+                print("Unable to find cells")
+            elif isinstance(self.cellfinder_result, int):
+                print(f"Cells found @ motor pos: {self.cellfinder_result}")
+
+            self.next_state()
+
+    @pyqtSlot(np.ndarray)
+    def run_SSAF(self, img):
+        try:
+            self.SSAF_routine.send(img)
+        except StopIteration as e:
+            print(f"SSAF complete, motor moved by: {e.value} steps")
+
+            self.next_state()
+
+    @pyqtSlot(np.ndarray)
+    def run_autoflow(self, img):
+        try:
+            self.autoflow_routine.send(img)
+        except StopIteration as e:
+            self.autoflow_result = e.value
+            if isinstance(self.autoflow_result, bool):
+                print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
+            elif isinstance(self.autoflow_result, float):
+                print(f"Flowrate: {self.autoflow_result}")
+                
             self.next_state()
 
     @pyqtSlot(np.ndarray)
