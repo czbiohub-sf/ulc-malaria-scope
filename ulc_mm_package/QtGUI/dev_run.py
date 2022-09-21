@@ -1,4 +1,4 @@
-from gui_constants import *
+from ulc_mm_package.QtGUI.gui_constants import *
 
 from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC
 from ulc_mm_package.hardware.hardware_modules import *
@@ -105,7 +105,7 @@ class AcquisitionThread(QThread):
 
         # Single-shot autofocus
         try:
-            self.autofocus_model = AutoFocus(AUTOFOCUS_MODEL_DIR)
+            self.autofocus_model = AutoFocus()
         except RuntimeError as e:
             raise RuntimeError(f'got {str(e)}:\n {subprocess.getoutput("lsusb | grep Myriad")}')
         self.active_autofocus = False

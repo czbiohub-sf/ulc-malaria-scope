@@ -128,7 +128,7 @@ class ScopeOp(QObject, Machine):
         self.add_transition(trigger='end', source='*', dest='standby')
 
     def precheck(self):
-        component_status = self.mscope.get_component_status()
+        component_status = self.mscope.getComponentStatus()
         print(component_status)
 
         # TEMP for testing

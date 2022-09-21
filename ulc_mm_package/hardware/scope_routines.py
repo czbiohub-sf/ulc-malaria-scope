@@ -1,4 +1,5 @@
-from time import perf_counter
+from time import perf_counter, sleep
+from typing import Union
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
@@ -7,29 +8,7 @@ from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerEr
 import ulc_mm_package.neural_nets.ssaf_constants as ssaf_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
-def getFocusBoundsCoroutine(mscope: MalariaScope, img: np.ndarray=None):
-    # Move stage to the bottom
-    mscope.motor.move_abs(0)
-
-    hist_standard_deviations = []
-    steps_per_image = 30
-
-    # Get image, move motor, get standard deviation of the histogram
-    while mscope.motor.pos < mscope.motor.max_pos:
-        img = yield img
-        hist_standard_deviations.append(np.std(np.histogram(img)[0]))
-        mscope.motor.move_rel(steps=steps_per_image, dir=Direction.CW)
-    
-    # Calculate lower and upper bound
-    search_window_steps = 30
-    x_max = np.argmax(hist_standard_deviations)*steps_per_image
-    lower, upper = x_max - search_window_steps, x_max+search_window_steps
-    lower = lower if lower >= 0 else 0
-    upper = upper if upper < mscope.motor.max_pos else mscope.motor.max_pos
-
-    return lower, upper
-
-def focusCoroutine(mscope: MalariaScope, lower_bound: int, upper_bound: int, img: np.ndarray=None):
+def focusRoutine(mscope: MalariaScope, lower_bound: int, upper_bound: int, img: np.ndarray=None):
     mscope.motor.move_abs(lower_bound)
     focus_metrics = []
     while mscope.motor.pos < upper_bound:
@@ -40,8 +19,8 @@ def focusCoroutine(mscope: MalariaScope, lower_bound: int, upper_bound: int, img
     best_focus_pos = lower_bound + np.argmax(focus_metrics)
     mscope.motor.move_abs(best_focus_pos)
 
-def singleShotAutofocusCoroutine(mscope: MalariaScope, img: np.ndarray):
-    """Single shot autofocus coroutine.
+def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
+    """Single shot autofocus routine.
 
     Use the neural compute stick and the single shot autofocus network
     to determine the number of steps to take to move back into focus.
@@ -49,53 +28,79 @@ def singleShotAutofocusCoroutine(mscope: MalariaScope, img: np.ndarray):
     This function batches and averages several inferences before making an adjustment. The number
     of images to look at before adjusting the motor is determined by the `AF_BATCH_SIZE` constant in
     `neural_nets/ssaf_constants.py`.
+
+    This function runs until one motor adjustment is completed, then returns.
+
+    Returns
+    -------
+    int: steps_from_focus
+        The number of steps that the motor was moved.
     """
 
     ssaf_steps_from_focus = []
 
-    while True:
+    while len(ssaf_steps_from_focus) != ssaf_constants.AF_BATCH_SIZE:
         img = yield img
         ssaf_steps_from_focus.append(-int(mscope.autofocus_model(img)[0][0][0]))
 
-        # Once batch is full, get mean and move motor
-        if len(ssaf_steps_from_focus) == ssaf_constants.AF_BATCH_SIZE:
-            steps_from_focus = np.mean(ssaf_steps_from_focus)
-            ssaf_steps_from_focus = []
+    # Once batch is full, get mean and move motor
+    steps_from_focus = np.mean(ssaf_steps_from_focus)
 
-            try:
-                dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-                mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
-            except MotorControllerError as e:
-                # TODO - change to logging
-                print(f"Error moving motor after receiving steps from the SSAF model: {e}")
+    try:
+        dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
+        mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
+    except MotorControllerError as e:
+        # TODO - change to logging
+        print(f"Error moving motor after receiving steps from the SSAF model: {e}")
+
+    return steps_from_focus
+
+def continuousSSAFRoutine(mscope: MalariaScope, img: np.ndarray):
+    """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes adjustments.
+    
+    `singleShotAutofocusRoutine` runs a single time before returning. This function is a simple
+    continuous wrapper so continuously receive and send images to the autofocus model.
+    """
+
+    ssaf = singleShotAutofocusRoutine(mscope, None)
+    ssaf.send(None)
+
+    while True:
+        img = yield img
+        try:
+            ssaf.send(img)
+        except StopIteration as e:
+            steps_taken = e.value
+            ssaf = singleShotAutofocusRoutine(mscope, None)
+            ssaf.send(None)
 
 def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
-    """A periodic wrapper around the single shot autofocus coroutine.
+    """A periodic wrapper around the `continuousSSAFRoutine`.
 
-    This function adds a simple time wrapper around singleShotAutofocusCoroutine
+    This function adds a simple time wrapper around `continuousSSAFRoutine`
     such that inferences and motor adjustments are done every `AF_PERIOD_S`seconds
     (located under `neuraL_nets/ssaf_constants.py`).
 
-    In other words, instead of every image
-    being inferenced and an adjustment being done once AF_BATCH_SIZE images have been analyzed,
-    inferences and adjustments are done only if AF_PERIOD_S has elapsed since the last adjustment.
+    In other words, instead of every image being inferenced and an adjustment being done once
+    AF_BATCH_SIZE images have been analyzed, inferences and adjustments are done only if AF_PERIOD_S
+    has elapsed since the last adjustment.
     """
 
     prev_adjustment_time = perf_counter()
     counter = 0
-    ssaf_coroutine = singleShotAutofocusCoroutine(mscope, None)
-    ssaf_coroutine.send(None)
+    ssaf_routine = continuousSSAFRoutine(mscope, None)
+    ssaf_routine.send(None)
 
     while True:
         img = yield img
         if perf_counter() - prev_adjustment_time > ssaf_constants.AF_PERIOD_S:
-            ssaf_coroutine.send(img)
+            ssaf_routine.send(img)
             counter += 1
             if counter >= ssaf_constants.AF_BATCH_SIZE:
                 counter = 0
                 prev_adjustment_time = perf_counter()
 
-def flowControlCoroutine(mscope: MalariaScope, target_flowrate: float, img: np.ndarray):
+def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.ndarray):
     """Keep the flowrate steady by continuously calculating the flowrate and periodically
     adjusting the syringe position. Need to initially pass in the flowrate to maintain.
 
@@ -115,17 +120,17 @@ def flowControlCoroutine(mscope: MalariaScope, target_flowrate: float, img: np.n
         img = yield img
         flow_controller.controlFlow(img)
 
-def fastFlowCoroutine(mscope: MalariaScope, img: np.ndarray) -> float:
+def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> Union[bool, float]:
     """Faster flowrate feedback for initial flow ramp-up.
 
     See FlowController.fastFlowAdjustment for specifics.
 
     Usage
     -----
-    - Use this coroutine to do the initial ramp up. Once it hits the target,
+    - Use this routine to do the initial ramp up. Once it hits the target,
     it raises a StopIteration exception and a float number (flowrate)
 
-        fastflow_generator = fastFlowCoroutine(mscope, None)
+        fastflow_generator = fastFlowRoutine(mscope, None)
         fastflow_generator.send(None) # need to start generator with a None value
         for img in cam.yieldImages():
             try:
@@ -135,33 +140,37 @@ def fastFlowCoroutine(mscope: MalariaScope, img: np.ndarray) -> float:
         cam.stopAcquisition()
         print(flow_val)
 
-    Then this flow_val can be passed into `flowControlCoroutine` on initialization to set
+    Then this flow_val can be passed into `flowControlRoutine` on initialization to set
     the flowrate that should be held steady: i.e:
 
-        flow_control = flowControlCoroutine(mscope, flow_val, None)
+        flow_control = flowControlRoutine(mscope, flow_val, None)
         ...
         ...etc
     """
 
+    img = yield img
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(processing_constants.TARGET_FLOWRATE)
 
     while True:
         img = yield img
-        flow_val = flow_controller.fastFlowAdjustment(img)
+        try:
+            flow_val = flow_controller.fastFlowAdjustment(img)
+        except PressureLeak:
+            return False
 
         # flow_val is False if target not yet achieved, float otherwise
         if isinstance(flow_val, float):
             # Stops the iterator, returns the flow rate value that was achieved
             return flow_val
 
-def autobrightnessCoroutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
+def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
     """Autobrightness routine to set led power.
 
     Usage
     -----
-        ab_generator = autobrightnessCoroutine(mscope, None)
+        ab_generator = autobrightnessRoutine(mscope, None)
         ab_generator.send(None) # need to start the generator with a None value
 
         for img in cam.yieldImages():
@@ -186,3 +195,78 @@ def autobrightnessCoroutine(mscope: MalariaScope, img: np.ndarray=None) -> float
             brightness_achieved = True
     # Get the mean image brightness to store in the experiment metadata
     return autobrightness.prev_mean_img_brightness
+
+def find_cells_routine(mscope: MalariaScope, pull_time: int=5, steps_per_image: int=10, img: np.ndarray=None) -> Union[bool, int]:
+    """Routine to pull pressure, sweep the motor, and assess whether cells are present.
+
+    This routine does the following:
+    1. Takes an initial image to check whether for cells (in the case when the blood already flows w/o pressure, and the cells are already in/near focus)
+    2. If no cells are found above:
+        2a. Pull the syringe maximally for `pull_time` seconds (default: 5s), then reset syringe back to its default (min pressure) position.
+        2b. Sweep the motor from bottom to top, taking `steps_per_image (default: 10) per image. Perform a 2D cross-correlation w/ an RBC thumbnail for each image.
+        2c. Taking the maximum cross-correlation value from the sweep, check whether it exceeds a threshold (indicative of if cells are present).
+        2d. If cells found, return the motor position (integer: 0 - max motor pos).
+
+    3. Repeat steps 2a-2c. `max_attempts` times (default: 3). If the attempts are exhausted, the function returns False.
+
+    In the case when cells are found, the returned motor position should be used to see a local Z-stack (i.e start motor at the returned position and 
+    sweep +/- N steps w/ a focus or use the single-shot autofocus model). 
+
+    In the case when no cells are found after the maximum number of attempts, the user should be informed and the run aborted.
+
+    Parameters
+    ----------
+    mscope: MalariaScope
+    pull_time: int
+        Sets how long the syringe should be pulled for (at its max position) before assessing
+        whether cells are present
+    img: np.ndarray
+
+    Returns
+    -------
+    bool: False -> Returned if after max_attempts no cells are found
+    int: Value between 0 and motor.max_pos -> Position where cells were found with the highest confidence. This position should be used to seed a local z-stack.
+    """
+
+    max_attempts = 3 # Maximum number of times to run check for cells routine before aborting
+    cell_finder = CellFinder()
+    cross_corr_vals = []
+    img = yield img
+    
+    # Initial check for cells, return current motor position if cells found
+    cells_present = cell_finder.checkForCells(cell_finder.getMaxCrossCorrelationVal(img))
+    if cells_present:
+        return mscope.motor.pos
+
+    # While cells not present, pull syringe and look for cells
+    while not cells_present:
+        """
+        1. Pull syringe for 5 seconds
+        2. Sweep the motor through the full range of motion and take in images at each step
+        3. Assess whether cells are present
+        """
+        if max_attempts == 0:
+            return False
+
+        # Pull the syringe maximally for `pull_time` seconds
+        start = perf_counter()
+        mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
+        while perf_counter() - start < pull_time:
+            img = yield img
+        mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
+
+        # Perform a full focal stack and assess for cells at each step
+        for pos in range(0, mscope.motor.max_pos, steps_per_image):
+            ### TODO: Potentially moving to 0 can cause the limit switch to get stuck? Add padding to the bottom after homing the motor?
+            mscope.motor.move_abs(pos)
+            img = yield img
+            cross_corr_vals.append(cell_finder.getMaxCrossCorrelationVal(img))
+
+        max_corr = np.max(cross_corr_vals)
+        cells_present = cell_finder.checkForCells(max_corr)
+        if cells_present:
+            # Return the motor position where cells were found w/ the highest confidence
+            motor_pos = int(np.argmax(cross_corr_vals)*steps_per_image)
+            return motor_pos
+        
+        max_attempts -=1

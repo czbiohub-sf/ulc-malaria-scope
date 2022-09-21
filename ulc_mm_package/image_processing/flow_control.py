@@ -103,7 +103,7 @@ class FlowController:
             Image to be passed into the FlowRateEstimator
         """
 
-        self._addImage(img, perf_counter())
+        self.fre.addImageAndCalculatePair(img, perf_counter())
         if self.fre.isFull():
             _, dy, _, _ = self.fre.getStatsAndReset()
             self.curr_flowrate = dy

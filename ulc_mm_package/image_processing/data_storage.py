@@ -1,4 +1,4 @@
-from os import mkdir, path
+from os import mkdir, path, listdir
 from datetime import datetime
 import csv
 from typing import Dict, List
@@ -11,6 +11,8 @@ from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_META
 
 class DataStorageError(Exception):
     pass
+
+DEFAULT_SSD = "/media/pi/"
 
 class DataStorage:
     def __init__(self):
@@ -29,7 +31,7 @@ class DataStorage:
         except FileNotFoundError as e:
             raise DataStorageError(f"DataStorageError - Unable to make top-level directory: {e}")
 
-    def createNewExperiment(self, custom_experiment_name: str, experiment_initialization_metdata: Dict=EXPERIMENT_METADATA_KEYS, per_image_metadata: Dict=PER_IMAGE_METADATA_KEYS):
+    def createNewExperiment(self, custom_experiment_name: str, experiment_initialization_metdata: Dict, per_image_metadata: Dict):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
 
         Parameters
@@ -47,7 +49,9 @@ class DataStorage:
         """
 
         if self.main_dir == None:
-            self.createTopLevelFolder()
+            media_dir = DEFAULT_SSD
+            external_dir = media_dir + listdir(media_dir)[0] + "/"
+            self.createTopLevelFolder(external_dir)
 
         # Create per-image metadata file
         time_str = datetime.now().strftime("%Y-%m-%d-%H%M%S")

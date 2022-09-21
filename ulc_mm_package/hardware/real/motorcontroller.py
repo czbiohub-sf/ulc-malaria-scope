@@ -122,7 +122,7 @@ class DRV8825Nema():
         self.dist_per_step_um = self.step_degree / degree_value['Full'] * FULL_STEP_TO_TRAVEL_DIST_UM
 
         # TODO Calculate the max position allowable based on stepping mode and actual travel distance on the scope
-        self.max_pos = max_pos if max_pos != None else 450*self.microstepping
+        self.max_pos = int(max_pos) if max_pos != None else int(450*self.microstepping)
 
         # Set up GPIO
         self._pi = pi if pi != None else pigpio.pi()

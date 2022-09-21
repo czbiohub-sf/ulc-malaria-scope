@@ -53,12 +53,20 @@ class MalariaScope:
         self._init_fan()
         self._init_encoder()
         self._init_data_storage()
+        self._init_TPU()
 
-    def get_component_status(self) -> Dict:
+    def __del__(self):
+        self.led.turnOff()
+        self.camera.deactivateCamera()
+        
+    def getComponentStatus(self) -> Dict:
         """Returns a dictionary of component to initialization status.
 
-        Can be used by the caller of MalariaScope f
+        Can be used by the caller of MalariaScope to check that different
+        components were initialized correctly (and take appropriate measures
+        if not).
         """
+
         return {
             Components.MOTOR: self.motor_enabled,
             Components.CAMERA: self.camera_enabled,
