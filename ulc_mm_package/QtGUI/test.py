@@ -42,12 +42,6 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 # SHUTOFF
 ## Replace all exit() with end() and go back to pre-experiment dialog
 # deal with camera shutoff
-# thread termination?
-        # self.thread.started.connect(self.worker.run)
-        # self.worker.finished.connect(self.thread.quit)
-        # self.worker.finished.connect(self.worker.deleteLater)
-        # self.thread.finished.connect(self.thread.deleteLater)
-        # self.worker.progress.connect(self.reportProgress)
 
 # Implement proper shutoff
 # FPS handling < and ^ may be better handled by timer? 
@@ -162,7 +156,7 @@ class ScopeOp(QObject, Machine):
                 )
             print("Failed precheck")
 
-    def start_setup(self):
+    def start(self):
         self.to_standby()
         self.next_state()
 
@@ -177,7 +171,6 @@ class ScopeOp(QObject, Machine):
         
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
-
 
     def _start_SSAF(self):
         self.freeze_liveview.emit(False)
@@ -237,7 +230,7 @@ class ScopeOp(QObject, Machine):
                 print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
             elif isinstance(self.autoflow_result, float):
                 print(f"Flowrate: {self.autoflow_result}")
-                
+
             self.next_state()
 
     @pyqtSlot(np.ndarray)
@@ -256,8 +249,6 @@ class Acquisition(QObject):
         self.mscope = mscope
 
     def run(self):
-        # # TODO is there a better way to use this
-        # while True:
         try:
             for image in self.mscope.camera.yieldImages():
                 self.new_img.emit(image) 
@@ -266,10 +257,6 @@ class Acquisition(QObject):
             # Once that happens, this can be swapped to catch the PyCameraException
             print(e)
             print(traceback.format_exc())
-
-    @pyqtSlot(np.ndarray)
-    def update_img(self, img):
-        self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
             
 class Oracle(Machine):
 
@@ -295,11 +282,11 @@ class Oracle(Machine):
             {'name' : 'precheck', 
                 'on_enter' : [self._start_precheck]},
             {'name' : 'form', 
-                'on_enter' : [lambda *args : self.form_window.show()], 
-                'on_exit' : [lambda *args : self.form_window.close()]},
+                'on_enter' : [self._start_form], 
+                'on_exit' : [self._close_form]},
             {'name' : 'liveview', 
-                'on_enter' : [lambda *args : self.liveview_window.show(), self._start_liveview], 
-                'on_exit' : [self._end_liveview, lambda *args : self.liveview_window.close()]},
+                'on_enter' : [self._start_liveview], 
+                'on_exit' : [self._close_liveview]},
             # {'name' : 'survey', 'on_enter' : ['open_survey']},
             ]
 
@@ -317,6 +304,9 @@ class Oracle(Machine):
         # Connect scopeop signals and slots
         self.scopeop.precheck_done.connect(self.next_state)
         self.scopeop.freeze_liveview.connect(self._freeze_liveview)
+
+        # Start scopeop thread
+        self.scopeop_thread.start()
 
         # Trigger first transition
         self.to_precheck()
@@ -354,6 +344,9 @@ class Oracle(Machine):
         self.scopeop.precheck()
         self.acquisition.get_mscope(self.scopeop.mscope)
 
+    def _start_form(self, *args):
+        self.form_window.show()
+
     def _save_form(self, *args):
         try:
             # TBD implement actual save here
@@ -370,21 +363,28 @@ class Oracle(Machine):
 
         self.next_state()
 
+    def _close_form(self, *args):
+        self.form_window.close()
+
     def _start_liveview(self, *args):
+        self.liveview_window.show()
+
         self.acquisition.new_img.connect(self.liveview_window.update_img)
         self.acquisition_thread.start()
 
-        self.scopeop.start_setup()
+        self.scopeop.start()
 
-    def _end_liveview(self, *args):
+    def _close_liveview(self, *args):
         self.scopeop.to_standby()
         self.acquisition.new_img.disconnect(self.liveview_window.update_img)
+
+        self.liveview_window.close()
 
     def end(self, *args):
         self.acquisition_thread.quit()
         self.scopeop_thread.quit()
         print("Exiting program")
-        # quit()
+        quit()
         
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
