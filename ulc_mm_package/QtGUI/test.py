@@ -48,13 +48,13 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
         # self.thread.finished.connect(self.thread.deleteLater)
         # self.worker.progress.connect(self.reportProgress)
 
+# Implement proper shutoff
+# FPS handling < and ^ may be better handled by timer? 
+
 # Implement correct setup order after merging
 # Populate info panel
 # Implement survey and metadata feed 
-
-# QUESTIONS
-# DO I NEED PYQT SIGNAL
-# How to cleanly freeze and unfreeze
+# Implement exception handling for camera
 
 class ScopeOpState(State):
 
@@ -148,15 +148,20 @@ class ScopeOp(QObject, Machine):
             print("Failed precheck")
 
     def start_setup(self):
+        self.to_standby()
         self.next_state()
 
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessCoroutine(self.mscope)
         self.autobrightness_routine.send(None)
 
+        self.freeze_liveview.emit(False)
+
     def _start_fbounds(self):
         self.fbounds_routine = getFocusBoundsCoroutine(self.mscope)
         self.fbounds_routine.send(None)
+
+        self.freeze_liveview.emit(False)
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
@@ -206,7 +211,6 @@ class Acquisition(QObject):
     @pyqtSlot(np.ndarray)
     def update_img(self, img):
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
-        # TODO add FPS handling
             
 class Oracle(Machine):
 
@@ -228,53 +232,41 @@ class Oracle(Machine):
 
         # Configure state machine
         states = [
-            {'name' : 'standby', 'on_enter' : [self._reset]},
-            {'name' : 'precheck', 'on_enter' : [self._start_precheck]},
-            {'name' : 'form', 'on_enter' : [self.form_window.show], 'on_exit' : [self.form_window.close]},
-            {'name' : 'liveview', 'on_enter' : [self.liveview_window.show, self._start_liveview], 'on_exit' : [self.liveview_window.close]},
+            {'name' : 'standby'},
+            {'name' : 'precheck', 
+                'on_enter' : [self._start_precheck]},
+            {'name' : 'form', 
+                'on_enter' : [lambda *args : self.form_window.show()], 
+                'on_exit' : [lambda *args : self.form_window.close()]},
+            {'name' : 'liveview', 
+                'on_enter' : [lambda *args : self.liveview_window.show(), self._start_liveview], 
+                'on_exit' : [self._end_liveview, lambda *args : self.liveview_window.close()]},
             # {'name' : 'survey', 'on_enter' : ['open_survey']},
             ]
 
         Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
-        self.add_transition(trigger='end', source='*', dest='standby')
+        self.add_transition(trigger='reset', source='*', dest='standby', after='_reset')
 
         # Connect experiment form buttons
-        self.form_window.start_btn.clicked.connect(self.save_form)
+        self.form_window.start_btn.clicked.connect(self._save_form)
         self.form_window.exit_btn.clicked.connect(self.end)
 
         # Connect liveview buttons
         self.liveview_window.exit_btn.clicked.connect(self.end)
 
-        # Connect signals and slots
-        self.acquisition.new_img.connect(self.liveview_window.update_img)
+        # Connect scopeop signals and slots
         self.scopeop.precheck_done.connect(self.next_state)
-        self.scopeop.freeze_liveview.connect(self.freeze_liveview)
+        self.scopeop.freeze_liveview.connect(self._freeze_liveview)
 
         # Trigger first transition
-        self.next_state()
+        self.to_precheck()
 
-    def freeze_liveview(self, freeze):
+    def _freeze_liveview(self, freeze):
         if freeze:
             self.acquisition.new_img.disconnect(self.liveview_window.update_img)
         else:            
             self.acquisition.new_img.connect(self.liveview_window.update_img)
-
-    def save_form(self, *args):
-        try:
-            # TBD implement actual save here
-            # self.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
-            pass
-        # TODO target correct exception here
-        except Exception as e:
-            _ = self._display_message(
-                QMessageBox.Icon.Warning,
-                "Invalid form input",
-                "The following entries are invalid:",   # Add proper warnings here
-                exit_after=True,
-                )
-
-        self.next_state()
 
     def _display_message(self, icon, title, text, cancel=False, exit_after=False):
         msgBox = QMessageBox()
@@ -291,26 +283,49 @@ class Oracle(Machine):
             msgBox.setStandardButtons(QMessageBox.Ok)
 
         if exit_after and msgBox.exec() == QMessageBox.Ok:
-            self.exit()
+            self.end()
 
         return msgBox.exec()
 
     def _reset(self, *args):
-        # delete current scope?
         pass
+        # delete current scope?
 
     def _start_precheck(self, *args):
         self.scopeop.precheck()
         self.acquisition.get_mscope(self.scopeop.mscope)
 
+    def _save_form(self, *args):
+        try:
+            # TBD implement actual save here
+            # self.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
+            pass
+        # TODO target correct exception here
+        except Exception as e:
+            _ = self._display_message(
+                QMessageBox.Icon.Warning,
+                "Invalid form input",
+                "The following entries are invalid:",   # Add proper warnings here
+                exit_after=True,
+                )
+
+        self.next_state()
+
     def _start_liveview(self, *args):
-        self.scopeop_thread.start()
+        self.acquisition.new_img.connect(self.liveview_window.update_img)
         self.acquisition_thread.start()
+
         self.scopeop.start_setup()
 
-    def exit(self):
+    def _end_liveview(self, *args):
+        self.scopeop.to_standby()
+        self.acquisition.new_img.disconnect(self.liveview_window.update_img)
+
+    def end(self, *args):
+        self.acquisition_thread.quit()
+        self.scopeop_thread.quit()
         print("Exiting program")
-        quit()
+        # quit()
         
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
