@@ -100,11 +100,21 @@ class ZarrWriter():
         # if not WRITE_LOCK.locked():
         #     threading.Thread(target=self.writeSingleArray, args=args, kwargs=kwargs).start()
 
+    @lockNoBlock(WRITE_LOCK)
     def closeFile(self):
-        wait(self.futures, return_when=ALL_COMPLETED)
-        self.store.close()
         self.store = None
         self.writable = False
+        wait(self.futures, return_when=ALL_COMPLETED)
+        self.store.close()
+
+    def threadedCloseFile(self):
+        """Close the file in a separate thread (and locks the ability to write to the file)
+        
+        Returns
+        -------
+        future: An object that can be polled to check if closing the file has completed
+        """
+        return self.executor.submit(self.closeFile)
 
     def __del__(self):
         # If the user did not manually close the storage, close it
