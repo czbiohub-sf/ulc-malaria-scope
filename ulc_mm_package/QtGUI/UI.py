@@ -153,6 +153,17 @@ class AcquisitionThread(QThread):
         - LED power
         """
 
+        # 
+        try:
+            pressure = self.pneumatic_module.getPressure()
+        except PressureSensorNotInstantiated:
+            # TODO: Add logging
+            pressure = -1
+        except Exception:
+            # TODO: Add logging
+            # print("Unknown pneumatic module / pressure sensor error")
+            pressure = -1
+
         return {
             "im_counter": self.im_counter,
             "measurement_type": "placeholder",
@@ -160,7 +171,7 @@ class AcquisitionThread(QThread):
             "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
             "exposure": self.camera.exposureTime_ms,
             "motor_pos": self.motor.pos,
-            "pressure_hpa": self.pneumatic_module.getPressure(),
+            "pressure_hpa": pressure,
             "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
             "flow_control_on": self.flowcontrol_enabled,
             "target_flowrate": self.flow_controller.target_flowrate,
@@ -199,7 +210,8 @@ class AcquisitionThread(QThread):
                     pressure = self.pneumatic_module.getPressure()
                     self.updatePressure.emit(pressure)
                 except Exception:
-                    print("Error getting pressure. Continuing...")
+                    pressure = -1
+                    self.updatePressure.emit(pressure)
             self.fps.emit(int(self.num_loops / (perf_counter() - self.fps_timer)))
             self.fps_timer = perf_counter()
 
