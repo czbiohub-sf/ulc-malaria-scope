@@ -2,6 +2,12 @@ from datetime import datetime
 import csv
 import argparse
 
+# Number of times to repeat a barcode in the csv
+# This is done since we package (32 / NUM REPETITIONS) together
+# So for example, since we are storing 8 flow cells per tube
+# We need 4 of each unique ID to label a full-sheet
+NUM_REPETITIONS = 4
+
 def luhn_checksum(card_number):
     def digits_of(n):
         return [int(d) for d in str(n)]
@@ -35,8 +41,9 @@ def main():
         writer.writerow(header)
 
         for i in range(lb, ub + 1):
-            if is_luhn_valid(i):
-                writer.writerow([f"{i:04}"])
+                if is_luhn_valid(i):
+                    for _ in range(4):
+                        writer.writerow([f"{i:04}"])
     print("Done! Enjoy your numbers.")
     
 if __name__ == "__main__":
