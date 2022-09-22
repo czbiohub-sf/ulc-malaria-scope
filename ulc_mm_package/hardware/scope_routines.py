@@ -71,6 +71,7 @@ def continuousSSAFRoutine(mscope: MalariaScope, img: np.ndarray):
             ssaf.send(img)
         except StopIteration as e:
             steps_taken = e.value
+            print(f"SSAF - moved motor: {steps_taken}")
             ssaf = singleShotAutofocusRoutine(mscope, None)
             ssaf.send(None)
 
@@ -112,6 +113,8 @@ def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.nda
     img: np.ndarray
         Image to be passed into the FlowController
     """
+
+    img = yield img
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
@@ -196,7 +199,7 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
     # Get the mean image brightness to store in the experiment metadata
     return autobrightness.prev_mean_img_brightness
 
-def find_cells_routine(mscope: MalariaScope, pull_time: int=5, steps_per_image: int=10, img: np.ndarray=None) -> Union[bool, int]:
+def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image: int=10, img: np.ndarray=None) -> Union[bool, int]:
     """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
     This routine does the following:
@@ -217,8 +220,8 @@ def find_cells_routine(mscope: MalariaScope, pull_time: int=5, steps_per_image: 
     Parameters
     ----------
     mscope: MalariaScope
-    pull_time: int
-        Sets how long the syringe should be pulled for (at its max position) before assessing
+    pull_time: float
+        Sets how long the syringe should be pulled for (at its maximum pressure position) before assessing
         whether cells are present
     img: np.ndarray
 

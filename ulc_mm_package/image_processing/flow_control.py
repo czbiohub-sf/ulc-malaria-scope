@@ -147,6 +147,7 @@ class FlowController:
             # Adjust pressure using the pneumatic module based on the flow rate error
             flow_error = self._getFlowError()
             self._adjustSyringe(flow_error)
+            print(f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}")
 
 
     def _getFlowError(self):

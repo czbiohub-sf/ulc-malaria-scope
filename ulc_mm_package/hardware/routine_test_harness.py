@@ -1,6 +1,8 @@
 from time import perf_counter
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
+from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS, PER_IMAGE_METADATA_KEYS, TARGET_FLOWRATE
+
 import cv2
 
 def _displayImage(img: np.ndarray) -> None:
@@ -9,7 +11,7 @@ def _displayImage(img: np.ndarray) -> None:
     cv2.imshow("Display", img)
     cv2.waitKey(2)
 
-def initial_cell_check(mscope):
+def initial_cell_check(mscope: MalariaScope):
     """Test the cell finding routine and subsequent autofocus
     
     Steps
@@ -85,12 +87,60 @@ def initial_cell_check(mscope):
                 print(f"Flowrate: {flow_val}")
             break
 
-    # Display for another 10 seconds
+    # Collect data for 5 mins w/ SSAF and flow control
+    main_acquisition_loop(mscope)
+
+    # # Display for another 10 seconds
+    # start = perf_counter()
+    # for img in mscope.camera.yieldImages():
+    #     _displayImage(img)
+    #     if perf_counter() - start > 10:
+    #         break
+
+def main_acquisition_loop(mscope: MalariaScope):
+    """Run the main acquisition loop for 5 mins"""
+
     start = perf_counter()
+    stop_time_s = 5*60
+
+    fake_exp_metadata = {
+        k: k for k in EXPERIMENT_METADATA_KEYS
+    }
+    fake_per_img_metadata = {
+        k: k for k in PER_IMAGE_METADATA_KEYS
+    }
+
+    mscope.data_storage.createNewExperiment("", fake_exp_metadata, fake_per_img_metadata)
+
+    periodic_ssaf = periodicAutofocusWrapper(mscope, None)
+    periodic_ssaf.send(None)
+
+    flow_control = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
+    flow_control.send(None)
+
     for img in mscope.camera.yieldImages():
-        _displayImage(img)
-        if perf_counter() - start > 10:
+        # Save data
+        mscope.data_storage.writeData(img, fake_per_img_metadata)
+
+        # Periodically adjust focus using single shot autofocus
+        periodic_ssaf.send(img)
+
+        # Adjust the flow
+        flow_control.send(img)
+        
+        # Timed stop condition
+        if perf_counter() - start > stop_time_s:
             break
+
+    closing_file_future = mscope.data_storage.close()
+
+    while not closing_file_future.done():
+        print("Waiting for the file to finish closing...")
+        sleep(1)
+
+    print("Successfully closed file.")
+        
+
 
 if __name__ == "__main__":
     mscope = MalariaScope()
