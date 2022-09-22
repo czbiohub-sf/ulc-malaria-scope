@@ -54,15 +54,18 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 
 class ScopeOpState(State):
 
-    def __init__(self, name, on_enter=None, on_exit=None, 
-                ignore_invalid_triggers=None, 
-                autoconnect=False, signal=None, slot=None):
+    def __init__(self, name, on_enter=None, on_exit=None, ignore_invalid_triggers=None,
+                signal=None, slot=None):
 
-        # Autoconnect connects signals/slots after "on_enter" functions, and disconnects before "on_exit" functions
-        if autoconnect:
-            if signal == None or slot == None:
-                raise ValueError('Autoconnect is enabled for state "{}" but signal and/or slot specification is missing.'.format(name))
+        self.signal = signal
+        self.slot = slot
 
+        if self.signal is None or self.slot is None:
+            if (self.signal is not None) or (self.slot is not None):
+                raise ValueError(f'Signal and/or slot specification is missing for state {name}.')
+
+        # Connect signals/slots after "on_enter" events, and disconnect before "on_exit"
+        else:
             if on_enter == None:
                 on_enter = self._connect
             else:
@@ -73,9 +76,6 @@ class ScopeOpState(State):
             else:
                 on_exit.insert(0, self._disconnect)
 
-        self.signal = signal
-        self.slot = slot
-
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
 
     def _connect(self):
@@ -83,6 +83,7 @@ class ScopeOpState(State):
 
     def _disconnect(self):
         self.signal.disconnect(self.slot)
+
         
 class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
@@ -103,30 +104,26 @@ class ScopeOp(QObject, Machine):
             {'name' : 'standby'},
             {'name' : 'autobrightness', 
                 'on_enter' : [self._start_autobrightness],
-                'autoconnect' : True, 
                 'signal' : self.img_signal, 
                 'slot' : self.run_autobrightness,
                 },
             {'name' : 'cellfinder', 
-                'on_enter' : [self._start_cellfinder],
-                'autoconnect' : True, 
+                'on_enter' : [self._start_cellfinder, self._freeze_liveview],
+                'on_exit' : [self._unfreeze_liveview],
                 'signal' : self.img_signal, 
                 'slot' : self.run_cellfinder,
                 },
             {'name' : 'SSAF', 
                 'on_enter' : [self._start_SSAF],
-                'autoconnect' : True, 
                 'signal' : self.img_signal, 
                 'slot' : self.run_SSAF,
                 },
             {'name' : 'autoflow', 
                 'on_enter' : [self._start_autoflow],
-                'autoconnect' : True, 
                 'signal' : self.img_signal, 
                 'slot' : self.run_autoflow,
                 },
             {'name' : 'experiment', 
-                'autoconnect' : True, 
                 'signal' : self.img_signal, 
                 'slot' : self.run_experiment,
                 },
@@ -160,21 +157,21 @@ class ScopeOp(QObject, Machine):
         self.to_standby()
         self.next_state()
 
-    def _start_autobrightness(self):
+    def _freeze_liveview(self):
+        self.freeze_liveview.emit(True)
+
+    def _unfreeze_liveview(self):
         self.freeze_liveview.emit(False)
 
+    def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
-    def _start_cellfinder(self):
-        self.freeze_liveview.emit(True)
-        
+    def _start_cellfinder(self):        
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
     def _start_SSAF(self):
-        self.freeze_liveview.emit(False)
-
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
@@ -182,8 +179,6 @@ class ScopeOp(QObject, Machine):
         self.SSAF_routine.send(None)
 
     def _start_autoflow(self):
-        self.freeze_liveview.emit(False)
-
         self.autoflow_routine = fastFlowRoutine(self.mscope, None)
         self.autoflow_routine.send(None)
 
