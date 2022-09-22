@@ -29,9 +29,7 @@ from ulc_mm_package.hardware.dtoverlay_pwm import (
     PWM_CHANNEL,
 )
 from ulc_mm_package.hardware.pneumatic_module import (
-    PneumaticModuleError,
     PressureSensorNotInstantiated,
-    PressureLeak,
     SyringeInMotion,
     SyringeDirection,
 )
@@ -162,15 +160,7 @@ class PneumaticModule():
             self.decreaseDutyCycle()
         return pressure_readings_hpa
 
-    def getPressure(self, apc_on: bool=False):
-        """_getPressure() wrapper."""
-        
-        if apc_on:
-            return self.curr_pressure
-        else:
-            return self._getPressure()
-
-    def _getPressure(self):
+    def getPressure(self):
         """Read and return the latest pressure value if it has been at least `polling_time_s` seconds,
         otherwise return the most recent pressure read. This is done because calls to the pressure sensor
         are somewhat slow.
