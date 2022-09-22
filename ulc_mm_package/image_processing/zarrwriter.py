@@ -97,8 +97,6 @@ class ZarrWriter():
 
     def threadedWriteSingleArray(self, *args, **kwargs):
         self.futures.append(self.executor.submit(self.writeSingleArray, (*args)))
-        # if not WRITE_LOCK.locked():
-        #     threading.Thread(target=self.writeSingleArray, args=args, kwargs=kwargs).start()
 
     @lockNoBlock(WRITE_LOCK)
     def closeFile(self):

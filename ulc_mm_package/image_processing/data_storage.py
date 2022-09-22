@@ -7,7 +7,6 @@ import numpy as np
 import cv2
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
-from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS, PER_IMAGE_METADATA_KEYS
 
 class DataStorageError(Exception):
     pass
@@ -91,7 +90,7 @@ class DataStorage:
         """
 
         if self.zw.writable:
-            self.zw.writeSingleArray(image)
+            self.zw.threadedWriteSingleArray(image)
             self.md_writer.writerow(metadata)
 
     def writeSingleImage(self, image: np.ndarray, custom_image_name: str):
@@ -113,11 +112,18 @@ class DataStorage:
         cv2.imwrite(filename, image)
 
     def close(self):
-        """Close the per-image metadata .csv file and Zarr image store"""
+        """Close the per-image metadata .csv file and Zarr image store
+
+        Returns
+        -------
+        A concurrent.futures.Future object
+            Can be polled to determine when the file has been successfully closed
+            (future.done())
+        """
 
         if self.metadata_file != None:
             self.metadata_file.close()
             self.metadata_file = None
 
         if self.zw.writable:
-            self.zw.closeFile()
+            return self.zw.threadedCloseFile()
