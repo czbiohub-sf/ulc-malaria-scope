@@ -11,8 +11,14 @@ from ulc_mm_package.image_processing.processing_constants import (
 )
 from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
-from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel, CantReachTargetFlowrate
+from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
 
+class FlowControlError(Exception):
+    pass
+
+class CantReachTargetFlowrate(FlowControlError):
+    """Raised when the target flowrate cannot be reached"""
+    pass
 
 class FlowController:
     def __init__(self, pneumatic_module: PneumaticModule, h: int=600, w: int=800, window_size: int=WINDOW_SIZE):

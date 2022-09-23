@@ -41,11 +41,6 @@ class SyringeEndOfTravel(PneumaticModuleError):
     """
     pass
 
-class CantReachTargetFlowrate(PneumaticModuleError):
-    """Raised when the target flowrate cannot be reached"""
-    # Note-to-self, maybe this should go into flow_rate.py? probably.
-    pass
-
 class SyringeDirection(enum.Enum):
     """Enum for the direction of the syringe."""
     UP = 1
