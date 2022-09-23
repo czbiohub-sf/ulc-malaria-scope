@@ -197,7 +197,7 @@ class FlowController:
             except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate()
         elif flow_error < 0:
-            try self.pneumatic_module.isMovePossible(SyringeDirection.UP):
+            try:
                 # Decrease pressure, move syringe up
                 self.pneumatic_module.increaseDutyCycle()
             except SyringeEndOfTravel:
