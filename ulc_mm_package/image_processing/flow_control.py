@@ -123,12 +123,9 @@ class FlowController:
             except CantReachTargetFlowrate:
                 raise
 
-            # If target flow rate has been roughly achieved, return val
-            # else return -1.0
+            # If target flow rate has been roughly achieved, return flow_val
             if flow_error == 0:
                 return float(dy)
-            else:
-                return -1.0
 
     def controlFlow(self, img: np.ndarray):
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
