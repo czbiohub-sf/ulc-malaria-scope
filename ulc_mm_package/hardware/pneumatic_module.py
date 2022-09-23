@@ -34,7 +34,7 @@ class PressureLeak(PneumaticModuleError):
 class SyringeInMotion(PneumaticModuleError):
     pass
 
-class CantReachTargetFlowrate(PneumaticModule):
+class CantReachTargetFlowrate(PneumaticModuleError):
     pass
 
 class SyringeDirection(enum.Enum):
