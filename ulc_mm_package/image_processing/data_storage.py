@@ -74,6 +74,7 @@ class DataStorage:
             writer.writerow(experiment_initialization_metdata)
 
         # Create Zarr Storage
+        filename = path.join(self.main_dir, self.experiment_folder, time_str) + f"_{custom_experiment_name}"
         self.zw.createNewFile(filename)
 
     def writeData(self, image: np.ndarray, metadata: Dict):
