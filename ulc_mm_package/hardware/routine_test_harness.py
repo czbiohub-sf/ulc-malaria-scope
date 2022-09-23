@@ -168,7 +168,7 @@ def main_acquisition_loop(mscope: MalariaScope):
     for img in mscope.camera.yieldImages():
         # Display
         _displayImage(img)
-        
+
         # Save data
         mscope.data_storage.writeData(img, fake_per_img_metadata)
 
@@ -181,12 +181,14 @@ def main_acquisition_loop(mscope: MalariaScope):
         # Timed stop condition
         if perf_counter() - start > stop_time_s:
             break
+        elif int(perf_counter() - start) % 10 == 0:
+            print(f"{perf_counter() - start}s elapsed out of ({stop_time_s}s)")
 
     closing_file_future = mscope.data_storage.close()
 
+    print("Waiting for the file to finish closing...")
     while not closing_file_future.done():
-        print("Waiting for the file to finish closing...")
-        sleep(1)
+        sleep(3)
 
     print("Successfully closed file.")
         
