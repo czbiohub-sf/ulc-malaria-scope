@@ -166,6 +166,9 @@ def main_acquisition_loop(mscope: MalariaScope):
     flow_control.send(None)
 
     for img in mscope.camera.yieldImages():
+        # Display
+        _displayImage(img)
+        
         # Save data
         mscope.data_storage.writeData(img, fake_per_img_metadata)
 
