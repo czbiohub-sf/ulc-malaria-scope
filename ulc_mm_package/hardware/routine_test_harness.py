@@ -103,6 +103,8 @@ def fast_flow_wrapper(mscope: MalariaScope):
             flow_val = e.value
             print(f"Flowrate: {flow_val}")
             break
+        except Exception as e:
+            print(e)
 
     return flow_val
 
@@ -148,6 +150,7 @@ def main_acquisition_loop(mscope: MalariaScope):
     """Run the main acquisition loop for 5 mins"""
 
     start = perf_counter()
+    prev_print_time = perf_counter()
     stop_time_s = 5*60
 
     fake_exp_metadata = {
@@ -181,8 +184,9 @@ def main_acquisition_loop(mscope: MalariaScope):
         # Timed stop condition
         if perf_counter() - start > stop_time_s:
             break
-        elif int(perf_counter() - start) % 10 == 0:
+        elif perf_counter() - prev_print_time >= 10:
             print(f"{perf_counter() - start}s elapsed out of ({stop_time_s}s)")
+            prev_print_time = perf_counter()
 
     closing_file_future = mscope.data_storage.close()
 
