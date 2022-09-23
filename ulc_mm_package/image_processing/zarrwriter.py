@@ -100,10 +100,10 @@ class ZarrWriter():
 
     @lockNoBlock(WRITE_LOCK)
     def closeFile(self):
+        self.writable = False
         wait(self.futures, return_when=ALL_COMPLETED)
         self.store.close()
         self.store = None
-        self.writable = False
 
     def threadedCloseFile(self):
         """Close the file in a separate thread (and locks the ability to write to the file)
