@@ -11,7 +11,7 @@ from ulc_mm_package.image_processing.processing_constants import (
 )
 from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
-from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeDirection, PressureLeak
+from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeDirection, PressureLeak, CantReachTargetFlowrate
 
 
 class FlowController:
@@ -101,6 +101,16 @@ class FlowController:
         ----------
         img: np.ndarray
             Image to be passed into the FlowRateEstimator
+
+        Returns
+        -------
+        float: -1 if not reached yet, flow_val if reached
+
+        Exceptions
+        ----------
+        CantReachTargetFlowrate:
+            Raised if the target flowrate hasn't been reached and the syringe
+            can't move any further in the necessary direction
         """
 
         self.fre.addImageAndCalculatePair(img, perf_counter())
@@ -108,12 +118,17 @@ class FlowController:
             _, dy, _, _ = self.fre.getStatsAndReset()
             self.curr_flowrate = dy
             flow_error = self._getFlowError()
-            self._adjustSyringe(flow_error)
+            try:
+                self._adjustSyringe(flow_error)
+            except CantReachTargetFlowrate:
+                raise
 
-            # If rough flow rate has been achieved, return float
-            # else return False
+            # If target flow rate has been roughly achieved, return val
+            # else return -1.0
             if flow_error == 0:
                 return float(dy)
+            else:
+                return -1.0
 
     def controlFlow(self, img: np.ndarray):
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
@@ -183,13 +198,13 @@ class FlowController:
                 # Increase pressure, move syringe down
                 self.pneumatic_module.decreaseDutyCycle()
             else:
-                raise PressureLeak
+                raise CantReachTargetFlowrate()
         elif flow_error < 0:
             if self.pneumatic_module.isMovePossible(SyringeDirection.UP):
                 # Decrease pressure, move syringe up
                 self.pneumatic_module.increaseDutyCycle()
             else:
-                raise PressureLeak
+                raise CantReachTargetFlowrate()
 
     def _ewma(self, data):
         """Adapted from @Divakar on StackOverflow
