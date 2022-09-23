@@ -34,7 +34,16 @@ class PressureLeak(PneumaticModuleError):
 class SyringeInMotion(PneumaticModuleError):
     pass
 
+class SyringeEndOfTravel(PneumaticModuleError):
+    """
+    Raised when the syringe is at its end-of-travel in a direction
+    and but another move in that direction is requested
+    """
+    pass
+
 class CantReachTargetFlowrate(PneumaticModuleError):
+    """Raised when the target flowrate cannot be reached"""
+    # Note-to-self, maybe this should go into flow_rate.py? probably.
     pass
 
 class SyringeDirection(enum.Enum):

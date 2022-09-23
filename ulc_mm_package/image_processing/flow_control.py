@@ -11,7 +11,7 @@ from ulc_mm_package.image_processing.processing_constants import (
 )
 from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
-from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeDirection, PressureLeak, CantReachTargetFlowrate
+from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel, CantReachTargetFlowrate
 
 
 class FlowController:
@@ -191,16 +191,16 @@ class FlowController:
         if flow_error == 0:
             return
         elif flow_error > 0:
-            if self.pneumatic_module.isMovePossible(SyringeDirection.DOWN):
+            try:
                 # Increase pressure, move syringe down
                 self.pneumatic_module.decreaseDutyCycle()
-            else:
+            except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate()
         elif flow_error < 0:
-            if self.pneumatic_module.isMovePossible(SyringeDirection.UP):
+            try self.pneumatic_module.isMovePossible(SyringeDirection.UP):
                 # Decrease pressure, move syringe up
                 self.pneumatic_module.increaseDutyCycle()
-            else:
+            except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate()
 
     def _ewma(self, data):

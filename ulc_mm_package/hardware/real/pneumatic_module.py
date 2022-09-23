@@ -20,7 +20,6 @@ from time import sleep, perf_counter
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_5V_PIN,
     SERVO_PWM_PIN,
-    VALVE_PIN,
     SERVO_FREQ,
     INVALID_READ_FLAG,
 )
@@ -32,6 +31,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorNotInstantiated,
     SyringeInMotion,
     SyringeDirection,
+    SyringeEndOfTravel
 )
 
 
@@ -110,16 +110,20 @@ class PneumaticModule():
         return self.min_duty_cycle
 
     def increaseDutyCycle(self):
-        if self.duty_cycle <= self.max_duty_cycle - self.min_step_size:
+        if self.isMovePossible(SyringeDirection.DOWN):
             self.duty_cycle += self.min_step_size
             self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
+        else:
+            raise SyringeEndOfTravel()
     
     def decreaseDutyCycle(self):
-        if self.duty_cycle >= self.min_duty_cycle + self.min_step_size:
+        if self.isMovePossible(SyringeDirection.UP):
             self.duty_cycle -= self.min_step_size
             self.pwm.setDutyCycle(self.duty_cycle)
             sleep(0.01)
+        else:
+            raise SyringeEndOfTravel()
 
     @lockNoBlock(SYRINGE_LOCK)
     def setDutyCycle(self, duty_cycle: int):
