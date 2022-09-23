@@ -11,6 +11,13 @@ def _displayImage(img: np.ndarray) -> None:
     cv2.imshow("Display", img)
     cv2.waitKey(2)
 
+def _displayForNSeconds(seconds: int):
+    start = perf_counter()
+    for img in mscope.camera.yieldImages():
+        _displayImage(img)
+        if perf_counter() - start > seconds:
+            break
+
 def autobrightness_wrappper(mscope: MalariaScope):
     print(f"Running Autobrightness...")
     ab_routine = autobrightnessRoutine(mscope)
@@ -44,14 +51,15 @@ def find_cells_wrapper(mscope: MalariaScope):
         _displayImage(img)
         try:
             find_cells.send(img)
+        except NoCellsFound:
+            print("Unable to find cells")
+            res = -1
+            break
         except StopIteration as e:
             res = e.value
-            if isinstance(res, bool):
-                print("Unable to find cells")
-                break
-            elif isinstance(res, int):
-                print(f"Cells found @ motor pos: {res}")
-                break
+            print(f"Cells found @ motor pos: {res}")
+            break
+
     return res
 
 def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
@@ -87,12 +95,13 @@ def fast_flow_wrapper(mscope: MalariaScope):
         _displayImage(img)
         try:
             fast_flow_routine.send(img)
+        except CantReachTargetFlowrate:
+            print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
+            flow_val = -1
+            break
         except StopIteration as e:
             flow_val = e.value
-            if isinstance(flow_val, bool):
-                print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
-            elif isinstance(flow_val, float):
-                print(f"Flowrate: {flow_val}")
+            print(f"Flowrate: {flow_val}")
             break
 
     return flow_val
@@ -118,24 +127,22 @@ def initial_cell_check(mscope: MalariaScope):
     # Pull, check for cells
     find_cells_res = find_cells_wrapper(mscope)
 
-    if isinstance(find_cells_res, int):
+    if find_cells_res != -1:
         # SSAF and fast flow
         ssaf_wrapper(mscope, find_cells_res)
 
         # Do an initial fast flow to get roughly to the target flowrate
         fast_flow_res = fast_flow_wrapper(mscope)
 
-        if isinstance(fast_flow_res, float):
+        if fast_flow_res != -1:
             # Collect data for 5 mins w/ SSAF and flow control
             main_acquisition_loop(mscope)
-    
+        else:
+            print("Target flowrate couldn't be achieved, so I'm throwing in the towel.")
+            _displayForNSeconds(10)
     else:
-        # Display for another 10 seconds
-        start = perf_counter()
-        for img in mscope.camera.yieldImages():
-            _displayImage(img)
-            if perf_counter() - start > 10:
-                break
+        print("No cells were found so I'm throwing in the towel.")
+        _displayForNSeconds(10)
 
 def main_acquisition_loop(mscope: MalariaScope):
     """Run the main acquisition loop for 5 mins"""

@@ -8,6 +8,9 @@ from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerEr
 import ulc_mm_package.neural_nets.ssaf_constants as ssaf_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
+class NoCellsFound(Exception):
+    pass
+
 def focusRoutine(mscope: MalariaScope, lower_bound: int, upper_bound: int, img: np.ndarray=None):
     mscope.motor.move_abs(lower_bound)
     focus_metrics = []
@@ -123,7 +126,7 @@ def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.nda
         img = yield img
         flow_controller.controlFlow(img)
 
-def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> Union[bool, float]:
+def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
     """Faster flowrate feedback for initial flow ramp-up.
 
     See FlowController.fastFlowAdjustment for specifics.
@@ -149,6 +152,14 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> Union[bool, float]
         flow_control = flowControlRoutine(mscope, flow_val, None)
         ...
         ...etc
+
+    Returns
+    -------
+    float: flow_rate if target achieved, otherwise raises CantReachTargetFlowrate exception
+
+    Exceptions
+    ----------
+    CantReachTargetFlowrate - raised if the flowrate is above/below where it needs to be, but the syringe can no longer move in the direction necessary
     """
 
     img = yield img
@@ -160,11 +171,11 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> Union[bool, float]
         img = yield img
         try:
             flow_val = flow_controller.fastFlowAdjustment(img)
-        except PressureLeak:
-            return False
+        except CantReachTargetFlowrate:
+            raise
 
-        # flow_val is False if target not yet achieved, float otherwise
-        if isinstance(flow_val, float):
+        # flow_val is -1 if target not yet achieved, float otherwise
+        if flow_val != -1:
             # Stops the iterator, returns the flow rate value that was achieved
             return flow_val
 
@@ -199,7 +210,7 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
     # Get the mean image brightness to store in the experiment metadata
     return autobrightness.prev_mean_img_brightness
 
-def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image: int=10, img: np.ndarray=None) -> Union[bool, int]:
+def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image: int=10, img: np.ndarray=None) -> int:
     """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
     This routine does the following:
@@ -227,8 +238,11 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
 
     Returns
     -------
-    bool: False -> Returned if after max_attempts no cells are found
     int: Value between 0 and motor.max_pos -> Position where cells were found with the highest confidence. This position should be used to seed a local z-stack.
+
+    Exceptions
+    ----------
+    NoCellsFound - raised if no cells found after max_attempts iterations
     """
 
     max_attempts = 3 # Maximum number of times to run check for cells routine before aborting
@@ -249,7 +263,7 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
         3. Assess whether cells are present
         """
         if max_attempts == 0:
-            return False
+            raise NoCellsFound()
 
         # Pull the syringe maximally for `pull_time` seconds
         start = perf_counter()
