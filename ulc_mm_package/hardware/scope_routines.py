@@ -155,7 +155,7 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
 
     Returns
     -------
-    float: flow_rate if target achieved, otherwise raises CantReachTargetFlowrate exception
+    float: flow_rate if target achieved
 
     Exceptions
     ----------
@@ -173,11 +173,6 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
             flow_val = flow_controller.fastFlowAdjustment(img)
         except CantReachTargetFlowrate:
             raise
-
-        # flow_val is -1 if target not yet achieved, float otherwise
-        if flow_val != -1:
-            # Stops the iterator, returns the flow rate value that was achieved
-            return flow_val
 
 def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
     """Autobrightness routine to set led power.
