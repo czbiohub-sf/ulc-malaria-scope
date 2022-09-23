@@ -216,7 +216,12 @@ class AcquisitionThread(QThread):
             self.fps_timer = perf_counter()
 
         if self.finish_saving_future != None:
+            print(self.finish_saving_future)
             if self.finish_saving_future.done():
+                try:
+                    print(self.finish_saving_future.result())
+                except:
+                    print(self.finish_saving_future.exception())
                 self.doneSaving.emit(1)
                 self.finish_saving_future = None
 
