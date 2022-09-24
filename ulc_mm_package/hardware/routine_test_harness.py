@@ -44,7 +44,7 @@ def find_cells_wrapper(mscope: MalariaScope):
         int returns the motor position w/ the highest cross correlation
         bool returns False, indicating 
     """
-    print("Initiating `find_cells_routine`")
+    print("Running `find_cells_routine`")
     find_cells = find_cells_routine(mscope)
     find_cells.send(None)
     for img in mscope.camera.yieldImages():
@@ -77,7 +77,7 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
     print(f"Moving motor to {motor_pos}")
     mscope.motor.move_abs(motor_pos)
 
-    print("Initiating SSAF")
+    print("Running SSAF")
     ssaf = singleShotAutofocusRoutine(mscope, None)
     ssaf.send(None)
     for img in mscope.camera.yieldImages():
@@ -89,6 +89,7 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
             break
 
 def fast_flow_wrapper(mscope: MalariaScope):
+    print("Running fast_flow_routine")
     fast_flow_routine = fastFlowRoutine(mscope, None)
     fast_flow_routine.send(None)
     for img in mscope.camera.yieldImages():
