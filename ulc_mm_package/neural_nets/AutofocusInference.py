@@ -3,6 +3,7 @@
 from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
 from ulc_mm_package.neural_nets.ssaf_constants import AUTOFOCUS_MODEL_DIR
 
+
 class AutoFocus(NCSModel):
     """
     Autofocus Model
@@ -14,7 +15,7 @@ class AutoFocus(NCSModel):
         <steps from 0!>
     """
 
-    def __init__(self, model_path: str=AUTOFOCUS_MODEL_DIR):
+    def __init__(self, model_path: str = AUTOFOCUS_MODEL_DIR):
         super().__init__(model_path, OptimizationHint.LATENCY)
 
     def __call__(self, input_img):

@@ -25,8 +25,10 @@ See https://github.com/czbiohub/ulc-malaria-autofocus#openvino-performance-optim
 more performance things I want to do
 """
 
+
 class TPUError(Exception):
     pass
+
 
 class OptimizationHint(Enum):
     LATENCY = 1
@@ -55,7 +57,9 @@ class NCSModel:
         self.model = self._compile_model(model_path, optimization_hint)
         self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        self.asyn_results = [] # List of list of tuples - (xcenter, ycenter, width, height, class, confidence)
+        self.asyn_results = (
+            []
+        )  # List of list of tuples - (xcenter, ycenter, width, height, class, confidence)
 
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
         model = self.core.read_model(model_path)
@@ -83,7 +87,9 @@ class NCSModel:
                     self.connected = True
                     return compiled_model
                 except Exception as e:
-                    print(f"Failed to connect NCS: {e}.\nRemaining connection attempts: {connection_attempts}. Retrying...")
+                    print(
+                        f"Failed to connect NCS: {e}.\nRemaining connection attempts: {connection_attempts}. Retrying..."
+                    )
                     connection_attempts -= 1
                     time.sleep(1)
 
