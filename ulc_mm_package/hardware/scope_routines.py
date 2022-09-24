@@ -174,6 +174,9 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
         except CantReachTargetFlowrate:
             raise
 
+        if isinstance(flow_val, float):
+            return flow_val
+
 def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
     """Autobrightness routine to set led power.
 
