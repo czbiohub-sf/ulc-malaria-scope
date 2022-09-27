@@ -55,3 +55,5 @@ RBC_THUMBNAIL_PATH = "../image_processing/thumbnail.png" #TODO better way to ref
 
 # This value was found empirically, looking at several focal stacks with and without cells
 CELLS_FOUND_THRESHOLD = 9000 # It's got to be... OVER 9000!!!!!!
+
+MIN_CELL_COUNT = 10

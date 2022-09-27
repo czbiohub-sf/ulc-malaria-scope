@@ -34,6 +34,13 @@ class PressureLeak(PneumaticModuleError):
 class SyringeInMotion(PneumaticModuleError):
     pass
 
+class SyringeEndOfTravel(PneumaticModuleError):
+    """
+    Raised when the syringe is at its end-of-travel in a direction
+    and but another move in that direction is requested
+    """
+    pass
+
 class SyringeDirection(enum.Enum):
     """Enum for the direction of the syringe."""
     UP = 1

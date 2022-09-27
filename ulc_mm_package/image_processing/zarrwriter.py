@@ -10,6 +10,7 @@ from os import listdir, path
 from time import perf_counter
 import functools
 import threading
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 import cv2
 import zarr
 
@@ -51,6 +52,8 @@ class ZarrWriter():
         self.arr_counter = 0
         self.compressor = None
         self.writable = False
+        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.futures = []
 
     def createNewFile(self, filename: str, metadata={}, overwrite: bool=False):
         """Create a new zarr file.
@@ -88,17 +91,28 @@ class ZarrWriter():
         try:
             ds = self.group.array(f"{self.arr_counter}", data=data, compressor=self.compressor)
             self.arr_counter += 1
+            return self.arr_counter
         except Exception:
             raise AttemptingWriteWithoutFile()
 
-    def theadedWriteSingleArray(self, *args, **kwargs):
-        if not WRITE_LOCK.locked():
-            threading.Thread(target=self.writeSingleArray, args=args, kwargs=kwargs).start()
+    def threadedWriteSingleArray(self, *args, **kwargs):
+        self.futures.append(self.executor.submit(self.writeSingleArray, (*args)))
 
+    @lockNoBlock(WRITE_LOCK)
     def closeFile(self):
+        self.writable = False
+        wait(self.futures, return_when=ALL_COMPLETED)
         self.store.close()
         self.store = None
-        self.writable = False
+
+    def threadedCloseFile(self):
+        """Close the file in a separate thread (and locks the ability to write to the file)
+        
+        Returns
+        -------
+        future: An object that can be polled to check if closing the file has completed
+        """
+        return self.executor.submit(self.closeFile)
 
     def __del__(self):
         # If the user did not manually close the storage, close it

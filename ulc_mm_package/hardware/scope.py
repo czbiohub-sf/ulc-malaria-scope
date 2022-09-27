@@ -57,6 +57,7 @@ class MalariaScope:
 
     def __del__(self):
         self.led.turnOff()
+        self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.camera.deactivateCamera()
         
     def getComponentStatus(self) -> Dict:
@@ -84,9 +85,9 @@ class MalariaScope:
         try:
             self.motor = DRV8825Nema(steptype="Half")
             self.motor.homeToLimitSwitches()
-            print("Moving motor to the middle.")
-            sleep(0.5)
-            self.motor.move_abs(int(self.motor.max_pos // 2))
+            # print("Moving motor to the middle.")
+            # sleep(0.5)
+            # self.motor.move_abs(int(self.motor.max_pos // 2))
             self.motor_enabled = True
         except MotorControllerError as e:
             # TODO - change to logging, critical error

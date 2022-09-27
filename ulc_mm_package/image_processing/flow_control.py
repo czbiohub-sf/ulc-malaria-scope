@@ -11,8 +11,14 @@ from ulc_mm_package.image_processing.processing_constants import (
 )
 from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
-from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeDirection, PressureLeak
+from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
 
+class FlowControlError(Exception):
+    pass
+
+class CantReachTargetFlowrate(FlowControlError):
+    """Raised when the target flowrate cannot be reached"""
+    pass
 
 class FlowController:
     def __init__(self, pneumatic_module: PneumaticModule, h: int=600, w: int=800, window_size: int=WINDOW_SIZE):
@@ -101,6 +107,16 @@ class FlowController:
         ----------
         img: np.ndarray
             Image to be passed into the FlowRateEstimator
+
+        Returns
+        -------
+        float: -1 if not reached yet, flow_val if reached
+
+        Exceptions
+        ----------
+        CantReachTargetFlowrate:
+            Raised if the target flowrate hasn't been reached and the syringe
+            can't move any further in the necessary direction
         """
 
         self.fre.addImageAndCalculatePair(img, perf_counter())
@@ -108,10 +124,12 @@ class FlowController:
             _, dy, _, _ = self.fre.getStatsAndReset()
             self.curr_flowrate = dy
             flow_error = self._getFlowError()
-            self._adjustSyringe(flow_error)
+            try:
+                self._adjustSyringe(flow_error)
+            except CantReachTargetFlowrate:
+                raise
 
-            # If rough flow rate has been achieved, return float
-            # else return False
+            # If target flow rate has been roughly achieved, return flow_val
             if flow_error == 0:
                 return float(dy)
 
@@ -147,6 +165,7 @@ class FlowController:
             # Adjust pressure using the pneumatic module based on the flow rate error
             flow_error = self._getFlowError()
             self._adjustSyringe(flow_error)
+            print(f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}")
 
 
     def _getFlowError(self):
@@ -173,22 +192,28 @@ class FlowController:
         Parameters
         ----------
         flow_error : float
+
+        Exceptions
+        ----------
+        CantReachTargetFlowrate:
+            Raised when the syringe has reached the end of travel
+            despite being above/below the required flowrate.
         """
         
         if flow_error == 0:
             return
         elif flow_error > 0:
-            if self.pneumatic_module.isMovePossible(SyringeDirection.DOWN):
+            try:
                 # Increase pressure, move syringe down
                 self.pneumatic_module.decreaseDutyCycle()
-            else:
-                raise PressureLeak
+            except SyringeEndOfTravel:
+                raise CantReachTargetFlowrate()
         elif flow_error < 0:
-            if self.pneumatic_module.isMovePossible(SyringeDirection.UP):
+            try:
                 # Decrease pressure, move syringe up
                 self.pneumatic_module.increaseDutyCycle()
-            else:
-                raise PressureLeak
+            except SyringeEndOfTravel:
+                raise CantReachTargetFlowrate()
 
     def _ewma(self, data):
         """Adapted from @Divakar on StackOverflow

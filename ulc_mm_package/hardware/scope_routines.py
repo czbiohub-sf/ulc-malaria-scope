@@ -71,6 +71,7 @@ def continuousSSAFRoutine(mscope: MalariaScope, img: np.ndarray):
             ssaf.send(img)
         except StopIteration as e:
             steps_taken = e.value
+            print(f"SSAF - moved motor: {steps_taken}")
             ssaf = singleShotAutofocusRoutine(mscope, None)
             ssaf.send(None)
 
@@ -112,15 +113,21 @@ def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.nda
     img: np.ndarray
         Image to be passed into the FlowController
     """
+
+    img = yield img
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
 
     while True:
         img = yield img
-        flow_controller.controlFlow(img)
+        try:
+            flow_controller.controlFlow(img)
+        except CantReachTargetFlowrate:
+            # TODO what to do...
+            raise
 
-def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> Union[bool, float]:
+def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
     """Faster flowrate feedback for initial flow ramp-up.
 
     See FlowController.fastFlowAdjustment for specifics.
@@ -146,6 +153,14 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> Union[bool, float]
         flow_control = flowControlRoutine(mscope, flow_val, None)
         ...
         ...etc
+
+    Returns
+    -------
+    float: flow_rate if target achieved
+
+    Exceptions
+    ----------
+    CantReachTargetFlowrate - raised if the flowrate is above/below where it needs to be, but the syringe can no longer move in the direction necessary
     """
 
     img = yield img
@@ -157,12 +172,10 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> Union[bool, float]
         img = yield img
         try:
             flow_val = flow_controller.fastFlowAdjustment(img)
-        except PressureLeak:
-            return False
+        except CantReachTargetFlowrate:
+            raise
 
-        # flow_val is False if target not yet achieved, float otherwise
         if isinstance(flow_val, float):
-            # Stops the iterator, returns the flow rate value that was achieved
             return flow_val
 
 def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
@@ -196,7 +209,7 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
     # Get the mean image brightness to store in the experiment metadata
     return autobrightness.prev_mean_img_brightness
 
-def find_cells_routine(mscope: MalariaScope, pull_time: int=5, steps_per_image: int=10, img: np.ndarray=None) -> Union[bool, int]:
+def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image: int=10, img: np.ndarray=None) -> int:
     """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
     This routine does the following:
@@ -217,36 +230,42 @@ def find_cells_routine(mscope: MalariaScope, pull_time: int=5, steps_per_image: 
     Parameters
     ----------
     mscope: MalariaScope
-    pull_time: int
-        Sets how long the syringe should be pulled for (at its max position) before assessing
+    pull_time: float
+        Sets how long the syringe should be pulled for (at its maximum pressure position) before assessing
         whether cells are present
     img: np.ndarray
 
     Returns
     -------
-    bool: False -> Returned if after max_attempts no cells are found
-    int: Value between 0 and motor.max_pos -> Position where cells were found with the highest confidence. This position should be used to seed a local z-stack.
+    int:
+        Value between 0 and motor.max_pos -> Position where cells were found with the highest confidence. This position should be used to seed a local z-stack.
+
+    Exceptions
+    ----------
+    NoCellsFound:
+        Raised if no cells found after max_attempts iterations
     """
 
     max_attempts = 3 # Maximum number of times to run check for cells routine before aborting
     cell_finder = CellFinder()
-    cross_corr_vals = []
     img = yield img
     
     # Initial check for cells, return current motor position if cells found
-    cells_present = cell_finder.checkForCells(cell_finder.getMaxCrossCorrelationVal(img))
-    if cells_present:
-        return mscope.motor.pos
+    cell_finder.add_image(mscope.motor.pos, img)
+    try:
+        cells_present_motor_pos = cell_finder.get_cells_found_position()
+        return cells_present_motor_pos
+    except NoCellsFound:
+        cell_finder.reset()
 
-    # While cells not present, pull syringe and look for cells
-    while not cells_present:
+    while True:
         """
         1. Pull syringe for 5 seconds
         2. Sweep the motor through the full range of motion and take in images at each step
         3. Assess whether cells are present
         """
         if max_attempts == 0:
-            return False
+            raise NoCellsFound()
 
         # Pull the syringe maximally for `pull_time` seconds
         start = perf_counter()
@@ -255,18 +274,15 @@ def find_cells_routine(mscope: MalariaScope, pull_time: int=5, steps_per_image: 
             img = yield img
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
-        # Perform a full focal stack and assess for cells at each step
+        # Perform a full focal stack and get the cross-correlation value for each image
         for pos in range(0, mscope.motor.max_pos, steps_per_image):
-            ### TODO: Potentially moving to 0 can cause the limit switch to get stuck? Add padding to the bottom after homing the motor?
             mscope.motor.move_abs(pos)
             img = yield img
-            cross_corr_vals.append(cell_finder.getMaxCrossCorrelationVal(img))
+            cell_finder.add_image(mscope.motor.pos, img)
 
-        max_corr = np.max(cross_corr_vals)
-        cells_present = cell_finder.checkForCells(max_corr)
-        if cells_present:
-            # Return the motor position where cells were found w/ the highest confidence
-            motor_pos = int(np.argmax(cross_corr_vals)*steps_per_image)
-            return motor_pos
-        
-        max_attempts -=1
+        # Return the motor position where cells were found
+        try:
+            cells_present_motor_pos = cell_finder.get_cells_found_position()
+            return cells_present_motor_pos
+        except NoCellsFound:
+            max_attempts -=1
