@@ -193,10 +193,11 @@ def main_acquisition_loop(mscope: MalariaScope):
             prev_print_time = perf_counter()
 
     closing_file_future = mscope.data_storage.close()
+    mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
     print("Waiting for the file to finish closing...")
     while not closing_file_future.done():
-        sleep(3)
+        sleep(1)
 
     print("Successfully closed file.")
         

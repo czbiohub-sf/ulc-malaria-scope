@@ -57,6 +57,7 @@ class MalariaScope:
 
     def __del__(self):
         self.led.turnOff()
+        self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.camera.deactivateCamera()
         
     def getComponentStatus(self) -> Dict:
