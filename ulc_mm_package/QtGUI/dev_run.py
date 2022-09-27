@@ -600,12 +600,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
         self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
-<<<<<<< HEAD:ulc_mm_package/QtGUI/dev_run.py
-        # self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
-=======
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
         self.acquisitionThread.doneSaving.connect(self.enableRecording)
->>>>>>> mscope-model-routines:ulc_mm_package/QtGUI/UI.py
 
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pneumatic_module = self.pneumatic_module

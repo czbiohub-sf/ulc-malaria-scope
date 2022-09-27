@@ -21,6 +21,8 @@ CORRELATION_THRESH = 0.5
 TARGET_FLOWRATE = 15 # In units of IMG_HEIGHT pixels/second.
 
 # ================ Data storage constants ================ #
+DEFAULT_SSD = "/media/pi/"
+
 EXPERIMENT_METADATA_KEYS = [
         "operator_id",
         "participant_id",
