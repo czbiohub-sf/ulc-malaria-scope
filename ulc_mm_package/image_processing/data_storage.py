@@ -31,7 +31,7 @@ class DataStorage:
         except FileNotFoundError as e:
             raise DataStorageError(f"DataStorageError - Unable to make top-level directory: {e}")
 
-    def createNewExperiment(self, custom_experiment_name: str, experiment_initialization_metdata: Dict, per_image_metadata: Dict):
+    def createNewExperiment(self, custom_experiment_name: str, experiment_initialization_metdata: Dict, per_image_metadata: Dict, main_dir):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
 
         Parameters

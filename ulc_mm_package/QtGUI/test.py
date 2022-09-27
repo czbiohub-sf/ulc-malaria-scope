@@ -36,21 +36,21 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 ## Clean up imports
 
 # NICE TO HAVE
+# Use "on_exception" to trigger exception handler
 # define types for arg inputs and Nonetype variables
 ## Validate experiment form inputs
+# Implement exception handling for camera
 
 # SHUTOFF
 ## Replace all exit() with end() and go back to pre-experiment dialog
 # deal with camera shutoff
 
+# on_enter and on_exit order doesnt work
 # Implement proper shutoff
 # FPS handling < and ^ may be better handled by timer? 
 
-# Implement correct setup order after merging
-# Build in a way to end run from scopeop
 # Populate info panel
 # Implement survey and metadata feed 
-# Implement exception handling for camera
 
 class ScopeOpState(State):
 
@@ -60,8 +60,8 @@ class ScopeOpState(State):
         self.signal = signal
         self.slot = slot
 
-        if self.signal is None or self.slot is None:
-            if (self.signal is not None) or (self.slot is not None):
+        if self.signal == None or self.slot == None:
+            if (not self.signal == None) or (not self.slot == None):
                 raise ValueError(f'Signal and/or slot specification is missing for state {name}.')
 
         # Connect signals/slots after "on_enter" events, and disconnect before "on_exit"
@@ -82,12 +82,14 @@ class ScopeOpState(State):
         self.signal.connect(self.slot)
 
     def _disconnect(self):
+        print("disconnecting " + self.name)
         self.signal.disconnect(self.slot)
 
         
 class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
+    error = pyqtSignal()
 
     state_cls = ScopeOpState
 
@@ -98,10 +100,12 @@ class ScopeOp(QObject, Machine):
 
         self.autobrightness_result = None
         self.cellfinder_result = None
+        self.SSAF_result = None
         self.autoflow_result = None
 
         states = [
-            {'name' : 'standby'},
+            {'name' : 'standby',
+                'on_enter' : [self._reset]},
             {'name' : 'autobrightness', 
                 'on_enter' : [self._start_autobrightness],
                 'signal' : self.img_signal, 
@@ -154,8 +158,16 @@ class ScopeOp(QObject, Machine):
             print("Failed precheck")
 
     def start(self):
+        print("start has been clicked")
+
         self.to_standby()
         self.next_state()
+
+    def _reset(self):
+        self.autobrightness_result = None
+        self.cellfinder_result = None
+        self.SSAF_result = None
+        self.autoflow_result = None
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -171,6 +183,7 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
+
     def _start_SSAF(self):
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
@@ -184,49 +197,55 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
-        try:
-            self.autobrightness_routine.send(img)
-        except StopIteration as e:
-            self.autobrightness_result = e.value
-            print(f"Mean pixel val: {self.autobrightness_result}")
+        if self.autobrightness_result == None:
+            try:
+                self.autobrightness_routine.send(img)
+            except StopIteration as e:
+                self.autobrightness_result = e.value
+                print(f"Mean pixel val: {self.autobrightness_result}")
 
-            self.next_state()
+                self.next_state()
 
     @pyqtSlot(np.ndarray)
     def run_cellfinder(self, img):
-        try:
-            self.cellfinder_routine.send(img)
-        except StopIteration as e:
-            self.cellfinder_result = e.value
+        if self.cellfinder_result == None: 
+            try:
+                self.cellfinder_routine.send(img)
+            except StopIteration as e:
+                self.cellfinder_result = e.value
 
-            if isinstance(self.cellfinder_result, bool):
-                print("Unable to find cells")
-            elif isinstance(self.cellfinder_result, int):
-                print(f"Cells found @ motor pos: {self.cellfinder_result}")
+                if isinstance(self.cellfinder_result, bool):
+                    print("Unable to find cells")
+                elif isinstance(self.cellfinder_result, int):
+                    print(f"Cells found @ motor pos: {self.cellfinder_result}")
 
-            self.next_state()
+                    self.next_state()
 
     @pyqtSlot(np.ndarray)
     def run_SSAF(self, img):
-        try:
-            self.SSAF_routine.send(img)
-        except StopIteration as e:
-            print(f"SSAF complete, motor moved by: {e.value} steps")
-
-            self.next_state()
+        if self.SSAF_result == None:
+            try:
+                self.SSAF_routine.send(img)
+            except StopIteration as e:
+                self.SSAF_result = e.value
+                print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
+                
+                self.next_state()
 
     @pyqtSlot(np.ndarray)
     def run_autoflow(self, img):
-        try:
-            self.autoflow_routine.send(img)
-        except StopIteration as e:
-            self.autoflow_result = e.value
-            if isinstance(self.autoflow_result, bool):
-                print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
-            elif isinstance(self.autoflow_result, float):
-                print(f"Flowrate: {self.autoflow_result}")
+        if self.autoflow_result == None:
+            try:
+                self.autoflow_routine.send(img)
+            except StopIteration as e:
+                self.autoflow_result = e.value
 
-            self.next_state()
+                if isinstance(self.autoflow_result, bool):
+                    print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
+                elif isinstance(self.autoflow_result, float):
+                    print(f"Flowrate: {self.autoflow_result}")
+
+                self.next_state()
 
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
@@ -238,15 +257,17 @@ class Acquisition(QObject):
 
     def __init__(self):
         super().__init__()
+
         self.mscope = None
+        self.running = True
 
     def get_mscope(self, mscope):
         self.mscope = mscope
 
     def run(self):
-        try:
-            for image in self.mscope.camera.yieldImages():
-                self.new_img.emit(image) 
+        try: 
+            while self.running:
+                self.new_img.emit(next(self.mscope.camera.yieldImages())) 
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
             # Once that happens, this can be swapped to catch the PyCameraException
@@ -345,10 +366,11 @@ class Oracle(Machine):
     def _save_form(self, *args):
         try:
             # TBD implement actual save here
-            # self.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
-            pass
+            self.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
+            # pass
         # TODO target correct exception here
         except Exception as e:
+            print(e)
             _ = self._display_message(
                 QMessageBox.Icon.Warning,
                 "Invalid form input",
@@ -376,10 +398,11 @@ class Oracle(Machine):
         self.liveview_window.close()
 
     def end(self, *args):
+        self.acquisition.running = False
         self.acquisition_thread.quit()
-        self.scopeop_thread.quit()
+        self.acquisition_thread.wait()
         print("Exiting program")
-        quit()
+        quit()   
         
 class FormGUI(QDialog):
     """Form to input experiment parameters"""

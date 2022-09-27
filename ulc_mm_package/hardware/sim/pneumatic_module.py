@@ -90,3 +90,14 @@ class PneumaticModule():
 
     def holdPressure(target_pressure):
         pass
+
+    def isMovePossible(self, move_dir: SyringeDirection) -> bool:        
+        # Cannot move the syringe up
+        if self.duty_cycle == self.max_duty_cycle and move_dir == 1:
+                return False
+                
+        # Cannot move the syringe down
+        elif self.duty_cycle == self.min_duty_cycle and move_dir == -1:
+            return False
+
+        return True
