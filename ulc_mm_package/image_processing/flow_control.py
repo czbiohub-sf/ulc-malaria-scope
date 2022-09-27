@@ -192,6 +192,12 @@ class FlowController:
         Parameters
         ----------
         flow_error : float
+
+        Exceptions
+        ----------
+        CantReachTargetFlowrate:
+            Raised when the syringe has reached the end of travel
+            despite being above/below the required flowrate.
         """
         
         if flow_error == 0:
