@@ -251,7 +251,7 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
     img = yield img
     
     # Initial check for cells, return current motor position if cells found
-    cell_finder.add_image(mscope.motor.motor_pos, img)
+    cell_finder.add_image(mscope.motor.pos, img)
     try:
         cells_present_motor_pos = cell_finder.get_cells_found_position()
         return cells_present_motor_pos
@@ -278,7 +278,7 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
         for pos in range(0, mscope.motor.max_pos, steps_per_image):
             mscope.motor.move_abs(pos)
             img = yield img
-            cell_finder.add_image(mscope.motor.motor_pos, img)
+            cell_finder.add_image(mscope.motor.pos, img)
 
         # Return the motor position where cells were found
         try:
