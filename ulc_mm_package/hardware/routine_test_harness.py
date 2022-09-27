@@ -180,13 +180,16 @@ def main_acquisition_loop(mscope: MalariaScope):
         periodic_ssaf.send(img)
 
         # Adjust the flow
-        flow_control.send(img)
+        try:
+            flow_control.send(img)
+        except CantReachTargetFlowrate:
+            print("Can't reach target flowrate.")
         
         # Timed stop condition
         if perf_counter() - start > stop_time_s:
             break
         elif perf_counter() - prev_print_time >= 10:
-            print(f"{perf_counter() - start}s elapsed out of ({stop_time_s}s)")
+            print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
             prev_print_time = perf_counter()
 
     closing_file_future = mscope.data_storage.close()

@@ -8,9 +8,6 @@ from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerEr
 import ulc_mm_package.neural_nets.ssaf_constants as ssaf_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
-class NoCellsFound(Exception):
-    pass
-
 def focusRoutine(mscope: MalariaScope, lower_bound: int, upper_bound: int, img: np.ndarray=None):
     mscope.motor.move_abs(lower_bound)
     focus_metrics = []
@@ -124,7 +121,11 @@ def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.nda
 
     while True:
         img = yield img
-        flow_controller.controlFlow(img)
+        try:
+            flow_controller.controlFlow(img)
+        except CantReachTargetFlowrate:
+            # TODO what to do...
+            raise
 
 def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
     """Faster flowrate feedback for initial flow ramp-up.
@@ -236,25 +237,28 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
 
     Returns
     -------
-    int: Value between 0 and motor.max_pos -> Position where cells were found with the highest confidence. This position should be used to seed a local z-stack.
+    int:
+        Value between 0 and motor.max_pos -> Position where cells were found with the highest confidence. This position should be used to seed a local z-stack.
 
     Exceptions
     ----------
-    NoCellsFound - raised if no cells found after max_attempts iterations
+    NoCellsFound:
+        Raised if no cells found after max_attempts iterations
     """
 
     max_attempts = 3 # Maximum number of times to run check for cells routine before aborting
     cell_finder = CellFinder()
-    cross_corr_vals = []
     img = yield img
     
     # Initial check for cells, return current motor position if cells found
-    cells_present = cell_finder.checkForCells(cell_finder.getMaxCrossCorrelationVal(img))
-    if cells_present:
-        return mscope.motor.pos
+    cell_finder.add_image(mscope.motor.motor_pos, img)
+    try:
+        cells_present_motor_pos = cell_finder.get_cells_found_position()
+        return cells_present_motor_pos
+    except NoCellsFound:
+        cell_finder.reset()
 
-    # While cells not present, pull syringe and look for cells
-    while not cells_present:
+    while True:
         """
         1. Pull syringe for 5 seconds
         2. Sweep the motor through the full range of motion and take in images at each step
@@ -270,18 +274,15 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
             img = yield img
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
-        # Perform a full focal stack and assess for cells at each step
+        # Perform a full focal stack and get the cross-correlation value for each image
         for pos in range(0, mscope.motor.max_pos, steps_per_image):
-            ### TODO: Potentially moving to 0 can cause the limit switch to get stuck? Add padding to the bottom after homing the motor?
             mscope.motor.move_abs(pos)
             img = yield img
-            cross_corr_vals.append(cell_finder.getMaxCrossCorrelationVal(img))
+            cell_finder.add_image(mscope.motor.motor_pos, img)
 
-        max_corr = np.max(cross_corr_vals)
-        cells_present = cell_finder.checkForCells(max_corr)
-        if cells_present:
-            # Return the motor position where cells were found w/ the highest confidence
-            motor_pos = int(np.argmax(cross_corr_vals)*steps_per_image)
-            return motor_pos
-        
-        max_attempts -=1
+        # Return the motor position where cells were found
+        try:
+            cells_present_motor_pos = cell_finder.get_cells_found_position()
+            return cells_present_motor_pos
+        except NoCellsFound:
+            max_attempts -=1
