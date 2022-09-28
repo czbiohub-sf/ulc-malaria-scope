@@ -22,6 +22,9 @@ from PyQt5.QtGui import QImage, QPixmap, QIcon
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
+from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS, PER_IMAGE_METADATA_KEYS, TARGET_FLOWRATE
+
+
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
@@ -100,7 +103,7 @@ class ScopeOp(QObject, Machine):
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
-        self.autoflow_result = None
+        self.fastflow_result = None
 
         states = [
             {'name' : 'standby',
@@ -121,12 +124,13 @@ class ScopeOp(QObject, Machine):
                 'signal' : self.img_signal, 
                 'slot' : self.run_SSAF,
                 },
-            {'name' : 'autoflow', 
-                'on_enter' : [self._start_autoflow],
+            {'name' : 'fastflow', 
+                'on_enter' : [self._start_fastflow],
                 'signal' : self.img_signal, 
-                'slot' : self.run_autoflow,
+                'slot' : self.run_fastflow,
                 },
             {'name' : 'experiment', 
+                'on_enter' : [self._start_experiment],
                 'signal' : self.img_signal, 
                 'slot' : self.run_experiment,
                 },
@@ -157,7 +161,7 @@ class ScopeOp(QObject, Machine):
             print("Failed precheck")
 
     def start(self):
-        print("start has been clicked")
+        print("Starting experiment")
 
         self.to_standby()
         self.next_state()
@@ -166,7 +170,7 @@ class ScopeOp(QObject, Machine):
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
-        self.autoflow_result = None
+        self.fastflow_result = None
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -182,7 +186,6 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
-
     def _start_SSAF(self):
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
@@ -190,9 +193,13 @@ class ScopeOp(QObject, Machine):
         self.SSAF_routine = singleShotAutofocusRoutine(self.mscope, None)
         self.SSAF_routine.send(None)
 
-    def _start_autoflow(self):
-        self.autoflow_routine = fastFlowRoutine(self.mscope, None)
-        self.autoflow_routine.send(None)
+    def _start_fastflow(self):
+        self.fastflow_routine = fastFlowRoutine(self.mscope, None)
+        self.fastflow_routine.send(None)
+
+    def _start_experiment(self):
+        self.PSSAF_routine = periodicAutofocusWrapper(mscope, None)
+        self.flowcontrol_routine = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
@@ -232,22 +239,34 @@ class ScopeOp(QObject, Machine):
                 self.next_state()
 
     @pyqtSlot(np.ndarray)
-    def run_autoflow(self, img):
-        if self.autoflow_result == None:
+    def run_fastflow(self, img):
+        if self.fastflow_result == None:
             try:
-                self.autoflow_routine.send(img)
+                self.fastflow_routine.send(img)
             except StopIteration as e:
-                self.autoflow_result = e.value
+                self.fastflow_result = e.value
 
-                if isinstance(self.autoflow_result, bool):
+                if isinstance(self.fastflow_result, bool):
                     print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
-                elif isinstance(self.autoflow_result, float):
-                    print(f"Flowrate: {self.autoflow_result}")
+                elif isinstance(self.fastflow_result, float):
+                    print(f"Flowrate: {self.fastflow_result}")
 
                 self.next_state()
 
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
+        # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
+        # TODO get metadata from hardware here
+
+        # Periodically adjust focus using single shot autofocus
+        self.PSSAF_routine.send(img)
+
+        # Adjust the flow
+        try:
+            self.flowcontrol_routine.send(img)
+        except CantReachTargetFlowrate:
+            print("Can't reach target flowrate.")
+
         print("Running experiment")
 
 
@@ -365,8 +384,8 @@ class Oracle(Machine):
     def _save_form(self, *args):
         try:
             # TBD implement actual save here
-            self.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
-            # pass
+            # self.scopeop.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
+            pass
         # TODO target correct exception here
         except Exception as e:
             print(e)
@@ -397,6 +416,14 @@ class Oracle(Machine):
         self.liveview_window.close()
 
     def end(self, *args):
+        # closing_file_future = self.scopeop.mscope.data_storage.close()
+        self.scopeop.mscope.pneumatic_module.setDutyCycle(self.mscope.pneumatic_module.getMaxDutyCycle())
+
+        print("Waiting for the file to finish closing...")
+        while not closing_file_future.done():
+            sleep(1)
+        print("Successfully closed file.")
+
         self.acquisition.running = False
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()

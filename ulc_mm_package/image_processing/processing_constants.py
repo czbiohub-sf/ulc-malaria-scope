@@ -32,24 +32,20 @@ EXPERIMENT_METADATA_KEYS = [
         "notes",
         "camera", # AVT / Basler
         "target_flowrate",
-        "mean_brightness",
-        "percentage_parasitemia", # if known, otherwise none/flag value?
+        "exposure",
+        "target_flowrate",
+        "target_brightness",
     ]
 
 PER_IMAGE_METADATA_KEYS = [
         "im_counter",
-        "measurement_type",
-        "sample_type",
         "timestamp",
-        "exposure",
         "motor_pos",
         "pressure_hpa",
         "syringe_pos",
-        "flow_control_on",
-        "target_flowrate",
-        "current_flowrate",
-        "autofocus_on",
-        "autofocus_motor_steps",
+        "flowrate",
+        "temperature",
+        "humidity",
     ]
 
 # ================ Cell detection constants ================ #
