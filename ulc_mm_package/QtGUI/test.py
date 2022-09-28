@@ -162,7 +162,6 @@ class ScopeOp(QObject, Machine):
     def start(self):
         print("Starting experiment")
 
-        self.acquisition.count = 0
         self.to_standby()
         self.next_state()
 
@@ -387,7 +386,7 @@ class Oracle(Machine):
         return msgBox.exec()
 
     def _reset(self, *args):
-        pass
+        self.acquisition.count = 0
         # delete current scope?
 
     def _start_precheck(self, *args):
