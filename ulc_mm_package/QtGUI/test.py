@@ -22,7 +22,6 @@ from PyQt5.QtGui import QImage, QPixmap, QIcon
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
-from ulc_mm_package.image_processing.processing_constants import DEFAULT_SSD
 from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS, PER_IMAGE_METADATA_KEYS, TARGET_FLOWRATE
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
@@ -81,7 +80,7 @@ class ScopeOpState(State):
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
 
     def _connect(self):
-        self.signal.connect(self.slot)
+        self.signal.connect(self.slot, type=Qt.BlockingQueuedConnection)
 
     def _disconnect(self):
         print("disconnecting " + self.name)
@@ -276,7 +275,8 @@ class ScopeOp(QObject, Machine):
 
 
 class Acquisition(QObject):
-    new_img = pyqtSignal(np.ndarray)
+    update_liveview = pyqtSignal(np.ndarray)
+    update_scopeop = pyqtSignal(np.ndarray)
 
     def __init__(self):
         super().__init__()
@@ -289,11 +289,17 @@ class Acquisition(QObject):
         self.mscope = mscope
 
     def run(self):
+        a = 0
+        b = 0
         try: 
             while self.running:
+                a = perf_counter()
+                print(a-b)
+                b = a 
+
                 img = next(self.mscope.camera.yieldImages())
-                self.new_img.emit(img) 
-                cv2.imwrite('{}.png'.format(self.count), img)
+                self.update_liveview.emit(img) 
+                self.update_scopeop.emit(img) 
                 self.count += 1
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
@@ -316,7 +322,7 @@ class Oracle(Machine):
         self.acquisition_thread.started.connect(self.acquisition.run)
 
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp(self.acquisition.new_img)
+        self.scopeop = ScopeOp(self.acquisition.update_scopeop)
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
@@ -357,9 +363,9 @@ class Oracle(Machine):
 
     def _freeze_liveview(self, freeze):
         if freeze:
-            self.acquisition.new_img.disconnect(self.liveview_window.update_img)
+            self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
         else:            
-            self.acquisition.new_img.connect(self.liveview_window.update_img)
+            self.acquisition.update_liveview.connect(self.liveview_window.update_img)
 
     def _display_message(self, icon, title, text, cancel=False, exit_after=False):
         msgBox = QMessageBox()
@@ -414,14 +420,14 @@ class Oracle(Machine):
     def _start_liveview(self, *args):
         self.liveview_window.show()
 
-        self.acquisition.new_img.connect(self.liveview_window.update_img)
+        self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition_thread.start()
 
         self.scopeop.start()
 
     def _close_liveview(self, *args):
         self.scopeop.to_standby()
-        self.acquisition.new_img.disconnect(self.liveview_window.update_img)
+        self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
 
         self.liveview_window.close()
 
@@ -430,8 +436,8 @@ class Oracle(Machine):
         self.scopeop.mscope.pneumatic_module.setDutyCycle(self.scopeop.mscope.pneumatic_module.getMaxDutyCycle())
 
         print("Waiting for the file to finish closing...")
-        while not closing_file_future.done():
-            sleep(1)
+        # while not closing_file_future.done():
+        #     sleep(1)
         print("Successfully closed file.")
 
         self.acquisition.running = False

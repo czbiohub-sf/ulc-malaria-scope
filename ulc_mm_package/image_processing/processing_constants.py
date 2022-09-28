@@ -30,6 +30,7 @@ EXPERIMENT_METADATA_KEYS = [
         "protocol",
         "site",
         "notes",
+        "scope",
         "camera", # AVT / Basler
         "target_flowrate",
         "exposure",
