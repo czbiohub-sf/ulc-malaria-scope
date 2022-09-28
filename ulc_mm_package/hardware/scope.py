@@ -161,7 +161,6 @@ class MalariaScope:
                     sleep(0.1)
                     self.encoder.setColor(12, 159, 217)
 
-
             # Connect the encoder
             try:
                 self.encoder = PIM522RotaryEncoder(manualFocusWithEncoder)

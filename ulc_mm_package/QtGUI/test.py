@@ -22,6 +22,8 @@ from PyQt5.QtGui import QImage, QPixmap, QIcon
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
+from ulc_mm_package.image_processing.processing_constants import DEFAULT_SSD
+
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
@@ -159,6 +161,7 @@ class ScopeOp(QObject, Machine):
     def start(self):
         print("start has been clicked")
 
+        self.acquisition.count = 0
         self.to_standby()
         self.next_state()
 
@@ -182,7 +185,6 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
-
     def _start_SSAF(self):
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
@@ -193,6 +195,9 @@ class ScopeOp(QObject, Machine):
     def _start_autoflow(self):
         self.autoflow_routine = fastFlowRoutine(self.mscope, None)
         self.autoflow_routine.send(None)
+
+    def _start_experiment(self):
+        self.SSAF_periodic
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
@@ -248,6 +253,8 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
+        mscope.data_storage.writeData(img, fake_per_img_metadata)
+
         print("Running experiment")
 
 
@@ -259,6 +266,7 @@ class Acquisition(QObject):
 
         self.mscope = None
         self.running = True
+        self.count = 0
 
     def get_mscope(self, mscope):
         self.mscope = mscope
@@ -266,13 +274,17 @@ class Acquisition(QObject):
     def run(self):
         try: 
             while self.running:
-                self.new_img.emit(next(self.mscope.camera.yieldImages())) 
+                img = next(self.mscope.camera.yieldImages())
+                self.new_img.emit(img) 
+                cv2.imwrite('{}.png'.format(self.count), img)
+                self.count += 1
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
             # Once that happens, this can be swapped to catch the PyCameraException
             print(e)
             print(traceback.format_exc())
             
+
 class Oracle(Machine):
 
     def __init__(self, *args, **kwargs):
