@@ -288,7 +288,7 @@ class Acquisition(QObject):
         self.mscope = None
 
         self.timer = QTimer()
-        self.timer.timeout.connect(get_img)
+        self.timer.timeout.connect(self.get_img)
 
         self.running = True
         self.count = 0
