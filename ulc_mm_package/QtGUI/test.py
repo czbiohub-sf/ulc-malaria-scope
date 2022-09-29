@@ -1,6 +1,5 @@
 import sys
 import traceback
-from xml.sax.handler import property_declaration_handler
 import numpy as np
 
 from transitions import Machine, State
@@ -9,43 +8,43 @@ from time import perf_counter, sleep
 from qimage2ndarray import gray2qimage
 
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow,
-    QDialog, QMessageBox,
-    QGridLayout, QVBoxLayout, QHBoxLayout,
-    QSizePolicy,
-    QWidget, QTabWidget,   
-    QLabel, QPushButton, QLineEdit, QComboBox,
+    QMessageBox,
+    QWidget,   
+    QLabel, 
+    QPushButton, 
+    QLineEdit, 
+    QComboBox,
 )
-from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, pyqtSlot, QTimer
-from PyQt5.QtGui import QImage, QPixmap, QIcon
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, 
+from PyQt5.QtGui import QPixmap, QIcon
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
+from ulc_mm_package.image_processing.processing_constants import (
+    TIMEOUT_PERIOD,
+    ICON_PATH,
+    CAMERA_SELECTION,
+    EXPERIMENT_METADATA_KEYS, 
+    PER_IMAGE_METADATA_KEYS, 
+    TARGET_FLOWRATE,
+)
 
-from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS, PER_IMAGE_METADATA_KEYS, TARGET_FLOWRATE
-
-QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
-_ICON_PATH = "CZB-logo.png"
-_FORM_PATH = "user_form.ui"
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 
-_UPDATE_PERIOD = 30
-
-# Move QTimer to correct spot
+# Add type to input arguments (mscope, img_signal)
+# Does PyQt5.QtWidgets need to be imported?
 # Check 4036 notes
 
 # TODOs
 # TH sensor needs to be simulated too
-## CLEAN UP NOTE??
-## Clean up imports
 
 # NICE TO HAVE
 # Use "on_exception" to trigger exception handler
 # Validate experiment form inputs
 # Implement exception handling for camera
-
 
 class ScopeOpState(State):
 
@@ -82,7 +81,7 @@ class ScopeOpState(State):
         self.signal.disconnect(self.slot)
 
         
-class ScopeOp(QObject, Machine):
+class ScopeOp(QtCore.QObject, Machine):
     precheck_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
     error = pyqtSignal()
@@ -266,7 +265,7 @@ class ScopeOp(QObject, Machine):
         print("Running experiment")
 
 
-class Acquisition(QObject):
+class Acquisition(QtCore.QObject):
     update_liveview = pyqtSignal(np.ndarray)
     update_scopeop = pyqtSignal(np.ndarray)
 
@@ -275,9 +274,9 @@ class Acquisition(QObject):
 
         self.mscope = None
 
-        self.timer = QTimer()
+        self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.get_img)
-        # self.timer.start(_UPDATE_PERIOD)
+        # self.timer.start(TIMEOUT_PERIOD)
 
         self.running = True
         self.count = 0
@@ -315,13 +314,13 @@ class Oracle(Machine):
 
         # Instantiate camera acquisition and thread
         self.acquisition = Acquisition()
-        self.acquisition_thread = QThread()
+        self.acquisition_thread = QtCore.QThread()
         self.acquisition.moveToThread(self.acquisition_thread)
         # self.acquisition_thread.started.connect(self.acquisition.run)
 
         # Instantiate scope operator and thread
         self.scopeop = ScopeOp(self.acquisition.update_scopeop)
-        self.scopeop_thread = QThread()
+        self.scopeop_thread = QtCore.QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
         # Configure state machine
@@ -367,7 +366,7 @@ class Oracle(Machine):
 
     def _display_message(self, icon, title, text, cancel=False, exit_after=False):
         msgBox = QMessageBox()
-        msgBox.setWindowIcon(QIcon(_ICON_PATH))
+        msgBox.setWindowIcon(QIcon(ICON_PATH))
         msgBox.setIcon(icon)
         msgBox.setWindowTitle(f"{title}")
         msgBox.setText(f"{text}")
@@ -424,7 +423,7 @@ class Oracle(Machine):
 
         self.scopeop.start()
         
-        self.acquisition.timer.start(_UPDATE_PERIOD)
+        self.acquisition.timer.start(TIMEOUT_PERIOD)
 
     def _close_liveview(self, *args):
         self.scopeop.to_standby()
@@ -447,7 +446,7 @@ class Oracle(Machine):
         print("Exiting program")
         quit()   
         
-class FormGUI(QDialog):
+class FormGUI(QtWidgets.QDialog):
     """Form to input experiment parameters"""
     def __init__(self, *args, **kwargs):
         super(FormGUI, self).__init__(*args, **kwargs)
@@ -456,10 +455,10 @@ class FormGUI(QDialog):
     def _load_ui(self):
         self.setWindowTitle('Experiment form')
         self.setGeometry(0, 0, 675, 500)
-        self.setWindowIcon(QIcon(_ICON_PATH))
+        self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up layout + widget
-        self.main_layout = QGridLayout()
+        self.main_layout = QtWidgets.QGridLayout()
         self.setLayout(self.main_layout)
 
         # Labels
@@ -484,8 +483,11 @@ class FormGUI(QDialog):
         self.protocol = QComboBox()
         self.site = QComboBox()
 
-        # Configure widgets
-        # notes_size_policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # # Configure widgets
+        # notes_size_policy = QtWidgets.QSizePolicy(
+        #                         QtWidgets.QSizePolicy.Preferred,
+        #                         QtWidgets.QSizePolicy.Preferred
+        #                         )
         # notes_size_policy.setVerticalStretch(1)
         # self.notes.setSizePolicy(notes_size_policy)
 
@@ -523,7 +525,7 @@ class FormGUI(QDialog):
             "notes": self.notes.text(),
         }
         
-class LiveviewGUI(QMainWindow):
+class LiveviewGUI(QtWidgets.QMainWindow):
     
     def __init__(self, *args, **kwargs):
         super(LiveviewGUI, self).__init__(*args, **kwargs)
@@ -543,18 +545,18 @@ class LiveviewGUI(QMainWindow):
         self.setGeometry(100, 100, 1100, 700)
 
         # Set up central layout + widget
-        self.main_layout = QGridLayout()
+        self.main_layout = QtWidgets.QGridLayout()
         self.main_widget = QWidget(self)
         self.setCentralWidget(self.main_widget)
         self.main_widget.setLayout(self.main_layout)
 
         # Set up liveview layout + widget
-        self.liveview_layout = QHBoxLayout()
+        self.liveview_layout = QtWidgets.QHBoxLayout()
         self.liveview_widget = QWidget()
         self.liveview_widget.setLayout(self.liveview_layout)
 
         # Populate liveview tab
-        self.margin_layout = QVBoxLayout()
+        self.margin_layout = QtWidgets.QVBoxLayout()
         self.margin_widget = QWidget()
         self.margin_widget.setLayout(self.margin_layout)
 
@@ -579,7 +581,7 @@ class LiveviewGUI(QMainWindow):
         self.margin_layout.addWidget(self.hardware_lbl)
 
         # Set up thumbnail layout + widget
-        self.thumbnail_layout = QGridLayout()
+        self.thumbnail_layout = QtWidgets.QGridLayout()
         self.thumbnail_widget = QWidget()
         self.thumbnail_widget.setLayout(self.thumbnail_layout)
 
@@ -607,13 +609,13 @@ class LiveviewGUI(QMainWindow):
         self.thumbnail_layout.addWidget(self.schizont_img, 1, 2)
 
         # Set up tabs
-        self.tab_widget = QTabWidget()
+        self.tab_widget = QtWidgets.QTabWidget()
         self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
         self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnail")
         self.main_layout.addWidget(self.tab_widget, 0, 0)
 
 if __name__ == "__main__":
 
-    app = QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     oracle = Oracle()
     sys.exit(app.exec_())

@@ -1,5 +1,8 @@
 SIMULATION = False
 
+# FPS rate
+TIMEOUT_PERIOD = 30
+
 # Window icon
 ICON_PATH = "CZB-logo.png"
 
