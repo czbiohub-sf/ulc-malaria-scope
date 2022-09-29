@@ -756,7 +756,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(float)
     def updateFlowVal(self, flow_val):
-        self.lblFlowrate.setText(f"Flowrate: {flow_val:.2f}")
+        if flow_val != -99:
+            self.lblFlowrate.setText(f"Flowrate: {flow_val:.2f}")
 
     @pyqtSlot(float)
     def updatePressureLabel(self, val):
