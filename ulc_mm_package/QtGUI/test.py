@@ -289,6 +289,7 @@ class Acquisition(QObject):
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.get_img)
+        self.start(30)
 
         self.running = True
         self.count = 0
