@@ -85,10 +85,11 @@ class ScopeOpState(State):
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
 
     def _connect(self):
+        print("CONNECTING " + self.name)
         self.signal.connect(self.slot, type=Qt.BlockingQueuedConnection)
 
     def _disconnect(self):
-        print("disconnecting " + self.name)
+        print("DISCONNECTING " + self.name)
         self.signal.disconnect(self.slot)
 
         
@@ -117,9 +118,10 @@ class ScopeOp(QObject, Machine):
                 'signal' : self.img_signal, 
                 'slot' : self.run_autobrightness,
                 },
-            {'name' : 'cellfinder', 
-                'on_enter' : [self._start_cellfinder, self._freeze_liveview],
-                'on_exit' : [self._unfreeze_liveview],
+            {'name' : 'cellfinder',
+                'on_enter' : [self._start_cellfinder],
+                # 'on_enter' : [self._start_cellfinder, self._freeze_liveview],
+                #'on_exit' : [self._unfreeze_liveview],
                 'signal' : self.img_signal, 
                 'slot' : self.run_cellfinder,
                 },

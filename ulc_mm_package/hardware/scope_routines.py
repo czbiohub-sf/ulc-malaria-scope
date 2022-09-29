@@ -286,3 +286,4 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
             return cells_present_motor_pos
         except NoCellsFound:
             max_attempts -=1
+            print("MAX ATTEMPTS LEFT {}".format(max_attempts))
