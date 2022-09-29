@@ -209,14 +209,18 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
+        self.img_signal.disconnect(self.run_autobrightness)
         if self.autobrightness_result == None:
             try:
                 self.autobrightness_routine.send(img)
+                print("HI")
             except StopIteration as e:
                 self.autobrightness_result = e.value
                 print(f"Mean pixel val: {self.autobrightness_result}")
 
                 self.next_state()
+        self.img_signal.connect(self.run_autobrightness)
+
 
     @pyqtSlot(np.ndarray)
     def run_cellfinder(self, img):
