@@ -1,11 +1,13 @@
 SIMULATION = False
 
+# Window icon
+ICON_PATH = "CZB-logo.png"
+
 # Camera Selection
 CAMERA_SELECTION = 0 # 0 = Basler, 1 = AVT
 
 # SSD directory
 DEFAULT_SSD = "/media/pi/"
-ALT_SSD = "./sim_media/pi/"
 
 #TODO: Better way to reference files in a module?
 AUTOFOCUS_MODEL_DIR =  "../neural_nets/autofocus.xml"

@@ -43,20 +43,9 @@ _UPDATE_PERIOD = 1.0/30.0
 
 # NICE TO HAVE
 # Use "on_exception" to trigger exception handler
-# define types for arg inputs and Nonetype variables
-## Validate experiment form inputs
+# Validate experiment form inputs
 # Implement exception handling for camera
 
-# SHUTOFF
-## Replace all exit() with end() and go back to pre-experiment dialog
-# deal with camera shutoff
-
-# on_enter and on_exit order doesnt work
-# Implement proper shutoff
-# FPS handling < and ^ may be better handled by timer? 
-
-# Populate info panel
-# Implement survey and metadata feed 
 
 class ScopeOpState(State):
 
