@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (
     QWidget, QTabWidget,   
     QLabel, QPushButton, QLineEdit, QComboBox,
 )
-from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, pyqtSlot, QTimer
 from PyQt5.QtGui import QImage, QPixmap, QIcon
 
 from ulc_mm_package.hardware.scope import MalariaScope
@@ -30,6 +30,11 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 _ICON_PATH = "CZB-logo.png"
 _FORM_PATH = "user_form.ui"
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
+
+_UPDATE_PERIOD = 1.0/30.0
+
+# Move QTimer to correct spot
+# Check 4036 notes
 
 # TODOs
 # TH sensor needs to be simulated too
@@ -281,11 +286,33 @@ class Acquisition(QObject):
         super().__init__()
 
         self.mscope = None
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(get_img)
+
         self.running = True
         self.count = 0
 
     def get_mscope(self, mscope):
         self.mscope = mscope
+
+    def get_img(self):
+        a = 0
+        b = 0
+        try: 
+            a = perf_counter()
+            print(a-b)
+            b = a    
+
+            img = next(self.mscope.camera.yieldImages())
+            self.update_liveview.emit(img)
+            self.update_scopeop.emit(img)
+            self.count += 1
+        except Exception as e:
+            # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
+            # Once that happens, this can be swapped to catch the PyCameraException
+            print(e)
+            print(traceback.format_exc())
 
     def run(self):
         a = 0
@@ -318,7 +345,7 @@ class Oracle(Machine):
         self.acquisition = Acquisition()
         self.acquisition_thread = QThread()
         self.acquisition.moveToThread(self.acquisition_thread)
-        self.acquisition_thread.started.connect(self.acquisition.run)
+        # self.acquisition_thread.started.connect(self.acquisition.run)
 
         # Instantiate scope operator and thread
         self.scopeop = ScopeOp(self.acquisition.update_scopeop)
