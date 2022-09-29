@@ -2,6 +2,7 @@
 FlowController
 """
 
+from typing import Union
 import numpy as np
 
 from ulc_mm_package.image_processing.processing_constants import (
@@ -133,7 +134,7 @@ class FlowController:
             if flow_error == 0:
                 return float(dy)
 
-    def controlFlow(self, img: np.ndarray):
+    def controlFlow(self, img: np.ndarray) -> float:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
         
         If the `self.target_flowrate` has not been set, the first full measurement is used as the target, and all subsequent measurements
@@ -166,6 +167,9 @@ class FlowController:
             flow_error = self._getFlowError()
             self._adjustSyringe(flow_error)
             print(f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}")
+            return self.curr_flowrate
+            
+        return -99
 
 
     def _getFlowError(self):
