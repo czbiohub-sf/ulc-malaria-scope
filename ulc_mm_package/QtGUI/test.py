@@ -31,7 +31,7 @@ _ICON_PATH = "CZB-logo.png"
 _FORM_PATH = "user_form.ui"
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 
-_UPDATE_PERIOD = 1.0/30.0
+_UPDATE_PERIOD = 30
 
 # Move QTimer to correct spot
 # Check 4036 notes
@@ -74,10 +74,11 @@ class ScopeOpState(State):
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
 
     def _connect(self):
+        print("CONNECTING " + self.name)
         self.signal.connect(self.slot, type=Qt.BlockingQueuedConnection)
 
     def _disconnect(self):
-        print("disconnecting " + self.name)
+        print("DISCONNECTING " + self.name)
         self.signal.disconnect(self.slot)
 
         
@@ -106,9 +107,10 @@ class ScopeOp(QObject, Machine):
                 'signal' : self.img_signal, 
                 'slot' : self.run_autobrightness,
                 },
-            {'name' : 'cellfinder', 
-                'on_enter' : [self._start_cellfinder, self._freeze_liveview],
-                'on_exit' : [self._unfreeze_liveview],
+            {'name' : 'cellfinder',
+                'on_enter' : [self._start_cellfinder],
+                # 'on_enter' : [self._start_cellfinder, self._freeze_liveview],
+                #'on_exit' : [self._unfreeze_liveview],
                 'signal' : self.img_signal, 
                 'slot' : self.run_cellfinder,
                 },
@@ -194,14 +196,12 @@ class ScopeOp(QObject, Machine):
         self.PSSAF_routine = periodicAutofocusWrapper(mscope, None)
         self.flowcontrol_routine = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
 
-    def _start_experiment(self):
-        self.SSAF_periodic
-
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
         if self.autobrightness_result == None:
             try:
                 self.autobrightness_routine.send(img)
+                print("HI")
             except StopIteration as e:
                 self.autobrightness_result = e.value
                 print(f"Mean pixel val: {self.autobrightness_result}")
@@ -251,7 +251,6 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
-        mscope.data_storage.writeData(img, fake_per_img_metadata)
         # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
         # TODO get metadata from hardware here
 
@@ -278,45 +277,28 @@ class Acquisition(QObject):
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.get_img)
-        self.start(30)
+        # self.timer.start(_UPDATE_PERIOD)
 
         self.running = True
         self.count = 0
+        
+        self.a = 0
+        self.b = 0
 
     def get_mscope(self, mscope):
         self.mscope = mscope
 
     def get_img(self):
-        a = 0
-        b = 0
+
         try: 
-            a = perf_counter()
-            print(a-b)
-            b = a    
+            self.a = perf_counter()
+            print("GET IMG {}".format(self.a-self.b))
+            self.b = self.a    
 
             img = next(self.mscope.camera.yieldImages())
             self.update_liveview.emit(img)
             self.update_scopeop.emit(img)
             self.count += 1
-        except Exception as e:
-            # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
-            # Once that happens, this can be swapped to catch the PyCameraException
-            print(e)
-            print(traceback.format_exc())
-
-    def run(self):
-        a = 0
-        b = 0
-        try: 
-            while self.running:
-                a = perf_counter()
-                print(a-b)
-                b = a 
-
-                img = next(self.mscope.camera.yieldImages())
-                self.update_liveview.emit(img) 
-                self.update_scopeop.emit(img) 
-                self.count += 1
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
             # Once that happens, this can be swapped to catch the PyCameraException
@@ -403,6 +385,7 @@ class Oracle(Machine):
         return msgBox.exec()
 
     def _reset(self, *args):
+        self.timer.stop()
         self.acquisition.count = 0
         # delete current scope?
 
@@ -440,6 +423,8 @@ class Oracle(Machine):
         self.acquisition_thread.start()
 
         self.scopeop.start()
+        
+        self.acquisition.timer.start(_UPDATE_PERIOD)
 
     def _close_liveview(self, *args):
         self.scopeop.to_standby()
@@ -456,7 +441,7 @@ class Oracle(Machine):
         #     sleep(1)
         print("Successfully closed file.")
 
-        self.acquisition.running = False
+        # self.acquisition.running = False
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
         print("Exiting program")
