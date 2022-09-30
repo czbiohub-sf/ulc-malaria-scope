@@ -189,6 +189,11 @@ class Oracle(Machine):
         # self.acquisition.running = False
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
+        
+        self.scopeop.mscope.shutoff()
+        self.scopeop_thread.quit()
+        self.scopeop_thread.wait()
+        
         print("Exiting program")
         quit()   
        

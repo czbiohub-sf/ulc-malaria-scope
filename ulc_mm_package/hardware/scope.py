@@ -56,6 +56,10 @@ class MalariaScope:
         self._init_TPU()
 
     def __del__(self):
+        self.shutoff()
+        
+    def shutoff(self):
+        print("SHUTTING OFF HARDWARE")
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.camera.deactivateCamera()
