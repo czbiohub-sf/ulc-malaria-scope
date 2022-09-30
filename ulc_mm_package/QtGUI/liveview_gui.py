@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QLabel, 
     QPushButton
 )
-from PyQt5.QtCore import Qt, pyqtSlot, 
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
 
