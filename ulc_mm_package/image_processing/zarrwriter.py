@@ -1,4 +1,4 @@
-""" Simple Zarr storage format wrapper
+f""" Simple Zarr storage format wrapper
 
 -- Important Links -- 
 Library Documentation:
@@ -100,13 +100,15 @@ class ZarrWriter():
 
     @lockNoBlock(WRITE_LOCK)
     def closeFile(self):
+        """Close the Zarr store."""
         self.writable = False
         wait(self.futures, return_when=ALL_COMPLETED)
         self.store.close()
         self.store = None
+        self.futures = []
 
     def threadedCloseFile(self):
-        """Close the file in a separate thread (and locks the ability to write to the file)
+        """Close the file in a separate thread (and locks the ability to write to the file).
         
         Returns
         -------
