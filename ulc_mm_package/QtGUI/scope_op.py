@@ -169,11 +169,9 @@ class ScopeOp(QtCore.QObject, Machine):
         if self.autobrightness_result == None:
             try:
                 self.autobrightness_routine.send(img)
-                print("HI")
             except StopIteration as e:
                 self.autobrightness_result = e.value
                 print(f"Mean pixel val: {self.autobrightness_result}")
-
                 self.next_state()
 
     @pyqtSlot(np.ndarray)
@@ -183,13 +181,12 @@ class ScopeOp(QtCore.QObject, Machine):
                 self.cellfinder_routine.send(img)
             except StopIteration as e:
                 self.cellfinder_result = e.value
-
-                if isinstance(self.cellfinder_result, bool):
-                    print("Unable to find cells")
-                elif isinstance(self.cellfinder_result, int):
-                    print(f"Cells found @ motor pos: {self.cellfinder_result}")
-
-                    self.next_state()
+                print(f"Cells found @ motor pos: {self.cellfinder_result}")
+                self.next_state()
+            except NoCellsFound:
+                self.cellfinder_result = -1
+                self.error.emit("Calibration failed", "No cells found.")
+                self.to_standby()
 
     @pyqtSlot(np.ndarray)
     def run_SSAF(self, img):
@@ -199,7 +196,6 @@ class ScopeOp(QtCore.QObject, Machine):
             except StopIteration as e:
                 self.SSAF_result = e.value
                 print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
-                
                 self.next_state()
 
     @pyqtSlot(np.ndarray)
@@ -207,14 +203,14 @@ class ScopeOp(QtCore.QObject, Machine):
         if self.fastflow_result == None:
             try:
                 self.fastflow_routine.send(img)
+            except CantReachTargetFlowrate:
+                self.fastflow_result = -1
+                print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
+                self.error.emit("Calibration failed", "Unable to achieve desired flowrate.")
+                self.to_standby()
             except StopIteration as e:
                 self.fastflow_result = e.value
-
-                if isinstance(self.fastflow_result, bool):
-                    print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
-                elif isinstance(self.fastflow_result, float):
-                    print(f"Flowrate: {self.fastflow_result}")
-
+                print(f"Flowrate: {self.fastflow_result}")
                 self.next_state()
 
     @pyqtSlot(np.ndarray)

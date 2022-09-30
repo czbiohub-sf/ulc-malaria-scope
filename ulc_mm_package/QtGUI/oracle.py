@@ -56,6 +56,9 @@ class Oracle(Machine):
         self.scopeop_thread = QtCore.QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
+        # Connect scope operator signal and slot
+        self.scopeop.error.connect(self.error_handler)
+
         # Configure state machine
         states = [
             {'name' : 'standby'},
@@ -163,6 +166,14 @@ class Oracle(Machine):
         self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
 
         self.liveview_window.close()
+
+    def error_handler(self, title, text):
+        _ = self._display_message(
+            QMessageBox.Icon.Error,
+            title,
+            text,
+            exit_after=True,
+            )
 
     def end(self, *args):
         # closing_file_future = self.scopeop.mscope.data_storage.close()

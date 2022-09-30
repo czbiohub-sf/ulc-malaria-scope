@@ -84,7 +84,7 @@ class ScopeOpState(State):
 class ScopeOp(QtCore.QObject, Machine):
     precheck_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
-    error = pyqtSignal()
+    error = pyqtSignal(str, str)
 
     state_cls = ScopeOpState
 
@@ -212,15 +212,18 @@ class ScopeOp(QtCore.QObject, Machine):
         if self.cellfinder_result == None: 
             try:
                 self.cellfinder_routine.send(img)
+
             except StopIteration as e:
                 self.cellfinder_result = e.value
+                print(f"Cells found @ motor pos: {self.cellfinder_result}")
+                self.next_state()
 
-                if isinstance(self.cellfinder_result, bool):
-                    print("Unable to find cells")
-                elif isinstance(self.cellfinder_result, int):
-                    print(f"Cells found @ motor pos: {self.cellfinder_result}")
-
-                    self.next_state()
+            except NoCellsFound:
+                print("Unable to find cells")
+                self.cellfinder_result = -1
+                self.error.emit("Calibration failed", "Unable to find cells.")
+                self.to_standby()
+                    
 
     @pyqtSlot(np.ndarray)
     def run_SSAF(self, img):
