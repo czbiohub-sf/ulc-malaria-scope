@@ -5,7 +5,7 @@ from time import perf_counter, sleep
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot
 
 
-class Acquisition(QtCore.QObject):
+class Acquisition(QObject):
     update_liveview = pyqtSignal(np.ndarray)
     update_scopeop = pyqtSignal(np.ndarray)
 
@@ -14,7 +14,7 @@ class Acquisition(QtCore.QObject):
 
         self.mscope = None
 
-        self.timer = QtCore.QTimer()
+        self.timer = QTimer()
         self.timer.timeout.connect(self.get_img)
 
         self.running = True

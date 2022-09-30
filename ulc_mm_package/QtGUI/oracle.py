@@ -4,15 +4,15 @@ import numpy as np
 from transitions import Machine
 from time import perf_counter, sleep
 
-from PyQt5.QtWidgets import QtWidgets, QtCore, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QIcon
 
-from ulc_mm_package.image_processing.processing_constants import (
+from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS
+from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD,
     ICON_PATH,
-    CAMERA_SELECTION,
-    EXPERIMENT_METADATA_KEYS, 
+    CAMERA_SELECTION, 
 )
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -20,7 +20,7 @@ from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 
-QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
@@ -47,13 +47,13 @@ class Oracle(Machine):
 
         # Instantiate camera acquisition and thread
         self.acquisition = Acquisition()
-        self.acquisition_thread = QtCore.QThread()
+        self.acquisition_thread = QThread()
         self.acquisition.moveToThread(self.acquisition_thread)
         # self.acquisition_thread.started.connect(self.acquisition.run)
 
         # Instantiate scope operator and thread
         self.scopeop = ScopeOp(self.acquisition.update_scopeop)
-        self.scopeop_thread = QtCore.QThread()
+        self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
         # Configure state machine
@@ -182,6 +182,6 @@ class Oracle(Machine):
 
 if __name__ == "__main__":
 
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     oracle = Oracle()
     sys.exit(app.exec_())

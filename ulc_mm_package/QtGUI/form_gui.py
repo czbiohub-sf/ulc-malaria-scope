@@ -12,6 +12,9 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QIcon
 
+from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
+
+
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
     def __init__(self, *args, **kwargs):
