@@ -5,7 +5,7 @@ from transitions import Machine
 from time import perf_counter, sleep
 
 from PyQt5.QtWidgets import QApplication, QMessageBox
-from PyQt5.QtCore import Qt, QThread
+from PyQt5.QtCore import Qt, QThread, pyqtSlot
 from PyQt5.QtGui import QIcon
 
 from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS
@@ -57,7 +57,6 @@ class Oracle(Machine):
         self.scopeop.moveToThread(self.scopeop_thread)
 
         # Connect scope operator signal and slot
-        self.scopeop.error.connect(self.error_handler)
 
         # Configure state machine
         states = [
@@ -87,6 +86,7 @@ class Oracle(Machine):
         # Connect scopeop signals and slots
         self.scopeop.precheck_done.connect(self.next_state)
         self.scopeop.freeze_liveview.connect(self._freeze_liveview)
+        self.scopeop.error.connect(self.error_handler)
 
         # Start scopeop thread
         self.scopeop_thread.start()
@@ -94,6 +94,7 @@ class Oracle(Machine):
         # Trigger first transition
         self.to_precheck()
 
+    # @pyqtSlot(bool)
     def _freeze_liveview(self, freeze):
         if freeze:
             self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
@@ -167,9 +168,10 @@ class Oracle(Machine):
 
         self.liveview_window.close()
 
+    # @pyqtSlot(str, str)
     def error_handler(self, title, text):
         _ = self._display_message(
-            QMessageBox.Icon.Error,
+            QMessageBox.Icon.Critical,
             title,
             text,
             exit_after=True,

@@ -50,7 +50,7 @@ class ScopeOpState(State):
 class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
-    error = pyqtSignal()
+    error = pyqtSignal(str, str)
 
     state_cls = ScopeOpState
 
