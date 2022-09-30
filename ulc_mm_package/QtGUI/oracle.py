@@ -179,7 +179,6 @@ class Oracle(Machine):
 
     def end(self, *args):
         # closing_file_future = self.scopeop.mscope.data_storage.close()
-        self.scopeop.mscope.pneumatic_module.setDutyCycle(self.scopeop.mscope.pneumatic_module.getMaxDutyCycle())
 
         print("Waiting for the file to finish closing...")
         # while not closing_file_future.done():
