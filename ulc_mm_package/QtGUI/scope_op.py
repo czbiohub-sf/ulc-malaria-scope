@@ -165,7 +165,7 @@ class ScopeOp(QObject, Machine):
     # def run_autobrightness(self, img):
     def run_autobrightness(self):
         # if self.autobrightness_result == None:
-        img = self.mscope.camera.yieldImages()
+        img = next(self.mscope.camera.yieldImages())
         try:
             self.autobrightness_routine.send(img)
         except StopIteration as e:
@@ -179,7 +179,7 @@ class ScopeOp(QObject, Machine):
     # def run_cellfinder(self, img):
     def run_cellfinder(self):
         # if self.cellfinder_result == None: 
-        img = self.mscope.camera.yieldImages()
+        img = next(self.mscope.camera.yieldImages())
         try:
             self.cellfinder_routine.send(img)
         except StopIteration as e:
@@ -197,7 +197,7 @@ class ScopeOp(QObject, Machine):
     # def run_SSAF(self, img):
     def run_SSAF(self):
         # if self.SSAF_result == None:
-        img = self.mscope.camera.yieldImages()
+        img = next(self.mscope.camera.yieldImages())
         try:
             self.SSAF_routine.send(img)
         except StopIteration as e:
@@ -211,7 +211,7 @@ class ScopeOp(QObject, Machine):
     # def run_fastflow(self, img):
     def run_fastflow(self):
         # if self.fastflow_result == None:
-        img = self.mscope.camera.yieldImages()
+        img = next(self.mscope.camera.yieldImages())
 
         try:
             self.fastflow_routine.send(img)
@@ -230,7 +230,7 @@ class ScopeOp(QObject, Machine):
     # @pyqtSlot(np.ndarray)
     # def run_experiment(self, img):
     def run_experiment(self):
-        self.mscope.camera.yieldImages()
+        img = next(self.mscope.camera.yieldImages())
 
         # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
         # TODO get metadata from hardware here
