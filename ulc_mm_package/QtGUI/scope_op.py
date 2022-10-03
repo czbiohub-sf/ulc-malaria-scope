@@ -166,32 +166,32 @@ class ScopeOp(QObject, Machine):
     def run_autobrightness(self):
         # if self.autobrightness_result == None:
         img = self.mscope.camera.yieldImages()
-            try:
-                self.autobrightness_routine.send(img)
-            except StopIteration as e:
-                self.autobrightness_result = e.value
-                print(f"Mean pixel val: {self.autobrightness_result}")
-                self.next_state()
-            else:
-                self.run_autobrightness()
+        try:
+            self.autobrightness_routine.send(img)
+        except StopIteration as e:
+            self.autobrightness_result = e.value
+            print(f"Mean pixel val: {self.autobrightness_result}")
+            self.next_state()
+        else:
+            self.run_autobrightness()
 
     # @pyqtSlot(np.ndarray)
     # def run_cellfinder(self, img):
     def run_cellfinder(self):
         # if self.cellfinder_result == None: 
         img = self.mscope.camera.yieldImages()
-            try:
-                self.cellfinder_routine.send(img)
-            except StopIteration as e:
-                self.cellfinder_result = e.value
-                print(f"Cells found @ motor pos: {self.cellfinder_result}")
-                self.next_state()
-            except NoCellsFound:
-                self.cellfinder_result = -1
-                self.error.emit("Calibration failed", "No cells found.")
-                self.to_standby()
-            else:
-                self.run_cellfinder()
+        try:
+            self.cellfinder_routine.send(img)
+        except StopIteration as e:
+            self.cellfinder_result = e.value
+            print(f"Cells found @ motor pos: {self.cellfinder_result}")
+            self.next_state()
+        except NoCellsFound:
+            self.cellfinder_result = -1
+            self.error.emit("Calibration failed", "No cells found.")
+            self.to_standby()
+        else:
+            self.run_cellfinder()
 
     # @pyqtSlot(np.ndarray)
     # def run_SSAF(self, img):
@@ -210,26 +210,28 @@ class ScopeOp(QObject, Machine):
     # @pyqtSlot(np.ndarray)
     # def run_fastflow(self, img):
     def run_fastflow(self):
-        if self.fastflow_result == None:
-            try:
-                self.fastflow_routine.send(img)
-            except CantReachTargetFlowrate:
-                self.fastflow_result = -1
-                print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
-                self.error.emit("Calibration failed", "Unable to achieve desired flowrate.")
-                self.to_standby()
-            except StopIteration as e:
-                self.fastflow_result = e.value
-                print(f"Flowrate: {self.fastflow_result}")
-                self.next_state()
-            else:
-                self.run_fastflow()
+        # if self.fastflow_result == None:
+        img = self.mscope.camera.yieldImages()
+
+        try:
+            self.fastflow_routine.send(img)
+        except CantReachTargetFlowrate:
+            self.fastflow_result = -1
+            print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
+            self.error.emit("Calibration failed", "Unable to achieve desired flowrate.")
+            self.to_standby()
+        except StopIteration as e:
+            self.fastflow_result = e.value
+            print(f"Flowrate: {self.fastflow_result}")
+            self.next_state()
+        else:
+            self.run_fastflow()
 
     # @pyqtSlot(np.ndarray)
     # def run_experiment(self, img):
     def run_experiment(self):
         self.mscope.camera.yieldImages()
-        
+
         # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
         # TODO get metadata from hardware here
 
