@@ -56,8 +56,6 @@ class Oracle(Machine):
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
-        # Connect scope operator signal and slot
-
         # Configure state machine
         states = [
             {'name' : 'standby'},
@@ -68,8 +66,7 @@ class Oracle(Machine):
                 'on_exit' : [self._close_form]},
             {'name' : 'liveview', 
                 'on_enter' : [self._start_liveview], 
-                'on_exit' : [self._close_liveview]},
-            # {'name' : 'survey', 'on_enter' : ['open_survey']},
+                'on_exit' : [self._close_liveview, self._open_survey]},
             ]
 
         Machine.__init__(self, states=states, queued=True, initial='standby')
@@ -77,7 +74,7 @@ class Oracle(Machine):
         self.add_transition(trigger='reset', source='*', dest='standby', after='_reset')
 
         # Connect experiment form buttons
-        self.form_window.start_btn.clicked.connect(self._save_form)
+        self.form_window.start_btn.clicked.connect(self.save_form)
         self.form_window.exit_btn.clicked.connect(self.end)
 
         # Connect liveview buttons
@@ -85,7 +82,7 @@ class Oracle(Machine):
 
         # Connect scopeop signals and slots
         self.scopeop.precheck_done.connect(self.next_state)
-        self.scopeop.freeze_liveview.connect(self._freeze_liveview)
+        self.scopeop.freeze_liveview.connect(self.freeze_liveview)
         self.scopeop.error.connect(self.error_handler)
 
         # Start scopeop thread
@@ -94,14 +91,23 @@ class Oracle(Machine):
         # Trigger first transition
         self.to_precheck()
 
-    # @pyqtSlot(bool)
-    def _freeze_liveview(self, freeze):
+
+
+    def freeze_liveview(self, freeze):
         if freeze:
             self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
         else:            
             self.acquisition.update_liveview.connect(self.liveview_window.update_img)
 
-    def _display_message(self, icon, title, text, cancel=False, exit_after=False):
+    def error_handler(self, title, text):
+        _ = self._display_message(
+            QMessageBox.Icon.Critical,
+            title,
+            text,
+            exit_after=True,
+            )
+
+    def display_message(self, icon, title, text, cancel=False, exit_after=False):
         msgBox = QMessageBox()
         msgBox.setWindowIcon(QIcon(ICON_PATH))
         msgBox.setIcon(icon)
@@ -132,23 +138,6 @@ class Oracle(Machine):
     def _start_form(self, *args):
         self.form_window.show()
 
-    def _save_form(self, *args):
-        try:
-            # TBD implement actual save here
-            # self.scopeop.mscope.data_storage.createNewExperiment(self.form_window.get_form_input())
-            pass
-        # TODO target correct exception here
-        except Exception as e:
-            print(e)
-            _ = self._display_message(
-                QMessageBox.Icon.Warning,
-                "Invalid form input",
-                "The following entries are invalid:",   # Add proper warnings here
-                exit_after=True,
-                )
-
-        self.next_state()
-
     def _close_form(self, *args):
         self.form_window.close()
 
@@ -168,14 +157,8 @@ class Oracle(Machine):
 
         self.liveview_window.close()
 
-    # @pyqtSlot(str, str)
-    def error_handler(self, title, text):
-        _ = self._display_message(
-            QMessageBox.Icon.Critical,
-            title,
-            text,
-            exit_after=True,
-            )
+    def _open_survey(self, *args):
+        pass
 
     def end(self, *args):
         # closing_file_future = self.scopeop.mscope.data_storage.close()

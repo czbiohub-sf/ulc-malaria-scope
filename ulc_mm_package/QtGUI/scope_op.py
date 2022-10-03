@@ -24,27 +24,27 @@ class ScopeOpState(State):
             if (not self.signal == None) or (not self.slot == None):
                 raise ValueError(f'Signal and/or slot specification is missing for state {name}.')
 
-        # Connect signals/slots after "on_enter" events, and disconnect before "on_exit"
-        else:
-            if on_enter == None:
-                on_enter = self._connect
-            else:
-                on_enter.append(self._connect)
+        # # Connect signals/slots after "on_enter" events, and disconnect before "on_exit"
+        # else:
+        #     if on_enter == None:
+        #         on_enter = self._connect
+        #     else:
+        #         on_enter.append(self._connect)
         
-            if on_exit == None:
-                on_exit = self._disconnect
-            else:
-                on_exit.insert(0, self._disconnect)
+        #     if on_exit == None:
+        #         on_exit = self._disconnect
+        #     else:
+        #         on_exit.insert(0, self._disconnect)
 
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
 
-    def _connect(self):
-        print("CONNECTING " + self.name)
-        self.signal.connect(self.slot, type=Qt.BlockingQueuedConnection)
+    # def _connect(self):
+    #     print("CONNECTING " + self.name)
+    #     self.signal.connect(self.slot, type=Qt.BlockingQueuedConnection)
 
-    def _disconnect(self):
-        print("DISCONNECTING " + self.name)
-        self.signal.disconnect(self.slot)
+    # def _disconnect(self):
+    #     print("DISCONNECTING " + self.name)
+    #     self.signal.disconnect(self.slot)
 
         
 class ScopeOp(QObject, Machine):
@@ -68,29 +68,29 @@ class ScopeOp(QObject, Machine):
             {'name' : 'standby',
                 'on_enter' : [self._reset]},
             {'name' : 'autobrightness', 
-                'on_enter' : [self._start_autobrightness],
+                'on_enter' : [self._start_autobrightness, self.run_autobrightness],
                 'signal' : self.img_signal, 
                 'slot' : self.run_autobrightness,
                 },
             {'name' : 'cellfinder',
-                'on_enter' : [self._start_cellfinder],
+                'on_enter' : [self._start_cellfinder, self.run_cellfinder],
                 # 'on_enter' : [self._start_cellfinder, self._freeze_liveview],
                 #'on_exit' : [self._unfreeze_liveview],
                 'signal' : self.img_signal, 
                 'slot' : self.run_cellfinder,
                 },
             {'name' : 'SSAF', 
-                'on_enter' : [self._start_SSAF],
+                'on_enter' : [self._start_SSAF, self.run_SSAF],
                 'signal' : self.img_signal, 
                 'slot' : self.run_SSAF,
                 },
             {'name' : 'fastflow', 
-                'on_enter' : [self._start_fastflow],
+                'on_enter' : [self._start_fastflow, self.run_fastflow],
                 'signal' : self.img_signal, 
                 'slot' : self.run_fastflow,
                 },
             {'name' : 'experiment', 
-                'on_enter' : [self._start_experiment],
+                'on_enter' : [self._start_experiment, self.run_experiment],
                 'signal' : self.img_signal, 
                 'slot' : self.run_experiment,
                 },
@@ -161,19 +161,25 @@ class ScopeOp(QObject, Machine):
         self.PSSAF_routine = periodicAutofocusWrapper(mscope, None)
         self.flowcontrol_routine = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
 
-    @pyqtSlot(np.ndarray)
-    def run_autobrightness(self, img):
-        if self.autobrightness_result == None:
+    # @pyqtSlot(np.ndarray)
+    # def run_autobrightness(self, img):
+    def run_autobrightness(self):
+        # if self.autobrightness_result == None:
+        img = self.mscope.camera.yieldImages()
             try:
                 self.autobrightness_routine.send(img)
             except StopIteration as e:
                 self.autobrightness_result = e.value
                 print(f"Mean pixel val: {self.autobrightness_result}")
                 self.next_state()
+            else:
+                self.run_autobrightness()
 
-    @pyqtSlot(np.ndarray)
-    def run_cellfinder(self, img):
-        if self.cellfinder_result == None: 
+    # @pyqtSlot(np.ndarray)
+    # def run_cellfinder(self, img):
+    def run_cellfinder(self):
+        # if self.cellfinder_result == None: 
+        img = self.mscope.camera.yieldImages()
             try:
                 self.cellfinder_routine.send(img)
             except StopIteration as e:
@@ -184,19 +190,26 @@ class ScopeOp(QObject, Machine):
                 self.cellfinder_result = -1
                 self.error.emit("Calibration failed", "No cells found.")
                 self.to_standby()
+            else:
+                self.run_cellfinder()
 
-    @pyqtSlot(np.ndarray)
-    def run_SSAF(self, img):
-        if self.SSAF_result == None:
+    # @pyqtSlot(np.ndarray)
+    # def run_SSAF(self, img):
+    def run_SSAF(self):
+        # if self.SSAF_result == None:
+        img = self.mscope.camera.yieldImages()
             try:
                 self.SSAF_routine.send(img)
             except StopIteration as e:
                 self.SSAF_result = e.value
                 print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
                 self.next_state()
+            else:
+                self.run_SSAF()
 
-    @pyqtSlot(np.ndarray)
-    def run_fastflow(self, img):
+    # @pyqtSlot(np.ndarray)
+    # def run_fastflow(self, img):
+    def run_fastflow(self):
         if self.fastflow_result == None:
             try:
                 self.fastflow_routine.send(img)
@@ -209,9 +222,14 @@ class ScopeOp(QObject, Machine):
                 self.fastflow_result = e.value
                 print(f"Flowrate: {self.fastflow_result}")
                 self.next_state()
+            else:
+                self.run_fastflow()
 
-    @pyqtSlot(np.ndarray)
-    def run_experiment(self, img):
+    # @pyqtSlot(np.ndarray)
+    # def run_experiment(self, img):
+    def run_experiment(self):
+        self.mscope.camera.yieldImages()
+        
         # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
         # TODO get metadata from hardware here
 
@@ -223,5 +241,7 @@ class ScopeOp(QObject, Machine):
             self.flowcontrol_routine.send(img)
         except CantReachTargetFlowrate:
             print("Can't reach target flowrate.")
+        else:
+            self.run_experiment()
 
         print("Running experiment")
