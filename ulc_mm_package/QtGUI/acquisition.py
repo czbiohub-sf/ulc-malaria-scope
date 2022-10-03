@@ -32,9 +32,9 @@ class Acquisition(QObject):
             # print("GET IMG {}".format(self.a-self.b))
             self.b = self.a    
 
-            img = next(self.mscope.camera.yieldImages())
-            self.update_liveview.emit(img)
-            self.update_scopeop.emit(img)
+            # img = next(self.mscope.camera.yieldImages())
+            # self.update_liveview.emit(img)
+            # self.update_scopeop.emit(img)
             self.count += 1
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
