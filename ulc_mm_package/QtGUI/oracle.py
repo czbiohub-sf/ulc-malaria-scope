@@ -91,7 +91,8 @@ class Oracle(Machine):
         # Trigger first transition
         self.to_precheck()
 
-
+    def save_form(self);
+        pass
 
     def freeze_liveview(self, freeze):
         if freeze:
