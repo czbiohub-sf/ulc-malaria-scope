@@ -92,7 +92,7 @@ class Oracle(Machine):
         self.to_precheck()
 
     def save_form(self):
-        pass
+        self.next_state()
 
     def freeze_liveview(self, freeze):
         if freeze:
