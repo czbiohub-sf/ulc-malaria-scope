@@ -198,14 +198,14 @@ class ScopeOp(QObject, Machine):
     def run_SSAF(self):
         # if self.SSAF_result == None:
         img = self.mscope.camera.yieldImages()
-            try:
-                self.SSAF_routine.send(img)
-            except StopIteration as e:
-                self.SSAF_result = e.value
-                print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
-                self.next_state()
-            else:
-                self.run_SSAF()
+        try:
+            self.SSAF_routine.send(img)
+        except StopIteration as e:
+            self.SSAF_result = e.value
+            print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
+            self.next_state()
+        else:
+            self.run_SSAF()
 
     # @pyqtSlot(np.ndarray)
     # def run_fastflow(self, img):
