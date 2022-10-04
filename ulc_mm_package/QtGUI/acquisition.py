@@ -24,6 +24,7 @@ class Acquisition(QObject):
         self.a = 0
         self.b = 0
 
+
     def get_mscope(self, mscope):
         self.mscope = mscope
         print("INITIALIZED IMG")
@@ -40,8 +41,8 @@ class Acquisition(QObject):
             # print("GET IMG {}".format(self.a-self.b))
             self.b = self.a    
 
-            self.img = next(self.mscope.camera.yieldImages())
-            self.update_liveview.emit(self.img)
+            img = next(self.mscope.camera.yieldImages())
+            self.update_liveview.emit(img)
             self.update_scopeop.emit(img)
             self.count += 1
         except Exception as e:

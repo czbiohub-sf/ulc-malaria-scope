@@ -65,6 +65,8 @@ class ScopeOp(QObject, Machine):
         self.SSAF_result = None
         self.fastflow_result = None
 
+        self.running = False
+
         states = [
             {'name' : 'standby',
                 'on_enter' : [self._reset]},
@@ -170,15 +172,17 @@ class ScopeOp(QObject, Machine):
         print("AH")
         # if self.autobrightness_result == None:
         # img = next(self.mscope.camera.yieldImages())
-        self.img_signal.blockSignals(True)
-        try:
-            pass
-            # self.autobrightness_routine.send(img)
-        except StopIteration as e:
-            self.autobrightness_result = e.value
-            print(f"Mean pixel val: {self.autobrightness_result}")
-            self.next_state()
-        self.img_signal.blockSignals(False)
+        if not self.running:
+            self.running = True
+            try:
+                pass
+                # self.autobrightness_routine.send(img)
+            except StopIteration as e:
+                self.autobrightness_result = e.value
+                print(f"Mean pixel val: {self.autobrightness_result}")
+                self.next_state()
+            # self.img_signal.blockSignals(False)
+            self.running = False
         # self.request_img.emit()
 
 

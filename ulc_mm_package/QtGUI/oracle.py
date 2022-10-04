@@ -136,7 +136,7 @@ class Oracle(Machine):
 
         self.scopeop.precheck()
         self.acquisition.get_mscope(self.scopeop.mscope)
-        self.acquisition.get_signal(self.scopeop.request_img)
+        # self.acquisition.get_signal(self.scopeop.request_img)
 
     def _start_form(self, *args):
         self.form_window.show()
