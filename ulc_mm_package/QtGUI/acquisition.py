@@ -30,10 +30,10 @@ class Acquisition(QObject):
 
 
     def get_img(self):
-        try: 
-            self.a = perf_counter()
-            # print("GET IMG {}".format(self.a-self.b))
-            self.b = self.a    
+        self.a = perf_counter()
+        print("GET IMG {}".format(self.a-self.b))
+        self.b = self.a    
+        try:
 
             img = next(self.mscope.camera.yieldImages())
             self.update_liveview.emit(img)
