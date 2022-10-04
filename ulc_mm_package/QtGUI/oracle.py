@@ -86,7 +86,6 @@ class Oracle(Machine):
         self.scopeop.error.connect(self.error_handler)
 
         # Start scopeop thread
-        self.scopeop_thread.start()
 
         # Trigger first transition
         self.to_precheck()
@@ -133,6 +132,8 @@ class Oracle(Machine):
         # delete current scope?
 
     def _start_precheck(self, *args):
+        self.scopeop_thread.start()
+
         self.scopeop.precheck()
         self.acquisition.get_mscope(self.scopeop.mscope)
 

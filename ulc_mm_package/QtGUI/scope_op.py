@@ -38,19 +38,20 @@ class ScopeOpState(State):
 
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
 
-    # def _connect(self):
-    #     print("CONNECTING " + self.name)
-    #     self.signal.connect(self.slot, type=Qt.BlockingQueuedConnection)
+    def _connect(self):
+        print("CONNECTING " + self.name)
+        self.signal.connect(self.slot)
 
-    # def _disconnect(self):
-    #     print("DISCONNECTING " + self.name)
-    #     self.signal.disconnect(self.slot)
+    def _disconnect(self):
+        print("DISCONNECTING " + self.name)
+        self.signal.disconnect(self.slot)
 
         
 class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
     error = pyqtSignal(str, str)
+    request_img = pyqtSignal()
 
     state_cls = ScopeOpState
 
@@ -141,6 +142,7 @@ class ScopeOp(QObject, Machine):
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
+        self.request_img.emit()
 
     def _start_cellfinder(self):        
         self.cellfinder_routine = find_cells_routine(self.mscope)
@@ -161,11 +163,11 @@ class ScopeOp(QObject, Machine):
         self.PSSAF_routine = periodicAutofocusWrapper(mscope, None)
         self.flowcontrol_routine = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
 
-    # @pyqtSlot(np.ndarray)
-    # def run_autobrightness(self, img):
-    def run_autobrightness(self):
+    @pyqtSlot(np.ndarray)
+    def run_autobrightness(self, img):
+    # def run_autobrightness(self):
         # if self.autobrightness_result == None:
-        img = next(self.mscope.camera.yieldImages())
+        # img = next(self.mscope.camera.yieldImages())
         try:
             self.autobrightness_routine.send(img)
         except StopIteration as e:
@@ -174,6 +176,7 @@ class ScopeOp(QObject, Machine):
             self.next_state()
         else:
             self.run_autobrightness()
+        self.request_img.emit()
 
     # @pyqtSlot(np.ndarray)
     # def run_cellfinder(self, img):
