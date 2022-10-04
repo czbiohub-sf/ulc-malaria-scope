@@ -43,9 +43,9 @@ class ScopeOpState(State):
         print("CONNECTING " + self.name)
         self.signal.connect(self.slot)
 
-    def _disconnect(self):
-        print("DISCONNECTING " + self.name)
-        self.signal.disconnect(self.slot)
+    # def _disconnect(self):
+    #     print("DISCONNECTING " + self.name)
+    #     self.signal.disconnect(self.slot)
 
         
 class ScopeOp(QObject, Machine):
@@ -65,8 +65,6 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_result = None
         self.SSAF_result = None
         self.fastflow_result = None
-
-        self.running = False
 
         states = [
             {'name' : 'standby',
@@ -143,42 +141,28 @@ class ScopeOp(QObject, Machine):
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
-        self.running = False
 
     def _start_cellfinder(self):       
-        print(self.running) 
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
-        self.running = False
 
     def _start_SSAF(self):
-        print(self.running)
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
         self.SSAF_routine = singleShotAutofocusRoutine(self.mscope, None)
         self.SSAF_routine.send(None)
 
-        self.running = False
-
     def _start_fastflow(self):
         self.fastflow_routine = fastFlowRoutine(self.mscope, None)
         self.fastflow_routine.send(None)
-
-        self.running = False
-
 
     def _start_experiment(self):
         self.PSSAF_routine = periodicAutofocusWrapper(mscope, None)
         self.flowcontrol_routine = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
 
-        self.running = False
-
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
-        # if not self.running:
-        #     self.running = True
-
         self.img_signal.disconnect(self.run_autobrightness)
 
         try:
@@ -187,19 +171,11 @@ class ScopeOp(QObject, Machine):
             self.autobrightness_result = e.value
             print(f"Mean pixel val: {self.autobrightness_result}")
             self.next_state()
-            print(self.running)
-            # else:
-            #     self.running = False
         else:
             self.img_signal.connect(self.run_autobrightness)
 
-
-
-
     @pyqtSlot(np.ndarray)
     def run_cellfinder(self, img):
-        # if not self.running:
-        #     self.running = True
         self.img_signal.disconnect(self.run_cellfinder)
 
         try:
@@ -212,62 +188,53 @@ class ScopeOp(QObject, Machine):
             self.cellfinder_result = -1
             self.error.emit("Calibration failed", "No cells found.")
             self.to_standby()
-            print(self.running)
         else:
             self.img_signal.connect(self.run_cellfinder)
-        #     self.running = False
 
     @pyqtSlot(np.ndarray)
     def run_SSAF(self, img):
-        if not self.running:
-            self.running = True
+        self.img_signal.disconnect(self.run_SSAF)
 
-            try:
-                self.SSAF_routine.send(img)
-            except StopIteration as e:
-                self.SSAF_result = e.value
-                print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
-                self.next_state()
-                print(self.running)
-            else:
-                self.running = False
+        try:
+            self.SSAF_routine.send(img)
+        except StopIteration as e:
+            self.SSAF_result = e.value
+            print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
+            self.next_state()
+        else:
+            self.img_signal.connect(self.run_SSAF)
 
     @pyqtSlot(np.ndarray)
     def run_fastflow(self, img):
-        if not self.running:
-            self.running = True
+        self.img_signal.disconnect(self.run_fastflow)
 
-            try:
-                self.fastflow_routine.send(img)
-            except CantReachTargetFlowrate:
-                self.fastflow_result = -1
-                print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
-                self.error.emit("Calibration failed", "Unable to achieve desired flowrate.")
-                self.to_standby()
-            except StopIteration as e:
-                self.fastflow_result = e.value
-                print(f"Flowrate: {self.fastflow_result}")
-                self.next_state()
-            else:
-                self.running = False
+        try:
+            self.fastflow_routine.send(img)
+        except CantReachTargetFlowrate:
+            self.fastflow_result = -1
+            print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
+            self.error.emit("Calibration failed", "Unable to achieve desired flowrate.")
+            self.to_standby()
+        except StopIteration as e:
+            self.fastflow_result = e.value
+            print(f"Flowrate: {self.fastflow_result}")
+            self.next_state()
+        else:
+            self.img_signal.connect(self.run_fastflow)
 
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
-        if not self.running:
-            self.running = True
 
-            # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
-            # TODO get metadata from hardware here
+        # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
+        # TODO get metadata from hardware here
 
-            # Periodically adjust focus using single shot autofocus
-            self.PSSAF_routine.send(img)
+        # Periodically adjust focus using single shot autofocus
+        self.PSSAF_routine.send(img)
 
-            # Adjust the flow
-            try:
-                self.flowcontrol_routine.send(img)
-            except CantReachTargetFlowrate:
-                print("Can't reach target flowrate.")
-            else:
-                self.running = False
-            print("Running experiment")
-       
+        # Adjust the flow
+        try:
+            self.flowcontrol_routine.send(img)
+        except CantReachTargetFlowrate:
+            print("Can't reach target flowrate.")
+
+        print("Running experiment")
