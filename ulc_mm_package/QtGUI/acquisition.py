@@ -24,15 +24,13 @@ class Acquisition(QObject):
         self.a = 0
         self.b = 0
 
-
     def get_mscope(self, mscope):
         self.mscope = mscope
 
-
     def get_img(self):
-        self.a = perf_counter()
-        print("GET IMG {}".format(self.a-self.b))
-        self.b = self.a    
+        # self.a = perf_counter()
+        # print("GET IMG {}".format(self.a-self.b))
+        # self.b = self.a    
         try:
 
             img = next(self.mscope.camera.yieldImages())

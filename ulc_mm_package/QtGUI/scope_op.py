@@ -53,7 +53,7 @@ class ScopeOp(QObject, Machine):
     freeze_liveview = pyqtSignal(bool)
     error = pyqtSignal(str, str)
 
-    state_cls = ScopeOpState
+    # state_cls = ScopeOpState
 
     def __init__(self, img_signal):
         super().__init__()
@@ -76,30 +76,30 @@ class ScopeOp(QObject, Machine):
                 'on_enter' : [self._reset]},
             {'name' : 'autobrightness', 
                 'on_enter' : [self._start_autobrightness],
-                'signal' : self.img_signal, 
-                'slot' : self.run_autobrightness,
+                # 'signal' : self.img_signal, 
+                # 'slot' : self.run_autobrightness,
                 },
             {'name' : 'cellfinder',
                 'on_enter' : [self._start_cellfinder],
                 # 'on_enter' : [self._start_cellfinder, self._freeze_liveview],
                 #'on_exit' : [self._unfreeze_liveview],
-                'signal' : self.img_signal, 
-                'slot' : self.run_cellfinder,
+                # 'signal' : self.img_signal, 
+                # 'slot' : self.run_cellfinder,
                 },
             {'name' : 'SSAF', 
                 'on_enter' : [self._start_SSAF],
-                'signal' : self.img_signal, 
-                'slot' : self.run_SSAF,
+                # 'signal' : self.img_signal, 
+                # 'slot' : self.run_SSAF,
                 },
             # {'name' : 'fastflow', 
             #    'on_enter' : [self._start_fastflow],
-            #    'signal' : self.img_signal, 
-            #    'slot' : self.run_fastflow,
+            #    # 'signal' : self.img_signal, 
+            #    # 'slot' : self.run_fastflow,
             #    },
             {'name' : 'experiment', 
                 'on_enter' : [self._start_experiment],
-                'signal' : self.img_signal, 
-                'slot' : self.run_experiment,
+                # 'signal' : self.img_signal, 
+                # 'slot' : self.run_experiment,
                 },
             ]
 
@@ -146,10 +146,14 @@ class ScopeOp(QObject, Machine):
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
+        
+        self.img_signal.connect(self.run_autobrightness)
 
     def _start_cellfinder(self):       
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
+        
+        self.img_signal.connect(self.run_cellfinder)
 
     def _start_SSAF(self):
         print(f"Moving motor to {self.cellfinder_result}")
@@ -157,10 +161,14 @@ class ScopeOp(QObject, Machine):
 
         self.SSAF_routine = singleShotAutofocusRoutine(self.mscope, None)
         self.SSAF_routine.send(None)
+        
+        self.img_signal.connect(self.run_SSAF)
 
     def _start_fastflow(self):
         self.fastflow_routine = fastFlowRoutine(self.mscope, None)
         self.fastflow_routine.send(None)
+        
+        self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self):
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
@@ -168,14 +176,16 @@ class ScopeOp(QObject, Machine):
         
         self.flowcontrol_routine = flowControlRoutine(self.mscope, TARGET_FLOWRATE, None)
         self.flowcontrol_routine.send(None)
+        
+        self.img_signal.connect(self.run_experiment)
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
         self.img_signal.disconnect(self.run_autobrightness)
         
-        self.a = perf_counter()
-        print("AB: {}".format(self.a-self.b))
-        self.b = self.a   
+        # self.a = perf_counter()
+        # print("AB: {}".format(self.a-self.b))
+        # self.b = self.a   
 
         try:
             self.autobrightness_routine.send(img)
@@ -214,7 +224,7 @@ class ScopeOp(QObject, Machine):
             print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
             self.next_state()
         else:
-            print("RECONNECTING")
+            # print("RECONNECTING")
             self.img_signal.connect(self.run_SSAF)
 
     @pyqtSlot(np.ndarray)
@@ -238,9 +248,9 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
 
-        self.c = perf_counter()
-        print("RUN: {}".format(self.c-self.d))
-        self.d = self.c
+        # self.c = perf_counter()
+        # print("RUN: {}".format(self.c-self.d))
+        # self.d = self.c
             
         # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
         # TODO get metadata from hardware here
