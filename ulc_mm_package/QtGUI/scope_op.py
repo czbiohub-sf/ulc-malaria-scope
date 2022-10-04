@@ -24,12 +24,13 @@ class ScopeOpState(State):
             if (not self.signal == None) or (not self.slot == None):
                 raise ValueError(f'Signal and/or slot specification is missing for state {name}.')
 
-        # Connect signals/slots after "on_enter" events, and disconnect before "on_exit"
+        # Connect signals/slots before "on_enter" events, and disconnect before "on_exit"
         else:
             if on_enter == None:
                 on_enter = self._connect
             else:
-                on_enter.append(self._connect)
+                on_enter.insert(0, self._connect)
+                # on_enter.append(self._connect)
         
             if on_exit == None:
                 on_exit = self._disconnect
@@ -51,12 +52,12 @@ class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
     error = pyqtSignal(str, str)
-    # request_img = pyqtSignal()
 
     state_cls = ScopeOpState
 
     def __init__(self, img_signal):
         super().__init__()
+
         self.mscope = MalariaScope()
         self.img_signal = img_signal
 
@@ -72,29 +73,28 @@ class ScopeOp(QObject, Machine):
                 'on_enter' : [self._reset]},
             {'name' : 'autobrightness', 
                 'on_enter' : [self._start_autobrightness],
-                # 'on_enter' : [self._start_autobrightness, self.run_autobrightness],
                 'signal' : self.img_signal, 
                 'slot' : self.run_autobrightness,
                 },
             {'name' : 'cellfinder',
-                'on_enter' : [self._start_cellfinder, self.run_cellfinder],
+                'on_enter' : [self._start_cellfinder],
                 # 'on_enter' : [self._start_cellfinder, self._freeze_liveview],
                 #'on_exit' : [self._unfreeze_liveview],
                 'signal' : self.img_signal, 
                 'slot' : self.run_cellfinder,
                 },
             {'name' : 'SSAF', 
-                'on_enter' : [self._start_SSAF, self.run_SSAF],
+                'on_enter' : [self._start_SSAF],
                 'signal' : self.img_signal, 
                 'slot' : self.run_SSAF,
                 },
             {'name' : 'fastflow', 
-                'on_enter' : [self._start_fastflow, self.run_fastflow],
+                'on_enter' : [self._start_fastflow],
                 'signal' : self.img_signal, 
                 'slot' : self.run_fastflow,
                 },
             {'name' : 'experiment', 
-                'on_enter' : [self._start_experiment, self.run_experiment],
+                'on_enter' : [self._start_experiment],
                 'signal' : self.img_signal, 
                 'slot' : self.run_experiment,
                 },
@@ -126,8 +126,6 @@ class ScopeOp(QObject, Machine):
 
     def start(self):
         print("Starting experiment")
-
-        self.to_standby()
         self.next_state()
 
     def _reset(self):
@@ -145,116 +143,126 @@ class ScopeOp(QObject, Machine):
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
-        # self.request_img.emit()
+        self.running = False
 
-    def _start_cellfinder(self):        
+    def _start_cellfinder(self):       
+        print(self.running) 
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
+        self.running = False
+
 
     def _start_SSAF(self):
+        print(self.running)
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
         self.SSAF_routine = singleShotAutofocusRoutine(self.mscope, None)
         self.SSAF_routine.send(None)
 
+        self.running = False
+
+
     def _start_fastflow(self):
         self.fastflow_routine = fastFlowRoutine(self.mscope, None)
         self.fastflow_routine.send(None)
+
+        self.running = False
+
 
     def _start_experiment(self):
         self.PSSAF_routine = periodicAutofocusWrapper(mscope, None)
         self.flowcontrol_routine = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
 
+        self.running = False
+
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
-    # def run_autobrightness(self):
-        print("AH")
-        # if self.autobrightness_result == None:
-        # img = next(self.mscope.camera.yieldImages())
         if not self.running:
             self.running = True
+
             try:
-                pass
-                # self.autobrightness_routine.send(img)
+                self.autobrightness_routine.send(img)
             except StopIteration as e:
                 self.autobrightness_result = e.value
                 print(f"Mean pixel val: {self.autobrightness_result}")
                 self.next_state()
-            # self.img_signal.blockSignals(False)
-            self.running = False
-        # self.request_img.emit()
+                print(self.running)
+            else:
+                self.running = False
+
 
 
     @pyqtSlot(np.ndarray)
     def run_cellfinder(self, img):
-    # def run_cellfinder(self):
-        # if self.cellfinder_result == None: 
-        img = next(self.mscope.camera.yieldImages())
-        try:
-            self.cellfinder_routine.send(img)
-        except StopIteration as e:
-            self.cellfinder_result = e.value
-            print(f"Cells found @ motor pos: {self.cellfinder_result}")
-            self.next_state()
-        except NoCellsFound:
-            self.cellfinder_result = -1
-            self.error.emit("Calibration failed", "No cells found.")
-            self.to_standby()
-        else:
-            self.run_cellfinder()
+        if not self.running:
+            self.running = True
 
-    # @pyqtSlot(np.ndarray)
-    # def run_SSAF(self, img):
-    def run_SSAF(self):
-        # if self.SSAF_result == None:
-        img = next(self.mscope.camera.yieldImages())
-        try:
-            self.SSAF_routine.send(img)
-        except StopIteration as e:
-            self.SSAF_result = e.value
-            print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
-            self.next_state()
-        else:
-            self.run_SSAF()
+            try:
+                self.cellfinder_routine.send(img)
+            except StopIteration as e:
+                self.cellfinder_result = e.value
+                print(f"Cells found @ motor pos: {self.cellfinder_result}")
+                self.next_state()
+            except NoCellsFound:
+                self.cellfinder_result = -1
+                self.error.emit("Calibration failed", "No cells found.")
+                self.to_standby()
+                print(self.running)
+            else:
+                self.running = False
 
-    # @pyqtSlot(np.ndarray)
-    # def run_fastflow(self, img):
-    def run_fastflow(self):
-        # if self.fastflow_result == None:
-        img = next(self.mscope.camera.yieldImages())
+    @pyqtSlot(np.ndarray)
+    def run_SSAF(self, img):
+        if not self.running:
+            self.running = True
 
-        try:
-            self.fastflow_routine.send(img)
-        except CantReachTargetFlowrate:
-            self.fastflow_result = -1
-            print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
-            self.error.emit("Calibration failed", "Unable to achieve desired flowrate.")
-            self.to_standby()
-        except StopIteration as e:
-            self.fastflow_result = e.value
-            print(f"Flowrate: {self.fastflow_result}")
-            self.next_state()
-        else:
-            self.run_fastflow()
+            try:
+                self.SSAF_routine.send(img)
+            except StopIteration as e:
+                self.SSAF_result = e.value
+                print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
+                self.next_state()
+                print(self.running)
+            else:
+                self.running = False
 
-    # @pyqtSlot(np.ndarray)
-    # def run_experiment(self, img):
-    def run_experiment(self):
-        img = next(self.mscope.camera.yieldImages())
+    @pyqtSlot(np.ndarray)
+    def run_fastflow(self, img):
+        if not self.running:
+            self.running = True
 
-        # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
-        # TODO get metadata from hardware here
+            try:
+                self.fastflow_routine.send(img)
+            except CantReachTargetFlowrate:
+                self.fastflow_result = -1
+                print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
+                self.error.emit("Calibration failed", "Unable to achieve desired flowrate.")
+                self.to_standby()
+            except StopIteration as e:
+                self.fastflow_result = e.value
+                print(f"Flowrate: {self.fastflow_result}")
+                self.next_state()
+            else:
+                self.running = False
 
-        # Periodically adjust focus using single shot autofocus
-        self.PSSAF_routine.send(img)
+    @pyqtSlot(np.ndarray)
+    def run_experiment(self, img):
+        if not self.running:
+            self.running = True
 
-        # Adjust the flow
-        try:
-            self.flowcontrol_routine.send(img)
-        except CantReachTargetFlowrate:
-            print("Can't reach target flowrate.")
-        else:
-            self.run_experiment()
+            # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
+            # TODO get metadata from hardware here
 
-        print("Running experiment")
+            # Periodically adjust focus using single shot autofocus
+            self.PSSAF_routine.send(img)
+
+            # Adjust the flow
+            try:
+                self.flowcontrol_routine.send(img)
+            except CantReachTargetFlowrate:
+                print("Can't reach target flowrate.")
+            else:
+                self.running = False
+            print("Running experiment")
+       

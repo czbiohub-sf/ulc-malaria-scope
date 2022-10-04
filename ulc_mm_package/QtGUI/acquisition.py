@@ -27,15 +27,9 @@ class Acquisition(QObject):
 
     def get_mscope(self, mscope):
         self.mscope = mscope
-        print("INITIALIZED IMG")
-        self.img = next(self.mscope.camera.yieldImages())
 
-    # def get_signal(self, request_img):
-    #     self.request_img = request_img
-    #     self.request_img.connect(self.send_img)
 
     def get_img(self):
-        print("GETTING IMG")
         try: 
             self.a = perf_counter()
             # print("GET IMG {}".format(self.a-self.b))
@@ -50,7 +44,3 @@ class Acquisition(QObject):
             # Once that happens, this can be swapped to catch the PyCameraException
             print(e)
             print(traceback.format_exc())
-
-    # @pyqtSlot
-    # def send_img(self):
-    #     self.update_scopeop.emit(self.img)
