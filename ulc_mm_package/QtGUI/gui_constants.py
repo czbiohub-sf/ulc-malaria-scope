@@ -1,4 +1,4 @@
-SIMULATION = False
+SIMULATION = True
 
 # FPS rate
 TIMEOUT_PERIOD = 30

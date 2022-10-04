@@ -136,6 +136,7 @@ class Oracle(Machine):
 
         self.scopeop.precheck()
         self.acquisition.get_mscope(self.scopeop.mscope)
+        self.acquisition.get_signal(self.scopeop.request_img)
 
     def _start_form(self, *args):
         self.form_window.show()
@@ -149,9 +150,11 @@ class Oracle(Machine):
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition_thread.start()
 
-        self.scopeop.start()
         
         self.acquisition.timer.start(TIMEOUT_PERIOD)
+
+        self.scopeop.start()
+
 
     def _close_liveview(self, *args):
         self.scopeop.to_standby()

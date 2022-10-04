@@ -12,6 +12,7 @@ class Acquisition(QObject):
     def __init__(self):
         super().__init__()
 
+        # self.img = None
         self.mscope = None
 
         self.timer = QTimer()
@@ -25,12 +26,15 @@ class Acquisition(QObject):
 
     def get_mscope(self, mscope):
         self.mscope = mscope
+        print("INITIALIZED IMG")
+        self.img = next(self.mscope.camera.yieldImages())
 
     # def get_signal(self, request_img):
     #     self.request_img = request_img
     #     self.request_img.connect(self.send_img)
 
     def get_img(self):
+        print("GETTING IMG")
         try: 
             self.a = perf_counter()
             # print("GET IMG {}".format(self.a-self.b))

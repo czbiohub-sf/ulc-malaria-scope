@@ -69,7 +69,8 @@ class ScopeOp(QObject, Machine):
             {'name' : 'standby',
                 'on_enter' : [self._reset]},
             {'name' : 'autobrightness', 
-                'on_enter' : [self._start_autobrightness, self.run_autobrightness],
+                'on_enter' : [self._start_autobrightness],
+                # 'on_enter' : [self._start_autobrightness, self.run_autobrightness],
                 'signal' : self.img_signal, 
                 'slot' : self.run_autobrightness,
                 },
@@ -166,19 +167,20 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
     # def run_autobrightness(self):
+        print("AH")
         # if self.autobrightness_result == None:
         # img = next(self.mscope.camera.yieldImages())
         self.img_signal.blockSignals(True)
         try:
-            self.autobrightness_routine.send(img)
+            pass
+            # self.autobrightness_routine.send(img)
         except StopIteration as e:
             self.autobrightness_result = e.value
             print(f"Mean pixel val: {self.autobrightness_result}")
             self.next_state()
-        else:
-            self.run_autobrightness()
         self.img_signal.blockSignals(False)
         # self.request_img.emit()
+
 
     @pyqtSlot(np.ndarray)
     def run_cellfinder(self, img):
