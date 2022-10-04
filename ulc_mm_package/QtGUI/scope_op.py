@@ -24,17 +24,17 @@ class ScopeOpState(State):
             if (not self.signal == None) or (not self.slot == None):
                 raise ValueError(f'Signal and/or slot specification is missing for state {name}.')
 
-        # # Connect signals/slots after "on_enter" events, and disconnect before "on_exit"
-        # else:
-        #     if on_enter == None:
-        #         on_enter = self._connect
-        #     else:
-        #         on_enter.append(self._connect)
+        # Connect signals/slots after "on_enter" events, and disconnect before "on_exit"
+        else:
+            if on_enter == None:
+                on_enter = self._connect
+            else:
+                on_enter.append(self._connect)
         
-        #     if on_exit == None:
-        #         on_exit = self._disconnect
-        #     else:
-        #         on_exit.insert(0, self._disconnect)
+            if on_exit == None:
+                on_exit = self._disconnect
+            else:
+                on_exit.insert(0, self._disconnect)
 
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
 
@@ -69,7 +69,8 @@ class ScopeOp(QObject, Machine):
             {'name' : 'standby',
                 'on_enter' : [self._reset]},
             {'name' : 'autobrightness', 
-                'on_enter' : [self._start_autobrightness, self.run_autobrightness],
+                'on_enter' : [self._start_autobrightness],
+                # 'on_enter' : [self._start_autobrightness, self.run_autobrightness],
                 'signal' : self.img_signal, 
                 'slot' : self.run_autobrightness,
                 },
@@ -142,6 +143,7 @@ class ScopeOp(QObject, Machine):
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
+        sleep(1)
         self.request_img.emit()
 
     def _start_cellfinder(self):        
@@ -166,16 +168,18 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
     # def run_autobrightness(self):
+        print("AH")
         # if self.autobrightness_result == None:
         # img = next(self.mscope.camera.yieldImages())
         try:
-            self.autobrightness_routine.send(img)
+            pass
+            # self.autobrightness_routine.send(img)
         except StopIteration as e:
             self.autobrightness_result = e.value
             print(f"Mean pixel val: {self.autobrightness_result}")
             self.next_state()
-        else:
-            self.run_autobrightness()
+        # else:
+        #     self.run_autobrightness()
         self.request_img.emit()
 
     # @pyqtSlot(np.ndarray)
