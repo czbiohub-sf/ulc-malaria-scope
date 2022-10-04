@@ -32,10 +32,10 @@ class ScopeOpState(State):
                 on_enter.insert(0, self._connect)
                 # on_enter.append(self._connect)
         
-            if on_exit == None:
-                on_exit = self._disconnect
-            else:
-                on_exit.insert(0, self._disconnect)
+            # if on_exit == None:
+            #     on_exit = self._disconnect
+            # else:
+            #     on_exit.insert(0, self._disconnect)
 
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
 
@@ -151,7 +151,6 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_routine.send(None)
         self.running = False
 
-
     def _start_SSAF(self):
         print(self.running)
         print(f"Moving motor to {self.cellfinder_result}")
@@ -161,7 +160,6 @@ class ScopeOp(QObject, Machine):
         self.SSAF_routine.send(None)
 
         self.running = False
-
 
     def _start_fastflow(self):
         self.fastflow_routine = fastFlowRoutine(self.mscope, None)
@@ -178,39 +176,46 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
-        if not self.running:
-            self.running = True
+        # if not self.running:
+        #     self.running = True
 
-            try:
-                self.autobrightness_routine.send(img)
-            except StopIteration as e:
-                self.autobrightness_result = e.value
-                print(f"Mean pixel val: {self.autobrightness_result}")
-                self.next_state()
-                print(self.running)
-            else:
-                self.running = False
+        self.img_signal.disconnect(self.run_autobrightness)
+
+        try:
+            self.autobrightness_routine.send(img)
+        except StopIteration as e:
+            self.autobrightness_result = e.value
+            print(f"Mean pixel val: {self.autobrightness_result}")
+            self.next_state()
+            print(self.running)
+            # else:
+            #     self.running = False
+        else:
+            self.img_signal.connect(self.run_autobrightness)
+
 
 
 
     @pyqtSlot(np.ndarray)
     def run_cellfinder(self, img):
-        if not self.running:
-            self.running = True
+        # if not self.running:
+        #     self.running = True
+        self.img_signal.disconnect(self.run_cellfinder)
 
-            try:
-                self.cellfinder_routine.send(img)
-            except StopIteration as e:
-                self.cellfinder_result = e.value
-                print(f"Cells found @ motor pos: {self.cellfinder_result}")
-                self.next_state()
-            except NoCellsFound:
-                self.cellfinder_result = -1
-                self.error.emit("Calibration failed", "No cells found.")
-                self.to_standby()
-                print(self.running)
-            else:
-                self.running = False
+        try:
+            self.cellfinder_routine.send(img)
+        except StopIteration as e:
+            self.cellfinder_result = e.value
+            print(f"Cells found @ motor pos: {self.cellfinder_result}")
+            self.next_state()
+        except NoCellsFound:
+            self.cellfinder_result = -1
+            self.error.emit("Calibration failed", "No cells found.")
+            self.to_standby()
+            print(self.running)
+        else:
+            self.img_signal.connect(self.run_cellfinder)
+        #     self.running = False
 
     @pyqtSlot(np.ndarray)
     def run_SSAF(self, img):
