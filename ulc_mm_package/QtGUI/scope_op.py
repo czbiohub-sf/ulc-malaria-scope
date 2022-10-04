@@ -24,17 +24,17 @@ class ScopeOpState(State):
             if (not self.signal == None) or (not self.slot == None):
                 raise ValueError(f'Signal and/or slot specification is missing for state {name}.')
 
-        # # Connect signals/slots after "on_enter" events, and disconnect before "on_exit"
-        # else:
-        #     if on_enter == None:
-        #         on_enter = self._connect
-        #     else:
-        #         on_enter.append(self._connect)
+        # Connect signals/slots after "on_enter" events, and disconnect before "on_exit"
+        else:
+            if on_enter == None:
+                on_enter = self._connect
+            else:
+                on_enter.append(self._connect)
         
-        #     if on_exit == None:
-        #         on_exit = self._disconnect
-        #     else:
-        #         on_exit.insert(0, self._disconnect)
+            if on_exit == None:
+                on_exit = self._disconnect
+            else:
+                on_exit.insert(0, self._disconnect)
 
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
 
@@ -51,7 +51,7 @@ class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
     error = pyqtSignal(str, str)
-    request_img = pyqtSignal()
+    # request_img = pyqtSignal()
 
     state_cls = ScopeOpState
 
@@ -142,7 +142,7 @@ class ScopeOp(QObject, Machine):
     def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
-        self.request_img.emit()
+        # self.request_img.emit()
 
     def _start_cellfinder(self):        
         self.cellfinder_routine = find_cells_routine(self.mscope)
@@ -168,6 +168,7 @@ class ScopeOp(QObject, Machine):
     # def run_autobrightness(self):
         # if self.autobrightness_result == None:
         # img = next(self.mscope.camera.yieldImages())
+        self.img_signal.blockSignals(True)
         try:
             self.autobrightness_routine.send(img)
         except StopIteration as e:
@@ -176,11 +177,12 @@ class ScopeOp(QObject, Machine):
             self.next_state()
         else:
             self.run_autobrightness()
-        self.request_img.emit()
+        self.img_signal.blockSignals(False)
+        # self.request_img.emit()
 
-    # @pyqtSlot(np.ndarray)
-    # def run_cellfinder(self, img):
-    def run_cellfinder(self):
+    @pyqtSlot(np.ndarray)
+    def run_cellfinder(self, img):
+    # def run_cellfinder(self):
         # if self.cellfinder_result == None: 
         img = next(self.mscope.camera.yieldImages())
         try:

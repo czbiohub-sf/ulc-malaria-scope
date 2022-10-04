@@ -26,9 +26,9 @@ class Acquisition(QObject):
     def get_mscope(self, mscope):
         self.mscope = mscope
 
-    def get_signal(self, request_img):
-        self.request_img = request_img
-        self.request_img.connect(self.send_img)
+    # def get_signal(self, request_img):
+    #     self.request_img = request_img
+    #     self.request_img.connect(self.send_img)
 
     def get_img(self):
         try: 
@@ -38,7 +38,7 @@ class Acquisition(QObject):
 
             self.img = next(self.mscope.camera.yieldImages())
             self.update_liveview.emit(self.img)
-            # self.update_scopeop.emit(img)
+            self.update_scopeop.emit(img)
             self.count += 1
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
@@ -46,6 +46,6 @@ class Acquisition(QObject):
             print(e)
             print(traceback.format_exc())
 
-    @pyqtSlot
-    def send_img(self):
-        self.update_scopeop.emit(self.img)
+    # @pyqtSlot
+    # def send_img(self):
+    #     self.update_scopeop.emit(self.img)
