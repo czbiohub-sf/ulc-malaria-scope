@@ -18,7 +18,6 @@ from openvino.runtime import Core, Layout, Type, InferRequest, AsyncInferQueue
 
 """ TODOs
 - All the performance things!
-- Create ABC for Autofocus, obj detect
 - best place to put autofocus.xml && autofocus.bin? root dir?
 
 See https://github.com/czbiohub/ulc-malaria-autofocus#openvino-performance-optimizations for
@@ -42,7 +41,6 @@ class NCSModel:
     Allows you to run a model (defined by an intel intermediate representation of your
     model, e.g. model.xml & model.bin) on the neural compute stick
     """
-
     def __init__(
         self,
         model_path: str,
@@ -96,6 +94,7 @@ class NCSModel:
         return -1
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
+        "userdata is some extra param"
         self.asyn_results.append(infer_request.output_tensors[0].data)
 
     def syn(self, input_img):
