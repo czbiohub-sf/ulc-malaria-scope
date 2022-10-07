@@ -56,6 +56,8 @@ class ScopeOp(QObject, Machine):
     freeze_liveview = pyqtSignal(bool)
     error = pyqtSignal(str, str)
     set_fps = pyqtSignal(float)
+    start_acquisition = pyqtSignal()
+    stop_acquisition = pyqtSignal()
 
     # state_cls = ScopeOpState
 
@@ -134,7 +136,13 @@ class ScopeOp(QObject, Machine):
 
     def start(self):
         print("Starting experiment")
+        self.start_acquisition.emit()
+        print("Started timer")
         self.next_state()
+        
+    def shutoff(self):
+        self.mscope.shutoff()
+        self.stop_acquisition.emit()
 
     def _reset(self):
         self.autobrightness_result = None

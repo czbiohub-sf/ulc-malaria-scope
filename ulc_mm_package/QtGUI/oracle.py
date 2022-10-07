@@ -86,6 +86,8 @@ class Oracle(Machine):
         self.scopeop.freeze_liveview.connect(self.freeze_liveview)
         self.scopeop.error.connect(self.error_handler)
         self.scopeop.set_fps.connect(self.acquisition.set_fps)
+        self.scopeop.start_acquisition.connect(self.acquisition.start)
+        self.scopeop.stop_acquisition.connect(self.acquisition.stop)
 
         # Start scopeop thread
 
@@ -180,7 +182,7 @@ class Oracle(Machine):
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
         
-        self.scopeop.mscope.shutoff()
+        self.scopeop.shutoff()
         self.scopeop_thread.quit()
         self.scopeop_thread.wait()
         

@@ -33,10 +33,16 @@ class Acquisition(QObject):
         self.a = 0
         self.b = 0
         
+    @pyqtSlot()
     def start(self):
         self.acquisition_timer.start(ACQUISITION_PERIOD)
         self.liveview_timer.start(ACQUISITION_PERIOD)
         
+    @pyqtSlot()
+    def stop(self):
+        self.acquisition_timer.stop()
+        self.liveview_timer.stop()
+            
     # def stop(self):
     #     self.acquisition_timer.stop()
     #     self.liveview_timer.stop()
