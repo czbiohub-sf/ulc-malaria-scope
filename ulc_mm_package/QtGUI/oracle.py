@@ -175,10 +175,12 @@ class Oracle(Machine):
         #     sleep(1)
         print("Successfully closed file.")
 
+        self.scopeop.shutoff()
+        print("Attempted to shut off timer")
+        sleep(5)
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
         
-        self.scopeop.stop_timers.emit()
         self.scopeop_thread.quit()
         self.scopeop_thread.wait()
         
