@@ -10,7 +10,10 @@ from PyQt5.QtCore import Qt, QObject, QTimer, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE, PER_IMAGE_METADATA_KEYS
-from ulc_mm_package.QtGUI.gui_constants import TIMEOUT_PERIOD
+from ulc_mm_package.QtGUI.gui_constants import (
+    ACQUISITION_PERIOD,
+    LIVEVIEW_PERIOD,
+)
 
 class ScopeOpState(State):
 
@@ -52,6 +55,7 @@ class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
     error = pyqtSignal(str, str)
+    set_fps = pyqtSignal(float)
 
     # state_cls = ScopeOpState
 
@@ -98,6 +102,7 @@ class ScopeOp(QObject, Machine):
             #    },
             {'name' : 'experiment', 
                 'on_enter' : [self._start_experiment],
+                'on_exit' : [self._end_experiment],
                 # 'signal' : self.img_signal, 
                 # 'slot' : self.run_experiment,
                 },
@@ -177,7 +182,13 @@ class ScopeOp(QObject, Machine):
         self.flowcontrol_routine = flowControlRoutine(self.mscope, TARGET_FLOWRATE, None)
         self.flowcontrol_routine.send(None)
         
+        self.set_fps.emit(LIVEVIEW_PERIOD)
+        
         self.img_signal.connect(self.run_experiment)
+        
+    def _end_experiment(self):
+        self.img_signal.disconnect(self.run_experiment)
+        self.set_fps.emit(ACQUISITION_PERIOD)
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
@@ -192,7 +203,8 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.autobrightness_result = e.value
             print(f"Mean pixel val: {self.autobrightness_result}")
-            self.next_state()
+            #self.next_state()
+            self.to_experiment()
         else:
             self.img_signal.connect(self.run_autobrightness)
 
@@ -248,9 +260,7 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
 
-        # self.c = perf_counter()
-        # print("RUN: {}".format(self.c-self.d))
-        # self.d = self.c
+        self.c = perf_counter()
             
         # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
         # TODO get metadata from hardware here
@@ -263,3 +273,7 @@ class ScopeOp(QObject, Machine):
             self.flowcontrol_routine.send(img)
         except CantReachTargetFlowrate:
             print("Can't reach target flowrate.")
+        
+        self.d = perf_counter()
+            
+        # print("RUN: {}".format(self.c-self.d))

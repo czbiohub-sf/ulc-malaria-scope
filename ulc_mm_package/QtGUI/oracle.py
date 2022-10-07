@@ -10,9 +10,10 @@ from PyQt5.QtGui import QIcon
 
 from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.QtGUI.gui_constants import (
-    TIMEOUT_PERIOD,
     ICON_PATH,
-    CAMERA_SELECTION, 
+    CAMERA_SELECTION,
+    ACQUISITION_PERIOD,
+    LIVEVIEW_PERIOD,
 )
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -84,6 +85,7 @@ class Oracle(Machine):
         self.scopeop.precheck_done.connect(self.next_state)
         self.scopeop.freeze_liveview.connect(self.freeze_liveview)
         self.scopeop.error.connect(self.error_handler)
+        self.scopeop.set_fps.connect(self.acquisition.set_fps)
 
         # Start scopeop thread
 
@@ -127,7 +129,7 @@ class Oracle(Machine):
         return msgBox.exec()
 
     def _reset(self, *args):
-        self.timer.stop()
+        self.acquisition.acquisition_timer.stop()
         self.acquisition.count = 0
         # delete current scope?
 
@@ -149,9 +151,10 @@ class Oracle(Machine):
 
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition_thread.start()
-
+        self.acquisition.start()
         
-        self.acquisition.timer.start(TIMEOUT_PERIOD)
+        # self.acquisition.acquisition_timer.start(ACQUISITION_PERIOD)
+        # self.acquisition.liveview_timer.start(ACQUISITION_PERIOD)
 
         self.scopeop.start()
 
