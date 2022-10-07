@@ -2,7 +2,7 @@ import traceback
 import numpy as np
 
 from time import perf_counter, sleep
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot, QThread
 
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
@@ -16,6 +16,8 @@ class Acquisition(QObject):
 
     def __init__(self):
         super().__init__()
+
+        print("Acquisition init {}".format(int(QThread.currentThreadId())))
 
         # self.img = None
         self.img = None
@@ -35,8 +37,10 @@ class Acquisition(QObject):
         
     @pyqtSlot()
     def start(self):
-        self.acquisition_timer.start(ACQUISITION_PERIOD)
-        self.liveview_timer.start(ACQUISITION_PERIOD)
+        # print("QTIMER {}".format(int(self.acquisition_timer.threadId())))
+        print(int(QThread.currentThreadId()))
+        # self.acquisition_timer.start(ACQUISITION_PERIOD)
+        # self.liveview_timer.start(ACQUISITION_PERIOD)
         
     @pyqtSlot()
     def stop(self):
@@ -59,6 +63,8 @@ class Acquisition(QObject):
         self.update_liveview.emit(self.img)
 
     def get_img(self):
+        print("Acquisition RUN {}".format(int(QThread.currentThreadId())))
+
         self.a = perf_counter()
         # print("GET IMG {}".format(self.a-self.b))
         self.b = self.a    

@@ -5,7 +5,7 @@ from transitions import Machine, State
 from time import perf_counter, sleep
 
 from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtCore import Qt, QObject, QTimer, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QObject, QTimer, pyqtSignal, pyqtSlot, QThread
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
@@ -136,12 +136,12 @@ class ScopeOp(QObject, Machine):
 
     def start(self):
         print("Starting experiment")
-        self.start_acquisition.emit()
+        # self.start_acquisition.emit()
         print("Started timer")
         self.next_state()
         
     def shutoff(self):
-        self.mscope.shutoff()
+        # self.mscope.shutoff()
         self.stop_acquisition.emit()
 
     def _reset(self):
@@ -190,13 +190,14 @@ class ScopeOp(QObject, Machine):
         self.flowcontrol_routine = flowControlRoutine(self.mscope, TARGET_FLOWRATE, None)
         self.flowcontrol_routine.send(None)
         
-        self.set_fps.emit(LIVEVIEW_PERIOD)
+        #self.set_fps.emit(LIVEVIEW_PERIOD)
         
         self.img_signal.connect(self.run_experiment)
         
     def _end_experiment(self):
         self.img_signal.disconnect(self.run_experiment)
-        self.set_fps.emit(ACQUISITION_PERIOD)
+        self.stop_acquisition.emit()
+        # self.set_fps.emit(ACQUISITION_PERIOD)
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):

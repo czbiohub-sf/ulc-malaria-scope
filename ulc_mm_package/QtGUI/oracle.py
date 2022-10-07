@@ -42,6 +42,9 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 class Oracle(Machine):
 
     def __init__(self, *args, **kwargs):
+
+        print("Oracle init {}".format(int(QThread.currentThreadId())))
+
         # Instantiate windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
@@ -50,7 +53,8 @@ class Oracle(Machine):
         self.acquisition = Acquisition()
         self.acquisition_thread = QThread()
         self.acquisition.moveToThread(self.acquisition_thread)
-        # self.acquisition_thread.started.connect(self.acquisition.run)
+        # self.acquisition_thread.exec()
+        # self.acquisition_thread.started.connect(self.acquisition.get_img)
 
         # Instantiate scope operator and thread
         self.scopeop = ScopeOp(self.acquisition.update_scopeop)
@@ -140,6 +144,7 @@ class Oracle(Machine):
 
         self.scopeop.precheck()
         self.acquisition.get_mscope(self.scopeop.mscope)
+        # self.acquisition.get_img()
         # self.acquisition.get_signal(self.scopeop.request_img)
 
     def _start_form(self, *args):
@@ -153,10 +158,11 @@ class Oracle(Machine):
 
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition_thread.start()
+        self.acquisition.get_img()
         self.acquisition.start()
         
-        # self.acquisition.acquisition_timer.start(ACQUISITION_PERIOD)
-        # self.acquisition.liveview_timer.start(ACQUISITION_PERIOD)
+        self.acquisition.acquisition_timer.start(ACQUISITION_PERIOD)
+        self.acquisition.liveview_timer.start(ACQUISITION_PERIOD)
 
         self.scopeop.start()
 
