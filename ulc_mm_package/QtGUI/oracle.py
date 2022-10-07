@@ -43,8 +43,6 @@ class Oracle(Machine):
 
     def __init__(self, *args, **kwargs):
 
-        print("Oracle init {}".format(int(QThread.currentThreadId())))
-
         # Instantiate windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
@@ -53,8 +51,6 @@ class Oracle(Machine):
         self.acquisition = Acquisition()
         self.acquisition_thread = QThread()
         self.acquisition.moveToThread(self.acquisition_thread)
-        # self.acquisition_thread.exec()
-        # self.acquisition_thread.started.connect(self.acquisition.get_img)
 
         # Instantiate scope operator and thread
         self.scopeop = ScopeOp(self.acquisition.update_scopeop)
@@ -87,25 +83,20 @@ class Oracle(Machine):
 
         # Connect scopeop signals and slots
         self.scopeop.precheck_done.connect(self.next_state)
-        self.scopeop.freeze_liveview.connect(self.freeze_liveview)
         self.scopeop.error.connect(self.error_handler)
-        self.scopeop.set_fps.connect(self.acquisition.set_fps)
-        self.scopeop.start_acquisition.connect(self.acquisition.start)
-        self.scopeop.stop_acquisition.connect(self.acquisition.stop)
 
-        # Start scopeop thread
+        self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
+        self.scopeop.set_period.connect(self.acquisition.set_period)
+
+        self.scopeop.create_timers.connect(self.acquisition.create_timers)
+        self.scopeop.start_timers.connect(self.acquisition.start_timers)
+        self.scopeop.stop_timers.connect(self.acquisition.stop_timers)
 
         # Trigger first transition
         self.to_precheck()
 
     def save_form(self):
         self.next_state()
-
-    def freeze_liveview(self, freeze):
-        if freeze:
-            self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
-        else:            
-            self.acquisition.update_liveview.connect(self.liveview_window.update_img)
 
     def error_handler(self, title, text):
         _ = self._display_message(
@@ -158,11 +149,11 @@ class Oracle(Machine):
 
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition_thread.start()
-        self.acquisition.get_img()
-        self.acquisition.start()
+        # self.acquisition.get_img()
+        # self.acquisition.start()
         
-        self.acquisition.acquisition_timer.start(ACQUISITION_PERIOD)
-        self.acquisition.liveview_timer.start(ACQUISITION_PERIOD)
+        # self.acquisition.acquisition_timer.start(ACQUISITION_PERIOD)
+        # self.acquisition.liveview_timer.start(ACQUISITION_PERIOD)
 
         self.scopeop.start()
 
@@ -184,11 +175,10 @@ class Oracle(Machine):
         #     sleep(1)
         print("Successfully closed file.")
 
-        # self.acquisition.running = False
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
         
-        self.scopeop.shutoff()
+        self.scopeop.stop_timers.emit()
         self.scopeop_thread.quit()
         self.scopeop_thread.wait()
         

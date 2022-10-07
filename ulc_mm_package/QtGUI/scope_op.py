@@ -15,51 +15,14 @@ from ulc_mm_package.QtGUI.gui_constants import (
     LIVEVIEW_PERIOD,
 )
 
-class ScopeOpState(State):
-
-    def __init__(self, name, on_enter=None, on_exit=None, ignore_invalid_triggers=None,
-                signal=None, slot=None):
-
-        self.signal = signal
-        self.slot = slot
-
-        if self.signal == None or self.slot == None:
-            if (not self.signal == None) or (not self.slot == None):
-                raise ValueError(f'Signal and/or slot specification is missing for state {name}.')
-
-        # Connect signals/slots before "on_enter" events, and disconnect before "on_exit"
-        else:
-            if on_enter == None:
-                on_enter = self._connect
-            else:
-                # on_enter.insert(0, self._connect)
-                on_enter.append(self._connect)
-        
-            # if on_exit == None:
-            #     on_exit = self._disconnect
-            # else:
-            #     on_exit.insert(0, self._disconnect)
-
-        super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
-
-    def _connect(self):
-        print("CONNECTING " + self.name)
-        self.signal.connect(self.slot)
-
-    # def _disconnect(self):
-    #     print("DISCONNECTING " + self.name)
-    #     self.signal.disconnect(self.slot)
-
-        
 class ScopeOp(QObject, Machine):
     precheck_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
     error = pyqtSignal(str, str)
-    set_fps = pyqtSignal(float)
-    start_acquisition = pyqtSignal()
-    stop_acquisition = pyqtSignal()
-
-    # state_cls = ScopeOpState
+    set_period = pyqtSignal(float)
+    create_timers = pyqtSignal()
+    start_timers = pyqtSignal()
+    stop_timers = pyqtSignal()
 
     def __init__(self, img_signal):
         super().__init__()
@@ -72,41 +35,31 @@ class ScopeOp(QObject, Machine):
         self.SSAF_result = None
         self.fastflow_result = None
         
-        self.a = 0
-        self.b = 0
-        self.c = 0
-        self.d = 0
+        # self.a = 0
+        # self.b = 0
+        # self.c = 0
+        # self.d = 0
 
         states = [
             {'name' : 'standby',
                 'on_enter' : [self._reset]},
             {'name' : 'autobrightness', 
                 'on_enter' : [self._start_autobrightness],
-                # 'signal' : self.img_signal, 
-                # 'slot' : self.run_autobrightness,
                 },
             {'name' : 'cellfinder',
-                'on_enter' : [self._start_cellfinder],
-                # 'on_enter' : [self._start_cellfinder, self._freeze_liveview],
-                #'on_exit' : [self._unfreeze_liveview],
-                # 'signal' : self.img_signal, 
-                # 'slot' : self.run_cellfinder,
+                # 'on_enter' : [self._start_cellfinder],
+                'on_enter' : [self._start_cellfinder, self._freeze_liveview],
+                'on_exit' : [self._unfreeze_liveview],
                 },
             {'name' : 'SSAF', 
                 'on_enter' : [self._start_SSAF],
-                # 'signal' : self.img_signal, 
-                # 'slot' : self.run_SSAF,
                 },
             # {'name' : 'fastflow', 
             #    'on_enter' : [self._start_fastflow],
-            #    # 'signal' : self.img_signal, 
-            #    # 'slot' : self.run_fastflow,
             #    },
             {'name' : 'experiment', 
                 'on_enter' : [self._start_experiment],
                 'on_exit' : [self._end_experiment],
-                # 'signal' : self.img_signal, 
-                # 'slot' : self.run_experiment,
                 },
             ]
 
@@ -135,16 +88,18 @@ class ScopeOp(QObject, Machine):
             print("Failed precheck")
 
     def start(self):
-        print("Starting experiment")
-        # self.start_acquisition.emit()
-        print("Started timer")
+        self.create_timers.emit()  
+        self.start_timers.emit()
+
         self.next_state()
         
-    def shutoff(self):
-        # self.mscope.shutoff()
-        self.stop_acquisition.emit()
+    # def shutoff(self):
+    #     self.mscope.shutoff()
+    #     self.stop_timers.emit()
 
     def _reset(self):
+        self.stop_timers.emit()
+
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
@@ -190,17 +145,17 @@ class ScopeOp(QObject, Machine):
         self.flowcontrol_routine = flowControlRoutine(self.mscope, TARGET_FLOWRATE, None)
         self.flowcontrol_routine.send(None)
         
-        #self.set_fps.emit(LIVEVIEW_PERIOD)
+        self.set_period.emit(LIVEVIEW_PERIOD)
         
         self.img_signal.connect(self.run_experiment)
         
     def _end_experiment(self):
         self.img_signal.disconnect(self.run_experiment)
         self.stop_acquisition.emit()
-        # self.set_fps.emit(ACQUISITION_PERIOD)
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
+
         self.img_signal.disconnect(self.run_autobrightness)
         
         # self.a = perf_counter()
@@ -245,7 +200,6 @@ class ScopeOp(QObject, Machine):
             print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
             self.next_state()
         else:
-            # print("RECONNECTING")
             self.img_signal.connect(self.run_SSAF)
 
     @pyqtSlot(np.ndarray)
@@ -269,7 +223,7 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
 
-        self.c = perf_counter()
+        # self.c = perf_counter()
             
         # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
         # TODO get metadata from hardware here
@@ -283,6 +237,6 @@ class ScopeOp(QObject, Machine):
         except CantReachTargetFlowrate:
             print("Can't reach target flowrate.")
         
-        self.d = perf_counter()
+        # self.d = perf_counter()
             
         # print("RUN: {}".format(self.c-self.d))

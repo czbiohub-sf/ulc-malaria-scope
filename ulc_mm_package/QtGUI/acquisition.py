@@ -17,43 +17,45 @@ class Acquisition(QObject):
     def __init__(self):
         super().__init__()
 
-        print("Acquisition init {}".format(int(QThread.currentThreadId())))
-
-        # self.img = None
         self.img = None
         self.mscope = None
 
+        self.running = True
+        self.count = 0
+        self.period = ACQUISITION_PERIOD
+        
+        # self.a = 0
+        # self.b = 0
+
+    @pyqtSlot()
+    def create_timers(self):
         self.acquisition_timer = QTimer()
         self.acquisition_timer.timeout.connect(self.get_img)
         
         self.liveview_timer = QTimer()
         self.liveview_timer.timeout.connect(self.send_img)
 
-        self.running = True
-        self.count = 0
-        
-        self.a = 0
-        self.b = 0
+    @pyqtSlot()
+    def start_timers(self):
+        self.acquisition_timer.start(ACQUISITION_PERIOD)
+        self.liveview_timer.start(self.period)
         
     @pyqtSlot()
-    def start(self):
-        # print("QTIMER {}".format(int(self.acquisition_timer.threadId())))
-        print(int(QThread.currentThreadId()))
-        # self.acquisition_timer.start(ACQUISITION_PERIOD)
-        # self.liveview_timer.start(ACQUISITION_PERIOD)
-        
-    @pyqtSlot()
-    def stop(self):
+    def stop_timers(self):
         self.acquisition_timer.stop()
         self.liveview_timer.stop()
-            
-    # def stop(self):
-    #     self.acquisition_timer.stop()
-    #     self.liveview_timer.stop()
-        
+
+    @pyqtSlot(bool)
+    def freeze_liveview(self, freeze):
+        if freeze: 
+            self.liveview_timer.start(self.period)
+        else:
+            self.liveview_timer.stop()
+
     @pyqtSlot(float)
-    def set_fps(self, period):
-        self.liveview_timer.setInterval(period)
+    def set_period(self, period):
+        self.period = period
+        self.liveview_timer.setInterval(self.period)
 
     def get_mscope(self, mscope):
         self.mscope = mscope
@@ -63,18 +65,11 @@ class Acquisition(QObject):
         self.update_liveview.emit(self.img)
 
     def get_img(self):
-        print("Acquisition RUN {}".format(int(QThread.currentThreadId())))
-
-        self.a = perf_counter()
+        # self.a = perf_counter()
         # print("GET IMG {}".format(self.a-self.b))
-        self.b = self.a    
+        # self.b = self.a    
         try:
-
             self.img = next(self.mscope.camera.yieldImages())
-            # print(img-self.img)
-            
-            # self.img = img
-            # self.update_liveview.emit(img)
             self.update_scopeop.emit(self.img)
             self.count += 1
         except Exception as e:
