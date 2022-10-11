@@ -176,8 +176,11 @@ class Oracle(Machine):
         print("Successfully closed file.")
 
         self.scopeop.shutoff()
-        print("Attempted to shut off timer")
-        sleep(5)
+        print("Waiting for timer to terminate...")
+        while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
+            pass
+        print("Successfully terminated timer.")
+        
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
         

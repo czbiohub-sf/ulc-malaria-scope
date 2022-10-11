@@ -95,7 +95,7 @@ class ScopeOp(QObject, Machine):
         
     def shutoff(self):
         self.mscope.shutoff()
-        # self.stop_timers.emit()
+        self.stop_timers.emit()
 
     def _reset(self):
         self.stop_timers.emit()
