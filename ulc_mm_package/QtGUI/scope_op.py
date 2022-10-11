@@ -1,6 +1,7 @@
 import traceback
 import numpy as np
 
+from collections import deque
 from transitions import Machine, State
 from time import perf_counter, sleep
 
@@ -176,6 +177,10 @@ class ScopeOp(QObject, Machine):
         
         self.flowcontrol_routine = flowControlRoutine(self.mscope, TARGET_FLOWRATE, None)
         self.flowcontrol_routine.send(None)
+
+        self.parasite_count_queue = deque()
+        self.count_parasitemia = count_parasetimia_routine(self.mscope, self.parasite_count_queue)
+        self.count_parasitemia.send(None)
         
         self.img_signal.connect(self.run_experiment)
 
@@ -257,6 +262,7 @@ class ScopeOp(QObject, Machine):
 
         # Periodically adjust focus using single shot autofocus
         self.PSSAF_routine.send(img)
+        self.count_parasitemia.send(img)
 
         # Adjust the flow
         try:

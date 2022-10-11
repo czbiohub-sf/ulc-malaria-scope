@@ -1,5 +1,6 @@
 from time import perf_counter, sleep
 from typing import Union
+from collections import deque
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
@@ -100,6 +101,10 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
             if counter >= ssaf_constants.AF_BATCH_SIZE:
                 counter = 0
                 prev_adjustment_time = perf_counter()
+
+def count_parasitemia_routine(mscope: MalariaScope, results_queue: deque):
+    results_queue.appendleft(mscope.cell_diagnosis_model)
+
 
 def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.ndarray):
     """Keep the flowrate steady by continuously calculating the flowrate and periodically
@@ -263,13 +268,12 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
             ### TODO: Potentially moving to 0 can cause the limit switch to get stuck? Add padding to the bottom after homing the motor?
             mscope.motor.move_abs(pos)
             img = yield img
-            cross_corr_vals.append(cell_finder.getMaxCrossCorrelationVal(img))
+            cell_finder.add_image(mscope.motor.pos, img)
 
-        max_corr = np.max(cross_corr_vals)
-        cells_present = cell_finder.checkForCells(max_corr)
-        if cells_present:
-            # Return the motor position where cells were found w/ the highest confidence
-            motor_pos = int(np.argmax(cross_corr_vals)*steps_per_image)
-            return motor_pos
-        
-        max_attempts -=1
+        # Return the motor position where cells were found
+        try:
+            cells_present_motor_pos = cell_finder.get_cells_found_position()
+            return cells_present_motor_pos
+        except NoCellsFound:
+            max_attempts -=1
+            print("MAX ATTEMPTS LEFT {}".format(max_attempts))
