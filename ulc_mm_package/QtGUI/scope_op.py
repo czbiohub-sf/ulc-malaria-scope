@@ -75,9 +75,7 @@ class ScopeOp(QObject, Machine):
         component_status = self.mscope.getComponentStatus()
         print(component_status)
 
-        # TEMP for testing
-        if True:
-        # if all([status==True for status in component_status.values()]):
+        if all([status==True for status in component_status.values()]):
             self.setup_done.emit()
             print("Successful setup")
         else: 
