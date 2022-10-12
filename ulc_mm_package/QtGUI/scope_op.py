@@ -49,7 +49,6 @@ class ScopeOp(QObject, Machine):
                 'on_enter' : [self._start_autobrightness],
                 },
             {'name' : 'cellfinder',
-                # 'on_enter' : [self._start_cellfinder],
                 'on_enter' : [self._start_cellfinder, self._freeze_liveview],
                 'on_exit' : [self._unfreeze_liveview],
                 },

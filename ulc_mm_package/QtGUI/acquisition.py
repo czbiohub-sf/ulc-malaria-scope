@@ -63,7 +63,6 @@ class Acquisition(QObject):
 
     def get_mscope(self, mscope):
         self.mscope = mscope
-        # self.img = next(self.mscope.camera.yieldImages())
         
     def send_img(self):
         self.update_liveview.emit(self.img)

@@ -52,14 +52,6 @@ class FormGUI(QDialog):
         self.protocol = QComboBox()
         self.site = QComboBox()
 
-        # # Configure widgets
-        # notes_size_policy = QtWidgets.QSizePolicy(
-        #                         QtWidgets.QSizePolicy.Preferred,
-        #                         QtWidgets.QSizePolicy.Preferred
-        #                         )
-        # notes_size_policy.setVerticalStretch(1)
-        # self.notes.setSizePolicy(notes_size_policy)
-
         self.protocol.addItems(["Default"])
         self.site.addItems(["Tororo, Uganda"])
 

@@ -1,6 +1,6 @@
 from ulc_mm_package.QtGUI.gui_constants import *
 
-from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC
+from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC, CAMERA_SELECTION
 from ulc_mm_package.hardware.hardware_modules import *
 
 from ulc_mm_package.image_processing.processing_modules import *
@@ -32,7 +32,6 @@ QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 # Qt GUI Files
 _UI_FILE_DIR = "dev_run.ui"
 _EXPERIMENT_FORM_PATH = "dev_form.ui"
-
 
 class ApplicationError(Exception):
     """Catch-all exception for misc errors not caught by the peripheral classes."""
@@ -154,7 +153,6 @@ class AcquisitionThread(QThread):
         - LED power
         """
 
-        # 
         try:
             pressure = self.pneumatic_module.getPressure()
         except PressureSensorNotInstantiated:
@@ -469,7 +467,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
 
-        media_dir = _DEFAULT_SSD
+        media_dir = DEFAULT_SSD
 
         if SIMULATION:
             print("---------------------\n|  SIMULATION MODE  |\n---------------------")

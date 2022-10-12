@@ -8,11 +8,9 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt, QThread, pyqtSlot
 from PyQt5.QtGui import QIcon
 
+from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
 from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS
-from ulc_mm_package.QtGUI.gui_constants import (
-    ICON_PATH,
-    CAMERA_SELECTION,
-)
+from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.acquisition import Acquisition
@@ -98,7 +96,7 @@ class Oracle(Machine):
         self.next_state()
 
     def error_handler(self, title, text):
-        _ = self.display_message(
+        self.display_message(
             QMessageBox.Icon.Critical,
             title,
             text,
@@ -129,8 +127,6 @@ class Oracle(Machine):
         return msgBox.exec()
 
     def _reset(self, *args):
-        # self.scopeop.reset()
-        # pass
         reset_query = self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
@@ -157,15 +153,9 @@ class Oracle(Machine):
 
     def _start_liveview(self, *args):
         self.liveview_window.show()
-
-        # self.acquisition.update_liveview.connect(self.liveview_window.update_img)
-
         self.scopeop.start()
 
     def _close_liveview(self, *args):
-        # self.scopeop.reset()
-        # self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
-
         self.liveview_window.close()
 
     def _open_survey(self, *args):

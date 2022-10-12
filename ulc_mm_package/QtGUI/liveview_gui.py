@@ -21,11 +21,9 @@ class LiveviewGUI(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(LiveviewGUI, self).__init__(*args, **kwargs)
         self._load_ui()
-        self.fps_scale = 2
-
+   
     @pyqtSlot(np.ndarray)
     def update_img(self, img):
-        # if self.fps % self.fps_scale == 0:
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
 
     def set_fps_scale(self, fps_scale):
