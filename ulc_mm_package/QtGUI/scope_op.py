@@ -88,7 +88,6 @@ class ScopeOp(QObject, Machine):
             print("Failed setup")
 
     def start(self):
-        print(self.state)
         self.start_timers.emit()
 
         if not self.state == 'standby':
@@ -158,7 +157,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_experiment)
         
     def _end_experiment(self):
-        print("DONE")
+        print("Ending experiment")
         self.stop_timers.emit()
 
         self.reset()
@@ -249,11 +248,10 @@ class ScopeOp(QObject, Machine):
             
         # print("RUN: {}".format(self.c-self.d))
 
-        print(self.count)
         self.count += 1
 
         if self.count >= 10:
-            print("DONE DONE DONE")
+            print("Reached frame timeout for experiment")
             self.to_standby()
         else:
             self.img_signal.connect(self.run_experiment)

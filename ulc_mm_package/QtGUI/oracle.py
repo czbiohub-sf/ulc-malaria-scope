@@ -135,6 +135,8 @@ class Oracle(Machine):
             )
         if reset_query == QMessageBox.Cancel:
             self.shutoff()
+        else:
+            print("Running new experiment")
         # TODO add user instructions to remove flow cell before resetting syringe
         # TODO delete current scope data storage
 
