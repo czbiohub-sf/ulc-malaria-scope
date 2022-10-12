@@ -5,10 +5,9 @@ from transitions import Machine
 from time import perf_counter, sleep
 
 from PyQt5.QtWidgets import QApplication, QMessageBox
-from PyQt5.QtCore import Qt, QThread, pyqtSlot
+from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QIcon
 
-from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
 from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
 

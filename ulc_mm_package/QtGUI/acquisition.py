@@ -2,12 +2,9 @@ import traceback
 import numpy as np
 
 from time import perf_counter, sleep
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot, QThread
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot
 
-from ulc_mm_package.QtGUI.gui_constants import (
-    ACQUISITION_PERIOD,
-    LIVEVIEW_PERIOD,
-)
+from ulc_mm_package.QtGUI.gui_constants import ACQUISITION_PERIOD
     
 
 class Acquisition(QObject):
