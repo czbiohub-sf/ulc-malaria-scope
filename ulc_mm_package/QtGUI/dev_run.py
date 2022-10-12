@@ -47,6 +47,7 @@ class AcquisitionThread(QThread):
     fps = pyqtSignal(int)
     pressureLeakDetected = pyqtSignal(int)
     syringePosChanged = pyqtSignal(int)
+    flowValChanged = pyqtSignal(float)
     autobrightnessDone = pyqtSignal(int)
     doneSaving = pyqtSignal(int)
 
@@ -334,8 +335,9 @@ class AcquisitionThread(QThread):
 
         if self.flowcontrol_enabled:
             try:
-                self.flow_controller.controlFlow(img)
+                flow_val = self.flow_controller.controlFlow(img)
                 self.syringePosChanged.emit(1)
+                self.flowValChanged.emit(flow_val)
             except PressureLeak:
                 print(
                     f"""The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
@@ -598,6 +600,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
         self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
+        self.acquisitionThread.flowValChanged.connect(self.updateFlowVal)
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
         self.acquisitionThread.doneSaving.connect(self.enableRecording)
 
@@ -749,6 +752,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsFlow.setValue(self.convertTovsFlowVal(self.pneumatic_module.getCurrentDutyCycle()))
         duty_cycle = self.pneumatic_module.duty_cycle
         self.txtBoxFlow.setText(f"{duty_cycle}")
+
+    @pyqtSlot(float)
+    def updateFlowVal(self, flow_val):
+        if flow_val != -99:
+            self.lblFlowrate.setText(f"Flowrate: {flow_val:.2f}")
 
     @pyqtSlot(float)
     def updatePressureLabel(self, val):

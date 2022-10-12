@@ -1,5 +1,7 @@
 import enum
+from typing import Union
 import numpy as np
+import cv2
 
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
@@ -20,7 +22,13 @@ class AutobrightnessError(Exception):
     def __init__(self, msg: str):
         super().__init__(f"{msg}")
 
-def assessBrightness(img: np.ndarray, top_perc: float) -> float:
+def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
+    """Downsamples an image by `scale_factor`"""
+
+    h, w = img.shape
+    return cv2.resize(img, (w // scale_factor, h // scale_factor))
+
+def assessBrightness(img: np.ndarray, top_perc: float, downsample_factor: int=10) -> float:
     """Returns the mean value of the top N pixels in a given image.
 
     Parameters
@@ -31,11 +39,12 @@ def assessBrightness(img: np.ndarray, top_perc: float) -> float:
         A float number between 0-1 which determines the number of pixels to assess (i.e the top X% of pixels)
     """
 
+    img = downsample_image(img, downsample_factor)
     top_n_perc = top_perc * img.size
     mean_brightness = np.mean(img.flatten()[np.argpartition(img.flatten(), -int(top_n_perc))[-int(top_n_perc):]])
     return mean_brightness
 
-def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float) -> [AB, float]:
+def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float) -> Union[AB, float]:
     """Adjusts the LED's duty cycle to achieve the target brightness.
 
     Returns

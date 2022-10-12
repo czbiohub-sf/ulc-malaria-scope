@@ -1,4 +1,3 @@
-from typing import List
 import numpy as np
 import cv2
 from ulc_mm_package.image_processing.processing_constants import RBC_THUMBNAIL_PATH, CELLS_FOUND_THRESHOLD, MIN_CELL_COUNT
