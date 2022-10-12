@@ -12,8 +12,6 @@ from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_META
 from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     CAMERA_SELECTION,
-    ACQUISITION_PERIOD,
-    LIVEVIEW_PERIOD,
 )
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -25,13 +23,9 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
+_EXIT_MSG = "Click OK to end experiment."
 
 # Add type to input arguments (mscope, img_signal)
-# Does PyQt5.QtWidgets need to be imported?
-# Check 4036 notes
-
-# TODOs
-# TH sensor needs to be simulated too
 
 # NICE TO HAVE
 # Use "on_exception" to trigger exception handler
@@ -60,8 +54,8 @@ class Oracle(Machine):
         # Configure state machine
         states = [
             {'name' : 'standby'},
-            {'name' : 'precheck', 
-                'on_enter' : [self._start_precheck]},
+            {'name' : 'setup', 
+                'on_enter' : [self._start_setup]},
             {'name' : 'form', 
                 'on_enter' : [self._start_form], 
                 'on_exit' : [self._close_form]},
@@ -69,20 +63,20 @@ class Oracle(Machine):
                 'on_enter' : [self._start_liveview], 
                 'on_exit' : [self._close_liveview, self._open_survey]},
             ]
-
         Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
-        self.add_transition(trigger='reset', source='*', dest='standby', after='_reset')
+        self.add_transition(trigger='reset', source='*', dest='form', before='_reset')
 
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
-        self.form_window.exit_btn.clicked.connect(self.end)
+        self.form_window.exit_btn.clicked.connect(self.shutoff)
 
         # Connect liveview buttons
-        self.liveview_window.exit_btn.clicked.connect(self.end)
+        self.liveview_window.exit_btn.clicked.connect(self.shutoff)
 
         # Connect scopeop signals and slots
-        self.scopeop.precheck_done.connect(self.next_state)
+        self.scopeop.setup_done.connect(self.to_form)
+        self.scopeop.reset_done.connect(self.reset)
         self.scopeop.error.connect(self.error_handler)
 
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
@@ -92,14 +86,19 @@ class Oracle(Machine):
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
         self.scopeop.stop_timers.connect(self.acquisition.stop_timers)
 
+        # Connect acquisition signals and slots
+        self.acquisition.update_liveview.connect(self.liveview_window.update_img)
+
         # Trigger first transition
-        self.to_precheck()
+        self.to_setup()
 
     def save_form(self):
+        # TODO save experiment metadata here
+
         self.next_state()
 
     def error_handler(self, title, text):
-        _ = self._display_message(
+        _ = self.display_message(
             QMessageBox.Icon.Critical,
             title,
             text,
@@ -111,7 +110,11 @@ class Oracle(Machine):
         msgBox.setWindowIcon(QIcon(ICON_PATH))
         msgBox.setIcon(icon)
         msgBox.setWindowTitle(f"{title}")
-        msgBox.setText(f"{text}")
+
+        if exit_after:
+            msgBox.setText(f"{text} {_EXIT_MSG}")
+        else:
+            msgBox.setText(f"{text}")
 
         if cancel:
             msgBox.setStandardButtons(
@@ -121,22 +124,30 @@ class Oracle(Machine):
             msgBox.setStandardButtons(QMessageBox.Ok)
 
         if exit_after and msgBox.exec() == QMessageBox.Ok:
-            self.end()
+            self.shutoff()
 
         return msgBox.exec()
 
     def _reset(self, *args):
-        self.acquisition.acquisition_timer.stop()
-        self.acquisition.count = 0
-        # delete current scope?
+        # self.scopeop.reset()
+        # pass
+        reset_query = self.display_message(
+            QMessageBox.Icon.Information,
+            "Run complete",
+            "Start new run?",
+            cancel=True,
+            )
+        if reset_query == QMessageBox.Cancel:
+            self.shutoff()
+        # TODO add user instructions to remove flow cell before resetting syringe
+        # TODO delete current scope data storage
 
-    def _start_precheck(self, *args):
+    def _start_setup(self, *args):
         self.scopeop_thread.start()
+        self.acquisition_thread.start()
 
-        self.scopeop.precheck()
+        self.scopeop.setup()
         self.acquisition.get_mscope(self.scopeop.mscope)
-        # self.acquisition.get_img()
-        # self.acquisition.get_signal(self.scopeop.request_img)
 
     def _start_form(self, *args):
         self.form_window.show()
@@ -147,40 +158,38 @@ class Oracle(Machine):
     def _start_liveview(self, *args):
         self.liveview_window.show()
 
-        self.acquisition.update_liveview.connect(self.liveview_window.update_img)
-        self.acquisition_thread.start()
-        # self.acquisition.get_img()
-        # self.acquisition.start()
-        
-        # self.acquisition.acquisition_timer.start(ACQUISITION_PERIOD)
-        # self.acquisition.liveview_timer.start(ACQUISITION_PERIOD)
+        # self.acquisition.update_liveview.connect(self.liveview_window.update_img)
 
         self.scopeop.start()
 
-
     def _close_liveview(self, *args):
-        self.scopeop.to_standby()
-        self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
+        # self.scopeop.reset()
+        # self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
 
         self.liveview_window.close()
 
     def _open_survey(self, *args):
         pass
 
-    def end(self, *args):
-        # closing_file_future = self.scopeop.mscope.data_storage.close()
+    def shutoff(self, *args):
 
-        print("Waiting for the file to finish closing...")
-        # while not closing_file_future.done():
-        #     sleep(1)
-        print("Successfully closed file.")
+        if self.state == 'liveview':
+            # TODO Update data_storage
+            # closing_file_future = self.scopeop.mscope.data_storage.close()
+
+            # print("Waiting for the file to finish closing...")
+            # while not self.scopeop.mscope.data_storage == None:
+            #     sleep(1)
+            # print("Successfully closed file.")
+
+            pass
 
         self.scopeop.shutoff()
         print("Waiting for timer to terminate...")
         while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
             pass
         print("Successfully terminated timer.")
-        
+    
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
         

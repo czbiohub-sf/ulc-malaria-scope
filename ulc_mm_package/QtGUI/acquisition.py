@@ -35,10 +35,14 @@ class Acquisition(QObject):
         self.liveview_timer = QTimer()
         self.liveview_timer.timeout.connect(self.send_img)
 
+        print("CREATED TIMERS")
+
     @pyqtSlot()
     def start_timers(self):
         self.acquisition_timer.start(ACQUISITION_PERIOD)
         self.liveview_timer.start(self.period)
+
+        print("STARTED TIMERS")
         
     @pyqtSlot()
     def stop_timers(self):

@@ -16,7 +16,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
 )
 
 class ScopeOp(QObject, Machine):
-    precheck_done = pyqtSignal()
+    setup_done = pyqtSignal()
+    reset_done = pyqtSignal()
     freeze_liveview = pyqtSignal(bool)
     error = pyqtSignal(str, str)
     set_period = pyqtSignal(float)
@@ -34,6 +35,8 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_result = None
         self.SSAF_result = None
         self.fastflow_result = None
+
+        self.count = 0
         
         # self.a = 0
         # self.b = 0
@@ -41,8 +44,7 @@ class ScopeOp(QObject, Machine):
         # self.d = 0
 
         states = [
-            {'name' : 'standby',
-                'on_enter' : [self._reset]},
+            {'name' : 'standby'},
             {'name' : 'autobrightness', 
                 'on_enter' : [self._start_autobrightness],
                 },
@@ -65,31 +67,38 @@ class ScopeOp(QObject, Machine):
 
         Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
-        self.add_transition(trigger='end', source='*', dest='standby')
+        self.add_transition(trigger='reset', source='*', dest='standby', before='_reset')
 
-    def precheck(self):
+    def setup(self):
+        print("Creating timers")
+        self.create_timers.emit()  
+
         component_status = self.mscope.getComponentStatus()
         print(component_status)
 
         # TEMP for testing
         if True:
         # if all([status==True for status in component_status.values()]):
-            self.precheck_done.emit()
-            print("Passed precheck")
+            self.setup_done.emit()
+            print("Successful setup")
         else: 
             failed_components = [comp.name for comp in component_status if component_status.get(comp)==False]
-            _ = self._display_message(
-                QMessageBox.Icon.Critical,
+            self.error.emit(
                 "Hardware pre-check failed",
-                "The following component(s) could not be instantiated: {}"
+                "The following component(s) could not be instantiated: {}."
                     .format((",".join(failed_components)).capitalize()),
-                exit_after=True,
                 )
-            print("Failed precheck")
+            print("Failed setup")
 
     def start(self):
-        self.create_timers.emit()  
+        print(self.state)
         self.start_timers.emit()
+
+        if not self.state == 'standby':
+            self.error.emit(
+                "Invalid startup state", 
+                "Scopeop can only be started from state 'standby', but is currently in state '{}'.".format(self.state)
+                )
 
         self.next_state()
         
@@ -98,12 +107,14 @@ class ScopeOp(QObject, Machine):
         self.stop_timers.emit()
 
     def _reset(self):
-        self.stop_timers.emit()
-
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
         self.fastflow_result = None
+
+        self.count = 0
+
+        self.set_period.emit(ACQUISITION_PERIOD)
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -150,12 +161,14 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_experiment)
         
     def _end_experiment(self):
-        self.img_signal.disconnect(self.run_experiment)
-        self.stop_acquisition.emit()
+        print("DONE")
+        self.stop_timers.emit()
+
+        self.reset()
+        self.reset_done.emit()
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
-
         self.img_signal.disconnect(self.run_autobrightness)
         
         # self.a = perf_counter()
@@ -167,7 +180,6 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.autobrightness_result = e.value
             print(f"Mean pixel val: {self.autobrightness_result}")
-            #self.next_state()
             self.to_experiment()
         else:
             self.img_signal.connect(self.run_autobrightness)
@@ -185,7 +197,6 @@ class ScopeOp(QObject, Machine):
         except NoCellsFound:
             self.cellfinder_result = -1
             self.error.emit("Calibration failed", "No cells found.")
-            self.to_standby()
         else:
             self.img_signal.connect(self.run_cellfinder)
 
@@ -210,9 +221,7 @@ class ScopeOp(QObject, Machine):
             self.fastflow_routine.send(img)
         except CantReachTargetFlowrate:
             self.fastflow_result = -1
-            print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
-            self.error.emit("Calibration failed", "Unable to achieve desired flowrate.")
-            self.to_standby()
+            self.error.emit("Calibration failed", "Unable to achieve desired flowrate with syringe at max position.")
         except StopIteration as e:
             self.fastflow_result = e.value
             print(f"Flowrate: {self.fastflow_result}")
@@ -222,6 +231,7 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
+        self.img_signal.disconnect(self.run_experiment)
 
         # self.c = perf_counter()
             
@@ -236,7 +246,19 @@ class ScopeOp(QObject, Machine):
             self.flowcontrol_routine.send(img)
         except CantReachTargetFlowrate:
             print("Can't reach target flowrate.")
+            # self.error.emit("Calibration failed", "Unable to achieve desired flowrate with syringe at max position.")
         
         # self.d = perf_counter()
             
         # print("RUN: {}".format(self.c-self.d))
+
+        print(self.count)
+        self.count += 1
+
+        if self.count >= 10:
+            print("DONE DONE DONE")
+            self.to_standby()
+        else:
+            self.img_signal.connect(self.run_experiment)
+
+
