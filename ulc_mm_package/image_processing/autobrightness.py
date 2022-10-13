@@ -28,7 +28,7 @@ def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
     h, w = img.shape
     return cv2.resize(img, (w // scale_factor, h // scale_factor))
 
-def assessBrightness(img: np.ndarray, top_perc: float, downsample_factor: int=10) -> float:
+def assessBrightness(img: np.ndarray, top_perc: float, downsample_factor: int=20) -> float:
     """Returns the mean value of the top N pixels in a given image.
 
     Parameters
