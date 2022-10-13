@@ -261,8 +261,7 @@ class ScopeOp(QObject, Machine):
             except CantReachTargetFlowrate:
                 self.error.emit("Flow control failed", "Unable to achieve desired flowrate with syringe at max position.")
             # TODO add recovery operation for low cell density
-            except 
-            :
+            except:
                 self.error.emit("Autofocus failed", "Unable to achieve desired focus within condenser's depth of field.")
             else:
                 # self.d = perf_counter()
