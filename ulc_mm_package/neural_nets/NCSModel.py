@@ -56,6 +56,7 @@ class NCSModel:
         params:
             model_path: path to the 'xml' file
         """
+        self.connected = False
         self.device_name = "MYRIAD"
         self.core = Core()
         self.model = self._compile_model(model_path, optimization_hint)
@@ -64,15 +65,11 @@ class NCSModel:
         self.asyn_infer_queue.set_callback(self._default_callback)
         self.asyn_results: "deque[List[Tuple[float]]]" = deque() # deque of list of tuples - (xcenter, ycenter, width, height, class, confidence)
 
-    def shutdown(self):
-        print("waiting on asyn_infer_queue")
-        self.asyn_infer_queue.wait_all()
-        print("wiat is over")
-        del self.asyn_infer_queue
-        del self.core
-        del self.model
-
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
+        if self.connected:
+            # TODO: reconnect param?
+            return
+
         model = self.core.read_model(model_path)
 
         input_tensor_shape = (1, IMG_HEIGHT, IMG_WIDTH, 1)
@@ -87,24 +84,27 @@ class NCSModel:
         ppp.output().tensor().set_element_type(Type.f32)
         model = ppp.build()
 
-        connection_attempts = 3
-        self.connected = False
-        while connection_attempts > 0:
-            if not self.connected:
-                try:
-                    compiled_model = self.core.compile_model(
-                        model, self.device_name, {"PERFORMANCE_HINT": perf_hint.name}
-                    )
-                    self.connected = True
-                    return compiled_model
-                except Exception as e:
+        err_msg = ""
+        connection_attempts = 0
+        while connection_attempts < 4:
+            # sleep 0, then 1, then 3, then 7
+            time.sleep(2 ** connection_attempts - 1)
+            try:
+                # TODO: benchmark_app.py says PERFORMANCE_HINT = 'none' w/ nstreams=1 is fastest!!
+                compiled_model = self.core.compile_model(
+                    model, self.device_name, {"PERFORMANCE_HINT": perf_hint.name}
+                )
+                self.connected = True
+                return compiled_model
+            except Exception as e:
+                connection_attempts += 1
+                if connection_attempts < 4:
                     print(
-                        f"Failed to connect NCS: {e}.\nRemaining connection attempts: {connection_attempts}. Retrying..."
+                        f"Failed to connect NCS: {e}.\nRemaining connection attempts: {4 - connection_attempts}. Retrying..."
                     )
-                    connection_attempts -= 1
-                    time.sleep(1)
+                err_msg = str(e)
 
-        return -1
+        raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
         "userdata is some extra param"

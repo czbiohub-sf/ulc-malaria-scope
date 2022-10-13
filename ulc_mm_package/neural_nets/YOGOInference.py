@@ -55,7 +55,3 @@ if __name__ == "__main__":
 
     vv = Y.syn(img)[0]
     print(vv)
-    del Y
-    print('wiait')
-    time.sleep(1)
-    print('wiait done')
