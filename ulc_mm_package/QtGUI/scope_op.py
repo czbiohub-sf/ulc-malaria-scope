@@ -19,12 +19,15 @@ from ulc_mm_package.QtGUI.gui_constants import (
 class ScopeOp(QObject, Machine):
     setup_done = pyqtSignal()
     reset_done = pyqtSignal()
-    freeze_liveview = pyqtSignal(bool)
+
     error = pyqtSignal(str, str)
-    set_period = pyqtSignal(float)
+
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
     stop_timers = pyqtSignal()
+
+    set_period = pyqtSignal(float)
+    freeze_liveview = pyqtSignal(bool)
 
     def __init__(self, img_signal):
         super().__init__()
@@ -230,31 +233,33 @@ class ScopeOp(QObject, Machine):
     def run_experiment(self, img):
         self.img_signal.disconnect(self.run_experiment)
 
-        # self.c = perf_counter()
-            
-        # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
-        # TODO get metadata from hardware here
-
-        # Periodically adjust focus using single shot autofocus
-        self.PSSAF_routine.send(img)
-
-        # Adjust the flow
-        try:
-            self.flowcontrol_routine.send(img)
-        except CantReachTargetFlowrate:
-            print("Can't reach target flowrate.")
-            # self.error.emit("Calibration failed", "Unable to achieve desired flowrate with syringe at max position.")
-        
-        # self.d = perf_counter()
-            
-        # print("RUN: {}".format(self.c-self.d))
-
-        self.count += 1
-
         if self.count >= 10:
             print("Reached frame timeout for experiment")
             self.to_standby()
         else:
-            self.img_signal.connect(self.run_experiment)
+
+            # self.c = perf_counter()
+                
+            # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
+            # TODO get metadata from hardware here
+
+            # Periodically adjust focus using single shot autofocus
+            self.PSSAF_routine.send(img)
+
+            # Adjust the flow
+            try:
+                # TODO add density check here
+                self.flowcontrol_routine.send(img)
+            except CantReachTargetFlowrate:
+                self.error.emit("Calibration failed", "Unable to achieve desired flowrate with syringe at max position.")
+            # TODO add recovery operation for low cell density
+            else:
+                # self.d = perf_counter()
+                    
+                # print("RUN: {}".format(self.c-self.d))
+
+                self.count += 1  
+
+                self.img_signal.connect(self.run_experiment)
 
 

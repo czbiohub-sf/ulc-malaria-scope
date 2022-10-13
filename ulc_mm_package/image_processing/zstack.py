@@ -159,7 +159,7 @@ def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_step
         img = yield img
         focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
         if save_loc != None:
-            cv2.imwrite(save_dir + f"{motor.pos:03d}_{i}.png", img)
+            cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         
         motor.move_rel(steps=steps_per_image, dir=Direction.CW, stepdelay=0.001)
         step_counter += steps_per_image

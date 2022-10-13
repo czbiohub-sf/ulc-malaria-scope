@@ -22,7 +22,8 @@ import inspect
 from importlib import import_module
 from os.path import basename
 
-from ulc_mm_package.QtGUI.gui_constants import SIMULATION
+from ulc_mm_package.hardware.hardware_constants import SIMULATION
+
 
 PKG_PATH = 'ulc_mm_package.hardware.'
 

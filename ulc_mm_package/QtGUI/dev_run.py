@@ -1,8 +1,7 @@
 from ulc_mm_package.QtGUI.gui_constants import *
+from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC, CAMERA_SELECTION, SIMULATION
 
-from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC, CAMERA_SELECTION
 from ulc_mm_package.hardware.hardware_modules import *
-
 from ulc_mm_package.image_processing.processing_modules import *
 
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
