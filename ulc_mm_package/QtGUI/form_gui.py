@@ -1,3 +1,9 @@
+""" Experiment form GUI window
+
+Takes user input and exports experiment metadata.
+
+"""
+
 import numpy as np
 
 from typing import Dict

@@ -1,3 +1,7 @@
+""" Liveview GUI window
+
+Displays camera preview and conveys info to user during runs."""
+
 import numpy as np
 
 from qimage2ndarray import gray2qimage

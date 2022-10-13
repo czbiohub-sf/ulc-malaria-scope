@@ -1,3 +1,10 @@
+""" High-level state machine manager.
+
+The Oracle sees all and knows all. 
+It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
+
+"""
+
 import sys
 import numpy as np
 
@@ -34,7 +41,7 @@ class Oracle(Machine):
 
     def __init__(self, *args, **kwargs):
 
-        # Instantiate windows
+        # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
 
@@ -58,7 +65,9 @@ class Oracle(Machine):
                 'on_exit' : [self._close_form]},
             {'name' : 'liveview', 
                 'on_enter' : [self._start_liveview], 
-                'on_exit' : [self._close_liveview, self._open_survey]},
+                'on_exit' : [self._close_liveview]},
+            {'name' : 'survey', 
+                'on_enter' : [self._start_survey]},
             ]
         Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
@@ -87,11 +96,6 @@ class Oracle(Machine):
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
 
         # Trigger first transition
-        self.to_setup()
-
-    def save_form(self):
-        # TODO save experiment metadata here
-
         self.next_state()
 
     def error_handler(self, title, text):
@@ -125,6 +129,10 @@ class Oracle(Machine):
 
         return msgBox.exec()
 
+    def save_form(self):
+        # TODO save experiment metadata here
+        self.next_state()
+
     def _reset(self, *args):
         reset_query = self.display_message(
             QMessageBox.Icon.Information,
@@ -138,6 +146,39 @@ class Oracle(Machine):
             print("Running new experiment")
         # TODO add user instructions to remove flow cell before resetting syringe
         # TODO delete current scope data storage
+
+    def shutoff(self, *args):
+
+        if self.state == 'liveview':
+            # TODO Update data_storage
+            # closing_file_future = self.scopeop.mscope.data_storage.close()
+
+            # print("Waiting for the file to finish closing...")
+            # while not self.scopeop.mscope.data_storage == None:
+            #     sleep(1)
+            # print("Successfully closed file.")
+
+            pass
+        
+        # Shut off hardware
+        self.scopeop.shutoff()
+
+        # Shut off QTimers
+        print("Waiting for timer to terminate...")
+        while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
+            pass
+        print("Successfully terminated timer.")
+    
+        # Shut off acquisition thread
+        self.acquisition_thread.quit()
+        self.acquisition_thread.wait()
+        
+        # Shut off scopeop thread
+        self.scopeop_thread.quit()
+        self.scopeop_thread.wait()
+        
+        print("Exiting program")
+        quit()   
 
     def _start_setup(self, *args):
         self.scopeop_thread.start()
@@ -159,36 +200,8 @@ class Oracle(Machine):
     def _close_liveview(self, *args):
         self.liveview_window.close()
 
-    def _open_survey(self, *args):
+    def _start_survey(self, *args):
         pass
-
-    def shutoff(self, *args):
-
-        if self.state == 'liveview':
-            # TODO Update data_storage
-            # closing_file_future = self.scopeop.mscope.data_storage.close()
-
-            # print("Waiting for the file to finish closing...")
-            # while not self.scopeop.mscope.data_storage == None:
-            #     sleep(1)
-            # print("Successfully closed file.")
-
-            pass
-
-        self.scopeop.shutoff()
-        print("Waiting for timer to terminate...")
-        while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
-            pass
-        print("Successfully terminated timer.")
-    
-        self.acquisition_thread.quit()
-        self.acquisition_thread.wait()
-        
-        self.scopeop_thread.quit()
-        self.scopeop_thread.wait()
-        
-        print("Exiting program")
-        quit()   
        
 
 if __name__ == "__main__":

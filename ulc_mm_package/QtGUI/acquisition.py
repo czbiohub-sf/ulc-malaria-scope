@@ -1,3 +1,9 @@
+""" Image manager
+
+Receives images from the camera and sends them to Liveview and ScopeOp.
+
+"""
+
 import traceback
 import numpy as np
 
@@ -17,7 +23,6 @@ class Acquisition(QObject):
         self.img = None
         self.mscope = None
 
-        self.running = True
         self.count = 0
         self.period = ACQUISITION_PERIOD
         
@@ -60,9 +65,6 @@ class Acquisition(QObject):
 
     def get_mscope(self, mscope):
         self.mscope = mscope
-        
-    def send_img(self):
-        self.update_liveview.emit(self.img)
 
     def get_img(self):
         # self.a = perf_counter()
@@ -77,3 +79,6 @@ class Acquisition(QObject):
             # Once that happens, this can be swapped to catch the PyCameraException
             print(e)
             print(traceback.format_exc())
+        
+    def send_img(self):
+        self.update_liveview.emit(self.img)

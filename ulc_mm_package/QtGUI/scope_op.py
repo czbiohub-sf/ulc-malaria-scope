@@ -1,3 +1,10 @@
+""" Low-level/hardware state machine manager
+
+Controls hardware (ie. the Scope) operations. 
+Manages hardware routines and interactions with Oracle and Acquisition.
+
+"""
+
 import numpy as np
 
 from transitions import Machine
@@ -81,7 +88,7 @@ class ScopeOp(QObject, Machine):
 
         if all([status==True for status in component_status.values()]):
             self.setup_done.emit()
-            print("Successful setup")
+            print("Successful hardware initialization")
         else: 
             failed_components = [comp.name for comp in component_status if component_status.get(comp)==False]
             self.error.emit(
@@ -89,7 +96,7 @@ class ScopeOp(QObject, Machine):
                 "The following component(s) could not be instantiated: {}."
                     .format((",".join(failed_components)).capitalize()),
                 )
-            print("Failed setup")
+            print("Failed initialization")
 
     def start(self):
         self.start_timers.emit()
@@ -164,7 +171,7 @@ class ScopeOp(QObject, Machine):
         print("Ending experiment")
         self.stop_timers.emit()
 
-        self.reset()
+        self._reset()
         self.reset_done.emit()
 
     @pyqtSlot(np.ndarray)
@@ -261,5 +268,3 @@ class ScopeOp(QObject, Machine):
                 self.count += 1  
 
                 self.img_signal.connect(self.run_experiment)
-
-
