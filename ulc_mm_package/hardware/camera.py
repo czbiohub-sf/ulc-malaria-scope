@@ -4,9 +4,6 @@ See camera module under hardware/real/ for more info.
 
 """
 
-import sys
-import queue
-
 from ulc_mm_package.hardware.hardware_wrapper import hardware
 from ulc_mm_package.hardware.hardware_constants import DEVICELINK_THROUGHPUT
 
