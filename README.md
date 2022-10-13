@@ -25,9 +25,25 @@ Allied Vision's Vimba library:
 3. [Download the SDK](https://www.alliedvision.com/en/products/vimba-sdk/#c1497).
 4. Navigate to the "VimbaPython" installation directory in a terminal and run <code>python -m pip install .</code>
 
-### Starting the GUI
-Navigate to ulc_mm_package/QtQUI and run <code>python3 UI.py</code>. Use optional flags to enable operation modes:
-* <code>-s</code> or <code>--sim</code>: Simulation mode (dummy functions replace hardware objects)
-* <code>-d</code> or <code>--dev</code>: Developer mode (manual control of hardware objects)
+### Running the GUI
 
-Note: The original GUI was activated by liveviewer.py, which is now obsolete. Use UI.py instead.
+Navigate to ulc_mm_package/QtQUI and run <code>python3 oracle.py</code>.
+
+Note: The original GUI lived in <code>liveviewer.py</code>, which is now obsolete. Use the above command instead.
+
+### Debugging using developer mode
+
+Navigate to ulc_mm_package/QtQUI and run <code>python3 dev_run.py</code>. This opens a GUI with manual hardware control for debugging purposes.
+
+### Using simulation mode
+
+To run any of these scripts using simulated hardware (eg. to test code without a scope), add an empty <code>simulation.py</code> file to your working directory. 
+
+For example, to run <code>oracle.py</code> in simulation mode, your file structure should include a <code>simulation.py</code> file as shown below:
+'''
+|--ulc_mm_package
+   |--QtGUI
+      |--simulation.py
+      |--oracle.py
+        
+'''
