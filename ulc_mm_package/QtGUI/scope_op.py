@@ -187,7 +187,7 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.autobrightness_result = e.value
             print(f"Mean pixel val: {self.autobrightness_result}")
-            self.to_experiment()
+            self.next_state()
         else:
             self.img_signal.connect(self.run_autobrightness)
 
