@@ -31,8 +31,6 @@ class YOGO(NCSModel):
         return self.filter_res(res)
 
     def filter_res(self, res):
-        "filter results"
-        # if we call this multiple times on res, we gotta do this
         if res.ndim == 4:
             bs, pred_dim, Sy, Sx = res.shape
             # constant time op, just changes view of res
@@ -40,18 +38,24 @@ class YOGO(NCSModel):
         mask = (res[:, 4:5, :] > YOGO_PRED_THRESHOLD).flatten()
         return res[:,:,mask]
 
+    def _default_callback(self, infer_request, userdata) -> None:
+        self.asyn_results.append(
+            self.filter_res(infer_request.output_tensor[0].data)
+        )
+
 
 if __name__ == "__main__":
     import cv2
     import sys
     import numpy as np
+    import time
 
     Y = YOGO()
     img = cv2.imread(sys.argv[1], cv2.IMREAD_GRAYSCALE)
-    imgg = np.concatenate((img,img,img,img))
-    print(imgg.shape)
 
-    vv = Y.syn(imgg)[0]
-
-    for row in vv[0,...].T:
-        print(row.shape, row)
+    vv = Y.syn(img)[0]
+    print(vv)
+    del Y
+    print('wiait')
+    time.sleep(1)
+    print('wiait done')

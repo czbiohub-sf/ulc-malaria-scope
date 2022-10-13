@@ -1,12 +1,13 @@
 #! /usr/bin/env python3
 
-import cv2
 import sys
 import time
 import numpy as np
 
 from enum import Enum
 from pathlib import Path
+from copy import deepcopy
+from collections import deque
 
 from typing import Any, Callable
 
@@ -40,6 +41,11 @@ class NCSModel:
 
     Allows you to run a model (defined by an intel intermediate representation of your
     model, e.g. model.xml & model.bin) on the neural compute stick
+
+    see https://github.com/luxonis/depthai-experiments/pull/57
+
+    Examples
+    https://github.com/decemberpei/openvino-ncs2-python-samples/blob/master/async_api_multi-threads.py
     """
     def __init__(
         self,
@@ -53,11 +59,18 @@ class NCSModel:
         self.device_name = "MYRIAD"
         self.core = Core()
         self.model = self._compile_model(model_path, optimization_hint)
-        self.asyn_infer_queue = AsyncInferQueue(self.model)
+        self.num_requests = self.model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")
+        self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        self.asyn_results = (
-            []
-        )  # List of list of tuples - (xcenter, ycenter, width, height, class, confidence)
+        self.asyn_results: "deque[List[Tuple[float]]]" = deque() # deque of list of tuples - (xcenter, ycenter, width, height, class, confidence)
+
+    def shutdown(self):
+        print("waiting on asyn_infer_queue")
+        self.asyn_infer_queue.wait_all()
+        print("wiat is over")
+        del self.asyn_infer_queue
+        del self.core
+        del self.model
 
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
         model = self.core.read_model(model_path)
@@ -95,28 +108,32 @@ class NCSModel:
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
         "userdata is some extra param"
-        self.asyn_results.append(infer_request.output_tensors[0].data)
+        self.asyn_results.appendleft(infer_request.output_tensors[0].data)
 
     def syn(self, input_img):
         """input_img is 2d array (i.e. grayscale img)"""
         input_tensor = [np.expand_dims(input_img, (0, 3))]
         results = self.model(input_tensor)
-        return list(results.values())
+        return next(iter(results.values()))
 
     def asyn(
         self,
-        input_img: list,
+        input_imgs: "List",
     ) -> None:
-        input_tensor = [np.expand_dims(input_img, (0, 3))]
-        self.asyn_infer_queue.start_async(input_tensor)
+        if isinstance(input_tensor, np.array):
+            input_imgs = [np.expand_dims(input_imgs, (0, 3))]
+
+        for i, input_tensor in enumerate(input_tensor):
+            self.asyn_infer_queue.start_async({0: input_tensor}, userdata=i)
 
     def get_asyn_results(self):
-        res = self.asyn_results
+        res = deepcopy(self.asyn_results)
         self.asyn_results = []
         return res
 
 
 if __name__ == "__main__":
+    import cv2
 
     def _asyn_calling(model, images):
         print("starting asyncing")
