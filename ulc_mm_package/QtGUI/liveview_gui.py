@@ -15,23 +15,23 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
+from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
+
 
 class LiveviewGUI(QMainWindow):
     
     def __init__(self, *args, **kwargs):
         super(LiveviewGUI, self).__init__(*args, **kwargs)
         self._load_ui()
-   
+        
     @pyqtSlot(np.ndarray)
     def update_img(self, img):
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
-
-    def set_fps_scale(self, fps_scale):
-        self.fps_scale = fps_scale
         
     def _load_ui(self):
         self.setWindowTitle('Malaria scope')
         self.setGeometry(100, 100, 1100, 700)
+        self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up central layout + widget
         self.main_layout = QGridLayout()
