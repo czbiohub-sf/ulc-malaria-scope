@@ -10,14 +10,13 @@ Purpose: Dummy hardware object simulating camera.
 
 import cv2
 
-from py_cameras import PyCamera
 from time import sleep
 
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS, VIDEO_PATH
 from ulc_mm_package.hardware.camera import CameraError
 
 
-class SimCamera(PyCamera):
+class SimCamera():
     def __init__(self):
         try:
             self.binning = 1

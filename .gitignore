@@ -107,4 +107,4 @@ ulc_mm_package/QtGUI/sim_media/*.avi
 !ulc_mm_package/QtGUI/sim_media/pi/data/.gitkeep
 
 # Simulation setting
-ulc_mm_package/QtGUI/simulation.py
+simulation.py

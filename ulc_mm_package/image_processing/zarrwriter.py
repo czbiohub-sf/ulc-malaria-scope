@@ -96,7 +96,7 @@ class ZarrWriter():
             raise AttemptingWriteWithoutFile()
 
     def threadedWriteSingleArray(self, *args, **kwargs):
-        self.futures.append(self.executor.submit(self.writeSingleArray, (*args)))
+        self.futures.append(self.executor.submit(self.writeSingleArray, *args))
 
     @lockNoBlock(WRITE_LOCK)
     def closeFile(self):
