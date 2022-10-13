@@ -40,6 +40,7 @@ setup(name='ulc_mm_package',
                           'pymotors @ git+https://github.com/czbiohub/PyMotors@master',
                           'typer==0.4.1',
                           'tqdm==4.63.0',
+                          'transitions==0.8.11',
                           ],
       classifiers = ["CZ Biohub :: Bioengineering"],
 )

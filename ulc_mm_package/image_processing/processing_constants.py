@@ -21,6 +21,8 @@ CORRELATION_THRESH = 0.5
 TARGET_FLOWRATE = 15 # In units of IMG_HEIGHT pixels/second.
 
 # ================ Data storage constants ================ #
+DEFAULT_SSD = "/media/pi/"
+
 EXPERIMENT_METADATA_KEYS = [
         "operator_id",
         "participant_id",
@@ -28,26 +30,23 @@ EXPERIMENT_METADATA_KEYS = [
         "protocol",
         "site",
         "notes",
+        # "scope", # TO BE ADDED
         "camera", # AVT / Basler
         "target_flowrate",
-        "mean_brightness",
-        "percentage_parasitemia", # if known, otherwise none/flag value?
+        "exposure",
+        "target_flowrate",
+        "target_brightness",
     ]
 
 PER_IMAGE_METADATA_KEYS = [
         "im_counter",
-        "measurement_type",
-        "sample_type",
         "timestamp",
-        "exposure",
         "motor_pos",
         "pressure_hpa",
         "syringe_pos",
-        "flow_control_on",
-        "target_flowrate",
-        "current_flowrate",
-        "autofocus_on",
-        "autofocus_motor_steps",
+        "flowrate",
+        "temperature",
+        "humidity",
     ]
 
 # ================ Cell detection constants ================ #
@@ -55,3 +54,5 @@ RBC_THUMBNAIL_PATH = "../image_processing/thumbnail.png" #TODO better way to ref
 
 # This value was found empirically, looking at several focal stacks with and without cells
 CELLS_FOUND_THRESHOLD = 9000 # It's got to be... OVER 9000!!!!!!
+
+MIN_CELL_COUNT = 10

@@ -5,13 +5,6 @@ See pneumatic module under hardware/real/ for more info
 """
 
 import enum
-import functools
-import threading
-import pigpio
-import board
-import adafruit_mprls
-
-from time import sleep, perf_counter
 
 from ulc_mm_package.hardware.hardware_wrapper import hardware
 from ulc_mm_package.hardware.hardware_constants import *
@@ -32,6 +25,13 @@ class PressureLeak(PneumaticModuleError):
     """Raised when a pressure leak is detected."""
 
 class SyringeInMotion(PneumaticModuleError):
+    pass
+
+class SyringeEndOfTravel(PneumaticModuleError):
+    """
+    Raised when the syringe is at its end-of-travel in a direction
+    and but another move in that direction is requested
+    """
     pass
 
 class SyringeDirection(enum.Enum):

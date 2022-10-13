@@ -1,60 +1,40 @@
-import traceback
+""" Low-level/hardware state machine manager
+
+Controls hardware (ie. the Scope) operations. 
+Manages hardware routines and interactions with Oracle and Acquisition.
+
+"""
+
 import numpy as np
 
-from collections import deque
-from transitions import Machine, State
+from transitions import Machine
 from time import perf_counter, sleep
 
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtCore import Qt, QObject, QTimer, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
-from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE, PER_IMAGE_METADATA_KEYS
-from ulc_mm_package.QtGUI.gui_constants import TIMEOUT_PERIOD
+from ulc_mm_package.image_processing.processing_constants import (
+    TARGET_FLOWRATE, 
+    PER_IMAGE_METADATA_KEYS,
+)
+from ulc_mm_package.QtGUI.gui_constants import (
+    ACQUISITION_PERIOD,
+    LIVEVIEW_PERIOD,
+)
 
-# class ScopeOpState(State):
-
-#     def __init__(self, name, on_enter=None, on_exit=None, ignore_invalid_triggers=None,
-#                 signal=None, slot=None):
-
-#         self.signal = signal
-#         self.slot = slot
-
-#         if self.signal == None or self.slot == None:
-#             if (not self.signal == None) or (not self.slot == None):
-#                 raise ValueError(f'Signal and/or slot specification is missing for state {name}.')
-
-#         # Connect signals/slots before "on_enter" events, and disconnect before "on_exit"
-#         else:
-#             if on_enter == None:
-#                 on_enter = self._connect
-#             else:
-#                 # on_enter.insert(0, self._connect)
-#                 on_enter.append(self._connect)
-        
-#             # if on_exit == None:
-#             #     on_exit = self._disconnect
-#             # else:
-#             #     on_exit.insert(0, self._disconnect)
-
-#         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
-
-#     def _connect(self):
-#         print("CONNECTING " + self.name)
-#         self.signal.connect(self.slot)
-
-#     # def _disconnect(self):
-#     #     print("DISCONNECTING " + self.name)
-#     #     self.signal.disconnect(self.slot)
-
-        
 class ScopeOp(QObject, Machine):
-    precheck_done = pyqtSignal()
-    freeze_liveview = pyqtSignal(bool)
+    setup_done = pyqtSignal()
+    reset_done = pyqtSignal()
+
     error = pyqtSignal(str, str)
 
-    # state_cls = ScopeOpState
+    create_timers = pyqtSignal()
+    start_timers = pyqtSignal()
+    stop_timers = pyqtSignal()
+
+    set_period = pyqtSignal(float)
+    freeze_liveview = pyqtSignal(bool)
 
     def __init__(self, img_signal):
         super().__init__()
@@ -66,77 +46,81 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_result = None
         self.SSAF_result = None
         self.fastflow_result = None
+        self.count = 0
         
-        self.a = 0
-        self.b = 0
-        self.c = 0
-        self.d = 0
+        # self.a = 0
+        # self.b = 0
+        # self.c = 0
+        # self.d = 0
 
         states = [
-            {'name' : 'standby',
-                'on_enter' : [self._reset]},
+            {'name' : 'standby'},
             {'name' : 'autobrightness', 
                 'on_enter' : [self._start_autobrightness],
-                # 'signal' : self.img_signal, 
-                # 'slot' : self.run_autobrightness,
                 },
-            {'name' : 'cellfinder',
-                'on_enter' : [self._start_cellfinder],
-                # 'on_enter' : [self._start_cellfinder, self._freeze_liveview],
-                #'on_exit' : [self._unfreeze_liveview],
-                # 'signal' : self.img_signal, 
-                # 'slot' : self.run_cellfinder,
-                },
-            {'name' : 'SSAF', 
-                'on_enter' : [self._start_SSAF],
-                # 'signal' : self.img_signal, 
-                # 'slot' : self.run_SSAF,
-                },
+            # {'name' : 'cellfinder',
+            #     'on_enter' : [self._start_cellfinder, self._freeze_liveview],
+            #     'on_exit' : [self._unfreeze_liveview],
+            #     },
+            # {'name' : 'SSAF', 
+            #     'on_enter' : [self._start_SSAF],
+            #     },
             # {'name' : 'fastflow', 
             #    'on_enter' : [self._start_fastflow],
-            #    # 'signal' : self.img_signal, 
-            #    # 'slot' : self.run_fastflow,
             #    },
             {'name' : 'experiment', 
                 'on_enter' : [self._start_experiment],
-                # 'signal' : self.img_signal, 
-                # 'slot' : self.run_experiment,
+                'on_exit' : [self._end_experiment],
                 },
             ]
 
         Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
-        self.add_transition(trigger='end', source='*', dest='standby')
+        self.add_transition(trigger='reset', source='*', dest='standby', before='_reset')
 
-    def precheck(self):
+    def setup(self):
+        print("Creating timers")
+        self.create_timers.emit()  
+
         component_status = self.mscope.getComponentStatus()
         print(component_status)
 
-        # TEMP for testing
-        if True:
-        # if all([status==True for status in component_status.values()]):
-            self.precheck_done.emit()
-            print("Passed precheck")
+        if all([status==True for status in component_status.values()]):
+            self.setup_done.emit()
+            print("Successful hardware initialization")
         else: 
             failed_components = [comp.name for comp in component_status if component_status.get(comp)==False]
-            _ = self._display_message(
-                QMessageBox.Icon.Critical,
+            self.error.emit(
                 "Hardware pre-check failed",
-                "The following component(s) could not be instantiated: {}"
+                "The following component(s) could not be instantiated: {}."
                     .format((",".join(failed_components)).capitalize()),
-                exit_after=True,
                 )
-            print("Failed precheck")
+            print("Failed initialization")
 
     def start(self):
-        print("Starting experiment")
+        self.start_timers.emit()
+
+        if not self.state == 'standby':
+            self.error.emit(
+                "Invalid startup state", 
+                "Scopeop can only be started from state 'standby', but is currently in state '{}'.".format(self.state)
+                )
+
         self.next_state()
+        
+    def shutoff(self):
+        self.mscope.shutoff()
+        self.stop_timers.emit()
 
     def _reset(self):
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
         self.fastflow_result = None
+
+        self.count = 0
+
+        self.set_period.emit(ACQUISITION_PERIOD)
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -177,12 +161,17 @@ class ScopeOp(QObject, Machine):
         
         self.flowcontrol_routine = flowControlRoutine(self.mscope, TARGET_FLOWRATE, None)
         self.flowcontrol_routine.send(None)
-
-        self.parasite_count_queue = deque()
-        self.count_parasitemia = count_parasetimia_routine(self.mscope, self.parasite_count_queue)
-        self.count_parasitemia.send(None)
+        
+        self.set_period.emit(LIVEVIEW_PERIOD)
         
         self.img_signal.connect(self.run_experiment)
+        
+    def _end_experiment(self):
+        print("Ending experiment")
+        self.stop_timers.emit()
+
+        self._reset()
+        self.reset_done.emit()
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
@@ -214,7 +203,6 @@ class ScopeOp(QObject, Machine):
         except NoCellsFound:
             self.cellfinder_result = -1
             self.error.emit("Calibration failed", "No cells found.")
-            self.to_standby()
         else:
             self.img_signal.connect(self.run_cellfinder)
 
@@ -224,12 +212,13 @@ class ScopeOp(QObject, Machine):
 
         try:
             self.SSAF_routine.send(img)
+        except InvalidMove:
+            self.error.emit("Calibration failed", "Unable to achieve desired focus within depth of field.")
         except StopIteration as e:
             self.SSAF_result = e.value
             print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
             self.next_state()
         else:
-            # print("RECONNECTING")
             self.img_signal.connect(self.run_SSAF)
 
     @pyqtSlot(np.ndarray)
@@ -240,9 +229,7 @@ class ScopeOp(QObject, Machine):
             self.fastflow_routine.send(img)
         except CantReachTargetFlowrate:
             self.fastflow_result = -1
-            print("Unable to achieve flowrate - syringe at max position but flowrate is below target.")
-            self.error.emit("Calibration failed", "Unable to achieve desired flowrate.")
-            self.to_standby()
+            self.error.emit("Calibration failed", "Unable to achieve desired flowrate with syringe at max position.")
         except StopIteration as e:
             self.fastflow_result = e.value
             print(f"Flowrate: {self.fastflow_result}")
@@ -252,20 +239,34 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray)
     def run_experiment(self, img):
+        self.img_signal.disconnect(self.run_experiment)
 
-        # self.c = perf_counter()
-        # print("RUN: {}".format(self.c-self.d))
-        # self.d = self.c
-            
-        # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
-        # TODO get metadata from hardware here
+        if self.count >= 1000:
+            print("Reached frame timeout for experiment")
+            self.to_standby()
+        else:
 
-        # Periodically adjust focus using single shot autofocus
-        self.PSSAF_routine.send(img)
-        self.count_parasitemia.send(img)
+            # self.c = perf_counter()
+                
+            # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
+            # TODO get metadata from hardware here
 
-        # Adjust the flow
-        try:
-            self.flowcontrol_routine.send(img)
-        except CantReachTargetFlowrate:
-            print("Can't reach target flowrate.")
+            # Adjust the flow
+            try:
+                # Periodically adjust focus using single shot autofocus
+                self.PSSAF_routine.send(img)
+                # TODO add density check here
+                self.flowcontrol_routine.send(img)
+            except CantReachTargetFlowrate:
+                self.error.emit("Flow control failed", "Unable to achieve desired flowrate with syringe at max position.")
+            # TODO add recovery operation for low cell density
+            except InvalidMove:
+                self.error.emit("Autofocus failed", "Unable to achieve desired focus within depth of field.")
+            else:
+                # self.d = perf_counter()
+                    
+                # print("RUN: {}".format(self.c-self.d))
+
+                self.count += 1  
+
+                self.img_signal.connect(self.run_experiment)

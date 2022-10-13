@@ -37,6 +37,7 @@ class PneumaticModule():
         self.prev_time_s = 0
         self.control_delay_s = 0.2
         self.curr_pressure = self.prev_pressure
+        self.mpr_enabled = True
 
         # Active flow control variables
         self.flowrate_target = 0
@@ -89,3 +90,14 @@ class PneumaticModule():
 
     def holdPressure(target_pressure):
         pass
+
+    def isMovePossible(self, move_dir: SyringeDirection) -> bool:        
+        # Cannot move the syringe up
+        if self.duty_cycle == self.max_duty_cycle and move_dir == 1:
+                return False
+                
+        # Cannot move the syringe down
+        elif self.duty_cycle == self.min_duty_cycle and move_dir == -1:
+            return False
+
+        return True

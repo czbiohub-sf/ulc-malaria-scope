@@ -6,7 +6,6 @@ See motor module under hardware/real/ for more info.
 
 import enum
 
-from ulc_mm_package.QtGUI.gui_constants import SIMULATION
 from ulc_mm_package.hardware.hardware_wrapper import hardware
 
 
