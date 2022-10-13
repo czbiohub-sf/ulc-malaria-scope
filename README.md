@@ -40,10 +40,10 @@ Navigate to ulc_mm_package/QtQUI and run <code>python3 dev_run.py</code>. This o
 To run any of these scripts using simulated hardware (eg. to test code without a scope), add an empty <code>simulation.py</code> file to your working directory. 
 
 For example, to run <code>oracle.py</code> in simulation mode, your file structure should include a <code>simulation.py</code> file as shown below:
-'''
+
+```
 |--ulc_mm_package
    |--QtGUI
       |--simulation.py
       |--oracle.py
-        
-'''
+```
