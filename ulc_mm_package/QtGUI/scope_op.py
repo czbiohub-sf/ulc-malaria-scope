@@ -214,7 +214,7 @@ class ScopeOp(QObject, Machine):
         try:
             self.SSAF_routine.send(img)
         except InvalidMove:
-            self.error.emit("Calibration failed", "Unable to achieve desired focus within depth of field.")
+                self.error.emit("Calibration failed", "Unable to achieve desired focus within condenser's depth of field.")
         except StopIteration as e:
             self.SSAF_result = e.value
             print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
@@ -261,8 +261,9 @@ class ScopeOp(QObject, Machine):
             except CantReachTargetFlowrate:
                 self.error.emit("Flow control failed", "Unable to achieve desired flowrate with syringe at max position.")
             # TODO add recovery operation for low cell density
-            except InvalidMove:
-                self.error.emit("Autofocus failed", "Unable to achieve desired focus within depth of field.")
+            except 
+            :
+                self.error.emit("Autofocus failed", "Unable to achieve desired focus within condenser's depth of field.")
             else:
                 # self.d = perf_counter()
                     

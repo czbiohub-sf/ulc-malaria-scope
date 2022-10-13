@@ -7,3 +7,5 @@ from ulc_mm_package.image_processing.zstack import (
 )
 from ulc_mm_package.image_processing.focus_metrics import logPowerSpectrumRadialAverageSum
 from ulc_mm_package.image_processing.cell_finder import CellFinder, NoCellsFound, count_cells
+
+from ulc_mm_package.hardware.motorcontroller import InvalidMove
