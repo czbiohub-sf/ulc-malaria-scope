@@ -59,13 +59,13 @@ class ScopeOp(QObject, Machine):
             {'name' : 'autobrightness', 
                 'on_enter' : [self._start_autobrightness],
                 },
-            {'name' : 'cellfinder',
-                'on_enter' : [self._start_cellfinder, self._freeze_liveview],
-                'on_exit' : [self._unfreeze_liveview],
-                },
-            {'name' : 'SSAF', 
-                'on_enter' : [self._start_SSAF],
-                },
+            # {'name' : 'cellfinder',
+            #     'on_enter' : [self._start_cellfinder, self._freeze_liveview],
+            #     'on_exit' : [self._unfreeze_liveview],
+            #     },
+            # {'name' : 'SSAF', 
+            #     'on_enter' : [self._start_SSAF],
+            #     },
             # {'name' : 'fastflow', 
             #    'on_enter' : [self._start_fastflow],
             #    },
@@ -213,6 +213,8 @@ class ScopeOp(QObject, Machine):
 
         try:
             self.SSAF_routine.send(img)
+        except InvalidMove:
+            self.error.emit("Calibration failed", "Unable to achieve desired focus within depth of field.")
         except StopIteration as e:
             self.SSAF_result = e.value
             print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
@@ -240,7 +242,7 @@ class ScopeOp(QObject, Machine):
     def run_experiment(self, img):
         self.img_signal.disconnect(self.run_experiment)
 
-        if self.count >= 10:
+        if self.count >= 1000:
             print("Reached frame timeout for experiment")
             self.to_standby()
         else:
@@ -250,16 +252,17 @@ class ScopeOp(QObject, Machine):
             # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
             # TODO get metadata from hardware here
 
-            # Periodically adjust focus using single shot autofocus
-            self.PSSAF_routine.send(img)
-
             # Adjust the flow
             try:
+                # Periodically adjust focus using single shot autofocus
+                self.PSSAF_routine.send(img)
                 # TODO add density check here
                 self.flowcontrol_routine.send(img)
             except CantReachTargetFlowrate:
-                self.error.emit("Calibration failed", "Unable to achieve desired flowrate with syringe at max position.")
+                self.error.emit("Flow control failed", "Unable to achieve desired flowrate with syringe at max position.")
             # TODO add recovery operation for low cell density
+            except InvalidMove:
+                self.error.emit("Autofocus failed", "Unable to achieve desired focus within depth of field.")
             else:
                 # self.d = perf_counter()
                     
