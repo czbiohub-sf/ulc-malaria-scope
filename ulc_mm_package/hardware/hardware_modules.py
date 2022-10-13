@@ -4,6 +4,7 @@ from ulc_mm_package.hardware.motorcontroller import (
     Direction,
     MotorControllerError,
     MotorInMotion,
+    InvalidMove,
 )
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder, EncoderI2CError

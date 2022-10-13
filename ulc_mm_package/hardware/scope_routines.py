@@ -48,10 +48,11 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
 
     try:
         dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-        mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
+        mscope.motor.move_rel(dir=dir, steps=abs(steps_from_focus))
     except MotorControllerError as e:
         # TODO - change to logging
-        print(f"Error moving motor after receiving steps from the SSAF model: {e}")
+        # print(f"Error moving motor after receiving steps from the SSAF model: {e}")
+        raise e
 
     return steps_from_focus
 
