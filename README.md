@@ -37,9 +37,7 @@ Navigate to ulc_mm_package/QtQUI and run <code>python3 dev_run.py</code>. This o
 
 ### Using simulation mode
 
-To run any of these scripts using simulated hardware (eg. to test code without a scope), add an empty <code>simulation.py</code> file to your working directory. 
-
-For example, to run <code>oracle.py</code> in simulation mode, your file structure should include a <code>simulation.py</code> file as shown below:
+To run any of these scripts using simulated hardware (eg. to test code without a scope), add an empty <code>simulation.py</code> file to your working directory. For example, to run <code>oracle.py</code> in simulation mode, your file structure should include a <code>simulation.py</code> file as shown below:
 
 ```
 |--ulc_mm_package
@@ -47,3 +45,5 @@ For example, to run <code>oracle.py</code> in simulation mode, your file structu
       |--simulation.py
       |--oracle.py
 ```
+
+You will also need to have a video saved locally, which will replace the camera input. By default, the video should be saved under ulc_mm_package/QtGUI/sim_media/sample.avi, but you can change the filename and location by editing the constant <code>VIDEO_PATH</code> under ulc_mm_package/hardware/hardware_constants.py.
