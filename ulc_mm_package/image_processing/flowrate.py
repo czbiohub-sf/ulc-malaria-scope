@@ -104,15 +104,14 @@ class FlowRateEstimator:
     def isValidDisplacement(self, dx, dy, confidence) -> bool:
         """A function to check for valid displacement values.
 
-        For now, this function is very simple (i.e only checking for non-negative y-displacement and whether the correlation value
+        For now, this function is very simple (i.e only checking for whether the correlation value
         is above a threshold). However, if additional logic needs to be implemented, it can go here.
         """
 
         if confidence <= CORRELATION_THRESH:
             return False
             
-        if dy >= 0:
-            return True
+        return True
 
     def isFull(self) -> bool:
         """Returns True when the calculation (dx, dy) arrays are full.
@@ -137,7 +136,7 @@ class FlowRateEstimator:
         self._addImage(img, timestamp)
         self._calculatePairDisplacement()
 
-def downSampleImage(img: np.ndarray, scale_factor: int):
+def downSampleImage(img: np.ndarray, scale_factor: int) -> np.ndarray:
     """Downsamples an image by `scale_factor`"""
     h, w = img.shape
     return cv2.resize(img, (w // scale_factor, h // scale_factor))

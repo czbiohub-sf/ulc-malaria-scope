@@ -1,8 +1,7 @@
 from ulc_mm_package.QtGUI.gui_constants import *
+from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC, CAMERA_SELECTION, SIMULATION
 
-from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC
 from ulc_mm_package.hardware.hardware_modules import *
-
 from ulc_mm_package.image_processing.processing_modules import *
 
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
@@ -30,8 +29,8 @@ from qimage2ndarray import gray2qimage
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # Qt GUI Files
-_UI_FILE_DIR = "liveview.ui"
-_EXPERIMENT_FORM_PATH = "experimentform.ui"
+_UI_FILE_DIR = "dev_run.ui"
+_EXPERIMENT_FORM_PATH = "dev_form.ui"
 
 class ApplicationError(Exception):
     """Catch-all exception for misc errors not caught by the peripheral classes."""
@@ -47,7 +46,9 @@ class AcquisitionThread(QThread):
     fps = pyqtSignal(int)
     pressureLeakDetected = pyqtSignal(int)
     syringePosChanged = pyqtSignal(int)
+    flowValChanged = pyqtSignal(float)
     autobrightnessDone = pyqtSignal(int)
+    doneSaving = pyqtSignal(int)
 
     def __init__(self, external_dir):
         super().__init__()
@@ -90,6 +91,7 @@ class AcquisitionThread(QThread):
         self.click_to_advance = False
         self.md_writer = None
         self.metadata_file = None
+        self.finish_saving_future = None
 
         # Hardware peripherals
         self.motor = None
@@ -104,7 +106,7 @@ class AcquisitionThread(QThread):
 
         # Single-shot autofocus
         try:
-            self.autofocus_model = AutoFocus(AUTOFOCUS_MODEL_DIR)
+            self.autofocus_model = AutoFocus()
         except RuntimeError as e:
             raise RuntimeError(f'got {str(e)}:\n {subprocess.getoutput("lsusb | grep Myriad")}')
         self.active_autofocus = False
@@ -151,6 +153,16 @@ class AcquisitionThread(QThread):
         - LED power
         """
 
+        try:
+            pressure = self.pneumatic_module.getPressure()
+        except PressureSensorNotInstantiated:
+            # TODO: Add logging
+            pressure = -1
+        except Exception:
+            # TODO: Add logging
+            # print("Unknown pneumatic module / pressure sensor error")
+            pressure = -1
+
         return {
             "im_counter": self.im_counter,
             "measurement_type": "placeholder",
@@ -158,7 +170,7 @@ class AcquisitionThread(QThread):
             "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
             "exposure": self.camera.exposureTime_ms,
             "motor_pos": self.motor.pos,
-            "pressure_hpa": self.pneumatic_module.getPressure(),
+            "pressure_hpa": pressure,
             "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
             "flow_control_on": self.flowcontrol_enabled,
             "target_flowrate": self.flow_controller.target_flowrate,
@@ -177,7 +189,7 @@ class AcquisitionThread(QThread):
 
         if self.continuous_save and self.continuous_dir_name != None:
             if self.zw.writable:
-                self.zw.writeSingleArray(image)
+                self.zw.threadedWriteSingleArray(image)
                 self.md_writer.writerow(self.getMetadata())
             self.measurementTime.emit(int(perf_counter() - self.start_time))
             self.im_counter += 1
@@ -197,9 +209,20 @@ class AcquisitionThread(QThread):
                     pressure = self.pneumatic_module.getPressure()
                     self.updatePressure.emit(pressure)
                 except Exception:
-                    print("Error getting pressure. Continuing...")
+                    pressure = -1
+                    self.updatePressure.emit(pressure)
             self.fps.emit(int(self.num_loops / (perf_counter() - self.fps_timer)))
             self.fps_timer = perf_counter()
+
+        if self.finish_saving_future != None:
+            print(self.finish_saving_future)
+            if self.finish_saving_future.done():
+                try:
+                    print(self.finish_saving_future.result())
+                except:
+                    print(self.finish_saving_future.exception())
+                self.doneSaving.emit(1)
+                self.finish_saving_future = None
 
     def updateExposure(self, exposure):
         self.camera.exposureTime_ms = exposure
@@ -311,8 +334,9 @@ class AcquisitionThread(QThread):
 
         if self.flowcontrol_enabled:
             try:
-                self.flow_controller.controlFlow(img)
+                flow_val = self.flow_controller.controlFlow(img)
                 self.syringePosChanged.emit(1)
+                self.flowValChanged.emit(flow_val)
             except PressureLeak:
                 print(
                     f"""The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
@@ -323,7 +347,7 @@ class AcquisitionThread(QThread):
 
     def autofocusWrapper(self, img: np.ndarray):
         self.af_adjustment_done = False
-        if perf_counter() - self.prev_autofocus_time > ssaf_constants.AF_FREQUENCY_S:
+        if perf_counter() - self.prev_autofocus_time > ssaf_constants.AF_PERIOD_S:
             self.autofocus(img)
             self.prev_autofocus_time = perf_counter()
 
@@ -383,7 +407,6 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
         self.chkBoxExperimentSetupAutofocus.stateChanged.connect(self.chkBoxAutofocusHandler)
         self.chkBoxExperimentSetupFlowControl.stateChanged.connect(self.chkBoxFlowControlHandler)
         self.sbExperimentSetupMinutes.valueChanged.connect(self.sbTimerHandler)
-        self.btnExperimentSetupAbort.clicked.connect(self.btnAbortHandler)
         self.btnStartExperiment.clicked.connect(self.btnStartExperimentHandler)
 
     def txtExperimentNameHandler(self):
@@ -424,10 +447,6 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
     def sbTimerHandler(self):
         self.time_mins = self.sbExperimentSetupMinutes.value()
         print(self.time_mins)
-
-    def btnAbortHandler(self):
-        print("Aborting experiment setup...")
-        self.close()
     
     def btnStartExperimentHandler(self):
         print("Something interesting will happen here eventually...")
@@ -580,7 +599,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
         self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
+        self.acquisitionThread.flowValChanged.connect(self.updateFlowVal)
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
+        self.acquisitionThread.doneSaving.connect(self.enableRecording)
 
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pneumatic_module = self.pneumatic_module
@@ -662,11 +683,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         if self.recording:
             self.recording = False
             self.acquisitionThread.continuous_save = False
-            self.btnSnap.setText("Record images")
-            self.chkBoxRecord.setEnabled(True)
-            self.chkBoxMaxFPS.setEnabled(True)
+            self.btnSnap.setText("Closing file...")
+            self.btnSnap.setEnabled(False)
             sleep(0.1)
-            self.acquisitionThread.zw.closeFile()
+            self.acquisitionThread.finish_saving_future = self.acquisitionThread.zw.threadedCloseFile()
             self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
@@ -717,10 +737,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         if retval == QtWidgets.QMessageBox.Ok:
             webbrowser.open(FLOWCELL_QC_FORM_LINK, new=1, autoraise=True)
 
-    def experimentSetupHandler(self):
-        self.btnAbortExperiment.setEnabled(True)
-        self.experiment_form_dialog.show()
-
     @pyqtSlot(QImage)
     def updateImage(self, qimage):
         self.lblImage.setPixmap(QPixmap.fromImage(qimage))
@@ -737,6 +753,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
     @pyqtSlot(float)
+    def updateFlowVal(self, flow_val):
+        if flow_val != -99:
+            self.lblFlowrate.setText(f"Flowrate: {flow_val:.2f}")
+
+    @pyqtSlot(float)
     def updatePressureLabel(self, val):
         self.lblPressure.setText(f"{val:.2f} hPa")
 
@@ -747,6 +768,13 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     @pyqtSlot(int)
     def updateMeasurementTimer(self, val):
         self.lblTimer.setText(f"{str(timedelta(seconds=val))}")
+
+    @pyqtSlot(int)
+    def enableRecording(self, _):
+        self.btnSnap.setText("Record images")
+        self.btnSnap.setEnabled(True)
+        self.chkBoxRecord.setEnabled(True)
+        self.chkBoxMaxFPS.setEnabled(True)
 
     def btnLEDToggleHandler(self):
         if self.led._isOn:

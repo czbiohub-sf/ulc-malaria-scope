@@ -2,6 +2,7 @@
 FlowController
 """
 
+from typing import Union
 import numpy as np
 
 from ulc_mm_package.image_processing.processing_constants import (
@@ -11,8 +12,14 @@ from ulc_mm_package.image_processing.processing_constants import (
 )
 from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
-from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeDirection, PressureLeak
+from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
 
+class FlowControlError(Exception):
+    pass
+
+class CantReachTargetFlowrate(FlowControlError):
+    """Raised when the target flowrate cannot be reached"""
+    pass
 
 class FlowController:
     def __init__(self, pneumatic_module: PneumaticModule, h: int=600, w: int=800, window_size: int=WINDOW_SIZE):
@@ -45,7 +52,10 @@ class FlowController:
         self.curr_flowrate: float = None
 
     def _addImage(self, img: np.ndarray, time: float):
-        """Adds an image to the FlowRateEsimator and retrives the flowrate if the FRE window is full."""
+        """Adds an image to the FlowRateEsimator and appends the flowrate to self.flowrates
+        if the FRE window is full.
+
+        """
 
         self.fre.addImageAndCalculatePair(img, time)
         if self.fre.isFull():
@@ -61,17 +71,84 @@ class FlowController:
             return True
         return False
 
-    def controlFlow(self, img: np.ndarray):
-        """Takes in an image, calculates and adjusts flowrate periodically to maintain the target (within a tolerance bound).
+    def setTargetFlowrate(self, target_flowrate: float):
+        """Set the target flowrate.
+
+        Parameters
+        ----------
+        target_flowrate: float
+            The flowrate to attempt to hold steady
+        """
+
+        self.target_flowrate = target_flowrate
+
+    def fastFlowAdjustment(self, img: np.ndarray) -> float:
+        """
+        Adjust flow on a faster feedback cycle (i.e w/o the EWMA batching)
+        until the target flowrate is achieved.
+
+        Some background explanation
+        ---------------------------
+        Using the default FlowRateEstimator batch size
+        (12 pairs of images, i.e 24 frames), the syringe is adjusted every 0.8s.
+
+        The pneumatic module currently has 60 increments from its uppermost position to being
+        fully extended. If the target flowrate requires the syringe to be at the halfway point
+        (30 steps), this will take ~24s.
+
+        Currently there is not a smarter proportional gain integrated into the control
+        because:
+            1. The granularity of the steps is fairly crude
+            2. The response of the system is (empirically) nonlinear and at times, sporadic
+
+        I _think_ that a simple, step-by-step increment/decrement and reassessment of the flow
+        is the ideal solution for now.
+
+        Parameters
+        ----------
+        img: np.ndarray
+            Image to be passed into the FlowRateEstimator
+
+        Returns
+        -------
+        float: -1 if not reached yet, flow_val if reached
+
+        Exceptions
+        ----------
+        CantReachTargetFlowrate:
+            Raised if the target flowrate hasn't been reached and the syringe
+            can't move any further in the necessary direction
+        """
+
+        self.fre.addImageAndCalculatePair(img, perf_counter())
+        if self.fre.isFull():
+            _, dy, _, _ = self.fre.getStatsAndReset()
+            self.curr_flowrate = dy
+            flow_error = self._getFlowError()
+            try:
+                self._adjustSyringe(flow_error)
+            except CantReachTargetFlowrate:
+                raise
+
+            # If target flow rate has been roughly achieved, return flow_val
+            if flow_error == 0:
+                return float(dy)
+
+    def controlFlow(self, img: np.ndarray) -> float:
+        """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
         
-        If the `self.target_flowrate` attribute is None, the first full measurement is used as the target, and all subsequent measurements
+        If the `self.target_flowrate` has not been set, the first full measurement is used as the target, and all subsequent measurements
         will result in adjustments relative to that initial target.
 
-        Periodically here is defined as the number of frames it takes for the FlowRateEstimator to fill its window
-        multiplied by the number of flowrate measurements to fill the EWMA window.
+        Some background explanation
+        ---------------------------
+        'Periodically' is defined as the number of frames it takes for the FlowRateEstimator to
+        fill its window multiplied by the number of flowrate measurements to fill the EWMA
+        window.
 
-        For example, if the FlowRateEstimator takes in 12 image pairs (i.e 24 frames), and the EWMA window is 12, 
-        then a total of 288 frames (@30fps, that's every 9.6s) will pass before an adjustment is made.
+        For example, if the FlowRateEstimator takes in 12 image pairs (i.e 24 frames), and the
+        EWMA window is 12, then a total of 288 frames will be observed before a syringe adjustment
+        is made (@30fps, that's every 9.6s).
 
         Parameters
         ----------
@@ -89,6 +166,10 @@ class FlowController:
             # Adjust pressure using the pneumatic module based on the flow rate error
             flow_error = self._getFlowError()
             self._adjustSyringe(flow_error)
+            print(f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}")
+            return self.curr_flowrate
+            
+        return -99
 
 
     def _getFlowError(self):
@@ -115,22 +196,28 @@ class FlowController:
         Parameters
         ----------
         flow_error : float
+
+        Exceptions
+        ----------
+        CantReachTargetFlowrate:
+            Raised when the syringe has reached the end of travel
+            despite being above/below the required flowrate.
         """
         
         if flow_error == 0:
             return
         elif flow_error > 0:
-            if self.pneumatic_module.isMovePossible(SyringeDirection.DOWN):
+            try:
                 # Increase pressure, move syringe down
                 self.pneumatic_module.decreaseDutyCycle()
-            else:
-                raise PressureLeak
+            except SyringeEndOfTravel:
+                raise CantReachTargetFlowrate()
         elif flow_error < 0:
-            if self.pneumatic_module.isMovePossible(SyringeDirection.UP):
+            try:
                 # Decrease pressure, move syringe up
                 self.pneumatic_module.increaseDutyCycle()
-            else:
-                raise PressureLeak
+            except SyringeEndOfTravel:
+                raise CantReachTargetFlowrate()
 
     def _ewma(self, data):
         """Adapted from @Divakar on StackOverflow

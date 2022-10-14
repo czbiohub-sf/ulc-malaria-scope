@@ -151,24 +151,20 @@ def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_step
     min_pos = int(min_pos) if min_pos >= 0 else 0
     max_pos = int(max_pos) if max_pos <= motor.max_pos else motor.max_pos
     
-    start_pos = motor.pos
-
     motor.move_abs(min_pos)
     step_counter = min_pos
     focus_metrics = []
-    num_images = 30
 
     while step_counter < max_pos:
-    
-        for i in range(num_images):
-            img = yield img
-            if save_loc != None:
-                cv2.imwrite(save_dir + f"{motor.pos:03d}_{i}.png", img)
+        img = yield img
+        focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
+        if save_loc != None:
+            cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         
         motor.move_rel(steps=steps_per_image, dir=Direction.CW, stepdelay=0.001)
         step_counter += steps_per_image
         if step_counter > max_pos:
             break
 
-    # best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
-    motor.move_abs(start_pos)
+    best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
+    motor.move_abs(best_focus_position)

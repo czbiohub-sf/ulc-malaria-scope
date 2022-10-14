@@ -369,6 +369,13 @@
           </property>
          </widget>
         </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="lblFlowrate">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item row="6" column="1">
@@ -567,8 +574,44 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0" alignment="Qt::AlignLeft">
-         <widget class="QCheckBox" name="chkBoxRecord">
+        <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="lblCameraTitle">
+          <property name="maximumSize">
+           <size>
+            <width>60</width>
+            <height>100</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>13</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Camera</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QPushButton" name="btnSnap">
+          <property name="maximumSize">
+           <size>
+            <width>150</width>
+            <height>160</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Take a single image (or continuously record if the checkbox is checked)</string>
+          </property>
+          <property name="text">
+           <string>Take Image</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QCheckBox" name="chkBoxMaxFPS">
           <property name="maximumSize">
            <size>
             <width>300</width>
@@ -576,10 +619,10 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Check to enable continuous recording of images</string>
+           <string>Check to disable live view, image scaling. The program will write to disk as fast as it can.</string>
           </property>
           <property name="text">
-           <string>Record?</string>
+           <string>Maximize fps for image acquisition?</string>
           </property>
          </widget>
         </item>
@@ -602,28 +645,8 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0" colspan="2">
-         <widget class="QLabel" name="lblCameraTitle">
-          <property name="maximumSize">
-           <size>
-            <width>60</width>
-            <height>100</height>
-           </size>
-          </property>
-          <property name="font">
-           <font>
-            <pointsize>13</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Camera</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QCheckBox" name="chkBoxMaxFPS">
+        <item row="2" column="0" alignment="Qt::AlignLeft">
+         <widget class="QCheckBox" name="chkBoxRecord">
           <property name="maximumSize">
            <size>
             <width>300</width>
@@ -631,26 +654,10 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Check to disable live view, image scaling. The program will write to disk as fast as it can.</string>
+           <string>Check to enable continuous recording of images</string>
           </property>
           <property name="text">
-           <string>Maximize fps for image acquisition?</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QPushButton" name="btnSnap">
-          <property name="maximumSize">
-           <size>
-            <width>150</width>
-            <height>160</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Take a single image (or continuously record if the checkbox is checked)</string>
-          </property>
-          <property name="text">
-           <string>Take Image</string>
+           <string>Record?</string>
           </property>
          </widget>
         </item>
@@ -680,22 +687,6 @@
           </property>
           <property name="text">
            <string>Open QC Form</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QPushButton" name="btnAbortExperiment">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>150</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Abort Experiment</string>
           </property>
          </widget>
         </item>

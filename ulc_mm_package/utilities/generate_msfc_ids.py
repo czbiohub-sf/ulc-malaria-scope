@@ -42,7 +42,7 @@ def main():
 
         for i in range(lb, ub + 1):
                 if is_luhn_valid(i):
-                    for _ in range(4):
+                    for _ in range(NUM_REPETITIONS):
                         writer.writerow([f"{i:04}"])
     print("Done! Enjoy your numbers.")
     

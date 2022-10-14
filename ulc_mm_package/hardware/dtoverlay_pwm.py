@@ -35,8 +35,8 @@ class dtoverlay_PWM:
         Internally, converts the frequency to time (in ns) and sets the period.
         """
         self.period_ns = int((1 / freq)*1e9)
-        cmd = f"echo {self.period_ns} > pwm{self.channel}/period;"
-        subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
+        with open(f"/sys/class/pwm/pwmchip0/pwm{self.channel}/period", "w") as g:
+            g.write(str(self.period_ns))
 
     def setDutyCycle(self, duty_cycle_perc: float):
         """Sets the dutycycle (in ns) given an '% on time'.
@@ -51,8 +51,8 @@ class dtoverlay_PWM:
             raise InvalidDutyCyclePerc(f"Duty cycle must be between 0 and 1.0. Got {duty_cycle_perc}")
 
         duty_cycle_val = int(duty_cycle_perc * self.period_ns)
-        cmd = f"echo {duty_cycle_val} > pwm{self.channel}/duty_cycle;"
-        subprocess.run(cmd, capture_output= True, shell=True, cwd=f"/sys/class/pwm/pwmchip0")
+        with open(f"/sys/class/pwm/pwmchip0/pwm{self.channel}/duty_cycle", "w") as g:
+            g.write(str(duty_cycle_val))
 
     def exit(self):
         cmd = '''

@@ -1,4 +1,4 @@
-""" daA1600-60um - Basler dart camera
+""" Basler dart camera (daA1600-60um) / AVT Camera (AVT Alvium 1800 U-319m mono bareboard)
 
 -- Important Links --
 Basler API:
@@ -45,6 +45,7 @@ class BaslerCamera(Basler):
         
 class AVTCamera:
     def __init__(self):
+        self._isActivated = False
         self.vimba = Vimba.get_instance().__enter__()
         self.queue = queue.Queue(maxsize=1)
         self.connect()
@@ -69,6 +70,7 @@ class AVTCamera:
         self.camera = self._get_camera()
         self.camera.__enter__()
         self._camera_setup()
+        self._isActivated = True
 
     def deactivateCamera(self) -> None:
         self.stopAcquisition()

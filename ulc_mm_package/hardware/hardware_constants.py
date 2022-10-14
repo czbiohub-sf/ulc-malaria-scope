@@ -1,8 +1,11 @@
+from os.path import exists
+
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
 
 # ================ Camera constants ================ #
+CAMERA_SELECTION = 0        # 0 = Basler, 1 = AVT
 DEFAULT_EXPOSURE_MS = 0.5
 DEVICELINK_THROUGHPUT = 100000000
 
@@ -68,5 +71,15 @@ CAM_FAN_1 = 23
 CAM_FAN_2 = 24
 
 # ================ Simulation constants ================ #
-VIDEO_PATH = "./sim_media/sample.avi"
+_viable_videos = ("./sim_media/sample.avi", "./sim_media/sample.mp4")
+VIDEO_PATH = next((vid for vid in _viable_videos if exists(vid)), None)
 VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
+
+SIMULATION = False
+# Enable simulation mode by creating blank simulation.py file under main script's directory
+# eg. to run ulc_mm_package/QtGUI/oracle.py, create an empty file under ulc_mm_package/QtGUI/simulation.py
+if exists("./simulation.py"):
+    print("found ./simulation.py")
+    SIMULATION = True
+else:
+    print(f"no simulation.py; simulation mode {SIMULATION}")

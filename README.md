@@ -17,17 +17,27 @@ Welcome to the ULC Malaria Scope! We are developing a barebones optical microsco
 ## Software operation
 
 ### Installing dependencies
-In the root folder, run <code>pip install -e .</code> to install all pip dependencies. There are also some modules that need to be manually installed:
+In the root folder, run <code>pip install -e .</code> to install all pip dependencies.
 
-Allied Vision's Vimba library:
-1. Check that Python 3.7 is installed and verify with <code>python --version</code>
-2. Check that pip is up to date and verify with <code>python -m pip --version</code>
-3. [Download the SDK](https://www.alliedvision.com/en/products/vimba-sdk/#c1497).
-4. Navigate to the "VimbaPython" installation directory in a terminal and run <code>python -m pip install .</code>
+### Running the GUI
 
-### Starting the GUI
-Navigate to ulc_mm_package/QtQUI and run <code>python3 UI.py</code>. Use optional flags to enable operation modes:
-* <code>-s</code> or <code>--sim</code>: Simulation mode (dummy functions replace hardware objects)
-* <code>-d</code> or <code>--dev</code>: Developer mode (manual control of hardware objects)
+Navigate to ulc_mm_package/QtQUI and run <code>python3 oracle.py</code>.
 
-Note: The original GUI was activated by liveviewer.py, which is now obsolete. Use UI.py instead.
+Note: The original GUI lived in <code>liveviewer.py</code>, which is now obsolete. Use the above command instead.
+
+### Debugging using developer mode
+
+Navigate to ulc_mm_package/QtQUI and run <code>python3 dev_run.py</code>. This opens a GUI with manual hardware control for debugging purposes.
+
+### Using simulation mode
+
+To run any of these scripts using simulated hardware (eg. to test code without a scope), add an empty <code>simulation.py</code> file to your working directory. For example, to run <code>oracle.py</code> in simulation mode, your file structure should include a <code>simulation.py</code> file as shown below:
+
+```
+|--ulc_mm_package
+   |--QtGUI
+      |--simulation.py
+      |--oracle.py
+```
+
+You will also need to have a video saved locally, which will replace the camera input. By default, the video should be saved under ulc_mm_package/QtGUI/sim_media/sample.avi, but you can change the filename and location by editing the constant <code>VIDEO_PATH</code> under ulc_mm_package/hardware/hardware_constants.py.
