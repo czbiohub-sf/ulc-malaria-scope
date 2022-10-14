@@ -1,7 +1,10 @@
 #! /usr/bin/env python3
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
-from ulc_mm_package.neural_nets.yogo_constants import YOGO_MODEL_DIR, YOGO_PRED_THRESHOLD
+from ulc_mm_package.neural_nets.yogo_constants import (
+    YOGO_MODEL_DIR,
+    YOGO_PRED_THRESHOLD,
+)
 
 
 class YOGO(NCSModel):
@@ -36,11 +39,11 @@ class YOGO(NCSModel):
             # constant time op, just changes view of res
             res.shape = (bs, pred_dim, Sy * Sx)
         mask = (res[:, 4:5, :] > YOGO_PRED_THRESHOLD).flatten()
-        return res[:,:,mask]
+        return res[:, :, mask]
 
     def _default_callback(self, infer_request, userdata) -> None:
-        self.asyn_results.append(
-            self.filter_res(infer_request.output_tensor[0].data)
+        self.asyn_results.appendleft(
+            (userdata, self.filter_res(infer_request.output_tensors[0].data))
         )
 
 
@@ -53,5 +56,7 @@ if __name__ == "__main__":
     Y = YOGO()
     img = cv2.imread(sys.argv[1], cv2.IMREAD_GRAYSCALE)
 
-    vv = Y.syn(img)[0]
-    print(vv)
+    Y([img, img])
+    time.sleep(1)
+    res = Y.get_asyn_results()
+    print(res)
