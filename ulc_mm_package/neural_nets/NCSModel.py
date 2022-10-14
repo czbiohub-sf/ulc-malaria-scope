@@ -67,7 +67,6 @@ class NCSModel:
         params:
             model_path: path to the 'xml' file
         """
-        print(self.core, id(self.core))
         self.lock = threading.Lock()
         self.connected = False
         self.device_name = "MYRIAD"
