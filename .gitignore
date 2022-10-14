@@ -103,12 +103,12 @@ Pipfile.lock
 
 # Simulation mode media
 ulc_mm_package/QtGUI/sim_media/pi/data/*
-# ulc_mm_package/QtGUI/sim_media/*.avi
+*.mp4
+*.avi
 !ulc_mm_package/QtGUI/sim_media/pi/data/.gitkeep
 
 # Simulation setting
 simulation.py
-*.mp4
-*.avi
 
+# Profiling data
 profiles
