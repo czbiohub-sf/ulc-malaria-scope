@@ -179,6 +179,8 @@ def main_acquisition_loop(mscope: MalariaScope):
         # Periodically adjust focus using single shot autofocus
         periodic_ssaf.send(img)
 
+        prev_results = count_parasitemia(mscope, img)
+
         # Adjust the flow
         try:
             flow_control.send(img)
