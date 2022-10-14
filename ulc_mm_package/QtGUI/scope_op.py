@@ -46,7 +46,6 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_result = None
         self.SSAF_result = None
         self.fastflow_result = None
-
         self.count = 0
         
         # self.a = 0

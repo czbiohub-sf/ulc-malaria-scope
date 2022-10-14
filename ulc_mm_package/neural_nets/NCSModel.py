@@ -1,28 +1,32 @@
 #! /usr/bin/env python3
 
-import cv2
 import sys
 import time
 import numpy as np
+import numpy.typing as npt
 
 from enum import Enum
 from pathlib import Path
+from copy import deepcopy
+from collections import deque
 
-from typing import Any, Callable
+from typing import Any, Callable, List, Sequence, Optional
 
 from ulc_mm_package.neural_nets.ssaf_constants import IMG_HEIGHT, IMG_WIDTH
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
-from openvino.runtime import Core, Layout, Type, InferRequest, AsyncInferQueue
+from openvino.runtime import Core, Layout, Type, InferRequest, AsyncInferQueue, Tensor
 
 
 """ TODOs
 - All the performance things!
-- Create ABC for Autofocus, obj detect
 - best place to put autofocus.xml && autofocus.bin? root dir?
 
 See https://github.com/czbiohub/ulc-malaria-autofocus#openvino-performance-optimizations for
 more performance things I want to do
+
+Best docs
+https://docs.openvino.ai/latest/openvino_docs_OV_UG_Python_API_exclusives.html
 """
 
 
@@ -41,6 +45,11 @@ class NCSModel:
 
     Allows you to run a model (defined by an intel intermediate representation of your
     model, e.g. model.xml & model.bin) on the neural compute stick
+
+    see https://github.com/luxonis/depthai-experiments/pull/57
+
+    Examples
+    https://github.com/decemberpei/openvino-ncs2-python-samples/blob/master/async_api_multi-threads.py
     """
 
     def __init__(
@@ -52,16 +61,22 @@ class NCSModel:
         params:
             model_path: path to the 'xml' file
         """
+        self.connected = False
         self.device_name = "MYRIAD"
         self.core = Core()
         self.model = self._compile_model(model_path, optimization_hint)
-        self.asyn_infer_queue = AsyncInferQueue(self.model)
+        self.num_requests = self.model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")
+        self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        self.asyn_results = (
-            []
-        )  # List of list of tuples - (xcenter, ycenter, width, height, class, confidence)
+        self.asyn_results: "deque[List[Tuple[int,Tuple[float]]]]" = (
+            deque()
+        )  # deque of list of tuples - (xcenter, ycenter, width, height, class, confidence)
 
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
+        if self.connected:
+            # TODO: reconnect param?
+            return
+
         model = self.core.read_model(model_path)
 
         input_tensor_shape = (1, IMG_HEIGHT, IMG_WIDTH, 1)
@@ -76,55 +91,81 @@ class NCSModel:
         ppp.output().tensor().set_element_type(Type.f32)
         model = ppp.build()
 
-        connection_attempts = 3
-        self.connected = False
-        while connection_attempts > 0:
-            if not self.connected:
-                try:
-                    compiled_model = self.core.compile_model(
-                        model, self.device_name, {"PERFORMANCE_HINT": perf_hint.name}
-                    )
-                    self.connected = True
-                    return compiled_model
-                except Exception as e:
+        err_msg = ""
+        connection_attempts = 0
+        while connection_attempts < 4:
+            # sleep 0, then 1, then 3, then 7
+            time.sleep(2**connection_attempts - 1)
+            try:
+                # TODO: benchmark_app.py says PERFORMANCE_HINT = 'none' w/ nstreams=1 is fastest!!
+                compiled_model = self.core.compile_model(
+                    model, self.device_name, {"PERFORMANCE_HINT": perf_hint.name}
+                )
+                self.connected = True
+                return compiled_model
+            except Exception as e:
+                connection_attempts += 1
+                if connection_attempts < 4:
                     print(
-                        f"Failed to connect NCS: {e}.\nRemaining connection attempts: {connection_attempts}. Retrying..."
+                        f"Failed to connect NCS: {e}.\nRemaining connection attempts: {4 - connection_attempts}. Retrying..."
                     )
-                    connection_attempts -= 1
-                    time.sleep(1)
+                err_msg = str(e)
 
-        return -1
+        raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
-        self.asyn_results.append(infer_request.output_tensors[0].data)
+        self.asyn_results.appendleft(infer_request.output_tensors[0].data)
 
     def syn(self, input_img):
         """input_img is 2d array (i.e. grayscale img)"""
-        input_tensor = [np.expand_dims(input_img, (0, 3))]
+        input_tensor = [Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)]
         results = self.model(input_tensor)
-        return list(results.values())
+        return next(iter(results.values()))
 
     def asyn(
-        self,
-        input_img: list,
+        self, input_imgs: List[npt.NDArray], idxs: Optional[Sequence[int]] = None
     ) -> None:
-        input_tensor = [np.expand_dims(input_img, (0, 3))]
-        self.asyn_infer_queue.start_async(input_tensor)
+        if isinstance(input_imgs, list):
+            input_imgs = [
+                Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)
+                for img in input_imgs
+            ]
+        else:
+            input_imgs = [
+                Tensor(np.expand_dims(input_imgs, (0, 3)), shared_memory=True)
+            ]
+
+        if idxs is not None:
+            assert len(input_imgs) == len(
+                idxs
+            ), f"must have len(input_imgs) == len(idxs); got {len(input_imgs)} != {len(idxs)}"
+        else:
+            idxs = range(len(input_imgs))
+
+        for i, input_tensor in zip(idxs, input_imgs):
+            self.asyn_infer_queue.start_async({0: input_tensor}, userdata=i)
 
     def get_asyn_results(self):
-        res = self.asyn_results
+        res = deepcopy(self.asyn_results)
         self.asyn_results = []
         return res
 
+    def wait_all(self):
+        self.asyn_infer_queue.wait_all()
+
 
 if __name__ == "__main__":
+    import cv2
 
     def _asyn_calling(model, images):
         print("starting asyncing")
         t0 = time.perf_counter()
+
         for image in images:
             model.asyn(image)
-        model.asyn_infer_queue.wait_all()
+
+        model.wait_all()
+
         t1 = time.perf_counter()
         print(f"Total runtime {t1 - t0}")
         print(f"Throughput {len(images) / (t1 - t0)} FPS")
@@ -143,13 +184,17 @@ if __name__ == "__main__":
         )
         print(f"Throughput {len(images) / sum(ts)} FPS")
 
-    image_path = Path(sys.argv[1])
+    if len(sys.argv) != 3:
+        print(f"usage: {sys.argv[0]} <path to model.xml> <path to image or dir of tiffs>")
+        exit()
+
+    image_path = Path(sys.argv[2])
     if image_path.is_file():
-        images = [cv2.imread(sys.argv[1], cv2.IMREAD_GRAYSCALE)]
+        images = [cv2.imread(sys.argv[2], cv2.IMREAD_GRAYSCALE)]
     else:
         sorted_fnames = sorted([str(p) for p in image_path.glob("*.tiff")])
         images = [cv2.imread(fname, cv2.IMREAD_GRAYSCALE) for fname in sorted_fnames]
 
-    A = NCSModel("autofocus.xml", OptimizationHint.THROUGHPUT)
+    A = NCSModel(sys.argv[1], OptimizationHint.THROUGHPUT)
     _syn_calling(A, images)
     _asyn_calling(A, images)

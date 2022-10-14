@@ -20,7 +20,7 @@ from typing import Dict
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
-from ulc_mm_package.neural_nets.neural_network_modules import *
+from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
 
 class Components(enum.Enum):
     MOTOR = 0
@@ -195,6 +195,7 @@ class MalariaScope:
     def _init_TPU(self):
         try:
             self.autofocus_model = AutoFocus()
+            self.cell_diagnosis_model = YOGO()
             self.tpu_enabled = True
         except TPUError as e:
             # TODO - change to logging
