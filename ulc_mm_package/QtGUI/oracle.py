@@ -160,14 +160,16 @@ class Oracle(Machine):
 
             pass
         
-        # Shut off hardware
-        self.scopeop.shutoff()
 
         # Shut off QTimers
+        self.scopeop.stop_timers.emit()
         print("Waiting for timer to terminate...")
         while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
             pass
         print("Successfully terminated timer.")
+        
+        # Shut off hardware
+        self.scopeop.mscope.shutoff()
     
         # Shut off acquisition thread
         self.acquisition_thread.quit()

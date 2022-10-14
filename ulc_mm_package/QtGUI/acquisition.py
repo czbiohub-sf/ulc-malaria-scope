@@ -26,6 +26,7 @@ class Acquisition(QObject):
         self.count = 0
         self.period = ACQUISITION_PERIOD
         
+        # # For timing
         # self.a = 0
         # self.b = 0
 
@@ -67,11 +68,15 @@ class Acquisition(QObject):
         self.mscope = mscope
 
     def get_img(self):
+        
+        # # For timing
         # self.a = perf_counter()
-        # print("GET IMG {}".format(self.a-self.b))
-        # self.b = self.a    
+        # print(f"Acquisition {self.a-self.b}")
+        # self.b = self.a
+        
         try:
             self.img = next(self.mscope.camera.yieldImages())
+            print("sent")
             self.update_scopeop.emit(self.img)
             self.count += 1
         except Exception as e:

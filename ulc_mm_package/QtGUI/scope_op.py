@@ -48,10 +48,9 @@ class ScopeOp(QObject, Machine):
         self.fastflow_result = None
         self.count = 0
         
+        # # For timing
         # self.a = 0
         # self.b = 0
-        # self.c = 0
-        # self.d = 0
 
         states = [
             {'name' : 'standby'},
@@ -59,8 +58,7 @@ class ScopeOp(QObject, Machine):
                 'on_enter' : [self._start_autobrightness],
                 },
             {'name' : 'cellfinder',
-                'on_enter' : [self._start_cellfinder, self._freeze_liveview],
-                'on_exit' : [self._unfreeze_liveview],
+                'on_enter' : [self._start_cellfinder],
                 },
             {'name' : 'SSAF', 
                 'on_enter' : [self._start_SSAF],
@@ -107,10 +105,6 @@ class ScopeOp(QObject, Machine):
                 )
 
         self.next_state()
-        
-    def shutoff(self):
-        self.mscope.shutoff()
-        self.stop_timers.emit()
 
     def _reset(self):
         self.autobrightness_result = None
@@ -137,7 +131,7 @@ class ScopeOp(QObject, Machine):
     def _start_cellfinder(self):       
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
-        
+                
         self.img_signal.connect(self.run_cellfinder)
 
     def _start_SSAF(self):
@@ -177,6 +171,11 @@ class ScopeOp(QObject, Machine):
     def run_autobrightness(self, img):
         self.img_signal.disconnect(self.run_autobrightness)
         
+        self.b = self.a
+        self.a = perf_counter()
+        print("Autobrightness: {}".format(self.a-self.b))
+
+        # # For timing
         # self.a = perf_counter()
         # print("AB: {}".format(self.a-self.b))
         # self.b = self.a   
@@ -193,6 +192,11 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_cellfinder(self, img):
         self.img_signal.disconnect(self.run_cellfinder)
+
+        # # For timing
+        # self.b = self.a
+        # self.a = perf_counter()
+        # print("Cellfinder: {}".format(self.a-self.b))
 
         try:
             self.cellfinder_routine.send(img)
@@ -224,6 +228,11 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_fastflow(self, img):
         self.img_signal.disconnect(self.run_fastflow)
+        
+        # # For timing
+        # self.b = self.a  
+        # self.a = perf_counter()
+        # print("Fastflow: {}".format(self.a-self.b))
 
         try:
             self.fastflow_routine.send(img)
@@ -245,11 +254,15 @@ class ScopeOp(QObject, Machine):
             print("Reached frame timeout for experiment")
             self.to_standby()
         else:
-
-            # self.c = perf_counter()
+            
+            # # For timing
+            # self.b = self.a   
+            # self.a = perf_counter()
+            # print("Experiment: {}".format(self.a-self.b))
                 
             # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
             # TODO get metadata from hardware here
+            
             prev_res = count_parasitemia(self.mscope, img)
 
             # Adjust the flow
@@ -264,10 +277,5 @@ class ScopeOp(QObject, Machine):
             except:
                 self.error.emit("Autofocus failed", "Unable to achieve desired focus within condenser's depth of field.")
             else:
-                # self.d = perf_counter()
-                    
-                # print("RUN: {}".format(self.c-self.d))
-
                 self.count += 1  
-
                 self.img_signal.connect(self.run_experiment)
