@@ -54,9 +54,9 @@ class Acquisition(QObject):
     @pyqtSlot(bool)
     def freeze_liveview(self, freeze):
         if freeze: 
-            self.liveview_timer.start(self.period)
-        else:
             self.liveview_timer.stop()
+        else:
+            self.liveview_timer.start(self.period)
 
     @pyqtSlot(float)
     def set_period(self, period):
