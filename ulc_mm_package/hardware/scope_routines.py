@@ -1,6 +1,5 @@
 from time import perf_counter, sleep
-from typing import Union
-from collections import deque
+from typing import Union, List, Tuple
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
@@ -103,9 +102,10 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
                 counter = 0
                 prev_adjustment_time = perf_counter()
 
-def count_parasitemia_routine(mscope: MalariaScope, results_queue: deque):
-    results_queue.appendleft(mscope.cell_diagnosis_model)
-
+def count_parasitemia(mscope: MalariaScope, img: np.ndarray) -> List[Tuple[int, Tuple[float,...]]]:
+    results = mscope.cell_diagnosis_model.get_asyn_results()
+    mscope.cell_diagnosis_model(img)
+    return results
 
 def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.ndarray):
     """Keep the flowrate steady by continuously calculating the flowrate and periodically

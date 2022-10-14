@@ -213,7 +213,7 @@ class ScopeOp(QObject, Machine):
         try:
             self.SSAF_routine.send(img)
         except InvalidMove:
-                self.error.emit("Calibration failed", "Unable to achieve desired focus within condenser's depth of field.")
+            self.error.emit("Calibration failed", "Unable to achieve desired focus within condenser's depth of field.")
         except StopIteration as e:
             self.SSAF_result = e.value
             print(f"SSAF complete, motor moved by: {self.SSAF_result} steps")
@@ -250,6 +250,7 @@ class ScopeOp(QObject, Machine):
                 
             # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
             # TODO get metadata from hardware here
+            prev_res = count_parasitemia(self.mscope, img)
 
             # Adjust the flow
             try:

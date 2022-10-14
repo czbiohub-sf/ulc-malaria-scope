@@ -9,14 +9,13 @@ import numpy.typing as npt
 from enum import Enum
 from pathlib import Path
 from copy import deepcopy
-from collections import deque
 
-from typing import Any, Callable, List, Sequence, Optional, Tuple, Deque
+from typing import Any, Callable, List, Sequence, Optional, Tuple
 
 from ulc_mm_package.neural_nets.ssaf_constants import IMG_HEIGHT, IMG_WIDTH
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
-from openvino.runtime import Core, Layout, Type, InferRequest, AsyncInferQueue, Tensor
+from openvino.runtime import Core, Layout, Type, InferRequest, AsyncInferQueue, Tensor, compile_model
 
 
 """ TODOs
@@ -52,6 +51,12 @@ class NCSModel:
     Examples
     https://github.com/decemberpei/openvino-ncs2-python-samples/blob/master/async_api_multi-threads.py
     """
+    core = None
+
+    def __init_subclass__(cls, *args, **kwargs):
+        if NCSModel.core is None:
+            NCSModel.core = Core()
+        cls.core = NCSModel.core
 
     def __init__(
         self,
@@ -62,16 +67,16 @@ class NCSModel:
         params:
             model_path: path to the 'xml' file
         """
+        print(self.core, id(self.core))
         self.lock = threading.Lock()
         self.connected = False
         self.device_name = "MYRIAD"
-        self.core = Core()
         self.model = self._compile_model(model_path, optimization_hint)
         self.num_requests = self.model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")
         self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        # deque of list of tuples - (xcenter, ycenter, width, height, class, confidence)
-        self._asyn_results: Deque[List[Tuple[int,Tuple[float]]]] = deque()
+        # list of list of tuples - (xcenter, ycenter, width, height, class, confidence)
+        self._asyn_results: List[List[Tuple[int,Tuple[float]]]] = []
 
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
         if self.connected:
@@ -116,7 +121,7 @@ class NCSModel:
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
         with self.lock:
-            self._asyn_results.appendleft(infer_request.output_tensors[0].data)
+            self._asyn_results.append(infer_request.output_tensors[0].data)
 
     def syn(self, input_img):
         """input_img is 2d array (i.e. grayscale img)"""

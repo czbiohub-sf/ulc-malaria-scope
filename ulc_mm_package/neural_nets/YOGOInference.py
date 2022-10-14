@@ -42,7 +42,7 @@ class YOGO(NCSModel):
         return res[:, :, mask]
 
     def _default_callback(self, infer_request, userdata):
-        self._asyn_results.appendleft(
+        self._asyn_results.append(
             (userdata, self.filter_res(infer_request.output_tensors[0].data))
         )
 
