@@ -108,3 +108,5 @@ ulc_mm_package/QtGUI/sim_media/*.avi
 
 # Simulation setting
 simulation.py
+sample.mp4
+sample.avi
