@@ -41,8 +41,8 @@ class YOGO(NCSModel):
         mask = (res[:, 4:5, :] > YOGO_PRED_THRESHOLD).flatten()
         return res[:, :, mask]
 
-    def _default_callback(self, infer_request, userdata) -> None:
-        self.asyn_results.appendleft(
+    def _default_callback(self, infer_request, userdata):
+        self._asyn_results.appendleft(
             (userdata, self.filter_res(infer_request.output_tensors[0].data))
         )
 

@@ -2,6 +2,7 @@
 
 import sys
 import time
+import threading
 import numpy as np
 import numpy.typing as npt
 
@@ -10,7 +11,7 @@ from pathlib import Path
 from copy import deepcopy
 from collections import deque
 
-from typing import Any, Callable, List, Sequence, Optional
+from typing import Any, Callable, List, Sequence, Optional, Tuple, Deque
 
 from ulc_mm_package.neural_nets.ssaf_constants import IMG_HEIGHT, IMG_WIDTH
 
@@ -61,6 +62,7 @@ class NCSModel:
         params:
             model_path: path to the 'xml' file
         """
+        self.lock = threading.Lock()
         self.connected = False
         self.device_name = "MYRIAD"
         self.core = Core()
@@ -68,9 +70,8 @@ class NCSModel:
         self.num_requests = self.model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")
         self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        self.asyn_results: "deque[List[Tuple[int,Tuple[float]]]]" = (
-            deque()
-        )  # deque of list of tuples - (xcenter, ycenter, width, height, class, confidence)
+        # deque of list of tuples - (xcenter, ycenter, width, height, class, confidence)
+        self._asyn_results: Deque[List[Tuple[int,Tuple[float]]]] = deque()
 
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
         if self.connected:
@@ -114,7 +115,8 @@ class NCSModel:
         raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
-        self.asyn_results.appendleft(infer_request.output_tensors[0].data)
+        with self.lock:
+            self._asyn_results.appendleft(infer_request.output_tensors[0].data)
 
     def syn(self, input_img):
         """input_img is 2d array (i.e. grayscale img)"""
@@ -146,8 +148,9 @@ class NCSModel:
             self.asyn_infer_queue.start_async({0: input_tensor}, userdata=i)
 
     def get_asyn_results(self):
-        res = deepcopy(self.asyn_results)
-        self.asyn_results = []
+        with self.lock:
+            res = deepcopy(self._asyn_results)
+            self._asyn_results = []
         return res
 
     def wait_all(self):
