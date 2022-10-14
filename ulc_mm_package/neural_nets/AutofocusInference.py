@@ -19,4 +19,4 @@ class AutoFocus(NCSModel):
         super().__init__(model_path, OptimizationHint.LATENCY)
 
     def __call__(self, input_img):
-        return self.syn(input_img)
+        return self.syn(input_img)[0][0]

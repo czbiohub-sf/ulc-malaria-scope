@@ -41,7 +41,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
 
     while len(ssaf_steps_from_focus) != ssaf_constants.AF_BATCH_SIZE:
         img = yield img
-        ssaf_steps_from_focus.append(-int(mscope.autofocus_model(img)[0][0][0]))
+        ssaf_steps_from_focus.append(-int(mscope.autofocus_model(img)))
 
     # Once batch is full, get mean and move motor
     steps_from_focus = np.mean(ssaf_steps_from_focus)
