@@ -110,3 +110,5 @@ ulc_mm_package/QtGUI/sim_media/pi/data/*
 simulation.py
 *.mp4
 *.avi
+
+profiles
