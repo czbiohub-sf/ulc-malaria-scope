@@ -19,17 +19,21 @@ class InvalidDutyCyclePerc(dtoverlay_PWM_Exception):
 
 
 class dtoverlay_PWM:
+    _started = False
+
     def __init__(self, channel: PWM_CHANNEL):
         self.channel = channel.value
         self.period_ns = 0
-        self._start()
+        if not dtoverlay_PWM._started:
+            self._start()
+            dtoverlay_PWM._started = True
 
     def _atomic_write_to_file(self, file, write_content):
         with open(file, "w") as g:
             g.write(write_content)
 
     def _start(self):
-        """Command to start is
+        """ cmd to start is
         echo 0 > export;
         echo 1 > export;
         echo 1 > pwm0/enable;
@@ -70,12 +74,13 @@ class dtoverlay_PWM:
         )
 
     def exit(self):
-        cmd = """
+        """ cmd is
         echo 0 > pwm0/enable;
         echo 0 > pwm1/enable;
         """
         self._atomic_write_to_file(f"/sys/class/pwm/pwmchip0/pwm0/enable", "0")
         self._atomic_write_to_file(f"/sys/class/pwm/pwmchip0/pwm1/enable", "0")
+        dtoverlay_PWM._started = False
 
 
 if __name__ == "__main__":
