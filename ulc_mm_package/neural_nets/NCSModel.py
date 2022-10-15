@@ -15,7 +15,15 @@ from typing import Any, Callable, List, Sequence, Optional, Tuple
 from ulc_mm_package.neural_nets.ssaf_constants import IMG_HEIGHT, IMG_WIDTH
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
-from openvino.runtime import Core, Layout, Type, InferRequest, AsyncInferQueue, Tensor, compile_model
+from openvino.runtime import (
+    Core,
+    Layout,
+    Type,
+    InferRequest,
+    AsyncInferQueue,
+    Tensor,
+    compile_model,
+)
 
 
 """ TODOs
@@ -51,6 +59,7 @@ class NCSModel:
     Examples
     https://github.com/decemberpei/openvino-ncs2-python-samples/blob/master/async_api_multi-threads.py
     """
+
     core = None
 
     def __init_subclass__(cls, *args, **kwargs):
@@ -75,7 +84,7 @@ class NCSModel:
         self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
         # list of list of tuples - (xcenter, ycenter, width, height, class, confidence)
-        self._asyn_results: List[List[Tuple[int,Tuple[float]]]] = []
+        self._asyn_results: List[List[Tuple[int, Tuple[float]]]] = []
 
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
         if self.connected:
@@ -192,7 +201,9 @@ if __name__ == "__main__":
         print(f"Throughput {len(images) / sum(ts)} FPS")
 
     if len(sys.argv) != 3:
-        print(f"usage: {sys.argv[0]} <path to model.xml> <path to image or dir of tiffs>")
+        print(
+            f"usage: {sys.argv[0]} <path to model.xml> <path to image or dir of tiffs>"
+        )
         exit()
 
     image_path = Path(sys.argv[2])

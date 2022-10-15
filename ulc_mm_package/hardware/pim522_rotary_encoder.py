@@ -12,6 +12,7 @@ from ulc_mm_package.hardware.hardware_wrapper import hardware
 class EncoderI2CError(Exception):
     """Base class for catching encoder errors."""
 
+
 @hardware
 class PIM522RotaryEncoder:
     def __init__(self, callback_func: Callable):

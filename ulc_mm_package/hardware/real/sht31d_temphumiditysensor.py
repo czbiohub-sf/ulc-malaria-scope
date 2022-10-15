@@ -10,14 +10,17 @@ Adafruit's PCF8523 Python library:
 import adafruit_sht31d
 import board
 
+
 class TemperatureSensorNotInstantiated(Exception):
     """Raised when the Adafruit SHT3x can not be instantiated."""
+
     def __init__(self):
         super().__init__("Could not instantiate temperature/humidity sensor.")
 
-class SHT3X():
+
+class SHT3X:
     """A wrapper around Adafruit's SHT3X temp/humidity sensor driver.
-    
+
     This class only exists to allow for extensibility if the need arises.
     """
 

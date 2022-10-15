@@ -17,10 +17,10 @@ import zarr
 
 WRITE_LOCK = threading.Lock()
 
+
 def lockNoBlock(lock):
     def lockDecorator(func):
         @functools.wraps(func)
-
         def wrapper(*args, **kwargs):
             if not lock.locked():
                 with lock:
@@ -29,7 +29,9 @@ def lockNoBlock(lock):
                 raise WriteInProgress
 
         return wrapper
+
     return lockDecorator
+
 
 # ==================== Custom errors ===============================
 class AttemptingWriteWithoutFile(Exception):
@@ -40,12 +42,14 @@ class AttemptingWriteWithoutFile(Exception):
         to write an array.
         """
 
+
 class WriteInProgress(Exception):
     def __str__(self):
         return "Write in progress."
 
+
 # ==================== Main class ===============================
-class ZarrWriter():
+class ZarrWriter:
     def __init__(self):
         self.store = None
         self.group = None
@@ -55,23 +59,23 @@ class ZarrWriter():
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.futures = []
 
-    def createNewFile(self, filename: str, metadata={}, overwrite: bool=False):
+    def createNewFile(self, filename: str, metadata={}, overwrite: bool = False):
         """Create a new zarr file.
-        
+
         Parameters
         ----------
-        filename : str 
+        filename : str
             Filename, don't include the extension (i.e pass "new_file" not "new_file.zip").
         overwrite : bool
-            Will overwrite a file with the existing filename if it exists, otherwise will append.     
+            Will overwrite a file with the existing filename if it exists, otherwise will append.
         """
-        
+
         try:
             filename = f"{filename}.zip"
             if overwrite:
-                self.store = zarr.ZipStore(filename, mode='x')
+                self.store = zarr.ZipStore(filename, mode="x")
             else:
-                self.store = zarr.ZipStore(filename, mode='w')
+                self.store = zarr.ZipStore(filename, mode="w")
             self.group = zarr.group(store=self.store)
             self.arr_counter = 0
             self.writable = True
@@ -89,7 +93,9 @@ class ZarrWriter():
             A dictionary of keys to values to be associated with the given data.
         """
         try:
-            ds = self.group.array(f"{self.arr_counter}", data=data, compressor=self.compressor)
+            ds = self.group.array(
+                f"{self.arr_counter}", data=data, compressor=self.compressor
+            )
             self.arr_counter += 1
             return self.arr_counter
         except Exception:
@@ -109,7 +115,7 @@ class ZarrWriter():
 
     def threadedCloseFile(self):
         """Close the file in a separate thread (and locks the ability to write to the file).
-        
+
         Returns
         -------
         future: An object that can be polled to check if closing the file has completed
@@ -120,6 +126,7 @@ class ZarrWriter():
         # If the user did not manually close the storage, close it
         if self.store != None:
             self.store.close()
+
 
 if __name__ == "__main__":
     from tqdm import tqdm

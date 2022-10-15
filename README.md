@@ -16,6 +16,13 @@ Welcome to the ULC Malaria Scope! We are developing a barebones optical microsco
 
 ## Software operation
 
+### Development
+Before commiting, make sure to run
+
+`black .`
+
+in the root of this project. This will autoformat your files for you.
+
 ### Installing dependencies
 In the root folder, run <code>pip install -e .</code> to install all pip dependencies.
 

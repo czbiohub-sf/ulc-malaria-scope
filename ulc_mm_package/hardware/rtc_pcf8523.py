@@ -13,6 +13,7 @@ import board
 
 from datetime import date
 
+
 class RTC_PCF8523:
     """A simplistic (and somewhwat gratuitous) wrapper class for Adafruit's PCF8523 library"""
 

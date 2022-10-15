@@ -10,6 +10,7 @@ import numpy as np
 from ulc_mm_package.image_processing.processing_constants import INSIDE_BBOX_FLAG
 from typing import List
 
+
 class PatchyBackgroundSubtraction:
     def _maskBoxedRegions(
         self,
@@ -127,7 +128,11 @@ class PatchyBackgroundSubtractionFixedNum(PatchyBackgroundSubtraction):
 
 
 class PatchyBackgroundSubtractionContinuous(PatchyBackgroundSubtraction):
-    def __init__(self, img_height: int = 0, img_width: int = 0, ):
+    def __init__(
+        self,
+        img_height: int = 0,
+        img_width: int = 0,
+    ):
         """A class to continuously update an average background pixel value array.
 
         Parameters

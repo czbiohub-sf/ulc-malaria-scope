@@ -25,23 +25,24 @@ from os.path import basename
 from ulc_mm_package.hardware.hardware_constants import SIMULATION
 
 
-PKG_PATH = 'ulc_mm_package.hardware.'
+PKG_PATH = "ulc_mm_package.hardware."
+
 
 def hardware(cls):
     class HardwareWrapper(cls):
         def __new__(cls, *args, **kwargs):
-            
+
             parent = inspect.getmro(cls)[1]
 
-            mod_name = parent.__module__.split('.')[-1]
+            mod_name = parent.__module__.split(".")[-1]
             obj_name = parent.__name__
 
             if SIMULATION:
-                mod = import_module(PKG_PATH + 'sim.' + mod_name)
+                mod = import_module(PKG_PATH + "sim." + mod_name)
             else:
-                mod = import_module(PKG_PATH + 'real.' + mod_name)
+                mod = import_module(PKG_PATH + "real." + mod_name)
 
             obj = getattr(mod, obj_name)
             return obj(*args, **kwargs)
-            
+
     return HardwareWrapper

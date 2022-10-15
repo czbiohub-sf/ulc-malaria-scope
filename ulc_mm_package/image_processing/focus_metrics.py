@@ -8,7 +8,7 @@ def logPowerSpectrumRadialAverageSum(img):
         h, w = data.shape[0], data.shape[1]
         center = (w // 2, h // 2)
         y, x = np.indices((data.shape))
-        r = np.sqrt((x - center[0])**2 + (y - center[1])**2)
+        r = np.sqrt((x - center[0]) ** 2 + (y - center[1]) ** 2)
         r = r.astype(int)
 
         tbin = np.bincount(r.ravel(), data.ravel())

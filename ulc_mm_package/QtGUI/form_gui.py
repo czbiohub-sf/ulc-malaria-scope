@@ -11,9 +11,9 @@ from typing import Dict
 from PyQt5.QtWidgets import (
     QDialog,
     QGridLayout,
-    QLabel, 
-    QPushButton, 
-    QLineEdit, 
+    QLabel,
+    QPushButton,
+    QLineEdit,
     QComboBox,
 )
 from PyQt5.QtGui import QIcon
@@ -23,12 +23,13 @@ from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
 
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
+
     def __init__(self, *args, **kwargs):
         super(FormGUI, self).__init__(*args, **kwargs)
         self._load_ui()
 
     def _load_ui(self):
-        self.setWindowTitle('Experiment form')
+        self.setWindowTitle("Experiment form")
         self.setGeometry(0, 0, 675, 500)
         self.setWindowIcon(QIcon(ICON_PATH))
 

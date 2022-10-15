@@ -8,20 +8,24 @@ import argparse
 # We need 4 of each unique ID to label a full-sheet
 NUM_REPETITIONS = 4
 
+
 def luhn_checksum(card_number):
     def digits_of(n):
         return [int(d) for d in str(n)]
+
     digits = digits_of(card_number)
     odd_digits = digits[-1::-2]
     even_digits = digits[-2::-2]
     checksum = 0
     checksum += sum(odd_digits)
     for d in even_digits:
-        checksum += sum(digits_of(d*2))
+        checksum += sum(digits_of(d * 2))
     return checksum % 10
+
 
 def is_luhn_valid(card_number):
     return luhn_checksum(card_number) == 0
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -37,14 +41,15 @@ def main():
 
     with open(f"{filename}", "w") as csvfile:
         writer = csv.writer(csvfile)
-        header = ['flowcell-id']
+        header = ["flowcell-id"]
         writer.writerow(header)
 
         for i in range(lb, ub + 1):
-                if is_luhn_valid(i):
-                    for _ in range(NUM_REPETITIONS):
-                        writer.writerow([f"{i:04}"])
+            if is_luhn_valid(i):
+                for _ in range(NUM_REPETITIONS):
+                    writer.writerow([f"{i:04}"])
     print("Done! Enjoy your numbers.")
-    
+
+
 if __name__ == "__main__":
     main()

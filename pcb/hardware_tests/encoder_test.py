@@ -4,12 +4,14 @@ import colorsys
 import ioexpander as io
 
 
-print("""rotary.py
+print(
+    """rotary.py
 Change the I2C_ADDR to:
  - 0x0F to use with the Rotary Encoder breakout.
  - 0x18 to use with IO Expander.
 Press Ctrl+C to exit.
-""")
+"""
+)
 
 I2C_ADDR = 0x0F  # 0x18 for IO Expander, 0x0F for the encoder breakout
 
@@ -21,8 +23,12 @@ POT_ENC_A = 12
 POT_ENC_B = 3
 POT_ENC_C = 11
 
-BRIGHTNESS = 0.5                # Effectively the maximum fraction of the period that the LED will be on
-PERIOD = int(255 / BRIGHTNESS)  # Add a period large enough to get 0-255 steps at the desired brightness
+BRIGHTNESS = (
+    0.5  # Effectively the maximum fraction of the period that the LED will be on
+)
+PERIOD = int(
+    255 / BRIGHTNESS
+)  # Add a period large enough to get 0-255 steps at the desired brightness
 
 ioe = io.IOE(i2c_addr=I2C_ADDR, interrupt_pin=17)
 
@@ -42,7 +48,11 @@ ioe.set_mode(PIN_BLUE, io.PWM, invert=True)
 print("Running LED with {} brightness steps.".format(int(PERIOD * BRIGHTNESS)))
 
 count = 0
-r, g, b, = 0, 0, 0
+r, g, b, = (
+    0,
+    0,
+    0,
+)
 
 while True:
     if ioe.get_interrupt():
