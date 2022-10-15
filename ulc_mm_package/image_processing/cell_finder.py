@@ -1,6 +1,11 @@
 import numpy as np
 import cv2
-from ulc_mm_package.image_processing.processing_constants import RBC_THUMBNAIL_PATH, CELLS_FOUND_THRESHOLD, MIN_CELL_COUNT
+from ulc_mm_package.image_processing.processing_constants import (
+    RBC_THUMBNAIL_PATH,
+    CELLS_FOUND_THRESHOLD,
+    MIN_CELL_COUNT,
+)
+
 
 def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
     """Downsamples an image by `scale_factor`"""
@@ -8,7 +13,10 @@ def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
     h, w = img.shape
     return cv2.resize(img, (w // scale_factor, h // scale_factor))
 
-def get_correlation_map(template_img: np.ndarray, img: np.ndarray, downsample_factor: int=10) -> np.ndarray:
+
+def get_correlation_map(
+    template_img: np.ndarray, img: np.ndarray, downsample_factor: int = 10
+) -> np.ndarray:
     """Downsamples the image and returns the 2D cross-correlation map.
 
     Side note
@@ -40,7 +48,8 @@ def get_correlation_map(template_img: np.ndarray, img: np.ndarray, downsample_fa
     img_ds = downsample_image(img, downsample_factor)
     return cv2.matchTemplate(img_ds, template_img, cv2.TM_CCOEFF)
 
-def count_cells(img: np.ndarray, downsample_factor: int=4) -> int:
+
+def count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
     """Count the number of cells using a basic binarizing+connected-components analysis.
 
     Parameters
@@ -55,17 +64,27 @@ def count_cells(img: np.ndarray, downsample_factor: int=4) -> int:
     """
 
     ds_img = downsample_image(img, downsample_factor)
-    th = cv2.adaptiveThreshold(ds_img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 10)
+    th = cv2.adaptiveThreshold(
+        ds_img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 10
+    )
     _, _, boxes, _ = cv2.connectedComponentsWithStats(th)
 
-    return len(boxes[1:]) # First bbox is the background, so we exclude and return the reset
+    return len(
+        boxes[1:]
+    )  # First bbox is the background, so we exclude and return the reset
+
 
 class NoCellsFound(Exception):
     pass
 
+
 class CellFinder:
-    def __init__(self, template_path: str=RBC_THUMBNAIL_PATH, downsample_factor: int=10):
-        self.thumbnail = downsample_image(cv2.imread(template_path, 0), downsample_factor)
+    def __init__(
+        self, template_path: str = RBC_THUMBNAIL_PATH, downsample_factor: int = 10
+    ):
+        self.thumbnail = downsample_image(
+            cv2.imread(template_path, 0), downsample_factor
+        )
         self.downsample_factor = downsample_factor
         self.motor_pos = []
         self.confidences = []
@@ -83,7 +102,9 @@ class CellFinder:
         if max_val >= CELLS_FOUND_THRESHOLD:
             return self.motor_pos[np.argmax(self.confidences)]
         else:
-            raise NoCellsFound("None of the images at any of the motor positions had a maximum cross-correlation exceeding the CELLS_FOUND threshold")
+            raise NoCellsFound(
+                "None of the images at any of the motor positions had a maximum cross-correlation exceeding the CELLS_FOUND threshold"
+            )
 
     def reset(self):
         self.motor_pos = []
@@ -94,9 +115,11 @@ class CellFinder:
 
         Returns
         -------
-        float: 
+        float:
             Max value of the 2D cross-correlation
         """
 
-        cross_corr_map = get_correlation_map(self.thumbnail, img, self.downsample_factor)
+        cross_corr_map = get_correlation_map(
+            self.thumbnail, img, self.downsample_factor
+        )
         return np.max(cross_corr_map)

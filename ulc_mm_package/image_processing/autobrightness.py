@@ -16,11 +16,13 @@ class AB(enum.Enum):
     JUST_RIGHT = 0
     TOO_LOW = -1
 
+
 class AutobrightnessError(Exception):
     """Base class for catching Autobrightness errors."""
-    
+
     def __init__(self, msg: str):
         super().__init__(f"{msg}")
+
 
 def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
     """Downsamples an image by `scale_factor`"""
@@ -28,7 +30,10 @@ def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
     h, w = img.shape
     return cv2.resize(img, (w // scale_factor, h // scale_factor))
 
-def assessBrightness(img: np.ndarray, top_perc: float, downsample_factor: int=20) -> float:
+
+def assessBrightness(
+    img: np.ndarray, top_perc: float, downsample_factor: int = 20
+) -> float:
     """Returns the mean value of the top N pixels in a given image.
 
     Parameters
@@ -41,10 +46,17 @@ def assessBrightness(img: np.ndarray, top_perc: float, downsample_factor: int=20
 
     img = downsample_image(img, downsample_factor)
     top_n_perc = top_perc * img.size
-    mean_brightness = np.mean(img.flatten()[np.argpartition(img.flatten(), -int(top_n_perc))[-int(top_n_perc):]])
+    mean_brightness = np.mean(
+        img.flatten()[
+            np.argpartition(img.flatten(), -int(top_n_perc))[-int(top_n_perc) :]
+        ]
+    )
     return mean_brightness
 
-def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float) -> Union[AB, float]:
+
+def adjustBrightness(
+    img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float
+) -> Union[AB, float]:
     """Adjusts the LED's duty cycle to achieve the target brightness.
 
     Returns
@@ -58,7 +70,7 @@ def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDD
     current_led_pwm_perc = led.pwm_duty_cycle
     current_brightness = assessBrightness(img, TOP_PERC)
     diff = target_pixel_val - current_brightness
-    diff = diff if abs(diff/np.iinfo(str(img.dtype)).max) >= TOL else 0
+    diff = diff if abs(diff / np.iinfo(str(img.dtype)).max) >= TOL else 0
 
     led.turnOn()
     if diff > 0:
@@ -69,17 +81,23 @@ def adjustBrightness(img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDD
         return AB.TOO_LOW, current_brightness
 
     elif diff < 0:
-        # Decrease brightness 
+        # Decrease brightness
         step = current_led_pwm_perc - step_size_perc
         step = step if step >= 0.0 else 0.0
         led.setDutyCycle(step)
         return AB.TOO_HIGH, current_brightness
     else:
-        # Brightness achieved within tol 
+        # Brightness achieved within tol
         return AB.JUST_RIGHT, current_brightness
 
-class Autobrightness():
-    def __init__(self, led: LED_TPS5420TDDCT, target_pixel_val: int=TOP_PERC_TARGET_VAL, step_size_perc: float=0.01):
+
+class Autobrightness:
+    def __init__(
+        self,
+        led: LED_TPS5420TDDCT,
+        target_pixel_val: int = TOP_PERC_TARGET_VAL,
+        step_size_perc: float = 0.01,
+    ):
         self.prev_brightness_enum = None
         self.prev_mean_img_brightness = None
         self.target_pixel_val = target_pixel_val
@@ -88,9 +106,11 @@ class Autobrightness():
         self.default_step_size_perc = step_size_perc
         self.timeout_steps = 100
         self.step_counter = 0
-    
+
     def runAutobrightness(self, img: np.ndarray) -> bool:
-        curr_brightness_enum, curr_mean_brightness_val = adjustBrightness(img, self.target_pixel_val, self.led, self.step_size_perc)
+        curr_brightness_enum, curr_mean_brightness_val = adjustBrightness(
+            img, self.target_pixel_val, self.led, self.step_size_perc
+        )
         if not self.prev_brightness_enum == None:
             if self.prev_brightness_enum != curr_brightness_enum:
                 self.step_size_perc /= 2
@@ -101,7 +121,9 @@ class Autobrightness():
 
         if self.step_counter >= self.timeout_steps:
             self.led.setDutyCycle(0)
-            raise AutobrightnessError(f"Unable to achieve the target brightness within {self.timeout_steps} steps. The exposure may be too low (and the target pixel value too high), or there may be an issue with the LED.") 
+            raise AutobrightnessError(
+                f"Unable to achieve the target brightness within {self.timeout_steps} steps. The exposure may be too low (and the target pixel value too high), or there may be an issue with the LED."
+            )
 
         if curr_brightness_enum == AB.JUST_RIGHT:
             return True

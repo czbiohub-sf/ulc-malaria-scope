@@ -31,21 +31,21 @@ from ulc_mm_package.hardware.motorcontroller import (
 )
 
 
-class DRV8825Nema():
+class DRV8825Nema:
     def __init__(
-                    self,
-                    direction_pin=MOTOR_DIR_PIN,
-                    step_pin=MOTOR_STEP_PIN,
-                    enable_pin=MOTOR_ENABLE,
-                    sleep_pin=MOTOR_SLEEP,
-                    reset_pin=MOTOR_RESET,
-                    fault_pin=MOTOR_FAULT_PIN,
-                    motor_type="DRV8825",
-                    steptype="Full",
-                    lim1=MOTOR_LIMIT_SWITCH1,
-                    lim2: int=None,
-                    max_pos: int=None,
-                ):
+        self,
+        direction_pin=MOTOR_DIR_PIN,
+        step_pin=MOTOR_STEP_PIN,
+        enable_pin=MOTOR_ENABLE,
+        sleep_pin=MOTOR_SLEEP,
+        reset_pin=MOTOR_RESET,
+        fault_pin=MOTOR_FAULT_PIN,
+        motor_type="DRV8825",
+        steptype="Full",
+        lim1=MOTOR_LIMIT_SWITCH1,
+        lim2: int = None,
+        max_pos: int = None,
+    ):
 
         self.motor_type = motor_type
         self.direction_pin = direction_pin
@@ -62,19 +62,23 @@ class DRV8825Nema():
         self.stop_motor = False
 
         # Get step degree based on steptype
-        degree_value = {'Full': 1.8,
-                        'Half': 0.9,
-                        '1/4': .45,
-                        '1/8': .225,
-                        '1/16': 0.1125,
-                        '1/32': 0.05625,
-                        '1/64': 0.028125,
-                        '1/128': 0.0140625}
+        degree_value = {
+            "Full": 1.8,
+            "Half": 0.9,
+            "1/4": 0.45,
+            "1/8": 0.225,
+            "1/16": 0.1125,
+            "1/32": 0.05625,
+            "1/64": 0.028125,
+            "1/128": 0.0140625,
+        }
         self.step_degree = degree_value[steptype]
-        self.microstepping = 1.8/self.step_degree # 1, 2, 4, 8, 16, 32
-        self.dist_per_step_um = self.step_degree / degree_value['Full'] * FULL_STEP_TO_TRAVEL_DIST_UM
+        self.microstepping = 1.8 / self.step_degree  # 1, 2, 4, 8, 16, 32
+        self.dist_per_step_um = (
+            self.step_degree / degree_value["Full"] * FULL_STEP_TO_TRAVEL_DIST_UM
+        )
         self.button_step = 1
-        self.max_pos = int(max_pos if max_pos != None else 450*self.microstepping)
+        self.max_pos = int(max_pos if max_pos != None else 450 * self.microstepping)
 
     def homeToLimitSwitches(self):
         print("Homing motor, please wait...")
@@ -82,21 +86,27 @@ class DRV8825Nema():
         print("Done homing.")
         self.homed = True
 
-    def move_abs(self, pos: int=200, stepdelay=.005, verbose=False, initdelay=.05):
+    def move_abs(self, pos: int = 200, stepdelay=0.005, verbose=False, initdelay=0.05):
         self.pos = int(pos)
 
-    def move_rel(self, steps: int=200,
-                dir=Direction.CCW, stepdelay=.005, verbose=False, initdelay=.05):
+    def move_rel(
+        self,
+        steps: int = 200,
+        dir=Direction.CCW,
+        stepdelay=0.005,
+        verbose=False,
+        initdelay=0.05,
+    ):
         if dir.value:
-            self.pos = int(self.pos + self.button_step*steps)
+            self.pos = int(self.pos + self.button_step * steps)
         else:
-            self.pos = int(self.pos - self.button_step*steps)
+            self.pos = int(self.pos - self.button_step * steps)
 
     def threaded_move_abs(self, *args, **kwargs):
         self.pos = int(args[0])
 
     def threaded_move_rel(self, *args, **kwargs):
-        if kwargs['dir'].value:
-            self.pos = int(self.pos + self.button_step*kwargs['steps'])
+        if kwargs["dir"].value:
+            self.pos = int(self.pos + self.button_step * kwargs["steps"])
         else:
-            self.pos = int(self.pos - self.button_step*kwargs['steps'])
+            self.pos = int(self.pos - self.button_step * kwargs["steps"])

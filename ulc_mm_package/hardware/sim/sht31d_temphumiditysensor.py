@@ -7,7 +7,8 @@ Adafruit's PCF8523 Python library:
     https://docs.circuitpython.org/projects/sht31d/en/latest/
 """
 
-class SHT3X():
+
+class SHT3X:
     """Simulated temperature/humidity sensor returning dummy values"""
 
     def __init__(self):

@@ -4,19 +4,28 @@ import cv2
 
 from ulc_mm_package.image_processing.processing_constants import CORRELATION_THRESH
 
+
 class FlowRateEstimatorError(Exception):
     """Base class for catching all pressure control related errors."""
+
     pass
 
-class FlowRateEstimator:
 
-    def __init__(self, img_height: int=600, img_width: int=800, num_image_pairs: int=12, scale_factor: int=10, coeff_of_var_thresh: float=0.8):
+class FlowRateEstimator:
+    def __init__(
+        self,
+        img_height: int = 600,
+        img_width: int = 800,
+        num_image_pairs: int = 12,
+        scale_factor: int = 10,
+        coeff_of_var_thresh: float = 0.8,
+    ):
         """A class for estimating the flow rate of cells using a 2D cross-correlation.
         The class holds two images at a time in `frame_storage`. To use this class,
-        a user needs only to provide a single image at a time. Every two images, 
+        a user needs only to provide a single image at a time. Every two images,
         the class calculates the displacement between those two.
 
-        Once the specified number of pairs 
+        Once the specified number of pairs
 
         Eaxmple usage (pseudocode)
         ---------------------------
@@ -94,11 +103,19 @@ class FlowRateEstimator:
 
     def _calculatePairDisplacement(self):
         if self._frame_counter == 0 and not self.isFull():
-            dx, dy, confidence = getFlowrateWithCrossCorrelation(self.frame_storage[:, :, 0], self.frame_storage[:, :, 1], self.scale_factor)
+            dx, dy, confidence = getFlowrateWithCrossCorrelation(
+                self.frame_storage[:, :, 0],
+                self.frame_storage[:, :, 1],
+                self.scale_factor,
+            )
             time_diff = self.timestamps[1] - self.timestamps[0]
             if self.isValidDisplacement(dx, dy, confidence):
-                self.dx[self._calc_idx] = (dx / time_diff) / (self.img_width / self.scale_factor)
-                self.dy[self._calc_idx] = (dy / time_diff) / (self.img_height / self.scale_factor)
+                self.dx[self._calc_idx] = (dx / time_diff) / (
+                    self.img_width / self.scale_factor
+                )
+                self.dy[self._calc_idx] = (dy / time_diff) / (
+                    self.img_height / self.scale_factor
+                )
                 self._calc_idx += 1
 
     def isValidDisplacement(self, dx, dy, confidence) -> bool:
@@ -110,7 +127,7 @@ class FlowRateEstimator:
 
         if confidence <= CORRELATION_THRESH:
             return False
-            
+
         return True
 
     def isFull(self) -> bool:
@@ -136,12 +153,20 @@ class FlowRateEstimator:
         self._addImage(img, timestamp)
         self._calculatePairDisplacement()
 
+
 def downSampleImage(img: np.ndarray, scale_factor: int) -> np.ndarray:
     """Downsamples an image by `scale_factor`"""
     h, w = img.shape
     return cv2.resize(img, (w // scale_factor, h // scale_factor))
 
-def getTemplateRegion(img: np.ndarray, x1_perc: float=0.05, y1_perc: float=0.05, x2_perc: float=0.45, y2_perc: float=0.85):
+
+def getTemplateRegion(
+    img: np.ndarray,
+    x1_perc: float = 0.05,
+    y1_perc: float = 0.05,
+    x2_perc: float = 0.45,
+    y2_perc: float = 0.85,
+):
     """Returns a subregion of the image provided.
     The start and end positions are to be given as percentages of the image's shape.
 
@@ -171,16 +196,25 @@ def getTemplateRegion(img: np.ndarray, x1_perc: float=0.05, y1_perc: float=0.05,
     """
 
     h, w = img.shape
-    xs, xf = int(x1_perc*w), int(x2_perc*w)
-    ys, yf = int(y1_perc*h), int(y2_perc*h)
+    xs, xf = int(x1_perc * w), int(x2_perc * w)
+    ys, yf = int(y1_perc * h), int(y2_perc * h)
 
     return img[ys:yf, xs:xf], (xs, xf), (ys, yf)
 
-def getFlowrateWithCrossCorrelation(prev_img: np.ndarray, next_img: np.ndarray, scale_factor: int=10, temp_x1_perc: float=0.05,
-temp_y1_perc: float=0.05, temp_x2_perc: float=0.45, temp_y2_perc: float=0.85, debug: bool=False) -> Tuple[float, float]:
+
+def getFlowrateWithCrossCorrelation(
+    prev_img: np.ndarray,
+    next_img: np.ndarray,
+    scale_factor: int = 10,
+    temp_x1_perc: float = 0.05,
+    temp_y1_perc: float = 0.05,
+    temp_x2_perc: float = 0.45,
+    temp_y2_perc: float = 0.85,
+    debug: bool = False,
+) -> Tuple[float, float]:
 
     """Find the displacement of a subregion of an image with another, temporally adjacent, image.
-    
+
     Parameters
     ----------
         prev_img : np.ndarray
@@ -207,10 +241,14 @@ temp_y1_perc: float=0.05, temp_x2_perc: float=0.45, temp_y2_perc: float=0.85, de
         int:
             dy: displacement in y
     """
-    im1_ds, im2_ds = downSampleImage(prev_img, scale_factor), downSampleImage(next_img, scale_factor)
+    im1_ds, im2_ds = downSampleImage(prev_img, scale_factor), downSampleImage(
+        next_img, scale_factor
+    )
 
     # Select the subregion within the first image by defining which quantiles to use
-    im1_ds_subregion, x_offset, y_offset = getTemplateRegion(im1_ds, 0.05, 0.05, 0.85, 0.45)
+    im1_ds_subregion, x_offset, y_offset = getTemplateRegion(
+        im1_ds, 0.05, 0.05, 0.85, 0.45
+    )
 
     # Run a normalized cross correlation between the image to search and subregion
     template_result = cv2.matchTemplate(im2_ds, im1_ds_subregion, cv2.TM_CCOEFF_NORMED)
@@ -221,15 +259,26 @@ temp_y1_perc: float=0.05, temp_x2_perc: float=0.45, temp_y2_perc: float=0.85, de
 
     # If debug mode is on, run `plot_cc` which saves images of the cross-correlation calculation.
     if debug:
-        plot_cc(im1_ds, im2_ds, im1_ds_subregion, template_result, (x_offset[0], y_offset[0]), (x_offset[1], y_offset[1]), max_loc[0], max_loc[1], dx, dy)
+        plot_cc(
+            im1_ds,
+            im2_ds,
+            im1_ds_subregion,
+            template_result,
+            (x_offset[0], y_offset[0]),
+            (x_offset[1], y_offset[1]),
+            max_loc[0],
+            max_loc[1],
+            dx,
+            dy,
+        )
 
     return dx, dy, max_val
 
 
 def plot_cc(im1, im2, im1_subregion, template_result, xy1, xy2, max_x, max_y, dx, dy):
-    """A function for debugging and visualizing the cross-correlation 
+    """A function for debugging and visualizing the cross-correlation
     displacement calculation.
-    
+
     This function produces a 2x2 plot of:
         Top-left: The first image
         Bottom-left: The second image
@@ -240,16 +289,16 @@ def plot_cc(im1, im2, im1_subregion, template_result, xy1, xy2, max_x, max_y, dx
 
     h, w = im1_subregion.shape
     im1_subregion = im1_subregion.copy()
-    im2_subregion = im2[max_y:max_y+h, max_x:max_x+w].copy()
+    im2_subregion = im2[max_y : max_y + h, max_x : max_x + w].copy()
     im1 = cv2.rectangle(im1, xy1, xy2, 255, 1)
-    im2 = cv2.rectangle(im2, (max_x, max_y), (max_x+w, max_y+h), 255, 1)
+    im2 = cv2.rectangle(im2, (max_x, max_y), (max_x + w, max_y + h), 255, 1)
 
     fig, ax = plt.subplots(3, 2, figsize=(10, 7))
-    ax[0, 0].imshow(im1, cmap='gray')
-    ax[0, 1].imshow(im1_subregion, cmap='gray')
-    ax[1, 0].imshow(im2, cmap='gray')
-    ax[1, 1].imshow(im2_subregion, cmap='gray')
-    ax[1, 1].text(0, 0, f"{dx, dy}", bbox={'facecolor': 'white', 'pad': 2})
+    ax[0, 0].imshow(im1, cmap="gray")
+    ax[0, 1].imshow(im1_subregion, cmap="gray")
+    ax[1, 0].imshow(im2, cmap="gray")
+    ax[1, 1].imshow(im2_subregion, cmap="gray")
+    ax[1, 1].text(0, 0, f"{dx, dy}", bbox={"facecolor": "white", "pad": 2})
     ax[2, 0].imshow(template_result)
     plt.show()
     # plt.pause(0.01)

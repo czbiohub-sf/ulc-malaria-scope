@@ -16,7 +16,10 @@ import vimba
 from py_cameras import Basler, GrabStrategy
 from vimba import Vimba
 
-from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS, DEVICELINK_THROUGHPUT
+from ulc_mm_package.hardware.hardware_constants import (
+    DEFAULT_EXPOSURE_MS,
+    DEVICELINK_THROUGHPUT,
+)
 from ulc_mm_package.hardware.camera import CameraError
 
 
@@ -42,7 +45,8 @@ class BaslerCamera(Basler):
 
     def _getTemperature(self):
         return self.camera.DeviceTemperature.GetValue()
-        
+
+
 class AVTCamera:
     def __init__(self):
         self._isActivated = False
@@ -75,14 +79,14 @@ class AVTCamera:
     def deactivateCamera(self) -> None:
         self.stopAcquisition()
         self.vimba.__exit__(*sys.exc_info())
-    
+
     def _frame_handler(self, cam, frame):
         if self.queue.full():
             self.queue.get()
         if frame.get_status() == vimba.FrameStatus.Complete:
             self.queue.put(frame.as_numpy_ndarray())
         cam.queue_frame(frame)
-    
+
     def _flush_queue(self):
         with self.queue.mutex:
             self.queue.queue.clear()
@@ -103,10 +107,10 @@ class AVTCamera:
         while self.camera.is_streaming():
             yield self.queue.get()[:, :, 0]
 
-    def setBinning(self, mode: str="Average", bin_factor=1):
+    def setBinning(self, mode: str = "Average", bin_factor=1):
         while self.camera.is_streaming():
             self.camera.stop_streaming()
-        
+
         self.camera.BinningHorizontalMode.set(mode)
         self.camera.BinningVerticalMode.set(mode)
         self.camera.BinningHorizontal.set(bin_factor)
@@ -120,7 +124,7 @@ class AVTCamera:
 
     def getBinning(self):
         return self.camera.BinningHorizontal.get()
-    
+
     def setDeviceLinkThroughputLimit(self, bytes_per_second: int):
         self.camera.DeviceLinkThroughputLimit.set(bytes_per_second)
 
@@ -133,7 +137,7 @@ class AVTCamera:
 
     def _setExposureTimeMilliseconds(self, value_ms: int):
         try:
-            self.camera.ExposureTime.set(value_ms*1000)
+            self.camera.ExposureTime.set(value_ms * 1000)
             return
         except:
             print(f"Could not use ExposureTime.set().")
@@ -152,8 +156,8 @@ class AVTCamera:
 
     def getExposureBoundsMilliseconds(self):
         try:
-            minExposure_ms = self.camera.ExposureAutoMin.get()/1000
-            maxExposure_ms = self.camera.ExposureAutoMax.get()/1000
+            minExposure_ms = self.camera.ExposureAutoMin.get() / 1000
+            maxExposure_ms = self.camera.ExposureAutoMax.get() / 1000
             return [minExposure_ms, maxExposure_ms]
         except Exception as e:
             print(e)

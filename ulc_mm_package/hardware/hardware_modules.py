@@ -6,7 +6,10 @@ from ulc_mm_package.hardware.motorcontroller import (
     MotorInMotion,
 )
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
-from ulc_mm_package.hardware.pim522_rotary_encoder import PIM522RotaryEncoder, EncoderI2CError
+from ulc_mm_package.hardware.pim522_rotary_encoder import (
+    PIM522RotaryEncoder,
+    EncoderI2CError,
+)
 from ulc_mm_package.hardware.pneumatic_module import (
     PneumaticModule,
     PneumaticModuleError,
@@ -15,4 +18,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     SyringeInMotion,
 )
 from ulc_mm_package.hardware.fan import Fan
-from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X, TemperatureSensorNotInstantiated
+from ulc_mm_package.hardware.sht31d_temphumiditysensor import (
+    SHT3X,
+    TemperatureSensorNotInstantiated,
+)

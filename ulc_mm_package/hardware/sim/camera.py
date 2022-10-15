@@ -16,7 +16,7 @@ from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS, VIDE
 from ulc_mm_package.hardware.camera import CameraError
 
 
-class SimCamera():
+class SimCamera:
     def __init__(self):
         try:
             self.binning = 1
@@ -72,9 +72,11 @@ class SimCamera():
 
     def deactivateCamera(self):
         pass
-    
+
+
 class BaslerCamera(SimCamera):
     pass
-    
+
+
 class AVTCamera(SimCamera):
     pass

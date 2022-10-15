@@ -3,14 +3,14 @@ import time
 
 # import the library
 from RpiMotorLib import RpiMotorLib
-    
-#define GPIO pins
+
+# define GPIO pins
 en = 26
 sleep = 6
 reset = 21
-GPIO_pins = (-1,-1,-1) # Microstep Resolution MS1-MS3 -> GPIO Pin
-direction = 20       # Direction -> GPIO Pin
-step = 19      # Step -> GPIO Pin
+GPIO_pins = (-1, -1, -1)  # Microstep Resolution MS1-MS3 -> GPIO Pin
+direction = 20  # Direction -> GPIO Pin
+step = 19  # Step -> GPIO Pin
 fault = 16
 
 # Declare an named instance of class pass GPIO pins numbers
@@ -30,11 +30,11 @@ GPIO.output(reset, GPIO.HIGH)
 time.sleep(3)
 # call the function, pass the arguments
 # motor_go(clockwise, steptype, steps, stepdelay, verbose, initdelay)
-mymotortest.motor_go(True, "Full" , 250, 0.01, True, .01)
+mymotortest.motor_go(True, "Full", 250, 0.01, True, 0.01)
 
-#print("Going the opposite direction")
+# print("Going the opposite direction")
 time.sleep(2)
-mymotortest.motor_go(False, "Full" , 250, 0.01, True, .01)
+mymotortest.motor_go(False, "Full", 250, 0.01, True, 0.01)
 
 # good practise to cleanup GPIO at some point before exit
 GPIO.cleanup()

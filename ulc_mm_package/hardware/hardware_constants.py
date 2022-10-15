@@ -5,7 +5,7 @@ RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
 
 # ================ Camera constants ================ #
-CAMERA_SELECTION = 0        # 0 = Basler, 1 = AVT
+CAMERA_SELECTION = 0  # 0 = Basler, 1 = AVT
 DEFAULT_EXPOSURE_MS = 0.5
 DEVICELINK_THROUGHPUT = 100000000
 
