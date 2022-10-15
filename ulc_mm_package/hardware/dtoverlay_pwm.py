@@ -1,4 +1,3 @@
-import subprocess
 import enum
 
 
@@ -25,16 +24,21 @@ class dtoverlay_PWM:
         self.period_ns = 0
         self._start()
 
+    def _atomic_write_to_file(self, file, write_content):
+        with open(file, "w") as g:
+            g.write(write_content)
+
     def _start(self):
-        cmd = """
-            echo 0 > export;
-            echo 1 > export;
-            echo 1 > pwm0/enable;
-            echo 1 > pwm1/enable;
+        """Command to start is
+        echo 0 > export;
+        echo 1 > export;
+        echo 1 > pwm0/enable;
+        echo 1 > pwm1/enable;
         """
-        subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
-        )
+        self._atomic_write_to_file("/sys/class/pwm/pwmchip0/export", "0")
+        self._atomic_write_to_file("/sys/class/pwm/pwmchip0/export", "1")
+        self._atomic_write_to_file("/sys/class/pwm/pwmchip0/pwm0/enable", "1")
+        self._atomic_write_to_file("/sys/class/pwm/pwmchip0/pwm1/enable", "1")
 
     def setFreq(self, freq: int):
         """Sets the frequency of the PWM.
@@ -42,8 +46,9 @@ class dtoverlay_PWM:
         Internally, converts the frequency to time (in ns) and sets the period.
         """
         self.period_ns = int((1 / freq) * 1e9)
-        with open(f"/sys/class/pwm/pwmchip0/pwm{self.channel}/period", "w") as g:
-            g.write(str(self.period_ns))
+        self._atomic_write_to_file(
+            f"/sys/class/pwm/pwmchip0/pwm{self.channel}/period", str(self.period_ns)
+        )
 
     def setDutyCycle(self, duty_cycle_perc: float):
         """Sets the dutycycle (in ns) given an '% on time'.
@@ -60,17 +65,17 @@ class dtoverlay_PWM:
             )
 
         duty_cycle_val = int(duty_cycle_perc * self.period_ns)
-        with open(f"/sys/class/pwm/pwmchip0/pwm{self.channel}/duty_cycle", "w") as g:
-            g.write(str(duty_cycle_val))
+        self._atomic_write_to_file(
+            f"/sys/class/pwm/pwmchip0/pwm{self.channel}/duty_cycle", str(duty_cycle_val)
+        )
 
     def exit(self):
         cmd = """
         echo 0 > pwm0/enable;
         echo 0 > pwm1/enable;
         """
-        subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
-        )
+        self._atomic_write_to_file(f"/sys/class/pwm/pwmchip0/pwm0/enable", "0")
+        self._atomic_write_to_file(f"/sys/class/pwm/pwmchip0/pwm1/enable", "0")
 
 
 if __name__ == "__main__":
