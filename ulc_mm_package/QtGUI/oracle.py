@@ -6,6 +6,7 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 """
 
 import sys
+import webbrowser
 import numpy as np
 
 from transitions import Machine
@@ -16,7 +17,7 @@ from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QIcon
 
 from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS
-from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
+from ulc_mm_package.QtGUI.gui_constants import ICON_PATH, FLOWCELL_QC_FORM_LINK
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.acquisition import Acquisition
@@ -59,19 +60,20 @@ class Oracle(Machine):
         states = [
             {'name' : 'standby'},
             {'name' : 'setup', 
-                'on_enter' : [self._start_setup]},
+                'on_enter' : [self._start_setup],
+                'on_exit' : [self._end_setup]},
             {'name' : 'form', 
                 'on_enter' : [self._start_form], 
-                'on_exit' : [self._close_form]},
+                'on_exit' : [self._end_form]},
             {'name' : 'liveview', 
                 'on_enter' : [self._start_liveview], 
-                'on_exit' : [self._close_liveview]},
-            {'name' : 'survey', 
-                'on_enter' : [self._start_survey]},
+                'on_exit' : [self._end_liveview, self._open_survey]},
+            # {'name' : 'survey', 
+            #     'on_enter' : [self._start_survey]},
             ]
         Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
-        self.add_transition(trigger='reset', source='*', dest='form', before='_reset')
+        self.add_transition(trigger='rerun', source='*', dest='form', before='reset')
 
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
@@ -82,7 +84,7 @@ class Oracle(Machine):
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.to_form)
-        self.scopeop.reset_done.connect(self.reset)
+        self.scopeop.reset_done.connect(self.rerun)
         self.scopeop.error.connect(self.error_handler)
 
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
@@ -131,18 +133,19 @@ class Oracle(Machine):
 
     def save_form(self):
         # TODO save experiment metadata here
+        # Only move on to next state if data is verified
         self.next_state()
 
-    def _reset(self, *args):
+    def reset(self, *args):
         reset_query = self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Click "OK" to start a new run. If starting a new run, do not remove flowcell until prompted to.',
+            'Click "OK" to start a new run.',
             cancel=True,
             )
         if reset_query == QMessageBox.Cancel:
             self.shutoff()
-        else:
+        elif reset_query == QMessageBox.Ok:
             self.display_message(
                 QMessageBox.Icon.Information,
                 "Swap flowcells",
@@ -186,27 +189,40 @@ class Oracle(Machine):
         quit()   
 
     def _start_setup(self, *args):
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Hardware setup starting",
+            'If there is a flow cell in the scope, remove it before clicking "OK".',
+        )
+
         self.scopeop_thread.start()
         self.acquisition_thread.start()
 
         self.scopeop.setup()
         self.acquisition.get_mscope(self.scopeop.mscope)
 
+    def _end_setup(self, *args):
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Hardware setup complete",
+            'Flow cell can now be inserted. Click "OK" once it is in place.',
+        )
+
     def _start_form(self, *args):
         self.form_window.show()
 
-    def _close_form(self, *args):
+    def _end_form(self, *args):
         self.form_window.close()
 
     def _start_liveview(self, *args):
         self.liveview_window.show()
         self.scopeop.start()
 
-    def _close_liveview(self, *args):
+    def _end_liveview(self, *args):
         self.liveview_window.close()
 
-    def _start_survey(self, *args):
-        pass
+    def _open_survey(self, *args):
+        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
        
 
 if __name__ == "__main__":

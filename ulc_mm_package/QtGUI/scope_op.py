@@ -93,6 +93,7 @@ class ScopeOp(QObject, Machine):
         print(component_status)
 
         if all([status == True for status in component_status.values()]):
+            self.mscope.startup()
             self.setup_done.emit()
             print("Successful hardware initialization")
         else:
@@ -112,13 +113,13 @@ class ScopeOp(QObject, Machine):
     def start(self):
         self.start_timers.emit()
 
-        if not self.state == "standby":
-            self.error.emit(
-                "Invalid startup state",
-                "Scopeop can only be started from state 'standby', but is currently in state '{}'.".format(
-                    self.state
-                ),
-            )
+        # if not self.state == "standby":
+        #     self.error.emit(
+        #         "Invalid startup state",
+        #         "Scopeop can only be started from state 'standby', but is currently in state '{}'.".format(
+        #             self.state
+        #         ),
+        #     )
 
         self.next_state()
 
