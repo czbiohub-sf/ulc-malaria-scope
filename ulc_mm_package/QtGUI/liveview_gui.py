@@ -19,6 +19,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
+import pyqtgraph as pg
+
+pg.setConfigOption("imageAxisOrder", "row-major")
+
 from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
 
 
@@ -29,7 +33,7 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img):
-        self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
+        self.liveview_img.setImage(img)
 
     def _load_ui(self):
         self.setWindowTitle("Malaria scope")
@@ -52,18 +56,22 @@ class LiveviewGUI(QMainWindow):
         self.margin_widget = QWidget()
         self.margin_widget.setLayout(self.margin_layout)
 
-        self.liveview_img = QLabel()
+        self.liveview_img_container = pg.PlotWidget()
+        self.liveview_img = pg.ImageItem()
+        self.liveview_img_container.addItem(self.liveview_img)
+        self.liveview_img_container.showAxes(False)
+
         self.status_lbl = QLabel("Setup")
         self.timer_lbl = QLabel("Timer")
         self.exit_btn = QPushButton("Exit")
         self.info_lbl = QLabel()
         self.hardware_lbl = QLabel()
 
-        self.liveview_img.setAlignment(Qt.AlignCenter)
+        # self.liveview_img.setAlignment(Qt.AlignCenter)
         self.status_lbl.setAlignment(Qt.AlignHCenter)
         self.timer_lbl.setAlignment(Qt.AlignHCenter)
 
-        self.liveview_layout.addWidget(self.liveview_img)
+        self.liveview_layout.addWidget(self.liveview_img_container)
         self.liveview_layout.addWidget(self.margin_widget)
 
         self.margin_layout.addWidget(self.status_lbl)
