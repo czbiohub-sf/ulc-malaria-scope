@@ -67,7 +67,6 @@ class LiveviewGUI(QMainWindow):
         self.info_lbl = QLabel()
         self.hardware_lbl = QLabel()
 
-        # self.liveview_img.setAlignment(Qt.AlignCenter)
         self.status_lbl.setAlignment(Qt.AlignHCenter)
         self.timer_lbl.setAlignment(Qt.AlignHCenter)
 
