@@ -56,10 +56,11 @@ class LiveviewGUI(QMainWindow):
         self.margin_widget = QWidget()
         self.margin_widget.setLayout(self.margin_layout)
 
-        self.liveview_img_container = pg.PlotWidget()
         self.liveview_img = pg.ImageItem()
+        self.liveview_img_container = pg.PlotWidget()
         self.liveview_img_container.addItem(self.liveview_img)
         self.liveview_img_container.showAxes(False)
+        self.liveview_img_container.setDefaultPadding(padding=0)
 
         self.status_lbl = QLabel("Setup")
         self.timer_lbl = QLabel("Timer")
