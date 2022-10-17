@@ -15,9 +15,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QIcon
 
-from ulc_mm_package.image_processing.processing_constants import (
-    EXPERIMENT_METADATA_KEYS,
-)
+from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -40,6 +38,7 @@ _EXIT_MSG = "Click OK to end experiment."
 
 
 class Oracle(Machine):
+
     def __init__(self, *args, **kwargs):
 
         # Instantiate GUI windows
@@ -58,23 +57,21 @@ class Oracle(Machine):
 
         # Configure state machine
         states = [
-            {"name": "standby"},
-            {"name": "setup", "on_enter": [self._start_setup]},
-            {
-                "name": "form",
-                "on_enter": [self._start_form],
-                "on_exit": [self._close_form],
-            },
-            {
-                "name": "liveview",
-                "on_enter": [self._start_liveview],
-                "on_exit": [self._close_liveview],
-            },
-            {"name": "survey", "on_enter": [self._start_survey]},
-        ]
-        Machine.__init__(self, states=states, queued=True, initial="standby")
+            {'name' : 'standby'},
+            {'name' : 'setup', 
+                'on_enter' : [self._start_setup]},
+            {'name' : 'form', 
+                'on_enter' : [self._start_form], 
+                'on_exit' : [self._close_form]},
+            {'name' : 'liveview', 
+                'on_enter' : [self._start_liveview], 
+                'on_exit' : [self._close_liveview]},
+            {'name' : 'survey', 
+                'on_enter' : [self._start_survey]},
+            ]
+        Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
-        self.add_transition(trigger="reset", source="*", dest="form", before="_reset")
+        self.add_transition(trigger='reset', source='*', dest='form', before='_reset')
 
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
@@ -107,7 +104,7 @@ class Oracle(Machine):
             title,
             text,
             exit_after=True,
-        )
+            )
 
     def display_message(self, icon, title, text, cancel=False, exit_after=False):
         msgBox = QMessageBox()
@@ -121,7 +118,9 @@ class Oracle(Machine):
             msgBox.setText(f"{text}")
 
         if cancel:
-            msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            msgBox.setStandardButtons(
+                QMessageBox.Ok | QMessageBox.Cancel
+            )
         else:
             msgBox.setStandardButtons(QMessageBox.Ok)
 
@@ -138,19 +137,24 @@ class Oracle(Machine):
         reset_query = self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            "Start new run?",
+            'Click "OK" to start a new run. If starting a new run, do not remove flowcell until prompted to.',
             cancel=True,
-        )
+            )
         if reset_query == QMessageBox.Cancel:
             self.shutoff()
         else:
-            print("Running new experiment")
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Swap flowcells",
+                "Flowcells can now be swapped.",
+            )
+            print("Running new experiment")  
         # TODO add user instructions to remove flow cell before resetting syringe
         # TODO delete current scope data storage
 
     def shutoff(self, *args):
 
-        if self.state == "liveview":
+        if self.state == 'liveview':
             # TODO Update data_storage
             # closing_file_future = self.scopeop.mscope.data_storage.close()
 
@@ -160,30 +164,26 @@ class Oracle(Machine):
             # print("Successfully closed file.")
 
             pass
-
-        # Shut off QTimers
-        self.scopeop.stop_timers.emit()
-        print("Waiting for timer to terminate...")
-        while (
-            self.acquisition.acquisition_timer.isActive()
-            or self.acquisition.liveview_timer.isActive()
-        ):
-            pass
-        print("Successfully terminated timer.")
-
+        
         # Shut off hardware
         self.scopeop.mscope.shutoff()
 
+        # Shut off QTimers
+        print("Waiting for timer to terminate...")
+        while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
+            pass
+        print("Successfully terminated timer.")
+    
         # Shut off acquisition thread
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
-
+        
         # Shut off scopeop thread
         self.scopeop_thread.quit()
         self.scopeop_thread.wait()
-
+        
         print("Exiting program")
-        quit()
+        quit()   
 
     def _start_setup(self, *args):
         self.scopeop_thread.start()
@@ -207,7 +207,7 @@ class Oracle(Machine):
 
     def _start_survey(self, *args):
         pass
-
+       
 
 if __name__ == "__main__":
 

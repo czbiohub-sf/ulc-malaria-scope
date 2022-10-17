@@ -21,6 +21,7 @@ from ulc_mm_package.image_processing.processing_constants import (
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
+    MAX_FRAMES,
 )
 
 
@@ -67,10 +68,10 @@ class ScopeOp(QObject, Machine):
                 "name": "SSAF",
                 "on_enter": [self._start_SSAF],
             },
-            {
-                "name": "fastflow",
-                "on_enter": [self._start_fastflow],
-            },
+            # {
+            #     "name": "fastflow",
+            #     "on_enter": [self._start_fastflow],
+            # },
             {
                 "name": "experiment",
                 "on_enter": [self._start_experiment],
@@ -122,6 +123,8 @@ class ScopeOp(QObject, Machine):
         self.next_state()
 
     def _reset(self):
+        self.mscope.reset()
+
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
@@ -188,14 +191,10 @@ class ScopeOp(QObject, Machine):
     def run_autobrightness(self, img):
         self.img_signal.disconnect(self.run_autobrightness)
 
-        self.b = self.a
-        self.a = perf_counter()
-        print("Autobrightness: {}".format(self.a - self.b))
-
         # # For timing
-        # self.a = perf_counter()
-        # print("AB: {}".format(self.a-self.b))
         # self.b = self.a
+        # self.a = perf_counter()
+        # print("Autobrightness: {}".format(self.a - self.b))
 
         try:
             self.autobrightness_routine.send(img)
@@ -273,7 +272,7 @@ class ScopeOp(QObject, Machine):
     def run_experiment(self, img):
         self.img_signal.disconnect(self.run_experiment)
 
-        if self.count >= 1000:
+        if self.count >= MAX_FRAMES:
             print("Reached frame timeout for experiment")
             self.to_standby()
         else:

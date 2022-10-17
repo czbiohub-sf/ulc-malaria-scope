@@ -67,6 +67,11 @@ class MalariaScope:
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.camera.deactivateCamera()
 
+    def reset(self):
+        print("Resetting hardware")
+        self.led.turnOff()
+        self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
+
     def getComponentStatus(self) -> Dict:
         """Returns a dictionary of component to initialization status.
 
