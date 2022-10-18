@@ -41,7 +41,7 @@ class ScopeOp(QObject, Machine):
     def __init__(self, img_signal):
         super().__init__()
 
-        self.mscope = MalariaScope()
+        self.mscope = None
         self.img_signal = img_signal
 
         self.autobrightness_result = None
@@ -89,11 +89,11 @@ class ScopeOp(QObject, Machine):
         print("Creating timers")
         self.create_timers.emit()
 
+        self.mscope = MalariaScope()
         component_status = self.mscope.getComponentStatus()
         print(component_status)
 
         if all([status == True for status in component_status.values()]):
-            self.mscope.startup()
             self.setup_done.emit()
             print("Successful hardware initialization")
         else:

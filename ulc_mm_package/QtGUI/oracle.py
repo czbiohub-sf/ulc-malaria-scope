@@ -67,7 +67,7 @@ class Oracle(Machine):
                 'on_exit' : [self._end_form]},
             {'name' : 'liveview', 
                 'on_enter' : [self._start_liveview], 
-                'on_exit' : [self._end_liveview, self._open_survey]},
+                'on_exit' : [self._end_liveview]},
             # {'name' : 'survey', 
             #     'on_enter' : [self._start_survey]},
             ]
@@ -85,6 +85,8 @@ class Oracle(Machine):
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.to_form)
         self.scopeop.reset_done.connect(self.rerun)
+
+        self.scopeop.open_survey.connect(self.open_survey)
         self.scopeop.error.connect(self.error_handler)
 
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
@@ -135,6 +137,10 @@ class Oracle(Machine):
         # TODO save experiment metadata here
         # Only move on to next state if data is verified
         self.next_state()
+
+    def open_survey(self, *args):
+        print("Opening survey")
+        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
     def reset(self, *args):
         reset_query = self.display_message(
@@ -220,9 +226,6 @@ class Oracle(Machine):
 
     def _end_liveview(self, *args):
         self.liveview_window.close()
-
-    def _open_survey(self, *args):
-        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
        
 
 if __name__ == "__main__":

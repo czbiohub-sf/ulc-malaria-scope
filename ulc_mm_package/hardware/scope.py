@@ -61,10 +61,6 @@ class MalariaScope:
     def __del__(self):
         self.shutoff()
 
-    def startup(self):
-        print("Resetting syringe")
-        self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMinDutyCycle())
-
     def shutoff(self):
         print("Shutting off hardware")
         self.led.turnOff()
