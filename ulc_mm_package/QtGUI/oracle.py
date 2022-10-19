@@ -163,7 +163,7 @@ class Oracle(Machine):
         
         # Shut off hardware
         self.scopeop.mscope.shutoff()
-
+        
         # Shut off QTimers
         print("ORACLE: Waiting for timer to terminate...")
         while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
