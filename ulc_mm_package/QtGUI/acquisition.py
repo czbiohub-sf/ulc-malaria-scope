@@ -38,14 +38,14 @@ class Acquisition(QObject):
         self.liveview_timer = QTimer()
         self.liveview_timer.timeout.connect(self.send_img)
 
-        print("Created timers")
+        print("ACQUISITION: Created timers")
 
     @pyqtSlot()
     def start_timers(self):
         self.acquisition_timer.start(ACQUISITION_PERIOD)
         self.liveview_timer.start(self.period)
 
-        print("Started timers")
+        print("ACQUISITION: Started timers")
 
     @pyqtSlot()
     def stop_timers(self):
@@ -68,6 +68,8 @@ class Acquisition(QObject):
         self.mscope = mscope
 
     def get_img(self):
+
+        print("got")
 
         # # For timing
         # self.a = perf_counter()

@@ -58,22 +58,33 @@ class Oracle(Machine):
 
         # Configure state machine
         states = [
-            {'name' : 'standby'},
-            {'name' : 'setup', 
+            {
+                'name' : 'standby',
+            },
+            {
+                'name' : 'setup', 
                 'on_enter' : [self._start_setup],
-                'on_exit' : [self._end_setup]},
-            {'name' : 'form', 
+                'on_exit' : [self._end_setup],
+            },
+            {
+                'name' : 'form', 
                 'on_enter' : [self._start_form], 
-                'on_exit' : [self._end_form]},
-            {'name' : 'liveview', 
+                'on_exit' : [self._end_form],
+            },
+            {
+                'name' : 'liveview', 
                 'on_enter' : [self._start_liveview], 
-                'on_exit' : [self._end_liveview]},
-            # {'name' : 'survey', 
-            #     'on_enter' : [self._start_survey]},
-            ]
+                'on_exit' : [self._end_liveview],
+            },
+            {
+                'name' : 'intermission', 
+                'on_enter' : [self._start_intermission],
+                'on_exit' : [self._end_intermission],
+            },
+        ]
         Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
-        self.add_transition(trigger='rerun', source='*', dest='form', before='reset')
+        self.add_transition(trigger='rerun', source='*', dest='form')
 
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
@@ -84,9 +95,9 @@ class Oracle(Machine):
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.to_form)
+        self.scopeop.experiment_done.connect(self.to_intermission)
         self.scopeop.reset_done.connect(self.rerun)
 
-        self.scopeop.open_survey.connect(self.open_survey)
         self.scopeop.error.connect(self.error_handler)
 
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
@@ -138,28 +149,30 @@ class Oracle(Machine):
         # Only move on to next state if data is verified
         self.next_state()
 
-    def open_survey(self, *args):
-        print("Opening survey")
+    def _start_intermission(self, *args):
+        print("ORACLE: Opening survey")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
-    def reset(self, *args):
         reset_query = self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Click "OK" to start a new run.',
+            'Remove flowcell before selecting an option. Click "OK" to start a new run or "Cancel" to shutoff.',
             cancel=True,
             )
         if reset_query == QMessageBox.Cancel:
             self.shutoff()
         elif reset_query == QMessageBox.Ok:
-            self.display_message(
-                QMessageBox.Icon.Information,
-                "Swap flowcells",
-                "Flowcells can now be swapped.",
-            )
-            print("Running new experiment")  
-        # TODO add user instructions to remove flow cell before resetting syringe
+            print("ORACLE: Running new experiment")  
+            self.scopeop.rerun()
+
         # TODO delete current scope data storage
+
+    def _end_intermission(self, *args):
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Hardware reset complete",
+            'New flowcell can now be added. Click "OK" once it is in place',
+            )
 
     def shutoff(self, *args):
 
@@ -178,10 +191,10 @@ class Oracle(Machine):
         self.scopeop.mscope.shutoff()
 
         # Shut off QTimers
-        print("Waiting for timer to terminate...")
+        print("ORACLE: Waiting for timer to terminate...")
         while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
             pass
-        print("Successfully terminated timer.")
+        print("ORACLE: Successfully terminated timer.")
     
         # Shut off acquisition thread
         self.acquisition_thread.quit()
@@ -191,13 +204,13 @@ class Oracle(Machine):
         self.scopeop_thread.quit()
         self.scopeop_thread.wait()
         
-        print("Exiting program")
+        print("ORACLE: Exiting program")
         quit()   
 
     def _start_setup(self, *args):
         self.display_message(
             QMessageBox.Icon.Information,
-            "Hardware setup starting",
+            "Initializing hardware",
             'If there is a flow cell in the scope, remove it before clicking "OK".',
         )
 
@@ -210,7 +223,7 @@ class Oracle(Machine):
     def _end_setup(self, *args):
         self.display_message(
             QMessageBox.Icon.Information,
-            "Hardware setup complete",
+            "Hardware initialization complete",
             'Flow cell can now be inserted. Click "OK" once it is in place.',
         )
 
