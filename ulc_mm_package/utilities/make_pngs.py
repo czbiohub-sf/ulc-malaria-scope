@@ -19,7 +19,7 @@ def main(path: str=typer.Option("", help="Path to the zarr .zip file."), num_img
     except:
         pass
 
-    num_imgs = num_imgs if num_imgs != -1 else len(range(zf))
+    num_imgs = num_imgs if num_imgs != -1 else len(zf)
     for i in tqdm(range(num_imgs)):
         img = zf[i][:]
         cv2.imwrite(f"{output_dir}/{i}.png", img)
