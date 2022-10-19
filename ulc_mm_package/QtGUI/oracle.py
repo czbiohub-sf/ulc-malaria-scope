@@ -156,7 +156,7 @@ class Oracle(Machine):
         reset_query = self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove flowcell before selecting an option. Click "OK" to start a new run or "Cancel" to shutoff.',
+            'Remove flowcell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
             cancel=True,
             )
         if reset_query == QMessageBox.Cancel:
