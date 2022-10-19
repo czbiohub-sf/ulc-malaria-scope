@@ -71,10 +71,10 @@ class ScopeOp(QObject, Machine):
                 "name" : "SSAF",
                 "on_enter" : [self._start_SSAF],
             },
-            # {
-            #     "name" : "fastflow",
-            #     "on_enter" : [self._start_fastflow],
-            # },
+            {
+                "name" : "fastflow",
+                "on_enter" : [self._start_fastflow],
+            },
             {
                 "name" : "experiment",
                 "on_enter" : [self._start_experiment],
@@ -126,7 +126,9 @@ class ScopeOp(QObject, Machine):
         self.next_state()
 
     def reset(self):
-        self.mscope.reset()
+        # self.mscope.reset()
+        print("SCOPEOP: Resetting pneumatic module")
+        self.mscope.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
 
         self.autobrightness_result = None
         self.cellfinder_result = None
@@ -187,12 +189,16 @@ class ScopeOp(QObject, Machine):
     def _end_experiment(self):
         print("SCOPEOP: Ending experiment")
         self.stop_timers.emit()
+        
+        print("SCOPEOP: Turning off LED")
+        self.mscope.led.turnOff()
+        
         self.experiment_done.emit()
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
         self.img_signal.disconnect(self.run_autobrightness)
-
+        
         # # For timing
         # self.b = self.a
         # self.a = perf_counter()

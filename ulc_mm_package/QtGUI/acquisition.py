@@ -69,7 +69,7 @@ class Acquisition(QObject):
 
     def get_img(self):
 
-        print("got")
+        # print("got")
 
         # # For timing
         # self.a = perf_counter()
