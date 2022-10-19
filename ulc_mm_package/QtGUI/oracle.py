@@ -121,7 +121,7 @@ class Oracle(Machine):
             exit_after=True,
             )
 
-    def display_message(self, icon, title, text, cancel=False, exit_after=False):
+    def display_message(self, icon : QMessageBox.Icon, title, text, cancel=False, exit_after=False):
         msgBox = QMessageBox()
         msgBox.setWindowIcon(QIcon(ICON_PATH))
         msgBox.setIcon(icon)
@@ -149,33 +149,7 @@ class Oracle(Machine):
         # Only move on to next state if data is verified
         self.next_state()
 
-    def _start_intermission(self, *args):
-        print("ORACLE: Opening survey")
-        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
-
-        reset_query = self.display_message(
-            QMessageBox.Icon.Information,
-            "Run complete",
-            'Remove flowcell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
-            cancel=True,
-            )
-        if reset_query == QMessageBox.Cancel:
-            self.shutoff()
-        elif reset_query == QMessageBox.Ok:
-            print("ORACLE: Running new experiment")  
-            self.scopeop.rerun()
-
-        # TODO delete current scope data storage
-
-    def _end_intermission(self, *args):
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Hardware reset complete",
-            'New flowcell can now be added. Click "OK" once it is in place',
-            )
-
-    def shutoff(self, *args):
-
+    def shutoff(self):
         if self.state == 'liveview':
             # TODO Update data_storage
             # closing_file_future = self.scopeop.mscope.data_storage.close()
@@ -207,7 +181,7 @@ class Oracle(Machine):
         print("ORACLE: Exiting program")
         quit()   
 
-    def _start_setup(self, *args):
+    def _start_setup(self):
         self.display_message(
             QMessageBox.Icon.Information,
             "Initializing hardware",
@@ -220,25 +194,50 @@ class Oracle(Machine):
         self.scopeop.setup()
         self.acquisition.get_mscope(self.scopeop.mscope)
 
-    def _end_setup(self, *args):
+    def _end_setup(self):
         self.display_message(
             QMessageBox.Icon.Information,
             "Hardware initialization complete",
             'Flow cell can now be inserted. Click "OK" once it is in place.',
         )
 
-    def _start_form(self, *args):
+    def _start_form(self):
         self.form_window.show()
 
-    def _end_form(self, *args):
+    def _end_form(self):
         self.form_window.close()
 
-    def _start_liveview(self, *args):
+    def _start_liveview(self):
         self.liveview_window.show()
         self.scopeop.start()
 
-    def _end_liveview(self, *args):
+    def _end_liveview(self):
         self.liveview_window.close()
+
+    def _start_intermission(self):
+        print("ORACLE: Opening survey")
+        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
+
+        reset_query = self.display_message(
+            QMessageBox.Icon.Information,
+            "Run complete",
+            'Remove flowcell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
+            cancel=True,
+            )
+        if reset_query == QMessageBox.Cancel:
+            self.shutoff()
+        elif reset_query == QMessageBox.Ok:
+            print("ORACLE: Running new experiment")  
+            self.scopeop.rerun()
+
+        # TODO delete current scope data storage
+
+    def _end_intermission(self):
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Hardware reset complete",
+            'New flowcell can now be added. Click "OK" once it is in place',
+            )
        
 
 if __name__ == "__main__":
