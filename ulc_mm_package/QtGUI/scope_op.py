@@ -78,7 +78,7 @@ class ScopeOp(QObject, Machine):
             {
                 "name": "experiment",
                 "on_enter": [self._start_experiment],
-                "on_exit": [self._stop_experiment],
+                "on_exit": [self._end_experiment],
             },
             {
                 "name": "intermission",
@@ -92,7 +92,7 @@ class ScopeOp(QObject, Machine):
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
         self.add_transition(
-            trigger="stop", source="*", dest="standby", before="_stop_experiment"
+            trigger="stop", source="*", dest="standby", before="_end_experiment"
         )
 
     def setup(self):
@@ -185,7 +185,7 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_experiment)
 
-    def _stop_experiment(self):
+    def _end_experiment(self):
         print("SCOPEOP: Ending experiment")
         self.stop_timers.emit()
 
