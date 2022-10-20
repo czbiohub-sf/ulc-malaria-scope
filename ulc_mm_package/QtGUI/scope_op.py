@@ -78,11 +78,10 @@ class ScopeOp(QObject, Machine):
             {
                 "name": "experiment",
                 "on_enter": [self._start_experiment],
-                "on_exit": [self._end_experiment],
             },
             {
                 "name": "intermission",
-                "on_enter": [self._start_intermission],
+                "on_enter": [self._end_experiment, self._start_intermission],
             },
         ]
 
