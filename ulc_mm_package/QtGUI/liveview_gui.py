@@ -33,7 +33,7 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img):
-        self.liveview_img.setImage(img, levels=(0,255))
+        self.liveview_img.setImage(img, levels=(0, 255))
 
     def _load_ui(self):
         self.setWindowTitle("Malaria scope")
