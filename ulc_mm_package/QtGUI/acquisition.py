@@ -76,7 +76,6 @@ class Acquisition(QObject):
 
         try:
             self.img = next(self.mscope.camera.yieldImages())
-            print("sent")
             self.update_scopeop.emit(self.img)
             self.count += 1
         except Exception as e:
