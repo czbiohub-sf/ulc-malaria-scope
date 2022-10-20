@@ -45,6 +45,7 @@ setup(
         "typer==0.4.1",
         "tqdm==4.63.0",
         "transitions==0.8.11",
+        "pyqtgraph==0.12.4",
     ],
     classifiers=["CZ Biohub :: Bioengineering"],
 )
