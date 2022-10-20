@@ -1,4 +1,4 @@
-from time import perf_counter
+from time import perf_counter, sleep
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 from ulc_mm_package.image_processing.processing_constants import (
@@ -6,6 +6,8 @@ from ulc_mm_package.image_processing.processing_constants import (
     PER_IMAGE_METADATA_KEYS,
     TARGET_FLOWRATE,
 )
+
+from ulc_mm_package.image_processing.cell_finder import isDensitySufficient
 
 import cv2
 
@@ -192,6 +194,10 @@ def main_acquisition_loop(mscope: MalariaScope):
 
         prev_results = count_parasitemia(mscope, img)
 
+        density_start_time = perf_counter()
+        _, count = isDensitySufficient(img)
+        print(f"Cell density : {count}, {perf_counter() - density_start_time}")
+
         # Adjust the flow
         try:
             flow_control.send((img, timestamp))
@@ -216,5 +222,8 @@ def main_acquisition_loop(mscope: MalariaScope):
 
 
 if __name__ == "__main__":
-    mscope = MalariaScope()
-    initial_cell_check(mscope)
+    try:
+        mscope = MalariaScope()
+        initial_cell_check(mscope)
+    finally:
+        mscope.shutoff()

@@ -58,9 +58,6 @@ class MalariaScope:
         self._init_data_storage()
         self._init_TPU()
 
-    def __del__(self):
-        self.shutoff()
-
     def shutoff(self):
         print("MSCOPE: Shutting off hardware")
         self.led.turnOff()
