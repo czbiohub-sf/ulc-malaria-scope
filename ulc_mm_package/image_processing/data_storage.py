@@ -7,14 +7,10 @@ import numpy as np
 import cv2
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
-
+from ulc_mm_package.image_processing.processing_constants import DEFAULT_SSD
 
 class DataStorageError(Exception):
     pass
-
-
-DEFAULT_SSD = "/media/pi/"
-
 
 class DataStorage:
     def __init__(self):
@@ -103,7 +99,7 @@ class DataStorage:
     def writeData(self, image: np.ndarray, metadata: Dict):
         """Write a new image and its corresponding metadata.
 
-        Paramaeters
+        Parameters
         -----------
         image: np.ndarray
             Image to be saved to the Zarr store

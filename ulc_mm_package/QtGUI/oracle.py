@@ -147,8 +147,14 @@ class Oracle(Machine):
         return msgBox.exec()
 
     def save_form(self):
-        # TODO save experiment metadata here
-        # Only move on to next state if data is verified
+        # DATA-TODO save experiment metadata here
+        # -> get keys from processing_constants.py
+        # self.scopeop.mscope.data_storage.createNewExperiment(PARAMS)
+
+        # DATA-TODO verify if user input satisfies required format
+        # -> if data fails verification, prompt user for correction using "display_message" (defined above)
+        # -> if data passes verification, call "self.next_state" to open liveview
+
         self.next_state()
 
     def shutoff(self):

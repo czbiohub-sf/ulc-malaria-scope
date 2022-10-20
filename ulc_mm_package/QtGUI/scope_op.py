@@ -191,7 +191,8 @@ class ScopeOp(QObject, Machine):
         print("SCOPEOP: Turning off LED")
         self.mscope.led.turnOff()
 
-        # TODO close data_storage
+        # DATA-TODO close data_storage
+        # self.mscope.data_storage.close()
 
     def _start_intermission(self):
         self.experiment_done.emit()
@@ -291,8 +292,10 @@ class ScopeOp(QObject, Machine):
             # self.a = perf_counter()
             # print("Experiment: {}".format(self.a-self.b))
 
+            # DATA-TODO get metadata from hardware here
             # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
-            # TODO get metadata from hardware here
+            # -> get keys from processing_constants.py
+            # -> time performance
 
             prev_res = count_parasitemia(self.mscope, img)
 
