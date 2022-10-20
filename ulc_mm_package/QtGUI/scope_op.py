@@ -57,39 +57,43 @@ class ScopeOp(QObject, Machine):
 
         states = [
             {
-                "name" : "standby",
+                "name": "standby",
             },
             {
-                "name" : "autobrightness",
-                "on_enter" : [self._start_autobrightness],
+                "name": "autobrightness",
+                "on_enter": [self._start_autobrightness],
             },
             {
-                "name" : "cellfinder",
-                "on_enter" : [self._start_cellfinder],
+                "name": "cellfinder",
+                "on_enter": [self._start_cellfinder],
             },
             {
-                "name" : "SSAF",
-                "on_enter" : [self._start_SSAF],
+                "name": "SSAF",
+                "on_enter": [self._start_SSAF],
             },
             {
-                "name" : "fastflow",
-                "on_enter" : [self._start_fastflow],
+                "name": "fastflow",
+                "on_enter": [self._start_fastflow],
             },
             {
-                "name" : "experiment",
-                "on_enter" : [self._start_experiment],
-                "on_exit" : [self._stop_experiment],
+                "name": "experiment",
+                "on_enter": [self._start_experiment],
+                "on_exit": [self._stop_experiment],
             },
             {
-                "name" : "intermission",
-                "on_enter" : [self._start_intermission],
-            }
+                "name": "intermission",
+                "on_enter": [self._start_intermission],
+            },
         ]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
-        self.add_transition(trigger="rerun", source="intermission", dest="standby", before="reset")
-        self.add_transition(trigger="stop", source="*", dest="standby", before="_stop_experiment")
+        self.add_transition(
+            trigger="rerun", source="intermission", dest="standby", before="reset"
+        )
+        self.add_transition(
+            trigger="stop", source="*", dest="standby", before="_stop_experiment"
+        )
 
     def setup(self):
         print("SCOPEOP: Creating timers")
@@ -121,7 +125,9 @@ class ScopeOp(QObject, Machine):
 
     def reset(self):
         print("SCOPEOP: Resetting pneumatic module")
-        self.mscope.pneumatic_module.setDutyCycle(self.mscope.pneumatic_module.getMaxDutyCycle())
+        self.mscope.pneumatic_module.setDutyCycle(
+            self.mscope.pneumatic_module.getMaxDutyCycle()
+        )
 
         self.autobrightness_result = None
         self.cellfinder_result = None
@@ -182,7 +188,7 @@ class ScopeOp(QObject, Machine):
     def _stop_experiment(self):
         print("SCOPEOP: Ending experiment")
         self.stop_timers.emit()
-        
+
         print("SCOPEOP: Turning off LED")
         self.mscope.led.turnOff()
 
@@ -194,7 +200,7 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
         self.img_signal.disconnect(self.run_autobrightness)
-        
+
         # # For timing
         # self.b = self.a
         # self.a = perf_counter()
