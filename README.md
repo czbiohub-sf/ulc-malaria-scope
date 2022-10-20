@@ -28,13 +28,13 @@ In the root folder, run <code>pip install -e .</code> to install all pip depende
 
 ### Running the GUI
 
-Navigate to ulc_mm_package/QtQUI and run <code>python3 oracle.py</code>.
+Navigate to ulc_mm_package/QtGUI and run <code>python3 oracle.py</code>.
 
 Note: The original GUI lived in <code>liveviewer.py</code>, which is now obsolete. Use the above command instead.
 
 ### Debugging using developer mode
 
-Navigate to ulc_mm_package/QtQUI and run <code>python3 dev_run.py</code>. This opens a GUI with manual hardware control for debugging purposes.
+Navigate to ulc_mm_package/QtGUI and run <code>python3 dev_run.py</code>. This opens a GUI with manual hardware control for debugging purposes.
 
 ### Using simulation mode
 
