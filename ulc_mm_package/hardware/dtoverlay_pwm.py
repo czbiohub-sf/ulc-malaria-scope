@@ -1,4 +1,5 @@
 import enum
+import subprocess
 
 
 class PWM_CHANNEL(enum.Enum):
@@ -33,16 +34,15 @@ class dtoverlay_PWM:
             g.write(write_content)
 
     def _start(self):
-        """ cmd to start is
+        cmd = """
         echo 0 > export;
         echo 1 > export;
         echo 1 > pwm0/enable;
         echo 1 > pwm1/enable;
         """
-        self._atomic_write_to_file("/sys/class/pwm/pwmchip0/export", "0")
-        self._atomic_write_to_file("/sys/class/pwm/pwmchip0/export", "1")
-        self._atomic_write_to_file("/sys/class/pwm/pwmchip0/pwm0/enable", "1")
-        self._atomic_write_to_file("/sys/class/pwm/pwmchip0/pwm1/enable", "1")
+        subprocess.run(
+            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+        )
 
     def setFreq(self, freq: int):
         """Sets the frequency of the PWM.
@@ -74,13 +74,16 @@ class dtoverlay_PWM:
         )
 
     def exit(self):
-        """ cmd is
+        cmd = """
+        echo 0 > pwm0/enable;
         echo 0 > pwm0/enable;
         echo 0 > pwm1/enable;
+        echo 0 > pwm1/enable;
         """
-        self._atomic_write_to_file(f"/sys/class/pwm/pwmchip0/pwm0/enable", "0")
-        self._atomic_write_to_file(f"/sys/class/pwm/pwmchip0/pwm1/enable", "0")
-        dtoverlay_PWM._started = False
+        subprocess.run(
+            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+        )
+        dtoverlay_PWM._started = True
 
 
 if __name__ == "__main__":
