@@ -65,7 +65,7 @@ class MalariaScope:
         print("MSCOPE: Shutting off hardware")
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
-        #self.camera.deactivateCamera()
+        self.camera.deactivateCamera()
 
     # def reset(self):
     #     print("MSCOPE: Resetting hardware")

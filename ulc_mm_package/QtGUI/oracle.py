@@ -82,9 +82,10 @@ class Oracle(Machine):
                 'on_exit' : [self._end_intermission],
             },
         ]
+        
         Machine.__init__(self, states=states, queued=True, initial='standby')
         self.add_ordered_transitions()
-        self.add_transition(trigger='rerun', source='*', dest='form')
+        self.add_transition(trigger='rerun', source='intermission', dest='form')
 
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
@@ -150,25 +151,18 @@ class Oracle(Machine):
         self.next_state()
 
     def shutoff(self):
-        if self.state == 'liveview':
-            # TODO Update data_storage
-            # closing_file_future = self.scopeop.mscope.data_storage.close()
+        # Stop scopeops
+        self.scopeop.stop()
 
-            # print("Waiting for the file to finish closing...")
-            # while not self.scopeop.mscope.data_storage == None:
-            #     sleep(1)
-            # print("Successfully closed file.")
-
-            pass
-        
-        # Shut off hardware
-        self.scopeop.mscope.shutoff()
-        
-        # Shut off QTimers
+        # Wait for QTimers to shutoff
         print("ORACLE: Waiting for timer to terminate...")
         while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
             pass
         print("ORACLE: Successfully terminated timer.")
+
+        # Shut off hardware
+        self.scopeop.mscope.shutoff()
+        # TODO does this shutoff before scopeop quits?
     
         # Shut off acquisition thread
         self.acquisition_thread.quit()

@@ -78,16 +78,18 @@ class ScopeOp(QObject, Machine):
             {
                 "name" : "experiment",
                 "on_enter" : [self._start_experiment],
-                "on_exit" : [self._end_experiment],
+                "on_exit" : [self._stop_experiment],
             },
             {
                 "name" : "intermission",
+                "on_enter" : [self._start_intermission],
             }
         ]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
-        self.add_transition(trigger="rerun", source="*", dest="standby", before="reset")
+        self.add_transition(trigger="rerun", source="intermission", dest="standby", before="reset")
+        self.add_transition(trigger="stop", source="*", dest="standby", before="_stop_experiment")
 
     def setup(self):
         print("SCOPEOP: Creating timers")
@@ -115,18 +117,9 @@ class ScopeOp(QObject, Machine):
     def start(self):
         self.start_timers.emit()
 
-        # if not self.state == "standby":
-        #     self.error.emit(
-        #         "Invalid setup state",
-        #         "Scopeop can only be started from state 'standby', but is currently in state '{}'.".format(
-        #             self.state
-        #         ),
-        #     )
-
         self.next_state()
 
     def reset(self):
-        # self.mscope.reset()
         print("SCOPEOP: Resetting pneumatic module")
         self.mscope.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
 
@@ -186,13 +179,16 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_experiment)
 
-    def _end_experiment(self):
+    def _stop_experiment(self):
         print("SCOPEOP: Ending experiment")
         self.stop_timers.emit()
         
         print("SCOPEOP: Turning off LED")
         self.mscope.led.turnOff()
-        
+
+        # TODO close data_storage
+
+    def _start_intermission(self):
         self.experiment_done.emit()
 
     @pyqtSlot(np.ndarray)
