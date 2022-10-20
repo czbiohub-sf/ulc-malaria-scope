@@ -159,6 +159,12 @@ class Oracle(Machine):
         while self.acquisition.acquisition_timer.isActive() or self.acquisition.liveview_timer.isActive():
             pass
         print("ORACLE: Successfully terminated timer.")
+        
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Shutting off",
+            'Remove flow cell before clicking "OK".',
+        )
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
