@@ -65,7 +65,6 @@ class Oracle(Machine):
             {
                 "name": "setup",
                 "on_enter": [self._start_setup],
-                "on_exit": [self._end_setup],
             },
             {
                 "name": "form",
@@ -80,7 +79,6 @@ class Oracle(Machine):
             {
                 "name": "intermission",
                 "on_enter": [self._start_intermission],
-                "on_exit": [self._end_intermission],
             },
         ]
 
@@ -96,8 +94,8 @@ class Oracle(Machine):
         self.liveview_window.exit_btn.clicked.connect(self.shutoff)
 
         # Connect scopeop signals and slots
-        self.scopeop.setup_done.connect(self.to_form)
-        self.scopeop.experiment_done.connect(self.to_intermission)
+        self.scopeop.setup_done.connect(self.next_state)
+        self.scopeop.experiment_done.connect(self.next_state)
         self.scopeop.reset_done.connect(self.rerun)
 
         self.scopeop.error.connect(self.error_handler)
@@ -170,11 +168,12 @@ class Oracle(Machine):
             pass
         print("ORACLE: Successfully terminated timer.")
 
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Shutting off",
-            'Remove flow cell now. Click "OK" once it is removed.',
-        )
+        if self.state == "liveview":
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Shutting off",
+                'Remove flow cell now. Click "OK" once it is removed.',
+            )
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
@@ -204,13 +203,6 @@ class Oracle(Machine):
         self.scopeop.setup()
         self.acquisition.get_mscope(self.scopeop.mscope)
 
-    def _end_setup(self):
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Hardware initialization complete",
-            'Insert flow cell now. Click "OK" once it is in place.',
-        )
-
     def _start_form(self):
         self.form_window.show()
 
@@ -218,15 +210,22 @@ class Oracle(Machine):
         self.form_window.close()
 
     def _start_liveview(self):
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Starting run",
+            'Insert flow cell now. Click "OK" once it is in place.',
+        )
+
         self.liveview_window.show()
         self.scopeop.start()
 
     def _end_liveview(self):
         self.liveview_window.close()
-
-    def _start_intermission(self):
+        
         print("ORACLE: Opening survey")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
+
+    def _start_intermission(self):
 
         reset_query = self.display_message(
             QMessageBox.Icon.Information,
@@ -239,15 +238,6 @@ class Oracle(Machine):
         elif reset_query == QMessageBox.Ok:
             print("ORACLE: Running new experiment")
             self.scopeop.rerun()
-
-        # TODO delete current scope data storage
-
-    def _end_intermission(self):
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Hardware reset complete",
-            'Insert new flow cell now. Click "OK" once it is in place.',
-        )
 
 
 if __name__ == "__main__":
