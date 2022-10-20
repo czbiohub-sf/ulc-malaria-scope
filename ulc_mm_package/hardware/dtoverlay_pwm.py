@@ -1,5 +1,5 @@
-import subprocess
 import enum
+import subprocess
 
 
 class PWM_CHANNEL(enum.Enum):
@@ -20,17 +20,25 @@ class InvalidDutyCyclePerc(dtoverlay_PWM_Exception):
 
 
 class dtoverlay_PWM:
+    _started = False
+
     def __init__(self, channel: PWM_CHANNEL):
         self.channel = channel.value
         self.period_ns = 0
-        self._start()
+        if not dtoverlay_PWM._started:
+            self._start()
+            dtoverlay_PWM._started = True
+
+    def _atomic_write_to_file(self, file, write_content):
+        with open(file, "w") as g:
+            g.write(write_content)
 
     def _start(self):
         cmd = """
-            echo 0 > export;
-            echo 1 > export;
-            echo 1 > pwm0/enable;
-            echo 1 > pwm1/enable;
+        echo 0 > export;
+        echo 1 > export;
+        echo 1 > pwm0/enable;
+        echo 1 > pwm1/enable;
         """
         subprocess.run(
             cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
@@ -42,8 +50,9 @@ class dtoverlay_PWM:
         Internally, converts the frequency to time (in ns) and sets the period.
         """
         self.period_ns = int((1 / freq) * 1e9)
-        with open(f"/sys/class/pwm/pwmchip0/pwm{self.channel}/period", "w") as g:
-            g.write(str(self.period_ns))
+        self._atomic_write_to_file(
+            f"/sys/class/pwm/pwmchip0/pwm{self.channel}/period", str(self.period_ns)
+        )
 
     def setDutyCycle(self, duty_cycle_perc: float):
         """Sets the dutycycle (in ns) given an '% on time'.
@@ -60,17 +69,21 @@ class dtoverlay_PWM:
             )
 
         duty_cycle_val = int(duty_cycle_perc * self.period_ns)
-        with open(f"/sys/class/pwm/pwmchip0/pwm{self.channel}/duty_cycle", "w") as g:
-            g.write(str(duty_cycle_val))
+        self._atomic_write_to_file(
+            f"/sys/class/pwm/pwmchip0/pwm{self.channel}/duty_cycle", str(duty_cycle_val)
+        )
 
     def exit(self):
         cmd = """
         echo 0 > pwm0/enable;
+        echo 0 > pwm0/enable;
+        echo 0 > pwm1/enable;
         echo 0 > pwm1/enable;
         """
         subprocess.run(
             cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
         )
+        dtoverlay_PWM._started = True
 
 
 if __name__ == "__main__":
