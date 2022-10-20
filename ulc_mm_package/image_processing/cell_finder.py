@@ -74,6 +74,11 @@ def count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
     )  # First bbox is the background, so we exclude and return the reset
 
 
+def isDensitySufficient(img, downsample_factor: int = 4) -> bool:
+    """Check whether the cell count is sufficently high"""
+    return count_cells(img, downsample_factor) >= MIN_CELL_COUNT
+
+
 class NoCellsFound(Exception):
     pass
 
@@ -93,13 +98,13 @@ class CellFinder:
         """Check for cells for the given image, store the result + motor position the image was taken at."""
 
         self.motor_pos.append(motor_pos)
-        self.confidences.append(self.find_cells_cross_corr(img))
+        self.confidences.append(count_cells(img))
 
     def get_cells_found_position(self):
         """Check if the cross-correlation value exceeds the threshold for cell detection."""
 
         max_val = np.max(self.confidences)
-        if max_val >= CELLS_FOUND_THRESHOLD:
+        if max_val >= MIN_CELL_COUNT:
             return self.motor_pos[np.argmax(self.confidences)]
         else:
             raise NoCellsFound(
