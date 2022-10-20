@@ -304,6 +304,8 @@ class ScopeOp(QObject, Machine):
                 # Periodically adjust focus using single shot autofocus
                 self.PSSAF_routine.send(img)
                 # TODO add density check here
+                # DATA-TODO get current flowrate from flowcontrol_routine
+                # flowrate = self.flowcontrol_routine.send(img)
                 self.flowcontrol_routine.send(img)
             except CantReachTargetFlowrate:
                 self.error.emit(
