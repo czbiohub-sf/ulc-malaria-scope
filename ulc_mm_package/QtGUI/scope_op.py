@@ -121,7 +121,7 @@ class ScopeOp(QObject, Machine):
 
     def reset(self):
         print("SCOPEOP: Resetting pneumatic module")
-        self.mscope.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
+        self.mscope.pneumatic_module.setDutyCycle(self.mscope.pneumatic_module.getMaxDutyCycle())
 
         self.autobrightness_result = None
         self.cellfinder_result = None

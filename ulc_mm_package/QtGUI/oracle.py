@@ -163,7 +163,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Shutting off",
-            'Remove flow cell before clicking "OK".',
+            'Remove flow cell now. Click "OK" once it is removed.',
         )
 
         # Shut off hardware
@@ -185,7 +185,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Initializing hardware",
-            'If there is a flow cell in the scope, remove it before clicking "OK".',
+            'If there is a flow cell in the scope, remove it now. Click "OK" once it is removed.',
         )
 
         self.scopeop_thread.start()
@@ -198,7 +198,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Hardware initialization complete",
-            'Flow cell can now be inserted. Click "OK" once it is in place.',
+            'Insert flow cell now. Click "OK" once it is in place.',
         )
 
     def _start_form(self):
@@ -221,7 +221,7 @@ class Oracle(Machine):
         reset_query = self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove flowcell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
+            'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
             cancel=True,
             )
         if reset_query == QMessageBox.Cancel:
@@ -236,7 +236,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Hardware reset complete",
-            'New flowcell can now be added. Click "OK" once it is in place',
+            'Insert new flow cell now. Click "OK" once it is in place.',
             )
        
 
