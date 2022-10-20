@@ -1,3 +1,6 @@
+# switch to official black linter
+# https://black.readthedocs.io/en/stable/integrations/github_actions.html
+
 name: Lint
 
 on: [push, pull_request]
@@ -9,5 +12,5 @@ jobs:
       - uses: actions/checkout@v2
       - uses: psf/black@stable
         with:
-          options: "--check --verbose"
+          options: "--check"
           src: "./ulc_mm_package"
