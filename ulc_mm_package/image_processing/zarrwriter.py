@@ -6,12 +6,10 @@ Library Documentation:
     
 """
 
-from os import listdir, path
-from time import perf_counter
 import functools
 import threading
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
-import cv2
+from time import perf_counter
 import zarr
 
 
@@ -56,8 +54,12 @@ class ZarrWriter:
         self.arr_counter = 0
         self.compressor = None
         self.writable = False
-        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.prev_write_time = 0
         self.futures = []
+        self.executor = ThreadPoolExecutor(max_workers=1)
+
+        self.fps = 30
+        self.dt = 1 / self.fps
 
     def createNewFile(self, filename: str, metadata={}, overwrite: bool = False):
         """Create a new zarr file.
@@ -92,11 +94,17 @@ class ZarrWriter:
         metadata : dict
             A dictionary of keys to values to be associated with the given data.
         """
+
+        # Rate-limit writing to disk to `self.fps``
+        if perf_counter() - self.prev_write_time < self.dt:
+            return
+
         try:
             ds = self.group.array(
                 f"{self.arr_counter}", data=data, compressor=self.compressor
             )
             self.arr_counter += 1
+            self.prev_write_time = perf_counter()
             return self.arr_counter
         except Exception:
             raise AttemptingWriteWithoutFile()
@@ -116,6 +124,9 @@ class ZarrWriter:
     def threadedCloseFile(self):
         """Close the file in a separate thread (and locks the ability to write to the file).
 
+        This threaded close was written with UI.py in mind, so that the file can be closed while 
+        keeping the rest of the GUI responsive.
+        
         Returns
         -------
         future: An object that can be polled to check if closing the file has completed
@@ -126,21 +137,3 @@ class ZarrWriter:
         # If the user did not manually close the storage, close it
         if self.store != None:
             self.store.close()
-
-
-if __name__ == "__main__":
-    from tqdm import tqdm
-
-    writer = ZarrWriter()
-    writer.createNewFile("experiment1")
-    dir = "../raw_images_nofocus/"
-    start = perf_counter()
-    for img in tqdm(listdir(dir)):
-        if "tif" in img:
-            img = path.join(dir, img)
-            arr = cv2.imread(img, 0)
-            writer.writeSingleArray(arr)
-    runtime = perf_counter() - start
-    print(f"Num images: {len(listdir(dir))} Runtime: {runtime}")
-
-    writer.closeFile()

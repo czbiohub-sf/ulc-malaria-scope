@@ -10,15 +10,21 @@ INSIDE_BBOX_FLAG = 0
 NUM_IMAGE_PAIRS = 12
 WINDOW_SIZE = 12
 TOL_PERC = 0.1
+FRE_INCOMPLETE = -99
 
 # ================ Flow rate constants ================ #
 CORRELATION_THRESH = 0.5
 
-# TODO: Determine an actual value for this.
 # You'd work backwards here...how many images do you want of the same cells?
 # Let's say 2 frames/fov of cells. At 33ms/frame, we want each cell to pass
 # through IMG_HEIGHT pixels in 66ms. So IMG_HEIGHT / 66s * 1000ms / 1s = 15.15 heights/second
-TARGET_FLOWRATE = 15  # In units of IMG_HEIGHT pixels/second.
+DESIRED_FRAMES_PER_CELL = 2
+MS_PER_FRAME = 33
+TARGET_FLOWRATE = 1000 / (DESIRED_FRAMES_PER_CELL * MS_PER_FRAME)
+
+TARGET_FLOWRATE_SLOW = 3.79  # 8 frames per cell
+TARGET_FLOWRATE_MED = 7.58  # 4 frames per cell
+TARGET_FLOWRATE_FAST = 15.15  # 2 frames per cell
 
 # ================ Data storage constants ================ #
 DEFAULT_SSD = "/media/pi/"
