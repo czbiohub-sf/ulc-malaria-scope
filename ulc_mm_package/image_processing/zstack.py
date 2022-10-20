@@ -7,15 +7,18 @@ from time import sleep
 from ulc_mm_package.image_processing.focus_metrics import *
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction
 
-def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int=1, save_loc=None):
+
+def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=None):
 
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        save_dir = os.path.join(save_loc, timestamp + '-global_zstack/')
+        save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")
         try:
             os.mkdir(save_dir)
         except Exception as e:
-            print(f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack.")
+            print(
+                f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack."
+            )
             return
 
     # Re-home the motor to the limit switch
@@ -35,17 +38,26 @@ def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int=1, save_loc=None
         if step_counter > max_steps:
             break
 
-    best_focus_position = np.argmax(focus_metrics)*steps_per_image
+    best_focus_position = np.argmax(focus_metrics) * steps_per_image
     return best_focus_position, focus_metrics
 
-def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps_per_fine: int=1, save_loc=None):
+
+def takeZStackCoroutine(
+    img,
+    motor: DRV8825Nema,
+    steps_per_coarse: int = 10,
+    steps_per_fine: int = 1,
+    save_loc=None,
+):
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        save_dir = os.path.join(save_loc, timestamp + '-global_zstack/')
+        save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")
         try:
             os.mkdir(save_dir)
         except Exception as e:
-            print(f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack.")
+            print(
+                f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack."
+            )
             return
 
     # Re-home the motor to the limit switch
@@ -63,16 +75,16 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
         if save_loc != None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         step_counter += steps_per_coarse
-    
+
     # Do a 1um sweep closer to where the true focus is
     focus_metrics_fine = []
     step_counter = 0
-    best_focus_position = np.argmax(focus_metrics)*steps_per_coarse
+    best_focus_position = np.argmax(focus_metrics) * steps_per_coarse
     start = best_focus_position - steps_per_coarse
     end = best_focus_position + steps_per_coarse
     start = start if start >= 0 else 0
     end = end if end <= motor.max_pos else motor.max_pos
-    
+
     motor.move_abs(start)
     step_counter = start
     while step_counter < end:
@@ -82,10 +94,18 @@ def takeZStackCoroutine(img, motor: DRV8825Nema, steps_per_coarse: int=10, steps
         if save_loc != None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         step_counter += steps_per_fine
-    best_focus_position = start + np.argmax(focus_metrics_fine)*steps_per_fine
+    best_focus_position = start + np.argmax(focus_metrics_fine) * steps_per_fine
     motor.move_abs(best_focus_position)
 
-def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int=20, steps_per_image: int=1, save_loc=None):
+
+def symmetricZStack(
+    camera,
+    motor: DRV8825Nema,
+    start_point: int,
+    num_steps: int = 20,
+    steps_per_image: int = 1,
+    save_loc=None,
+):
     """Take a symmetric z-stack about a given motor position.
 
     Parameters
@@ -110,11 +130,13 @@ def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int
 
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        save_dir = os.path.join(save_loc, timestamp + '-local_zstack/')
+        save_dir = os.path.join(save_loc, timestamp + "-local_zstack/")
         try:
             os.mkdir(save_dir)
         except Exception as e:
-            print(f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack.")
+            print(
+                f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack."
+            )
             return
     min_pos = int(start_point - num_steps)
     max_pos = int(start_point + num_steps)
@@ -132,25 +154,35 @@ def symmetricZStack(camera, motor: DRV8825Nema, start_point: int, num_steps: int
         step_counter += steps_per_image
         if step_counter > max_pos:
             break
-    best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
+    best_focus_position = int(min_pos + np.argmax(focus_metrics) * steps_per_image)
     return best_focus_position, focus_metrics
 
-def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_steps: int=30, steps_per_image: int=1, save_loc=None):
+
+def symmetricZStackCoroutine(
+    img,
+    motor: DRV8825Nema,
+    start_point: int,
+    num_steps: int = 30,
+    steps_per_image: int = 1,
+    save_loc=None,
+):
     """The coroutine companion to symmetricZStack"""
 
     if save_loc != None:
         timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        save_dir = os.path.join(save_loc, timestamp + '-local_zstack/')
+        save_dir = os.path.join(save_loc, timestamp + "-local_zstack/")
         try:
             os.mkdir(save_dir)
         except Exception as e:
-            print(f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack.")
+            print(
+                f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack."
+            )
             return
     min_pos = int(start_point - num_steps)
     max_pos = int(start_point + num_steps)
     min_pos = int(min_pos) if min_pos >= 0 else 0
     max_pos = int(max_pos) if max_pos <= motor.max_pos else motor.max_pos
-    
+
     motor.move_abs(min_pos)
     step_counter = min_pos
     focus_metrics = []
@@ -160,11 +192,11 @@ def symmetricZStackCoroutine(img, motor: DRV8825Nema, start_point: int, num_step
         focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
         if save_loc != None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
-        
+
         motor.move_rel(steps=steps_per_image, dir=Direction.CW, stepdelay=0.001)
         step_counter += steps_per_image
         if step_counter > max_pos:
             break
 
-    best_focus_position = int(min_pos + np.argmax(focus_metrics)*steps_per_image)
+    best_focus_position = int(min_pos + np.argmax(focus_metrics) * steps_per_image)
     motor.move_abs(best_focus_position)

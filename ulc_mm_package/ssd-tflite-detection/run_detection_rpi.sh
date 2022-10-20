@@ -1,4 +1,0 @@
-# python3 detect_image.py --model /home/pi/code/ssd_v1_aspect_ratios_diff_pipeline_config/learn_cells_ssd_v1/models/output_tflite_graph.tflite  --labels /home/pi//coral/tflite/labels.txt --input /home/pi/code/parasites_mcwhf2_plan_zStacks/ --output output_tflite_dec16_ssd_v1_parasite_dec_data
-python3 detect_video.py --model /home/pi/code/ssd_v1_aspect_ratios_diff_pipeline_config/learn_cells_ssd_v1/models/output_tflite_graph.tflite  --labels /home/pi//coral/tflite/labels.txt --video /home/pi/code/whole_RBC.mp4 --output output_tflite_dec16_ssd_v1_whole_rbc
-python3 detect_video.py --model /home/pi/code/ssd_v1_aspect_ratios_diff_pipeline_config/learn_cells_ssd_v1/models/output_tflite_graph.tflite  --labels /home/pi//coral/tflite/labels.txt --video /home/pi/code/2x_diluted_RBC.mp4 --output output_tflite_dec16_ssd_v1_diluted_rbc
-

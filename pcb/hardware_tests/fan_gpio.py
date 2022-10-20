@@ -10,7 +10,7 @@ GPIO.setup(pin, GPIO.OUT)
 
 
 print("Turning high")
-GPIO.output(pin, GPIO.HIGH) # direction
+GPIO.output(pin, GPIO.HIGH)  # direction
 time.sleep(10)
 print("Turning low")
 GPIO.output(pin, GPIO.LOW)

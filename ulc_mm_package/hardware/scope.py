@@ -22,6 +22,7 @@ from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
 
+
 class Components(enum.Enum):
     MOTOR = 0
     CAMERA = 1
@@ -32,6 +33,7 @@ class Components(enum.Enum):
     HT_SENSOR = 6
     DATA_STORAGE = 7
     TPU = 8
+
 
 class MalariaScope:
     def __init__(self):
@@ -58,13 +60,18 @@ class MalariaScope:
 
     def __del__(self):
         self.shutoff()
-        
+
     def shutoff(self):
-        print("Shutting off hardware")
+        print("MSCOPE: Shutting off hardware")
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.camera.deactivateCamera()
-        
+
+    # def reset(self):
+    #     print("MSCOPE: Resetting hardware")
+    #     self.led.turnOff()
+    #     self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
+
     def getComponentStatus(self) -> Dict:
         """Returns a dictionary of component to initialization status.
 
@@ -82,7 +89,7 @@ class MalariaScope:
             Components.ENCODER: self.encoder_enabled,
             Components.HT_SENSOR: self.ht_sensor_enabled,
             Components.DATA_STORAGE: self.data_storage_enabled,
-            Components.TPU: self.tpu_enabled
+            Components.TPU: self.tpu_enabled,
         }
 
     def _init_motor(self):
@@ -96,7 +103,9 @@ class MalariaScope:
             self.motor_enabled = True
         except MotorControllerError as e:
             # TODO - change to logging, critical error
-            print(f"Error initializing DRV8825. Disabling focus actuation GUI elements.\nSpecific error: {e}")
+            print(
+                f"Error initializing DRV8825. Disabling focus actuation GUI elements.\nSpecific error: {e}"
+            )
 
     def _init_camera(self):
         try:
@@ -107,11 +116,15 @@ class MalariaScope:
                 self.camera = AVTCamera()
                 self.camera_enabled = True
             else:
-                raise CameraError("Invalid camera selection - must be 0 (Basler) or 1 (AVT)")
+                raise CameraError(
+                    "Invalid camera selection - must be 0 (Basler) or 1 (AVT)"
+                )
             self.camera_activated = True
         except CameraError as e:
             # TODO - change to logging, critical error
-            print(f"Error initializing camera (selection: {CAMERA_SELECTION}), error: {e}")
+            print(
+                f"Error initializing camera (selection: {CAMERA_SELECTION}), error: {e}"
+            )
 
     def _init_pneumatic_module(self):
         # Create pressure controller (sensor + servo)
@@ -120,15 +133,19 @@ class MalariaScope:
 
             # Check to see if the pressure sensor was successfully instantiated
             if not self.pneumatic_module.mpr_enabled:
-                # If pressure sensor not created, raises PressureSensorNotInstantiated error 
+                # If pressure sensor not created, raises PressureSensorNotInstantiated error
                 # when calling `pneumatic_module.getPressure()`
                 # TODO - change to logging
-                print(f"Error initializing pressure sensor: {self.pneumatic_module.mpr_err_msg}")
+                print(
+                    f"Error initializing pressure sensor: {self.pneumatic_module.mpr_err_msg}"
+                )
 
             self.pneumatic_module_enabled = True
         except PneumaticModuleError as e:
             # TODO - change to logging, critical error
-            print(f"Error initializing Pressure Controller. Disabling flow GUI elements. Error: {e}")
+            print(
+                f"Error initializing Pressure Controller. Disabling flow GUI elements. Error: {e}"
+            )
 
     def _init_led(self):
         # Create the LED
@@ -153,6 +170,7 @@ class MalariaScope:
 
     def _init_encoder(self):
         if self.motor_enabled:
+
             def manualFocusWithEncoder(self, increment: int):
                 try:
                     if increment == 1:

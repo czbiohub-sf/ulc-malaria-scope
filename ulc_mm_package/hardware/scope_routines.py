@@ -8,16 +8,20 @@ from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerEr
 import ulc_mm_package.neural_nets.ssaf_constants as ssaf_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
-def focusRoutine(mscope: MalariaScope, lower_bound: int, upper_bound: int, img: np.ndarray=None):
+
+def focusRoutine(
+    mscope: MalariaScope, lower_bound: int, upper_bound: int, img: np.ndarray = None
+):
     mscope.motor.move_abs(lower_bound)
     focus_metrics = []
     while mscope.motor.pos < upper_bound:
         img = yield img
         focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
         mscope.motor.move_rel(steps=1, dir=Direction.CW)
-    
+
     best_focus_pos = lower_bound + np.argmax(focus_metrics)
     mscope.motor.move_abs(best_focus_pos)
+
 
 def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
     """Single shot autofocus routine.
@@ -56,9 +60,10 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
 
     return steps_from_focus
 
+
 def continuousSSAFRoutine(mscope: MalariaScope, img: np.ndarray):
     """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes adjustments.
-    
+
     `singleShotAutofocusRoutine` runs a single time before returning. This function is a simple
     continuous wrapper so continuously receive and send images to the autofocus model.
     """
@@ -75,6 +80,7 @@ def continuousSSAFRoutine(mscope: MalariaScope, img: np.ndarray):
             print(f"SSAF - moved motor: {steps_taken}")
             ssaf = singleShotAutofocusRoutine(mscope, None)
             ssaf.send(None)
+
 
 def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
     """A periodic wrapper around the `continuousSSAFRoutine`.
@@ -102,10 +108,14 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
                 counter = 0
                 prev_adjustment_time = perf_counter()
 
-def count_parasitemia(mscope: MalariaScope, img: np.ndarray) -> List[Tuple[int, Tuple[float,...]]]:
+
+def count_parasitemia(
+    mscope: MalariaScope, img: np.ndarray
+) -> List[Tuple[int, Tuple[float, ...]]]:
     results = mscope.cell_diagnosis_model.get_asyn_results()
     mscope.cell_diagnosis_model(img)
     return results
+
 
 def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.ndarray):
     """Keep the flowrate steady by continuously calculating the flowrate and periodically
@@ -132,6 +142,7 @@ def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.nda
         except CantReachTargetFlowrate:
             # TODO what to do...
             raise
+
 
 def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
     """Faster flowrate feedback for initial flow ramp-up.
@@ -184,7 +195,8 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
         if isinstance(flow_val, float):
             return flow_val
 
-def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
+
+def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float:
     """Autobrightness routine to set led power.
 
     Usage
@@ -210,12 +222,20 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray=None) -> float:
             brightness_achieved = autobrightness.runAutobrightness(img)
         except AutobrightnessError as e:
             # TODO switch to logging
-            print(f"AutobrightnessError encountered: {e}. Stopping autobrightness and continuing...")
+            print(
+                f"AutobrightnessError encountered: {e}. Stopping autobrightness and continuing..."
+            )
             brightness_achieved = True
     # Get the mean image brightness to store in the experiment metadata
     return autobrightness.prev_mean_img_brightness
 
-def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image: int=10, img: np.ndarray=None) -> int:
+
+def find_cells_routine(
+    mscope: MalariaScope,
+    pull_time: float = 5,
+    steps_per_image: int = 10,
+    img: np.ndarray = None,
+) -> int:
     """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
     This routine does the following:
@@ -228,8 +248,8 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
 
     3. Repeat steps 2a-2c. `max_attempts` times (default: 3). If the attempts are exhausted, the function returns False.
 
-    In the case when cells are found, the returned motor position should be used to see a local Z-stack (i.e start motor at the returned position and 
-    sweep +/- N steps w/ a focus or use the single-shot autofocus model). 
+    In the case when cells are found, the returned motor position should be used to see a local Z-stack (i.e start motor at the returned position and
+    sweep +/- N steps w/ a focus or use the single-shot autofocus model).
 
     In the case when no cells are found after the maximum number of attempts, the user should be informed and the run aborted.
 
@@ -252,10 +272,12 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
         Raised if no cells found after max_attempts iterations
     """
 
-    max_attempts = 3 # Maximum number of times to run check for cells routine before aborting
+    max_attempts = (
+        3  # Maximum number of times to run check for cells routine before aborting
+    )
     cell_finder = CellFinder()
     img = yield img
-    
+
     # Initial check for cells, return current motor position if cells found
     cell_finder.add_image(mscope.motor.pos, img)
     try:
@@ -291,5 +313,5 @@ def find_cells_routine(mscope: MalariaScope, pull_time: float=5, steps_per_image
             cells_present_motor_pos = cell_finder.get_cells_found_position()
             return cells_present_motor_pos
         except NoCellsFound:
-            max_attempts -=1
+            max_attempts -= 1
             print("MAX ATTEMPTS LEFT {}".format(max_attempts))

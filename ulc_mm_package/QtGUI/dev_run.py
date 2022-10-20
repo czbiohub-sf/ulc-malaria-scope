@@ -1,5 +1,10 @@
 from ulc_mm_package.QtGUI.gui_constants import *
-from ulc_mm_package.hardware.hardware_constants import VIDEO_PATH, VIDEO_REC, CAMERA_SELECTION, SIMULATION
+from ulc_mm_package.hardware.hardware_constants import (
+    VIDEO_PATH,
+    VIDEO_REC,
+    CAMERA_SELECTION,
+    SIMULATION,
+)
 
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.image_processing.processing_modules import *
@@ -32,9 +37,12 @@ QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 _UI_FILE_DIR = "dev_run.ui"
 _EXPERIMENT_FORM_PATH = "dev_form.ui"
 
+
 class ApplicationError(Exception):
     """Catch-all exception for misc errors not caught by the peripheral classes."""
+
     pass
+
 
 class AcquisitionThread(QThread):
     # Qt signals must be defined at the class-level (not instance-level)
@@ -60,7 +68,9 @@ class AcquisitionThread(QThread):
             elif CAMERA_SELECTION == 1:
                 self.camera = AVTCamera()
             else:
-                raise ApplicationError(f"Invalid camera selection: must be 0 (Basler) or 1 (AVT). It is currently {CAMERA_SELECTION}.")
+                raise ApplicationError(
+                    f"Invalid camera selection: must be 0 (Basler) or 1 (AVT). It is currently {CAMERA_SELECTION}."
+                )
             self.camera_activated = True
         except CameraError:
             self.camera_activated = False
@@ -98,7 +108,9 @@ class AcquisitionThread(QThread):
         self.pneumatic_module: PneumaticModule = None
         self.zw = ZarrWriter()
 
-        self.flow_controller: FlowController = FlowController(self.pneumatic_module, 600, 800) # default shell
+        self.flow_controller: FlowController = FlowController(
+            self.pneumatic_module, 600, 800
+        )  # default shell
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
         self.autobrightness: Autobrightness = None
@@ -108,7 +120,9 @@ class AcquisitionThread(QThread):
         try:
             self.autofocus_model = AutoFocus()
         except RuntimeError as e:
-            raise RuntimeError(f'got {str(e)}:\n {subprocess.getoutput("lsusb | grep Myriad")}')
+            raise RuntimeError(
+                f'got {str(e)}:\n {subprocess.getoutput("lsusb | grep Myriad")}'
+            )
         self.active_autofocus = False
         self.prev_autofocus_time = 0
         self.af_adjustment_done = False
@@ -252,7 +266,9 @@ class AcquisitionThread(QThread):
             if self.md_writer:
                 self.metadata_file.close()
             self.metadata_file = open(f"{filename}_metadata.csv", "w")
-            self.md_writer = csv.DictWriter(self.metadata_file, fieldnames=self.getMetadata().keys())
+            self.md_writer = csv.DictWriter(
+                self.metadata_file, fieldnames=self.getMetadata().keys()
+            )
             self.md_writer.writeheader()
 
             self.zw.createNewFile(filename)
@@ -310,11 +326,13 @@ class AcquisitionThread(QThread):
             try:
                 done = self.autobrightness.runAutobrightness(img)
             except AutobrightnessError as e:
-                print(f"AutobrightnessError encountered: {e}. Stopping autobrightness and continuing...")
+                print(
+                    f"AutobrightnessError encountered: {e}. Stopping autobrightness and continuing..."
+                )
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
                 return
-                
+
             if done:
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
@@ -357,7 +375,7 @@ class AcquisitionThread(QThread):
         if self.active_autofocus:
             print("Autofocusing!")
             try:
-                steps_from_focus = -int(self.autofocus_model(img)[0][0][0])
+                steps_from_focus = -int(self.autofocus_model(img))
                 print(type(steps_from_focus), steps_from_focus)
                 self.af_adjustment_done = True
 
@@ -365,13 +383,17 @@ class AcquisitionThread(QThread):
                     dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
                     self.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
                 except MotorControllerError:
-                    print("Error moving motor after receiving steps from the SSAF model.")
+                    print(
+                        "Error moving motor after receiving steps from the SSAF model."
+                    )
 
             except Exception as e:
                 print(f"Generic model inference error: {e}")
 
+
 class ExperimentSetupGUI(QtWidgets.QDialog):
     """Form to input experiment parameters"""
+
     def __init__(self, *args, **kwargs):
         super(ExperimentSetupGUI, self).__init__(*args, **kwargs)
 
@@ -383,10 +405,17 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
         self.setTabOrder(self.txtFlowCellID, self.radBtn1x1)
         self.setTabOrder(self.radBtn1x1, self.radBtn2x2)
         self.setTabOrder(self.radBtn2x2, self.chkBoxExperimentSetupAutobrightness)
-        self.setTabOrder(self.chkBoxExperimentSetupAutobrightness, self.chkBoxExperimentSetupAutofocus)
-        self.setTabOrder(self.chkBoxExperimentSetupAutofocus, self.chkBoxExperimentSetupFlowControl)
-        self.setTabOrder(self.chkBoxExperimentSetupFlowControl, self.sbExperimentSetupMinutes)
-        
+        self.setTabOrder(
+            self.chkBoxExperimentSetupAutobrightness,
+            self.chkBoxExperimentSetupAutofocus,
+        )
+        self.setTabOrder(
+            self.chkBoxExperimentSetupAutofocus, self.chkBoxExperimentSetupFlowControl
+        )
+        self.setTabOrder(
+            self.chkBoxExperimentSetupFlowControl, self.sbExperimentSetupMinutes
+        )
+
         self.txtExperimentName.setFocus()
 
         # Parameters
@@ -403,16 +432,22 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
         self.txtFlowCellID.editingFinished.connect(self.flowCellIDHandler)
         self.radBtn1x1.toggled.connect(self.binningModeHandler)
         self.radBtn2x2.toggled.connect(self.binningModeHandler)
-        self.chkBoxExperimentSetupAutobrightness.stateChanged.connect(self.chkBoxAutobrightnessHandler)
-        self.chkBoxExperimentSetupAutofocus.stateChanged.connect(self.chkBoxAutofocusHandler)
-        self.chkBoxExperimentSetupFlowControl.stateChanged.connect(self.chkBoxFlowControlHandler)
+        self.chkBoxExperimentSetupAutobrightness.stateChanged.connect(
+            self.chkBoxAutobrightnessHandler
+        )
+        self.chkBoxExperimentSetupAutofocus.stateChanged.connect(
+            self.chkBoxAutofocusHandler
+        )
+        self.chkBoxExperimentSetupFlowControl.stateChanged.connect(
+            self.chkBoxFlowControlHandler
+        )
         self.sbExperimentSetupMinutes.valueChanged.connect(self.sbTimerHandler)
         self.btnStartExperiment.clicked.connect(self.btnStartExperimentHandler)
 
     def txtExperimentNameHandler(self):
         self.experiment_name = self.txtExperimentName.text()
         print(self.experiment_name)
-    
+
     def flowCellIDHandler(self):
         """TODO: Validate the flowcell ID"""
         text = self.txtFlowCellID.text()
@@ -422,7 +457,7 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
             pass
         self.flowcell_id = self.txtFlowCellID.text()
         print(self.flowcell_id)
-    
+
     def binningModeHandler(self):
         if self.radBtn1x1.isChecked():
             self.radBtn2x2.setChecked(False)
@@ -431,7 +466,7 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
             self.radBtn1x1.setChecked(False)
             self.binningMode = 2
         print(f"Binning mode: {self.binningMode}")
-    
+
     def chkBoxAutobrightnessHandler(self):
         self.autobrightness = True if self.chkBoxAutobrightness.checkState() else False
         print(self.autobrightness)
@@ -439,7 +474,7 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
     def chkBoxAutofocusHandler(self):
         self.autofocus = True if self.chkBoxAutofocus.checkState() else False
         print(self.autofocus)
-    
+
     def chkBoxFlowControlHandler(self):
         self.autoflowcontrol = True if self.chkBoxFlowControl.checkState() else False
         print(self.autoflowcontrol)
@@ -447,11 +482,10 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
     def sbTimerHandler(self):
         self.time_mins = self.sbExperimentSetupMinutes.value()
         print(self.time_mins)
-    
+
     def btnStartExperimentHandler(self):
         print("Something interesting will happen here eventually...")
         parameters = self.getAllParameters()
-
 
     def getAllParameters(self) -> Dict:
         return {
@@ -464,6 +498,7 @@ class ExperimentSetupGUI(QtWidgets.QDialog):
             "time_mins": self.time_mins,
         }
 
+
 class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
@@ -474,13 +509,19 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             print("---------------------\n|  SIMULATION MODE  |\n---------------------")
 
             if not path.exists(VIDEO_PATH):
-                print("Error - no sample video exists. To add your own video, save it under "
-                        + VIDEO_PATH  + "\nRecommended video: " + VIDEO_REC )
+                print(
+                    "Error - no sample video exists. To add your own video, save it under "
+                    + VIDEO_PATH
+                    + "\nRecommended video: "
+                    + VIDEO_REC
+                )
                 quit()
 
             if not path.exists(media_dir) or len(listdir(media_dir)) == 0:
                 media_dir = ALT_SSD
-                print("No external harddrive / SSD detected. Saving media to " + media_dir)
+                print(
+                    "No external harddrive / SSD detected. Saving media to " + media_dir
+                )
 
         try:
             self.external_dir = media_dir + listdir(media_dir)[0] + "/"
@@ -554,13 +595,17 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.txtBoxFocus.gotFocus.connect(self.txtBoxFocusGotFocus)
             self.btnFullZStack.clicked.connect(self.btnFullZStackHandler)
             self.btnLocalZStack.clicked.connect(self.btnLocalZStackHandler)
-            self.chkBoxActiveAutofocus.stateChanged.connect(self.chkBoxActiveAutofocusHandler)
+            self.chkBoxActiveAutofocus.stateChanged.connect(
+                self.chkBoxActiveAutofocusHandler
+            )
             self.vsFocus.setMinimum(0)
             self.vsFocus.setValue(self.motor.pos)
             self.vsFocus.setMaximum(self.motor.max_pos)
 
         except MotorControllerError as e:
-            print(f"Error initializing DRV8825. Disabling focus actuation GUI elements.\nSpecific error: {e}")
+            print(
+                f"Error initializing DRV8825. Disabling focus actuation GUI elements.\nSpecific error: {e}"
+            )
             self.btnFocusUp.setEnabled(False)
             self.btnFocusDown.setEnabled(False)
             self.vsFocus.setEnabled(False)
@@ -569,14 +614,24 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Create pressure controller (sensor + servo)
         try:
             self.pneumatic_module = PneumaticModule()
-            num_steps = int((self.pneumatic_module.getMaxDutyCycle() - self.pneumatic_module.getMinDutyCycle()) / self.pneumatic_module.min_step_size)
+            num_steps = int(
+                (
+                    self.pneumatic_module.getMaxDutyCycle()
+                    - self.pneumatic_module.getMinDutyCycle()
+                )
+                / self.pneumatic_module.min_step_size
+            )
             self.vsFlow.setMinimum(0)
             self.vsFlow.setMaximum(num_steps)
             self.vsFlow.setSingleStep(1)
             self.txtBoxFlow.setText(f"{self.pneumatic_module.getCurrentDutyCycle()}")
-            self.vsFlow.setValue(self.convertTovsFlowVal(self.pneumatic_module.getCurrentDutyCycle()))
+            self.vsFlow.setValue(
+                self.convertTovsFlowVal(self.pneumatic_module.getCurrentDutyCycle())
+            )
         except PneumaticModuleError as e:
-            print(f"Error initializing Pressure Controller. Disabling flow GUI elements. Error: {e}")
+            print(
+                f"Error initializing Pressure Controller. Disabling flow GUI elements. Error: {e}"
+            )
             self.btnFlowUp.setEnabled(False)
             self.btnFlowDown.setEnabled(False)
             self.vsFlow.setEnabled(False)
@@ -606,7 +661,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.motor = self.motor
         self.acquisitionThread.pneumatic_module = self.pneumatic_module
         self.acquisitionThread.autobrightness = Autobrightness(self.led)
-        
+
         self.acquisitionThread.start()
 
         # GUI element signals
@@ -686,7 +741,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnSnap.setText("Closing file...")
             self.btnSnap.setEnabled(False)
             sleep(0.1)
-            self.acquisitionThread.finish_saving_future = self.acquisitionThread.zw.threadedCloseFile()
+            self.acquisitionThread.finish_saving_future = (
+                self.acquisitionThread.zw.threadedCloseFile()
+            )
             self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
@@ -695,11 +752,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
                 f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
             )
 
-            retval = self._displayMessageBox(QtWidgets.QMessageBox.Icon.Information,
-                        "Open Flowcell QC Post-run Form?",
-                        "Press okay to open the Google form. A browser window will be opened.",
-                        cancel=True
-                    )
+            retval = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Information,
+                "Open Flowcell QC Post-run Form?",
+                "Press okay to open the Google form. A browser window will be opened.",
+                cancel=True,
+            )
             if retval == QtWidgets.QMessageBox.Ok:
                 webbrowser.open(FLOWCELL_QC_FORM_LINK, new=1, autoraise=True)
 
@@ -729,11 +787,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnChangeBinning.setText(f"Change to {change_to}X binning")
 
     def btnQCFormHandler(self):
-        retval = self._displayMessageBox(QtWidgets.QMessageBox.Icon.Information,
-                        "Open Flowcell QC Post-run Form?",
-                        "Press okay to open the Google form. A browser window will be opened.",
-                        cancel=True
-                    )
+        retval = self._displayMessageBox(
+            QtWidgets.QMessageBox.Icon.Information,
+            "Open Flowcell QC Post-run Form?",
+            "Press okay to open the Google form. A browser window will be opened.",
+            cancel=True,
+        )
         if retval == QtWidgets.QMessageBox.Ok:
             webbrowser.open(FLOWCELL_QC_FORM_LINK, new=1, autoraise=True)
 
@@ -748,7 +807,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(int)
     def updateSyringePos(self, _):
-        self.vsFlow.setValue(self.convertTovsFlowVal(self.pneumatic_module.getCurrentDutyCycle()))
+        self.vsFlow.setValue(
+            self.convertTovsFlowVal(self.pneumatic_module.getCurrentDutyCycle())
+        )
         duty_cycle = self.pneumatic_module.duty_cycle
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
@@ -804,7 +865,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnLEDToggle.setEnabled(True)
         self.vsLED.blockSignals(False)
         self.vsLED.setEnabled(True)
-        new_val = self.led.pwm_duty_cycle*100
+        new_val = self.led.pwm_duty_cycle * 100
         self.vsLED.setValue(new_val)
         self.lblLED.setText(f"{int(new_val)}%")
 
@@ -970,11 +1031,17 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.setText(f"{duty_cycle}")
 
     def convertFromvsFlowVal(self):
-        return self.vsFlow.value() * self.pneumatic_module.min_step_size + self.pneumatic_module.getMinDutyCycle()
-    
+        return (
+            self.vsFlow.value() * self.pneumatic_module.min_step_size
+            + self.pneumatic_module.getMinDutyCycle()
+        )
+
     def convertTovsFlowVal(self, val):
-        return int((val - self.pneumatic_module.getMinDutyCycle()) / self.pneumatic_module.min_step_size)
-    
+        return int(
+            (val - self.pneumatic_module.getMinDutyCycle())
+            / self.pneumatic_module.min_step_size
+        )
+
     def vsFlowValueChangedHandler(self):
         val = self.convertFromvsFlowVal()
         self.txtBoxFlow.setText(f"{val}")

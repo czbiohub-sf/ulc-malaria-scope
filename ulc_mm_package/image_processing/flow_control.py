@@ -14,17 +14,27 @@ from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
 
+
 class FlowControlError(Exception):
     pass
 
+
 class CantReachTargetFlowrate(FlowControlError):
     """Raised when the target flowrate cannot be reached"""
+
     pass
 
+
 class FlowController:
-    def __init__(self, pneumatic_module: PneumaticModule, h: int=600, w: int=800, window_size: int=WINDOW_SIZE):
+    def __init__(
+        self,
+        pneumatic_module: PneumaticModule,
+        h: int = 600,
+        w: int = 800,
+        window_size: int = WINDOW_SIZE,
+    ):
         """Flow controller class.
-        
+
         Wraps the functionality of FlowRateEstimator, PneumaticModule, and the flow control algorithm
         together to control the flowrate. Single images are provided to this class via `controlFlow(img)`
         which, using the FlowRateEstimator, and an exponentially weighted moving average (EWMA) to smooth the noise,
@@ -65,7 +75,7 @@ class FlowController:
 
     def _isFull(self):
         """Returns whether the EWMA window has been filled with a new batch of flowrate measurements."""
-        
+
         if self._idx == len(self.flowrates):
             self._idx = 0
             return True
@@ -136,7 +146,7 @@ class FlowController:
 
     def controlFlow(self, img: np.ndarray) -> float:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
-        
+
         If the `self.target_flowrate` has not been set, the first full measurement is used as the target, and all subsequent measurements
         will result in adjustments relative to that initial target.
 
@@ -161,20 +171,25 @@ class FlowController:
             self.curr_flowrate = self._ewma(self.flowrates)
 
             # Set target flowrate if this is the first calculation
-            self.target_flowrate = self.target_flowrate if self.target_flowrate is not None else self.curr_flowrate
-            
+            self.target_flowrate = (
+                self.target_flowrate
+                if self.target_flowrate is not None
+                else self.curr_flowrate
+            )
+
             # Adjust pressure using the pneumatic module based on the flow rate error
             flow_error = self._getFlowError()
             self._adjustSyringe(flow_error)
-            print(f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}")
+            print(
+                f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
+            )
             return self.curr_flowrate
-            
+
         return -99
 
-
     def _getFlowError(self):
-        """Returns the flowrate error, i.e the difference between the target and current flowrate. 
-        
+        """Returns the flowrate error, i.e the difference between the target and current flowrate.
+
         Returns
         -------
         float:
@@ -192,7 +207,7 @@ class FlowController:
 
     def _adjustSyringe(self, flow_error: float):
         """Adjusts the syringe based on the flow error.
-        
+
         Parameters
         ----------
         flow_error : float
@@ -203,7 +218,7 @@ class FlowController:
             Raised when the syringe has reached the end of travel
             despite being above/below the required flowrate.
         """
-        
+
         if flow_error == 0:
             return
         elif flow_error > 0:
@@ -221,7 +236,7 @@ class FlowController:
 
     def _ewma(self, data):
         """Adapted from @Divakar on StackOverflow
-        
+
         Fast, pure-numpy implementation of an exponentially weighted moving average.
 
         Parameters
@@ -229,19 +244,19 @@ class FlowController:
         data : np.ndarray
             Data on which to run EWMA smoothing
         """
-        
+
         window = self.window_size
-        alpha = 2 /(window + 1.0)
-        alpha_rev = 1-alpha
+        alpha = 2 / (window + 1.0)
+        alpha_rev = 1 - alpha
         n = data.shape[0]
 
-        pows = alpha_rev**(np.arange(n+1))
+        pows = alpha_rev ** (np.arange(n + 1))
 
-        scale_arr = 1/pows[:-1]
-        offset = data[0]*pows[1:]
-        pw0 = alpha*alpha_rev**(n-1)
+        scale_arr = 1 / pows[:-1]
+        offset = data[0] * pows[1:]
+        pw0 = alpha * alpha_rev ** (n - 1)
 
-        mult = data*pw0*scale_arr
+        mult = data * pw0 * scale_arr
         cumsums = mult.cumsum()
-        out = offset + cumsums*scale_arr[::-1]
+        out = offset + cumsums * scale_arr[::-1]
         return out[-1]

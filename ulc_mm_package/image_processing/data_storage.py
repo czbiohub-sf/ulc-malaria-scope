@@ -8,10 +8,13 @@ import cv2
 
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 
+
 class DataStorageError(Exception):
     pass
 
+
 DEFAULT_SSD = "/media/pi/"
+
 
 class DataStorage:
     def __init__(self):
@@ -28,9 +31,16 @@ class DataStorage:
         try:
             mkdir(self.main_dir)
         except FileNotFoundError as e:
-            raise DataStorageError(f"DataStorageError - Unable to make top-level directory: {e}")
+            raise DataStorageError(
+                f"DataStorageError - Unable to make top-level directory: {e}"
+            )
 
-    def createNewExperiment(self, custom_experiment_name: str, experiment_initialization_metdata: Dict, per_image_metadata: Dict):
+    def createNewExperiment(
+        self,
+        custom_experiment_name: str,
+        experiment_initialization_metdata: Dict,
+        per_image_metadata: Dict,
+    ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
 
         Parameters
@@ -61,20 +71,33 @@ class DataStorage:
         except Exception as e:
             raise DataStorage(e)
 
-        filename = path.join(self.main_dir, self.experiment_folder, time_str) + f"perimage_{custom_experiment_name}_metadata.csv"
+        filename = (
+            path.join(self.main_dir, self.experiment_folder, time_str)
+            + f"perimage_{custom_experiment_name}_metadata.csv"
+        )
         self.metadata_file = open(f"{filename}", "w")
-        self.md_writer = csv.DictWriter(self.metadata_file, fieldnames=list(per_image_metadata.keys()))
+        self.md_writer = csv.DictWriter(
+            self.metadata_file, fieldnames=list(per_image_metadata.keys())
+        )
         self.md_writer.writeheader()
 
         # Create experiment initialization metadata file
-        exp_run_md_file = path.join(self.main_dir, self.experiment_folder, time_str) + f"exp_{custom_experiment_name}_metadata.csv"
+        exp_run_md_file = (
+            path.join(self.main_dir, self.experiment_folder, time_str)
+            + f"exp_{custom_experiment_name}_metadata.csv"
+        )
         with open(f"{exp_run_md_file}", "w") as f:
-            writer = csv.DictWriter(f, fieldnames=list(experiment_initialization_metdata.keys()))
+            writer = csv.DictWriter(
+                f, fieldnames=list(experiment_initialization_metdata.keys())
+            )
             writer.writeheader()
             writer.writerow(experiment_initialization_metdata)
 
         # Create Zarr Storage
-        filename = path.join(self.main_dir, self.experiment_folder, time_str) + f"_{custom_experiment_name}"
+        filename = (
+            path.join(self.main_dir, self.experiment_folder, time_str)
+            + f"_{custom_experiment_name}"
+        )
         self.zw.createNewFile(filename)
 
     def writeData(self, image: np.ndarray, metadata: Dict):
@@ -107,9 +130,9 @@ class DataStorage:
         """
 
         filename = (
-                path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S"))
-                + f"_{custom_image_name}.png"
-            )
+            path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S"))
+            + f"_{custom_image_name}.png"
+        )
         cv2.imwrite(filename, image)
 
     def close(self):

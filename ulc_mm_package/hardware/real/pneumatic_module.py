@@ -31,16 +31,16 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorNotInstantiated,
     SyringeInMotion,
     SyringeDirection,
-    SyringeEndOfTravel
+    SyringeEndOfTravel,
 )
 
 
 SYRINGE_LOCK = threading.Lock()
 
+
 def lockNoBlock(lock):
     def lockDecorator(func):
         @functools.wraps(func)
-
         def wrapper(*args, **kwargs):
             if not lock.locked():
                 with lock:
@@ -49,19 +49,24 @@ def lockNoBlock(lock):
                 raise SyringeInMotion
 
         return wrapper
+
     return lockDecorator
 
-class PneumaticModule():
+
+class PneumaticModule:
     """Class that deals with monitoring and adjusting the pressure.
 
     Interfaces with an Adafruit MPRLS pressure sensor to get the readings (valid for 0-25 bar). Uses a
     PWM-driven Servo motor (Pololu HD-1810MG) to adjust the position of the syringe (thereby adjusting the pressure).
     """
-    def __init__(self, servo_pin: int=SERVO_PWM_PIN, pi: pigpio.pi=None):
+
+    def __init__(self, servo_pin: int = SERVO_PWM_PIN, pi: pigpio.pi = None):
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
 
-        self.min_step_size = (0.23 - 0.16) / 60 # empircally found the top/bottom vals, ~60 steps between min/max pressure
+        self.min_step_size = (
+            0.23 - 0.16
+        ) / 60  # empircally found the top/bottom vals, ~60 steps between min/max pressure
         self.min_duty_cycle = 0.16
         self.max_duty_cycle = 0.23
         self.duty_cycle = self.max_duty_cycle
@@ -75,7 +80,7 @@ class PneumaticModule():
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
-        
+
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
 
@@ -116,7 +121,7 @@ class PneumaticModule():
             sleep(0.01)
         else:
             raise SyringeEndOfTravel()
-    
+
     def decreaseDutyCycle(self):
         if self.isMovePossible(SyringeDirection.DOWN):
             self.duty_cycle -= self.min_step_size
@@ -134,7 +139,7 @@ class PneumaticModule():
             else:
                 while self.duty_cycle >= duty_cycle + self.min_step_size:
                     self.decreaseDutyCycle()
-    
+
     def threadedDecreaseDutyCycle(self, *args, **kwargs):
         if not SYRINGE_LOCK.locked():
             threading.Thread(target=self.decreaseDutyCycle, *args, **kwargs).start()
@@ -168,7 +173,7 @@ class PneumaticModule():
         """Read and return the latest pressure value if it has been at least `polling_time_s` seconds,
         otherwise return the most recent pressure read. This is done because calls to the pressure sensor
         are somewhat slow.
-        
+
         Additionally, the pressure sensor may raise I/O or Runtime errors intermittently.
 
         To mitigate a crash if that is the case, we attempt to read the
@@ -198,13 +203,15 @@ class PneumaticModule():
 
     def isMovePossible(self, move_dir: SyringeDirection) -> bool:
         """Return true if the syringe can still move in the specified direction."""
-        
+
         # Cannot move the syringe up
         if self.duty_cycle > self.max_duty_cycle and move_dir == SyringeDirection.UP:
-                return False
-                
+            return False
+
         # Cannot move the syringe down
-        elif self.duty_cycle < self.min_duty_cycle and move_dir == SyringeDirection.DOWN:
+        elif (
+            self.duty_cycle < self.min_duty_cycle and move_dir == SyringeDirection.DOWN
+        ):
             return False
 
         return True

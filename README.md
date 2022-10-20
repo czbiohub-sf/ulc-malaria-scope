@@ -16,18 +16,25 @@ Welcome to the ULC Malaria Scope! We are developing a barebones optical microsco
 
 ## Software operation
 
+### Development
+Before commiting, make sure to run
+
+`black .`
+
+in the root of this project. This will autoformat your files for you.
+
 ### Installing dependencies
 In the root folder, run <code>pip install -e .</code> to install all pip dependencies.
 
 ### Running the GUI
 
-Navigate to ulc_mm_package/QtQUI and run <code>python3 oracle.py</code>.
+Navigate to ulc_mm_package/QtGUI and run <code>python3 oracle.py</code>.
 
 Note: The original GUI lived in <code>liveviewer.py</code>, which is now obsolete. Use the above command instead.
 
 ### Debugging using developer mode
 
-Navigate to ulc_mm_package/QtQUI and run <code>python3 dev_run.py</code>. This opens a GUI with manual hardware control for debugging purposes.
+Navigate to ulc_mm_package/QtGUI and run <code>python3 dev_run.py</code>. This opens a GUI with manual hardware control for debugging purposes.
 
 ### Using simulation mode
 

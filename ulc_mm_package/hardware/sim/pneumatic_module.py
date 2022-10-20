@@ -22,8 +22,8 @@ from ulc_mm_package.hardware.pneumatic_module import (
 )
 
 
-class PneumaticModule():
-    def __init__(self, servo_pin: int=SERVO_PWM_PIN):
+class PneumaticModule:
+    def __init__(self, servo_pin: int = SERVO_PWM_PIN):
         self.servo_pin = servo_pin
         self.min_step_size = 10
         self.min_duty_cycle = 1600
@@ -45,7 +45,7 @@ class PneumaticModule():
         self.prev_afc_time_s = 0
         self.afc_delay_s = DEFAULT_AFC_DELAY_S
 
-    def getPressure(self, apc_on: bool=False):
+    def getPressure(self, apc_on: bool = False):
         return self.curr_pressure
 
     def getCurrentDutyCycle(self):
@@ -91,11 +91,11 @@ class PneumaticModule():
     def holdPressure(target_pressure):
         pass
 
-    def isMovePossible(self, move_dir: SyringeDirection) -> bool:        
+    def isMovePossible(self, move_dir: SyringeDirection) -> bool:
         # Cannot move the syringe up
         if self.duty_cycle == self.max_duty_cycle and move_dir == 1:
-                return False
-                
+            return False
+
         # Cannot move the syringe down
         elif self.duty_cycle == self.min_duty_cycle and move_dir == -1:
             return False
