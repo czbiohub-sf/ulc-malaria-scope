@@ -215,7 +215,7 @@ class Oracle(Machine):
 
     def _end_liveview(self):
         self.liveview_window.close()
-        
+
         print("ORACLE: Opening survey")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
