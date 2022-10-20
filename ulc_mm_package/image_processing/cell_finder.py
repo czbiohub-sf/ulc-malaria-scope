@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 import cv2
 from ulc_mm_package.image_processing.processing_constants import (
@@ -49,7 +50,7 @@ def get_correlation_map(
     return cv2.matchTemplate(img_ds, template_img, cv2.TM_CCOEFF)
 
 
-def count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
+def binarize_count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
     """Count the number of cells using a basic binarizing+connected-components analysis.
 
     Parameters
@@ -74,9 +75,18 @@ def count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
     )  # First bbox is the background, so we exclude and return the reset
 
 
-def isDensitySufficient(img, downsample_factor: int = 4) -> bool:
-    """Check whether the cell count is sufficently high"""
-    return count_cells(img, downsample_factor) >= MIN_CELL_COUNT
+def isDensitySufficient(img, downsample_factor: int = 4) -> Tuple[bool, int]:
+    """Check whether the cell count is sufficently high
+
+    Returns
+    -------
+    Tuple(bool, int):
+        bool: Whether the density is sufficiently high (based on a MIN_CELL_COUNT threshold)
+        int: count of cells detected
+    """
+
+    count = binarize_count_cells(img, downsample_factor)
+    return count >= MIN_CELL_COUNT, count
 
 
 class NoCellsFound(Exception):
@@ -98,13 +108,13 @@ class CellFinder:
         """Check for cells for the given image, store the result + motor position the image was taken at."""
 
         self.motor_pos.append(motor_pos)
-        self.confidences.append(count_cells(img))
+        self.confidences.append(self.find_cells_cross_corr(img))
 
     def get_cells_found_position(self):
         """Check if the cross-correlation value exceeds the threshold for cell detection."""
 
         max_val = np.max(self.confidences)
-        if max_val >= MIN_CELL_COUNT:
+        if max_val >= CELLS_FOUND_THRESHOLD:
             return self.motor_pos[np.argmax(self.confidences)]
         else:
             raise NoCellsFound(
