@@ -182,7 +182,8 @@ class Oracle(Machine):
         self.scopeop_thread.wait()
 
         print("ORACLE: Exiting program")
-        quit()
+        self.form_window.close()
+        self.liveview_window.close()
 
     def _start_setup(self):
         self.display_message(

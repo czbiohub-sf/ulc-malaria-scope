@@ -95,9 +95,10 @@ class ScopeOp(QObject, Machine):
         )
 
     def setup(self):
-        print("SCOPEOP: Creating timers")
+        print("SCOPEOP: Creating timers...")
         self.create_timers.emit()
 
+        print("SCOPEOP: Initializing scope...")
         self.mscope = MalariaScope()
         component_status = self.mscope.getComponentStatus()
         print(component_status)
