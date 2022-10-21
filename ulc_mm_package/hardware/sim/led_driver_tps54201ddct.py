@@ -20,7 +20,9 @@ from ulc_mm_package.hardware.dtoverlay_pwm import PWM_CHANNEL
 
 from ulc_mm_package.hardware.sim.dtoverlay_pwm import dtoverlay_PWM
 
-from ulc_mm_package.hardware.real.led_driver_tps54201ddct import LED_TPS5420TDDCT as RealLED_TPS5420TDDCT
+from ulc_mm_package.hardware.real.led_driver_tps54201ddct import (
+    LED_TPS5420TDDCT as RealLED_TPS5420TDDCT,
+)
 
 
 class LED_TPS5420TDDCT(RealLED_TPS5420TDDCT):

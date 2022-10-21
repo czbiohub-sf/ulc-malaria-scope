@@ -27,7 +27,6 @@ from ulc_mm_package.hardware.motorcontroller import (
 from ulc_mm_package.hardware.real.motorcontroller import DRV8825Nema as RealDRV8825Nema
 
 
-
 MOTOR_LOCK = threading.Lock()
 
 
