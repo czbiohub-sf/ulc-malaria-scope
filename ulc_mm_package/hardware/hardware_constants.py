@@ -1,4 +1,4 @@
-from os.path import exists
+import os
 
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
@@ -71,15 +71,16 @@ CAM_FAN_1 = 23
 CAM_FAN_2 = 24
 
 # ================ Simulation constants ================ #
-_viable_videos = ("./sim_media/sample.avi", "./sim_media/sample.mp4")
-VIDEO_PATH = next((vid for vid in _viable_videos if exists(vid)), None)
-VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
-
-SIMULATION = False
 # Enable simulation mode by creating blank simulation.py file under main script's directory
 # eg. to run ulc_mm_package/QtGUI/oracle.py, create an empty file under ulc_mm_package/QtGUI/simulation.py
-if exists("./simulation.py"):
-    print("found ./simulation.py")
-    SIMULATION = True
+VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
+VIDEO_PATH = None
+
+MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
+SIMULATION = MS_SIMULATE_FLAG > 0
+if SIMULATION:
+    print(f"simulation mode MS_SIMULATE={MS_SIMULATE_FLAG}")
+    _viable_videos = ("./sim_media/sample.avi", "./sim_media/sample.mp4")
+    VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
 else:
-    print(f"no simulation.py; simulation mode {SIMULATION}")
+    print(f"simulation mode MS_SIMULATE={MS_SIMULATE_FLAG}: not simulating")

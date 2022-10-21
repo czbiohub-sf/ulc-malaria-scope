@@ -14,6 +14,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
+from ulc_mm_package.hardware.hardware_constants import SIMULATION
 from ulc_mm_package.image_processing.processing_constants import (
     TARGET_FLOWRATE,
     PER_IMAGE_METADATA_KEYS,
@@ -247,11 +248,16 @@ class ScopeOp(QObject, Machine):
         try:
             self.fastflow_routine.send(img)
         except CantReachTargetFlowrate:
-            self.fastflow_result = -1
-            self.error.emit(
-                "Calibration failed",
-                "Unable to achieve desired flowrate with syringe at max position.",
-            )
+            if SIMULATION:
+                self.fastflow_result = 8  # rough estimate of slow flowrate
+                print(f"Flowrate: {self.fastflow_result}")
+                self.next_state()
+            else:
+                self.fastflow_result = -1
+                self.error.emit(
+                    "Calibration failed",
+                    "Unable to achieve desired flowrate with syringe at max position.",
+                )
         except StopIteration as e:
             self.fastflow_result = e.value
             print(f"Flowrate: {self.fastflow_result}")
