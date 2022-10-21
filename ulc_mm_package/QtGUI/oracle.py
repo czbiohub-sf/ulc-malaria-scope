@@ -46,6 +46,7 @@ class Oracle(Machine):
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
+        self.dialog_window = QMessageBox()
 
         # Instantiate camera acquisition and thread
         self.acquisition = Acquisition()
@@ -135,20 +136,23 @@ class Oracle(Machine):
     def display_message(
         self, icon: QMessageBox.Icon, title, text, cancel=False
     ):
-        dialog_window = QMessageBox()
-        dialog_window.setWindowIcon(QIcon(ICON_PATH))
-        dialog_window.setIcon(icon)
-        dialog_window.setWindowTitle(f"{title}")
+        
+        self.dialog_window.close() 
 
-        dialog_window.setText(f"{text}")
+        self.dialog_window = QMessageBox()
+        self.dialog_window.setWindowIcon(QIcon(ICON_PATH))
+        self.dialog_window.setIcon(icon)
+        self.dialog_window.setWindowTitle(f"{title}")
+
+        self.dialog_window.setText(f"{text}")
 
         if cancel:
-            dialog_window.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            self.dialog_window.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         else:
-            dialog_window.setStandardButtons(QMessageBox.Ok)
+            self.dialog_window.setStandardButtons(QMessageBox.Ok)
+        self.dialog_window.setDefaultButton(QMessageBox.Ok)
 
-        dialog_result = dialog_window.exec()
-        dialog_window.close()
+        dialog_result = self.dialog_window.exec()
 
         return dialog_result
 
