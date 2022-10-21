@@ -1,6 +1,6 @@
-""" Low-level/hardware state machine manager
+""" Mid-level/hardware state machine manager
 
-Controls hardware (ie. the Scope) operations. 
+Controls hardware (ie. the Scope) operations.
 Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
@@ -51,10 +51,6 @@ class ScopeOp(QObject, Machine):
         self.fastflow_result = None
         self.count = 0
 
-        # # For timing
-        # self.a = 0
-        # self.b = 0
-
         states = [
             {
                 "name": "standby",
@@ -95,9 +91,10 @@ class ScopeOp(QObject, Machine):
         )
 
     def setup(self):
-        print("SCOPEOP: Creating timers")
+        print("SCOPEOP: Creating timers...")
         self.create_timers.emit()
 
+        print("SCOPEOP: Initializing scope...")
         self.mscope = MalariaScope()
         component_status = self.mscope.getComponentStatus()
         print(component_status)
@@ -201,11 +198,6 @@ class ScopeOp(QObject, Machine):
     def run_autobrightness(self, img):
         self.img_signal.disconnect(self.run_autobrightness)
 
-        # # For timing
-        # self.b = self.a
-        # self.a = perf_counter()
-        #   ("Autobrightness: {}".format(self.a - self.b))
-
         try:
             self.autobrightness_routine.send(img)
         except StopIteration as e:
@@ -218,11 +210,6 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_cellfinder(self, img):
         self.img_signal.disconnect(self.run_cellfinder)
-
-        # # For timing
-        # self.b = self.a
-        # self.a = perf_counter()
-        # print("Cellfinder: {}".format(self.a-self.b))
 
         try:
             self.cellfinder_routine.send(img)
@@ -258,11 +245,6 @@ class ScopeOp(QObject, Machine):
     def run_fastflow(self, img):
         self.img_signal.disconnect(self.run_fastflow)
 
-        # # For timing
-        # self.b = self.a
-        # self.a = perf_counter()
-        # print("Fastflow: {}".format(self.a-self.b))
-
         try:
             self.fastflow_routine.send(img)
         except CantReachTargetFlowrate:
@@ -286,11 +268,6 @@ class ScopeOp(QObject, Machine):
             print("Reached frame timeout for experiment")
             self.to_intermission()
         else:
-
-            # # For timing
-            # self.b = self.a
-            # self.a = perf_counter()
-            # print("Experiment: {}".format(self.a-self.b))
 
             # DATA-TODO get metadata from hardware here
             # self.mscope.data_storage.writeData(img, fake_per_img_metadata)

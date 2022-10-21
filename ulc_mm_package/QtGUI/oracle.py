@@ -188,7 +188,8 @@ class Oracle(Machine):
         self.scopeop_thread.wait()
 
         print("ORACLE: Exiting program")
-        quit()
+        self.form_window.close()
+        self.liveview_window.close()
 
     def _start_setup(self):
         self.display_message(
@@ -221,7 +222,7 @@ class Oracle(Machine):
 
     def _end_liveview(self):
         self.liveview_window.close()
-        
+
         print("ORACLE: Opening survey")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 

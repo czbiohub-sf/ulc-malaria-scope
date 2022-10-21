@@ -27,10 +27,6 @@ class Acquisition(QObject):
         self.count = 0
         self.period = ACQUISITION_PERIOD
 
-        # # For timing
-        # self.a = 0
-        # self.b = 0
-
     @pyqtSlot()
     def create_timers(self):
         self.acquisition_timer = QTimer()
@@ -65,18 +61,10 @@ class Acquisition(QObject):
         self.period = period
         self.liveview_timer.setInterval(self.period)
 
-    def get_mscope(self, mscope : MalariaScope):
+    def get_mscope(self, mscope: MalariaScope):
         self.mscope = mscope
 
     def get_img(self):
-
-        # print("got")
-
-        # # For timing
-        # self.a = perf_counter()
-        # print(f"Acquisition {self.a-self.b}")
-        # self.b = self.a
-
         try:
             self.img = next(self.mscope.camera.yieldImages())
             self.update_scopeop.emit(self.img)

@@ -1,5 +1,5 @@
-from time import perf_counter, sleep
-from typing import Union, List, Tuple
+from typing import List, Tuple
+from time import perf_counter
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
@@ -117,7 +117,9 @@ def count_parasitemia(
     return results
 
 
-def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.ndarray):
+def flowControlRoutine(
+    mscope: MalariaScope, target_flowrate: float, img: np.ndarray
+) -> float:
     """Keep the flowrate steady by continuously calculating the flowrate and periodically
     adjusting the syringe position. Need to initially pass in the flowrate to maintain.
 
@@ -130,21 +132,25 @@ def flowControlRoutine(mscope: MalariaScope, target_flowrate: float, img: np.nda
         Image to be passed into the FlowController
     """
 
-    img = yield img
+    img = yield
+    flow_val = 0
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
 
     while True:
-        img = yield img
+        img = yield flow_val
         try:
-            flow_controller.controlFlow(img)
+            flow_val = flow_controller.controlFlow(img)
         except CantReachTargetFlowrate:
-            # TODO what to do...
             raise
 
 
-def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
+def fastFlowRoutine(
+    mscope: MalariaScope,
+    img: np.ndarray,
+    target_flowrate: float = processing_constants.TARGET_FLOWRATE_FAST,
+) -> float:
     """Faster flowrate feedback for initial flow ramp-up.
 
     See FlowController.fastFlowAdjustment for specifics.
@@ -152,13 +158,13 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
     Usage
     -----
     - Use this routine to do the initial ramp up. Once it hits the target,
-    it raises a StopIteration exception and a float number (flowrate)
+    it raises a StopIteration exception and a float number (flowrate) is returned via the exception (e.value)
 
         fastflow_generator = fastFlowRoutine(mscope, None)
         fastflow_generator.send(None) # need to start generator with a None value
         for img in cam.yieldImages():
             try:
-                fastflow_generator.send(img)
+                flow_val = fastflow_generator.send(img)
             except StopIteration as e:
                 flow_val = e.value
         cam.stopAcquisition()
@@ -180,19 +186,20 @@ def fastFlowRoutine(mscope: MalariaScope, img: np.ndarray) -> float:
     CantReachTargetFlowrate - raised if the flowrate is above/below where it needs to be, but the syringe can no longer move in the direction necessary
     """
 
-    img = yield img
+    flow_val = 0
+    img = yield
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
-    flow_controller.setTargetFlowrate(processing_constants.TARGET_FLOWRATE)
+    flow_controller.setTargetFlowrate(target_flowrate)
 
     while True:
-        img = yield img
+        img = yield flow_val
         try:
-            flow_val = flow_controller.fastFlowAdjustment(img)
+            flow_val, flow_error = flow_controller.fastFlowAdjustment(img)
         except CantReachTargetFlowrate:
             raise
 
-        if isinstance(flow_val, float):
+        if flow_error == 0:
             return flow_val
 
 

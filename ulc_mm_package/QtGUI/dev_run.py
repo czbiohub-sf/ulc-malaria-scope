@@ -2,12 +2,19 @@ from ulc_mm_package.QtGUI.gui_constants import *
 from ulc_mm_package.hardware.hardware_constants import (
     VIDEO_PATH,
     VIDEO_REC,
-    CAMERA_SELECTION,
     SIMULATION,
 )
 
+from ulc_mm_package.hardware.scope import MalariaScope, Components
 from ulc_mm_package.hardware.hardware_modules import *
+from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlRoutine
 from ulc_mm_package.image_processing.processing_modules import *
+from ulc_mm_package.image_processing.processing_constants import (
+    TARGET_FLOWRATE_SLOW,
+    TARGET_FLOWRATE_MED,
+    TARGET_FLOWRATE_FAST,
+    FRE_INCOMPLETE,
+)
 
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
 
@@ -58,24 +65,17 @@ class AcquisitionThread(QThread):
     autobrightnessDone = pyqtSignal(int)
     doneSaving = pyqtSignal(int)
 
-    def __init__(self, external_dir):
+    def __init__(self, external_dir, mscope: MalariaScope):
         super().__init__()
-        self._initializeAttributes(external_dir)
-
-        try:
-            if CAMERA_SELECTION == 0:
-                self.camera = BaslerCamera()
-            elif CAMERA_SELECTION == 1:
-                self.camera = AVTCamera()
-            else:
-                raise ApplicationError(
-                    f"Invalid camera selection: must be 0 (Basler) or 1 (AVT). It is currently {CAMERA_SELECTION}."
-                )
+        self.mscope = mscope
+        self._initializeAttributes(external_dir, mscope)
+        if mscope.getComponentStatus()[Components.CAMERA]:
+            self.camera = mscope.camera
             self.camera_activated = True
-        except CameraError:
+        else:
             self.camera_activated = False
 
-    def _initializeAttributes(self, external_dir: str):
+    def _initializeAttributes(self, external_dir: str, mscope: MalariaScope):
         """Initialize attributes (variables, flags, references to hardware peripherals)
         in this function to make the __init__ more readable."""
 
@@ -104,8 +104,8 @@ class AcquisitionThread(QThread):
         self.finish_saving_future = None
 
         # Hardware peripherals
-        self.motor = None
-        self.pneumatic_module: PneumaticModule = None
+        self.motor = mscope.motor
+        self.pneumatic_module: PneumaticModule = mscope.pneumatic_module
         self.zw = ZarrWriter()
 
         self.flow_controller: FlowController = FlowController(
@@ -113,7 +113,8 @@ class AcquisitionThread(QThread):
         )  # default shell
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
-        self.autobrightness: Autobrightness = None
+        self.fast_flow_enabled = False
+        self.autobrightness: Autobrightness = Autobrightness(mscope.led)
         self.autobrightness_on = False
 
         # Single-shot autofocus
@@ -294,17 +295,15 @@ class AcquisitionThread(QThread):
 
         self.camera_activated = True
 
-    def runFullZStack(self, motor: DRV8825Nema):
+    def runFullZStack(self):
         self.takeZStack = True
-        self.motor = motor
-        self.zstack = takeZStackCoroutine(None, motor, save_loc=self.external_dir)
+        self.zstack = takeZStackCoroutine(None, save_loc=self.external_dir)
         self.zstack.send(None)
 
-    def runLocalZStack(self, motor: DRV8825Nema, start_point: int):
+    def runLocalZStack(self):
         self.takeZStack = True
-        self.motor = motor
         self.zstack = symmetricZStackCoroutine(
-            None, motor, start_point, save_loc=self.external_dir
+            None, self.motor, self.pos, save_loc=self.external_dir
         )
         self.zstack.send(None)
 
@@ -337,29 +336,52 @@ class AcquisitionThread(QThread):
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
 
+    def _set_target_flowrate(self, val):
+        self.target_flowrate = val
+
     def initializeActiveFlowControl(self, img: np.ndarray):
-        h, w = img.shape
-        self.flow_controller = FlowController(self.pneumatic_module, h, w)
-        self.flowcontrol_enabled = True
+        self.fastFlowRoutine = fastFlowRoutine(self.mscope, img, self.target_flowrate)
+        self.fastFlowRoutine.send(None)
         self.initializeFlowControl = False
+        self.fast_flow_enabled = True
 
     def stopActiveFlowControl(self):
         self.flowcontrol_enabled = False
+        self.initializeFlowControl = False
 
     def activeFlowControl(self, img: np.ndarray):
         if self.initializeFlowControl:
             self.initializeActiveFlowControl(img)
 
+        if self.fast_flow_enabled:
+            try:
+                flow_val = self.fastFlowRoutine.send(img)
+                self.flowValChanged.emit(flow_val)
+            except StopIteration as e:
+                final_val = e.value
+                self.flowControl = flowControlRoutine(
+                    self.mscope, self.target_flowrate, img
+                )
+                self.flowControl.send(None)
+                self.fast_flow_enabled = False
+                self.flowcontrol_enabled = True
+                print(f"Final fast flow val: {final_val}")
+            except CantReachTargetFlowrate:
+                self.stopActiveFlowControl()
+                print(
+                    f"Unable to reach target flowrate: {self.target_flowrate}. Disabling active flow control."
+                )
+                self.pressureLeakDetected.emit(1)
+
         if self.flowcontrol_enabled:
             try:
-                flow_val = self.flow_controller.controlFlow(img)
+                flow_val = self.flowControl.send(img)
                 self.syringePosChanged.emit(1)
                 self.flowValChanged.emit(flow_val)
-            except PressureLeak:
+            except CantReachTargetFlowrate:
+                self.stopActiveFlowControl()
                 print(
-                    f"""The syringe is already at its maximum position but the current flow rate is either above or below the target.\n
-                        Active flow control is now disabled.
-                        """
+                    f"Unable to reach the target flowrate. Current: {flow_val}, target: {self.target_flowrate}"
                 )
                 self.pressureLeakDetected.emit(1)
 
@@ -541,7 +563,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.pneumatic_module = None
         self.encoder = None
         self.led = None
-        self.fan = Fan()
+
+        # Create scope object
+        mscope = MalariaScope()
+        hardware_status = mscope.getComponentStatus()
+        self.fan = mscope.fan
 
         # Load the ui file
         uic.loadUi(_UI_FILE_DIR, self)
@@ -550,10 +576,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.experiment_form_dialog = ExperimentSetupGUI(self)
 
         # Start the video stream
-        self.acquisitionThread = AcquisitionThread(self.external_dir)
+        self.acquisitionThread = AcquisitionThread(self.external_dir, mscope)
         self.recording = False
-
-        if not self.acquisitionThread.camera_activated:
+        if not hardware_status[Components.CAMERA]:
             print(f"Error initializing camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
@@ -562,7 +587,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         # Create the LED
         try:
-            self.led = LED_TPS5420TDDCT()
+            self.led = mscope.led
             self.led.turnOn()
             self.led.setDutyCycle(0)
             self.vsLED.setValue(0)
@@ -577,8 +602,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         # Create motor w/ default pins/settings (full step)
         try:
-            self.motor = DRV8825Nema(steptype="Half")
-            self.motor.homeToLimitSwitches()
+            self.motor = mscope.motor
             print("Moving motor to the middle.")
             sleep(0.5)
             self.motor.move_abs(int(self.motor.max_pos // 2))
@@ -613,7 +637,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         # Create pressure controller (sensor + servo)
         try:
-            self.pneumatic_module = PneumaticModule()
+            self.pneumatic_module = mscope.pneumatic_module
             num_steps = int(
                 (
                     self.pneumatic_module.getMaxDutyCycle()
@@ -639,7 +663,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         # Connect the encoder
         try:
-            self.encoder = PIM522RotaryEncoder(self.manualFocusWithEncoder)
+            self.encoder = mscope.encoder
         except EncoderI2CError as e:
             print(f"ENCODER I2C ERROR: {e}")
 
@@ -657,10 +681,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.flowValChanged.connect(self.updateFlowVal)
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
         self.acquisitionThread.doneSaving.connect(self.enableRecording)
-
-        self.acquisitionThread.motor = self.motor
-        self.acquisitionThread.pneumatic_module = self.pneumatic_module
-        self.acquisitionThread.autobrightness = Autobrightness(self.led)
 
         self.acquisitionThread.start()
 
@@ -682,6 +702,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsFlow.sliderReleased.connect(self.vsFlowSliderReleasedHandler)
         self.vsFlow.sliderPressed.connect(self.vsFlowClickHandler)
         self.chkBoxFlowControl.stateChanged.connect(self.activeFlowControlHandler)
+        self.radFlowSlow.toggled.connect(self.setFlowrate)
+        self.radFlowMed.toggled.connect(self.setFlowrate)
+        self.radFlowFast.toggled.connect(self.setFlowrate)
 
         # Misc
         self.fan.turn_on_all()
@@ -815,7 +838,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(float)
     def updateFlowVal(self, flow_val):
-        if flow_val != -99:
+        if flow_val != FRE_INCOMPLETE:
             self.lblFlowrate.setText(f"Flowrate: {flow_val:.2f}")
 
     @pyqtSlot(float)
@@ -969,7 +992,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         if retval == QtWidgets.QMessageBox.Ok:
             self.disableMotorUIElements()
-            self.acquisitionThread.runFullZStack(self.motor)
+            self.acquisitionThread.runFullZStack()
 
     def btnLocalZStackHandler(self):
         retval = self._displayMessageBox(
@@ -981,7 +1004,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         if retval == QtWidgets.QMessageBox.Ok:
             self.disableMotorUIElements()
-            self.acquisitionThread.runLocalZStack(self.motor, self.motor.pos)
+            self.acquisitionThread.runLocalZStack()
 
     def chkBoxActiveAutofocusHandler(self):
         if self.chkBoxActiveAutofocus.checkState():
@@ -1079,18 +1102,24 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     def activeFlowControlHandler(self):
         if self.chkBoxFlowControl.checkState():
-            retval = self._displayMessageBox(
-                QtWidgets.QMessageBox.Icon.Information,
-                "Active flow control (AFC)",
-                f"The AFC will attempt to maintain a the current flow rate. Press okay to confirm.",
-                cancel=True,
-            )
-            if retval == QtWidgets.QMessageBox.Ok:
-                self.acquisitionThread.initializeFlowControl = True
-                self.disablePressureUIElements()
+            self.acquisitionThread.flowcontrol_enabled = False
+            self.acquisitionThread.fast_flow_enabled = False
+            self.acquisitionThread.initializeFlowControl = True
+            self.disablePressureUIElements()
         else:
             self.acquisitionThread.stopActiveFlowControl()
             self.enablePressureUIElements()
+
+    def setFlowrate(self):
+        if self.radFlowSlow.isChecked():
+            self.acquisitionThread._set_target_flowrate(TARGET_FLOWRATE_SLOW)
+            print(f"Slow flow target: {TARGET_FLOWRATE_SLOW}")
+        elif self.radFlowMed.isChecked():
+            self.acquisitionThread._set_target_flowrate(TARGET_FLOWRATE_MED)
+            print(f"Med flow target: {TARGET_FLOWRATE_MED}")
+        elif self.radFlowFast.isChecked():
+            self.acquisitionThread._set_target_flowrate(TARGET_FLOWRATE_FAST)
+            print(f"Fast flow target: {TARGET_FLOWRATE_FAST}")
 
     def enablePressureUIElements(self):
         self.vsFlow.blockSignals(False)
@@ -1109,7 +1138,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     @pyqtSlot(int)
     def pressureLeak(self, _):
         self.chkBoxFlowControl.setChecked(False)
-        self.lblTargetPressure.setText("")
         self.enablePressureUIElements()
         _ = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,

@@ -2,13 +2,14 @@
 FlowController
 """
 
-from typing import Union
+from typing import Tuple
 import numpy as np
 
 from ulc_mm_package.image_processing.processing_constants import (
     NUM_IMAGE_PAIRS,
     WINDOW_SIZE,
     TOL_PERC,
+    FRE_INCOMPLETE,
 )
 from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
@@ -92,7 +93,7 @@ class FlowController:
 
         self.target_flowrate = target_flowrate
 
-    def fastFlowAdjustment(self, img: np.ndarray) -> float:
+    def fastFlowAdjustment(self, img: np.ndarray) -> Tuple[float, float]:
         """
         Adjust flow on a faster feedback cycle (i.e w/o the EWMA batching)
         until the target flowrate is achieved.
@@ -121,13 +122,16 @@ class FlowController:
 
         Returns
         -------
-        float: -1 if not reached yet, flow_val if reached
+        tuple (float, float):
+            flow_val, flow_error if a full window of measurements has been acquried by FlowRateEstimator
+        int (FRE_INCOMPLETE, -99):
+            Returned if a full window of measurements has not been acquired yet
 
         Exceptions
         ----------
         CantReachTargetFlowrate:
             Raised if the target flowrate hasn't been reached and the syringe
-            can't move any further in the necessary direction
+            can't move any further in the necessary direction, this exception is raised
         """
 
         self.fre.addImageAndCalculatePair(img, perf_counter())
@@ -137,12 +141,11 @@ class FlowController:
             flow_error = self._getFlowError()
             try:
                 self._adjustSyringe(flow_error)
+                return (dy, flow_error)
             except CantReachTargetFlowrate:
                 raise
-
-            # If target flow rate has been roughly achieved, return flow_val
-            if flow_error == 0:
-                return float(dy)
+        else:
+            return (FRE_INCOMPLETE, FRE_INCOMPLETE)
 
     def controlFlow(self, img: np.ndarray) -> float:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
@@ -164,6 +167,19 @@ class FlowController:
         ----------
         img : np.ndarray
             Image must have the same dimensions as those specified on initializing this FlowController class.
+
+        Returns
+        -------
+        float:
+            flow_val if a full window of measurements has been acquried by FlowRateEstimator
+        int (FRE_INCOMPLETE, -99):
+            Returned if a full window of measurements has not been acquired yet
+
+        Exceptions
+        ----------
+        CantReachTargetFlowrate:
+            Raised if the target flowrate hasn't been reached and the syringe
+            can't move any further in the necessary direction, this exception is raised
         """
 
         self._addImage(img, perf_counter())
@@ -179,13 +195,16 @@ class FlowController:
 
             # Adjust pressure using the pneumatic module based on the flow rate error
             flow_error = self._getFlowError()
-            self._adjustSyringe(flow_error)
-            print(
-                f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
-            )
-            return self.curr_flowrate
-
-        return -99
+            try:
+                self._adjustSyringe(flow_error)
+                print(
+                    f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
+                )
+                return self.curr_flowrate
+            except CantReachTargetFlowrate:
+                raise
+        else:
+            return FRE_INCOMPLETE
 
     def _getFlowError(self):
         """Returns the flowrate error, i.e the difference between the target and current flowrate.
