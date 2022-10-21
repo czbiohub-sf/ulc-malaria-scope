@@ -282,10 +282,11 @@ class ScopeOp(QObject, Machine):
                 # TODO add density check here
                 self.flowcontrol_routine.send(img)
             except CantReachTargetFlowrate:
-                self.error.emit(
-                    "Flow control failed",
-                    "Unable to achieve desired flowrate with syringe at max position.",
-                )
+                if not SIMULATION:
+                    self.error.emit(
+                        "Flow control failed",
+                        "Unable to achieve desired flowrate with syringe at max position.",
+                    )
             # TODO add recovery operation for low cell density
             except:
                 self.error.emit(
