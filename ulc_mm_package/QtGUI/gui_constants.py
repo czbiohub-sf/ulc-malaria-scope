@@ -6,7 +6,7 @@ LIVEVIEW_PERIOD = 1000
 MAX_FRAMES = 1000
 
 # Window icon
-ICON_PATH = "CZB-logo.png"
+ICON_PATH = "gui_images/CZB-logo.png"
 
 # SSD directory
 DEFAULT_SSD = "/media/pi/"
