@@ -17,6 +17,7 @@ from ulc_mm_package.image_processing.focus_metrics import (
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
     NoCellsFound,
+    LowDensity,
     binarize_count_cells,
 )
 

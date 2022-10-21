@@ -134,6 +134,7 @@ def flowControlRoutine(
 
     img, timestamp = yield
     flow_val = 0
+    prev_flow_val = 0
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
@@ -322,3 +323,27 @@ def find_cells_routine(
         except NoCellsFound:
             max_attempts -= 1
             print("MAX ATTEMPTS LEFT {}".format(max_attempts))
+
+
+def cell_density_routine(
+    img: np.ndarray,
+):
+    prev_time = perf_counter()
+    prev_measurements = np.asarray(
+        [100] * processing_constants.CELL_DENSITY_HISTORY_LEN
+    )
+    idx = 0
+
+    while True:
+        if (
+            perf_counter() - prev_time
+            >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
+        ):
+            img = yield
+            prev_measurements[index] = binarize_count_cells(img)
+            idx = (idx + 1) % len(prev_measurements)
+
+            if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):
+                raise LowDensity
+
+            prev_time = perf_counter()

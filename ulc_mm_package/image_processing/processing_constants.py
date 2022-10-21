@@ -64,3 +64,5 @@ RBC_THUMBNAIL_PATH = (
 CELLS_FOUND_THRESHOLD = 9000  # It's got to be... OVER 9000!!!!!!
 
 MIN_CELL_COUNT = 10
+CELL_DENSITY_CHECK_PERIOD_S = 0.5  # How often to check cell density
+CELL_DENSITY_HISTORY_LEN = 10  # Number of continuuous cell density measurements that need to be < MIN_CELL_COUNT before an exception is raised
