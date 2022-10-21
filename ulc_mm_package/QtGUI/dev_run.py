@@ -324,10 +324,13 @@ class AcquisitionThread(QThread):
         if self.autobrightness_on:
             try:
                 done = self.autobrightness.runAutobrightness(img)
-            except AutobrightnessError as e:
-                print(
-                    f"AutobrightnessError encountered: {e}. Stopping autobrightness and continuing..."
-                )
+            except BrightnessTargetNotAchieved as e:
+                print(f"Autobrightness error : {e}.")
+                self.autobrightness_on = False
+                self.autobrightnessDone.emit(1)
+                return
+            except BrightnessCriticallyLow as e:
+                print(f"Autobrightness error : {e}")
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
                 return
@@ -1128,6 +1131,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.blockSignals(False)
         self.btnFlowUp.setEnabled(True)
         self.btnFlowDown.setEnabled(True)
+        self.radSlowFlow.setEnabled(True)
+        self.radMedFlow.setEnabled(True)
+        self.radFastFlow.setEnabled(True)
 
     def disablePressureUIElements(self):
         self.vsFlow.blockSignals(True)
@@ -1135,6 +1141,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.blockSignals(True)
         self.btnFlowUp.setEnabled(False)
         self.btnFlowDown.setEnabled(False)
+        self.radSlowFlow.setEnabled(False)
+        self.radMedFlow.setEnabled(False)
+        self.radFastFlow.setEnabled(False)
 
     @pyqtSlot(int)
     def pressureLeak(self, _):
