@@ -102,7 +102,7 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
 
 def fast_flow_wrapper(mscope: MalariaScope):
     print("Running fast_flow_routine")
-    fast_flow_routine = fastFlowRoutine(mscope, None)
+    fast_flow_routine = fastFlowRoutine(mscope, None, TARGET_FLOWRATE)
     fast_flow_routine.send(None)
     for img in mscope.camera.yieldImages():
         _displayImage(img)
