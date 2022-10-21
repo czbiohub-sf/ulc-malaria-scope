@@ -13,7 +13,7 @@ from transitions import Machine
 from time import perf_counter, sleep
 
 from PyQt5.QtWidgets import QApplication, QMessageBox
-from PyQt5.QtCore import Qt, QThread
+from PyQt5.QtCore import Qt, QThread 
 from PyQt5.QtGui import QIcon
 
 from ulc_mm_package.image_processing.processing_constants import (
@@ -124,25 +124,28 @@ class Oracle(Machine):
     def display_message(
         self, icon: QMessageBox.Icon, title, text, cancel=False, exit_after=False
     ):
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QIcon(ICON_PATH))
-        msgBox.setIcon(icon)
-        msgBox.setWindowTitle(f"{title}")
+        dialog_window = QMessageBox()
+        dialog_window.setWindowIcon(QIcon(ICON_PATH))
+        dialog_window.setIcon(icon)
+        dialog_window.setWindowTitle(f"{title}")
 
         if exit_after:
-            msgBox.setText(f"{text} {_EXIT_MSG}")
+            dialog_window.setText(f"{text} {_EXIT_MSG}")
         else:
-            msgBox.setText(f"{text}")
+            dialog_window.setText(f"{text}")
 
         if cancel:
-            msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            dialog_window.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         else:
-            msgBox.setStandardButtons(QMessageBox.Ok)
+            dialog_window.setStandardButtons(QMessageBox.Ok)
 
-        if exit_after and msgBox.exec() == QMessageBox.Ok:
+        dialog_result = dialog_window.exec()
+        dialog_window.close()
+
+        if exit_after and dialog_result == QMessageBox.Ok:
             self.shutoff()
 
-        return msgBox.exec()
+        return dialog_result
 
     def save_form(self):
         # TODO save experiment metadata here

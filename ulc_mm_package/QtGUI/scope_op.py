@@ -142,18 +142,24 @@ class ScopeOp(QObject, Machine):
         self.freeze_liveview.emit(False)
 
     def _start_autobrightness(self):
+        print("SCOPEOP: Starting autobrightness")
+
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
 
     def _start_cellfinder(self):
+        print("SCOPEOP: Starting cellfinder")
+
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
     def _start_SSAF(self):
+        print("SCOPEOP: Starting SSAF")
+
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
@@ -163,12 +169,16 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_SSAF)
 
     def _start_fastflow(self):
+        print("SCOPEOP: Starting fastflow")
+
         self.fastflow_routine = fastFlowRoutine(self.mscope, None)
         self.fastflow_routine.send(None)
 
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self):
+        print("SCOPEOP: Starting experiment")
+
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
@@ -243,6 +253,7 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_fastflow(self, img):
         self.img_signal.disconnect(self.run_fastflow)
+        print("called")
 
         try:
             self.fastflow_routine.send(img)
