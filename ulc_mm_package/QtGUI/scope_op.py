@@ -21,11 +21,13 @@ from ulc_mm_package.image_processing.processing_constants import (
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
+    MAX_FRAMES,
 )
 
 
 class ScopeOp(QObject, Machine):
     setup_done = pyqtSignal()
+    experiment_done = pyqtSignal()
     reset_done = pyqtSignal()
 
     error = pyqtSignal(str, str)
@@ -40,7 +42,7 @@ class ScopeOp(QObject, Machine):
     def __init__(self, img_signal):
         super().__init__()
 
-        self.mscope = MalariaScope()
+        self.mscope = None
         self.img_signal = img_signal
 
         self.autobrightness_result = None
@@ -54,7 +56,9 @@ class ScopeOp(QObject, Machine):
         # self.b = 0
 
         states = [
-            {"name": "standby"},
+            {
+                "name": "standby",
+            },
             {
                 "name": "autobrightness",
                 "on_enter": [self._start_autobrightness],
@@ -74,26 +78,33 @@ class ScopeOp(QObject, Machine):
             {
                 "name": "experiment",
                 "on_enter": [self._start_experiment],
-                "on_exit": [self._end_experiment],
+            },
+            {
+                "name": "intermission",
+                "on_enter": [self._end_experiment, self._start_intermission],
             },
         ]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
         self.add_transition(
-            trigger="reset", source="*", dest="standby", before="_reset"
+            trigger="rerun", source="intermission", dest="standby", before="reset"
+        )
+        self.add_transition(
+            trigger="stop", source="*", dest="standby", before="_end_experiment"
         )
 
     def setup(self):
-        print("Creating timers")
+        print("SCOPEOP: Creating timers...")
         self.create_timers.emit()
 
+        print("SCOPEOP: Initializing scope...")
+        self.mscope = MalariaScope()
         component_status = self.mscope.getComponentStatus()
         print(component_status)
 
         if all([status == True for status in component_status.values()]):
             self.setup_done.emit()
-            print("Successful hardware initialization")
         else:
             failed_components = [
                 comp.name
@@ -106,22 +117,18 @@ class ScopeOp(QObject, Machine):
                     (",".join(failed_components)).capitalize()
                 ),
             )
-            print("Failed initialization")
 
     def start(self):
         self.start_timers.emit()
 
-        if not self.state == "standby":
-            self.error.emit(
-                "Invalid startup state",
-                "Scopeop can only be started from state 'standby', but is currently in state '{}'.".format(
-                    self.state
-                ),
-            )
-
         self.next_state()
 
-    def _reset(self):
+    def reset(self):
+        print("SCOPEOP: Resetting pneumatic module")
+        self.mscope.pneumatic_module.setDutyCycle(
+            self.mscope.pneumatic_module.getMaxDutyCycle()
+        )
+
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
@@ -130,6 +137,7 @@ class ScopeOp(QObject, Machine):
         self.count = 0
 
         self.set_period.emit(ACQUISITION_PERIOD)
+        self.reset_done.emit()
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -178,24 +186,25 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
-        print("Ending experiment")
+        print("SCOPEOP: Ending experiment")
         self.stop_timers.emit()
 
-        self._reset()
-        self.reset_done.emit()
+        print("SCOPEOP: Turning off LED")
+        self.mscope.led.turnOff()
+
+        # TODO close data_storage
+
+    def _start_intermission(self):
+        self.experiment_done.emit()
 
     @pyqtSlot(np.ndarray)
     def run_autobrightness(self, img):
         self.img_signal.disconnect(self.run_autobrightness)
 
-        self.b = self.a
-        self.a = perf_counter()
-        print("Autobrightness: {}".format(self.a - self.b))
-
         # # For timing
-        # self.a = perf_counter()
-        # print("AB: {}".format(self.a-self.b))
         # self.b = self.a
+        # self.a = perf_counter()
+        #   ("Autobrightness: {}".format(self.a - self.b))
 
         try:
             self.autobrightness_routine.send(img)
@@ -273,9 +282,9 @@ class ScopeOp(QObject, Machine):
     def run_experiment(self, img):
         self.img_signal.disconnect(self.run_experiment)
 
-        if self.count >= 1000:
+        if self.count >= MAX_FRAMES:
             print("Reached frame timeout for experiment")
-            self.to_standby()
+            self.to_intermission()
         else:
 
             # # For timing

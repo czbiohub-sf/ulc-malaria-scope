@@ -2,6 +2,9 @@
 ACQUISITION_PERIOD = 1000.0 / 30.0
 LIVEVIEW_PERIOD = 1000
 
+# Run duration
+MAX_FRAMES = 1000
+
 # Window icon
 ICON_PATH = "CZB-logo.png"
 

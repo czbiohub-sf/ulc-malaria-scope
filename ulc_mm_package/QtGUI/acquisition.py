@@ -10,6 +10,7 @@ import numpy as np
 from time import perf_counter, sleep
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot
 
+from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.QtGUI.gui_constants import ACQUISITION_PERIOD
 
 
@@ -38,14 +39,14 @@ class Acquisition(QObject):
         self.liveview_timer = QTimer()
         self.liveview_timer.timeout.connect(self.send_img)
 
-        print("Created timers")
+        print("ACQUISITION: Created timers")
 
     @pyqtSlot()
     def start_timers(self):
         self.acquisition_timer.start(ACQUISITION_PERIOD)
         self.liveview_timer.start(self.period)
 
-        print("Started timers")
+        print("ACQUISITION: Started timers")
 
     @pyqtSlot()
     def stop_timers(self):
@@ -64,10 +65,12 @@ class Acquisition(QObject):
         self.period = period
         self.liveview_timer.setInterval(self.period)
 
-    def get_mscope(self, mscope):
+    def get_mscope(self, mscope: MalariaScope):
         self.mscope = mscope
 
     def get_img(self):
+
+        # print("got")
 
         # # For timing
         # self.a = perf_counter()
