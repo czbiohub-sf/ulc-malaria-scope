@@ -65,6 +65,9 @@ INVALID_READ_FLAG = -1
 DEFAULT_AFC_DELAY_S = 1
 AFC_NUM_IMAGE_PAIRS = 12
 
+MPRLS_RST = 10
+MPRLS_PWR = 22
+
 # ================ Fan constants ================ #
 FAN_GPIO = 5
 CAM_FAN_1 = 23
