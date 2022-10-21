@@ -89,6 +89,10 @@ def isDensitySufficient(img, downsample_factor: int = 4) -> Tuple[bool, int]:
     return count >= MIN_CELL_COUNT, count
 
 
+class LowDensity(Exception):
+    pass
+
+
 class NoCellsFound(Exception):
     pass
 
