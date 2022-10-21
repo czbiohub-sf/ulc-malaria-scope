@@ -13,7 +13,7 @@ from transitions import Machine
 from time import perf_counter, sleep
 
 from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel
-from PyQt5.QtCore import Qt, QThread 
+from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.image_processing.processing_constants import (
@@ -132,8 +132,8 @@ class Oracle(Machine):
     def display_message(
         self, icon: QMessageBox.Icon, title, text, cancel=False, image=None
     ):
-        
-        self.dialog_window.close() 
+
+        self.dialog_window.close()
 
         self.dialog_window = QMessageBox()
         self.dialog_window.setWindowIcon(QIcon(ICON_PATH))
@@ -147,7 +147,7 @@ class Oracle(Machine):
         else:
             self.dialog_window.setStandardButtons(QMessageBox.Ok)
         self.dialog_window.setDefaultButton(QMessageBox.Ok)
-        
+
         if not image == None:
             layout = self.dialog_window.layout()
 
