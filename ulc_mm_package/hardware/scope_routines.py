@@ -207,6 +207,34 @@ def fastFlowRoutine(
 def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float:
     """Autobrightness routine to set led power.
 
+    Parameters
+    ----------
+    mscope: MalariaScope
+    img: np.ndarray
+
+    Returns
+    -------
+    float: Mean autobrightness value
+
+    Exceptions
+    ----------
+    BrightnessTargetNotAchieved:
+        The target was not achieved BUT is still sufficiently bright enough
+        to proceed with a run. THe mean pixel brightness value can be accessed
+        by:
+            try:
+                ...
+            exception BrightTargetNotAchieved as e:
+                val = e.brightness_val
+
+    BrightnessCriticallyLow:
+        The targeg was not achieved and the brightness is too low to continue
+        with the run. The mean pixel brightness value can be accessed by:
+            try:
+                ...
+            exception BrightTargetNotAchieved as e:
+                val = e.brightness_val
+
     Usage
     -----
         ab_generator = autobrightnessRoutine(mscope, None)
@@ -217,6 +245,10 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
                 ab_generator.send(img)
             except StopIteration as e:
                 mean_brightness_val = e.value
+            except BrightnessTargetNotAchieved:
+                Brightness not at target but still workable
+            except BrightnessCriticallyLow:
+
         cam.stopAcquisition()
         print(mean_brightness_val)
     """
@@ -228,12 +260,15 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
         img = yield img
         try:
             brightness_achieved = autobrightness.runAutobrightness(img)
-        except AutobrightnessError as e:
+        except BrightnessTargetNotAchieved as e:
             # TODO switch to logging
-            print(
-                f"AutobrightnessError encountered: {e}. Stopping autobrightness and continuing..."
-            )
-            brightness_achieved = True
+            print(f"Autobrightness routine exception : {e}")
+            raise
+        except BrightnessCriticallyLow as e:
+            # TODO switch to logging
+            print(f"Autobrightness routine exception : {e}")
+            raise
+
     # Get the mean image brightness to store in the experiment metadata
     return autobrightness.prev_mean_img_brightness
 
@@ -300,6 +335,7 @@ def find_cells_routine(
         2. Sweep the motor through the full range of motion and take in images at each step
         3. Assess whether cells are present
         """
+
         if max_attempts == 0:
             raise NoCellsFound()
 
@@ -339,8 +375,8 @@ def cell_density_routine(
             perf_counter() - prev_time
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
-            img = yield
-            prev_measurements[index] = binarize_count_cells(img)
+            img = yield prev_measurements[(idx - 1) % 10]
+            prev_measurements[idx] = binarize_count_cells(img)
             idx = (idx + 1) % len(prev_measurements)
 
             if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):

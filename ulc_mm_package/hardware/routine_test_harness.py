@@ -7,7 +7,7 @@ from ulc_mm_package.image_processing.processing_constants import (
     TARGET_FLOWRATE,
 )
 
-from ulc_mm_package.image_processing.cell_finder import isDensitySufficient
+from ulc_mm_package.image_processing.cell_finder import LowDensity
 
 import cv2
 
@@ -54,6 +54,7 @@ def find_cells_wrapper(mscope: MalariaScope):
         int returns the motor position w/ the highest cross correlation
         bool returns False, indicating
     """
+
     print("Running `find_cells_routine`")
     find_cells = find_cells_routine(mscope)
     find_cells.send(None)
@@ -182,6 +183,9 @@ def main_acquisition_loop(mscope: MalariaScope):
     flow_control = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
     flow_control.send(None)
 
+    cell_density = cell_density_routine(None)
+    cell_density.send(None)
+
     for img, timestamp in mscope.camera.yieldImages():
         # Display
         _displayImage(img)
@@ -195,10 +199,12 @@ def main_acquisition_loop(mscope: MalariaScope):
         prev_results = count_parasitemia(mscope, img)
 
         density_start_time = perf_counter()
-        _, count = isDensitySufficient(img)
+        try:
+            count = cell_density.send(img)
+        except LowDensity as e:
+            print(e)
         print(f"Cell density : {count}, {perf_counter() - density_start_time}")
 
-        # Adjust the flow
         try:
             flow_control.send((img, timestamp))
         except CantReachTargetFlowrate:
@@ -210,6 +216,13 @@ def main_acquisition_loop(mscope: MalariaScope):
         elif perf_counter() - prev_print_time >= 10:
             print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
             prev_print_time = perf_counter()
+
+            # Timed stop condition
+            if perf_counter() - start > stop_time_s:
+                break
+            elif perf_counter() - prev_print_time >= 10:
+                print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
+                prev_print_time = perf_counter()
 
     closing_file_future = mscope.data_storage.close()
     mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
