@@ -97,7 +97,6 @@ class ScopeOp(QObject, Machine):
         print("SCOPEOP: Initializing scope...")
         self.mscope = MalariaScope()
         component_status = self.mscope.getComponentStatus()
-        print(component_status)
 
         if all([status == True for status in component_status.values()]):
             self.setup_done.emit()
@@ -253,7 +252,6 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_fastflow(self, img):
         self.img_signal.disconnect(self.run_fastflow)
-        print("called")
 
         try:
             self.fastflow_routine.send(img)

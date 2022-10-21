@@ -30,7 +30,7 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
-_EXIT_MSG = "Click OK to end experiment."
+_ERROR_MSG = ' Click "OK" to end this run.'
 
 # Add type to input arguments (mscope, img_signal)
 
@@ -91,7 +91,7 @@ class Oracle(Machine):
         self.form_window.exit_btn.clicked.connect(self.shutoff)
 
         # Connect liveview buttons
-        self.liveview_window.exit_btn.clicked.connect(self.shutoff)
+        self.liveview_window.exit_btn.clicked.connect(self.exit_handler)
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.next_state)
@@ -113,26 +113,34 @@ class Oracle(Machine):
         # Trigger first transition
         self.next_state()
 
+    def exit_handler(self):
+        dialog_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "End run?",
+            'Click "OK" to end this run.',
+            cancel=True,
+        )
+        if dialog_result == QMessageBox.Ok:
+            self.scopeop.to_intermission()
+
     def error_handler(self, title, text):
         self.display_message(
             QMessageBox.Icon.Critical,
             title,
-            text,
-            exit_after=True,
+            text + _ERROR_MSG,
         )
 
+        self.scopeop.to_intermission()
+
     def display_message(
-        self, icon: QMessageBox.Icon, title, text, cancel=False, exit_after=False
+        self, icon: QMessageBox.Icon, title, text, cancel=False
     ):
         dialog_window = QMessageBox()
         dialog_window.setWindowIcon(QIcon(ICON_PATH))
         dialog_window.setIcon(icon)
         dialog_window.setWindowTitle(f"{title}")
 
-        if exit_after:
-            dialog_window.setText(f"{text} {_EXIT_MSG}")
-        else:
-            dialog_window.setText(f"{text}")
+        dialog_window.setText(f"{text}")
 
         if cancel:
             dialog_window.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
@@ -141,9 +149,6 @@ class Oracle(Machine):
 
         dialog_result = dialog_window.exec()
         dialog_window.close()
-
-        if exit_after and dialog_result == QMessageBox.Ok:
-            self.shutoff()
 
         return dialog_result
 
@@ -225,15 +230,15 @@ class Oracle(Machine):
 
     def _start_intermission(self):
 
-        reset_query = self.display_message(
+        dialog_result = self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
             'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
             cancel=True,
         )
-        if reset_query == QMessageBox.Cancel:
+        if dialog_result == QMessageBox.Cancel:
             self.shutoff()
-        elif reset_query == QMessageBox.Ok:
+        elif dialog_result == QMessageBox.Ok:
             print("ORACLE: Running new experiment")
             self.scopeop.rerun()
 
