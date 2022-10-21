@@ -1,4 +1,4 @@
-from os.path import exists
+import os
 
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
@@ -78,8 +78,9 @@ VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7ch
 SIMULATION = False
 # Enable simulation mode by creating blank simulation.py file under main script's directory
 # eg. to run ulc_mm_package/QtGUI/oracle.py, create an empty file under ulc_mm_package/QtGUI/simulation.py
-if exists("./simulation.py"):
-    print("found ./simulation.py")
+simulate_flag = os.environ.get("MS_SIMULATE", None)
+if simulate_flag is not None:
+    print(f"MS_SIMULATE={simulate_flag}")
     SIMULATION = True
 else:
     print(f"no simulation.py; simulation mode {SIMULATION}")
