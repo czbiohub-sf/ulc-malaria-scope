@@ -1,6 +1,6 @@
 """ Low-level/hardware state machine manager
 
-Controls hardware (ie. the Scope) operations. 
+Controls hardware (ie. the Scope) operations.
 Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
@@ -50,10 +50,6 @@ class ScopeOp(QObject, Machine):
         self.SSAF_result = None
         self.fastflow_result = None
         self.count = 0
-
-        # # For timing
-        # self.a = 0
-        # self.b = 0
 
         states = [
             {
@@ -201,11 +197,6 @@ class ScopeOp(QObject, Machine):
     def run_autobrightness(self, img):
         self.img_signal.disconnect(self.run_autobrightness)
 
-        # # For timing
-        # self.b = self.a
-        # self.a = perf_counter()
-        #   ("Autobrightness: {}".format(self.a - self.b))
-
         try:
             self.autobrightness_routine.send(img)
         except StopIteration as e:
@@ -218,11 +209,6 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray)
     def run_cellfinder(self, img):
         self.img_signal.disconnect(self.run_cellfinder)
-
-        # # For timing
-        # self.b = self.a
-        # self.a = perf_counter()
-        # print("Cellfinder: {}".format(self.a-self.b))
 
         try:
             self.cellfinder_routine.send(img)
@@ -258,11 +244,6 @@ class ScopeOp(QObject, Machine):
     def run_fastflow(self, img):
         self.img_signal.disconnect(self.run_fastflow)
 
-        # # For timing
-        # self.b = self.a
-        # self.a = perf_counter()
-        # print("Fastflow: {}".format(self.a-self.b))
-
         try:
             self.fastflow_routine.send(img)
         except CantReachTargetFlowrate:
@@ -286,15 +267,6 @@ class ScopeOp(QObject, Machine):
             print("Reached frame timeout for experiment")
             self.to_intermission()
         else:
-
-            # # For timing
-            # self.b = self.a
-            # self.a = perf_counter()
-            # print("Experiment: {}".format(self.a-self.b))
-
-            # self.mscope.data_storage.writeData(img, fake_per_img_metadata)
-            # TODO get metadata from hardware here
-
             prev_res = count_parasitemia(self.mscope, img)
 
             # Adjust the flow
