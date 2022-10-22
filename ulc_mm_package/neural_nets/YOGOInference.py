@@ -26,8 +26,8 @@ class YOGO(NCSModel):
     def __init__(self, model_path: str = YOGO_MODEL_DIR):
         super().__init__(model_path, OptimizationHint.THROUGHPUT)
 
-    def __call__(self, input_img):
-        return self.asyn(input_img)
+    def __call__(self, input_img, idxs=None):
+        return self.asyn(input_img, idxs)
 
     def syn(self, input_img):
         res = super().syn(input_img)
