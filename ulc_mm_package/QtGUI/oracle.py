@@ -32,8 +32,8 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 _ERROR_MSG = ' Click "OK" to end this run.'
 
-_IMAGE_INSERT_PATH = "gui_images/cat-sample.jpg"
-_IMAGE_REMOVE_PATH = "gui_images/cat-sample.jpg"
+_IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
+_IMAGE_REMOVE_PATH = "gui_images/remove_inforgraphic.png"
 
 
 class Oracle(Machine):

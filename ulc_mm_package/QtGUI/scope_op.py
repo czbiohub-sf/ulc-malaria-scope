@@ -45,6 +45,8 @@ class ScopeOp(QObject, Machine):
         self.mscope = None
         self.img_signal = img_signal
 
+        # TODO make sure all of these get reset
+
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
