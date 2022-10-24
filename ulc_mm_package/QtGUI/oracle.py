@@ -33,8 +33,8 @@ _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7c
 _ERROR_MSG = ' Click "OK" to end this run.'
 
 _IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
-_IMAGE_REMOVE_PATH = "gui_images/remove_inforgraphic.png"
-
+_IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
+   
 
 class Oracle(Machine):
     def __init__(self):
