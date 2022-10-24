@@ -260,8 +260,8 @@ class ScopeOp(QObject, Machine):
             self.fastflow_routine.send(img)
         except CantReachTargetFlowrate:
             if SIMULATION:
-                self.fastflow_result = 8  # rough estimate of slow flowrate
-                print(f"Flowrate: {self.fastflow_result}")
+                self.fastflow_result = TARGET_FLOWRATE
+                print(f"(simulated) Flowrate: {self.fastflow_result}")
                 self.next_state()
             else:
                 self.fastflow_result = -1
@@ -281,10 +281,9 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_experiment)
 
         if self.count >= MAX_FRAMES:
-            print("Reached frame timeout for experiment")
             self.to_intermission()
         else:
-            prev_res = count_parasitemia(self.mscope, img)
+            prev_res = count_parasitemia(self.mscope, img, [self.count])
 
             # Adjust the flow
             try:
@@ -300,10 +299,15 @@ class ScopeOp(QObject, Machine):
                     )
             # TODO add recovery operation for low cell density
             except:
-                self.error.emit(
-                    "Autofocus failed",
-                    "Unable to achieve desired focus within condenser's depth of field.",
-                )
+                if not SIMULATION:
+                    self.error.emit(
+                        "Autofocus failed",
+                        "Unable to achieve desired focus within condenser's depth of field.",
+                    )
             else:
                 self.count += 1
                 self.img_signal.connect(self.run_experiment)
+            finally:
+                if SIMULATION:
+                    self.count += 1
+                    self.img_signal.connect(self.run_experiment)
