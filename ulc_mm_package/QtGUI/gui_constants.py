@@ -3,10 +3,10 @@ ACQUISITION_PERIOD = 1000.0 / 30.0
 LIVEVIEW_PERIOD = 1000
 
 # Run duration
-MAX_FRAMES = 1000
+MAX_FRAMES = 100
 
 # Window icon
-ICON_PATH = "CZB-logo.png"
+ICON_PATH = "gui_images/CZB-logo.png"
 
 # SSD directory
 DEFAULT_SSD = "/media/pi/"

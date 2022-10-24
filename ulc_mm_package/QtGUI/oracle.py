@@ -12,9 +12,9 @@ import numpy as np
 from transitions import Machine
 from time import perf_counter, sleep
 
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel
 from PyQt5.QtCore import Qt, QThread
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.image_processing.processing_constants import (
     EXPERIMENT_METADATA_KEYS,
@@ -30,22 +30,19 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
-_EXIT_MSG = "Click OK to end experiment."
+_ERROR_MSG = ' Click "OK" to end this run.'
 
-# Add type to input arguments (mscope, img_signal)
-
-# NICE TO HAVE
-# Use "on_exception" to trigger exception handler
-# Validate experiment form inputs
-# Implement exception handling for camera
+_IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
+_IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
 
 
 class Oracle(Machine):
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
 
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
+        self.dialog_window = QMessageBox()
 
         # Instantiate camera acquisition and thread
         self.acquisition = Acquisition()
@@ -82,7 +79,7 @@ class Oracle(Machine):
             },
         ]
 
-        Machine.__init__(self, states=states, queued=True, initial="standby")
+        super().__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
         self.add_transition(trigger="rerun", source="intermission", dest="form")
 
@@ -91,7 +88,7 @@ class Oracle(Machine):
         self.form_window.exit_btn.clicked.connect(self.shutoff)
 
         # Connect liveview buttons
-        self.liveview_window.exit_btn.clicked.connect(self.shutoff)
+        self.liveview_window.exit_btn.clicked.connect(self.exit_handler)
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.next_state)
@@ -113,36 +110,56 @@ class Oracle(Machine):
         # Trigger first transition
         self.next_state()
 
+    def exit_handler(self):
+        dialog_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "End run?",
+            'Click "OK" to end this run.',
+            cancel=True,
+        )
+        if dialog_result == QMessageBox.Ok:
+            self.scopeop.to_intermission()
+
     def error_handler(self, title, text):
         self.display_message(
             QMessageBox.Icon.Critical,
             title,
-            text,
-            exit_after=True,
+            text + _ERROR_MSG,
         )
 
-    def display_message(
-        self, icon: QMessageBox.Icon, title, text, cancel=False, exit_after=False
-    ):
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QIcon(ICON_PATH))
-        msgBox.setIcon(icon)
-        msgBox.setWindowTitle(f"{title}")
+        self.scopeop.to_intermission()
 
-        if exit_after:
-            msgBox.setText(f"{text} {_EXIT_MSG}")
-        else:
-            msgBox.setText(f"{text}")
+    def display_message(
+        self, icon: QMessageBox.Icon, title, text, cancel=False, image=None
+    ):
+
+        self.dialog_window.close()
+
+        self.dialog_window = QMessageBox()
+        self.dialog_window.setWindowIcon(QIcon(ICON_PATH))
+        self.dialog_window.setIcon(icon)
+        self.dialog_window.setWindowTitle(f"{title}")
+
+        self.dialog_window.setText(f"{text}")
 
         if cancel:
-            msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            self.dialog_window.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         else:
-            msgBox.setStandardButtons(QMessageBox.Ok)
+            self.dialog_window.setStandardButtons(QMessageBox.Ok)
+        self.dialog_window.setDefaultButton(QMessageBox.Ok)
 
-        if exit_after and msgBox.exec() == QMessageBox.Ok:
-            self.shutoff()
+        if not image == None:
+            layout = self.dialog_window.layout()
 
-        return msgBox.exec()
+            image_lbl = QLabel()
+            image_lbl.setPixmap(QPixmap(image))
+
+            # Row/column span determined using layout.rowCount() and layout.columnCount()
+            layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)
+
+        dialog_result = self.dialog_window.exec()
+
+        return dialog_result
 
     def save_form(self):
         # TODO save experiment metadata here
@@ -161,13 +178,6 @@ class Oracle(Machine):
         ):
             pass
         print("ORACLE: Successfully terminated timer.")
-
-        if self.state == "liveview":
-            self.display_message(
-                QMessageBox.Icon.Information,
-                "Shutting off",
-                'Remove flow cell now. Click "OK" once it is removed.',
-            )
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
@@ -190,6 +200,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Initializing hardware",
             'If there is a flow cell in the scope, remove it now. Click "OK" once it is removed.',
+            image=_IMAGE_REMOVE_PATH,
         )
 
         self.scopeop_thread.start()
@@ -209,6 +220,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Starting run",
             'Insert flow cell now. Click "OK" once it is in place.',
+            image=_IMAGE_INSERT_PATH,
         )
 
         self.liveview_window.show()
@@ -222,15 +234,16 @@ class Oracle(Machine):
 
     def _start_intermission(self):
 
-        reset_query = self.display_message(
+        dialog_result = self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
             'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
             cancel=True,
+            image=_IMAGE_REMOVE_PATH,
         )
-        if reset_query == QMessageBox.Cancel:
+        if dialog_result == QMessageBox.Cancel:
             self.shutoff()
-        elif reset_query == QMessageBox.Ok:
+        elif dialog_result == QMessageBox.Ok:
             print("ORACLE: Running new experiment")
             self.scopeop.rerun()
 

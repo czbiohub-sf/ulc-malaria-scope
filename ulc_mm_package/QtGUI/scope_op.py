@@ -46,6 +46,8 @@ class ScopeOp(QObject, Machine):
         self.mscope = None
         self.img_signal = img_signal
 
+        # TODO make sure all of these get reset
+
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
@@ -98,7 +100,6 @@ class ScopeOp(QObject, Machine):
         print("SCOPEOP: Initializing scope...")
         self.mscope = MalariaScope()
         component_status = self.mscope.getComponentStatus()
-        print(component_status)
 
         if all([status == True for status in component_status.values()]):
             self.setup_done.emit()
@@ -143,18 +144,24 @@ class ScopeOp(QObject, Machine):
         self.freeze_liveview.emit(False)
 
     def _start_autobrightness(self):
+        print("SCOPEOP: Starting autobrightness")
+
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
 
     def _start_cellfinder(self):
+        print("SCOPEOP: Starting cellfinder")
+
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
     def _start_SSAF(self):
+        print("SCOPEOP: Starting SSAF")
+
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
@@ -164,12 +171,16 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_SSAF)
 
     def _start_fastflow(self):
+        print("SCOPEOP: Starting fastflow")
+
         self.fastflow_routine = fastFlowRoutine(self.mscope, None)
         self.fastflow_routine.send(None)
 
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self):
+        print("SCOPEOP: Starting experiment")
+
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
