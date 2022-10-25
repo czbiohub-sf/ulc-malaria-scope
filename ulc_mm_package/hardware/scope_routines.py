@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Sequence
 from time import perf_counter
 import numpy as np
 
@@ -110,10 +110,10 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
 
 
 def count_parasitemia(
-    mscope: MalariaScope, img: np.ndarray
+    mscope: MalariaScope, img: np.ndarray, counts: Optional[Sequence[int]] = None
 ) -> List[Tuple[int, Tuple[float, ...]]]:
     results = mscope.cell_diagnosis_model.get_asyn_results()
-    mscope.cell_diagnosis_model(img)
+    mscope.cell_diagnosis_model(img, counts)
     return results
 
 

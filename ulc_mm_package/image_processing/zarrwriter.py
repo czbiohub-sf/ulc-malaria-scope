@@ -124,9 +124,9 @@ class ZarrWriter:
     def threadedCloseFile(self):
         """Close the file in a separate thread (and locks the ability to write to the file).
 
-        This threaded close was written with UI.py in mind, so that the file can be closed while 
+        This threaded close was written with UI.py in mind, so that the file can be closed while
         keeping the rest of the GUI responsive.
-        
+
         Returns
         -------
         future: An object that can be polled to check if closing the file has completed

@@ -9,6 +9,7 @@ import numpy.typing as npt
 from enum import Enum
 from pathlib import Path
 from copy import deepcopy
+from contextlib import contextmanager
 
 from typing import Any, Callable, List, Sequence, Optional, Tuple
 
@@ -45,6 +46,15 @@ class TPUError(Exception):
 class OptimizationHint(Enum):
     LATENCY = 1
     THROUGHPUT = 2
+
+
+@contextmanager
+def lock_timout(lock, timeout=0.01):
+    lock.acquire(timeout=timeout)
+    try:
+        yield
+    finally:
+        lock.release()
 
 
 class NCSModel:
@@ -128,7 +138,7 @@ class NCSModel:
         raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
-        with self.lock:
+        with lock_timout(self.lock):
             self._asyn_results.append(infer_request.output_tensors[0].data)
 
     def syn(self, input_img):
@@ -161,7 +171,7 @@ class NCSModel:
             self.asyn_infer_queue.start_async({0: input_tensor}, userdata=i)
 
     def get_asyn_results(self):
-        with self.lock:
+        with lock_timout(self.lock):
             res = deepcopy(self._asyn_results)
             self._asyn_results = []
         return res

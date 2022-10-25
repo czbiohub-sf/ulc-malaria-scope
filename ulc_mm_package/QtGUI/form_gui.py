@@ -24,8 +24,8 @@ from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
 
-    def __init__(self, *args, **kwargs):
-        super(FormGUI, self).__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         self._load_ui()
 
     def _load_ui(self):
