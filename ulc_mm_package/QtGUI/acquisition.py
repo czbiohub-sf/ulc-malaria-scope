@@ -10,6 +10,7 @@ import numpy as np
 from time import perf_counter, sleep
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot
 
+from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.QtGUI.gui_constants import ACQUISITION_PERIOD
 
 
@@ -26,10 +27,6 @@ class Acquisition(QObject):
         self.count = 0
         self.period = ACQUISITION_PERIOD
 
-        # # For timing
-        # self.a = 0
-        # self.b = 0
-
     @pyqtSlot()
     def create_timers(self):
         self.acquisition_timer = QTimer()
@@ -38,14 +35,14 @@ class Acquisition(QObject):
         self.liveview_timer = QTimer()
         self.liveview_timer.timeout.connect(self.send_img)
 
-        print("Created timers")
+        print("ACQUISITION: Created timers")
 
     @pyqtSlot()
     def start_timers(self):
         self.acquisition_timer.start(ACQUISITION_PERIOD)
         self.liveview_timer.start(self.period)
 
-        print("Started timers")
+        print("ACQUISITION: Started timers")
 
     @pyqtSlot()
     def stop_timers(self):
@@ -64,19 +61,12 @@ class Acquisition(QObject):
         self.period = period
         self.liveview_timer.setInterval(self.period)
 
-    def get_mscope(self, mscope):
+    def get_mscope(self, mscope: MalariaScope):
         self.mscope = mscope
 
     def get_img(self):
-
-        # # For timing
-        # self.a = perf_counter()
-        # print(f"Acquisition {self.a-self.b}")
-        # self.b = self.a
-
         try:
             self.img = next(self.mscope.camera.yieldImages())
-            print("sent")
             self.update_scopeop.emit(self.img)
             self.count += 1
         except Exception as e:

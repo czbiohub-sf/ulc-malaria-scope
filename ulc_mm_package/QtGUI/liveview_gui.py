@@ -23,8 +23,8 @@ from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
 
 
 class LiveviewGUI(QMainWindow):
-    def __init__(self, *args, **kwargs):
-        super(LiveviewGUI, self).__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         self._load_ui()
 
     @pyqtSlot(np.ndarray)
