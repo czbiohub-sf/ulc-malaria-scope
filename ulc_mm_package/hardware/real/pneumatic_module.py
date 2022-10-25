@@ -22,6 +22,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     SERVO_PWM_PIN,
     SERVO_FREQ,
     INVALID_READ_FLAG,
+    PRESSURE_SENSOR_ENABLE_PIN,
 )
 from ulc_mm_package.hardware.dtoverlay_pwm import (
     dtoverlay_PWM,
@@ -80,6 +81,9 @@ class PneumaticModule:
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
+
+        # Enable the pressure sensor board
+        self._pi.write(PRESSURE_SENSOR_ENABLE_PIN, 1)
 
         # Move servo to default position (minimum, stringe fully extended out)
         self._pi.set_pull_up_down(servo_pin, pigpio.PUD_DOWN)
