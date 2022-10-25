@@ -7,7 +7,7 @@ from ulc_mm_package.image_processing.processing_constants import (
     TARGET_FLOWRATE,
 )
 
-from ulc_mm_package.image_processing.cell_finder import isDensitySufficient
+from ulc_mm_package.image_processing.cell_finder import LowDensity
 
 import cv2
 
@@ -202,6 +202,7 @@ def main_acquisition_loop(mscope: MalariaScope):
         try:
             count = cell_density.send(img)
             print(f"Cell density : {count}, {perf_counter() - density_start_time}")
+            density_start_time = perf_counter()
 
             # Adjust the flow
             try:
