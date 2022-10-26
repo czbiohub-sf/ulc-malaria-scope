@@ -297,17 +297,19 @@ class ScopeOp(QObject, Machine):
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
                     )
+                else:
+                    self.count += 1
+                    self.img_signal.connect(self.run_experiment)
             # TODO add recovery operation for low cell density
-            except:
+            except Exception as e:
                 if not SIMULATION:
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
                     )
+                else:
+                    self.count += 1
+                    self.img_signal.connect(self.run_experiment)
             else:
                 self.count += 1
                 self.img_signal.connect(self.run_experiment)
-            finally:
-                if SIMULATION:
-                    self.count += 1
-                    self.img_signal.connect(self.run_experiment)
