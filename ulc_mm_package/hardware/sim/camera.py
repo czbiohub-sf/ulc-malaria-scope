@@ -10,7 +10,7 @@ Purpose: Dummy hardware object simulating camera.
 
 import cv2
 
-from time import sleep
+from time import time, sleep
 
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS, VIDEO_PATH
 from ulc_mm_package.hardware.camera import CameraError
@@ -46,7 +46,7 @@ class SimCamera:
             if not success:
                 self.video = cv2.VideoCapture(VIDEO_PATH)
                 success, frame = self.video.read()
-            yield cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            yield cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), time()
             sleep(1 / self.fps)
 
     def snapImage(self):
