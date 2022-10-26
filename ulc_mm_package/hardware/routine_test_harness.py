@@ -39,6 +39,13 @@ def autobrightness_wrappper(mscope: MalariaScope):
             final_brightness = e.value
             print(f"Mean pixel val: {final_brightness}")
             break
+        except BrightnessTargetNotAchieved as e:
+            print(
+                f"Brightness not quite at target, but still ok. Mean pixel val: {e.brightness_val}"
+            )
+            break
+        except BrightnessCriticallyLow:
+            raise
 
 
 def find_cells_wrapper(mscope: MalariaScope):
