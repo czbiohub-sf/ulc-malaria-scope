@@ -221,8 +221,7 @@ class ScopeOp(QObject, Machine):
             )
             self.next_state()
         except BrightnessCriticallyLow as e:
-            # TODO
-            print(
+            self.error.emit(
                 f"Too dim to run an experiment - aborting. Mean pixel value: {e.brightness_val}"
             )
         else:
@@ -287,7 +286,7 @@ class ScopeOp(QObject, Machine):
             self.img_signal.connect(self.run_fastflow)
 
     @pyqtSlot(np.ndarray, int)
-    def run_experiment(self, img, _):
+    def run_experiment(self, img, timestamp):
         self.img_signal.disconnect(self.run_experiment)
 
         if self.count >= MAX_FRAMES:
@@ -300,7 +299,7 @@ class ScopeOp(QObject, Machine):
                 # Periodically adjust focus using single shot autofocus
                 self.PSSAF_routine.send(img)
                 # TODO add density check here
-                self.flowcontrol_routine.send(img)
+                self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate:
                 if not SIMULATION:
                     self.error.emit(
