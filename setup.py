@@ -29,7 +29,6 @@ setup(
         "matplotlib==3.4.3",
         "numpy==1.21.0",
         "opencv-python",
-        "scipy==1.8.1",
         "PyQt5==5.15.4",
         "pypylon==1.7.2",
         "zarr==2.10.1",
