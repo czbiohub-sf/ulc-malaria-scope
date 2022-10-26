@@ -222,7 +222,8 @@ class ScopeOp(QObject, Machine):
             self.next_state()
         except BrightnessCriticallyLow as e:
             self.error.emit(
-                f"Too dim to run an experiment - aborting. Mean pixel value: {e.brightness_val}"
+                "Autobrightness failed",
+                f"Too dim to run an experiment - aborting. Mean pixel value: {e.brightness_val}",
             )
         else:
             self.img_signal.connect(self.run_autobrightness)
