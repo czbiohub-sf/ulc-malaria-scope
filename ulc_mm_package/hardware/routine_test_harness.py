@@ -19,7 +19,7 @@ def _displayImage(img: np.ndarray) -> None:
 
 def _displayForNSeconds(seconds: int):
     start = perf_counter()
-    for img in mscope.camera.yieldImages():
+    for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
         if perf_counter() - start > seconds:
             break
@@ -29,7 +29,7 @@ def autobrightness_wrappper(mscope: MalariaScope):
     print(f"Running Autobrightness...")
     ab_routine = autobrightnessRoutine(mscope)
     ab_routine.send(None)
-    for img in mscope.camera.yieldImages():
+    for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
         try:
             ab_routine.send(img)
@@ -55,7 +55,7 @@ def find_cells_wrapper(mscope: MalariaScope):
     print("Running `find_cells_routine`")
     find_cells = find_cells_routine(mscope)
     find_cells.send(None)
-    for img in mscope.camera.yieldImages():
+    for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
         try:
             find_cells.send(img)
@@ -89,7 +89,7 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
     print("Running SSAF")
     ssaf = singleShotAutofocusRoutine(mscope, None)
     ssaf.send(None)
-    for img in mscope.camera.yieldImages():
+    for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
         try:
             ssaf.send(img)
@@ -102,10 +102,10 @@ def fast_flow_wrapper(mscope: MalariaScope):
     print("Running fast_flow_routine")
     fast_flow_routine = fastFlowRoutine(mscope, None)
     fast_flow_routine.send(None)
-    for img in mscope.camera.yieldImages():
+    for img, timestamp in mscope.camera.yieldImages():
         _displayImage(img)
         try:
-            fast_flow_routine.send(img)
+            fast_flow_routine.send((img, timestamp))
         except CantReachTargetFlowrate:
             print(
                 "Unable to achieve flowrate - syringe at max position but flowrate is below target."
@@ -180,7 +180,7 @@ def main_acquisition_loop(mscope: MalariaScope):
     flow_control = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
     flow_control.send(None)
 
-    for img in mscope.camera.yieldImages():
+    for img, timestamp in mscope.camera.yieldImages():
         # Display
         _displayImage(img)
 
@@ -194,7 +194,7 @@ def main_acquisition_loop(mscope: MalariaScope):
 
         # Adjust the flow
         try:
-            flow_control.send(img)
+            flow_control.send((img, timestamp))
         except CantReachTargetFlowrate:
             print("Can't reach target flowrate.")
 

@@ -132,16 +132,16 @@ def flowControlRoutine(
         Image to be passed into the FlowController
     """
 
-    img = yield
+    img, timestamp = yield
     flow_val = 0
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
 
     while True:
-        img = yield flow_val
+        img, timestamp = yield flow_val
         try:
-            flow_val = flow_controller.controlFlow(img)
+            flow_val = flow_controller.controlFlow(img, timestamp)
         except CantReachTargetFlowrate:
             raise
 
@@ -187,15 +187,15 @@ def fastFlowRoutine(
     """
 
     flow_val = 0
-    img = yield
+    img, timestamp = yield
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
 
     while True:
-        img = yield flow_val
+        img, timestamp = yield flow_val
         try:
-            flow_val, flow_error = flow_controller.fastFlowAdjustment(img)
+            flow_val, flow_error = flow_controller.fastFlowAdjustment(img, timestamp)
         except CantReachTargetFlowrate:
             raise
 
@@ -283,7 +283,7 @@ def find_cells_routine(
         3  # Maximum number of times to run check for cells routine before aborting
     )
     cell_finder = CellFinder()
-    img = yield img
+    img = yield
 
     # Initial check for cells, return current motor position if cells found
     cell_finder.add_image(mscope.motor.pos, img)
@@ -306,13 +306,13 @@ def find_cells_routine(
         start = perf_counter()
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
         while perf_counter() - start < pull_time:
-            img = yield img
+            img = yield
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
         # Perform a full focal stack and get the cross-correlation value for each image
         for pos in range(0, mscope.motor.max_pos, steps_per_image):
             mscope.motor.move_abs(pos)
-            img = yield img
+            img = yield
             cell_finder.add_image(mscope.motor.pos, img)
 
         # Return the motor position where cells were found

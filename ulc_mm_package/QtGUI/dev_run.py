@@ -132,11 +132,11 @@ class AcquisitionThread(QThread):
         while True:
             if self.camera_activated:
                 try:
-                    for image in self.camera.yieldImages():
+                    for image, timestamp in self.camera.yieldImages():
                         self.updateGUIElements()
                         self.save(image)
                         self.zStack(image)
-                        self.activeFlowControl(image)
+                        self.activeFlowControl(image, timestamp)
                         self._autobrightness(image)
                         self.autofocusWrapper(image)
 
@@ -346,16 +346,17 @@ class AcquisitionThread(QThread):
         self.fast_flow_enabled = True
 
     def stopActiveFlowControl(self):
+        self.fast_flow_enabled = False
         self.flowcontrol_enabled = False
         self.initializeFlowControl = False
 
-    def activeFlowControl(self, img: np.ndarray):
+    def activeFlowControl(self, img: np.ndarray, timestamp: int):
         if self.initializeFlowControl:
             self.initializeActiveFlowControl(img)
 
         if self.fast_flow_enabled:
             try:
-                flow_val = self.fastFlowRoutine.send(img)
+                flow_val = self.fastFlowRoutine.send((img, timestamp))
                 self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
@@ -375,7 +376,7 @@ class AcquisitionThread(QThread):
 
         if self.flowcontrol_enabled:
             try:
-                flow_val = self.flowControl.send(img)
+                flow_val = self.flowControl.send((img, timestamp))
                 self.syringePosChanged.emit(1)
                 self.flowValChanged.emit(flow_val)
             except CantReachTargetFlowrate:

@@ -93,7 +93,9 @@ class FlowController:
 
         self.target_flowrate = target_flowrate
 
-    def fastFlowAdjustment(self, img: np.ndarray) -> Tuple[float, float]:
+    def fastFlowAdjustment(
+        self, img: np.ndarray, timestamp: int
+    ) -> Tuple[float, float]:
         """
         Adjust flow on a faster feedback cycle (i.e w/o the EWMA batching)
         until the target flowrate is achieved.
@@ -119,6 +121,8 @@ class FlowController:
         ----------
         img: np.ndarray
             Image to be passed into the FlowRateEstimator
+        timestamp: int
+            Timestamp of when the image was taken
 
         Returns
         -------
@@ -134,7 +138,7 @@ class FlowController:
             can't move any further in the necessary direction, this exception is raised
         """
 
-        self.fre.addImageAndCalculatePair(img, perf_counter())
+        self.fre.addImageAndCalculatePair(img, timestamp)
         if self.fre.isFull():
             _, dy, _, _ = self.fre.getStatsAndReset()
             self.curr_flowrate = dy
@@ -147,7 +151,7 @@ class FlowController:
         else:
             return (FRE_INCOMPLETE, FRE_INCOMPLETE)
 
-    def controlFlow(self, img: np.ndarray) -> float:
+    def controlFlow(self, img: np.ndarray, timestamp: int) -> float:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
 
         If the `self.target_flowrate` has not been set, the first full measurement is used as the target, and all subsequent measurements
@@ -167,6 +171,8 @@ class FlowController:
         ----------
         img : np.ndarray
             Image must have the same dimensions as those specified on initializing this FlowController class.
+        timestamp: int
+            Timestamp of when the image was taken
 
         Returns
         -------
@@ -182,7 +188,7 @@ class FlowController:
             can't move any further in the necessary direction, this exception is raised
         """
 
-        self._addImage(img, perf_counter())
+        self._addImage(img, timestamp)
         if self._isFull():
             self.curr_flowrate = self._ewma(self.flowrates)
 
