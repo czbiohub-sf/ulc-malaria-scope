@@ -1131,9 +1131,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.blockSignals(False)
         self.btnFlowUp.setEnabled(True)
         self.btnFlowDown.setEnabled(True)
-        self.radSlowFlow.setEnabled(True)
-        self.radMedFlow.setEnabled(True)
-        self.radFastFlow.setEnabled(True)
+        self.radFlowSlow.setEnabled(True)
+        self.radFlowMed.setEnabled(True)
+        self.radFlowFast.setEnabled(True)
 
     def disablePressureUIElements(self):
         self.vsFlow.blockSignals(True)
@@ -1141,9 +1141,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.blockSignals(True)
         self.btnFlowUp.setEnabled(False)
         self.btnFlowDown.setEnabled(False)
-        self.radSlowFlow.setEnabled(False)
-        self.radMedFlow.setEnabled(False)
-        self.radFastFlow.setEnabled(False)
+        self.radFlowSlow.setEnabled(False)
+        self.radFlowMed.setEnabled(False)
+        self.radFlowFast.setEnabled(False)
 
     @pyqtSlot(int)
     def pressureLeak(self, _):

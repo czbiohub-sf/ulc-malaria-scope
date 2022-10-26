@@ -110,12 +110,18 @@ class FlowRateEstimator:
             )
             time_diff = self.timestamps[1] - self.timestamps[0]
             if self.isValidDisplacement(dx, dy, confidence):
-                self.dx[self._calc_idx] = (dx / time_diff) / (
-                    self.img_width / self.scale_factor
-                )
-                self.dy[self._calc_idx] = (dy / time_diff) / (
-                    self.img_height / self.scale_factor
-                )
+                try:
+                    self.dx[self._calc_idx] = (dx / time_diff) / (
+                        self.img_width / self.scale_factor
+                    )
+                    self.dy[self._calc_idx] = (dy / time_diff) / (
+                        self.img_height / self.scale_factor
+                    )
+                except ZeroDivisionError:
+                    # TODO - remove this, find root cause
+                    print(
+                        f"Temporary: Flow rate calculation error - division by zero: time_diff={time_diff}"
+                    )
                 self._calc_idx += 1
 
     def isValidDisplacement(self, dx, dy, confidence) -> bool:
