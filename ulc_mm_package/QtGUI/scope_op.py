@@ -205,8 +205,8 @@ class ScopeOp(QObject, Machine):
     def _start_intermission(self):
         self.experiment_done.emit()
 
-    @pyqtSlot(np.ndarray)
-    def run_autobrightness(self, img):
+    @pyqtSlot(np.ndarray, int)
+    def run_autobrightness(self, img, _):
         self.img_signal.disconnect(self.run_autobrightness)
 
         try:
@@ -218,8 +218,8 @@ class ScopeOp(QObject, Machine):
         else:
             self.img_signal.connect(self.run_autobrightness)
 
-    @pyqtSlot(np.ndarray)
-    def run_cellfinder(self, img):
+    @pyqtSlot(np.ndarray, int)
+    def run_cellfinder(self, img, _):
         self.img_signal.disconnect(self.run_cellfinder)
 
         try:
@@ -234,8 +234,8 @@ class ScopeOp(QObject, Machine):
         else:
             self.img_signal.connect(self.run_cellfinder)
 
-    @pyqtSlot(np.ndarray)
-    def run_SSAF(self, img):
+    @pyqtSlot(np.ndarray, int)
+    def run_SSAF(self, img, _):
         self.img_signal.disconnect(self.run_SSAF)
 
         try:
@@ -252,12 +252,12 @@ class ScopeOp(QObject, Machine):
         else:
             self.img_signal.connect(self.run_SSAF)
 
-    @pyqtSlot(np.ndarray)
-    def run_fastflow(self, img):
+    @pyqtSlot(np.ndarray, int)
+    def run_fastflow(self, img, timestamp):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            self.fastflow_routine.send(img)
+            self.fastflow_routine.send(img, timestamp)
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = TARGET_FLOWRATE
@@ -276,8 +276,8 @@ class ScopeOp(QObject, Machine):
         else:
             self.img_signal.connect(self.run_fastflow)
 
-    @pyqtSlot(np.ndarray)
-    def run_experiment(self, img):
+    @pyqtSlot(np.ndarray, int)
+    def run_experiment(self, img, _):
         self.img_signal.disconnect(self.run_experiment)
 
         if self.count >= MAX_FRAMES:
