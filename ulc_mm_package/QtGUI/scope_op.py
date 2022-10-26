@@ -267,7 +267,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            self.fastflow_routine.send(img, timestamp)
+            self.fastflow_routine.send((img, timestamp))
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = TARGET_FLOWRATE
