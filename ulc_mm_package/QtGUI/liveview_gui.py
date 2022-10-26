@@ -3,10 +3,12 @@
 Displays camera preview and conveys info to user during runs."""
 
 import numpy as np
+import sys
 
 from qimage2ndarray import gray2qimage
 
 from PyQt5.QtWidgets import (
+    QApplication,
     QMainWindow,
     QGridLayout,
     QHBoxLayout,
@@ -105,3 +107,11 @@ class LiveviewGUI(QMainWindow):
         self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
         self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnail")
         self.main_layout.addWidget(self.tab_widget, 0, 0)
+
+
+if __name__ == "__main__":
+
+    app = QApplication(sys.argv)
+    gui = LiveviewGUI()
+    gui.show()
+    sys.exit(app.exec_())
