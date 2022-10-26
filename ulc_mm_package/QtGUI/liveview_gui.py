@@ -6,6 +6,7 @@ import numpy as np
 import sys
 
 from qimage2ndarray import gray2qimage
+from typing import Dict
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -15,6 +16,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QTabWidget,
     QWidget,
+    QPlainTextEdit,
     QLabel,
     QPushButton,
 )
@@ -26,12 +28,18 @@ from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
 
 class LiveviewGUI(QMainWindow):
     def __init__(self):
+        self.metadata = None
+
         super().__init__()
         self._load_ui()
 
     @pyqtSlot(np.ndarray)
-    def update_img(self, img):
+    def update_img(self, img : np.ndarray):
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
+
+    def update_metadata(self, metadata : Dict):
+        self.metadata = metadata 
+        # TODO: Update metadata tab
 
     def _load_ui(self):
         self.setWindowTitle("Malaria scope")
@@ -44,35 +52,46 @@ class LiveviewGUI(QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.main_widget.setLayout(self.main_layout)
 
+        # Set up margin layout + widget
+        self.margin_layout = QGridLayout()
+        self.margin_widget = QWidget()
+        self.margin_widget.setLayout(self.margin_layout)
+
+        # Populate margin
+        self.state_lbl = QLabel("Setup")
+        self.exit_btn = QPushButton("Exit")
+        self.timer_lbl = QLabel("Timer")
+        self.terminal_box = QPlainTextEdit("Terminal READOUT")
+        self.brightness_lbl = QLabel("Brightness METRIC")
+        self.focus_lbl = QLabel("Focus error METRIC")
+        self.flowrate_lbl = QLabel("Flowrate METRIC")
+        self.fps_lbl = QLabel("FPS")
+
+        # Set color of metrics
+        # Set size and read only of textbox
+
+        self.margin_layout.addWidget(self.state_lbl, 1, 1)
+        self.margin_layout.addWidget(self.timer_lbl, 1, 2)
+        self.margin_layout.addWidget(self.exit_btn, 2, 1, 1, 2)
+        self.margin_layout.addWidget(self.terminal_box, 3, 1, 3, 2)
+        self.margin_layout.addWidget(self.brightness_lbl, 6, 1, 1, 2)
+        self.margin_layout.addWidget(self.focus_lbl, 7, 1, 1, 2)
+        self.margin_layout.addWidget(self.flowrate_lbl, 8, 1, 1, 2)
+        self.margin_layout.addWidget(self.fps_lbl, 9, 1, 1, 2)
+
         # Set up liveview layout + widget
         self.liveview_layout = QHBoxLayout()
         self.liveview_widget = QWidget()
         self.liveview_widget.setLayout(self.liveview_layout)
 
         # Populate liveview tab
-        self.margin_layout = QVBoxLayout()
-        self.margin_widget = QWidget()
-        self.margin_widget.setLayout(self.margin_layout)
-
         self.liveview_img = QLabel()
-        self.status_lbl = QLabel("Setup")
-        self.timer_lbl = QLabel("Timer")
-        self.exit_btn = QPushButton("Exit")
-        self.info_lbl = QLabel()
-        self.hardware_lbl = QLabel()
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
-        self.status_lbl.setAlignment(Qt.AlignHCenter)
+        self.state_lbl.setAlignment(Qt.AlignHCenter)
         self.timer_lbl.setAlignment(Qt.AlignHCenter)
 
         self.liveview_layout.addWidget(self.liveview_img)
-        self.liveview_layout.addWidget(self.margin_widget)
-
-        self.margin_layout.addWidget(self.status_lbl)
-        self.margin_layout.addWidget(self.timer_lbl)
-        self.margin_layout.addWidget(self.exit_btn)
-        self.margin_layout.addWidget(self.info_lbl)
-        self.margin_layout.addWidget(self.hardware_lbl)
 
         # Set up thumbnail layout + widget
         self.thumbnail_layout = QGridLayout()
@@ -102,11 +121,25 @@ class LiveviewGUI(QMainWindow):
         self.thumbnail_layout.addWidget(self.troph_img, 1, 1)
         self.thumbnail_layout.addWidget(self.schizont_img, 1, 2)
 
+        # Set up metadata layout + widget
+        self.metadata_layout = QGridLayout()
+        self.metadata_widget = QWidget()
+        self.metadata_widget.setLayout(self.liveview_layout)
+
+        # Populate metadata tab
+        self.metadata_lbl = QLabel("Metadata here")
+
+        self.liveview_layout.addWidget(self.metadata_lbl)
+
         # Set up tabs
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
-        self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnail")
+        self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnails")
+        self.tab_widget.addTab(self.metadata_widget, "Experiment metadata")
+
+        # Populate window
         self.main_layout.addWidget(self.tab_widget, 0, 0)
+        self.main_layout.addWidget(self.margin_widget, 0, 1)
 
 
 if __name__ == "__main__":
