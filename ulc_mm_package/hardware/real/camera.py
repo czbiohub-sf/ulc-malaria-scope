@@ -103,7 +103,7 @@ class AVTCamera:
         if self.camera.is_streaming():
             self.camera.stop_streaming()
 
-    def yieldImages(self) -> Generator[Tuple[np.ndarray, int], None, None]:
+    def yieldImages(self) -> Generator[Tuple[np.ndarray, float], None, None]:
         if not self.camera.is_streaming():
             self._flush_queue()
             self.startAcquisition()
