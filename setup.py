@@ -29,7 +29,7 @@ setup(
         "matplotlib==3.4.3",
         "numpy==1.21.0",
         "opencv-python",
-        "PyQt5==5.15.4",
+        "PyQt5>=5.15.2",
         "pypylon==1.7.2",
         "zarr==2.10.1",
         "pigpio==1.78",
