@@ -45,7 +45,7 @@ class LiveviewGUI(QMainWindow):
         self.metadata = None
 
         super().__init__()
-        self._load_ui()
+        self._load_main_ui()
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img : np.ndarray):
@@ -67,7 +67,7 @@ class LiveviewGUI(QMainWindow):
     def _set_color(self, lbl, status):
         lbl.setStyleSheet(f"background-color: {status.value}")
 
-    def _load_ui(self):
+    def _load_main_ui(self):
         self.setWindowTitle("Malaria scope")
         self.setGeometry(100, 100, 1100, 700)
         self.setWindowIcon(QIcon(ICON_PATH))
@@ -78,6 +78,22 @@ class LiveviewGUI(QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.main_widget.setLayout(self.main_layout)
 
+        self._load_margin_ui()
+        self._load_liveview_ui()
+        self._load_thumbnail_ui()
+        self._load_metadata_ui()
+
+        # Set up tabs
+        self.tab_widget = QTabWidget()
+        self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
+        self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnails")
+        self.tab_widget.addTab(self.metadata_widget, "Experiment metadata")
+
+        # Populate window
+        self.main_layout.addWidget(self.tab_widget, 0, 0)
+        self.main_layout.addWidget(self.margin_widget, 0, 1)
+
+    def _load_margin_ui(self):
         # Set up margin layout + widget
         self.margin_layout = QGridLayout()
         self.margin_widget = QWidget()
@@ -125,6 +141,7 @@ class LiveviewGUI(QMainWindow):
         self.margin_layout.addWidget(self.focus_lbl, 7, 2)
         self.margin_layout.addWidget(self.flowrate_lbl, 8, 2)
 
+    def _load_liveview_ui(self):
         # Set up liveview layout + widget
         self.liveview_layout = QHBoxLayout()
         self.liveview_widget = QWidget()
@@ -139,6 +156,7 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_layout.addWidget(self.liveview_img)
 
+    def _load_thumbnail_ui(self):
         # Set up thumbnail layout + widget
         self.thumbnail_layout = QGridLayout()
         self.thumbnail_widget = QWidget()
@@ -167,6 +185,7 @@ class LiveviewGUI(QMainWindow):
         self.thumbnail_layout.addWidget(self.troph_img, 1, 1)
         self.thumbnail_layout.addWidget(self.schizont_img, 1, 2)
 
+    def _load_metadata_ui(self):
         # Set up metadata layout + widget
         self.metadata_layout = QGridLayout()
         self.metadata_widget = QWidget()
@@ -207,16 +226,6 @@ class LiveviewGUI(QMainWindow):
         self.metadata_layout.addWidget(self.protocol_val, 4, 2)
         self.metadata_layout.addWidget(self.site_val, 5, 2)
         self.metadata_layout.addWidget(self.notes_val, 6, 2)  
-
-        # Set up tabs
-        self.tab_widget = QTabWidget()
-        self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
-        self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnails")
-        self.tab_widget.addTab(self.metadata_widget, "Experiment metadata")
-
-        # Populate window
-        self.main_layout.addWidget(self.tab_widget, 0, 0)
-        self.main_layout.addWidget(self.margin_widget, 0, 1)
 
 
 if __name__ == "__main__":
