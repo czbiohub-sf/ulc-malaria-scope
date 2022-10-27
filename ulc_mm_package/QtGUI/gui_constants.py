@@ -1,3 +1,7 @@
+# Experiment form dropdown menu selection
+PROTOCOL_LIST = ["Default"]
+SITE_LIST = ["Tororo, Uganda"]
+
 # FPS rate
 ACQUISITION_PERIOD = 1000.0 / 30.0
 LIVEVIEW_PERIOD = 1000

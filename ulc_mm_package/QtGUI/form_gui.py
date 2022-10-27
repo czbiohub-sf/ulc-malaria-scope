@@ -70,20 +70,20 @@ class FormGUI(QDialog):
         self.site.addItems(SITE_LIST)
 
         # Place widgets
-        self.main_layout.addWidget(self.operator_id_lbl, 0, 0)
-        self.main_layout.addWidget(self.participant_id_lbl, 1, 0)
-        self.main_layout.addWidget(self.flowcell_id_lbl, 2, 0)
+        self.main_layout.addWidget(self.operator_lbl, 0, 0)
+        self.main_layout.addWidget(self.participant_lbl, 1, 0)
+        self.main_layout.addWidget(self.flowcell_lbl, 2, 0)
         self.main_layout.addWidget(self.protocol_lbl, 3, 0)
         self.main_layout.addWidget(self.site_lbl, 4, 0)
         self.main_layout.addWidget(self.notes_lbl, 5, 0)
         self.main_layout.addWidget(self.exit_btn, 6, 0)
 
-        self.main_layout.addWidget(self.operator_id, 0, 1)
-        self.main_layout.addWidget(self.participant_id, 1, 1)
-        self.main_layout.addWidget(self.flowcell_id, 2, 1)
-        self.main_layout.addWidget(self.protocol, 3, 1)
-        self.main_layout.addWidget(self.site, 4, 1)
-        self.main_layout.addWidget(self.notes, 5, 1)
+        self.main_layout.addWidget(self.operator_val, 0, 1)
+        self.main_layout.addWidget(self.participant_val, 1, 1)
+        self.main_layout.addWidget(self.flowcell_val, 2, 1)
+        self.main_layout.addWidget(self.protocol_val, 3, 1)
+        self.main_layout.addWidget(self.site_val, 4, 1)
+        self.main_layout.addWidget(self.notes_val, 5, 1)
         self.main_layout.addWidget(self.start_btn, 6, 1)
 
         # Set the focus order
@@ -92,9 +92,9 @@ class FormGUI(QDialog):
 
     def get_form_input(self) -> Dict:
         return {
-            "operator_id": self.operator_id.text(),
-            "participant_id": self.participant_id.text(),
-            "flowcell_id": self.flowcell_id.text(),
+            "operator": self.operator.text(),
+            "participant": self.participant.text(),
+            "flowcell": self.flowcell.text(),
             "protocol": self.protocol.currentText(),
             "site": self.site.currentText(),
             "notes": self.notes.text(),
