@@ -15,7 +15,7 @@ ImageDims = namedtuple("ImageDims", ["width", "height"])
 
 class CameraOptions(Enum):
     AVT = auto()
-    BALSER = auto()
+    BASLER = auto()
     SIMULATED = auto()
 
     def img_dims(self) -> ImageDims:
@@ -32,7 +32,7 @@ class CameraOptions(Enum):
 
     @property
     def IMG_HEIGHT(self) -> int:
-        returnself.img_dims().height
+        return self.img_dims().height
 
 
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
