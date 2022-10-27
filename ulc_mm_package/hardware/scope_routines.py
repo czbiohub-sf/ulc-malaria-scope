@@ -117,6 +117,7 @@ def count_parasitemia(
     results = mscope.cell_diagnosis_model.get_asyn_results()
     # threading.Thread(target=mscope.cell_diagnosis_model, args=(img,counts), name=str(counts)).start()
     import time
+
     t0 = time.perf_counter()
     mscope.cell_diagnosis_model(img, counts)
     t1 = time.perf_counter()

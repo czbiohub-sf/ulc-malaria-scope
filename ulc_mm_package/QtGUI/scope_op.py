@@ -296,7 +296,10 @@ class ScopeOp(QObject, Machine):
             self.to_intermission()
         else:
             cProfile.runctx(
-                "count_parasitemia(self.mscope, img, [self.count])", globals(), locals(), "profile.stat"
+                "count_parasitemia(self.mscope, img, [self.count])",
+                globals(),
+                locals(),
+                "profile.stat",
             )
 
             # Adjust the flow
