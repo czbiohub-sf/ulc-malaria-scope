@@ -54,4 +54,6 @@ elif _avt_dev is not None:
 elif _basler_dev is not None:
     CAMERA_SELECTION = CameraOptions.BASLER
 else:
-    raise MissingCameraError("There is no camera found on the device and we are not simulating: ")
+    raise MissingCameraError(
+        "There is no camera found on the device and we are not simulating: "
+    )

@@ -103,7 +103,12 @@ class NCSModel:
 
         model = self.core.read_model(model_path)
 
-        input_tensor_shape = (1, CAMERA_SELECTION.IMG_HEIGHT, CAMERA_SELECTION.IMG_WIDTH, 1)
+        input_tensor_shape = (
+            1,
+            CAMERA_SELECTION.IMG_HEIGHT,
+            CAMERA_SELECTION.IMG_WIDTH,
+            1,
+        )
 
         # https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
         ppp = PrePostProcessor(model)
