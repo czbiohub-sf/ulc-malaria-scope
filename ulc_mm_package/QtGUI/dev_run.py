@@ -297,7 +297,9 @@ class AcquisitionThread(QThread):
 
     def runFullZStack(self):
         self.takeZStack = True
-        self.zstack = takeZStackCoroutine(None, save_loc=self.external_dir)
+        self.zstack = takeZStackCoroutine(
+            None, motor=self.motor, save_loc=self.external_dir
+        )
         self.zstack.send(None)
 
     def runLocalZStack(self):
@@ -402,7 +404,7 @@ class AcquisitionThread(QThread):
             print("Autofocusing!")
             try:
                 steps_from_focus = -int(self.autofocus_model(img))
-                print(type(steps_from_focus), steps_from_focus)
+                print(f"SSAF: {steps_from_focus} steps")
                 self.af_adjustment_done = True
 
                 try:
@@ -685,6 +687,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.flowValChanged.connect(self.updateFlowVal)
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
         self.acquisitionThread.doneSaving.connect(self.enableRecording)
+        self.acquisitionThread._set_target_flowrate(TARGET_FLOWRATE_MED)
 
         self.acquisitionThread.start()
 
