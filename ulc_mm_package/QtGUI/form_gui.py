@@ -5,20 +5,27 @@ Takes user input and exports experiment metadata.
 """
 
 import numpy as np
+import sys
 
 from typing import Dict
 
 from PyQt5.QtWidgets import (
+    QApplication,
     QDialog,
     QGridLayout,
     QLabel,
     QPushButton,
     QLineEdit,
+    QTextEdit,
     QComboBox,
 )
 from PyQt5.QtGui import QIcon
 
-from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
+from ulc_mm_package.QtGUI.gui_constants import (
+    ICON_PATH,
+    PROTOCOL_LIST,
+    SITE_LIST,
+)
 
 
 class FormGUI(QDialog):
@@ -41,7 +48,7 @@ class FormGUI(QDialog):
         self.operator_id_lbl = QLabel("Operator ID")
         self.participant_id_lbl = QLabel("Participant ID")
         self.flowcell_id_lbl = QLabel("Flowcell ID")
-        self.notes_lbl = QLabel("Comments")
+        self.notes_lbl = QLabel("Other notes")
         self.protocol_lbl = QLabel("Protocol")
         self.site_lbl = QLabel("Site")
 
@@ -49,7 +56,7 @@ class FormGUI(QDialog):
         self.operator_id = QLineEdit()
         self.participant_id = QLineEdit()
         self.flowcell_id = QLineEdit()
-        self.notes = QLineEdit()
+        self.notes = QTextEdit()
 
         # Buttons
         self.exit_btn = QPushButton("Cancel")
@@ -59,8 +66,8 @@ class FormGUI(QDialog):
         self.protocol = QComboBox()
         self.site = QComboBox()
 
-        self.protocol.addItems(["Default"])
-        self.site.addItems(["Tororo, Uganda"])
+        self.protocol.addItems(PROTOCOL_LIST)
+        self.site.addItems(SITE_LIST)
 
         # Place widgets
         self.main_layout.addWidget(self.operator_id_lbl, 0, 0)
@@ -92,3 +99,10 @@ class FormGUI(QDialog):
             "site": self.site.currentText(),
             "notes": self.notes.text(),
         }
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    gui = FormGUI()
+    gui.show()
+    sys.exit(app.exec_())

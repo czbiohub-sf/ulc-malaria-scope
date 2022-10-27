@@ -14,6 +14,9 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
+
+from ulc_mm_package.QtGUI.liveview_gui import STATUS
+
 from ulc_mm_package.hardware.hardware_constants import SIMULATION
 from ulc_mm_package.image_processing.processing_constants import (
     TARGET_FLOWRATE,
