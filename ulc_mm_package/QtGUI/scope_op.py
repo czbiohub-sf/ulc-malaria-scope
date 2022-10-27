@@ -5,6 +5,8 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
 
+import cProfile
+
 import numpy as np
 
 from transitions import Machine
@@ -293,7 +295,9 @@ class ScopeOp(QObject, Machine):
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
-            prev_res = count_parasitemia(self.mscope, img, [self.count])
+            cProfile.runctx(
+                "count_parasitemia(self.mscope, img, [self.count])", globals(), locals(), "profile.stat"
+            )
 
             # Adjust the flow
             try:

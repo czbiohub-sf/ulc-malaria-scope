@@ -1,6 +1,8 @@
-from typing import List, Tuple, Optional, Sequence
-from time import perf_counter
 import numpy as np
+
+from threading import Thread
+from time import perf_counter
+from typing import List, Tuple, Optional, Sequence
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.processing_modules import *
@@ -113,7 +115,13 @@ def count_parasitemia(
     mscope: MalariaScope, img: np.ndarray, counts: Optional[Sequence[int]] = None
 ) -> List[Tuple[int, Tuple[float, ...]]]:
     results = mscope.cell_diagnosis_model.get_asyn_results()
+    # threading.Thread(target=mscope.cell_diagnosis_model, args=(img,counts), name=str(counts)).start()
+    import time
+    t0 = time.perf_counter()
     mscope.cell_diagnosis_model(img, counts)
+    t1 = time.perf_counter()
+    with open("imaslowprofiler.txt", "a") as f:
+        f.write(f"{t1 - t0}\n")
     return results
 
 
