@@ -10,7 +10,7 @@ Purpose: Dummy hardware object simulating camera.
 
 import cv2
 
-from time import time, perf_counter
+from time import time, perf_counter, sleep
 
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS, VIDEO_PATH
 from ulc_mm_package.hardware.camera import CameraError
