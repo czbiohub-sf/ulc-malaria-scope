@@ -13,7 +13,7 @@ from contextlib import contextmanager
 
 from typing import Any, Callable, List, Sequence, Optional, Tuple
 
-from ulc_mm_package.neural_nets.ssaf_constants import IMG_HEIGHT, IMG_WIDTH
+from ulc_mm_package.neural_nets.neural_net_constants import IMG_HEIGHT, IMG_WIDTH
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import (
