@@ -18,7 +18,7 @@ from time import sleep
 from typing import Dict
 
 from ulc_mm_package.hardware.hardware_modules import *
-from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
+from ulc_mm_package.hardware.scope_constants import CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
 
@@ -106,10 +106,10 @@ class MalariaScope:
 
     def _init_camera(self):
         try:
-            if CAMERA_SELECTION == 0:
+            if CAMERA_SELECTION == CameraOptions.BASLER:
                 self.camera = BaslerCamera()
                 self.camera_enabled = True
-            elif CAMERA_SELECTION == 1:
+            elif CAMERA_SELECTION == CameraOptions.AVT:
                 self.camera = AVTCamera()
                 self.camera_enabled = True
             else:

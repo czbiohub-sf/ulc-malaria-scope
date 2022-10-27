@@ -1,11 +1,12 @@
 import os
 
+from ulc_mm_package.scope_constants import SIMULATION
+
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
 
 # ================ Camera constants ================ #
-CAMERA_SELECTION = 0  # 0 = Basler, 1 = AVT
 DEFAULT_EXPOSURE_MS = 0.5
 DEVICELINK_THROUGHPUT = 100000000
 
@@ -80,8 +81,6 @@ CAM_FAN_2 = 24
 VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 VIDEO_PATH = None
 
-MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
-SIMULATION = MS_SIMULATE_FLAG > 0
 if SIMULATION:
     print(f"simulation mode MS_SIMULATE={MS_SIMULATE_FLAG}")
     _viable_videos = ("./sim_media/sample.avi", "./sim_media/sample.mp4")
