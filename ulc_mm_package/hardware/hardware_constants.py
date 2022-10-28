@@ -86,4 +86,4 @@ if SIMULATION:
     _viable_videos = ("./sim_media/sample.avi", "./sim_media/sample.mp4")
     VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
 else:
-    print(f"simulation mode MS_SIMULATE={MS_SIMULATE_FLAG}: not simulating")
+    print(f"simulation mode: not simulating")
