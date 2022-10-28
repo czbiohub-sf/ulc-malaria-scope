@@ -85,5 +85,7 @@ if SIMULATION:
     _viable_videos = ("../QtGUI/sim_media/sample.avi", "../QtGUI/sim_media/sample.mp4")
     VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
     if VIDEO_PATH == None:
-        raise RuntimeError("Sample video for simulation mode could not be found. "
-                           f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}")
+        raise RuntimeError(
+            "Sample video for simulation mode could not be found. "
+            f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
+        )
