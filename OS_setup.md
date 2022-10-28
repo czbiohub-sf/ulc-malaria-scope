@@ -69,6 +69,25 @@ sudo udevadm trigger
 sudo ldconfig
 ```
 
+### Install Vimba
+
+I could not find Vimba for `armv71` online. I `rsync`'d the source (Vimba for Linux ARMv7 32-bit - Release Notes) from a previous Malaria Scope's OS and installed
+from there.
+
+I `rsync`'d it to `/opt/`, then
+```console
+cd /opt/Vimba_5_0/VimbaUSBTL
+sudo ./Install.sh
+sudo reboot
+```
+
+after reboot,
+
+```console
+cd /opt/Vimba_5_0/VimbaPython
+sudo ./Install.sh
+```
+
 ### Updating boot/config.txt
 Now is a good time to take a breath. You've made it through the worst of it!
 Add the following to `/boot/config.txt` (at the bottom, under `[all]` if it is there)
