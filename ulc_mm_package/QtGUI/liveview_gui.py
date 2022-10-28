@@ -45,9 +45,9 @@ class LiveviewGUI(QMainWindow):
 
     def update_experiment(self, metadata : dict):
         # TODO standardize dict input
-        self.operator_val.setText(f"{metadata['operator']}")
-        self.participant_val.setText(f"{metadata['participant']}")
-        self.flowcell_val.setText(f"{metadata['flowcell']}")
+        self.operator_val.setText(f"{metadata['operator_id']}")
+        self.participant_val.setText(f"{metadata['participant_id']}")
+        self.flowcell_val.setText(f"{metadata['flowcell_id']}")
         self.protocol_val.setText(f"{metadata['protocol']}")
         self.site_val.setText(f"{metadata['site']}")
         self.notes_val.setPlainText(f"{metadata['notes']}")
@@ -233,9 +233,9 @@ if __name__ == "__main__":
     gui = LiveviewGUI()
 
     experiment_metadata = {
-                "operator": "1234",
-                "participant": "567",
-                "flowcell": "A2",
+                "operator_id": "1234",
+                "participant_id": "567",
+                "flowcell_id": "A2",
                 "protocol": "Default",
                 "site": "Uganda",  
                 "notes": sample+sample,
