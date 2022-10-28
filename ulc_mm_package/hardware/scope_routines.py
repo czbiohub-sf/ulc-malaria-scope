@@ -5,7 +5,7 @@ import numpy as np
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
-import ulc_mm_package.neural_nets.ssaf_constants as ssaf_constants
+import ulc_mm_package.neural_nets.neural_net_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
 
@@ -31,7 +31,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
 
     This function batches and averages several inferences before making an adjustment. The number
     of images to look at before adjusting the motor is determined by the `AF_BATCH_SIZE` constant in
-    `neural_nets/ssaf_constants.py`.
+    `neural_nets/nn_constants.py`.
 
     This function runs until one motor adjustment is completed, then returns.
 
@@ -43,7 +43,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
 
     ssaf_steps_from_focus = []
 
-    while len(ssaf_steps_from_focus) != ssaf_constants.AF_BATCH_SIZE:
+    while len(ssaf_steps_from_focus) != nn_constants.AF_BATCH_SIZE:
         img = yield img
         ssaf_steps_from_focus.append(-int(mscope.autofocus_model(img)))
 
@@ -87,7 +87,7 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
 
     This function adds a simple time wrapper around `continuousSSAFRoutine`
     such that inferences and motor adjustments are done every `AF_PERIOD_S`seconds
-    (located under `neuraL_nets/ssaf_constants.py`).
+    (located under `neuraL_nets/nn_constants.py`).
 
     In other words, instead of every image being inferenced and an adjustment being done once
     AF_BATCH_SIZE images have been analyzed, inferences and adjustments are done only if AF_PERIOD_S
@@ -101,10 +101,10 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
 
     while True:
         img = yield img
-        if perf_counter() - prev_adjustment_time > ssaf_constants.AF_PERIOD_S:
+        if perf_counter() - prev_adjustment_time > nn_constants.AF_PERIOD_S:
             ssaf_routine.send(img)
             counter += 1
-            if counter >= ssaf_constants.AF_BATCH_SIZE:
+            if counter >= nn_constants.AF_BATCH_SIZE:
                 counter = 0
                 prev_adjustment_time = perf_counter()
 
