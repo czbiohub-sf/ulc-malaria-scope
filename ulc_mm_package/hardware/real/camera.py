@@ -57,7 +57,6 @@ class AVTCamera:
         self.vimba = Vimba.get_instance().__enter__()
         self.queue = queue.Queue(maxsize=1)
         self.connect()
-        self.minExposure_ms, self.maxExposure_ms = self.getExposureBoundsMilliseconds()
 
     def __del__(self):
         self.deactivateCamera()
@@ -68,9 +67,10 @@ class AVTCamera:
             return cams[0]
 
     def _camera_setup(self):
+        self.minExposure_ms, self.maxExposure_ms = self.getExposureBoundsMilliseconds()
         self.setDeviceLinkThroughputLimit(DEVICELINK_THROUGHPUT)
         self.camera.ExposureAuto.set("Off")
-        self.camera.ExposureTime.set(DEFAULT_EXPOSURE_MS * 1000)
+        self.exposureTime_ms = DEFAULT_EXPOSURE_MS
         self.camera.ReverseY.set(True)
         self.setBinning(bin_factor=2)
         self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
