@@ -29,6 +29,9 @@ TARGET_FLOWRATE_FAST = 15.15  # 2 frames per cell
 
 # ================ Data storage constants ================ #
 DEFAULT_SSD = "/media/pi/"
+MIN_GB_REQUIRED = 50
+NUM_SUBSEQUENCE = 10
+SUBSEQUENCE_LENGTH = 10
 
 EXPERIMENT_METADATA_KEYS = [
     "operator_id",
