@@ -109,12 +109,18 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
                 prev_adjustment_time = perf_counter()
 
 
-def count_parasitemia(
-    mscope: MalariaScope, img: np.ndarray, counts: Optional[Sequence[int]] = None
-) -> List[Tuple[int, Tuple[float, ...]]]:
-    results = mscope.cell_diagnosis_model.get_asyn_results()
-    mscope.cell_diagnosis_model(img, counts)
-    return results
+def count_parasitemia_routine(mscope: MalariaScope):
+    imgs_under_inference = []
+
+    img: np.ndarray
+    counts: Optional[Sequence[int]]
+    while True:
+        results = mscope.cell_diagnosis_model.get_asyn_results()
+        # get a new image and imageid for inference, and send previous
+        # results out
+        img, counts = yield results
+
+        mscope.cell_diagnosis_model(img, counts)
 
 
 def flowControlRoutine(

@@ -184,6 +184,9 @@ class ScopeOp(QObject, Machine):
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
+        self.count_parasites = count_parasitemia_routine(self.mscope)
+        self.count_parasites.send(None)
+
         self.flowcontrol_routine = flowControlRoutine(
             self.mscope, TARGET_FLOWRATE, None
         )
@@ -293,7 +296,8 @@ class ScopeOp(QObject, Machine):
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
-            prev_res = count_parasitemia(self.mscope, img, [self.count])
+            prev_res = self.count_parasites.send((img, [self.count]))
+            print(prev_res)
 
             # Adjust the flow
             try:
