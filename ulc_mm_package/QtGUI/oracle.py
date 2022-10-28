@@ -38,7 +38,6 @@ _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
 
 class Oracle(Machine):
     def __init__(self):
-
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
@@ -106,6 +105,9 @@ class Oracle(Machine):
 
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
+
+        # When we are on the thumbnail tab, don't render liveview
+        self.liveview_window.tab_widget.currentChanged.connect(self._toggle_liveview)
 
         # Trigger first transition
         self.next_state()
@@ -231,6 +233,12 @@ class Oracle(Machine):
 
         print("ORACLE: Opening survey")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
+
+    def _toggle_liveview(self, i):
+        if i == 0:
+            self.acquisition.update_liveview.connect(self.liveview_window.update_img)
+        elif i == 1:
+            self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
 
     def _start_intermission(self):
 
