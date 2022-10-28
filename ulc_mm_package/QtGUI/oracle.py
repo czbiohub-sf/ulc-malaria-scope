@@ -163,16 +163,6 @@ class Oracle(Machine):
 
         return dialog_result
 
-    def save_form(self):
-        # TODO save experiment metadata here
-        # Only move on to next state if data is verified
-        self.form_metadata = self.form_window.get_form_input()
-        self.liveview_window.update_experiment(self.form_metadata)
-
-        # for key in self.form_metadata 
-        
-        self.next_state()
-
     def _start_setup(self):
         self.display_message(
             QMessageBox.Icon.Information,
@@ -197,6 +187,18 @@ class Oracle(Machine):
         self.experiment_metadata = {key : None for key in EXPERIMENT_METADATA_KEYS}
 
         self.form_window.show()
+
+    def save_form(self):
+        self.form_metadata = self.form_window.get_form_input()
+        self.liveview_window.update_experiment(self.form_metadata)
+
+        for key in self.form_metadata:
+            self.experiment_metadata[key] = self.form_metadata[key]
+
+        # TODO Fill in other experiment metadata here, and initialize data_storage object
+        # Only move on to next state if data is verified
+
+        self.next_state()
 
     def _end_form(self):
         self.form_window.close()
