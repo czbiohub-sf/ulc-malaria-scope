@@ -5,6 +5,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     SIMULATION,
 )
 
+from ulc_mm_package.scope_constants import DEFAULT_SSD, ALT_SSD
 from ulc_mm_package.hardware.scope import MalariaScope, Components
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlRoutine
@@ -19,7 +20,7 @@ from ulc_mm_package.image_processing.processing_constants import (
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
 
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
-import ulc_mm_package.neural_nets.ssaf_constants as ssaf_constants
+import ulc_mm_package.neural_nets.neural_net_constants as nn_constants
 
 import sys
 import csv
@@ -132,11 +133,11 @@ class AcquisitionThread(QThread):
         while True:
             if self.camera_activated:
                 try:
-                    for image in self.camera.yieldImages():
+                    for image, timestamp in self.camera.yieldImages():
                         self.updateGUIElements()
                         self.save(image)
                         self.zStack(image)
-                        self.activeFlowControl(image)
+                        self.activeFlowControl(image, timestamp)
                         self._autobrightness(image)
                         self.autofocusWrapper(image)
 
@@ -297,7 +298,9 @@ class AcquisitionThread(QThread):
 
     def runFullZStack(self):
         self.takeZStack = True
-        self.zstack = takeZStackCoroutine(None, save_loc=self.external_dir)
+        self.zstack = takeZStackCoroutine(
+            None, motor=self.motor, save_loc=self.external_dir
+        )
         self.zstack.send(None)
 
     def runLocalZStack(self):
@@ -324,10 +327,13 @@ class AcquisitionThread(QThread):
         if self.autobrightness_on:
             try:
                 done = self.autobrightness.runAutobrightness(img)
-            except AutobrightnessError as e:
-                print(
-                    f"AutobrightnessError encountered: {e}. Stopping autobrightness and continuing..."
-                )
+            except BrightnessTargetNotAchieved as e:
+                print(f"Autobrightness error : {e}.")
+                self.autobrightness_on = False
+                self.autobrightnessDone.emit(1)
+                return
+            except BrightnessCriticallyLow as e:
+                print(f"Autobrightness error : {e}")
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
                 return
@@ -346,16 +352,17 @@ class AcquisitionThread(QThread):
         self.fast_flow_enabled = True
 
     def stopActiveFlowControl(self):
+        self.fast_flow_enabled = False
         self.flowcontrol_enabled = False
         self.initializeFlowControl = False
 
-    def activeFlowControl(self, img: np.ndarray):
+    def activeFlowControl(self, img: np.ndarray, timestamp: int):
         if self.initializeFlowControl:
             self.initializeActiveFlowControl(img)
 
         if self.fast_flow_enabled:
             try:
-                flow_val = self.fastFlowRoutine.send(img)
+                flow_val = self.fastFlowRoutine.send((img, timestamp))
                 self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
@@ -375,7 +382,7 @@ class AcquisitionThread(QThread):
 
         if self.flowcontrol_enabled:
             try:
-                flow_val = self.flowControl.send(img)
+                flow_val = self.flowControl.send((img, timestamp))
                 self.syringePosChanged.emit(1)
                 self.flowValChanged.emit(flow_val)
             except CantReachTargetFlowrate:
@@ -387,7 +394,7 @@ class AcquisitionThread(QThread):
 
     def autofocusWrapper(self, img: np.ndarray):
         self.af_adjustment_done = False
-        if perf_counter() - self.prev_autofocus_time > ssaf_constants.AF_PERIOD_S:
+        if perf_counter() - self.prev_autofocus_time > nn_constants.AF_PERIOD_S:
             self.autofocus(img)
             self.prev_autofocus_time = perf_counter()
 
@@ -398,7 +405,7 @@ class AcquisitionThread(QThread):
             print("Autofocusing!")
             try:
                 steps_from_focus = -int(self.autofocus_model(img))
-                print(type(steps_from_focus), steps_from_focus)
+                print(f"SSAF: {steps_from_focus} steps")
                 self.af_adjustment_done = True
 
                 try:
@@ -681,6 +688,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.flowValChanged.connect(self.updateFlowVal)
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
         self.acquisitionThread.doneSaving.connect(self.enableRecording)
+        self.acquisitionThread._set_target_flowrate(TARGET_FLOWRATE_MED)
 
         self.acquisitionThread.start()
 
@@ -1127,6 +1135,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.blockSignals(False)
         self.btnFlowUp.setEnabled(True)
         self.btnFlowDown.setEnabled(True)
+        self.radFlowSlow.setEnabled(True)
+        self.radFlowMed.setEnabled(True)
+        self.radFlowFast.setEnabled(True)
 
     def disablePressureUIElements(self):
         self.vsFlow.blockSignals(True)
@@ -1134,6 +1145,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFlow.blockSignals(True)
         self.btnFlowUp.setEnabled(False)
         self.btnFlowDown.setEnabled(False)
+        self.radFlowSlow.setEnabled(False)
+        self.radFlowMed.setEnabled(False)
+        self.radFlowFast.setEnabled(False)
 
     @pyqtSlot(int)
     def pressureLeak(self, _):

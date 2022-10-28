@@ -10,6 +10,7 @@ Servo Motor Pololu HD-1810MG:
 """
 
 import functools
+from re import S
 import threading
 import pigpio
 import board
@@ -22,6 +23,8 @@ from ulc_mm_package.hardware.hardware_constants import (
     SERVO_PWM_PIN,
     SERVO_FREQ,
     INVALID_READ_FLAG,
+    MPRLS_RST,
+    MPRLS_PWR,
 )
 from ulc_mm_package.hardware.dtoverlay_pwm import (
     dtoverlay_PWM,
@@ -60,9 +63,17 @@ class PneumaticModule:
     PWM-driven Servo motor (Pololu HD-1810MG) to adjust the position of the syringe (thereby adjusting the pressure).
     """
 
-    def __init__(self, servo_pin: int = SERVO_PWM_PIN, pi: pigpio.pi = None):
+    def __init__(
+        self,
+        servo_pin: int = SERVO_PWM_PIN,
+        mprls_rst_pin: int = MPRLS_RST,
+        mprls_pwr_pin: int = MPRLS_PWR,
+        pi: pigpio.pi = None,
+    ):
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
+        self.mprls_rst_pin = mprls_rst_pin
+        self.mprls_pwr_pin = mprls_pwr_pin
 
         self.min_step_size = (
             0.23 - 0.16
@@ -89,6 +100,11 @@ class PneumaticModule:
         self.pwm.setDutyCycle(self.duty_cycle)
 
         # Instantiate pressure sensor
+        self._pi.write(self.mprls_pwr_pin, 0)
+        sleep(0.005)
+        self._pi.write(self.mprls_rst_pin, 1)
+        sleep(0.005)
+
         try:
             i2c = board.I2C()
             self.mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
@@ -99,6 +115,10 @@ class PneumaticModule:
 
     def close(self):
         """Move the servo to its lowest-pressure position and close."""
+        self._pi.write(self.mprls_rst_pin, 0)
+        sleep(0.005)
+        self._pi.write(self.mprls_pwr_pin, 1)
+
         self.setDutyCycle(self.max_duty_cycle)
         sleep(0.5)
         self._pi.stop()

@@ -1,6 +1,7 @@
+<<<<<<< HEAD
 import enum
 
-# Status color indicators
+# ================ Status colors ================ #
 class STATUS(enum.Enum):
     STANDBY = "lightgray"
     GOOD = "lightgreen"
@@ -8,7 +9,7 @@ class STATUS(enum.Enum):
     IN_PROGRESS = "yellow"
 
 
-# Default info panel metadata
+# ================ Metadata ================ #
 INFOPANEL_METADATA = {
     "state" : "--",
     "im_counter" : None, 
@@ -39,25 +40,21 @@ IMAGE_METADATA = {
         "humidity" : None,
     }
 
-# Experiment form dropdown menu selection
+# ================ Dropdown menu options ================ #
 PROTOCOL_LIST = ["Default"]
 SITE_LIST = ["Tororo, Uganda"]
 
-# FPS rate
+
+# ================ FPS constants ================ #
 ACQUISITION_PERIOD = 1000.0 / 30.0
 LIVEVIEW_PERIOD = 1000
 
-# Run duration
-MAX_FRAMES = 40000 # Rounded up, assuming 20 minutes of data at 30 FPS
+# ================ Experiment timeout ================ #
+MAX_FRAMES = 100
 
-# Window icon
+# ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"
 
-# SSD directory
-DEFAULT_SSD = "/media/pi/"
-ALT_SSD = "sim_media/pi/"
-
-# Flowcell QC Form
 FLOWCELL_QC_FORM_LINK = (
     "https://docs.google.com/forms/d/16pOE3TAvOMZG4Yuu3ef73knGYKRdZfXSxg5vZlsR-AM/edit"
 )

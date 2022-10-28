@@ -1,19 +1,24 @@
 from os import mkdir, path, listdir
 from datetime import datetime
 import csv
+import random
 from typing import Dict, List
+import shutil
 
 import numpy as np
 import cv2
 
+from ulc_mm_package.scope_constants import DEFAULT_SSD
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
+from ulc_mm_package.image_processing.processing_constants import (
+    MIN_GB_REQUIRED,
+    NUM_SUBSEQUENCE,
+    SUBSEQUENCE_LENGTH,
+)
 
 
 class DataStorageError(Exception):
     pass
-
-
-DEFAULT_SSD = "/media/pi/"
 
 
 class DataStorage:
@@ -26,6 +31,7 @@ class DataStorage:
 
     def createTopLevelFolder(self, external_dir: str):
         # Create top-level directory for this program run.
+        self.external_dir = external_dir
         self.main_dir = external_dir + datetime.now().strftime("%Y-%m-%d-%H%M%S")
 
         try:
@@ -33,6 +39,10 @@ class DataStorage:
         except FileNotFoundError as e:
             raise DataStorageError(
                 f"DataStorageError - Unable to make top-level directory: {e}"
+            )
+        except PermissionError as e:
+            raise DataStorage(
+                f"DataStorageError - Unable to make top-level directory, permission issue: {e}"
             )
 
     def createNewExperiment(
@@ -151,3 +161,105 @@ class DataStorage:
 
         if self.zw.writable:
             return self.zw.threadedCloseFile()
+
+    def _get_remaining_storage_size_GB(self) -> float:
+        """Get the remaining storage size in GB of the SSD.
+
+        Returns
+        -------
+        float:
+            Remaining storage (GB)
+        """
+
+        return (
+            shutil.disk_usage(self.external_dir).free / 2**30
+        )  # 2^30 bytes in a gigabyte
+
+    def is_there_sufficient_storage(self) -> bool:
+        """Check if there is sufficient storage to run an experiment.
+
+        Returns
+        -------
+        bool
+        """
+
+        storage_remaining_gb = self._get_remaining_storage_size_GB()
+        return storage_remaining_gb > MIN_GB_REQUIRED
+
+    def save_uniform_random_sample(self) -> None:
+        """Extract and save a uniform random sample of images from the currently active Zarr store.
+
+        Saves images in subsequences - i.e {N}-continuous sequences of images at {M} random locations.
+        A new subfolder is created in the same folder as the experiment and images are saved as .pngs.
+        """
+
+        num_files = len(self.zw.group)
+        indices = self._unif_rand_with_min_distance(
+            max_val=num_files, num_samples=NUM_SUBSEQUENCE, min_dist=SUBSEQUENCE_LENGTH
+        )
+
+        try:
+            sub_seq_path = self._create_subseq_folder()
+        except:
+            # TODO: change to logging
+            print("Unable to create the subsample folder - aborting subsampling.")
+            return
+
+        for idx in indices:
+            img = self.zw.group[idx][:]
+            filepath = path.join(sub_seq_path, f"{idx}.png")
+            cv2.imwrite(filepath, img)
+
+    def _create_subseq_folder(self) -> str:
+        """Creates a folder to store the random subsample of data.
+
+        Returns
+        -------
+        str:
+            Path as a string
+        """
+
+        if self.zw.store != None:
+            try:
+                dir_path = path.join(self.main_dir, "sub_sample_imgs/")
+                mkdir(dir_path)
+                return dir_path
+            except:
+                # TODO
+                print(f"Could not create the subsample directory")
+                raise
+        else:
+            raise
+
+    @staticmethod
+    def _unif_rand_with_min_distance(
+        max_val: int, num_samples: int, min_dist: int
+    ) -> List[int]:
+
+        """Generate a uniform distributed random sample with a minimum distance between samples.
+
+        Parameters
+        ----------
+        max_val: int
+            Maximum value of the sequence
+        num_samples; int
+            Number of samples to return
+        min_dist: int
+            Minimum distance between returned samples
+
+        Returns
+        -------
+        List[int]:
+            List of {num_sample} values between 0-max_val, each with at least min_dist between them.
+        """
+
+        return [
+            (min_dist - 1) * i + val
+            for i, val in enumerate(
+                sorted(
+                    random.sample(
+                        range(max_val - (min_dist - 1) * num_samples), num_samples
+                    )
+                )
+            )
+        ]

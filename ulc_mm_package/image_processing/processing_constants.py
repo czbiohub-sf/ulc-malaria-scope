@@ -2,6 +2,7 @@
 TOP_PERC_TARGET_VAL = 245
 TOP_PERC = 0.03
 TOL = 0.01
+MIN_ACCEPTABLE_MEAN_BRIGHTNESS = 200
 
 # ================ Background subtraction constants ================ #
 INSIDE_BBOX_FLAG = 0
@@ -28,6 +29,9 @@ TARGET_FLOWRATE_FAST = 15.15  # 2 frames per cell
 
 # ================ Data storage constants ================ #
 DEFAULT_SSD = "/media/pi/"
+MIN_GB_REQUIRED = 50
+NUM_SUBSEQUENCE = 10
+SUBSEQUENCE_LENGTH = 10
 
 EXPERIMENT_METADATA_KEYS = [
     "operator_id",
@@ -64,3 +68,5 @@ RBC_THUMBNAIL_PATH = (
 CELLS_FOUND_THRESHOLD = 9000  # It's got to be... OVER 9000!!!!!!
 
 MIN_CELL_COUNT = 10
+CELL_DENSITY_CHECK_PERIOD_S = 0.5  # How often to check cell density
+CELL_DENSITY_HISTORY_LEN = 10  # Number of continuuous cell density measurements that need to be < MIN_CELL_COUNT before an exception is raised

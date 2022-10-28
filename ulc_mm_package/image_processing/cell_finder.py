@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 import cv2
 from ulc_mm_package.image_processing.processing_constants import (
@@ -49,7 +50,7 @@ def get_correlation_map(
     return cv2.matchTemplate(img_ds, template_img, cv2.TM_CCOEFF)
 
 
-def count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
+def binarize_count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
     """Count the number of cells using a basic binarizing+connected-components analysis.
 
     Parameters
@@ -72,6 +73,24 @@ def count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
     return len(
         boxes[1:]
     )  # First bbox is the background, so we exclude and return the reset
+
+
+def isDensitySufficient(img, downsample_factor: int = 4) -> Tuple[bool, int]:
+    """Check whether the cell count is sufficently high
+
+    Returns
+    -------
+    Tuple(bool, int):
+        bool: Whether the density is sufficiently high (based on a MIN_CELL_COUNT threshold)
+        int: count of cells detected
+    """
+
+    count = binarize_count_cells(img, downsample_factor)
+    return count >= MIN_CELL_COUNT, count
+
+
+class LowDensity(Exception):
+    pass
 
 
 class NoCellsFound(Exception):

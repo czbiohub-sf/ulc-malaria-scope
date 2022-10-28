@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QIcon
 
+from ulc_mm_package.scope_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,

@@ -1,6 +1,7 @@
 from ulc_mm_package.image_processing.autobrightness import (
     Autobrightness,
-    AutobrightnessError,
+    BrightnessTargetNotAchieved,
+    BrightnessCriticallyLow,
 )
 from ulc_mm_package.image_processing.flow_control import (
     FlowController,
@@ -17,7 +18,8 @@ from ulc_mm_package.image_processing.focus_metrics import (
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
     NoCellsFound,
-    count_cells,
+    LowDensity,
+    binarize_count_cells,
 )
 
 from ulc_mm_package.hardware.motorcontroller import InvalidMove

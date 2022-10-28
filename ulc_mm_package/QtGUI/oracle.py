@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel
 from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QIcon, QPixmap
 
-from ulc_mm_package.image_processing.processing_constants import (
+from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
 )
 from ulc_mm_package.QtGUI.gui_constants import ICON_PATH, FLOWCELL_QC_FORM_LINK
