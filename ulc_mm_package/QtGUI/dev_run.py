@@ -19,7 +19,7 @@ from ulc_mm_package.image_processing.processing_constants import (
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
 
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
-import ulc_mm_package.neural_nets.ssaf_constants as ssaf_constants
+import ulc_mm_package.neural_nets.neural_net_constants as nn_constants
 
 import sys
 import csv
@@ -393,7 +393,7 @@ class AcquisitionThread(QThread):
 
     def autofocusWrapper(self, img: np.ndarray):
         self.af_adjustment_done = False
-        if perf_counter() - self.prev_autofocus_time > ssaf_constants.AF_PERIOD_S:
+        if perf_counter() - self.prev_autofocus_time > nn_constants.AF_PERIOD_S:
             self.autofocus(img)
             self.prev_autofocus_time = perf_counter()
 

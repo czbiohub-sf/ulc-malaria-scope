@@ -13,7 +13,7 @@ from contextlib import contextmanager
 
 from typing import Any, Callable, List, Sequence, Optional, Tuple
 
-from ulc_mm_package.neural_nets.ssaf_constants import IMG_HEIGHT, IMG_WIDTH
+from ulc_mm_package.scope_constants import CAMERA_SELECTION
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import (
@@ -103,7 +103,12 @@ class NCSModel:
 
         model = self.core.read_model(model_path)
 
-        input_tensor_shape = (1, IMG_HEIGHT, IMG_WIDTH, 1)
+        input_tensor_shape = (
+            1,
+            CAMERA_SELECTION.IMG_HEIGHT,
+            CAMERA_SELECTION.IMG_WIDTH,
+            1,
+        )
 
         # https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
         ppp = PrePostProcessor(model)

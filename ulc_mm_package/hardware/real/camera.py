@@ -71,6 +71,7 @@ class AVTCamera:
         self.setDeviceLinkThroughputLimit(DEVICELINK_THROUGHPUT)
         self.camera.ExposureAuto.set("Off")
         self.camera.ExposureTime.set(DEFAULT_EXPOSURE_MS * 1000)
+        self.camera.ReverseY.set(True)
         self.setBinning(bin_factor=2)
         self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
 

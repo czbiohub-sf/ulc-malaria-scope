@@ -51,3 +51,19 @@ You can do the required development on the Pi through SSH. You have two options.
 The first is rendering "offscreen". This can be done by setting the environment variable `QT_QPA_PLATFORM=offscreen`.
 
 The next thing is X11 forwarding. On Mac, you have to setup [XQuartz](https://www.xquartz.org/), and you will probably have to do something different on different platforms. To use X11 forwarding, `ssh` into your pi with the `-Y` option (safe X11 forwarding). You should then be able to run any command with a GUI, and one should pop up on screen.
+
+#### Remote SSH using `ngrok`
+1. Set up `ngrok` on a new device by:
+
+```
+wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-arm.zip
+unzip ngrok-stable-linux-arm.zip
+ngrok authtoken {TOKEN HERE}
+```
+
+2. `cd` to the directory where `ngrok` is downloaded.
+
+3. Run `ngrok` with:
+```
+./ngrok tcp 22
+```
