@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import enum
 
 # ================ Status colors ================ #
