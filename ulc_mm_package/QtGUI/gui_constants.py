@@ -5,19 +5,39 @@ class STATUS(enum.Enum):
     STANDBY = "lightgray"
     GOOD = "lightgreen"
     BAD = "red"
+    IN_PROGRESS = "yellow"
 
 
 # Default info panel metadata
 INFOPANEL_METADATA = {
     "state" : "--",
-    "frame" : None, 
+    "im_counter" : None, 
+    "terminal_msg" : "",
     "brightness" : "--",
     "brightness_status" : STATUS.STANDBY,
     "focus" : "--",
     "focus_status" : STATUS.STANDBY,
-    "flowrate" : "--",
+    "flowrate" : None,
     "flowrate_status" : STATUS.STANDBY,
-    }      
+    }     
+
+INFOPANEL_METADATA_KEYS = [
+    "im_counter",
+    # "brightness",
+    # "focus",
+    "flowrate",
+]
+
+IMAGE_METADATA = {
+        "im_counter" : 0,
+        "timestamp" : None,
+        "motor_pos" : None,
+        "pressure_hpa" : None,
+        "syringe_pos" : None,
+        "flowrate" : "--",
+        "temperature" : None,
+        "humidity" : None,
+    }
 
 # Experiment form dropdown menu selection
 PROTOCOL_LIST = ["Default"]

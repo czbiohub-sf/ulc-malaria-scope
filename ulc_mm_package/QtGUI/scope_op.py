@@ -25,6 +25,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     LIVEVIEW_PERIOD,
     MAX_FRAMES,
     INFOPANEL_METADATA,
+    INFOPANEL_METADATA_KEYS,
+    IMAGE_METADATA,
     STATUS,
 )
 
@@ -48,16 +50,8 @@ class ScopeOp(QObject, Machine):
     def __init__(self):
         super().__init__()
 
-        self.mscope = None
-        # Info panel
-        self.infopanel_metadata = INFOPANEL_METADATA
-        # TODO make sure all of these get reset
-
-        self.autobrightness_result = None
-        self.cellfinder_result = None
-        self.SSAF_result = None
-        self.fastflow_result = None
-        self.count = 0
+        # Instantiate variables
+        self._init_variables()
 
         states = [
             {
@@ -65,23 +59,23 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness",
-                "on_enter": [self._start_autobrightness],
+                "on_enter": [self._start_autobrightness, self.send_info],
             },
             {
                 "name": "cellfinder",
-                "on_enter": [self._start_cellfinder],
+                "on_enter": [self._start_cellfinder, self.send_info],
             },
             {
                 "name": "SSAF",
-                "on_enter": [self._start_SSAF],
+                "on_enter": [self._start_SSAF, self.send_info],
             },
             {
                 "name": "fastflow",
-                "on_enter": [self._start_fastflow],
+                "on_enter": [self._start_fastflow, self.send_info],
             },
             {
                 "name": "experiment",
-                "on_enter": [self._start_experiment],
+                "on_enter": [self._start_experiment, self.send_info],
             },
             {
                 "name": "intermission",
@@ -106,7 +100,27 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot()
     def send_info(self):
+        self.infopanel_metadata["state"] = self.state
+        for key in INFOPANEL_METADATA_KEYS:
+            self.infopanel_metadata[key] = self.image_metadata[key]
+
+        # TEMP for testing
+        self.infopanel_metadata["terminal_msg"] = "HI"
+
         self.update_infopanel.emit(self.infopanel_metadata)
+
+    def _init_variables(self):
+        self.mscope = None
+        
+        # Info panel
+        self.infopanel_metadata = INFOPANEL_METADATA
+        self.image_metadata = IMAGE_METADATA
+
+        self.autobrightness_result = None
+        self.cellfinder_result = None
+        self.SSAF_result = None
+        self.fastflow_result = None
+        self.count = 0
 
     def get_signals(self, img_signal, timer_signal):
         print("SCOPEOP: Getting signals")
@@ -146,14 +160,8 @@ class ScopeOp(QObject, Machine):
             self.mscope.pneumatic_module.getMaxDutyCycle()
         )
 
-        self.infopanel_metadata = INFOPANEL_METADATA
-
-        self.autobrightness_result = None
-        self.cellfinder_result = None
-        self.SSAF_result = None
-        self.fastflow_result = None
-
-        self.count = 0
+        # Reset variables
+        self._init_variables()
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
@@ -230,7 +238,7 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.autobrightness_result = e.value
             print(f"Mean pixel val: {self.autobrightness_result}")
-            self.send_info()
+            # TODO save autobrightness value to metadata instead
             self.next_state()
         else:
             self.img_signal.connect(self.run_autobrightness)
@@ -279,6 +287,7 @@ class ScopeOp(QObject, Machine):
             if SIMULATION:
                 self.fastflow_result = TARGET_FLOWRATE
                 print(f"(simulated) Flowrate: {self.fastflow_result}")
+                # TODO save flowrate result to metadata instead
                 self.next_state()
             else:
                 self.fastflow_result = -1
@@ -307,7 +316,7 @@ class ScopeOp(QObject, Machine):
                 # Periodically adjust focus using single shot autofocus
                 self.PSSAF_routine.send(img)
                 # TODO add density check here
-                self.flowcontrol_routine.send(img)
+                flowrate = self.flowcontrol_routine.send(img)
             except CantReachTargetFlowrate:
                 if not SIMULATION:
                     self.error.emit(
@@ -322,6 +331,18 @@ class ScopeOp(QObject, Machine):
                         "Unable to achieve desired focus within condenser's depth of field.",
                     )
             else:
+                # TODO populate this and add brightness, focus, and parasitemia count
+                self.image_metadata = {
+                    "im_counter" : self.count,
+                    "timestamp" : None,
+                    "motor_pos" : None,
+                    "pressure_hpa" : None,
+                    "syringe_pos" : None,
+                    "flowrate" : flowrate,
+                    "temperature" : None,
+                    "humidity" : None,
+                }
+            
                 self.count += 1
                 self.img_signal.connect(self.run_experiment)
             finally:

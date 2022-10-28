@@ -35,6 +35,7 @@ sample = "*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*"
 class LiveviewGUI(QMainWindow):
     def __init__(self):
         self.metadata = None
+        self.terminal_msg = ""
 
         super().__init__()
         self._load_main_ui()
@@ -54,17 +55,22 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(dict)
     def update_infopanel(self, metadata : dict):
+        if not metadata['terminal_msg'] == "":
+            self.terminal_msg = self.terminal_msg + f"\n{metadata['terminal_msg']}"
+            self.terminal_txt.setPlainText(self.terminal_msg)
 
-        self.state_lbl.setText("AB DONE")
-        self.timer_lbl.setText("TIME HERE")
-        self.terminal_txt.setPlainText(":)")
-        self.fps_lbl.setText("FPS HERE")
+        self.state_lbl.setText(f"{metadata['state']}")
+        self.timer_lbl.setText(f"{metadata['im_counter']}")
+        # self.fps_lbl.setText("FPS HERE")
 
-        self.brightness_val.setText("###")
-        self.focus_val.setText("###")
-        self.flowrate_val.setText("###")
+        # TODO add other values
 
-    def _set_color(self, lbl, status):
+        # self.brightness_val.setText("###")
+        # self.focus_val.setText("###")
+        self.flowrate_val.setText(f"{metadata['flowrate']}")
+        self._set_color(self.flowrate_lbl, metadata['flowrate_status'])
+
+    def _set_color(self, lbl : QLabel, status : STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
 
     def _load_main_ui(self):

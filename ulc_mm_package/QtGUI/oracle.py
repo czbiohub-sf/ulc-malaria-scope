@@ -38,11 +38,13 @@ _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
 
 class Oracle(Machine):
     def __init__(self):
-
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
         self.dialog_window = QMessageBox()
+
+        # Instantiate variables
+        self._init_variables()
 
         # Instantiate camera acquisition and thread
         self.acquisition = Acquisition()
@@ -81,7 +83,7 @@ class Oracle(Machine):
 
         super().__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
-        self.add_transition(trigger="rerun", source="intermission", dest="form")
+        self.add_transition(trigger="rerun", source="intermission", dest="form", before=self._init_variables)
 
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
@@ -163,6 +165,11 @@ class Oracle(Machine):
 
         return dialog_result
 
+    def _init_variables(self):
+        # Instantiate metadata dicts
+        self.form_metadata = None
+        self.experiment_metadata = {key : None for key in EXPERIMENT_METADATA_KEYS}
+
     def _start_setup(self):
         self.display_message(
             QMessageBox.Icon.Information,
@@ -182,10 +189,6 @@ class Oracle(Machine):
         )
 
     def _start_form(self):
-        # Instantiate metadata dicts
-        self.form_metadata = None
-        self.experiment_metadata = {key : None for key in EXPERIMENT_METADATA_KEYS}
-
         self.form_window.show()
 
     def save_form(self):
