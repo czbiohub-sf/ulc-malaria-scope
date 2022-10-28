@@ -50,7 +50,7 @@ class Oracle(Machine):
         self.acquisition.moveToThread(self.acquisition_thread)
 
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp(self.acquisition.update_scopeop)
+        self.scopeop = ScopeOp()
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
@@ -103,6 +103,8 @@ class Oracle(Machine):
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
         self.scopeop.stop_timers.connect(self.acquisition.stop_timers)
+
+        self.scopeop.update_infopanel.connect(self.liveview_window.update_infopanel)
 
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
@@ -164,11 +166,75 @@ class Oracle(Machine):
     def save_form(self):
         # TODO save experiment metadata here
         # Only move on to next state if data is verified
+        self.form_metadata = self.form_window.get_form_input()
+        self.liveview_window.update_experiment(self.form_metadata)
+
+        # for key in self.form_metadata 
+        
         self.next_state()
 
+    def _start_setup(self):
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Initializing hardware",
+            'If there is a flow cell in the scope, remove it now. Click "OK" once it is removed.',
+            image=_IMAGE_REMOVE_PATH,
+        )
+
+        self.scopeop_thread.start()
+        self.acquisition_thread.start()
+
+        self.scopeop.setup()
+        self.acquisition.get_mscope(self.scopeop.mscope)
+        self.scopeop.get_signals(
+            self.acquisition.update_scopeop, 
+            self.acquisition.acquisition_timer
+        )
+
+    def _start_form(self):
+        # Instantiate metadata dicts
+        self.form_metadata = None
+        self.experiment_metadata = {key : None for key in EXPERIMENT_METADATA_KEYS}
+
+        self.form_window.show()
+
+    def _end_form(self):
+        self.form_window.close()
+
+    def _start_liveview(self):
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Starting run",
+            'Insert flow cell now. Click "OK" once it is in place.',
+            image=_IMAGE_INSERT_PATH,
+        )
+
+        self.liveview_window.show()
+        self.scopeop.start()
+
+    def _end_liveview(self):
+        self.liveview_window.close()
+
+        print("ORACLE: Opening survey")
+        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
+
+    def _start_intermission(self):
+        dialog_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "Run complete",
+            'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
+            cancel=True,
+            image=_IMAGE_REMOVE_PATH,
+        )
+        if dialog_result == QMessageBox.Cancel:
+            self.shutoff()
+        elif dialog_result == QMessageBox.Ok:
+            print("ORACLE: Running new experiment")
+            self.scopeop.rerun()
+
     def shutoff(self):
-        # Stop scopeops
-        self.scopeop.stop()
+        # End experiment
+        self.scopeop.end()
 
         # Wait for QTimers to shutoff
         print("ORACLE: Waiting for timer to terminate...")
@@ -194,58 +260,6 @@ class Oracle(Machine):
         print("ORACLE: Exiting program")
         self.form_window.close()
         self.liveview_window.close()
-
-    def _start_setup(self):
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Initializing hardware",
-            'If there is a flow cell in the scope, remove it now. Click "OK" once it is removed.',
-            image=_IMAGE_REMOVE_PATH,
-        )
-
-        self.scopeop_thread.start()
-        self.acquisition_thread.start()
-
-        self.scopeop.setup()
-        self.acquisition.get_mscope(self.scopeop.mscope)
-
-    def _start_form(self):
-        self.form_window.show()
-
-    def _end_form(self):
-        self.form_window.close()
-
-    def _start_liveview(self):
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Starting run",
-            'Insert flow cell now. Click "OK" once it is in place.',
-            image=_IMAGE_INSERT_PATH,
-        )
-
-        self.liveview_window.show()
-        self.scopeop.start()
-
-    def _end_liveview(self):
-        self.liveview_window.close()
-
-        print("ORACLE: Opening survey")
-        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
-
-    def _start_intermission(self):
-
-        dialog_result = self.display_message(
-            QMessageBox.Icon.Information,
-            "Run complete",
-            'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
-            cancel=True,
-            image=_IMAGE_REMOVE_PATH,
-        )
-        if dialog_result == QMessageBox.Cancel:
-            self.shutoff()
-        elif dialog_result == QMessageBox.Ok:
-            print("ORACLE: Running new experiment")
-            self.scopeop.rerun()
 
 
 if __name__ == "__main__":

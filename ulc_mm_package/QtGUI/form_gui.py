@@ -16,11 +16,12 @@ from PyQt5.QtWidgets import (
     QLabel,
     QPushButton,
     QLineEdit,
-    QTextEdit,
+    QPlainTextEdit,
     QComboBox,
 )
 from PyQt5.QtGui import QIcon
 
+from ulc_mm_package.image_processing.processing_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     PROTOCOL_LIST,
@@ -45,29 +46,29 @@ class FormGUI(QDialog):
         self.setLayout(self.main_layout)
 
         # Labels
-        self.operator_id_lbl = QLabel("Operator ID")
-        self.participant_id_lbl = QLabel("Participant ID")
-        self.flowcell_id_lbl = QLabel("Flowcell ID")
+        self.operator_lbl = QLabel("Operator ID")
+        self.participant_lbl = QLabel("Participant ID")
+        self.flowcell_lbl = QLabel("Flowcell ID")
         self.notes_lbl = QLabel("Other notes")
         self.protocol_lbl = QLabel("Protocol")
         self.site_lbl = QLabel("Site")
 
         # Text boxes
-        self.operator_id = QLineEdit()
-        self.participant_id = QLineEdit()
-        self.flowcell_id = QLineEdit()
-        self.notes = QTextEdit()
+        self.operator_val = QLineEdit()
+        self.participant_val = QLineEdit()
+        self.flowcell_val = QLineEdit()
+        self.notes_val = QPlainTextEdit()
 
         # Buttons
         self.exit_btn = QPushButton("Cancel")
         self.start_btn = QPushButton("Start")
 
         # Dropdown menus
-        self.protocol = QComboBox()
-        self.site = QComboBox()
+        self.protocol_val = QComboBox()
+        self.site_val = QComboBox()
 
-        self.protocol.addItems(PROTOCOL_LIST)
-        self.site.addItems(SITE_LIST)
+        self.protocol_val.addItems(PROTOCOL_LIST)
+        self.site_val.addItems(SITE_LIST)
 
         # Place widgets
         self.main_layout.addWidget(self.operator_lbl, 0, 0)
@@ -87,22 +88,31 @@ class FormGUI(QDialog):
         self.main_layout.addWidget(self.start_btn, 6, 1)
 
         # Set the focus order
-        self.operator_id.setFocus()
-        self.setTabOrder(self.notes, self.start_btn)
+        self.operator_val.setFocus()
+        self.setTabOrder(self.notes_val, self.start_btn)
 
-    def get_form_input(self) -> Dict:
-        return {
-            "operator": self.operator.text(),
-            "participant": self.participant.text(),
-            "flowcell": self.flowcell.text(),
-            "protocol": self.protocol.currentText(),
-            "site": self.site.currentText(),
-            "notes": self.notes.text(),
+    def get_form_input(self) -> dict:
+        # Match keys with EXPERIMENT_METADATA_KEYS from processing_constants.py
+        form_metadata = {
+            "operator_id": self.operator_val.text(),
+            "participant_id": self.participant_val.text(),
+            "flowcell_id": self.flowcell_val.text(),
+            "protocol": self.protocol_val.currentText(),
+            "site": self.site_val.currentText(),
+            "notes": self.notes_val.toPlainText(),
         }
+
+        if not all(key in EXPERIMENT_METADATA_KEYS for key in form_metadata):
+            raise KeyError("Detected invalid experiment metadata key(s)")
+
+        return form_metadata
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui = FormGUI()
+    
+    print(gui.get_form_input())
+
     gui.show()
     sys.exit(app.exec_())

@@ -15,8 +15,6 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
-from ulc_mm_package.QtGUI.liveview_gui import STATUS
-
 from ulc_mm_package.hardware.hardware_constants import SIMULATION
 from ulc_mm_package.image_processing.processing_constants import (
     TARGET_FLOWRATE,
@@ -26,6 +24,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
     MAX_FRAMES,
+    INFOPANEL_METADATA,
+    STATUS,
 )
 
 
@@ -43,12 +43,14 @@ class ScopeOp(QObject, Machine):
     set_period = pyqtSignal(float)
     freeze_liveview = pyqtSignal(bool)
 
-    def __init__(self, img_signal):
+    update_infopanel =  pyqtSignal(dict)
+
+    def __init__(self):
         super().__init__()
 
         self.mscope = None
-        self.img_signal = img_signal
-
+        # Info panel
+        self.infopanel_metadata = INFOPANEL_METADATA
         # TODO make sure all of these get reset
 
         self.autobrightness_result = None
@@ -93,8 +95,23 @@ class ScopeOp(QObject, Machine):
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
         self.add_transition(
-            trigger="stop", source="*", dest="standby", before="_end_experiment"
+            trigger="end", source="*", dest="standby", before="_end_experiment"
         )
+
+    def _freeze_liveview(self):
+        self.freeze_liveview.emit(True)
+
+    def _unfreeze_liveview(self):
+        self.freeze_liveview.emit(False)
+
+    @pyqtSlot()
+    def send_info(self):
+        self.update_infopanel.emit(self.infopanel_metadata)
+
+    def get_signals(self, img_signal, timer_signal):
+        print("SCOPEOP: Getting signals")
+        self.img_signal = img_signal
+        self.timer_signal = timer_signal
 
     def setup(self):
         print("SCOPEOP: Creating timers...")
@@ -121,7 +138,6 @@ class ScopeOp(QObject, Machine):
 
     def start(self):
         self.start_timers.emit()
-
         self.next_state()
 
     def reset(self):
@@ -129,6 +145,8 @@ class ScopeOp(QObject, Machine):
         self.mscope.pneumatic_module.setDutyCycle(
             self.mscope.pneumatic_module.getMaxDutyCycle()
         )
+
+        self.infopanel_metadata = INFOPANEL_METADATA
 
         self.autobrightness_result = None
         self.cellfinder_result = None
@@ -139,12 +157,6 @@ class ScopeOp(QObject, Machine):
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
-
-    def _freeze_liveview(self):
-        self.freeze_liveview.emit(True)
-
-    def _unfreeze_liveview(self):
-        self.freeze_liveview.emit(False)
 
     def _start_autobrightness(self):
         print("SCOPEOP: Starting autobrightness")
@@ -194,6 +206,7 @@ class ScopeOp(QObject, Machine):
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
+        self.timer_signal.connect(self.send_info)
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
@@ -217,6 +230,7 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.autobrightness_result = e.value
             print(f"Mean pixel val: {self.autobrightness_result}")
+            self.send_info()
             self.next_state()
         else:
             self.img_signal.connect(self.run_autobrightness)

@@ -4,10 +4,8 @@ Displays camera preview and conveys info to user during runs."""
 
 import numpy as np
 import sys
-import enum
 
 from qimage2ndarray import gray2qimage
-from typing import Dict
 
 from PyQt5.QtWidgets import (
     QSizePolicy,
@@ -15,12 +13,11 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QGridLayout,
     QHBoxLayout,
-    QVBoxLayout,
+    # QVBoxLayout,
     QTabWidget,
     QWidget,
     QLabel,
     QLineEdit,
-    QTextEdit,
     QPlainTextEdit,
     QPushButton,
     QScrollBar,
@@ -28,16 +25,11 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
-from ulc_mm_package.QtGUI.gui_constants import ICON_PATH
+from ulc_mm_package.QtGUI.gui_constants import ICON_PATH, STATUS
 
 
 # TEMP for testing
 sample = "*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*"
-
-class STATUS(enum.Enum):
-    STANDBY = "lightgray"
-    GOOD = "lightgreen"
-    BAD = "red"
 
 
 class LiveviewGUI(QMainWindow):
@@ -51,18 +43,26 @@ class LiveviewGUI(QMainWindow):
     def update_img(self, img : np.ndarray):
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
 
-    def update_metadata(self, metadata : Dict):
-        # TODO standardize Dict input
+    def update_experiment(self, metadata : dict):
+        # TODO standardize dict input
         self.operator_val.setText(f"{metadata['operator']}")
         self.participant_val.setText(f"{metadata['participant']}")
         self.flowcell_val.setText(f"{metadata['flowcell']}")
         self.protocol_val.setText(f"{metadata['protocol']}")
         self.site_val.setText(f"{metadata['site']}")
-        self.notes_val.setText(f"{metadata['notes']}")
+        self.notes_val.setPlainText(f"{metadata['notes']}")
 
-    def update_margin(self, data : Dict):
-        # TODO implement this
-        pass
+    @pyqtSlot(dict)
+    def update_infopanel(self, metadata : dict):
+
+        self.state_lbl.setText("AB DONE")
+        self.timer_lbl.setText("TIME HERE")
+        self.terminal_txt.setPlainText(":)")
+        self.fps_lbl.setText("FPS HERE")
+
+        self.brightness_val.setText("###")
+        self.focus_val.setText("###")
+        self.flowrate_val.setText("###")
 
     def _set_color(self, lbl, status):
         lbl.setStyleSheet(f"background-color: {status.value}")
@@ -78,7 +78,7 @@ class LiveviewGUI(QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.main_widget.setLayout(self.main_layout)
 
-        self._load_margin_ui()
+        self._load_infopanel_ui()
         self._load_liveview_ui()
         self._load_thumbnail_ui()
         self._load_metadata_ui()
@@ -91,15 +91,15 @@ class LiveviewGUI(QMainWindow):
 
         # Populate window
         self.main_layout.addWidget(self.tab_widget, 0, 0)
-        self.main_layout.addWidget(self.margin_widget, 0, 1)
+        self.main_layout.addWidget(self.infopanel_widget, 0, 1)
 
-    def _load_margin_ui(self):
-        # Set up margin layout + widget
-        self.margin_layout = QGridLayout()
-        self.margin_widget = QWidget()
-        self.margin_widget.setLayout(self.margin_layout)
+    def _load_infopanel_ui(self):
+        # Set up infopanel layout + widget
+        self.infopanel_layout = QGridLayout()
+        self.infopanel_widget = QWidget()
+        self.infopanel_widget.setLayout(self.infopanel_layout)
 
-        # Populate margin
+        # Populate infopanel
         self.state_lbl = QLabel("Setup")
         self.exit_btn = QPushButton("Exit")
         self.timer_lbl = QLabel("Timer")
@@ -128,18 +128,18 @@ class LiveviewGUI(QMainWindow):
         self._set_color(self.focus_val, STATUS.GOOD)
         self._set_color(self.flowrate_val, STATUS.BAD)
 
-        self.margin_layout.addWidget(self.state_lbl, 1, 1)
-        self.margin_layout.addWidget(self.timer_lbl, 1, 2)
-        self.margin_layout.addWidget(self.exit_btn, 2, 1, 1, 2)
-        self.margin_layout.addWidget(self.terminal_txt, 9, 1, 1, 2)
-        self.margin_layout.addWidget(self.fps_lbl, 10, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.state_lbl, 1, 1)
+        self.infopanel_layout.addWidget(self.timer_lbl, 1, 2)
+        self.infopanel_layout.addWidget(self.exit_btn, 2, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.terminal_txt, 9, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.fps_lbl, 10, 1, 1, 2)
 
-        self.margin_layout.addWidget(self.brightness_val, 6, 1)
-        self.margin_layout.addWidget(self.focus_val, 7, 1)
-        self.margin_layout.addWidget(self.flowrate_val, 8, 1)
-        self.margin_layout.addWidget(self.brightness_lbl, 6, 2)
-        self.margin_layout.addWidget(self.focus_lbl, 7, 2)
-        self.margin_layout.addWidget(self.flowrate_lbl, 8, 2)
+        self.infopanel_layout.addWidget(self.brightness_val, 6, 1)
+        self.infopanel_layout.addWidget(self.focus_val, 7, 1)
+        self.infopanel_layout.addWidget(self.flowrate_val, 8, 1)
+        self.infopanel_layout.addWidget(self.brightness_lbl, 6, 2)
+        self.infopanel_layout.addWidget(self.focus_lbl, 7, 2)
+        self.infopanel_layout.addWidget(self.flowrate_lbl, 8, 2)
 
     def _load_liveview_ui(self):
         # Set up liveview layout + widget
@@ -204,7 +204,7 @@ class LiveviewGUI(QMainWindow):
         self.flowcell_val = QLineEdit()
         self.protocol_val = QLineEdit()
         self.site_val = QLineEdit()
-        self.notes_val = QTextEdit()
+        self.notes_val = QPlainTextEdit()
 
         self.operator_val.setReadOnly(True)
         self.participant_val.setReadOnly(True)
@@ -232,15 +232,15 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui = LiveviewGUI()
 
-    metadata = {
+    experiment_metadata = {
                 "operator": "1234",
                 "participant": "567",
                 "flowcell": "A2",
                 "protocol": "Default",
-                "site": "Uganda",
-                "notes": sample,
+                "site": "Uganda",  
+                "notes": sample+sample,
             }
-    gui.update_metadata(metadata)
+    gui.update_experiment(experiment_metadata)
 
     gui.show()
     sys.exit(app.exec_())
