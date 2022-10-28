@@ -175,7 +175,7 @@ def main_acquisition_loop(mscope: MalariaScope):
 
     start = perf_counter()
     prev_print_time = perf_counter()
-    stop_time_s = 5 * 60
+    stop_time_s = 1 * 60
 
     fake_exp_metadata = {k: k for k in EXPERIMENT_METADATA_KEYS}
     fake_per_img_metadata = {k: k for k in PER_IMAGE_METADATA_KEYS}
@@ -231,6 +231,7 @@ def main_acquisition_loop(mscope: MalariaScope):
                 print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
                 prev_print_time = perf_counter()
 
+    mscope.data_storage.save_uniform_random_sample()
     closing_file_future = mscope.data_storage.close()
     mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
