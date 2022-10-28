@@ -8,12 +8,12 @@ import shutil
 import numpy as np
 import cv2
 
+from ulc_mm_package.scope_constants import DEFAULT_SSD
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
     MIN_GB_REQUIRED,
     NUM_SUBSEQUENCE,
     SUBSEQUENCE_LENGTH,
-    DEFAULT_SSD,
 )
 
 

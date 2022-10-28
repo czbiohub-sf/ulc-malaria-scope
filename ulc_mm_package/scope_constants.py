@@ -35,9 +35,16 @@ class CameraOptions(Enum):
         return self.img_dims().height
 
 
+# ================ SSD directory constants ================ #
+DEFAULT_SSD = "/media/pi/"
+ALT_SSD = "../QtGUI/sim_media/pi/"
+
+# ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
 SIMULATION = MS_SIMULATE_FLAG > 0
+print(f"Simulation mode: {SIMULATION}")
 
+# ================ Camera constants ================ #
 AVT_VENDOR_ID = 0x1AB2
 AVT_PRODUCT_ID = 0x0001
 

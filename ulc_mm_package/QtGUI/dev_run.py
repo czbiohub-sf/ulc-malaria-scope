@@ -5,6 +5,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     SIMULATION,
 )
 
+from ulc_mm_package.scope_constants import DEFAULT_SSD, ALT_SSD
 from ulc_mm_package.hardware.scope import MalariaScope, Components
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlRoutine
