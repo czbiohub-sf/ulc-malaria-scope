@@ -50,6 +50,7 @@ class ScopeOp(QObject, Machine):
 
         # Instantiate variables
         self._init_variables()
+        self.mscope = None
 
         states = [
             {
@@ -107,9 +108,7 @@ class ScopeOp(QObject, Machine):
 
         self.update_infopanel.emit(self.infopanel_metadata)
 
-    def _init_variables(self):
-        self.mscope = None
-        
+    def _init_variables(self):        
         # Info panel
         self.infopanel_metadata = INFOPANEL_METADATA
         self.image_metadata = IMAGE_METADATA
