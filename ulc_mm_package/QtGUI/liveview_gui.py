@@ -2,9 +2,11 @@
 
 Displays camera preview and conveys info to user during runs."""
 
+from matplotlib.streamplot import streamplot
 import numpy as np
 import sys
 
+from time import perf_counter
 from qimage2ndarray import gray2qimage
 
 from PyQt5.QtWidgets import (
@@ -39,11 +41,7 @@ class LiveviewGUI(QMainWindow):
 
         super().__init__()
         self._load_main_ui()
-
-    @pyqtSlot(np.ndarray)
-    def update_img(self, img : np.ndarray):
-        self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
-
+    
     def update_experiment(self, metadata : dict):
         # TODO standardize dict input
         self.operator_val.setText(f"{metadata['operator_id']}")
@@ -53,22 +51,48 @@ class LiveviewGUI(QMainWindow):
         self.site_val.setText(f"{metadata['site']}")
         self.notes_val.setPlainText(f"{metadata['notes']}")
 
+    @pyqtSlot(np.ndarray)
+    def update_img(self, img : np.ndarray):
+        self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
+
     @pyqtSlot(dict)
-    def update_infopanel(self, metadata : dict):
-        if not metadata['terminal_msg'] == "":
-            self.terminal_msg = self.terminal_msg + f"\n{metadata['terminal_msg']}"
-            self.terminal_txt.setPlainText(self.terminal_msg)
-
-        self.state_lbl.setText(f"{metadata['state']}")
-        self.timer_lbl.setText(f"{metadata['im_counter']}")
-        # self.fps_lbl.setText("FPS HERE")
-
-        # TODO add other values
+    def update_infopanel(self, info : dict):
+        # TODO implement other values
 
         # self.brightness_val.setText("###")
         # self.focus_val.setText("###")
-        self.flowrate_val.setText(f"{metadata['flowrate']}")
-        self._set_color(self.flowrate_lbl, metadata['flowrate_status'])
+        self.flowrate_val.setText(f"Flowrate: {info['flowrate']} px/s")
+        self._set_color(self.flowrate_lbl, info['flowrate_status'])
+
+    @pyqtSlot(str)
+    def update_state(self, state):
+        self.state_lbl.setText(state.capitalize())
+
+        if state == 'experiment':
+            self._set_color(self.state_lbl, STATUS.GOOD)
+        else:
+            self._set_color(self.state_lbl, STATUS.STANDBY)
+
+    @pyqtSlot(int)
+    def update_count(self, count):
+        self.count_lbl.setText(f"{count}")
+    
+    @pyqtSlot(str)
+    def update_msg(self, msg):
+        self.terminal_msg = self.terminal_msg + f"\n{msg}"
+        self.terminal_txt.setPlainText(self.terminal_msg)
+    
+    @pyqtSlot(int)
+    def update_brightness(self, val):
+        self.brightness_val.setText(f"Brightness: {val}")
+
+    @pyqtSlot(int)
+    def update_focus(self, val):
+        self.focus_val.setText(f"Focus error: {val} steps")
+
+    @pyqtSlot(int)
+    def update_flowrate(self, val):
+        self.flowrate_val.setText(f"Flowrate: {val} px/s")
 
     def _set_color(self, lbl : QLabel, status : STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
@@ -106,18 +130,20 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_widget.setLayout(self.infopanel_layout)
 
         # Populate infopanel
-        self.state_lbl = QLabel("Setup")
+        self.state_lbl = QLabel("--")
         self.exit_btn = QPushButton("Exit")
-        self.timer_lbl = QLabel("Timer")
-        self.terminal_txt = QPlainTextEdit(sample + sample + sample + sample)
-        self.fps_lbl = QLabel("FPS")
+        self.count_lbl = QLabel()
+        self.terminal_txt = QPlainTextEdit(self.terminal_msg)
+        # self.fps_lbl = QLabel("FPS")
 
-        self.brightness_val = QLabel("Brightness METRIC")
-        self.focus_val = QLabel("Focus error METRIC")
-        self.flowrate_val = QLabel("Flowrate METRIC")
-        self.brightness_lbl = QLabel("Brightness METRIC")
-        self.focus_lbl = QLabel("Focus error METRIC")
-        self.flowrate_lbl = QLabel("Flowrate METRIC")
+        self.brightness_val = QLabel()
+        self.focus_val = QLabel()
+        self.flowrate_val = QLabel()
+        self.brightness_lbl = QLabel("expected: x-x")
+        self.focus_lbl = QLabel("expected: x-x")
+        self.flowrate_lbl = QLabel("expected: x-x")
+
+        # self.set_infopanel_vals()
 
         self.terminal_scroll = QScrollBar()
 
@@ -129,16 +155,15 @@ class LiveviewGUI(QMainWindow):
         # TODO scrollbar setting doesn't work
         self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
-        # Setup routine statuses
-        self._set_color(self.brightness_val, STATUS.STANDBY)
-        self._set_color(self.focus_val, STATUS.GOOD)
-        self._set_color(self.flowrate_val, STATUS.BAD)
+        # Setup column size
+        self.state_lbl.setFixedWidth(180)
+        self.count_lbl.setFixedWidth(150)
 
         self.infopanel_layout.addWidget(self.state_lbl, 1, 1)
-        self.infopanel_layout.addWidget(self.timer_lbl, 1, 2)
+        self.infopanel_layout.addWidget(self.count_lbl, 1, 2)
         self.infopanel_layout.addWidget(self.exit_btn, 2, 1, 1, 2)
         self.infopanel_layout.addWidget(self.terminal_txt, 9, 1, 1, 2)
-        self.infopanel_layout.addWidget(self.fps_lbl, 10, 1, 1, 2)
+        # self.infopanel_layout.addWidget(self.fps_lbl, 10, 1, 1, 2)
 
         self.infopanel_layout.addWidget(self.brightness_val, 6, 1)
         self.infopanel_layout.addWidget(self.focus_val, 7, 1)
@@ -146,6 +171,20 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.brightness_lbl, 6, 2)
         self.infopanel_layout.addWidget(self.focus_lbl, 7, 2)
         self.infopanel_layout.addWidget(self.flowrate_lbl, 8, 2)
+
+    def set_infopanel_vals(self):
+        print("LIVEVIEW: Setting initial infopanel values")
+        # Set label values
+        self.update_count("--")
+        self.update_brightness("--")
+        self.update_focus("--")
+        self.update_flowrate("--")
+
+        # Setup routine statuses
+        self._set_color(self.state_lbl, STATUS.STANDBY)
+        self._set_color(self.brightness_val, STATUS.STANDBY)
+        self._set_color(self.focus_val, STATUS.STANDBY)
+        self._set_color(self.flowrate_val, STATUS.STANDBY)
 
     def _load_liveview_ui(self):
         # Set up liveview layout + widget
@@ -158,7 +197,7 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.state_lbl.setAlignment(Qt.AlignHCenter)
-        self.timer_lbl.setAlignment(Qt.AlignHCenter)
+        self.count_lbl.setAlignment(Qt.AlignHCenter)
 
         self.liveview_layout.addWidget(self.liveview_img)
 

@@ -5,8 +5,6 @@ class STATUS(enum.Enum):
     STANDBY = "lightgray"
     GOOD = "lightgreen"
     BAD = "red"
-    IN_PROGRESS = "yellow"
-
 
 # ================ Metadata ================ #
 INFOPANEL_METADATA = {

@@ -106,7 +106,14 @@ class Oracle(Machine):
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
         self.scopeop.stop_timers.connect(self.acquisition.stop_timers)
 
-        self.scopeop.update_infopanel.connect(self.liveview_window.update_infopanel)
+        # self.scopeop.update_infopanel.connect(self.liveview_window.update_infopanel)
+        self.scopeop.update_state.connect(self.liveview_window.update_state)
+        self.scopeop.update_count.connect(self.liveview_window.update_count)
+        self.scopeop.update_msg.connect(self.liveview_window.update_msg)
+
+        self.scopeop.update_brightness.connect(self.liveview_window.update_brightness)
+        self.scopeop.update_flowrate.connect(self.liveview_window.update_flowrate)
+        self.scopeop.update_focus.connect(self.liveview_window.update_focus)
 
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
@@ -170,6 +177,8 @@ class Oracle(Machine):
         self.form_metadata = None
         self.experiment_metadata = {key : None for key in EXPERIMENT_METADATA_KEYS}
 
+        self.liveview_window.set_infopanel_vals()
+
     def _start_setup(self):
         self.display_message(
             QMessageBox.Icon.Information,
@@ -185,7 +194,7 @@ class Oracle(Machine):
         self.acquisition.get_mscope(self.scopeop.mscope)
         self.scopeop.get_signals(
             self.acquisition.update_scopeop, 
-            self.acquisition.acquisition_timer.timeout
+            self.acquisition.liveview_timer.timeout
         )
 
     def _start_form(self):
