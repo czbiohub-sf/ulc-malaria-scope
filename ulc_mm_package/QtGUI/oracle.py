@@ -185,7 +185,7 @@ class Oracle(Machine):
         self.acquisition.get_mscope(self.scopeop.mscope)
         self.scopeop.get_signals(
             self.acquisition.update_scopeop, 
-            self.acquisition.acquisition_timer
+            self.acquisition.acquisition_timer.timeout
         )
 
     def _start_form(self):
