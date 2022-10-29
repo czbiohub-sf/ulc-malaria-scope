@@ -191,7 +191,9 @@ class ScopeOp(QObject, Machine):
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
-        self.count_parasites = count_parasitemia_routine(self.mscope, self.send_thumbnail)
+        self.count_parasites = count_parasitemia_routine(
+            self.mscope, self.send_thumbnail
+        )
         self.count_parasites.send(None)
 
         self.flowcontrol_routine = flowControlRoutine(
