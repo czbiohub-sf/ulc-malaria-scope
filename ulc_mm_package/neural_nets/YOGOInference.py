@@ -34,16 +34,16 @@ class YOGO(NCSModel):
         return self.filter_res(res)
 
     def filter_res(self, res):
-        if res.ndim == 4:
-            bs, pred_dim, Sy, Sx = res.shape
-            # constant time op, just changes view of res
-            res.shape = (bs, pred_dim, Sy * Sx)
         mask = (res[:, 4:5, :] > YOGO_PRED_THRESHOLD).flatten()
         return res[:, :, mask]
 
     def _default_callback(self, infer_request, userdata):
+        res = infer_request.output_tensors[0].data
+        bs, pred_dim, Sy, Sx = res.shape
+        # constant time op, just changes view of res
+        res.shape = (bs, pred_dim, Sy * Sx)
         self._asyn_results.append(
-            (userdata, self.filter_res(infer_request.output_tensors[0].data))
+            (userdata, res)
         )
 
 
