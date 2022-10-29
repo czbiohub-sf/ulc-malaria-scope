@@ -239,7 +239,9 @@ class Oracle(Machine):
     def _toggle_liveview(self, i):
         if i == 0:
             self.acquisition.update_liveview.connect(self.liveview_window.update_img)
-            self.scopeop.send_thumbnail.disconnect(self.liveview_window.update_thumbnails)
+            self.scopeop.send_thumbnail.disconnect(
+                self.liveview_window.update_thumbnails
+            )
         elif i == 1:
             self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
             self.scopeop.send_thumbnail.connect(self.liveview_window.update_thumbnails)

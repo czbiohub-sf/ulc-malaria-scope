@@ -37,7 +37,7 @@ class LiveviewGUI(QMainWindow):
         self.queues_by_class = {
             1: self.ring_queue,
             2: self.schz_queue,
-            3: self.trph_queue
+            3: self.trph_queue,
         }
 
     @pyqtSlot(np.ndarray)
@@ -55,7 +55,6 @@ class LiveviewGUI(QMainWindow):
             self.thumbnail_imgs_by_class[class_].setPixmap(
                 QPixmap.fromImage(gray2qimage(thumbnail))
             )
-
 
     def _load_ui(self):
         self.setWindowTitle("Malaria scope")
@@ -115,7 +114,7 @@ class LiveviewGUI(QMainWindow):
         self.thumbnail_imgs_by_class = {
             1: self.ring_img,
             2: self.schizont_img,
-            3: self.troph_img
+            3: self.troph_img,
         }
 
         self.ring_lbl.setAlignment(Qt.AlignHCenter)

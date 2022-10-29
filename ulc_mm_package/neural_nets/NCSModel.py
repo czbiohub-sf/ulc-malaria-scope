@@ -151,9 +151,7 @@ class NCSModel:
         results = self.model(input_tensor)
         return next(iter(results.values()))
 
-    def asyn(
-        self, input_img: npt.NDArray, idx: int = None
-    ) -> None:
+    def asyn(self, input_img: npt.NDArray, idx: int = None) -> None:
         input_tensor = Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)
         self.asyn_infer_queue.start_async({0: input_tensor}, userdata=idx)
 

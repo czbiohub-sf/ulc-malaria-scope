@@ -45,9 +45,7 @@ class YOGO(NCSModel):
         bs, pred_dim, Sy, Sx = res.shape
         res.shape = (bs, pred_dim, Sy * Sx)
         with lock_timeout(self.lock):
-            self._asyn_results.append(
-                (userdata, res)
-            )
+            self._asyn_results.append((userdata, res))
 
 
 if __name__ == "__main__":
