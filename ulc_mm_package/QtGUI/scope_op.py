@@ -40,11 +40,15 @@ class ScopeOp(QObject, Machine):
     set_period = pyqtSignal(float)
     freeze_liveview = pyqtSignal(bool)
 
+    send_thumbnail = pyqtSignal(int, np.ndarray)
+
     def __init__(self, img_signal):
         super().__init__()
 
         self.mscope = None
         self.img_signal = img_signal
+
+        self.send_thumbnail.connect(self.butt_slot)
 
         # TODO make sure all of these get reset
 
@@ -53,7 +57,6 @@ class ScopeOp(QObject, Machine):
         self.SSAF_result = None
         self.fastflow_result = None
         self.count = 0
-
         states = [
             {
                 "name": "standby",
@@ -92,6 +95,10 @@ class ScopeOp(QObject, Machine):
         self.add_transition(
             trigger="stop", source="*", dest="standby", before="_end_experiment"
         )
+
+    @pyqtSlot(int, np.ndarray)
+    def butt_slot(self, cls, img):
+        print(f"got result of cls {cls}")
 
     def setup(self):
         print("SCOPEOP: Creating timers...")
@@ -184,7 +191,7 @@ class ScopeOp(QObject, Machine):
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
-        self.count_parasites = count_parasitemia_routine(self.mscope)
+        self.count_parasites = count_parasitemia_routine(self.mscope, self.send_thumbnail)
         self.count_parasites.send(None)
 
         self.flowcontrol_routine = flowControlRoutine(
@@ -296,8 +303,8 @@ class ScopeOp(QObject, Machine):
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
-            prev_res = self.count_parasites.send((img, [self.count]))
-            print(prev_res)
+            prev_res = self.count_parasites.send((img, self.count))
+            # print(prev_res)
 
             # Adjust the flow
             try:
