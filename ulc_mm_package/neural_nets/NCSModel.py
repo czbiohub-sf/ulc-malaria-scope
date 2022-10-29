@@ -152,27 +152,10 @@ class NCSModel:
         return next(iter(results.values()))
 
     def asyn(
-        self, input_imgs: List[npt.NDArray], idxs: Optional[Sequence[int]] = None
+        self, input_img: npt.NDArray, idx: int = None
     ) -> None:
-        if isinstance(input_imgs, list):
-            input_imgs = [
-                Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)
-                for img in input_imgs
-            ]
-        else:
-            input_imgs = [
-                Tensor(np.expand_dims(input_imgs, (0, 3)), shared_memory=True)
-            ]
-
-        if idxs is not None:
-            assert len(input_imgs) == len(
-                idxs
-            ), f"must have len(input_imgs) == len(idxs); got {len(input_imgs)} != {len(idxs)}"
-        else:
-            idxs = range(len(input_imgs))
-
-        for i, input_tensor in zip(idxs, input_imgs):
-            self.asyn_infer_queue.start_async({0: input_tensor}, userdata=i)
+        input_tensor = Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)
+        self.asyn_infer_queue.start_async({0: input_tensor}, userdata=idx)
 
     def get_asyn_results(self):
         with lock_timeout(self.lock):

@@ -122,12 +122,6 @@ class DRV8825Nema(RealDRV8825Nema):
             int(max_pos) if max_pos != None else int(450 * self.microstepping)
         )
 
-        # Set up GPIO
-        # Move motor up to ensure it isn't hitting the limit switch
-        self._move_rel_steps(
-            steps=int(ZERO_OFFSET_STEPS * self.microstepping), dir=Direction.CW
-        )
-
     def close(self):
         pass
 
@@ -151,7 +145,7 @@ class DRV8825Nema(RealDRV8825Nema):
         except MotorMoveTimeout:
             # normally we would throw this error, but we do not hit limit switches
             # so this will suffice
-            self.pos = 0
+            self.pos = 450
             """
             raise HomingError(
                 f"Motor failed to home in the allotted time ({homing_timeout} seconds)."

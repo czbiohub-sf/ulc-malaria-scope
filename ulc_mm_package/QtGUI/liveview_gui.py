@@ -4,6 +4,8 @@ Displays camera preview and conveys info to user during runs."""
 
 import numpy as np
 
+from collections import deque
+
 from qimage2ndarray import gray2qimage
 
 from PyQt5.QtWidgets import (
@@ -26,13 +28,34 @@ class LiveviewGUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self._load_ui()
+        # TODO: Hook up queues. Will probably need another
+        # signal/slot pair for displaying the thumbnails.
+        # For now, just do this.
+        self.ring_queue = deque(maxlen=1)
+        self.schz_queue = deque(maxlen=1)
+        self.trph_queue = deque(maxlen=1)
+        self.queues_by_class = {
+            1: self.ring_queue,
+            2: self.schz_queue,
+            3: self.trph_queue
+        }
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img):
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
 
-    # @pyqtSlot(np.ndarray)
-    # def update_thumbnail(self, thumbnail,
+    @pyqtSlot(int, np.ndarray)
+    def update_thumbnails(self, class_, thumbnail):
+        # ignore healthy thumbnails
+        # TODO: may as well show some healthy thumbnails, discuss
+        if class_ > 0:
+            if any(el <= 0 for el in thumbnail.shape):
+                print("update_thumbnails: invalid thumbnail shape {thumbnail.shape}")
+                return
+            self.thumbnail_imgs_by_class[class_].setPixmap(
+                QPixmap.fromImage(gray2qimage(thumbnail))
+            )
+
 
     def _load_ui(self):
         self.setWindowTitle("Malaria scope")
@@ -82,11 +105,18 @@ class LiveviewGUI(QMainWindow):
 
         # Populate thumbnail tab
         self.ring_lbl = QLabel("Ring")
-        self.troph_lbl = QLabel("Troph")
         self.schizont_lbl = QLabel("Schizont")
+        self.troph_lbl = QLabel("Troph")
+
         self.ring_img = QLabel()
-        self.troph_img = QLabel()
         self.schizont_img = QLabel()
+        self.troph_img = QLabel()
+
+        self.thumbnail_imgs_by_class = {
+            1: self.ring_img,
+            2: self.schizont_img,
+            3: self.troph_img
+        }
 
         self.ring_lbl.setAlignment(Qt.AlignHCenter)
         self.troph_lbl.setAlignment(Qt.AlignHCenter)

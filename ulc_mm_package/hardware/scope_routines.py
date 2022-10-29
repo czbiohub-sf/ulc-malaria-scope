@@ -1,5 +1,6 @@
 from typing import List, Tuple, Optional, Sequence
 from time import perf_counter
+from collections import deque
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
@@ -109,31 +110,55 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
                 prev_adjustment_time = perf_counter()
 
 
-#def thumbnail_routine(mscope: MalariaScope):
+def count_parasitemia_routine(mscope: MalariaScope, thumbnail_signal):
+    imgs_under_inference: List[int, np.ndarray] = []
 
+    def argmax(arr):
+        "faster than np.argmax for small arrays by almost 30%!"
+        return max(range(len(arr)), key=arr.__getitem__)
 
-
-def count_parasitemia_routine(mscope: MalariaScope):
-    imgs_under_inference = []
+    def _pop_result_by_id(lst, id):
+        for i in range(len(lst)):
+            if lst[i][0] == id:
+                return lst.pop(i)
+        raise ValueError(f"id {id} not found in sequence")
 
     img: np.ndarray
     counts: Optional[Sequence[int]]
     while True:
-        # TODO: this filtering step will most likely be
-        # moved somewhere else. It makes more sense to
-        # 
-        results = [
-            (res[0], mscope.cell_diagnosis_model.filter_res(res[1]))
-            for res in
-            mscope.cell_diagnosis_model.get_asyn_results()
-        ]
+        results = mscope.cell_diagnosis_model.get_asyn_results()
+
+        # do thumbnail stuff
+        # this could be put in another function?
+        for id_, pred  in results:
+            filtered_pred = mscope.cell_diagnosis_model.filter_res(pred)
+
+            try:
+                _, img = _pop_result_by_id(imgs_under_inference, id_)
+            except ValueError:
+                print(f"id {id_} not found in sequence - len(imgs_under_inference) == {len(imgs_under_inference)}")
+                continue
+
+            bs, pred_dim, num_preds = filtered_pred.shape
+            assert bs == 1
+            for k in range(num_preds):
+                xc, yc, w, h, t0, *classes = filtered_pred[0,:,k]
+                img_h, img_w = img.shape
+                xc_px, yc_px, w_px, h_px = img_w * xc, img_h * yc, img_w * w, img_h * h
+                x0 = xc_px - w_px / 2
+                x1 = xc_px + w_px / 2
+                y0 = yc_px - h_px / 2
+                y1 = yc_px + h_px / 2
+                thumbnail = img[round(y0):round(y1), round(x0):round(x1)]
+                class_ = argmax(classes)
+                thumbnail_signal.emit(class_, thumbnail)
+
         # get a new image and imageid for inference, and send previous
         # results out
-        img, counts = yield results
+        img, count = yield results
+        imgs_under_inference.append((count, img))
 
-        mscope.cell_diagnosis_model(img, counts)
-
-
+        mscope.cell_diagnosis_model(img, count)
 
 
 

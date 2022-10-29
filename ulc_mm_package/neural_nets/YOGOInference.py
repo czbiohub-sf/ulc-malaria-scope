@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
+from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint, lock_timeout
 from ulc_mm_package.neural_nets.neural_net_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
@@ -39,12 +39,15 @@ class YOGO(NCSModel):
 
     def _default_callback(self, infer_request, userdata):
         res = infer_request.output_tensors[0].data
-        bs, pred_dim, Sy, Sx = res.shape
         # constant time op, just changes view of res
+        # doing it this way will raise an error if it is a reshape
+        # and we want to know if we are wasting time on reshapes!
+        bs, pred_dim, Sy, Sx = res.shape
         res.shape = (bs, pred_dim, Sy * Sx)
-        self._asyn_results.append(
-            (userdata, res)
-        )
+        with lock_timeout(self.lock):
+            self._asyn_results.append(
+                (userdata, res)
+            )
 
 
 if __name__ == "__main__":

@@ -48,10 +48,7 @@ class ScopeOp(QObject, Machine):
         self.mscope = None
         self.img_signal = img_signal
 
-        self.send_thumbnail.connect(self.butt_slot)
-
         # TODO make sure all of these get reset
-
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.SSAF_result = None
@@ -95,10 +92,6 @@ class ScopeOp(QObject, Machine):
         self.add_transition(
             trigger="stop", source="*", dest="standby", before="_end_experiment"
         )
-
-    @pyqtSlot(int, np.ndarray)
-    def butt_slot(self, cls, img):
-        print(f"got result of cls {cls}")
 
     def setup(self):
         print("SCOPEOP: Creating timers...")

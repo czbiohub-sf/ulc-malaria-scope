@@ -103,6 +103,8 @@ class Oracle(Machine):
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
         self.scopeop.stop_timers.connect(self.acquisition.stop_timers)
 
+        self.scopeop.send_thumbnail.connect(self.liveview_window.update_thumbnails)
+
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
 
@@ -237,11 +239,12 @@ class Oracle(Machine):
     def _toggle_liveview(self, i):
         if i == 0:
             self.acquisition.update_liveview.connect(self.liveview_window.update_img)
+            self.scopeop.send_thumbnail.disconnect(self.liveview_window.update_thumbnails)
         elif i == 1:
             self.acquisition.update_liveview.disconnect(self.liveview_window.update_img)
+            self.scopeop.send_thumbnail.connect(self.liveview_window.update_thumbnails)
 
     def _start_intermission(self):
-
         dialog_result = self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
