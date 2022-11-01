@@ -25,15 +25,13 @@ from ulc_mm_package.QtGUI.gui_constants import (
     MAX_FRAMES,
     INFOPANEL_METADATA,
     INFOPANEL_METADATA_KEYS,
-    IMAGE_METADATA,
     STATUS,
 )
 
 # TODO figure out how to disconnect img_signal so it's not running after reset
-# TODO populate info?
-
-# TODO get rid of infopanel dict???
-# TODO get rid of timer signal?
+# TODO populate info?    
+# TODO get rid of infopanel dict, etc.
+# TODO get rid of timer signal
 
 class ScopeOp(QObject, Machine):
     setup_done = pyqtSignal()
@@ -79,7 +77,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autofocus",
-                "on_enter": [self.send_state, self._start_autofocus,
+                "on_enter": [self.send_state, self._start_autofocus],
             },
             {
                 "name": "fastflow",
@@ -123,7 +121,9 @@ class ScopeOp(QObject, Machine):
     def _init_variables(self):        
         # Info panel
         # self.infopanel_metadata = INFOPANEL_METADATA
-        self.image_metadata = IMAGE_METADATA
+        self.image_metadata = {key : None for key in PER_IMAGE_METADATA_KEYS}
+        # TEMP for testing
+        print(self.image_metadata)
 
         self.autobrightness_result = None
         self.cellfinder_result = None
@@ -230,7 +230,13 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
-        self.img_signal.disconnect()
+
+        # TODO is there a better way to check for pyqtSignal connections?
+        try:
+            self.img_signal.disconnect()
+            print("SCOPEOP: Disconnected img_signal")
+        except TypeError:
+            print("SCOPEOP: Since img_signal is already disconnected, no changes made")
 
         print("SCOPEOP: Ending experiment")
         self.stop_timers.emit()
@@ -343,9 +349,10 @@ class ScopeOp(QObject, Machine):
                 # Periodically adjust focus using single shot autofocus
                 self.PSSAF_routine.send(img)
                 # TODO add density check here
-                # flowrate = self.flowcontrol_routine.send((img, timestamp))
-                flowrate = 2
-                self.update_flowrate.emit(int(flowrate))
+                flowrate = self.flowcontrol_routine.send((img, timestamp))
+                # TODO change this to None type check
+                if not self.flowrate == -99:
+                    self.update_flowrate.emit(int(flowrate))
             except CantReachTargetFlowrate:
                 if not SIMULATION:
                     self.error.emit(

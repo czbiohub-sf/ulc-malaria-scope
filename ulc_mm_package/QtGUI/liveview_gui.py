@@ -27,7 +27,11 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
-from ulc_mm_package.QtGUI.gui_constants import ICON_PATH, STATUS
+from ulc_mm_package.QtGUI.gui_constants import (
+    STATUS,
+    ICON_PATH,
+    MAX_FRAMES,
+)
 
 
 # TEMP for testing
@@ -75,11 +79,11 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(int)
     def update_count(self, count):
-        self.count_lbl.setText(f"{count}")
+        self.count_lbl.setText(f"{count} / {MAX_FRAMES}")
     
     @pyqtSlot(str)
     def update_msg(self, msg):
-        self.terminal_msg = self.terminal_msg + f"\n{msg}"
+        self.terminal_msg = self.terminal_msg + f"{msg}\n"
         self.terminal_txt.setPlainText(self.terminal_msg)
     
     @pyqtSlot(int)
@@ -136,9 +140,9 @@ class LiveviewGUI(QMainWindow):
         self.terminal_txt = QPlainTextEdit(self.terminal_msg)
         # self.fps_lbl = QLabel("FPS")
 
-        self.brightness_val = QLabel()
-        self.focus_val = QLabel()
-        self.flowrate_val = QLabel()
+        self.brightness_val = QLabel("--")
+        self.focus_val = QLabel("--")
+        self.flowrate_val = QLabel("--")
         self.brightness_lbl = QLabel("expected: x-x")
         self.focus_lbl = QLabel("expected: x-x")
         self.flowrate_lbl = QLabel("expected: x-x")

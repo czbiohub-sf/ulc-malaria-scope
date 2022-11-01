@@ -26,17 +26,6 @@ INFOPANEL_METADATA_KEYS = [
     "flowrate",
 ]
 
-IMAGE_METADATA = {
-        "im_counter" : 0,
-        "timestamp" : None,
-        "motor_pos" : None,
-        "pressure_hpa" : None,
-        "syringe_pos" : None,
-        "flowrate" : "--",
-        "temperature" : None,
-        "humidity" : None,
-    }
-
 # ================ Dropdown menu options ================ #
 PROTOCOL_LIST = ["Default"]
 SITE_LIST = ["Tororo, Uganda"]
@@ -47,6 +36,8 @@ LIVEVIEW_PERIOD = 1000
 
 # ================ Experiment timeout ================ #
 MAX_FRAMES = 40000 # Rounded up from 20 minutes of data at 30 FPS
+# For testing
+# MAX_FRAMES = 10
 
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"
