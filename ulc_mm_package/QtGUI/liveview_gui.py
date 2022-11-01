@@ -59,15 +59,6 @@ class LiveviewGUI(QMainWindow):
     def update_img(self, img: np.ndarray):
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
 
-    @pyqtSlot(dict)
-    def update_infopanel(self, info: dict):
-        # TODO implement other values
-
-        # self.brightness_val.setText("###")
-        # self.focus_val.setText("###")
-        self.flowrate_val.setText(f"Flowrate: {info['flowrate']} px/s")
-        self._set_color(self.flowrate_lbl, info["flowrate_status"])
-
     @pyqtSlot(str)
     def update_state(self, state):
         self.state_lbl.setText(state.capitalize())
@@ -186,9 +177,9 @@ class LiveviewGUI(QMainWindow):
 
         # Setup routine statuses
         self._set_color(self.state_lbl, STATUS.STANDBY)
-        self._set_color(self.brightness_val, STATUS.STANDBY)
-        self._set_color(self.focus_val, STATUS.STANDBY)
-        self._set_color(self.flowrate_val, STATUS.STANDBY)
+        # self._set_color(self.brightness_val, STATUS.STANDBY)
+        # self._set_color(self.focus_val, STATUS.STANDBY)
+        # self._set_color(self.flowrate_val, STATUS.STANDBY)
 
     def _load_liveview_ui(self):
         # Set up liveview layout + widget
