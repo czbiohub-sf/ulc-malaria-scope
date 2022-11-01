@@ -52,7 +52,7 @@ class Oracle(Machine):
         self.acquisition.moveToThread(self.acquisition_thread)
 
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp()
+        self.scopeop = ScopeOp(self.acquisition.update_scopeop)
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
@@ -192,10 +192,6 @@ class Oracle(Machine):
 
         self.scopeop.setup()
         self.acquisition.get_mscope(self.scopeop.mscope)
-        self.scopeop.get_signals(
-            self.acquisition.update_scopeop, 
-            self.acquisition.liveview_timer.timeout
-        )
 
     def _start_form(self):
         self.form_window.show()

@@ -47,7 +47,6 @@ class ScopeOp(QObject, Machine):
     set_period = pyqtSignal(float)
     freeze_liveview = pyqtSignal(bool)
 
-    # update_infopanel =  pyqtSignal(dict)
     update_state = pyqtSignal(str)
     update_count = pyqtSignal(int)
     update_msg = pyqtSignal(str)
@@ -56,12 +55,12 @@ class ScopeOp(QObject, Machine):
     update_flowrate = pyqtSignal(int)
     update_focus = pyqtSignal(int)
 
-    def __init__(self):
+    def __init__(self, img_signal):
         super().__init__()
 
-        # Instantiate variables
         self._init_variables()
         self.mscope = None
+        self.img_signal = img_signal
 
         states = [
             {
@@ -109,21 +108,14 @@ class ScopeOp(QObject, Machine):
         self.freeze_liveview.emit(False)
 
     def send_state(self):
-        # self.infopanel_metadata["state"] = self.state
-        # for key in INFOPANEL_METADATA_KEYS:
-        #     self.infopanel_metadata[key] = self.image_metadata[key]
-
-        # TEMP for testing
+        # TODO perhaps delete this to print more useful statements. See future "logging" branch
         self.update_msg.emit(f"Changing state to {self.state}")
 
         self.update_state.emit(self.state)
 
     def _init_variables(self):        
-        # Info panel
-        # self.infopanel_metadata = INFOPANEL_METADATA
+
         self.image_metadata = {key : None for key in PER_IMAGE_METADATA_KEYS}
-        # TEMP for testing
-        print(self.image_metadata)
 
         self.autobrightness_result = None
         self.cellfinder_result = None
@@ -133,11 +125,6 @@ class ScopeOp(QObject, Machine):
 
         self.update_count.emit(0)
         self.update_msg.emit("Starting new experiment")
-
-    def get_signals(self, img_signal, timer_signal):
-        print("SCOPEOP: Getting signals")
-        self.img_signal = img_signal
-        self.timer_signal = timer_signal
 
     def setup(self):
         print("SCOPEOP: Creating timers...")
@@ -226,7 +213,6 @@ class ScopeOp(QObject, Machine):
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
-        # self.timer_signal.connect(self.send_state)
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
@@ -318,6 +304,7 @@ class ScopeOp(QObject, Machine):
             if SIMULATION:
                 self.fastflow_result = TARGET_FLOWRATE
                 print(f"(simulated) Flowrate: {int(self.fastflow_result)}")
+                self.update_flowrate.emit(int(self.fastflow_result))
                 # TODO save flowrate result to metadata instead
                 self.next_state()
             else:
