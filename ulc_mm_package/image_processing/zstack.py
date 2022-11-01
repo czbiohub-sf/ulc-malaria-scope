@@ -164,6 +164,7 @@ def symmetricZStackCoroutine(
     start_point: int,
     num_steps: int = 30,
     steps_per_image: int = 1,
+    num_imgs=30,
     save_loc=None,
 ):
     """The coroutine companion to symmetricZStack"""
@@ -188,10 +189,11 @@ def symmetricZStackCoroutine(
     focus_metrics = []
 
     while step_counter < max_pos:
-        img = yield img
-        focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
-        if save_loc != None:
-            cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
+        for i in range(num_imgs):
+            img = yield img
+            # focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
+            if save_loc != None:
+                cv2.imwrite(save_dir + f"{motor.pos:03d}_{i:03d}.png", img)
 
         motor.move_rel(steps=steps_per_image, dir=Direction.CW, stepdelay=0.001)
         step_counter += steps_per_image
