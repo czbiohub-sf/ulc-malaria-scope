@@ -45,8 +45,8 @@ class LiveviewGUI(QMainWindow):
 
         super().__init__()
         self._load_main_ui()
-    
-    def update_experiment(self, metadata : dict):
+
+    def update_experiment(self, metadata: dict):
         # TODO standardize dict input
         self.operator_val.setText(f"{metadata['operator_id']}")
         self.participant_val.setText(f"{metadata['participant_id']}")
@@ -56,23 +56,23 @@ class LiveviewGUI(QMainWindow):
         self.notes_val.setPlainText(f"{metadata['notes']}")
 
     @pyqtSlot(np.ndarray)
-    def update_img(self, img : np.ndarray):
+    def update_img(self, img: np.ndarray):
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
 
     @pyqtSlot(dict)
-    def update_infopanel(self, info : dict):
+    def update_infopanel(self, info: dict):
         # TODO implement other values
 
         # self.brightness_val.setText("###")
         # self.focus_val.setText("###")
         self.flowrate_val.setText(f"Flowrate: {info['flowrate']} px/s")
-        self._set_color(self.flowrate_lbl, info['flowrate_status'])
+        self._set_color(self.flowrate_lbl, info["flowrate_status"])
 
     @pyqtSlot(str)
     def update_state(self, state):
         self.state_lbl.setText(state.capitalize())
 
-        if state == 'experiment':
+        if state == "experiment":
             self._set_color(self.state_lbl, STATUS.GOOD)
         else:
             self._set_color(self.state_lbl, STATUS.STANDBY)
@@ -80,12 +80,12 @@ class LiveviewGUI(QMainWindow):
     @pyqtSlot(int)
     def update_count(self, count):
         self.count_lbl.setText(f"{count} / {MAX_FRAMES}")
-    
+
     @pyqtSlot(str)
     def update_msg(self, msg):
         self.terminal_msg = self.terminal_msg + f"{msg}\n"
         self.terminal_txt.setPlainText(self.terminal_msg)
-    
+
     @pyqtSlot(int)
     def update_brightness(self, val):
         self.brightness_val.setText(f"Brightness: {val}")
@@ -98,7 +98,7 @@ class LiveviewGUI(QMainWindow):
     def update_flowrate(self, val):
         self.flowrate_val.setText(f"Flowrate: {val} px/s")
 
-    def _set_color(self, lbl : QLabel, status : STATUS):
+    def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
 
     def _load_main_ui(self):
@@ -258,7 +258,7 @@ class LiveviewGUI(QMainWindow):
         self.operator_val.setReadOnly(True)
         self.participant_val.setReadOnly(True)
         self.flowcell_val.setReadOnly(True)
-        self.protocol_val.setReadOnly(True) 
+        self.protocol_val.setReadOnly(True)
         self.site_val.setReadOnly(True)
         self.notes_val.setReadOnly(True)
 
@@ -267,14 +267,14 @@ class LiveviewGUI(QMainWindow):
         self.metadata_layout.addWidget(self.flowcell_lbl, 3, 1)
         self.metadata_layout.addWidget(self.protocol_lbl, 4, 1)
         self.metadata_layout.addWidget(self.site_lbl, 5, 1)
-        self.metadata_layout.addWidget(self.notes_lbl, 6, 1)        
+        self.metadata_layout.addWidget(self.notes_lbl, 6, 1)
 
         self.metadata_layout.addWidget(self.operator_val, 1, 2)
         self.metadata_layout.addWidget(self.participant_val, 2, 2)
         self.metadata_layout.addWidget(self.flowcell_val, 3, 2)
         self.metadata_layout.addWidget(self.protocol_val, 4, 2)
         self.metadata_layout.addWidget(self.site_val, 5, 2)
-        self.metadata_layout.addWidget(self.notes_val, 6, 2)  
+        self.metadata_layout.addWidget(self.notes_val, 6, 2)
 
 
 if __name__ == "__main__":
@@ -282,13 +282,13 @@ if __name__ == "__main__":
     gui = LiveviewGUI()
 
     experiment_metadata = {
-                "operator_id": "1234",
-                "participant_id": "567",
-                "flowcell_id": "A2",
-                "protocol": "Default",
-                "site": "Uganda",  
-                "notes": sample+sample,
-            }
+        "operator_id": "1234",
+        "participant_id": "567",
+        "flowcell_id": "A2",
+        "protocol": "Default",
+        "site": "Uganda",
+        "notes": sample + sample,
+    }
     gui.update_experiment(experiment_metadata)
 
     gui.show()

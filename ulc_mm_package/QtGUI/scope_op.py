@@ -29,9 +29,10 @@ from ulc_mm_package.QtGUI.gui_constants import (
 )
 
 # TODO figure out how to disconnect img_signal so it's not running after reset
-# TODO populate info?    
+# TODO populate info?
 # TODO get rid of infopanel dict, etc.
 # TODO get rid of timer signal
+
 
 class ScopeOp(QObject, Machine):
     setup_done = pyqtSignal()
@@ -113,9 +114,9 @@ class ScopeOp(QObject, Machine):
 
         self.update_state.emit(self.state)
 
-    def _init_variables(self):        
+    def _init_variables(self):
 
-        self.image_metadata = {key : None for key in PER_IMAGE_METADATA_KEYS}
+        self.image_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.autobrightness_result = None
         self.cellfinder_result = None
@@ -367,6 +368,6 @@ class ScopeOp(QObject, Machine):
             #     "temperature" : None,
             #     "humidity" : None,
             # }
-        
+
             self.count += 1
             self.img_signal.connect(self.run_experiment)

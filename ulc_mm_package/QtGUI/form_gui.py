@@ -111,7 +111,7 @@ class FormGUI(QDialog):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui = FormGUI()
-    
+
     print(gui.get_form_input())
 
     gui.show()

@@ -6,18 +6,19 @@ class STATUS(enum.Enum):
     GOOD = "lightgreen"
     BAD = "red"
 
+
 # ================ Metadata ================ #
 INFOPANEL_METADATA = {
-    "state" : "--",
-    "im_counter" : None, 
-    "terminal_msg" : "",
-    "brightness" : "--",
-    "brightness_status" : STATUS.STANDBY,
-    "focus" : "--",
-    "focus_status" : STATUS.STANDBY,
-    "flowrate" : None,
-    "flowrate_status" : STATUS.STANDBY,
-    }     
+    "state": "--",
+    "im_counter": None,
+    "terminal_msg": "",
+    "brightness": "--",
+    "brightness_status": STATUS.STANDBY,
+    "focus": "--",
+    "focus_status": STATUS.STANDBY,
+    "flowrate": None,
+    "flowrate_status": STATUS.STANDBY,
+}
 
 INFOPANEL_METADATA_KEYS = [
     "im_counter",
@@ -35,7 +36,7 @@ ACQUISITION_PERIOD = 1000.0 / 30.0
 LIVEVIEW_PERIOD = 1000
 
 # ================ Experiment timeout ================ #
-MAX_FRAMES = 40000 # Rounded up from 20 minutes of data at 30 FPS
+MAX_FRAMES = 40000  # Rounded up from 20 minutes of data at 30 FPS
 # For testing
 # MAX_FRAMES = 10
 

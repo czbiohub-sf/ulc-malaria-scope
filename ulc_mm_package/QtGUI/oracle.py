@@ -83,7 +83,12 @@ class Oracle(Machine):
 
         super().__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
-        self.add_transition(trigger="rerun", source="intermission", dest="form", before=self._init_variables)
+        self.add_transition(
+            trigger="rerun",
+            source="intermission",
+            dest="form",
+            before=self._init_variables,
+        )
 
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
@@ -175,7 +180,7 @@ class Oracle(Machine):
     def _init_variables(self):
         # Instantiate metadata dicts
         self.form_metadata = None
-        self.experiment_metadata = {key : None for key in EXPERIMENT_METADATA_KEYS}
+        self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
 
         self.liveview_window.set_infopanel_vals()
 
