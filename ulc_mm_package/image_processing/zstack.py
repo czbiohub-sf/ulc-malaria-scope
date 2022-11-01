@@ -199,6 +199,6 @@ def symmetricZStackCoroutine(
         step_counter += steps_per_image
         if step_counter > max_pos:
             break
-
-    best_focus_position = int(min_pos + np.argmax(focus_metrics) * steps_per_image)
-    motor.move_abs(best_focus_position)
+    motor.move_abs(start_point)
+    # best_focus_position = int(min_pos + np.argmax(focus_metrics) * steps_per_image)
+    # motor.move_abs(best_focus_position)
