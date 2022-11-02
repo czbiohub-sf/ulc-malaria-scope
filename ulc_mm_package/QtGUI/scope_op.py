@@ -365,7 +365,7 @@ class ScopeOp(QObject, Machine):
             #     "syringe_pos" : None,
             #     "flowrate" : flowrate,
             #     "temperature" : None,
-            #     "humidity" : None,  
+            #     "humidity" : None,
             # }
 
             self.count += 1

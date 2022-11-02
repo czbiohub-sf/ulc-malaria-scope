@@ -7,6 +7,7 @@ class STATUS(enum.Enum):
     GOOD = "lightgreen"
     BAD = "red"
 
+
 # ================ Dropdown menu options ================ #
 PROTOCOL_LIST = ["Default"]
 SITE_LIST = ["Tororo, Uganda"]
