@@ -148,7 +148,7 @@ class Oracle(Machine):
             self.dialog_window.setStandardButtons(QMessageBox.Ok)
         self.dialog_window.setDefaultButton(QMessageBox.Ok)
 
-        if not image == None:
+        if image != None:
             layout = self.dialog_window.layout()
 
             image_lbl = QLabel()

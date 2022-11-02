@@ -362,7 +362,8 @@ class AcquisitionThread(QThread):
         if self.fast_flow_enabled:
             try:
                 flow_val = self.fastFlowRoutine.send((img, timestamp))
-                self.flowValChanged.emit(flow_val)
+                if flow_val != None:
+                    self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
                 self.flowControl = flowControlRoutine(
@@ -383,7 +384,8 @@ class AcquisitionThread(QThread):
             try:
                 flow_val = self.flowControl.send((img, timestamp))
                 self.syringePosChanged.emit(1)
-                self.flowValChanged.emit(flow_val)
+                if flow_val != None:
+                    self.flowValChanged.emit(flow_val)
             except CantReachTargetFlowrate:
                 self.stopActiveFlowControl()
                 print(
