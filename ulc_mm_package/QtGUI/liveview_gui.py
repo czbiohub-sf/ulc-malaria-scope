@@ -229,6 +229,7 @@ class LiveviewGUI(QMainWindow):
         self._set_color(self.focus_title, STATUS.STANDBY)
         self._set_color(self.flowrate_title, STATUS.STANDBY)
 
+        # TODO decide if routine statuses need colors
         # self._set_color(self.brightness_val, STATUS.STANDBY)
         # self._set_color(self.focus_val, STATUS.STANDBY)
         # self._set_color(self.flowrate_val, STATUS.STANDBY)

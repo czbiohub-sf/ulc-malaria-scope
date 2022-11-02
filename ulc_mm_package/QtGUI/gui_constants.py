@@ -7,27 +7,6 @@ class STATUS(enum.Enum):
     GOOD = "lightgreen"
     BAD = "red"
 
-
-# ================ Metadata ================ #
-INFOPANEL_METADATA = {
-    "state": "--",
-    "im_counter": None,
-    "terminal_msg": "",
-    "brightness": "--",
-    "brightness_status": STATUS.STANDBY,
-    "focus": "--",
-    "focus_status": STATUS.STANDBY,
-    "flowrate": None,
-    "flowrate_status": STATUS.STANDBY,
-}
-
-INFOPANEL_METADATA_KEYS = [
-    "im_counter",
-    # "brightness",
-    # "focus",
-    "flowrate",
-]
-
 # ================ Dropdown menu options ================ #
 PROTOCOL_LIST = ["Default"]
 SITE_LIST = ["Tororo, Uganda"]

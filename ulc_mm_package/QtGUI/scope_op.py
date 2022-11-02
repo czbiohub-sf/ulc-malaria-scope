@@ -23,8 +23,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
     MAX_FRAMES,
-    INFOPANEL_METADATA,
-    INFOPANEL_METADATA_KEYS,
     STATUS,
 )
 
@@ -98,9 +96,6 @@ class ScopeOp(QObject, Machine):
         self.add_ordered_transitions()
         self.add_transition(
             trigger="rerun", source="intermission", dest="standby", before="reset"
-        )
-        self.add_transition(
-            trigger="end", source="*", dest="standby", before="_end_experiment"
         )
 
     def _freeze_liveview(self):

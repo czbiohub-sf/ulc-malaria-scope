@@ -111,7 +111,6 @@ class Oracle(Machine):
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
         self.scopeop.stop_timers.connect(self.acquisition.stop_timers)
 
-        # self.scopeop.update_infopanel.connect(self.liveview_window.update_infopanel)
         self.scopeop.update_state.connect(self.liveview_window.update_state)
         self.scopeop.update_img_count.connect(self.liveview_window.update_img_count)
         self.scopeop.update_cell_count.connect(self.liveview_window.update_cell_count)
@@ -249,9 +248,6 @@ class Oracle(Machine):
             self.scopeop.rerun()
 
     def shutoff(self):
-        # End experiment
-        self.scopeop.end()
-
         # Wait for QTimers to shutoff
         print("ORACLE: Waiting for timer to terminate...")
         while (
@@ -275,7 +271,9 @@ class Oracle(Machine):
 
         print("ORACLE: Exiting program")
         self.form_window.close()
+        print("ORACLE: Closed experiment form")
         self.liveview_window.close()
+        print("ORACLE: Closed liveview")
 
 
 if __name__ == "__main__":
