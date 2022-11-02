@@ -49,7 +49,8 @@ class ScopeOp(QObject, Machine):
     freeze_liveview = pyqtSignal(bool)
 
     update_state = pyqtSignal(str)
-    update_count = pyqtSignal(int)
+    update_img_count = pyqtSignal(int)
+    update_cell_count = pyqtSignal(list)
     update_msg = pyqtSignal(str)
 
     update_brightness = pyqtSignal(int)
@@ -124,7 +125,7 @@ class ScopeOp(QObject, Machine):
         self.fastflow_result = None
         self.count = 0
 
-        self.update_count.emit(0)
+        self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
 
     def setup(self):
@@ -329,8 +330,11 @@ class ScopeOp(QObject, Machine):
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
-            self.update_count.emit(self.count)
+            self.update_img_count.emit(self.count)
+
             prev_res = count_parasitemia(self.mscope, img, [self.count])
+            # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
+            # self.update_cell_count.emit(cell_counts)
 
             # Adjust the flow
             try:
@@ -366,7 +370,7 @@ class ScopeOp(QObject, Machine):
             #     "syringe_pos" : None,
             #     "flowrate" : flowrate,
             #     "temperature" : None,
-            #     "humidity" : None,
+            #     "humidity" : None,  
             # }
 
             self.count += 1

@@ -27,6 +27,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
+from ulc_mm_package.image_processing.processing_constants import (
+    TOP_PERC_TARGET_VAL,
+    TARGET_FLOWRATE,
+)
 from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
     ICON_PATH,
@@ -66,11 +70,19 @@ class LiveviewGUI(QMainWindow):
         if state == "experiment":
             self._set_color(self.state_lbl, STATUS.GOOD)
         else:
-            self._set_color(self.state_lbl, STATUS.STANDBY)
+            self._set_color(self.state_lbl, STATUS.IN_PROGRESS)
 
     @pyqtSlot(int)
-    def update_count(self, count):
-        self.count_lbl.setText(f"{count} / {MAX_FRAMES}")
+    def update_img_count(self, img_count):
+        self.img_count_val.setText(f"{img_count} / {MAX_FRAMES}")
+
+    @pyqtSlot(list)
+    def update_cell_count(self, cell_count):
+        # TODO Check that these are mapped properly and use cleaner implementation
+        self.healthy_count_val.setText(f"{cell_count[0]}")
+        self.ring_count_val.setText(f"{cell_count[1]}")
+        self.schizont_count_val.setText(f"{cell_count[2]}")
+        self.troph_count_val.setText(f"{cell_count[3]}")
 
     @pyqtSlot(str)
     def update_msg(self, msg):
@@ -79,15 +91,15 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(int)
     def update_brightness(self, val):
-        self.brightness_val.setText(f"Brightness: {val}")
+        self.brightness_val.setText(f"Actual = {val}")
 
     @pyqtSlot(int)
     def update_focus(self, val):
-        self.focus_val.setText(f"Focus error: {val} steps")
+        self.focus_val.setText(f"Actual = {val}")
 
     @pyqtSlot(int)
     def update_flowrate(self, val):
-        self.flowrate_val.setText(f"Flowrate: {val} px/s")
+        self.flowrate_val.setText(f"Actual = {val}")
 
     def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
@@ -124,23 +136,42 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_widget = QWidget()
         self.infopanel_widget.setLayout(self.infopanel_layout)
 
-        # Populate infopanel
-        self.state_lbl = QLabel("--")
+        # Populate infopanel with general components
+        self.state_lbl = QLabel("-")
         self.exit_btn = QPushButton("Exit")
-        self.count_lbl = QLabel()
+        self.img_count_lbl = QLabel("Frame:")
+        self.img_count_val = QLabel("-")
         self.terminal_txt = QPlainTextEdit(self.terminal_msg)
-        # self.fps_lbl = QLabel("FPS")
-
-        self.brightness_val = QLabel("--")
-        self.focus_val = QLabel("--")
-        self.flowrate_val = QLabel("--")
-        self.brightness_lbl = QLabel("expected: x-x")
-        self.focus_lbl = QLabel("expected: x-x")
-        self.flowrate_lbl = QLabel("expected: x-x")
-
-        # self.set_infopanel_vals()
-
         self.terminal_scroll = QScrollBar()
+
+        # Populate infopanel with cell counts
+        self.cell_count_title = QLabel("CELL COUNTS")
+        self.healthy_count_lbl = QLabel("Healthy:")
+        self.ring_count_lbl = QLabel("Ring:")
+        self.schizont_count_lbl = QLabel("Schizont:")
+        self.troph_count_lbl = QLabel("Troph:")
+        self.healthy_count_val = QLabel("-")
+        self.ring_count_val = QLabel("-")
+        self.schizont_count_val = QLabel("-")
+        self.troph_count_val = QLabel("-")
+
+        # Populate infopanel with routine results
+        self.brightness_title = QLabel("AVERAGE BRIGHTNESS")
+        self.focus_title = QLabel("FOCUS ERROR (motor steps)")
+        self.flowrate_title = QLabel("CELL FLOWRATE (pix/sec)")
+        self.brightness_lbl = QLabel(f"Target = {TOP_PERC_TARGET_VAL}")
+        self.focus_lbl = QLabel("Target = 0")
+        self.flowrate_lbl = QLabel(f"Target = {int(TARGET_FLOWRATE)}")
+        self.brightness_val = QLabel("-")
+        self.focus_val = QLabel("-")
+        self.flowrate_val = QLabel("-")
+
+        # Set title alignments
+        self.state_lbl.setAlignment(Qt.AlignCenter)
+        self.cell_count_title.setAlignment(Qt.AlignCenter)
+        self.brightness_title.setAlignment(Qt.AlignCenter)
+        self.focus_title.setAlignment(Qt.AlignCenter)
+        self.flowrate_title.setAlignment(Qt.AlignCenter)
 
         # Setup terminal box
         self.terminal_txt.setReadOnly(True)
@@ -151,32 +182,53 @@ class LiveviewGUI(QMainWindow):
         self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
         # Setup column size
-        self.state_lbl.setFixedWidth(180)
-        self.count_lbl.setFixedWidth(150)
+        self.state_lbl.setFixedWidth(150)
+        self.exit_btn.setFixedWidth(150)
 
         self.infopanel_layout.addWidget(self.state_lbl, 1, 1)
-        self.infopanel_layout.addWidget(self.count_lbl, 1, 2)
-        self.infopanel_layout.addWidget(self.exit_btn, 2, 1, 1, 2)
-        self.infopanel_layout.addWidget(self.terminal_txt, 9, 1, 1, 2)
-        # self.infopanel_layout.addWidget(self.fps_lbl, 10, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.exit_btn, 1, 2)
+        self.infopanel_layout.addWidget(self.img_count_lbl, 2, 1)
+        self.infopanel_layout.addWidget(self.img_count_val, 2, 2)
+        self.infopanel_layout.addWidget(self.terminal_txt, 14, 1, 1, 2)
 
-        self.infopanel_layout.addWidget(self.brightness_val, 6, 1)
-        self.infopanel_layout.addWidget(self.focus_val, 7, 1)
-        self.infopanel_layout.addWidget(self.flowrate_val, 8, 1)
-        self.infopanel_layout.addWidget(self.brightness_lbl, 6, 2)
-        self.infopanel_layout.addWidget(self.focus_lbl, 7, 2)
-        self.infopanel_layout.addWidget(self.flowrate_lbl, 8, 2)
+        self.infopanel_layout.addWidget(self.cell_count_title, 3, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.healthy_count_lbl, 4, 1)
+        self.infopanel_layout.addWidget(self.ring_count_lbl, 5, 1)
+        self.infopanel_layout.addWidget(self.schizont_count_lbl, 6, 1)
+        self.infopanel_layout.addWidget(self.troph_count_lbl, 7, 1)
+        self.infopanel_layout.addWidget(self.healthy_count_val, 4, 2)
+        self.infopanel_layout.addWidget(self.ring_count_val, 5, 2)
+        self.infopanel_layout.addWidget(self.schizont_count_val, 6, 2)
+        self.infopanel_layout.addWidget(self.troph_count_val, 7, 2)
+
+        self.infopanel_layout.addWidget(self.brightness_title, 8, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.brightness_lbl, 9, 2)
+        self.infopanel_layout.addWidget(self.brightness_val, 9, 1)
+        self.infopanel_layout.addWidget(self.focus_title, 10, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.focus_lbl, 11, 2)
+        self.infopanel_layout.addWidget(self.focus_val, 11, 1)
+        self.infopanel_layout.addWidget(self.flowrate_title, 12, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.flowrate_lbl, 13, 2)
+        self.infopanel_layout.addWidget(self.flowrate_val, 13, 1)
 
     def set_infopanel_vals(self):
         print("LIVEVIEW: Setting initial infopanel values")
         # Set label values
-        self.update_count("--")
-        self.update_brightness("--")
-        self.update_focus("--")
-        self.update_flowrate("--")
+        self.update_img_count("---")
+        self.update_cell_count(["---", "---", "---", "---"])
 
-        # Setup routine statuses
-        self._set_color(self.state_lbl, STATUS.STANDBY)
+        self.update_brightness("---")
+        self.update_focus("---")
+        self.update_flowrate("---")
+
+        # Setup status colors
+        self._set_color(self.state_lbl, STATUS.IN_PROGRESS)
+
+        self._set_color(self.cell_count_title, STATUS.STANDBY)
+        self._set_color(self.brightness_title, STATUS.STANDBY)
+        self._set_color(self.focus_title, STATUS.STANDBY)
+        self._set_color(self.flowrate_title, STATUS.STANDBY)
+
         # self._set_color(self.brightness_val, STATUS.STANDBY)
         # self._set_color(self.focus_val, STATUS.STANDBY)
         # self._set_color(self.flowrate_val, STATUS.STANDBY)
@@ -191,8 +243,6 @@ class LiveviewGUI(QMainWindow):
         self.liveview_img = QLabel()
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
-        self.state_lbl.setAlignment(Qt.AlignHCenter)
-        self.count_lbl.setAlignment(Qt.AlignHCenter)
 
         self.liveview_layout.addWidget(self.liveview_img)
 
@@ -281,6 +331,8 @@ if __name__ == "__main__":
         "notes": sample + sample,
     }
     gui.update_experiment(experiment_metadata)
+
+    gui.set_infopanel_vals()
 
     gui.show()
     sys.exit(app.exec_())

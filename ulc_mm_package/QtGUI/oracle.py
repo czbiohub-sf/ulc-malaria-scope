@@ -113,7 +113,8 @@ class Oracle(Machine):
 
         # self.scopeop.update_infopanel.connect(self.liveview_window.update_infopanel)
         self.scopeop.update_state.connect(self.liveview_window.update_state)
-        self.scopeop.update_count.connect(self.liveview_window.update_count)
+        self.scopeop.update_img_count.connect(self.liveview_window.update_img_count)
+        self.scopeop.update_cell_count.connect(self.liveview_window.update_cell_count)
         self.scopeop.update_msg.connect(self.liveview_window.update_msg)
 
         self.scopeop.update_brightness.connect(self.liveview_window.update_brightness)

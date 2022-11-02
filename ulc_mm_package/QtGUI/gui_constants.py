@@ -3,6 +3,7 @@ import enum
 # ================ Status colors ================ #
 class STATUS(enum.Enum):
     STANDBY = "lightgray"
+    IN_PROGRESS = "yellow"
     GOOD = "lightgreen"
     BAD = "red"
 
