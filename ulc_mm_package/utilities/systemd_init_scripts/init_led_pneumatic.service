@@ -1,5 +1,5 @@
 [Unit]
-Description=Start fan
+Description=PWM initialization
 After=multi-user.target
 
 [Service]

@@ -306,7 +306,7 @@ class AcquisitionThread(QThread):
     def runLocalZStack(self):
         self.takeZStack = True
         self.zstack = symmetricZStackCoroutine(
-            None, self.motor, self.pos, save_loc=self.external_dir
+            None, self.motor, self.motor.pos, save_loc=self.external_dir
         )
         self.zstack.send(None)
 
