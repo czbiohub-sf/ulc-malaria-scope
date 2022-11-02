@@ -14,7 +14,6 @@ from ulc_mm_package.image_processing.processing_constants import (
     TARGET_FLOWRATE_SLOW,
     TARGET_FLOWRATE_MED,
     TARGET_FLOWRATE_FAST,
-    FRE_INCOMPLETE,
 )
 
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
@@ -363,7 +362,8 @@ class AcquisitionThread(QThread):
         if self.fast_flow_enabled:
             try:
                 flow_val = self.fastFlowRoutine.send((img, timestamp))
-                self.flowValChanged.emit(flow_val)
+                if flow_val != None:
+                    self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
                 self.flowControl = flowControlRoutine(
@@ -384,7 +384,8 @@ class AcquisitionThread(QThread):
             try:
                 flow_val = self.flowControl.send((img, timestamp))
                 self.syringePosChanged.emit(1)
-                self.flowValChanged.emit(flow_val)
+                if flow_val != None:
+                    self.flowValChanged.emit(flow_val)
             except CantReachTargetFlowrate:
                 self.stopActiveFlowControl()
                 print(
@@ -846,7 +847,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(float)
     def updateFlowVal(self, flow_val):
-        if flow_val != FRE_INCOMPLETE:
+        if flow_val != None:
             self.lblFlowrate.setText(f"Flowrate: {flow_val:.2f}")
 
     @pyqtSlot(float)

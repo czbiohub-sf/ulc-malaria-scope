@@ -9,7 +9,6 @@ from ulc_mm_package.image_processing.processing_constants import (
     NUM_IMAGE_PAIRS,
     WINDOW_SIZE,
     TOL_PERC,
-    FRE_INCOMPLETE,
 )
 from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
@@ -128,7 +127,7 @@ class FlowController:
         -------
         tuple (float, float):
             flow_val, flow_error if a full window of measurements has been acquried by FlowRateEstimator
-        int (FRE_INCOMPLETE, -99):
+        int (None, None):
             Returned if a full window of measurements has not been acquired yet
 
         Exceptions
@@ -149,7 +148,7 @@ class FlowController:
             except CantReachTargetFlowrate:
                 raise
         else:
-            return (FRE_INCOMPLETE, FRE_INCOMPLETE)
+            return (None, None)
 
     def controlFlow(self, img: np.ndarray, timestamp: int) -> float:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
@@ -178,7 +177,7 @@ class FlowController:
         -------
         float:
             flow_val if a full window of measurements has been acquried by FlowRateEstimator
-        int (FRE_INCOMPLETE, -99):
+        int (None, None):
             Returned if a full window of measurements has not been acquired yet
 
         Exceptions
@@ -210,7 +209,7 @@ class FlowController:
             except CantReachTargetFlowrate:
                 raise
         else:
-            return FRE_INCOMPLETE
+            return None
 
     def _getFlowError(self):
         """Returns the flowrate error, i.e the difference between the target and current flowrate.
