@@ -14,7 +14,6 @@ from ulc_mm_package.image_processing.processing_constants import (
     TARGET_FLOWRATE_SLOW,
     TARGET_FLOWRATE_MED,
     TARGET_FLOWRATE_FAST,
-    FRE_INCOMPLETE,
 )
 
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
@@ -846,7 +845,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(float)
     def updateFlowVal(self, flow_val):
-        if flow_val != FRE_INCOMPLETE:
+        if flow_val != None:
             self.lblFlowrate.setText(f"Flowrate: {flow_val:.2f}")
 
     @pyqtSlot(float)
