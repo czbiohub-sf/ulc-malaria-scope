@@ -69,7 +69,7 @@ class ScopeOp(QObject, Machine):
             {
                 "name": "autobrightness",
                 "on_enter": [self.send_state, self._start_autobrightness],
-            },
+            },  
             {
                 "name": "cellfinder",
                 "on_enter": [self.send_state, self._start_cellfinder],
@@ -91,6 +91,10 @@ class ScopeOp(QObject, Machine):
                 "on_enter": [self._end_experiment, self._start_intermission],
             },
         ]
+
+        if SIMULATION:
+            skipped_states = ["autofocus", "fastflow"]
+            states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
@@ -245,9 +249,11 @@ class ScopeOp(QObject, Machine):
             # TODO save autobrightness value to metadata instead
             self.next_state()
         except BrightnessTargetNotAchieved as e:
+            self.autobrightness_result = e.brightness_val
             print(
-                f"Brightness not quite high enough but still ok - mean pixel val: {e.brightness_val}"
+                f"Brightness not quite high enough but still ok - mean pixel val: {self.autobrightness_result}"
             )
+            self.update_brightness.emit(int(self.autobrightness_result))
             self.next_state()
         except BrightnessCriticallyLow as e:
             self.error.emit(
@@ -337,8 +343,9 @@ class ScopeOp(QObject, Machine):
                 self.PSSAF_routine.send(img)
                 # TODO add density check here
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
+                print(flowrate)
                 # TODO change this to None type check
-                if not self.flowrate == -99:
+                if self.flowrate != None:
                     self.update_flowrate.emit(int(flowrate))
             except CantReachTargetFlowrate:
                 if not SIMULATION:
