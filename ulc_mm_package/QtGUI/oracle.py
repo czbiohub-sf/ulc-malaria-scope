@@ -19,6 +19,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
+    CAMERA
 )
 from ulc_mm_package.QtGUI.gui_constants import ICON_PATH, FLOWCELL_QC_FORM_LINK
 
@@ -216,6 +217,11 @@ class Oracle(Machine):
 
         for key in self.form_metadata:
             self.experiment_metadata[key] = self.form_metadata[key]
+
+        print(self.experiment_metadata)
+
+        # Assign other metadata parameters
+        self.experiment_metadata["camera"] = CAMERA_SELECTION
 
         # TODO Fill in other experiment metadata here, and initialize data_storage object
         # Only move on to next state if data is verified
