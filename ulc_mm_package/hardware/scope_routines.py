@@ -225,7 +225,7 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
             try:
                 ...
             exception BrightTargetNotAchieved as e:
-                val = e.brightness_val
+                val = e.value
 
     BrightnessCriticallyLow:
         The targeg was not achieved and the brightness is too low to continue
@@ -233,7 +233,7 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
             try:
                 ...
             exception BrightTargetNotAchieved as e:
-                val = e.brightness_val
+                val = e.value
 
     Usage
     -----
