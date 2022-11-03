@@ -11,7 +11,6 @@ INSIDE_BBOX_FLAG = 0
 NUM_IMAGE_PAIRS = 12
 WINDOW_SIZE = 12
 TOL_PERC = 0.1
-FRE_INCOMPLETE = -99
 
 # ================ Flow rate constants ================ #
 CORRELATION_THRESH = 0.5
