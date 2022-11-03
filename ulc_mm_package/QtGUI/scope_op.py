@@ -69,7 +69,7 @@ class ScopeOp(QObject, Machine):
             {
                 "name": "autobrightness",
                 "on_enter": [self.send_state, self._start_autobrightness],
-            },  
+            },
             {
                 "name": "cellfinder",
                 "on_enter": [self.send_state, self._start_cellfinder],
