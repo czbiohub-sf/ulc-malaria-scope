@@ -35,14 +35,14 @@ class BrightnessTargetNotAchieved(AutobrightnessError):
             f"The brightness value is still above the minimum acceptable value ",
             f"of ({MIN_ACCEPTABLE_MEAN_BRIGHTNESS}).",
         )
-        self.brightness_val = brightness_val
+        self.value = brightness_val
         super().__init__(f"{msg}")
 
 
 class BrightnessCriticallyLow(AutobrightnessError):
     def __init__(self, brightness_val):
         msg = f""
-        self.brightness_val = brightness_val
+        self.value = brightness_val
         super().__init__(f"{msg}")
 
 

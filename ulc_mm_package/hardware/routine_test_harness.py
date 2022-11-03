@@ -42,7 +42,7 @@ def autobrightness_wrappper(mscope: MalariaScope):
             break
         except BrightnessTargetNotAchieved as e:
             print(
-                f"Brightness not quite at target, but still ok. Mean pixel val: {e.brightness_val}"
+                f"Brightness not quite at target, but still ok. Mean pixel val: {e.value}"
             )
             break
         except BrightnessCriticallyLow:

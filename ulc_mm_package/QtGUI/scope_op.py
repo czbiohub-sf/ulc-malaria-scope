@@ -249,7 +249,7 @@ class ScopeOp(QObject, Machine):
             # TODO save autobrightness value to metadata instead
             self.next_state()
         except BrightnessTargetNotAchieved as e:
-            self.autobrightness_result = e.brightness_val
+            self.autobrightness_result = e.value
             print(
                 f"Brightness not quite high enough but still ok - mean pixel val: {self.autobrightness_result}"
             )
@@ -258,7 +258,7 @@ class ScopeOp(QObject, Machine):
         except BrightnessCriticallyLow as e:
             self.error.emit(
                 "Autobrightness failed",
-                f"Too dim to run an experiment - aborting. Mean pixel value: {e.brightness_val}",
+                f"Too dim to run an experiment - aborting. Mean pixel value: {e.value}",
             )
         else:
             self.img_signal.connect(self.run_autobrightness)
