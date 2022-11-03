@@ -93,7 +93,7 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            skipped_states = ["autofocus", "fastflow"]
+            skipped_states = ["autofocus"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -244,14 +244,14 @@ class ScopeOp(QObject, Machine):
             self.autobrightness_routine.send(img)
         except StopIteration as e:
             self.autobrightness_result = e.value
-            print(f"Mean pixel val: {self.autobrightness_result}")
+            print(f"SCOPEOP: Mean pixel val = {self.autobrightness_result}")
             self.update_brightness.emit(int(self.autobrightness_result))
             # TODO save autobrightness value to metadata instead
             self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
             print(
-                f"Brightness not quite high enough but still ok - mean pixel val: {self.autobrightness_result}"
+                f"SCOPEOP: Brightness not quite high enough but still ok - mean pixel val = {self.autobrightness_result}"
             )
             self.update_brightness.emit(int(self.autobrightness_result))
             self.next_state()
@@ -271,7 +271,7 @@ class ScopeOp(QObject, Machine):
             self.cellfinder_routine.send(img)
         except StopIteration as e:
             self.cellfinder_result = e.value
-            print(f"Cells found @ motor pos: {self.cellfinder_result}")
+            print(f"SCOPEOP: Cells found @ motor pos = {self.cellfinder_result}")
             self.next_state()
         except NoCellsFound:
             self.cellfinder_result = -1
@@ -292,7 +292,9 @@ class ScopeOp(QObject, Machine):
             )
         except StopIteration as e:
             self.autofocus_result = e.value
-            print(f"Autofocus complete, motor moved by: {self.autofocus_result} steps")
+            print(
+                f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
+            )
             self.next_state()
         else:
             self.img_signal.connect(self.run_autofocus)
@@ -306,7 +308,7 @@ class ScopeOp(QObject, Machine):
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = TARGET_FLOWRATE
-                print(f"(simulated) Flowrate: {int(self.fastflow_result)}")
+                print(f"SCOPEOP: Flowrate (simulated) = {int(self.fastflow_result)}")
                 self.update_flowrate.emit(int(self.fastflow_result))
                 # TODO save flowrate result to metadata instead
                 self.next_state()
@@ -318,7 +320,7 @@ class ScopeOp(QObject, Machine):
                 )
         except StopIteration as e:
             self.fastflow_result = e.value
-            print(f"Flowrate: {self.fastflow_result}")
+            print(f"SCOPEOP: Flowrate = {self.fastflow_result}")
             self.update_flowrate.emit(self.fastflow_result)
             self.next_state()
         else:

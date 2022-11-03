@@ -141,7 +141,7 @@ class DRV8825Nema(RealDRV8825Nema):
         homing_timeout = DEFAULT_FULL_STEP_HOMING_TIMEOUT * self.microstepping
 
         # TODO: Change to logging
-        print("Homing motor, please wait...")
+        print("MSCOPE: Homing motor, please wait...")
 
         # Move the motor until it hits the CCW limit switch
         try:
@@ -178,7 +178,7 @@ class DRV8825Nema(RealDRV8825Nema):
                 self.max_pos = self.pos
 
         # TODO Change to logging
-        print("Done homing.")
+        print("MSCOPE: Done homing.")
         self.homed = True
 
     def _move_rel_steps(self, steps: int, dir=Direction.CCW, stepdelay=0.005):

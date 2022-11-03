@@ -52,6 +52,7 @@ class FormGUI(QDialog):
         self.notes_lbl = QLabel("Other notes")
         self.protocol_lbl = QLabel("Protocol")
         self.site_lbl = QLabel("Site")
+        self.msg_lbl = QLabel("Hardware initializing, please wait to submit form...")
 
         # Text boxes
         self.operator_val = QLineEdit()
@@ -70,6 +71,10 @@ class FormGUI(QDialog):
         self.protocol_val.addItems(PROTOCOL_LIST)
         self.site_val.addItems(SITE_LIST)
 
+        # Disable buttons at startup
+        self.exit_btn.setEnabled(False)
+        self.start_btn.setEnabled(False)
+
         # Place widgets
         self.main_layout.addWidget(self.operator_lbl, 0, 0)
         self.main_layout.addWidget(self.participant_lbl, 1, 0)
@@ -77,7 +82,7 @@ class FormGUI(QDialog):
         self.main_layout.addWidget(self.protocol_lbl, 3, 0)
         self.main_layout.addWidget(self.site_lbl, 4, 0)
         self.main_layout.addWidget(self.notes_lbl, 5, 0)
-        self.main_layout.addWidget(self.exit_btn, 6, 0)
+        self.main_layout.addWidget(self.exit_btn, 7, 0)
 
         self.main_layout.addWidget(self.operator_val, 0, 1)
         self.main_layout.addWidget(self.participant_val, 1, 1)
@@ -85,11 +90,19 @@ class FormGUI(QDialog):
         self.main_layout.addWidget(self.protocol_val, 3, 1)
         self.main_layout.addWidget(self.site_val, 4, 1)
         self.main_layout.addWidget(self.notes_val, 5, 1)
-        self.main_layout.addWidget(self.start_btn, 6, 1)
+        self.main_layout.addWidget(self.start_btn, 7, 1)
+
+        self.main_layout.addWidget(self.msg_lbl, 6, 0, 1, 2)
 
         # Set the focus order
         self.operator_val.setFocus()
         self.setTabOrder(self.notes_val, self.start_btn)
+
+    def unfreeze_buttons(self):
+        self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
+
+        self.exit_btn.setEnabled(True)
+        self.start_btn.setEnabled(True)
 
     def get_form_input(self) -> dict:
         # Match keys with EXPERIMENT_METADATA_KEYS from processing_constants.py
