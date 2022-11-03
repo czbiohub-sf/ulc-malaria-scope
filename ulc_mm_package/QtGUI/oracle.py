@@ -7,6 +7,7 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 import sys
 import webbrowser
+import enum
 import numpy as np
 
 from transitions import Machine
@@ -34,6 +35,11 @@ _ERROR_MSG = ' Click "OK" to end this run.'
 
 _IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
 _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
+
+
+class Buttons(enum.Enum):
+    OK = QMessageBox.Ok
+    CANCEL = QMessageBox.Ok | QMessageBox.Cancel
 
 
 class Oracle(Machine):
@@ -131,7 +137,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "End run?",
             'Click "OK" to end this run.',
-            cancel=True,
+            buttons=Buttons.CANCEL
         )
         if dialog_result == QMessageBox.Ok:
             self.scopeop.to_intermission()
@@ -141,12 +147,13 @@ class Oracle(Machine):
             QMessageBox.Icon.Critical,
             title,
             text + _ERROR_MSG,
+            buttons=Buttons.OK
         )
 
         self.scopeop.to_intermission()
 
     def display_message(
-        self, icon: QMessageBox.Icon, title, text, cancel=False, image=None
+        self, icon: QMessageBox.Icon, title, text, buttons=None, image=None
     ):
 
         self.dialog_window.close()
@@ -158,11 +165,8 @@ class Oracle(Machine):
 
         self.dialog_window.setText(f"{text}")
 
-        if cancel:
-            self.dialog_window.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        else:
-            self.dialog_window.setStandardButtons(QMessageBox.Ok)
-        self.dialog_window.setDefaultButton(QMessageBox.Ok)
+        if buttons != None:
+            self.dialog_window.setStandardButtons(buttons.value)
 
         if image != None:
             layout = self.dialog_window.layout()
@@ -189,6 +193,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Initializing hardware",
             'If there is a flow cell in the scope, remove it now. Click "OK" once it is removed.',
+            buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
 
@@ -221,6 +226,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Starting run",
             'Insert flow cell now. Click "OK" once it is in place.',
+            buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
 
@@ -238,7 +244,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Run complete",
             'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
-            cancel=True,
+            buttons=Buttons.CANCEL,
             image=_IMAGE_REMOVE_PATH,
         )
         if dialog_result == QMessageBox.Cancel:
