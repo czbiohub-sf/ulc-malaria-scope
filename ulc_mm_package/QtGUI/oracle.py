@@ -62,6 +62,8 @@ class Oracle(Machine):
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
+        self.scopeop_thread.started.connect(self.scopeop.setup)
+
         # Configure state machine
         states = [
             {
@@ -70,6 +72,7 @@ class Oracle(Machine):
             {
                 "name": "setup",
                 "on_enter": [self._start_setup],
+                "on_exit": [self._end_setup],
             },
             {
                 "name": "form",
@@ -200,8 +203,12 @@ class Oracle(Machine):
         self.scopeop_thread.start()
         self.acquisition_thread.start()
 
-        self.scopeop.setup()
+        self.form_window.show()
+
+    def _end_setup(self):
         self.acquisition.get_mscope(self.scopeop.mscope)
+
+        self.form_window.unfreeze_buttons()
 
     def _start_form(self):
         self.form_window.show()
