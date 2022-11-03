@@ -343,9 +343,8 @@ class ScopeOp(QObject, Machine):
                 self.PSSAF_routine.send(img)
                 # TODO add density check here
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
-                print(flowrate)
                 # TODO change this to None type check
-                if self.flowrate != None:
+                if flowrate != None:
                     self.update_flowrate.emit(int(flowrate))
             except CantReachTargetFlowrate:
                 if not SIMULATION:
