@@ -1,5 +1,7 @@
 import enum
 
+from ulc_mm_package.scope_constants import SIMULATION
+
 # ================ Status colors ================ #
 class STATUS(enum.Enum):
     STANDBY = "lightgray"
@@ -18,8 +20,8 @@ LIVEVIEW_PERIOD = 1000
 
 # ================ Experiment timeout ================ #
 MAX_FRAMES = 40000  # Rounded up from 20 minutes of data at 30 FPS
-# For testing
-# MAX_FRAMES = 10
+if SIMULATION:
+    MAX_FRAMES = 10
 
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"

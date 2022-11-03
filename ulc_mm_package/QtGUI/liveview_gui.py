@@ -10,12 +10,10 @@ from time import perf_counter
 from qimage2ndarray import gray2qimage
 
 from PyQt5.QtWidgets import (
-    QSizePolicy,
     QApplication,
     QMainWindow,
     QGridLayout,
     QHBoxLayout,
-    # QVBoxLayout,
     QTabWidget,
     QWidget,
     QLabel,
@@ -36,10 +34,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     MAX_FRAMES,
 )
-
-
-# TEMP for testing
-sample = "*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*"
 
 
 class LiveviewGUI(QMainWindow):
@@ -329,7 +323,7 @@ if __name__ == "__main__":
         "flowcell_id": "A2",
         "protocol": "Default",
         "site": "Uganda",
-        "notes": sample + sample,
+        "notes": "*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*",
     }
     gui.update_experiment(experiment_metadata)
 
