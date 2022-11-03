@@ -1,11 +1,12 @@
 from time import perf_counter, sleep
-from ulc_mm_package.hardware.scope import MalariaScope
-from ulc_mm_package.hardware.scope_routines import *
-from ulc_mm_package.image_processing.processing_constants import (
+
+from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
-    TARGET_FLOWRATE,
 )
+from ulc_mm_package.hardware.scope import MalariaScope
+from ulc_mm_package.hardware.scope_routines import *
+from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
 
 from ulc_mm_package.image_processing.cell_finder import LowDensity
 

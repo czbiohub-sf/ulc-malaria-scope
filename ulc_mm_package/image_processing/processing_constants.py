@@ -27,36 +27,9 @@ TARGET_FLOWRATE_MED = 7.58  # 4 frames per cell
 TARGET_FLOWRATE_FAST = 15.15  # 2 frames per cell
 
 # ================ Data storage constants ================ #
-DEFAULT_SSD = "/media/pi/"
 MIN_GB_REQUIRED = 50
 NUM_SUBSEQUENCE = 10
 SUBSEQUENCE_LENGTH = 10
-
-EXPERIMENT_METADATA_KEYS = [
-    "operator_id",
-    "participant_id",
-    "flowcell_id",
-    "protocol",
-    "site",
-    "notes",
-    # "scope", # TO BE ADDED
-    "camera",  # AVT / Basler
-    "target_flowrate",
-    "exposure",
-    "target_flowrate",
-    "target_brightness",
-]
-
-PER_IMAGE_METADATA_KEYS = [
-    "im_counter",
-    "timestamp",
-    "motor_pos",
-    "pressure_hpa",
-    "syringe_pos",
-    "flowrate",
-    "temperature",
-    "humidity",
-]
 
 # ================ Cell detection constants ================ #
 RBC_THUMBNAIL_PATH = (

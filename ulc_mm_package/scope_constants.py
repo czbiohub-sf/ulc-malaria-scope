@@ -39,6 +39,33 @@ class CameraOptions(Enum):
 DEFAULT_SSD = "/media/pi/"
 ALT_SSD = "../QtGUI/sim_media/pi/"
 
+# ================ Data storage metadata ================ #
+EXPERIMENT_METADATA_KEYS = [
+    "operator_id",
+    "participant_id",
+    "flowcell_id",
+    "protocol",
+    "site",
+    "notes",
+    # "scope", # TO BE ADDED
+    "camera",  # AVT / Basler
+    "target_flowrate",
+    "exposure",
+    "target_flowrate",
+    "target_brightness",
+]
+
+PER_IMAGE_METADATA_KEYS = [
+    "im_counter",
+    "timestamp",
+    "motor_pos",
+    "pressure_hpa",
+    "syringe_pos",
+    "flowrate",
+    "temperature",
+    "humidity",
+]
+
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
 SIMULATION = MS_SIMULATE_FLAG > 0
