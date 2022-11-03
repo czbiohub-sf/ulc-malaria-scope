@@ -292,7 +292,9 @@ class ScopeOp(QObject, Machine):
             )
         except StopIteration as e:
             self.autofocus_result = e.value
-            print(f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps")
+            print(
+                f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
+            )
             self.next_state()
         else:
             self.img_signal.connect(self.run_autofocus)

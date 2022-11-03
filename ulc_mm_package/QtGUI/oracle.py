@@ -140,17 +140,14 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "End run?",
             'Click "OK" to end this run.',
-            buttons=Buttons.CANCEL
+            buttons=Buttons.CANCEL,
         )
         if dialog_result == QMessageBox.Ok:
             self.scopeop.to_intermission()
 
     def error_handler(self, title, text):
         self.display_message(
-            QMessageBox.Icon.Critical,
-            title,
-            text + _ERROR_MSG,
-            buttons=Buttons.OK
+            QMessageBox.Icon.Critical, title, text + _ERROR_MSG, buttons=Buttons.OK
         )
 
         self.scopeop.to_intermission()
