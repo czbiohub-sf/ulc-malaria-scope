@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
-from ulc_mm_package.neural_nets.yogo_constants import (
+from ulc_mm_package.neural_nets.neural_net_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
 )
@@ -26,8 +26,8 @@ class YOGO(NCSModel):
     def __init__(self, model_path: str = YOGO_MODEL_DIR):
         super().__init__(model_path, OptimizationHint.THROUGHPUT)
 
-    def __call__(self, input_img):
-        return self.asyn(input_img)
+    def __call__(self, input_img, idxs=None):
+        return self.asyn(input_img, idxs)
 
     def syn(self, input_img):
         res = super().syn(input_img)

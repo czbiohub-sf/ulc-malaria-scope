@@ -7,6 +7,7 @@ from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
     TOP_PERC,
     TOL,
+    MIN_ACCEPTABLE_MEAN_BRIGHTNESS,
 )
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
 
@@ -21,6 +22,27 @@ class AutobrightnessError(Exception):
     """Base class for catching Autobrightness errors."""
 
     def __init__(self, msg: str):
+        super().__init__(f"{msg}")
+
+
+class BrightnessTargetNotAchieved(AutobrightnessError):
+    """Raised when target not achieved, but still sufficiently bright for a run to proceed."""
+
+    def __init__(self, brightness_val):
+        msg = (
+            f"Unable to achieve the target brightness. The exposure may be too low (and the target pixel value too high) ",
+            f"or there may be an issue with the LED. Final mean pixel value: {brightness_val}. ",
+            f"The brightness value is still above the minimum acceptable value ",
+            f"of ({MIN_ACCEPTABLE_MEAN_BRIGHTNESS}).",
+        )
+        self.value = brightness_val
+        super().__init__(f"{msg}")
+
+
+class BrightnessCriticallyLow(AutobrightnessError):
+    def __init__(self, brightness_val):
+        msg = f""
+        self.value = brightness_val
         super().__init__(f"{msg}")
 
 
@@ -120,10 +142,10 @@ class Autobrightness:
         self.step_counter += 1
 
         if self.step_counter >= self.timeout_steps:
-            self.led.setDutyCycle(0)
-            raise AutobrightnessError(
-                f"Unable to achieve the target brightness within {self.timeout_steps} steps. The exposure may be too low (and the target pixel value too high), or there may be an issue with the LED."
-            )
+            if self.prev_mean_img_brightness >= MIN_ACCEPTABLE_MEAN_BRIGHTNESS:
+                raise BrightnessTargetNotAchieved(self.prev_mean_img_brightness)
+            else:
+                raise BrightnessCriticallyLow(self.prev_mean_img_brightness)
 
         if curr_brightness_enum == AB.JUST_RIGHT:
             return True

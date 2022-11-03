@@ -1,13 +1,14 @@
-from os.path import exists
+import os
+
+from ulc_mm_package.scope_constants import SIMULATION
 
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
 
 # ================ Camera constants ================ #
-CAMERA_SELECTION = 0  # 0 = Basler, 1 = AVT
 DEFAULT_EXPOSURE_MS = 0.5
-DEVICELINK_THROUGHPUT = 100000000
+DEVICELINK_THROUGHPUT = 140000000
 
 # ================ Motor controller constants ================ #
 FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
@@ -61,9 +62,13 @@ SERVO_PWM_PIN = 12
 VALVE_PIN = 8
 SERVO_FREQ = 100
 
+PRESSURE_SENSOR_ENABLE_PIN = 22
 INVALID_READ_FLAG = -1
 DEFAULT_AFC_DELAY_S = 1
 AFC_NUM_IMAGE_PAIRS = 12
+
+MPRLS_RST = 10
+MPRLS_PWR = 22
 
 # ================ Fan constants ================ #
 FAN_GPIO = 5
@@ -71,15 +76,16 @@ CAM_FAN_1 = 23
 CAM_FAN_2 = 24
 
 # ================ Simulation constants ================ #
-_viable_videos = ("./sim_media/sample.avi", "./sim_media/sample.mp4")
-VIDEO_PATH = next((vid for vid in _viable_videos if exists(vid)), None)
-VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
-
-SIMULATION = False
 # Enable simulation mode by creating blank simulation.py file under main script's directory
 # eg. to run ulc_mm_package/QtGUI/oracle.py, create an empty file under ulc_mm_package/QtGUI/simulation.py
-if exists("./simulation.py"):
-    print("found ./simulation.py")
-    SIMULATION = True
-else:
-    print(f"no simulation.py; simulation mode {SIMULATION}")
+VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
+VIDEO_PATH = None
+
+if SIMULATION:
+    _viable_videos = ("../QtGUI/sim_media/sample.avi", "../QtGUI/sim_media/sample.mp4")
+    VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
+    if VIDEO_PATH == None:
+        raise RuntimeError(
+            "Sample video for simulation mode could not be found. "
+            f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
+        )

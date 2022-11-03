@@ -10,11 +10,15 @@ Basler PyPlon Library:
 """
 
 import sys
+from time import perf_counter
 import queue
+from typing import Generator, Tuple
+
+import numpy as np
 import vimba
+from vimba import Vimba
 
 from py_cameras import Basler, GrabStrategy
-from vimba import Vimba
 
 from ulc_mm_package.hardware.hardware_constants import (
     DEFAULT_EXPOSURE_MS,
@@ -53,7 +57,6 @@ class AVTCamera:
         self.vimba = Vimba.get_instance().__enter__()
         self.queue = queue.Queue(maxsize=1)
         self.connect()
-        self.minExposure_ms, self.maxExposure_ms = self.getExposureBoundsMilliseconds()
 
     def __del__(self):
         self.deactivateCamera()
@@ -64,9 +67,11 @@ class AVTCamera:
             return cams[0]
 
     def _camera_setup(self):
+        self.minExposure_ms, self.maxExposure_ms = self.getExposureBoundsMilliseconds()
         self.setDeviceLinkThroughputLimit(DEVICELINK_THROUGHPUT)
         self.camera.ExposureAuto.set("Off")
-        self.camera.ExposureTime.set(500)
+        self.exposureTime_ms = DEFAULT_EXPOSURE_MS
+        self.camera.ReverseY.set(True)
         self.setBinning(bin_factor=2)
         self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
 
@@ -84,7 +89,7 @@ class AVTCamera:
         if self.queue.full():
             self.queue.get()
         if frame.get_status() == vimba.FrameStatus.Complete:
-            self.queue.put(frame.as_numpy_ndarray())
+            self.queue.put((frame.as_numpy_ndarray()[:, :, 0], perf_counter()))
         cam.queue_frame(frame)
 
     def _flush_queue(self):
@@ -99,13 +104,13 @@ class AVTCamera:
         if self.camera.is_streaming():
             self.camera.stop_streaming()
 
-    def yieldImages(self):
+    def yieldImages(self) -> Generator[Tuple[np.ndarray, float], None, None]:
         if not self.camera.is_streaming():
             self._flush_queue()
             self.startAcquisition()
 
         while self.camera.is_streaming():
-            yield self.queue.get()[:, :, 0]
+            yield self.queue.get()
 
     def setBinning(self, mode: str = "Average", bin_factor=1):
         while self.camera.is_streaming():

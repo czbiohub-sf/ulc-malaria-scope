@@ -16,12 +16,13 @@ from ulc_mm_package.QtGUI.gui_constants import ACQUISITION_PERIOD
 
 class Acquisition(QObject):
     update_liveview = pyqtSignal(np.ndarray)
-    update_scopeop = pyqtSignal(np.ndarray)
+    update_scopeop = pyqtSignal(np.ndarray, float)
 
     def __init__(self):
         super().__init__()
 
         self.img = None
+        self.img_timestamp = None
         self.mscope = None
 
         self.count = 0
@@ -66,8 +67,8 @@ class Acquisition(QObject):
 
     def get_img(self):
         try:
-            self.img = next(self.mscope.camera.yieldImages())
-            self.update_scopeop.emit(self.img)
+            self.img, self.img_timestamp = next(self.mscope.camera.yieldImages())
+            self.update_scopeop.emit(self.img, self.img_timestamp)
             self.count += 1
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)

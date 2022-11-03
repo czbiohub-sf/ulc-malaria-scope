@@ -1,11 +1,14 @@
-from time import perf_counter
-from ulc_mm_package.hardware.scope import MalariaScope
-from ulc_mm_package.hardware.scope_routines import *
-from ulc_mm_package.image_processing.processing_constants import (
+from time import perf_counter, sleep
+
+from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
-    TARGET_FLOWRATE,
 )
+from ulc_mm_package.hardware.scope import MalariaScope
+from ulc_mm_package.hardware.scope_routines import *
+from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
+
+from ulc_mm_package.image_processing.cell_finder import LowDensity
 
 import cv2
 
@@ -19,7 +22,7 @@ def _displayImage(img: np.ndarray) -> None:
 
 def _displayForNSeconds(seconds: int):
     start = perf_counter()
-    for img in mscope.camera.yieldImages():
+    for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
         if perf_counter() - start > seconds:
             break
@@ -29,7 +32,7 @@ def autobrightness_wrappper(mscope: MalariaScope):
     print(f"Running Autobrightness...")
     ab_routine = autobrightnessRoutine(mscope)
     ab_routine.send(None)
-    for img in mscope.camera.yieldImages():
+    for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
         try:
             ab_routine.send(img)
@@ -37,6 +40,13 @@ def autobrightness_wrappper(mscope: MalariaScope):
             final_brightness = e.value
             print(f"Mean pixel val: {final_brightness}")
             break
+        except BrightnessTargetNotAchieved as e:
+            print(
+                f"Brightness not quite at target, but still ok. Mean pixel val: {e.value}"
+            )
+            break
+        except BrightnessCriticallyLow:
+            raise
 
 
 def find_cells_wrapper(mscope: MalariaScope):
@@ -52,10 +62,11 @@ def find_cells_wrapper(mscope: MalariaScope):
         int returns the motor position w/ the highest cross correlation
         bool returns False, indicating
     """
+
     print("Running `find_cells_routine`")
     find_cells = find_cells_routine(mscope)
     find_cells.send(None)
-    for img in mscope.camera.yieldImages():
+    for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
         try:
             find_cells.send(img)
@@ -89,7 +100,7 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
     print("Running SSAF")
     ssaf = singleShotAutofocusRoutine(mscope, None)
     ssaf.send(None)
-    for img in mscope.camera.yieldImages():
+    for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
         try:
             ssaf.send(img)
@@ -100,12 +111,12 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
 
 def fast_flow_wrapper(mscope: MalariaScope):
     print("Running fast_flow_routine")
-    fast_flow_routine = fastFlowRoutine(mscope, None)
+    fast_flow_routine = fastFlowRoutine(mscope, None, TARGET_FLOWRATE)
     fast_flow_routine.send(None)
-    for img in mscope.camera.yieldImages():
+    for img, timestamp in mscope.camera.yieldImages():
         _displayImage(img)
         try:
-            fast_flow_routine.send(img)
+            fast_flow_routine.send((img, timestamp))
         except CantReachTargetFlowrate:
             print(
                 "Unable to achieve flowrate - syringe at max position but flowrate is below target."
@@ -165,7 +176,7 @@ def main_acquisition_loop(mscope: MalariaScope):
 
     start = perf_counter()
     prev_print_time = perf_counter()
-    stop_time_s = 5 * 60
+    stop_time_s = 1 * 60
 
     fake_exp_metadata = {k: k for k in EXPERIMENT_METADATA_KEYS}
     fake_per_img_metadata = {k: k for k in PER_IMAGE_METADATA_KEYS}
@@ -180,7 +191,10 @@ def main_acquisition_loop(mscope: MalariaScope):
     flow_control = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
     flow_control.send(None)
 
-    for img in mscope.camera.yieldImages():
+    cell_density = cell_density_routine(None)
+    cell_density.send(None)
+
+    for img, timestamp in mscope.camera.yieldImages():
         # Display
         _displayImage(img)
 
@@ -192,9 +206,15 @@ def main_acquisition_loop(mscope: MalariaScope):
 
         prev_results = count_parasitemia(mscope, img)
 
-        # Adjust the flow
+        density_start_time = perf_counter()
         try:
-            flow_control.send(img)
+            count = cell_density.send(img)
+        except LowDensity as e:
+            print(e)
+        print(f"Cell density : {count}, {perf_counter() - density_start_time}")
+
+        try:
+            flow_control.send((img, timestamp))
         except CantReachTargetFlowrate:
             print("Can't reach target flowrate.")
 
@@ -205,6 +225,14 @@ def main_acquisition_loop(mscope: MalariaScope):
             print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
             prev_print_time = perf_counter()
 
+            # Timed stop condition
+            if perf_counter() - start > stop_time_s:
+                break
+            elif perf_counter() - prev_print_time >= 10:
+                print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
+                prev_print_time = perf_counter()
+
+    mscope.data_storage.save_uniform_random_sample()
     closing_file_future = mscope.data_storage.close()
     mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
@@ -216,5 +244,8 @@ def main_acquisition_loop(mscope: MalariaScope):
 
 
 if __name__ == "__main__":
-    mscope = MalariaScope()
-    initial_cell_check(mscope)
+    try:
+        mscope = MalariaScope()
+        initial_cell_check(mscope)
+    finally:
+        mscope.shutoff()

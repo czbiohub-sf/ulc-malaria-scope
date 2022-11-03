@@ -2,6 +2,7 @@
 TOP_PERC_TARGET_VAL = 245
 TOP_PERC = 0.03
 TOL = 0.01
+MIN_ACCEPTABLE_MEAN_BRIGHTNESS = 200
 
 # ================ Background subtraction constants ================ #
 INSIDE_BBOX_FLAG = 0
@@ -10,7 +11,6 @@ INSIDE_BBOX_FLAG = 0
 NUM_IMAGE_PAIRS = 12
 WINDOW_SIZE = 12
 TOL_PERC = 0.1
-FRE_INCOMPLETE = -99
 
 # ================ Flow rate constants ================ #
 CORRELATION_THRESH = 0.5
@@ -27,33 +27,9 @@ TARGET_FLOWRATE_MED = 7.58  # 4 frames per cell
 TARGET_FLOWRATE_FAST = 15.15  # 2 frames per cell
 
 # ================ Data storage constants ================ #
-DEFAULT_SSD = "/media/pi/"
-
-EXPERIMENT_METADATA_KEYS = [
-    "operator_id",
-    "participant_id",
-    "flowcell_id",
-    "protocol",
-    "site",
-    "notes",
-    # "scope", # TO BE ADDED
-    "camera",  # AVT / Basler
-    "target_flowrate",
-    "exposure",
-    "target_flowrate",
-    "target_brightness",
-]
-
-PER_IMAGE_METADATA_KEYS = [
-    "im_counter",
-    "timestamp",
-    "motor_pos",
-    "pressure_hpa",
-    "syringe_pos",
-    "flowrate",
-    "temperature",
-    "humidity",
-]
+MIN_GB_REQUIRED = 50
+NUM_SUBSEQUENCE = 10
+SUBSEQUENCE_LENGTH = 10
 
 # ================ Cell detection constants ================ #
 RBC_THUMBNAIL_PATH = (
@@ -64,3 +40,5 @@ RBC_THUMBNAIL_PATH = (
 CELLS_FOUND_THRESHOLD = 9000  # It's got to be... OVER 9000!!!!!!
 
 MIN_CELL_COUNT = 10
+CELL_DENSITY_CHECK_PERIOD_S = 0.5  # How often to check cell density
+CELL_DENSITY_HISTORY_LEN = 10  # Number of continuuous cell density measurements that need to be < MIN_CELL_COUNT before an exception is raised

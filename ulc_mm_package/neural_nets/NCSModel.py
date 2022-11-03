@@ -9,10 +9,11 @@ import numpy.typing as npt
 from enum import Enum
 from pathlib import Path
 from copy import deepcopy
+from contextlib import contextmanager
 
 from typing import Any, Callable, List, Sequence, Optional, Tuple
 
-from ulc_mm_package.neural_nets.ssaf_constants import IMG_HEIGHT, IMG_WIDTH
+from ulc_mm_package.scope_constants import CAMERA_SELECTION
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import (
@@ -45,6 +46,15 @@ class TPUError(Exception):
 class OptimizationHint(Enum):
     LATENCY = 1
     THROUGHPUT = 2
+
+
+@contextmanager
+def lock_timout(lock, timeout=0.01):
+    lock.acquire(timeout=timeout)
+    try:
+        yield
+    finally:
+        lock.release()
 
 
 class NCSModel:
@@ -93,7 +103,12 @@ class NCSModel:
 
         model = self.core.read_model(model_path)
 
-        input_tensor_shape = (1, IMG_HEIGHT, IMG_WIDTH, 1)
+        input_tensor_shape = (
+            1,
+            CAMERA_SELECTION.IMG_HEIGHT,
+            CAMERA_SELECTION.IMG_WIDTH,
+            1,
+        )
 
         # https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
         ppp = PrePostProcessor(model)
@@ -128,7 +143,7 @@ class NCSModel:
         raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
-        with self.lock:
+        with lock_timout(self.lock):
             self._asyn_results.append(infer_request.output_tensors[0].data)
 
     def syn(self, input_img):
@@ -161,7 +176,7 @@ class NCSModel:
             self.asyn_infer_queue.start_async({0: input_tensor}, userdata=i)
 
     def get_asyn_results(self):
-        with self.lock:
+        with lock_timout(self.lock):
             res = deepcopy(self._asyn_results)
             self._asyn_results = []
         return res

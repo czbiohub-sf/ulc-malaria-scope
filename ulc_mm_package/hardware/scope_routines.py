@@ -1,11 +1,11 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Sequence
 from time import perf_counter
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
-import ulc_mm_package.neural_nets.ssaf_constants as ssaf_constants
+import ulc_mm_package.neural_nets.neural_net_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
 
@@ -31,7 +31,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
 
     This function batches and averages several inferences before making an adjustment. The number
     of images to look at before adjusting the motor is determined by the `AF_BATCH_SIZE` constant in
-    `neural_nets/ssaf_constants.py`.
+    `neural_nets/nn_constants.py`.
 
     This function runs until one motor adjustment is completed, then returns.
 
@@ -43,7 +43,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
 
     ssaf_steps_from_focus = []
 
-    while len(ssaf_steps_from_focus) != ssaf_constants.AF_BATCH_SIZE:
+    while len(ssaf_steps_from_focus) != nn_constants.AF_BATCH_SIZE:
         img = yield img
         ssaf_steps_from_focus.append(-int(mscope.autofocus_model(img)))
 
@@ -87,7 +87,7 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
 
     This function adds a simple time wrapper around `continuousSSAFRoutine`
     such that inferences and motor adjustments are done every `AF_PERIOD_S`seconds
-    (located under `neuraL_nets/ssaf_constants.py`).
+    (located under `neuraL_nets/nn_constants.py`).
 
     In other words, instead of every image being inferenced and an adjustment being done once
     AF_BATCH_SIZE images have been analyzed, inferences and adjustments are done only if AF_PERIOD_S
@@ -101,19 +101,19 @@ def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
 
     while True:
         img = yield img
-        if perf_counter() - prev_adjustment_time > ssaf_constants.AF_PERIOD_S:
+        if perf_counter() - prev_adjustment_time > nn_constants.AF_PERIOD_S:
             ssaf_routine.send(img)
             counter += 1
-            if counter >= ssaf_constants.AF_BATCH_SIZE:
+            if counter >= nn_constants.AF_BATCH_SIZE:
                 counter = 0
                 prev_adjustment_time = perf_counter()
 
 
 def count_parasitemia(
-    mscope: MalariaScope, img: np.ndarray
+    mscope: MalariaScope, img: np.ndarray, counts: Optional[Sequence[int]] = None
 ) -> List[Tuple[int, Tuple[float, ...]]]:
     results = mscope.cell_diagnosis_model.get_asyn_results()
-    mscope.cell_diagnosis_model(img)
+    mscope.cell_diagnosis_model(img, counts)
     return results
 
 
@@ -132,16 +132,17 @@ def flowControlRoutine(
         Image to be passed into the FlowController
     """
 
-    img = yield
+    img, timestamp = yield
     flow_val = 0
+    prev_flow_val = 0
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
 
     while True:
-        img = yield flow_val
+        img, timestamp = yield flow_val
         try:
-            flow_val = flow_controller.controlFlow(img)
+            flow_val = flow_controller.controlFlow(img, timestamp)
         except CantReachTargetFlowrate:
             raise
 
@@ -187,15 +188,15 @@ def fastFlowRoutine(
     """
 
     flow_val = 0
-    img = yield
+    img, timestamp = yield
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
 
     while True:
-        img = yield flow_val
+        img, timestamp = yield flow_val
         try:
-            flow_val, flow_error = flow_controller.fastFlowAdjustment(img)
+            flow_val, flow_error = flow_controller.fastFlowAdjustment(img, timestamp)
         except CantReachTargetFlowrate:
             raise
 
@@ -205,6 +206,34 @@ def fastFlowRoutine(
 
 def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float:
     """Autobrightness routine to set led power.
+
+    Parameters
+    ----------
+    mscope: MalariaScope
+    img: np.ndarray
+
+    Returns
+    -------
+    float: Mean autobrightness value
+
+    Exceptions
+    ----------
+    BrightnessTargetNotAchieved:
+        The target was not achieved BUT is still sufficiently bright enough
+        to proceed with a run. THe mean pixel brightness value can be accessed
+        by:
+            try:
+                ...
+            exception BrightTargetNotAchieved as e:
+                val = e.value
+
+    BrightnessCriticallyLow:
+        The targeg was not achieved and the brightness is too low to continue
+        with the run. The mean pixel brightness value can be accessed by:
+            try:
+                ...
+            exception BrightTargetNotAchieved as e:
+                val = e.value
 
     Usage
     -----
@@ -216,6 +245,10 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
                 ab_generator.send(img)
             except StopIteration as e:
                 mean_brightness_val = e.value
+            except BrightnessTargetNotAchieved:
+                Brightness not at target but still workable
+            except BrightnessCriticallyLow:
+
         cam.stopAcquisition()
         print(mean_brightness_val)
     """
@@ -227,12 +260,15 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
         img = yield img
         try:
             brightness_achieved = autobrightness.runAutobrightness(img)
-        except AutobrightnessError as e:
+        except BrightnessTargetNotAchieved as e:
             # TODO switch to logging
-            print(
-                f"AutobrightnessError encountered: {e}. Stopping autobrightness and continuing..."
-            )
-            brightness_achieved = True
+            print(f"Autobrightness routine exception : {e}")
+            raise
+        except BrightnessCriticallyLow as e:
+            # TODO switch to logging
+            print(f"Autobrightness routine exception : {e}")
+            raise
+
     # Get the mean image brightness to store in the experiment metadata
     return autobrightness.prev_mean_img_brightness
 
@@ -283,7 +319,7 @@ def find_cells_routine(
         3  # Maximum number of times to run check for cells routine before aborting
     )
     cell_finder = CellFinder()
-    img = yield img
+    img = yield
 
     # Initial check for cells, return current motor position if cells found
     cell_finder.add_image(mscope.motor.pos, img)
@@ -299,6 +335,7 @@ def find_cells_routine(
         2. Sweep the motor through the full range of motion and take in images at each step
         3. Assess whether cells are present
         """
+
         if max_attempts == 0:
             raise NoCellsFound()
 
@@ -306,13 +343,13 @@ def find_cells_routine(
         start = perf_counter()
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
         while perf_counter() - start < pull_time:
-            img = yield img
+            img = yield
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
         # Perform a full focal stack and get the cross-correlation value for each image
         for pos in range(0, mscope.motor.max_pos, steps_per_image):
             mscope.motor.move_abs(pos)
-            img = yield img
+            img = yield
             cell_finder.add_image(mscope.motor.pos, img)
 
         # Return the motor position where cells were found
@@ -322,3 +359,27 @@ def find_cells_routine(
         except NoCellsFound:
             max_attempts -= 1
             print("MAX ATTEMPTS LEFT {}".format(max_attempts))
+
+
+def cell_density_routine(
+    img: np.ndarray,
+):
+    prev_time = perf_counter()
+    prev_measurements = np.asarray(
+        [100] * processing_constants.CELL_DENSITY_HISTORY_LEN
+    )
+    idx = 0
+
+    while True:
+        if (
+            perf_counter() - prev_time
+            >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
+        ):
+            img = yield prev_measurements[(idx - 1) % 10]
+            prev_measurements[idx] = binarize_count_cells(img)
+            idx = (idx + 1) % len(prev_measurements)
+
+            if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):
+                raise LowDensity
+
+            prev_time = perf_counter()

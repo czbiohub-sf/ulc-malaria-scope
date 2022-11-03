@@ -7,16 +7,17 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 import sys
 import webbrowser
+import enum
 import numpy as np
 
 from transitions import Machine
 from time import perf_counter, sleep
 
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel
 from PyQt5.QtCore import Qt, QThread
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
 
-from ulc_mm_package.image_processing.processing_constants import (
+from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
 )
 from ulc_mm_package.QtGUI.gui_constants import ICON_PATH, FLOWCELL_QC_FORM_LINK
@@ -30,22 +31,26 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
-_EXIT_MSG = "Click OK to end experiment."
+_ERROR_MSG = ' Click "OK" to end this run.'
 
-# Add type to input arguments (mscope, img_signal)
+_IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
+_IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
 
-# NICE TO HAVE
-# Use "on_exception" to trigger exception handler
-# Validate experiment form inputs
-# Implement exception handling for camera
+
+class Buttons(enum.Enum):
+    OK = QMessageBox.Ok
+    CANCEL = QMessageBox.Ok | QMessageBox.Cancel
 
 
 class Oracle(Machine):
-    def __init__(self, *args, **kwargs):
-
+    def __init__(self):
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
+        self.dialog_window = QMessageBox()
+
+        # Instantiate variables
+        self._init_variables()
 
         # Instantiate camera acquisition and thread
         self.acquisition = Acquisition()
@@ -57,6 +62,8 @@ class Oracle(Machine):
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
+        self.scopeop_thread.started.connect(self.scopeop.setup)
+
         # Configure state machine
         states = [
             {
@@ -65,6 +72,7 @@ class Oracle(Machine):
             {
                 "name": "setup",
                 "on_enter": [self._start_setup],
+                "on_exit": [self._end_setup],
             },
             {
                 "name": "form",
@@ -82,16 +90,21 @@ class Oracle(Machine):
             },
         ]
 
-        Machine.__init__(self, states=states, queued=True, initial="standby")
+        super().__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
-        self.add_transition(trigger="rerun", source="intermission", dest="form")
+        self.add_transition(
+            trigger="rerun",
+            source="intermission",
+            dest="form",
+            before=self._init_variables,
+        )
 
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
         self.form_window.exit_btn.clicked.connect(self.shutoff)
 
         # Connect liveview buttons
-        self.liveview_window.exit_btn.clicked.connect(self.shutoff)
+        self.liveview_window.exit_btn.clicked.connect(self.exit_handler)
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.next_state)
@@ -107,46 +120,106 @@ class Oracle(Machine):
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
         self.scopeop.stop_timers.connect(self.acquisition.stop_timers)
 
+        self.scopeop.update_state.connect(self.liveview_window.update_state)
+        self.scopeop.update_img_count.connect(self.liveview_window.update_img_count)
+        self.scopeop.update_cell_count.connect(self.liveview_window.update_cell_count)
+        self.scopeop.update_msg.connect(self.liveview_window.update_msg)
+
+        self.scopeop.update_brightness.connect(self.liveview_window.update_brightness)
+        self.scopeop.update_flowrate.connect(self.liveview_window.update_flowrate)
+        self.scopeop.update_focus.connect(self.liveview_window.update_focus)
+
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
 
         # Trigger first transition
         self.next_state()
 
+    def exit_handler(self):
+        dialog_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "End run?",
+            'Click "OK" to end this run.',
+            buttons=Buttons.CANCEL,
+        )
+        if dialog_result == QMessageBox.Ok:
+            self.scopeop.to_intermission()
+
     def error_handler(self, title, text):
         self.display_message(
-            QMessageBox.Icon.Critical,
-            title,
-            text,
-            exit_after=True,
+            QMessageBox.Icon.Critical, title, text + _ERROR_MSG, buttons=Buttons.OK
         )
 
+        self.scopeop.to_intermission()
+
     def display_message(
-        self, icon: QMessageBox.Icon, title, text, cancel=False, exit_after=False
+        self, icon: QMessageBox.Icon, title, text, buttons=None, image=None
     ):
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QIcon(ICON_PATH))
-        msgBox.setIcon(icon)
-        msgBox.setWindowTitle(f"{title}")
 
-        if exit_after:
-            msgBox.setText(f"{text} {_EXIT_MSG}")
-        else:
-            msgBox.setText(f"{text}")
+        self.dialog_window.close()
 
-        if cancel:
-            msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        else:
-            msgBox.setStandardButtons(QMessageBox.Ok)
+        self.dialog_window = QMessageBox()
+        self.dialog_window.setWindowIcon(QIcon(ICON_PATH))
+        self.dialog_window.setIcon(icon)
+        self.dialog_window.setWindowTitle(f"{title}")
 
-        if exit_after and msgBox.exec() == QMessageBox.Ok:
-            self.shutoff()
+        self.dialog_window.setText(f"{text}")
+   
+        if buttons != None:
+            self.dialog_window.setStandardButtons(buttons.value)
 
-        return msgBox.exec()
+        if image != None:
+            layout = self.dialog_window.layout()
+
+            image_lbl = QLabel()
+            image_lbl.setPixmap(QPixmap(image))
+
+            # Row/column span determined using layout.rowCount() and layout.columnCount()
+            layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)
+
+        dialog_result = self.dialog_window.exec()
+
+        return dialog_result
+
+    def _init_variables(self):
+        # Instantiate metadata dicts
+        self.form_metadata = None
+        self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
+
+        self.liveview_window.set_infopanel_vals()
+
+    def _start_setup(self):
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Initializing hardware",
+            'If there is a flow cell in the scope, remove it now. Click "OK" once it is removed.',
+            buttons=Buttons.OK,
+            image=_IMAGE_REMOVE_PATH,
+        )
+
+        self.scopeop_thread.start()
+        self.acquisition_thread.start()
+
+        self.form_window.show()
+
+    def _end_setup(self):
+        self.acquisition.get_mscope(self.scopeop.mscope)
+
+        self.form_window.unfreeze_buttons()
+
+    def _start_form(self):
+        self.form_window.show()
 
     def save_form(self):
-        # DATA-TODO save experiment metadata here
-        # -> get keys from processing_constants.py
+        self.form_metadata = self.form_window.get_form_input()
+        self.liveview_window.update_experiment(self.form_metadata)
+
+        for key in self.form_metadata:
+            self.experiment_metadata[key] = self.form_metadata[key]
+
+        # TODO Fill in other experiment metadata here, and initialize data_storage object
+        # Only move on to next state if data is verified
+
         # self.scopeop.mscope.data_storage.createNewExperiment(PARAMS)
 
         # DATA-TODO verify if user input satisfies required format
@@ -155,10 +228,42 @@ class Oracle(Machine):
 
         self.next_state()
 
-    def shutoff(self):
-        # Stop scopeops
-        self.scopeop.stop()
+    def _end_form(self):
+        self.form_window.close()
 
+    def _start_liveview(self):
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Starting run",
+            'Insert flow cell now. Click "OK" once it is in place.',
+            buttons=Buttons.OK,
+            image=_IMAGE_INSERT_PATH,
+        )
+
+        self.liveview_window.show()
+        self.scopeop.start()
+
+    def _end_liveview(self):
+        self.liveview_window.close()
+
+        print("ORACLE: Opening survey")
+        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
+
+    def _start_intermission(self):
+        dialog_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "Run complete",
+            'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
+            buttons=Buttons.CANCEL,
+            image=_IMAGE_REMOVE_PATH,
+        )
+        if dialog_result == QMessageBox.Cancel:
+            self.shutoff()
+        elif dialog_result == QMessageBox.Ok:
+            print("ORACLE: Running new experiment")
+            self.scopeop.rerun()
+
+    def shutoff(self):
         # Wait for QTimers to shutoff
         print("ORACLE: Waiting for timer to terminate...")
         while (
@@ -167,13 +272,6 @@ class Oracle(Machine):
         ):
             pass
         print("ORACLE: Successfully terminated timer.")
-
-        if self.state == "liveview":
-            self.display_message(
-                QMessageBox.Icon.Information,
-                "Shutting off",
-                'Remove flow cell now. Click "OK" once it is removed.',
-            )
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
@@ -189,56 +287,9 @@ class Oracle(Machine):
 
         print("ORACLE: Exiting program")
         self.form_window.close()
+        print("ORACLE: Closed experiment form")
         self.liveview_window.close()
-
-    def _start_setup(self):
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Initializing hardware",
-            'If there is a flow cell in the scope, remove it now. Click "OK" once it is removed.',
-        )
-
-        self.scopeop_thread.start()
-        self.acquisition_thread.start()
-
-        self.scopeop.setup()
-        self.acquisition.get_mscope(self.scopeop.mscope)
-
-    def _start_form(self):
-        self.form_window.show()
-
-    def _end_form(self):
-        self.form_window.close()
-
-    def _start_liveview(self):
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Starting run",
-            'Insert flow cell now. Click "OK" once it is in place.',
-        )
-
-        self.liveview_window.show()
-        self.scopeop.start()
-
-    def _end_liveview(self):
-        self.liveview_window.close()
-
-        print("ORACLE: Opening survey")
-        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
-
-    def _start_intermission(self):
-
-        reset_query = self.display_message(
-            QMessageBox.Icon.Information,
-            "Run complete",
-            'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
-            cancel=True,
-        )
-        if reset_query == QMessageBox.Cancel:
-            self.shutoff()
-        elif reset_query == QMessageBox.Ok:
-            print("ORACLE: Running new experiment")
-            self.scopeop.rerun()
+        print("ORACLE: Closed liveview")
 
 
 if __name__ == "__main__":
