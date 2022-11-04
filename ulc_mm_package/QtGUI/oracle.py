@@ -111,6 +111,8 @@ class Oracle(Machine):
         self.scopeop.experiment_done.connect(self.next_state)
         self.scopeop.reset_done.connect(self.rerun)
 
+        self.scopeop.yield_mscope.connect(self.acquisition.get_mscope)
+
         self.scopeop.error.connect(self.error_handler)
 
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
@@ -203,8 +205,6 @@ class Oracle(Machine):
         self.form_window.show()
 
     def _end_setup(self):
-        self.acquisition.get_mscope(self.scopeop.mscope)
-
         self.form_window.unfreeze_buttons()
 
     def _start_form(self):
