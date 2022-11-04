@@ -6,6 +6,7 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 """
 
 import sys
+import socket
 import webbrowser
 import enum
 import numpy as np
@@ -19,9 +20,16 @@ from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
-    CAMERA
+    CAMERA_SELECTION,
 )
-from ulc_mm_package.QtGUI.gui_constants import ICON_PATH, FLOWCELL_QC_FORM_LINK
+from ulc_mm_package.image_processing.processing_constants import (
+    TOP_PERC_TARGET_VAL, 
+    TARGET_FLOWRATE,
+)
+from ulc_mm_package.QtGUI.gui_constants import (
+    ICON_PATH, 
+    FLOWCELL_QC_FORM_LINK,
+)
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.acquisition import Acquisition
@@ -218,19 +226,21 @@ class Oracle(Machine):
         for key in self.form_metadata:
             self.experiment_metadata[key] = self.form_metadata[key]
 
-        print(self.experiment_metadata)
-
-        # Assign other metadata parameters
-        self.experiment_metadata["camera"] = CAMERA_SELECTION
-
-        # TODO Fill in other experiment metadata here, and initialize data_storage object
-        # Only move on to next state if data is verified
-
-        # self.scopeop.mscope.data_storage.createNewExperiment(PARAMS)
-
         # DATA-TODO verify if user input satisfies required format
         # -> if data fails verification, prompt user for correction using "display_message" (defined above)
         # -> if data passes verification, call "self.next_state" to open liveview
+
+        # Assign other metadata parameters
+        self.experiment_metadata["scope"] = socket.gethostname()
+        self.experiment_metadata["camera"] = CAMERA_SELECTION.name
+        self.experiment_metadata["exposure"] = self.scopeop.mscope.camera.exposureTime_ms
+        self.experiment_metadata["target_flowrate"] = TARGET_FLOWRATE
+        self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
+
+        print(self.experiment_metadata)
+
+        # self.scopeop.mscope.data_storage.createNewExperiment(PARAMS)
+
 
         self.next_state()
 

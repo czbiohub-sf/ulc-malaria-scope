@@ -47,9 +47,8 @@ EXPERIMENT_METADATA_KEYS = [
     "protocol",
     "site",
     "notes",
-    # "scope", # TO BE ADDED
-    "camera",  # AVT / Basler
-    "target_flowrate",
+    "scope",
+    "camera",
     "exposure",
     "target_flowrate",
     "target_brightness",
