@@ -84,102 +84,6 @@ Wire Wire Line
 	2140 3940 3655 3940
 Wire Wire Line
 	2140 4140 3655 4140
-Wire Wire Line
-	1640 3940 1415 3940
-Wire Wire Line
-	1640 4040 1415 4040
-Wire Wire Line
-	1640 4240 1415 4240
-Wire Wire Line
-	1640 4340 1415 4340
-Text Label 1415 3940 0    39   ~ 0
-S1
-Text Label 1415 4040 0    39   ~ 0
-S2
-Text Label 1415 4240 0    39   ~ 0
-S3
-Text Label 1415 4340 0    39   ~ 0
-S4
-Wire Wire Line
-	1315 3840 1640 3840
-Wire Wire Line
-	1315 4140 1640 4140
-$Comp
-L power:GND #PWR?
-U 1 1 64DF0520
-P 1315 4740
-AR Path="/64DF0520" Ref="#PWR?"  Part="1" 
-AR Path="/64D22535/64DF0520" Ref="#PWR069"  Part="1" 
-F 0 "#PWR069" H 1315 4490 50  0001 C CNN
-F 1 "GND" H 1315 4590 50  0000 C CNN
-F 2 "" H 1315 4740 50  0001 C CNN
-F 3 "" H 1315 4740 50  0001 C CNN
-	1    1315 4740
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1315 4540 1640 4540
-Wire Wire Line
-	1640 4440 1315 4440
-Connection ~ 1315 4440
-Wire Wire Line
-	1315 4440 1315 4540
-Wire Wire Line
-	1315 3840 1315 4140
-Connection ~ 1315 4140
-Wire Wire Line
-	1315 4140 1315 4440
-Connection ~ 1315 4540
-Wire Wire Line
-	1315 4540 1315 4740
-Wire Wire Line
-	4155 3940 4380 3940
-Wire Wire Line
-	4155 4040 4380 4040
-Wire Wire Line
-	4155 4240 4380 4240
-Wire Wire Line
-	4155 4340 4380 4340
-Text Label 4380 3940 2    39   ~ 0
-S1
-Text Label 4380 4040 2    39   ~ 0
-S2
-Text Label 4380 4240 2    39   ~ 0
-S3
-Text Label 4380 4340 2    39   ~ 0
-S4
-Wire Wire Line
-	4480 3840 4155 3840
-Wire Wire Line
-	4480 4140 4155 4140
-$Comp
-L power:GND #PWR?
-U 1 1 64DF0539
-P 4480 4740
-AR Path="/64DF0539" Ref="#PWR?"  Part="1" 
-AR Path="/64D22535/64DF0539" Ref="#PWR070"  Part="1" 
-F 0 "#PWR070" H 4480 4490 50  0001 C CNN
-F 1 "GND" H 4480 4590 50  0000 C CNN
-F 2 "" H 4480 4740 50  0001 C CNN
-F 3 "" H 4480 4740 50  0001 C CNN
-	1    4480 4740
-	-1   0    0    -1  
-$EndComp
-Wire Wire Line
-	4480 4540 4155 4540
-Wire Wire Line
-	4155 4440 4480 4440
-Connection ~ 4480 4440
-Wire Wire Line
-	4480 4440 4480 4540
-Wire Wire Line
-	4480 3840 4480 4140
-Connection ~ 4480 4140
-Wire Wire Line
-	4480 4140 4480 4440
-Connection ~ 4480 4540
-Wire Wire Line
-	4480 4540 4480 4740
 Text Notes 2025 3450 0    30   ~ 0
 Board to board cable assembly. Female-female IDC headers on a ribbon cable.
 $Comp
@@ -450,17 +354,6 @@ $EndComp
 Text Notes 1935 1110 0    59   ~ 0
 Main Board Components\n
 $Comp
-L Connector:Barrel_Jack #J30
-U 1 1 6604EE9C
-P 6370 4365
-F 0 "#J30" H 6405 4690 50  0000 C CNN
-F 1 "Barrel_Jack" H 6427 4599 50  0000 C CNN
-F 2 "" H 6420 4325 50  0001 C CNN
-F 3 "https://www.cuidevices.com/product/resource/pj-065b.pdf" H 6420 4325 50  0001 C CNN
-	1    6370 4365
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR071
 U 1 1 6605384F
 P 6825 4465
@@ -506,7 +399,7 @@ P 7890 4335
 F 0 "#J29" H 7808 4552 50  0000 C CNN
 F 1 "12V_WALL_CONN" H 7808 4461 50  0000 C CNN
 F 2 "" H 7890 4335 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/molex/0039012020/61315?s=N4IgTCBcDaIMwE4AMBGMT0gLoF8g" H 7890 4335 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/te-connectivity-amp-connectors/1-480318-0/15664" H 7890 4335 50  0001 C CNN
 	1    7890 4335
 	1    0    0    -1  
 $EndComp
@@ -537,8 +430,6 @@ Wire Wire Line
 	7250 3370 7435 3370
 Wire Wire Line
 	7250 3470 7435 3470
-Wire Wire Line
-	6670 4265 6825 4265
 $Comp
 L power:+12V #PWR0134
 U 1 1 625BA266
@@ -558,4 +449,205 @@ Wire Wire Line
 Wire Wire Line
 	6825 4465 7690 4465
 Connection ~ 6825 4465
+$Comp
+L Connector:Mini-DIN-4 #J19
+U 1 1 62F0B693
+P 6280 4415
+F 0 "#J19" H 6280 4782 50  0000 C CNN
+F 1 "Mini-DIN-4" H 6280 4691 50  0000 C CNN
+F 2 "" H 6280 4415 50  0001 C CNN
+F 3 "http://service.powerdynamics.com/ec/Catalog17/Section%2011.pdf" H 6280 4415 50  0001 C CNN
+	1    6280 4415
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6580 4415 6580 4640
+Wire Wire Line
+	6580 4640 5980 4640
+Wire Wire Line
+	5980 4640 5980 4415
+Wire Wire Line
+	6670 4465 6670 4415
+Wire Wire Line
+	6670 4415 6580 4415
+Connection ~ 6580 4415
+Wire Wire Line
+	6580 4265 6825 4265
+Wire Wire Line
+	6580 4095 5980 4095
+Wire Wire Line
+	5980 4095 5980 4315
+Wire Wire Line
+	6580 4095 6580 4265
+Connection ~ 6580 4265
+Wire Wire Line
+	6580 4265 6580 4315
+$Comp
+L Motor:Fan #M?
+U 1 1 62F1D246
+P 8830 4550
+AR Path="/62F1D246" Ref="#M?"  Part="1" 
+AR Path="/64D22535/62F1D246" Ref="#M4"  Part="1" 
+F 0 "#M4" H 8672 4646 50  0000 R CNN
+F 1 "Fan" H 8672 4555 50  0000 R CNN
+F 2 "" H 8830 4560 50  0001 C CNN
+F 3 "https://www.mechatronics.com/pdf/B5020.pdf" H 8830 4560 50  0001 C CNN
+	1    8830 4550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8830 4250 9310 4250
+Wire Wire Line
+	9310 4250 9310 4450
+Wire Wire Line
+	8830 4750 9310 4750
+Wire Wire Line
+	9310 4750 9310 4550
+$Comp
+L Connector_Generic:Conn_01x02 #J?
+U 1 1 62F1D250
+P 9510 4450
+AR Path="/62F1D250" Ref="#J?"  Part="1" 
+AR Path="/64D22535/62F1D250" Ref="#J2"  Part="1" 
+F 0 "#J2" H 9590 4442 50  0000 L CNN
+F 1 "CAM_FAN1" H 9590 4351 50  0000 L CNN
+F 2 "" H 9510 4450 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0510210200/242842?utm_adgroup=Connectors%20%26%20Interconnects&utm_source=google&utm_medium=cpc&utm_campaign=Dynamic%20Search_EN_Product&utm_term=&utm_content=Connectors%20%26%20Interconnects&gclid=CjwKCAjwtfqKBhBoEiwAZuesiFsxfBKkBfunjHFEX8ndclfE03LpsQ0aJ1bUUSo-KliiUNP-btW6HxoC67MQAvD_BwE" H 9510 4450 50  0001 C CNN
+	1    9510 4450
+	1    0    0    -1  
+$EndComp
+$Comp
+L Motor:Fan #M?
+U 1 1 62F21820
+P 8830 5215
+AR Path="/62F21820" Ref="#M?"  Part="1" 
+AR Path="/64D22535/62F21820" Ref="#M5"  Part="1" 
+F 0 "#M5" H 8672 5311 50  0000 R CNN
+F 1 "Fan" H 8672 5220 50  0000 R CNN
+F 2 "" H 8830 5225 50  0001 C CNN
+F 3 "https://www.mechatronics.com/pdf/B5020.pdf" H 8830 5225 50  0001 C CNN
+	1    8830 5215
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8830 4915 9310 4915
+Wire Wire Line
+	9310 4915 9310 5115
+Wire Wire Line
+	8830 5415 9310 5415
+Wire Wire Line
+	9310 5415 9310 5215
+$Comp
+L Connector_Generic:Conn_01x02 #J?
+U 1 1 62F2182A
+P 9510 5115
+AR Path="/62F2182A" Ref="#J?"  Part="1" 
+AR Path="/64D22535/62F2182A" Ref="#J3"  Part="1" 
+F 0 "#J3" H 9590 5107 50  0000 L CNN
+F 1 "CAM_FAN2" H 9590 5016 50  0000 L CNN
+F 2 "" H 9510 5115 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0510210200/242842?utm_adgroup=Connectors%20%26%20Interconnects&utm_source=google&utm_medium=cpc&utm_campaign=Dynamic%20Search_EN_Product&utm_term=&utm_content=Connectors%20%26%20Interconnects&gclid=CjwKCAjwtfqKBhBoEiwAZuesiFsxfBKkBfunjHFEX8ndclfE03LpsQ0aJ1bUUSo-KliiUNP-btW6HxoC67MQAvD_BwE" H 9510 5115 50  0001 C CNN
+	1    9510 5115
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1640 3840 1415 3840
+Text Label 1415 3840 0    39   ~ 0
+S1
+Wire Wire Line
+	1640 4040 1415 4040
+Text Label 1415 4040 0    39   ~ 0
+S2
+Wire Wire Line
+	1640 4240 1415 4240
+Text Label 1415 4240 0    39   ~ 0
+S3
+Wire Wire Line
+	1640 4440 1415 4440
+Text Label 1415 4440 0    39   ~ 0
+S4
+Wire Wire Line
+	1640 4340 1415 4340
+Text Label 1415 4340 0    39   ~ 0
+VALVE
+Wire Wire Line
+	1640 4540 1415 4540
+Text Label 1415 4540 0    39   ~ 0
+CAM_FAN1
+$Comp
+L power:+12V #PWR0139
+U 1 1 62F4F166
+P 1300 3940
+F 0 "#PWR0139" H 1300 3790 50  0001 C CNN
+F 1 "+12V" H 1315 4113 50  0000 C CNN
+F 2 "" H 1300 3940 50  0001 C CNN
+F 3 "" H 1300 3940 50  0001 C CNN
+	1    1300 3940
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1300 3940 1640 3940
+$Comp
+L power:GND #PWR0145
+U 1 1 62F54951
+P 1305 4140
+F 0 "#PWR0145" H 1305 3890 50  0001 C CNN
+F 1 "GND" H 1310 3967 50  0000 C CNN
+F 2 "" H 1305 4140 50  0001 C CNN
+F 3 "" H 1305 4140 50  0001 C CNN
+	1    1305 4140
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1305 4140 1640 4140
+Wire Wire Line
+	4155 3840 4380 3840
+Text Label 4380 3840 2    39   ~ 0
+S1
+Wire Wire Line
+	4155 4040 4380 4040
+Text Label 4380 4040 2    39   ~ 0
+S2
+Wire Wire Line
+	4155 4240 4380 4240
+Text Label 4380 4240 2    39   ~ 0
+S3
+Wire Wire Line
+	4155 4440 4380 4440
+Text Label 4380 4440 2    39   ~ 0
+S4
+Wire Wire Line
+	4155 4340 4380 4340
+Text Label 4380 4340 2    39   ~ 0
+VALVE
+Wire Wire Line
+	4155 4540 4380 4540
+Text Label 4380 4540 2    39   ~ 0
+CAM_FAN1
+$Comp
+L power:+12V #PWR0146
+U 1 1 62F65746
+P 4495 3940
+F 0 "#PWR0146" H 4495 3790 50  0001 C CNN
+F 1 "+12V" H 4510 4113 50  0000 C CNN
+F 2 "" H 4495 3940 50  0001 C CNN
+F 3 "" H 4495 3940 50  0001 C CNN
+	1    4495 3940
+	-1   0    0    -1  
+$EndComp
+Wire Wire Line
+	4495 3940 4155 3940
+$Comp
+L power:GND #PWR0147
+U 1 1 62F6574D
+P 4490 4140
+F 0 "#PWR0147" H 4490 3890 50  0001 C CNN
+F 1 "GND" H 4495 3967 50  0000 C CNN
+F 2 "" H 4490 4140 50  0001 C CNN
+F 3 "" H 4490 4140 50  0001 C CNN
+	1    4490 4140
+	-1   0    0    -1  
+$EndComp
+Wire Wire Line
+	4490 4140 4155 4140
 $EndSCHEMATC

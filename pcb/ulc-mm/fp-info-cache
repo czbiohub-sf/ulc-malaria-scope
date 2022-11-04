@@ -1,4 +1,4 @@
-19413481798219348
+19418476943697348
 794120-1
 TE_794120-1
 
@@ -85358,6 +85358,13 @@ DowelPin_1mm
 0
 0
 ulc-mm
+GageRef_Hole
+GageRef_Hole
+GageRef_Hole
+0
+0
+0
+ulc-mm
 LED_Cree-XHP35
 http://www.cree.com/~/media/Files/Cree/LED-Components-and-Modules/XLamp/Data-and-Binning/ds--XHP35.pdf
 LED Cree XHP35
@@ -85386,6 +85393,13 @@ MountingHole_#2_CloseFit
 0
 0
 ulc-mm
+MouseBite_0.508mm
+MouseBite_0.508mm
+MouseBite_0.508mm
+0
+0
+0
+ulc-mm
 PinSocket_1x02_P2.54mm_Vertical
 Through hole straight socket strip, 1x02, 2.54mm pitch, single row (from Kicad 4.0.7), script generated
 Through hole socket strip THT 1x02 2.54mm single row
@@ -85399,3 +85413,10 @@ WirePad
 0
 1
 1
+ulc-mm
+XDCR_MPRLS0025PA00001A
+
+
+0
+12
+12
