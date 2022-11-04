@@ -231,8 +231,8 @@ class ScopeOp(QObject, Machine):
         print("SCOPEOP: Turning off LED")
         self.mscope.led.turnOff()
 
-        # DATA-TODO close data_storage
-        # self.mscope.data_storage.close()
+        print("SCOPEOP: Closing data storage")
+        self.mscope.data_storage.close()
 
     def _start_intermission(self):
         self.experiment_done.emit()
