@@ -20,6 +20,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
+    PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
 )
 from ulc_mm_package.image_processing.processing_constants import (
@@ -239,7 +240,7 @@ class Oracle(Machine):
 
         print(self.experiment_metadata)
 
-        # self.scopeop.mscope.data_storage.createNewExperiment(PARAMS)
+        self.scopeop.mscope.data_storage.createNewExperiment("", self.experiment_metadata, PER_IMAGE_METADATA_KEYS)
 
 
         self.next_state()

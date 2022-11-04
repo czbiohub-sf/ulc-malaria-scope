@@ -8,7 +8,8 @@ import shutil
 import numpy as np
 import cv2
 
-from ulc_mm_package.scope_constants import DEFAULT_SSD
+from ulc_mm_package.QtGUI.gui_constants import SIMULATION
+from ulc_mm_package.scope_constants import DEFAULT_SSD, ALT_SSD
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
     MIN_GB_REQUIRED,
@@ -49,7 +50,7 @@ class DataStorage:
         self,
         custom_experiment_name: str,
         experiment_initialization_metdata: Dict,
-        per_image_metadata: Dict,
+        per_image_metadata_keys: list,
     ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
 
@@ -61,14 +62,15 @@ class DataStorage:
         experiment_initialization_metadata: Dict [str : val]
             A dictionary of the experiment initialization parameters.
 
-        per_image_metadata: Dict [str : val]
-            A dictionary of the metadata to be stored on a per-image basis. Since this is just for initialization,
-            the dictionary does not necessarily need to have any values - this function just needs to keys in order to
-            create the `.csv` file.
+        per_image_metadata_keys: list [str]
+            A list of the metadata keys to be stored on a per-image basis. The keys are used to create a .csv file.
         """
 
         if self.main_dir == None:
-            media_dir = DEFAULT_SSD
+            if SIMULATION:
+                media_dir = ALT_SSD
+            else:
+                media_dir = DEFAULT_SSD
             external_dir = media_dir + listdir(media_dir)[0] + "/"
             self.createTopLevelFolder(external_dir)
 
@@ -87,7 +89,7 @@ class DataStorage:
         )
         self.metadata_file = open(f"{filename}", "w")
         self.md_writer = csv.DictWriter(
-            self.metadata_file, fieldnames=list(per_image_metadata.keys())
+            self.metadata_file, fieldnames=per_image_metadata_keys
         )
         self.md_writer.writeheader()
 
