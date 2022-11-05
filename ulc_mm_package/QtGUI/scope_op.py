@@ -26,16 +26,13 @@ from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
 )
 
-# TODO figure out how to disconnect img_signal so it's not running after reset
-# TODO populate info?
-# TODO get rid of infopanel dict, etc.
-# TODO get rid of timer signal
-
 
 class ScopeOp(QObject, Machine):
     setup_done = pyqtSignal()
     experiment_done = pyqtSignal()
     reset_done = pyqtSignal()
+
+    yield_mscope = pyqtSignal(MalariaScope)
 
     error = pyqtSignal(str, str)
 
@@ -133,6 +130,7 @@ class ScopeOp(QObject, Machine):
 
         print("SCOPEOP: Initializing scope...")
         self.mscope = MalariaScope()
+        self.yield_mscope.emit(self.mscope)
         component_status = self.mscope.getComponentStatus()
 
         if all([status == True for status in component_status.values()]):
@@ -167,6 +165,7 @@ class ScopeOp(QObject, Machine):
         self.reset_done.emit()
 
     def _start_autobrightness(self):
+
         print("SCOPEOP: Starting autobrightness")
 
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)

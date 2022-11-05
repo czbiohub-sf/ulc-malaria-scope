@@ -37,6 +37,7 @@ class Components(enum.Enum):
 
 class MalariaScope:
     def __init__(self):
+
         self.motor_enabled = False
         self.camera_enabled = False
         self.pneumatic_module_enabled = False
@@ -63,11 +64,6 @@ class MalariaScope:
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.camera.deactivateCamera()
-
-    # def reset(self):
-    #     print("MSCOPE: Resetting hardware")
-    #     self.led.turnOff()
-    #     self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
 
     def getComponentStatus(self) -> Dict:
         """Returns a dictionary of component to initialization status.
