@@ -92,7 +92,7 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            skipped_states = ["autofocus"]
+            skipped_states = ["autofocus", "fastflow"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -334,6 +334,7 @@ class ScopeOp(QObject, Machine):
             self.to_intermission()
         else:
             # Record timestamp before running routines
+            # TODO change this to RTC
             self.image_metadata["timestamp"] = datetime.now().strftime("%Y-%m-%d-%H%M%S")
             self.image_metadata["im_counter"] = self.count
 
@@ -369,8 +370,8 @@ class ScopeOp(QObject, Machine):
                     return
 
             self.image_metadata["motor_pos"] = self.mscope.motor.pos
-            self.image_metadata["pressure_hpa"] = self.mscope.pressure_module.getPressure()
-            self.image_metadata["syringe_pos"] = self.count
+            self.image_metadata["pressure_hpa"] = self.mscope.pneumatic_module.getPressure()
+            self.image_metadata["syringe_pos"] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.image_metadata["flowrate"] = flowrate
             self.image_metadata["temperature"] = self.mscope.ht_sensor.getRelativeHumidity()
             self.image_metadata["humidity"] = self.mscope.ht_sensor.getTemperature()
