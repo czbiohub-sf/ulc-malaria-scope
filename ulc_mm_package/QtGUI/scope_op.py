@@ -7,6 +7,7 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 import numpy as np
 
+from datetime import datetime
 from transitions import Machine
 from time import perf_counter, sleep
 
@@ -26,10 +27,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
 )
 
-# TODO figure out how to disconnect img_signal so it's not running after reset
 # TODO populate info?
-# TODO get rid of infopanel dict, etc.
-# TODO get rid of timer signal
+# TODO remove -1 flag from TH sensor?
 
 
 class ScopeOp(QObject, Machine):
@@ -334,6 +333,9 @@ class ScopeOp(QObject, Machine):
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
+            # Record timestamp before running routines
+            self.image_metadata["timestamp"] = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+            self.image_metadata["im_counter"] = self.count
 
             self.update_img_count.emit(self.count)
 
@@ -366,6 +368,18 @@ class ScopeOp(QObject, Machine):
                     )
                     return
 
+            self.image_metadata["motor_pos"] = self.mscope.motor.pos
+            self.image_metadata["pressure_hpa"] = self.mscope.pressure_module.getPressure()
+            self.image_metadata["syringe_pos"] = self.count
+            self.image_metadata["flowrate"] = flowrate
+            self.image_metadata["temperature"] = self.mscope.ht_sensor.getRelativeHumidity()
+            self.image_metadata["humidity"] = self.mscope.ht_sensor.getTemperature()
+
+            print(self.image_metadata)
+
+
+
+            # Populate per image metadata
             # # TODO populate this and add brightness, focus, and parasitemia count
             # self.image_metadata = {
             #     "im_counter" : self.count,
