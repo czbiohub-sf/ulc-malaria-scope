@@ -27,12 +27,9 @@ from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
 )
 
-<<<<<<< HEAD
 # TODO populate info?
 # TODO remove -1 flag from TH sensor?
 
-=======
->>>>>>> master
 
 class ScopeOp(QObject, Machine):
     setup_done = pyqtSignal()
@@ -376,7 +373,8 @@ class ScopeOp(QObject, Machine):
                     )
                     return
 
-            self.image_metadata["motor_pos"] = self.mscope.motor.pos
+            # Update remaining metadata
+            self.image_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
             self.image_metadata["pressure_hpa"] = self.mscope.pneumatic_module.getPressure()
             self.image_metadata["syringe_pos"] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.image_metadata["flowrate"] = flowrate
@@ -384,21 +382,6 @@ class ScopeOp(QObject, Machine):
             self.image_metadata["humidity"] = self.mscope.ht_sensor.getTemperature()
 
             print(self.image_metadata)
-
-
-
-            # Populate per image metadata
-            # # TODO populate this and add brightness, focus, and parasitemia count
-            # self.image_metadata = {
-            #     "im_counter" : self.count,
-            #     "timestamp" : None,
-            #     "motor_pos" : None,
-            #     "pressure_hpa" : None,
-            #     "syringe_pos" : None,
-            #     "flowrate" : flowrate,
-            #     "temperature" : None,
-            #     "humidity" : None,
-            # }
 
             self.count += 1
             self.img_signal.connect(self.run_experiment)

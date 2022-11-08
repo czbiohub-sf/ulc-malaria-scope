@@ -10,12 +10,7 @@ Adafruit's PCF8523 Python library:
 import adafruit_sht31d
 import board
 
-
-class TemperatureSensorNotInstantiated(Exception):
-    """Raised when the Adafruit SHT3x can not be instantiated."""
-
-    def __init__(self):
-        super().__init__("Could not instantiate temperature/humidity sensor.")
+from ulc_mm_package.hardware.sht31d_temphumiditysensor import TemperatureSensorNotInstantiated
 
 
 class SHT3X:

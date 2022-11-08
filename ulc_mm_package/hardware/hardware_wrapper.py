@@ -15,6 +15,9 @@ Usage:   Define a new hardware class as
 
          There should be a real and simulated version of this hardware under hardware/real
          and hardware/sim, respectively. Ensure filenames and class names are identical.
+
+         Note that all exceptions should be declared in the hardware wrapper file. The exception
+         can then be imported into real or simulated hardware files as necessary.
 """
 
 import inspect
