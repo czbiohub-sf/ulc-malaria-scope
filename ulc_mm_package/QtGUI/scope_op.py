@@ -339,7 +339,7 @@ class ScopeOp(QObject, Machine):
         else:
             # Record timestamp before running routines
             # TODO change this to RTC
-            self.image_metadata["timestamp"] = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+            self.image_metadata["timestamp"] = self.mscope.rtc.get_time()
             self.image_metadata["im_counter"] = self.count
 
             self.update_img_count.emit(self.count)

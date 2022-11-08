@@ -1,5 +1,10 @@
+import time
+
+from datetime import date
+
+
 class RTC_PCF8523:
-    """A simplistic (and somewhwat gratuitous) wrapper class for Adafruit's PCF8523 library"""
+    """A simplistic (and somewhat gratuitous) wrapper class for Adafruit's PCF8523 library"""
 
     def __init__(self):
         pass
@@ -24,4 +29,4 @@ class RTC_PCF8523:
             - tm_wday (day of the week as a number, ranges from [0-6] with Monday being 0)
             - tm_yday (day of the year, ranges from [1-366])
         """
-        return "OK"
+        return "DATETIME HERE"
