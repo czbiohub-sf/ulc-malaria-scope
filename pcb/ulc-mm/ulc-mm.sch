@@ -9,7 +9,7 @@ Date "2021-09-14"
 Rev "A"
 Comp "Chan Zuckerberg Biohub"
 Comment1 "Bioengineering Platform"
-Comment2 "PN: 5-0005, 5-0006"
+Comment2 "PN: 5-0005, 5-0006, 5-0008"
 Comment3 ""
 Comment4 ""
 $EndDescr
@@ -52,32 +52,32 @@ DRV_RESET
 $Comp
 L Mechanical:MountingHole_Pad MK1
 U 1 1 5834FB2E
-P 7785 10505
-F 0 "MK1" H 7885 10551 50  0000 L CNN
-F 1 "M2.5" H 7885 10460 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 7785 10505 60  0001 C CNN
-F 3 "" H 7785 10505 60  0001 C CNN
-	1    7785 10505
+P 7780 10285
+F 0 "MK1" H 7880 10331 50  0000 L CNN
+F 1 "M2.5" H 7880 10240 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 7780 10285 60  0001 C CNN
+F 3 "" H 7780 10285 60  0001 C CNN
+	1    7780 10285
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole_Pad MK2
 U 1 1 5834FC19
-P 8005 10855
-F 0 "MK2" H 8105 10901 50  0000 L CNN
-F 1 "M2.5" H 8105 10810 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 8005 10855 60  0001 C CNN
-F 3 "" H 8005 10855 60  0001 C CNN
-	1    8005 10855
+P 8000 10635
+F 0 "MK2" H 8100 10681 50  0000 L CNN
+F 1 "M2.5" H 8100 10590 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 8000 10635 60  0001 C CNN
+F 3 "" H 8000 10635 60  0001 C CNN
+	1    8000 10635
 	1    0    0    -1  
 $EndComp
-Text Notes 7845 10365 0    50   ~ 0
+Text Notes 7840 10145 0    50   ~ 0
 Main PCB Mounting Holes
 Wire Wire Line
 	2925 1375 2925 1475
 Text Notes 7900 995  0    98   ~ 0
 Power
-Text Notes 1845 4155 0    98   ~ 0
+Text Notes 1820 3985 0    98   ~ 0
 Pneumatic Control
 Text Notes 13400 825  0    98   ~ 0
 LED Driver
@@ -85,46 +85,19 @@ Text Notes 12890 4235 0    98   ~ 0
 Peripherals
 Text Notes 2150 825  0    98   ~ 0
 RPi GPIO
-Text Notes 1920 4355 0    39   ~ 0
+Text Notes 1895 4185 0    39   ~ 0
 Pressure sensor breakout board will be \nmounted separately from the PCB.
-Text Notes 2955 4665 0    30   ~ 0
+Text Notes 2935 4435 0    30   ~ 0
 I2C addr = 0x18 (unchangeable)
-$Comp
-L ODMeter-cache:+3.3V #PWR08
-U 1 1 6122290A
-P 2850 5050
-F 0 "#PWR08" H 2850 4900 50  0001 C CNN
-F 1 "+3.3V" H 2865 5223 50  0000 C CNN
-F 2 "" H 2850 5050 50  0001 C CNN
-F 3 "" H 2850 5050 50  0001 C CNN
-	1    2850 5050
-	1    0    0    -1  
-$EndComp
-NoConn ~ 3150 5150
-$Comp
-L power:GND #PWR09
-U 1 1 6122663C
-P 2850 5250
-F 0 "#PWR09" H 2850 5000 50  0001 C CNN
-F 1 "GND" H 2855 5077 50  0000 C CNN
-F 2 "" H 2850 5250 50  0001 C CNN
-F 3 "" H 2850 5250 50  0001 C CNN
-	1    2850 5250
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
-	2850 5050 3150 5050
+	2585 5115 2460 5115
 Wire Wire Line
-	2850 5250 3150 5250
-Wire Wire Line
-	3150 5350 3025 5350
-Wire Wire Line
-	3150 5450 3025 5450
-Text Label 3025 5350 0    39   ~ 0
-SCL
-Text Label 3025 5450 0    39   ~ 0
-SDA
-Text Notes 4105 4590 2    59   ~ 0
+	2585 5215 2460 5215
+Text Label 2460 5115 0    39   ~ 0
+R_SCL
+Text Label 2460 5215 0    39   ~ 0
+R_SDA
+Text Notes 4090 4345 2    59   ~ 0
 Pressure Sensor Breakout Board
 Text Notes 11740 4075 2    59   ~ 0
 Temp/Humidity Sensor
@@ -202,50 +175,6 @@ F 3 "" H 7965 8760 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector:TestPoint TP2
-U 1 1 616B83BB
-P 8590 8760
-F 0 "TP2" V 8544 8948 50  0000 L CNN
-F 1 "5V" V 8635 8948 50  0000 L CNN
-F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8790 8760 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8790 8760 50  0001 C CNN
-	1    8590 8760
-	0    1    1    0   
-$EndComp
-$Comp
-L Connector:TestPoint TP3
-U 1 1 616BDB4B
-P 9190 8760
-F 0 "TP3" V 9144 8948 50  0000 L CNN
-F 1 "3.3V" V 9235 8948 50  0000 L CNN
-F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 9390 8760 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 9390 8760 50  0001 C CNN
-	1    9190 8760
-	0    1    1    0   
-$EndComp
-$Comp
-L power:+5V #PWR036
-U 1 1 616C8C69
-P 8590 8760
-F 0 "#PWR036" H 8590 8610 50  0001 C CNN
-F 1 "+5V" H 8605 8933 50  0000 C CNN
-F 2 "" H 8590 8760 50  0001 C CNN
-F 3 "" H 8590 8760 50  0001 C CNN
-	1    8590 8760
-	1    0    0    -1  
-$EndComp
-$Comp
-L ODMeter-cache:+3.3V #PWR040
-U 1 1 616CF3DC
-P 9190 8760
-F 0 "#PWR040" H 9190 8610 50  0001 C CNN
-F 1 "+3.3V" H 9205 8933 50  0000 C CNN
-F 2 "" H 9190 8760 50  0001 C CNN
-F 3 "" H 9190 8760 50  0001 C CNN
-	1    9190 8760
-	1    0    0    -1  
-$EndComp
-$Comp
 L Connector:TestPoint TP4
 U 1 1 616E33D0
 P 8020 9190
@@ -295,7 +224,7 @@ Wire Wire Line
 	10845 6735 10470 6735
 Wire Wire Line
 	10845 6960 11145 6960
-Text Notes 2025 6805 0    98   ~ 0
+Text Notes 2025 6915 0    98   ~ 0
 Shield Connectors\n
 $Comp
 L power:GND #PWR012
@@ -324,18 +253,6 @@ F 2 "Connector_Molex:Molex_PicoBlade_53398-0471_1x04-1MP_P1.25mm_Vertical" H 151
 F 3 "https://www.digikey.com/en/products/detail/molex/0533980467/2421489" H 15120 9120 50  0001 C CNN
 	1    15120 9120
 	1    0    0    1   
-$EndComp
-$Comp
-L malaria_parts:MPR_Pressure_Breakout_Conn J2
-U 1 1 61B8F24D
-P 3350 5250
-F 0 "J2" H 3430 5292 50  0000 L CNN
-F 1 "MPR_Pressure_Breakout_Conn" H 3430 5201 50  0000 L CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" H 3350 5250 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/molex/0901361105/760929" H 3350 5250 50  0001 C CNN
-F 4 "https://www.digikey.com/en/products/detail/molex/0901560145/760736" H 3350 5250 50  0001 C CNN "Mating Conn"
-	1    3350 5250
-	1    0    0    -1  
 $EndComp
 $Comp
 L Transistor_FET:ZVN3306F Q2
@@ -389,101 +306,99 @@ Connection ~ 5125 4700
 $Comp
 L power:GND #PWR032
 U 1 1 613D2EDD
-P 7475 7215
-F 0 "#PWR032" H 7475 6965 50  0001 C CNN
-F 1 "GND" H 7480 7042 50  0000 C CNN
-F 2 "" H 7475 7215 50  0001 C CNN
-F 3 "" H 7475 7215 50  0001 C CNN
-	1    7475 7215
+P 7685 7225
+F 0 "#PWR032" H 7685 6975 50  0001 C CNN
+F 1 "GND" H 7690 7052 50  0000 C CNN
+F 2 "" H 7685 7225 50  0001 C CNN
+F 3 "" H 7685 7225 50  0001 C CNN
+	1    7685 7225
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:C_Small C11
 U 1 1 613F28C7
-P 8450 5640
-F 0 "C11" H 8542 5686 50  0000 L CNN
-F 1 "0.01 uF" H 8542 5595 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0603_1608Metric" H 8450 5640 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/samsung-electro-mechanics/CL10B103KB8NNNC/3886667" H 8450 5640 50  0001 C CNN
-	1    8450 5640
+P 8660 5650
+F 0 "C11" H 8752 5696 50  0000 L CNN
+F 1 "0.01 uF" H 8752 5605 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 8660 5650 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/samsung-electro-mechanics/CL10B103KB8NNNC/3886667" H 8660 5650 50  0001 C CNN
+	1    8660 5650
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	8325 5540 8450 5540
+	8535 5550 8660 5550
 Wire Wire Line
-	8325 5740 8450 5740
+	8535 5750 8660 5750
 $Comp
 L Device:C_Small C4
 U 1 1 61408CA7
-P 5645 6590
-F 0 "C4" H 5470 6640 50  0000 L CNN
-F 1 "0.47 uF" H 5270 6565 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0603_1608Metric" H 5645 6590 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/avx-corporation/06036D474KAT2A/1600431" H 5645 6590 50  0001 C CNN
-	1    5645 6590
+P 5855 6600
+F 0 "C4" H 5680 6650 50  0000 L CNN
+F 1 "0.47 uF" H 5480 6575 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 5855 6600 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/avx-corporation/06036D474KAT2A/1600431" H 5855 6600 50  0001 C CNN
+	1    5855 6600
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR020
 U 1 1 61414576
-P 5645 6690
-F 0 "#PWR020" H 5645 6440 50  0001 C CNN
-F 1 "GND" H 5650 6517 50  0000 C CNN
-F 2 "" H 5645 6690 50  0001 C CNN
-F 3 "" H 5645 6690 50  0001 C CNN
-	1    5645 6690
+P 5855 6700
+F 0 "#PWR020" H 5855 6450 50  0001 C CNN
+F 1 "GND" H 5860 6527 50  0000 C CNN
+F 2 "" H 5855 6700 50  0001 C CNN
+F 3 "" H 5855 6700 50  0001 C CNN
+	1    5855 6700
 	1    0    0    -1  
 $EndComp
-Text Notes 7870 7165 0    39   ~ 0
+Text Notes 8080 7175 0    39   ~ 0
 Current Limit = xVREF / 5 * Rsense\n
 $Comp
 L Device:R_Small R3
 U 1 1 614A3622
-P 6060 6640
-F 0 "R3" H 5920 6725 50  0000 L CNN
-F 1 "499" V 6060 6595 31  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 6060 6640 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD499R/2240098" H 6060 6640 50  0001 C CNN
-	1    6060 6640
+P 6270 6650
+F 0 "R3" H 6130 6735 50  0000 L CNN
+F 1 "499" V 6270 6605 31  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 6270 6650 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD499R/2240098" H 6270 6650 50  0001 C CNN
+	1    6270 6650
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6060 6490 6060 6540
+	6270 6500 6270 6550
 $Comp
 L power:GND #PWR024
 U 1 1 614D4AE8
-P 6060 7305
-F 0 "#PWR024" H 6060 7055 50  0001 C CNN
-F 1 "GND" H 6065 7132 50  0000 C CNN
-F 2 "" H 6060 7305 50  0001 C CNN
-F 3 "" H 6060 7305 50  0001 C CNN
-	1    6060 7305
+P 6270 7315
+F 0 "#PWR024" H 6270 7065 50  0001 C CNN
+F 1 "GND" H 6275 7142 50  0000 C CNN
+F 2 "" H 6270 7315 50  0001 C CNN
+F 3 "" H 6270 7315 50  0001 C CNN
+	1    6270 7315
 	1    0    0    -1  
 $EndComp
-Connection ~ 7475 7165
+Connection ~ 7685 7175
 Wire Wire Line
-	7475 7215 7475 7165
-Text Label 6355 5790 0    39   ~ 0
+	7685 7225 7685 7175
+Text Label 6565 5800 0    39   ~ 0
 STEP
-Text Label 6350 5890 0    39   ~ 0
+Text Label 6560 5900 0    39   ~ 0
 DIR
-NoConn ~ 8125 6740
-NoConn ~ 6675 5990
-Text Label 6350 5490 0    39   ~ 0
+NoConn ~ 8335 6750
+NoConn ~ 6885 6000
+Text Label 6560 5500 0    39   ~ 0
 DRV_SLEEP
 Wire Notes Line
 	475  3750 16075 3750
-Wire Notes Line
-	475  6225 4675 6225
 Wire Notes Line
 	11350 3750 11350 475 
 Wire Notes Line
 	10275 3750 10275 9950
 Wire Notes Line
 	10280 7430 16055 7430
-Text Notes 5785 5550 0    20   ~ 0
+Text Notes 5995 5560 0    20   ~ 0
 nSLEEP and nRESET must be high \nfor operation. Has internal PD.
-Text Label 6350 5590 0    39   ~ 0
+Text Label 6560 5600 0    39   ~ 0
 DRV_RESET
 $Comp
 L Device:C_Small C8
@@ -496,7 +411,7 @@ F 3 "https://www.digikey.com/en/products/detail/rubycon/25YXG47MEFC5X11/3562887"
 	1    6375 4600
 	1    0    0    -1  
 $EndComp
-Text Label 6400 6795 0    39   ~ 0
+Text Label 6610 6805 0    39   ~ 0
 DRV_Vref
 Text Label 10610 2680 2    39   ~ 0
 PGood_Rem_5V
@@ -760,12 +675,12 @@ $EndComp
 $Comp
 L power:+12V #PWR030
 U 1 1 61C13EA5
-P 7375 5055
-F 0 "#PWR030" H 7375 4905 50  0001 C CNN
-F 1 "+12V" H 7390 5228 50  0000 C CNN
-F 2 "" H 7375 5055 50  0001 C CNN
-F 3 "" H 7375 5055 50  0001 C CNN
-	1    7375 5055
+P 7585 5065
+F 0 "#PWR030" H 7585 4915 50  0001 C CNN
+F 1 "+12V" H 7600 5238 50  0000 C CNN
+F 2 "" H 7585 5065 50  0001 C CNN
+F 3 "" H 7585 5065 50  0001 C CNN
+	1    7585 5065
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -797,17 +712,17 @@ R_SERVO_PWM
 $Comp
 L Connector:TestPoint TP6
 U 1 1 6257AF6B
-P 9560 9190
-F 0 "TP6" H 9618 9308 50  0000 L CNN
-F 1 "DRV_VREF" H 9618 9217 50  0000 L CNN
-F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 9760 9190 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 9760 9190 50  0001 C CNN
-	1    9560 9190
+P 8750 8760
+F 0 "TP6" H 8808 8878 50  0000 L CNN
+F 1 "DRV_VREF" H 8808 8787 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8950 8760 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8950 8760 50  0001 C CNN
+	1    8750 8760
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	9235 9190 9560 9190
-Text Label 9235 9190 0    39   ~ 0
+	8425 8760 8750 8760
+Text Label 8425 8760 0    39   ~ 0
 DRV_Vref
 $Comp
 L Connector_Generic:Conn_02x08_Counter_Clockwise J1
@@ -822,10 +737,6 @@ F 3 "https://www.digikey.com/en/products/detail/cnc-tech/3210-16-003-12-00/38827
 $EndComp
 Wire Wire Line
 	3375 7325 3175 7325
-Wire Notes Line
-	10275 8175 4675 8175
-Text Notes 1565 8380 0    47   ~ 0
-Use internal Pi PU
 Text Notes 5375 8700 0    98   ~ 0
 Real Time Clock
 Text Label 5360 9625 0    39   ~ 0
@@ -834,106 +745,60 @@ Text Label 5360 9725 0    39   ~ 0
 SDA
 Wire Wire Line
 	6000 9300 6000 9425
-Text Notes 5265 9690 2    39   ~ 0
-Use Pi PU\n
 Wire Notes Line
 	7450 8175 7450 11225
 Wire Notes Line
 	7450 9950 16050 9950
 Text Notes 13795 1760 0    30   ~ 0
-Lmin = (Vout * (Vin - Vout)) / (Vin * Kind * Iout * Fsw)\nKind = 0.2, Fsw = 600kHz, Vout = 3.7V\nLmin = 60uH, I_Lripple = 70mA\nL = 100uH, I_ripple = 47mA
-Text Label 550  5225 0    39   ~ 0
-VALVE_GPIO
-$Comp
-L power:GND #PWR03
-U 1 1 63CC0ACF
-P 1575 5525
-F 0 "#PWR03" H 1575 5275 50  0001 C CNN
-F 1 "GND" H 1580 5352 50  0000 C CNN
-F 2 "" H 1575 5525 50  0001 C CNN
-F 3 "" H 1575 5525 50  0001 C CNN
-	1    1575 5525
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1575 5425 1575 5450
-Wire Wire Line
-	925  5450 925  5225
-Connection ~ 1575 5450
-Wire Wire Line
-	1575 5450 1575 5525
-Text Label 1575 4850 3    39   ~ 0
-VALVE
-$Comp
-L Device:R_Small R1
-U 1 1 63CC0AEB
-P 1100 5225
-F 0 "R1" V 1025 5225 50  0000 C CNN
-F 1 "330" V 1100 5225 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" H 1100 5225 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 1100 5225 50  0001 C CNN
-	1    1100 5225
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	1275 5225 1200 5225
-Wire Wire Line
-	1000 5225 925  5225
-Connection ~ 925  5225
-Wire Wire Line
-	925  5225 550  5225
-Wire Wire Line
-	925  5450 1225 5450
-Text Notes 1900 4600 2    59   ~ 0
-Valve Switch
+Lmin = (Vout * (Vin - Vout)) / (Vin * Kind * Iout * Fsw)\nKind = 0.2, Fsw = 600kHz, Vout = 3.7V\nLmin = 60uH, I_Lripple = 70mA\nL = 100uH, I_ripple = 40mA\nL = 220uH, I_ripple = 18.5mA\nL = 330uH, I_ripple = 12.3mA
 Text Label 15245 8445 1    39   ~ 0
 R_VALVE
 Wire Wire Line
-	6350 5490 6675 5490
+	6560 5500 6885 5500
 Wire Wire Line
-	6350 5590 6675 5590
+	6560 5600 6885 5600
 Wire Wire Line
-	6350 5890 6675 5890
-Connection ~ 6060 6490
+	6560 5900 6885 5900
+Connection ~ 6270 6500
 Wire Wire Line
-	6675 6690 6675 6790
+	6885 6700 6885 6800
 Wire Wire Line
-	7575 7165 7575 7040
+	7785 7175 7785 7050
 Wire Wire Line
-	7475 7165 7575 7165
+	7685 7175 7785 7175
 Wire Wire Line
-	7375 7165 7375 7040
+	7585 7175 7585 7050
 Wire Wire Line
-	7375 7165 7475 7165
+	7585 7175 7685 7175
 Wire Wire Line
-	7475 7040 7475 7165
+	7685 7050 7685 7175
 Wire Wire Line
-	8125 5590 8325 5590
+	8335 5600 8535 5600
 Wire Wire Line
-	8325 5590 8325 5540
+	8535 5600 8535 5550
 Wire Wire Line
-	8125 5690 8325 5690
+	8335 5700 8535 5700
 Wire Wire Line
-	8325 5690 8325 5740
-Text Label 8450 5940 2    39   ~ 0
+	8535 5700 8535 5750
+Text Label 8660 5950 2    39   ~ 0
 S2
-Text Label 8450 5840 2    39   ~ 0
+Text Label 8660 5850 2    39   ~ 0
 S1
 Wire Wire Line
-	8450 5940 8125 5940
+	8660 5950 8335 5950
 Wire Wire Line
-	8450 5840 8125 5840
-Text Label 8450 6190 2    39   ~ 0
+	8660 5850 8335 5850
+Text Label 8660 6200 2    39   ~ 0
 S4
-Text Label 8450 6090 2    39   ~ 0
+Text Label 8660 6100 2    39   ~ 0
 S3
 Wire Wire Line
-	8450 6190 8125 6190
+	8660 6200 8335 6200
 Wire Wire Line
-	8450 6090 8125 6090
-Text Label 9020 6710 2    39   ~ 0
+	8660 6100 8335 6100
+Text Label 9230 6720 2    39   ~ 0
 DRV_FAULT
-Text Notes 13060 3020 2    39   ~ 0
+Text Notes 13060 3130 2    39   ~ 0
 Ven > 2.07 V locks onto analog dimming mode.\nRecommended PWM freq > 10kHz.\nPWM/EN includes internal pulldown.
 Text Notes 15825 3100 2    39   ~ 0
 Rsense = Vref / I_led, Vref = 200mV @ 100% DC
@@ -991,27 +856,27 @@ Wire Wire Line
 $Comp
 L Device:R_Small R7
 U 1 1 65181848
-P 8325 6340
-F 0 "R7" V 8250 6290 50  0000 L CNN
-F 1 "2" V 8325 6315 39  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 8325 6340 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/bourns-inc/CRT0603-BY-10R0ELF/1775018" H 8325 6340 50  0001 C CNN
-	1    8325 6340
+P 8535 6350
+F 0 "R7" V 8460 6300 50  0000 L CNN
+F 1 "2" V 8535 6320 39  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 8535 6350 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/bourns-inc/CRT0603-BY-10R0ELF/1775018" H 8535 6350 50  0001 C CNN
+	1    8535 6350
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	8125 6340 8225 6340
+	8335 6350 8435 6350
 Wire Wire Line
-	8125 6440 8225 6440
+	8335 6450 8435 6450
 $Comp
 L power:GND #PWR035
 U 1 1 6524811D
-P 8495 6445
-F 0 "#PWR035" H 8495 6195 50  0001 C CNN
-F 1 "GND" H 8500 6272 50  0000 C CNN
-F 2 "" H 8495 6445 50  0001 C CNN
-F 3 "" H 8495 6445 50  0001 C CNN
-	1    8495 6445
+P 8705 6455
+F 0 "#PWR035" H 8705 6205 50  0001 C CNN
+F 1 "GND" H 8710 6282 50  0000 C CNN
+F 2 "" H 8705 6455 50  0001 C CNN
+F 3 "" H 8705 6455 50  0001 C CNN
+	1    8705 6455
 	1    0    0    -1  
 $EndComp
 Wire Notes Line
@@ -1097,33 +962,31 @@ Wire Notes Line
 $Comp
 L Device:R_Small R4
 U 1 1 614A4218
-P 6060 7205
-F 0 "R4" H 6119 7243 50  0000 L CNN
-F 1 "4.02k" V 6060 7140 30  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 6060 7205 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD4K02/2240124" H 6060 7205 50  0001 C CNN
-	1    6060 7205
+P 6270 7215
+F 0 "R4" H 6329 7253 50  0000 L CNN
+F 1 "4.02k" V 6270 7150 30  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 6270 7215 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD4K02/2240124" H 6270 7215 50  0001 C CNN
+	1    6270 7215
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R_POT_Small RV1
 U 1 1 615C5CE0
-P 6060 6885
-F 0 "RV1" H 6030 6975 50  0000 R CNN
-F 1 "10k" V 6060 6915 30  0000 R CNN
-F 2 "Potentiometer_THT:Potentiometer_Bourns_3266W_Vertical" H 6060 6885 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/bourns-inc/3266W-1-103LF/1087907" H 6060 6885 50  0001 C CNN
-	1    6060 6885
+P 6270 6895
+F 0 "RV1" H 6240 6985 50  0000 R CNN
+F 1 "10k" V 6270 6925 30  0000 R CNN
+F 2 "Potentiometer_THT:Potentiometer_Bourns_3266W_Vertical" H 6270 6895 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/bourns-inc/3266W-1-103LF/1087907" H 6270 6895 50  0001 C CNN
+	1    6270 6895
 	1    0    0    -1  
 $EndComp
-Text Notes 6325 7580 0    39   ~ 0
+Text Notes 6535 7590 0    39   ~ 0
 Actual adjustable Vref\n———————————\n0k pot: Vref = 2.93V\n10k pot: Vref = 0.91V\nVref min is recommended to be 1V. Potential loss of accuracy <1V.
 Wire Wire Line
 	11495 6410 11495 6535
 Text Label 11495 6410 3    39   ~ 0
 FAN
-Wire Wire Line
-	1575 4850 1575 5025
 $Comp
 L Connector_Generic:Conn_01x02 J5
 U 1 1 61BDEB1F
@@ -1148,81 +1011,79 @@ F 4 "https://www.digikey.com/en/products/detail/adafruit-industries-llc/3922/968
 	1    12320 8090
 	1    0    0    -1  
 $EndComp
-Text Notes 5605 6120 0    20   ~ 0
+Text Notes 5815 6130 0    20   ~ 0
 Leave switches open\nfor full step.
 Wire Wire Line
-	6400 6790 6675 6790
+	6610 6800 6885 6800
 $Comp
 L power:+3.3VP #PWR019
 U 1 1 62051D6D
-P 5490 6140
-F 0 "#PWR019" H 5640 6090 50  0001 C CNN
-F 1 "+3.3VP" H 5505 6313 50  0000 C CNN
-F 2 "" H 5490 6140 50  0001 C CNN
-F 3 "" H 5490 6140 50  0001 C CNN
-	1    5490 6140
+P 5700 6150
+F 0 "#PWR019" H 5850 6100 50  0001 C CNN
+F 1 "+3.3VP" H 5715 6323 50  0000 C CNN
+F 2 "" H 5700 6150 50  0001 C CNN
+F 3 "" H 5700 6150 50  0001 C CNN
+	1    5700 6150
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:+3.3VP #PWR037
 U 1 1 6205368D
-P 8685 6405
-F 0 "#PWR037" H 8835 6355 50  0001 C CNN
-F 1 "+3.3VP" H 8700 6578 50  0000 C CNN
-F 2 "" H 8685 6405 50  0001 C CNN
-F 3 "" H 8685 6405 50  0001 C CNN
-	1    8685 6405
+P 8895 6415
+F 0 "#PWR037" H 9045 6365 50  0001 C CNN
+F 1 "+3.3VP" H 8910 6588 50  0000 C CNN
+F 2 "" H 8895 6415 50  0001 C CNN
+F 3 "" H 8895 6415 50  0001 C CNN
+	1    8895 6415
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	8685 6405 8685 6455
+	8895 6415 8895 6465
 Wire Wire Line
-	8265 6710 8265 6640
+	8475 6720 8475 6650
 Wire Wire Line
-	8265 6640 8125 6640
+	8475 6650 8335 6650
 Wire Wire Line
-	8425 6340 8495 6340
+	8635 6350 8705 6350
 Wire Wire Line
-	8495 6340 8495 6440
+	8705 6350 8705 6450
 Wire Wire Line
-	8425 6440 8495 6440
-Connection ~ 8495 6440
+	8635 6450 8705 6450
+Connection ~ 8705 6450
 Wire Wire Line
-	8495 6440 8495 6445
+	8705 6450 8705 6455
 Wire Wire Line
-	8265 6710 8685 6710
+	8475 6720 8895 6720
 Wire Wire Line
-	8685 6655 8685 6710
+	8895 6665 8895 6720
 Wire Wire Line
-	8685 6710 9020 6710
-Connection ~ 8685 6710
-Connection ~ 6675 6790
+	8895 6720 9230 6720
+Connection ~ 8895 6720
+Connection ~ 6885 6800
 $Comp
 L malaria_parts:DRV8825 U3
 U 1 1 6130E0BD
-P 7425 6190
-F 0 "U3" H 7425 6345 60  0000 C CNN
-F 1 "DRV8825" H 7420 6250 60  0000 C CNN
-F 2 "digikey-footprints:TSSOP-28-1EP_W4.40mm" H 7375 7093 60  0001 C CNN
-F 3 "https://www.ti.com/lit/ds/symlink/drv8825.pdf" H 7375 6987 60  0001 C CNN
-	1    7425 6190
+P 7635 6200
+F 0 "U3" H 7635 6355 60  0000 C CNN
+F 1 "DRV8825" H 7630 6260 60  0000 C CNN
+F 2 "digikey-footprints:TSSOP-28-1EP_W4.40mm" H 7585 7103 60  0001 C CNN
+F 3 "https://www.ti.com/lit/ds/symlink/drv8825.pdf" H 7585 6997 60  0001 C CNN
+	1    7635 6200
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	7475 5150 7475 5190
+	7685 5160 7685 5200
 Wire Wire Line
-	7375 5150 7375 5190
+	7585 5160 7585 5200
 Wire Wire Line
-	7375 5055 7375 5150
-Connection ~ 7375 5150
+	7585 5065 7585 5160
+Connection ~ 7585 5160
 NoConn ~ 2725 1575
 NoConn ~ 2725 1975
 NoConn ~ 2725 2775
 NoConn ~ 2725 2975
 NoConn ~ 2725 2675
 NoConn ~ 2225 2675
-Text Notes 6950 4300 0    39   ~ 0
-no startup seq required
 Connection ~ 5605 2170
 Wire Wire Line
 	5605 2170 5830 2170
@@ -1323,35 +1184,35 @@ Wire Wire Line
 $Comp
 L Switch:SW_DIP_x03 SW2
 U 1 1 658A8E58
-P 6125 6340
-F 0 "SW2" H 6125 6807 50  0000 C CNN
-F 1 "DIP SWITCH" H 6125 6716 50  0000 C CNN
-F 2 "Button_Switch_SMD:SW_DIP_SPSTx03_Slide_6.7x9.18mm_W8.61mm_P2.54mm_LowProfile" H 6125 6340 50  0001 C CNN
-F 3 "https://www.ctscorp.com/wp-content/uploads/219.pdf" H 6125 6340 50  0001 C CNN
-	1    6125 6340
+P 6335 6350
+F 0 "SW2" H 6335 6817 50  0000 C CNN
+F 1 "DIP SWITCH" H 6335 6726 50  0000 C CNN
+F 2 "Button_Switch_SMD:SW_DIP_SPSTx03_Slide_6.7x9.18mm_W8.61mm_P2.54mm_LowProfile" H 6335 6350 50  0001 C CNN
+F 3 "https://www.ctscorp.com/wp-content/uploads/219.pdf" H 6335 6350 50  0001 C CNN
+	1    6335 6350
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5490 6140 5490 6240
-Connection ~ 5490 6140
-Connection ~ 5490 6240
+	5700 6150 5700 6250
+Connection ~ 5700 6150
+Connection ~ 5700 6250
 Wire Wire Line
-	5490 6240 5490 6340
-Connection ~ 5490 6340
+	5700 6250 5700 6350
+Connection ~ 5700 6350
 Wire Wire Line
-	5490 6340 5490 6490
+	5700 6350 5700 6500
 Wire Wire Line
-	5490 6140 5825 6140
+	5700 6150 6035 6150
 Wire Wire Line
-	5490 6240 5825 6240
+	5700 6250 6035 6250
 Wire Wire Line
-	5490 6340 5825 6340
+	5700 6350 6035 6350
 Wire Wire Line
-	6425 6140 6675 6140
+	6635 6150 6885 6150
 Wire Wire Line
-	6425 6240 6675 6240
+	6635 6250 6885 6250
 Wire Wire Line
-	6425 6340 6675 6340
+	6635 6350 6885 6350
 $Comp
 L Timer_RTC:DS3231M U1
 U 1 1 65B485CD
@@ -1392,17 +1253,6 @@ $EndComp
 NoConn ~ 6500 9625
 NoConn ~ 6500 9925
 $Comp
-L ODMeter-cache:+3.3V #PWR022
-U 1 1 65BBE90C
-P 5900 9130
-F 0 "#PWR022" H 5900 8980 50  0001 C CNN
-F 1 "+3.3V" H 5915 9303 50  0000 C CNN
-F 2 "" H 5900 9130 50  0001 C CNN
-F 3 "" H 5900 9130 50  0001 C CNN
-	1    5900 9130
-	1    0    0    -1  
-$EndComp
-$Comp
 L Device:C_Small C5
 U 1 1 65C1B0FF
 P 5690 9190
@@ -1427,8 +1277,6 @@ F 3 "" H 5400 9190 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5900 9130 5900 9190
-Wire Wire Line
 	5500 9625 5360 9625
 Wire Wire Line
 	5500 9725 5360 9725
@@ -1450,28 +1298,28 @@ F 3 "" H 6000 10225 50  0001 C CNN
 $EndComp
 NoConn ~ 5500 10025
 Wire Wire Line
-	6060 6740 6060 6785
+	6270 6750 6270 6795
 Wire Wire Line
-	6160 6885 6195 6885
+	6370 6895 6405 6895
 Wire Wire Line
-	6195 6885 6195 6985
+	6405 6895 6405 6995
 Wire Wire Line
-	6195 6985 6060 6985
+	6405 6995 6270 6995
 Wire Wire Line
-	6060 6985 6060 7105
-Connection ~ 6060 6985
+	6270 6995 6270 7115
+Connection ~ 6270 6995
 Wire Wire Line
-	6060 6490 6675 6490
+	6270 6500 6885 6500
 Wire Wire Line
-	6195 6985 6400 6985
+	6405 6995 6610 6995
 Wire Wire Line
-	6400 6985 6400 6790
-Connection ~ 6195 6985
-Connection ~ 5645 6490
+	6610 6995 6610 6800
+Connection ~ 6405 6995
+Connection ~ 5855 6500
 Wire Wire Line
-	5645 6490 5490 6490
+	5855 6500 5700 6500
 Wire Wire Line
-	5645 6490 6060 6490
+	5855 6500 6270 6500
 Text Notes 13765 4475 2    59   ~ 0
 LED Indicators\n
 Wire Wire Line
@@ -1494,27 +1342,14 @@ F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866
 	0    -1   -1   0   
 $EndComp
 $Comp
-L Device:R_Small R2
-U 1 1 66944006
-P 1325 5450
-F 0 "R2" V 1390 5400 50  0000 L CNN
-F 1 "10k" V 1325 5375 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 1325 5450 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 1325 5450 50  0001 C CNN
-	1    1325 5450
-	0    -1   -1   0   
-$EndComp
-Wire Wire Line
-	1425 5450 1575 5450
-$Comp
 L Device:R_Small R9
 U 1 1 669C2E0E
-P 8685 6555
-F 0 "R9" V 8750 6505 50  0000 L CNN
-F 1 "10k" V 8685 6480 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 8685 6555 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 8685 6555 50  0001 C CNN
-	1    8685 6555
+P 8895 6565
+F 0 "R9" V 8960 6515 50  0000 L CNN
+F 1 "10k" V 8895 6490 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 8895 6565 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 8895 6565 50  0001 C CNN
+	1    8895 6565
 	-1   0    0    1   
 $EndComp
 Text Label 13970 5515 0    39   ~ 0
@@ -1522,26 +1357,13 @@ PGood_Rem_5V
 Text Notes 12955 4365 0    39   ~ 0
 Vf = 2.15V, If (ideal) = approx. 20mA
 $Comp
-L Device:R_Small R15
-U 1 1 66CC7D2E
-P 14630 5515
-F 0 "R15" V 14555 5515 50  0000 C CNN
-F 1 "330" V 14630 5515 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" H 14630 5515 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 14630 5515 50  0001 C CNN
-	1    14630 5515
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	14730 5515 14825 5515
-$Comp
 L Device:R_Small R16
 U 1 1 66D4542D
 P 14800 5750
 F 0 "R16" V 14865 5700 50  0000 L CNN
-F 1 "10k" V 14800 5675 50  0000 L CNN
+F 1 "1M" V 14795 5685 50  0000 L CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 14800 5750 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 14800 5750 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/rohm-semiconductor/ESR03EZPJ105/4051181" H 14800 5750 50  0001 C CNN
 	1    14800 5750
 	0    -1   -1   0   
 $EndComp
@@ -1552,8 +1374,6 @@ Wire Wire Line
 Wire Wire Line
 	14505 5750 14505 5515
 Connection ~ 14505 5515
-Wire Wire Line
-	14505 5515 14530 5515
 $Comp
 L power:GND #PWR066
 U 1 1 66DDFF11
@@ -1588,14 +1408,14 @@ L Connector:TestPoint TP7
 U 1 1 66F74BDE
 P 8020 9590
 F 0 "TP7" H 8078 9708 50  0000 L CNN
-F 1 "VLED" H 8078 9617 50  0000 L CNN
+F 1 "VLED-" H 8078 9617 50  0000 L CNN
 F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 8220 9590 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/keystone-electronics/5006/255330" H 8220 9590 50  0001 C CNN
 	1    8020 9590
 	1    0    0    -1  
 $EndComp
 Text Label 7820 9590 0    47   ~ 0
-Vled+
+Vled-
 Wire Wire Line
 	7820 9590 8020 9590
 $Comp
@@ -1649,26 +1469,13 @@ F 3 "https://www.digikey.com/en/products/detail/american-opto-plus-led/L152L-GC/
 	0    -1   -1   0   
 $EndComp
 $Comp
-L Device:R_Small R20
-U 1 1 618903A5
-P 12955 5510
-F 0 "R20" V 12880 5510 50  0000 C CNN
-F 1 "330" V 12955 5510 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" H 12955 5510 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 12955 5510 50  0001 C CNN
-	1    12955 5510
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	13055 5510 13150 5510
-$Comp
 L Device:R_Small R21
 U 1 1 618903AC
 P 13125 5745
 F 0 "R21" V 13190 5695 50  0000 L CNN
-F 1 "10k" V 13125 5670 50  0000 L CNN
+F 1 "1M" V 13120 5685 50  0000 L CNN
 F 2 "Resistor_SMD:R_0603_1608Metric" H 13125 5745 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 13125 5745 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/rohm-semiconductor/ESR03EZPJ105/4051181" H 13125 5745 50  0001 C CNN
 	1    13125 5745
 	0    -1   -1   0   
 $EndComp
@@ -1679,8 +1486,6 @@ Wire Wire Line
 Wire Wire Line
 	12830 5745 12830 5510
 Connection ~ 12830 5510
-Wire Wire Line
-	12830 5510 12855 5510
 $Comp
 L power:GND #PWR0101
 U 1 1 618903B7
@@ -1724,45 +1529,45 @@ Connection ~ 11155 5380
 $Comp
 L Mechanical:Mounting_Hole MK5
 U 1 1 61859C5F
-P 9290 10535
-F 0 "MK5" H 9390 10581 50  0000 L CNN
-F 1 "M2.5" H 9390 10490 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.7mm_M2.5" H 9290 10535 60  0001 C CNN
-F 3 "" H 9290 10535 60  0001 C CNN
-	1    9290 10535
+P 9260 10300
+F 0 "MK5" H 9360 10346 50  0000 L CNN
+F 1 "M2.5" H 9360 10255 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.7mm_M2.5" H 9260 10300 60  0001 C CNN
+F 3 "" H 9260 10300 60  0001 C CNN
+	1    9260 10300
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:Mounting_Hole MK7
 U 1 1 61859C65
-P 9740 10535
-F 0 "MK7" H 9840 10581 50  0000 L CNN
-F 1 "M2.5" H 9840 10490 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.7mm_M2.5" H 9740 10535 60  0001 C CNN
-F 3 "" H 9740 10535 60  0001 C CNN
-	1    9740 10535
+P 9710 10300
+F 0 "MK7" H 9810 10346 50  0000 L CNN
+F 1 "M2.5" H 9810 10255 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.7mm_M2.5" H 9710 10300 60  0001 C CNN
+F 3 "" H 9710 10300 60  0001 C CNN
+	1    9710 10300
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:Mounting_Hole MK6
 U 1 1 61859C6B
-P 9290 10735
-F 0 "MK6" H 9390 10781 50  0000 L CNN
-F 1 "M2.5" H 9390 10690 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.7mm_M2.5" H 9290 10735 60  0001 C CNN
-F 3 "" H 9290 10735 60  0001 C CNN
-	1    9290 10735
+P 9260 10500
+F 0 "MK6" H 9360 10546 50  0000 L CNN
+F 1 "M2.5" H 9360 10455 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.7mm_M2.5" H 9260 10500 60  0001 C CNN
+F 3 "" H 9260 10500 60  0001 C CNN
+	1    9260 10500
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:Mounting_Hole MK8
 U 1 1 61859C71
-P 9740 10735
-F 0 "MK8" H 9840 10781 50  0000 L CNN
-F 1 "M2.5" H 9840 10690 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.7mm_M2.5" H 9740 10735 60  0001 C CNN
-F 3 "" H 9740 10735 60  0001 C CNN
-	1    9740 10735
+P 9710 10500
+F 0 "MK8" H 9810 10546 50  0000 L CNN
+F 1 "M2.5" H 9810 10455 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.7mm_M2.5" H 9710 10500 60  0001 C CNN
+F 3 "" H 9710 10500 60  0001 C CNN
+	1    9710 10500
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1777,7 +1582,7 @@ F 3 "https://www.digikey.com/en/products/detail/oupiin/2047-2X20G00S1U/13251087"
 	1    0    0    -1  
 $EndComp
 Wire Notes Line
-	4675 475  4675 11225
+	4885 475  4885 11225
 Text Label 3875 1775 2    50   ~ 0
 LS2
 $Comp
@@ -1817,12 +1622,12 @@ $EndComp
 $Comp
 L Device:R_Small R8
 U 1 1 61689AD0
-P 8325 6440
-F 0 "R8" V 8400 6395 50  0000 L CNN
-F 1 "2" V 8325 6410 39  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 8325 6440 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS06032R00FKEA/5868183" H 8325 6440 50  0001 C CNN
-	1    8325 6440
+P 8535 6450
+F 0 "R8" V 8610 6405 50  0000 L CNN
+F 1 "2" V 8535 6420 39  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 8535 6450 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/bourns-inc/CRT0603-BY-10R0ELF/1775018" H 8535 6450 50  0001 C CNN
+	1    8535 6450
 	0    1    1    0   
 $EndComp
 $Comp
@@ -1942,7 +1747,7 @@ Wire Wire Line
 Text Label 1075 2975 0    50   ~ 0
 LED_PWM
 Wire Wire Line
-	6475 5790 6355 5790
+	6685 5800 6565 5800
 Wire Wire Line
 	13540 8975 13430 8975
 Wire Wire Line
@@ -1965,19 +1770,19 @@ $EndComp
 $Comp
 L Device:R_Small R23
 U 1 1 6214E301
-P 6575 5790
-F 0 "R23" V 6500 5790 50  0000 C CNN
-F 1 "100" V 6570 5790 39  0000 C CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 6575 5790 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD100R/2240086" H 6575 5790 50  0001 C CNN
-	1    6575 5790
+P 6785 5800
+F 0 "R23" V 6710 5800 50  0000 C CNN
+F 1 "100" V 6780 5800 39  0000 C CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 6785 5800 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP0603FTD100R/2240086" H 6785 5800 50  0001 C CNN
+	1    6785 5800
 	0    1    1    0   
 $EndComp
-Text Label 6350 5390 0    39   ~ 0
+Text Label 6560 5400 0    39   ~ 0
 DRV_EN
 Wire Wire Line
-	6350 5390 6675 5390
-Text Notes 5790 5395 0    20   ~ 0
+	6560 5400 6885 5400
+Text Notes 6000 5405 0    20   ~ 0
 nENBL low to energize motor.
 Text Label 1075 2875 0    50   ~ 0
 DRV_EN
@@ -1986,44 +1791,44 @@ Wire Wire Line
 NoConn ~ 2225 2475
 NoConn ~ 2225 2575
 Wire Wire Line
-	8560 5150 8560 5185
+	8770 5160 8770 5195
 Wire Wire Line
-	8560 5385 8560 5440
+	8770 5395 8770 5450
 Wire Wire Line
-	7475 5150 7375 5150
-Connection ~ 7475 5150
-Connection ~ 8375 5440
+	7685 5160 7585 5160
+Connection ~ 7685 5160
+Connection ~ 8585 5450
 Wire Wire Line
-	8560 5440 8375 5440
+	8770 5450 8585 5450
 Wire Wire Line
-	8125 5440 8375 5440
+	8335 5450 8585 5450
 $Comp
 L Device:C_Small C10
 U 1 1 64DED071
-P 8375 5340
-F 0 "C10" H 8465 5285 50  0000 L CNN
-F 1 "0.1 uF" H 8450 5350 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0603_1608Metric" H 8375 5340 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/kemet/C0603C104M3RACAUTO/10642429" H 8375 5340 50  0001 C CNN
-	1    8375 5340
+P 8585 5350
+F 0 "C10" H 8675 5295 50  0000 L CNN
+F 1 "0.1 uF" H 8660 5360 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 8585 5350 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/kemet/C0603C104M3RACAUTO/10642429" H 8585 5350 50  0001 C CNN
+	1    8585 5350
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
-	8375 5150 8560 5150
+	8585 5160 8770 5160
 Wire Wire Line
-	7475 5150 8375 5150
-Connection ~ 8375 5150
+	7685 5160 8585 5160
+Connection ~ 8585 5160
 Wire Wire Line
-	8375 5150 8375 5240
+	8585 5160 8585 5250
 $Comp
 L Device:R_Small R26
 U 1 1 61C72354
-P 8560 5285
-F 0 "R26" H 8619 5331 50  0000 L CNN
-F 1 "1M" V 8560 5225 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 8560 5285 50  0001 C CNN
-F 3 "https://www.digikey.com/en/products/detail/rohm-semiconductor/ESR03EZPJ105/4051181" H 8560 5285 50  0001 C CNN
-	1    8560 5285
+P 8770 5295
+F 0 "R26" H 8829 5341 50  0000 L CNN
+F 1 "1M" V 8770 5235 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 8770 5295 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/rohm-semiconductor/ESR03EZPJ105/4051181" H 8770 5295 50  0001 C CNN
+	1    8770 5295
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2032,9 +1837,9 @@ U 1 1 62B44FF4
 P 1865 8860
 F 0 "J11" H 1945 8902 50  0000 L CNN
 F 1 "ENCODER" H 1945 8811 50  0000 L CNN
-F 2 "Connector_Molex:Molex_CLIK-Mate_502443-0570_1x05-1MP_P2.00mm_Vertical" H 1865 8860 50  0001 C CNN
-F 3 "https://www.molex.com/webdocs/datasheets/pdf/en-us/5024430570_PCB_RECEPTACLES.pdf" H 1865 8860 50  0001 C CNN
-F 4 "https://www.molex.com/molex/products/part-detail/crimp_housings/5024390500" H 1865 8860 50  0001 C CNN "Mating Conn"
+F 2 "Connector_Molex:Molex_PicoBlade_53398-0571_1x05-1MP_P1.25mm_Vertical" H 1865 8860 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0533980571/699069" H 1865 8860 50  0001 C CNN
+F 4 "https://www.digikey.com/en/products/detail/molex/0151340501/6198151" H 1865 8860 50  0001 C CNN "Mating Conn"
 	1    1865 8860
 	1    0    0    -1  
 $EndComp
@@ -2094,8 +1899,6 @@ Text Label 1075 1975 0    50   ~ 0
 INT
 Wire Wire Line
 	2115 7970 2610 7970
-NoConn ~ 2225 2075
-NoConn ~ 2225 2275
 Wire Wire Line
 	2570 7570 2115 7570
 Wire Wire Line
@@ -2182,12 +1985,12 @@ $EndComp
 $Comp
 L power:+3.3VA #PWR0104
 U 1 1 61DE4F00
-P 1745 2175
-F 0 "#PWR0104" H 1745 2025 50  0001 C CNN
-F 1 "+3.3VA" H 1735 2325 50  0000 C CNN
-F 2 "" H 1745 2175 50  0001 C CNN
-F 3 "" H 1745 2175 50  0001 C CNN
-	1    1745 2175
+P 940 2175
+F 0 "#PWR0104" H 940 2025 50  0001 C CNN
+F 1 "+3.3VA" H 930 2325 50  0000 C CNN
+F 2 "" H 940 2175 50  0001 C CNN
+F 3 "" H 940 2175 50  0001 C CNN
+	1    940  2175
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2267,36 +2070,21 @@ Wire Wire Line
 	10755 4680 10680 4680
 Wire Wire Line
 	11620 4465 11620 4680
-Wire Wire Line
-	1745 2175 2225 2175
 $Comp
 L power:GND #PWR0126
 U 1 1 628DB106
-P 2070 2270
-F 0 "#PWR0126" H 2070 2020 50  0001 C CNN
-F 1 "GND" H 2075 2097 50  0000 C CNN
-F 2 "" H 2070 2270 50  0001 C CNN
-F 3 "" H 2070 2270 50  0001 C CNN
-	1    2070 2270
+P 2070 2335
+F 0 "#PWR0126" H 2070 2085 50  0001 C CNN
+F 1 "GND" H 2075 2162 50  0000 C CNN
+F 2 "" H 2070 2335 50  0001 C CNN
+F 3 "" H 2070 2335 50  0001 C CNN
+	1    2070 2335
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
 	2225 1775 2070 1775
-Wire Wire Line
-	2070 1775 2070 2270
 NoConn ~ 2725 2375
 NoConn ~ 2725 2275
-$Comp
-L Transistor_FET:ZVN3306F Q1
-U 1 1 6298E7D1
-P 1475 5225
-F 0 "Q1" V 1680 5271 50  0000 L CNN
-F 1 "BSS214NWH6327XTSA1" V 1760 4790 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-323_SC-70" H 1475 5225 50  0001 C CIN
-F 3 "https://www.infineon.com/dgdl/Infineon-BSS214NW-DS-v02_02-en.pdf?fileId=db3a30431b3e89eb011b695aebc01bde" H 1475 5225 50  0001 L CNN
-	1    1475 5225
-	1    0    0    -1  
-$EndComp
 $Comp
 L malaria_parts:794120-1 J4
 U 1 1 629ECBF9
@@ -2386,7 +2174,7 @@ F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RNCP06
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	12405 2450 12650 2450
+	12405 2450 12620 2450
 Wire Wire Line
 	11975 2250 12325 2250
 Wire Wire Line
@@ -2568,7 +2356,7 @@ L Device:L_Small L2
 U 1 1 612AD659
 P 14250 2000
 F 0 "L2" V 14435 2000 50  0000 C CNN
-F 1 "100 uH" V 14344 2000 50  0000 C CNN
+F 1 "330 uH" V 14344 2000 50  0000 C CNN
 F 2 "Inductor_SMD:L_Wuerth_WE-PDF_Handsoldering" H 14250 2000 50  0001 C CNN
 F 3 "https://www.digikey.com/en/products/detail/w%C3%BCrth-elektronik/74477720/9859301" H 14250 2000 50  0001 C CNN
 	1    14250 2000
@@ -2626,12 +2414,12 @@ $EndComp
 $Comp
 L Mechanical:MountingHole_Pad MK9
 U 1 1 62A3F5EA
-P 8615 10505
-F 0 "MK9" H 8715 10551 50  0000 L CNN
-F 1 "M3" H 8715 10460 50  0000 L CNN
-F 2 "MountingHole:MountingHole_3.2mm_M3_Pad" H 8615 10505 60  0001 C CNN
-F 3 "" H 8615 10505 60  0001 C CNN
-	1    8615 10505
+P 8610 10285
+F 0 "MK9" H 8710 10331 50  0000 L CNN
+F 1 "M3" H 8710 10240 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3_Pad" H 8610 10285 60  0001 C CNN
+F 3 "" H 8610 10285 60  0001 C CNN
+	1    8610 10285
 	1    0    0    -1  
 $EndComp
 Text Label 13030 8205 0    39   ~ 0
@@ -2712,10 +2500,8 @@ F 3 "https://www.infineon.com/dgdl/Infineon-BSS214NW-DS-v02_02-en.pdf?fileId=db3
 	1    15025 5515
 	1    0    0    -1  
 $EndComp
-Text Notes 9375 10380 0    50   ~ 0
+Text Notes 9345 10145 0    50   ~ 0
 Remote PCB\n
-Text Label 11855 6750 0    39   ~ 0
-CAM_FAN_1_GPIO
 $Comp
 L power:GND #PWR0114
 U 1 1 625CD23D
@@ -2783,7 +2569,7 @@ $EndComp
 Wire Wire Line
 	12880 6355 12880 6550
 Text Label 13170 6760 0    39   ~ 0
-CAM_FAN_2_GPIO
+CAM_FAN2_GPIO
 $Comp
 L power:GND #PWR0115
 U 1 1 6260B9AE
@@ -2932,11 +2718,11 @@ Text Label 3875 2175 2    50   ~ 0
 CAM_FAN2_GPIO
 Wire Wire Line
 	3875 2175 2725 2175
-Text Notes 2830 9560 0    98   ~ 0
+Text Notes 3085 9560 0    98   ~ 0
 LED Board
-Text Label 3755 10010 2    39   ~ 0
+Text Label 3485 10025 2    39   ~ 0
 R_Vled+
-Text Label 2675 10010 0    39   ~ 0
+Text Label 2405 10025 0    39   ~ 0
 R_Vled-
 Text Label 15300 2250 3    39   ~ 0
 Vled-
@@ -3002,118 +2788,118 @@ Wire Wire Line
 Text Label 1075 1675 0    50   ~ 0
 LED_IND
 Wire Wire Line
-	2920 10010 2675 10010
+	2650 10025 2405 10025
 Wire Wire Line
-	3755 10010 3520 10010
+	3485 10025 3250 10025
 $Comp
 L Mechanical:Mounting_Hole MK10
 U 1 1 62617E48
-P 10440 10540
-F 0 "MK10" H 10540 10586 50  0000 L CNN
-F 1 "#2" H 10540 10495 50  0000 L CNN
-F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10440 10540 60  0001 C CNN
-F 3 "" H 10440 10540 60  0001 C CNN
-	1    10440 10540
+P 10410 10305
+F 0 "MK10" H 10510 10351 50  0000 L CNN
+F 1 "#2" H 10510 10260 50  0000 L CNN
+F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10410 10305 60  0001 C CNN
+F 3 "" H 10410 10305 60  0001 C CNN
+	1    10410 10305
 	1    0    0    -1  
 $EndComp
-Text Notes 10525 10385 0    50   ~ 0
+Text Notes 10495 10150 0    50   ~ 0
 LED PCB
 $Comp
 L Mechanical:Mounting_Hole MK14
 U 1 1 626D397E
-P 11235 10535
-F 0 "MK14" H 11335 10581 50  0000 L CNN
-F 1 "Dowel_1mm" H 11335 10490 50  0000 L CNN
-F 2 "ulc-mm:DowelPin_1mm" H 11235 10535 60  0001 C CNN
-F 3 "" H 11235 10535 60  0001 C CNN
-	1    11235 10535
+P 11205 10300
+F 0 "MK14" H 11305 10346 50  0000 L CNN
+F 1 "Dowel_1mm" H 11305 10255 50  0000 L CNN
+F 2 "ulc-mm:DowelPin_1mm" H 11205 10300 60  0001 C CNN
+F 3 "" H 11205 10300 60  0001 C CNN
+	1    11205 10300
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:Mounting_Hole MK16
 U 1 1 626F123E
-P 11240 10740
-F 0 "MK16" H 11340 10786 50  0000 L CNN
-F 1 "Dowel_1mm" H 11340 10695 50  0000 L CNN
-F 2 "ulc-mm:DowelPin_1mm" H 11240 10740 60  0001 C CNN
-F 3 "" H 11240 10740 60  0001 C CNN
-	1    11240 10740
+P 11210 10505
+F 0 "MK16" H 11310 10551 50  0000 L CNN
+F 1 "Dowel_1mm" H 11310 10460 50  0000 L CNN
+F 2 "ulc-mm:DowelPin_1mm" H 11210 10505 60  0001 C CNN
+F 3 "" H 11210 10505 60  0001 C CNN
+	1    11210 10505
 	1    0    0    -1  
 $EndComp
-Text Label 3825 10575 0    39   ~ 0
+Text Label 3555 10590 0    39   ~ 0
 R_Vled+
 Wire Wire Line
-	3825 10575 4060 10575
-Text Label 3815 10740 0    39   ~ 0
+	3555 10590 3790 10590
+Text Label 3545 10755 0    39   ~ 0
 R_Vled-
 Wire Wire Line
-	4060 10740 3815 10740
+	3790 10755 3545 10755
 $Comp
 L malaria_parts:UV_LED D5
 U 1 1 62830CD0
-P 3220 10010
-F 0 "D5" V 2945 10010 50  0000 C CNN
-F 1 "UV_LED" V 2854 10010 50  0000 C CNN
-F 2 "ulc-mm:LED_Cree-XHP35" H 3270 9710 50  0001 L TNN
-F 3 "https://www.adafruit.com/product/1938" H 3320 9635 50  0001 L TNN
-	1    3220 10010
+P 2950 10025
+F 0 "D5" V 2675 10025 50  0000 C CNN
+F 1 "UV_LED" V 2584 10025 50  0000 C CNN
+F 2 "ulc-mm:LED_Cree-XHP35" H 3000 9725 50  0001 L TNN
+F 3 "https://www.adafruit.com/product/1938" H 3050 9650 50  0001 L TNN
+	1    2950 10025
 	0    1    1    0   
 $EndComp
-Text Label 3220 10705 1    39   ~ 0
+Text Label 2950 10720 1    39   ~ 0
 LED_BRD_GND
 $Comp
 L Mechanical:Mounting_Hole MK11
 U 1 1 62E55A76
-P 10435 10750
-F 0 "MK11" H 10535 10796 50  0000 L CNN
-F 1 "#2" H 10535 10705 50  0000 L CNN
-F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10435 10750 60  0001 C CNN
-F 3 "" H 10435 10750 60  0001 C CNN
-	1    10435 10750
+P 10405 10515
+F 0 "MK11" H 10505 10561 50  0000 L CNN
+F 1 "#2" H 10505 10470 50  0000 L CNN
+F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10405 10515 60  0001 C CNN
+F 3 "" H 10405 10515 60  0001 C CNN
+	1    10405 10515
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:Mounting_Hole MK12
 U 1 1 62E74326
-P 10830 10540
-F 0 "MK12" H 10930 10586 50  0000 L CNN
-F 1 "#2" H 10930 10495 50  0000 L CNN
-F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10830 10540 60  0001 C CNN
-F 3 "" H 10830 10540 60  0001 C CNN
-	1    10830 10540
+P 10800 10305
+F 0 "MK12" H 10900 10351 50  0000 L CNN
+F 1 "#2" H 10900 10260 50  0000 L CNN
+F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10800 10305 60  0001 C CNN
+F 3 "" H 10800 10305 60  0001 C CNN
+	1    10800 10305
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:Mounting_Hole MK13
 U 1 1 62E92BEC
-P 10830 10745
-F 0 "MK13" H 10930 10791 50  0000 L CNN
-F 1 "#2" H 10930 10700 50  0000 L CNN
-F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10830 10745 60  0001 C CNN
-F 3 "" H 10830 10745 60  0001 C CNN
-	1    10830 10745
+P 10800 10510
+F 0 "MK13" H 10900 10556 50  0000 L CNN
+F 1 "#2" H 10900 10465 50  0000 L CNN
+F 2 "ulc-mm:MountingHole_#2_CloseFit" H 10800 10510 60  0001 C CNN
+F 3 "" H 10800 10510 60  0001 C CNN
+	1    10800 10510
 	1    0    0    -1  
 $EndComp
 $Comp
 L Connector_Generic:Conn_01x01 J13
 U 1 1 626CF0BA
-P 4260 10575
-F 0 "J13" H 4340 10617 50  0000 L CNN
-F 1 "Vled+" H 4340 10526 50  0000 L CNN
-F 2 "ulc-mm:WirePad" H 4260 10575 50  0001 C CNN
-F 3 "~" H 4260 10575 50  0001 C CNN
-	1    4260 10575
+P 3990 10590
+F 0 "J13" H 4070 10632 50  0000 L CNN
+F 1 "Vled+" H 4070 10541 50  0000 L CNN
+F 2 "ulc-mm:WirePad" H 3990 10590 50  0001 C CNN
+F 3 "~" H 3990 10590 50  0001 C CNN
+	1    3990 10590
 	1    0    0    -1  
 $EndComp
 $Comp
 L Connector_Generic:Conn_01x01 J16
 U 1 1 626D009C
-P 4260 10740
-F 0 "J16" H 4340 10782 50  0000 L CNN
-F 1 "Vled-" H 4340 10691 50  0000 L CNN
-F 2 "ulc-mm:WirePad" H 4260 10740 50  0001 C CNN
-F 3 "~" H 4260 10740 50  0001 C CNN
-	1    4260 10740
+P 3990 10755
+F 0 "J16" H 4070 10797 50  0000 L CNN
+F 1 "Vled-" H 4070 10706 50  0000 L CNN
+F 2 "ulc-mm:WirePad" H 3990 10755 50  0001 C CNN
+F 3 "~" H 3990 10755 50  0001 C CNN
+	1    3990 10755
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -3122,21 +2908,21 @@ Wire Wire Line
 	13920 8215 14230 8215
 Wire Wire Line
 	11055 9595 11365 9595
-Text Label 3610 10935 0    39   ~ 0
+Text Label 3340 10950 0    39   ~ 0
 LED_BRD_GND
 $Comp
 L Connector_Generic:Conn_01x01 J17
 U 1 1 628B5B61
-P 4255 10935
-F 0 "J17" H 4335 10977 50  0000 L CNN
-F 1 "LED_BRD_GND" H 4335 10886 50  0000 L CNN
-F 2 "ulc-mm:WirePad" H 4255 10935 50  0001 C CNN
-F 3 "~" H 4255 10935 50  0001 C CNN
-	1    4255 10935
+P 3985 10950
+F 0 "J17" H 4065 10992 50  0000 L CNN
+F 1 "LED_BRD_GND" H 4065 10901 50  0000 L CNN
+F 2 "ulc-mm:WirePad" H 3985 10950 50  0001 C CNN
+F 3 "~" H 3985 10950 50  0001 C CNN
+	1    3985 10950
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3610 10935 4055 10935
+	3340 10950 3785 10950
 $Comp
 L power:GND #PWR0112
 U 1 1 6297BC39
@@ -3170,108 +2956,683 @@ F 3 "" H 2590 7370 50  0001 C CNN
 	1    2590 7370
 	1    0    0    -1  
 $EndComp
-Text Label 3675 10310 0    39   ~ 0
+Text Label 3405 10325 0    39   ~ 0
 LED_BRD_GND
 Wire Wire Line
-	3675 10310 4120 10310
+	3405 10325 3850 10325
 $Comp
 L Mechanical:Heatsink_Pad HS1
 U 1 1 62B39959
-P 4220 10310
-F 0 "HS1" V 3970 10260 50  0000 L CNN
-F 1 "Heatsink_Pad" V 4040 10120 50  0000 L CNN
-F 2 "ulc-mm:15MMX15MM_Heatsink" H 4232 10260 50  0001 C CNN
-F 3 "~" H 4232 10260 50  0001 C CNN
-	1    4220 10310
+P 3950 10325
+F 0 "HS1" V 3700 10275 50  0000 L CNN
+F 1 "Heatsink_Pad" V 3770 10135 50  0000 L CNN
+F 2 "ulc-mm:15MMX15MM_Heatsink" H 3962 10275 50  0001 C CNN
+F 3 "~" H 3962 10275 50  0001 C CNN
+	1    3950 10325
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	3220 10705 3220 10310
+	2950 10720 2950 10325
 $Comp
 L power:LED_GND #PWR0107
 U 1 1 6270B135
-P 3610 10935
-F 0 "#PWR0107" H 3610 10685 50  0001 C CNN
-F 1 "LED_GND" H 3615 10762 50  0000 C CNN
-F 2 "" H 3610 10935 50  0001 C CNN
-F 3 "" H 3610 10935 50  0001 C CNN
-	1    3610 10935
+P 3340 10950
+F 0 "#PWR0107" H 3340 10700 50  0001 C CNN
+F 1 "LED_GND" H 3345 10777 50  0000 C CNN
+F 2 "" H 3340 10950 50  0001 C CNN
+F 3 "" H 3340 10950 50  0001 C CNN
+	1    3340 10950
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:LED_GND #PWR0135
 U 1 1 6274D7DE
-P 3220 10705
-F 0 "#PWR0135" H 3220 10455 50  0001 C CNN
-F 1 "LED_GND" H 3225 10532 50  0000 C CNN
-F 2 "" H 3220 10705 50  0001 C CNN
-F 3 "" H 3220 10705 50  0001 C CNN
-	1    3220 10705
+P 2950 10720
+F 0 "#PWR0135" H 2950 10470 50  0001 C CNN
+F 1 "LED_GND" H 2955 10547 50  0000 C CNN
+F 2 "" H 2950 10720 50  0001 C CNN
+F 3 "" H 2950 10720 50  0001 C CNN
+	1    2950 10720
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:LED_GND #PWR0136
 U 1 1 6278CD71
-P 3675 10310
-F 0 "#PWR0136" H 3675 10060 50  0001 C CNN
-F 1 "LED_GND" H 3680 10137 50  0000 C CNN
-F 2 "" H 3675 10310 50  0001 C CNN
-F 3 "" H 3675 10310 50  0001 C CNN
-	1    3675 10310
+P 3405 10325
+F 0 "#PWR0136" H 3405 10075 50  0001 C CNN
+F 1 "LED_GND" H 3410 10152 50  0000 C CNN
+F 2 "" H 3405 10325 50  0001 C CNN
+F 3 "" H 3405 10325 50  0001 C CNN
+	1    3405 10325
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0137
 U 1 1 62693476
-P 8235 10605
-F 0 "#PWR0137" H 8235 10355 50  0001 C CNN
-F 1 "GND" H 8380 10535 50  0000 C CNN
-F 2 "" H 8235 10605 50  0001 C CNN
-F 3 "" H 8235 10605 50  0001 C CNN
-	1    8235 10605
+P 8230 10385
+F 0 "#PWR0137" H 8230 10135 50  0001 C CNN
+F 1 "GND" H 8375 10315 50  0000 C CNN
+F 2 "" H 8230 10385 50  0001 C CNN
+F 3 "" H 8230 10385 50  0001 C CNN
+	1    8230 10385
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0138
 U 1 1 62710436
-P 8235 10955
-F 0 "#PWR0138" H 8235 10705 50  0001 C CNN
-F 1 "GND" H 8365 10875 50  0000 C CNN
-F 2 "" H 8235 10955 50  0001 C CNN
-F 3 "" H 8235 10955 50  0001 C CNN
-	1    8235 10955
+P 8230 10735
+F 0 "#PWR0138" H 8230 10485 50  0001 C CNN
+F 1 "GND" H 8360 10655 50  0000 C CNN
+F 2 "" H 8230 10735 50  0001 C CNN
+F 3 "" H 8230 10735 50  0001 C CNN
+	1    8230 10735
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	8005 10955 8235 10955
+	8000 10735 8230 10735
 Wire Wire Line
-	8235 10955 8455 10955
-Connection ~ 8235 10955
+	8230 10735 8450 10735
+Connection ~ 8230 10735
 $Comp
 L Mechanical:MountingHole_Pad MK3
 U 1 1 62819BE4
-P 8235 10505
-F 0 "MK3" H 8335 10551 50  0000 L CNN
-F 1 "M2.5" H 8335 10460 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 8235 10505 60  0001 C CNN
-F 3 "" H 8235 10505 60  0001 C CNN
-	1    8235 10505
+P 8230 10285
+F 0 "MK3" H 8330 10331 50  0000 L CNN
+F 1 "M2.5" H 8330 10240 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 8230 10285 60  0001 C CNN
+F 3 "" H 8230 10285 60  0001 C CNN
+	1    8230 10285
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole_Pad MK4
 U 1 1 62839588
-P 8455 10855
-F 0 "MK4" H 8555 10901 50  0000 L CNN
-F 1 "M2.5" H 8555 10810 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 8455 10855 60  0001 C CNN
-F 3 "" H 8455 10855 60  0001 C CNN
-	1    8455 10855
+P 8450 10635
+F 0 "MK4" H 8550 10681 50  0000 L CNN
+F 1 "M2.5" H 8550 10590 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.7mm_M2.5_Pad" H 8450 10635 60  0001 C CNN
+F 3 "" H 8450 10635 60  0001 C CNN
+	1    8450 10635
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	7785 10605 8235 10605
-Connection ~ 8235 10605
+	7780 10385 8230 10385
+Connection ~ 8230 10385
 Wire Wire Line
-	8235 10605 8615 10605
+	8230 10385 8610 10385
+Text Label 11855 6750 0    39   ~ 0
+CAM_FAN1_GPIO
+$Comp
+L Mechanical:Mounting_Hole MK21
+U 1 1 628FA3C8
+P 11015 10740
+F 0 "MK21" H 11115 10786 50  0000 L CNN
+F 1 "MouseBite" H 11115 10695 50  0000 L CNN
+F 2 "ulc-mm:MouseBite_0.508mm" H 11015 10740 60  0001 C CNN
+F 3 "" H 11015 10740 60  0001 C CNN
+	1    11015 10740
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Mounting_Hole MK20
+U 1 1 628DAC16
+P 10820 10735
+F 0 "MK20" H 10920 10781 50  0000 L CNN
+F 1 "MouseBite" H 10920 10690 50  0000 L CNN
+F 2 "ulc-mm:MouseBite_0.508mm" H 10820 10735 60  0001 C CNN
+F 3 "" H 10820 10735 60  0001 C CNN
+	1    10820 10735
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Mounting_Hole MK19
+U 1 1 628BB43D
+P 10620 10735
+F 0 "MK19" H 10720 10781 50  0000 L CNN
+F 1 "MouseBite" H 10720 10690 50  0000 L CNN
+F 2 "ulc-mm:MouseBite_0.508mm" H 10620 10735 60  0001 C CNN
+F 3 "" H 10620 10735 60  0001 C CNN
+	1    10620 10735
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Mounting_Hole MK18
+U 1 1 6289BCE3
+P 9735 10720
+F 0 "MK18" H 9835 10766 50  0000 L CNN
+F 1 "MouseBite" H 9835 10675 50  0000 L CNN
+F 2 "ulc-mm:MouseBite_0.508mm" H 9735 10720 60  0001 C CNN
+F 3 "" H 9735 10720 60  0001 C CNN
+	1    9735 10720
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Mounting_Hole MK17
+U 1 1 6287C59B
+P 9530 10725
+F 0 "MK17" H 9630 10771 50  0000 L CNN
+F 1 "MouseBite" H 9630 10680 50  0000 L CNN
+F 2 "ulc-mm:MouseBite_0.508mm" H 9530 10725 60  0001 C CNN
+F 3 "" H 9530 10725 60  0001 C CNN
+	1    9530 10725
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Mounting_Hole MK15
+U 1 1 627F7018
+P 9320 10720
+F 0 "MK15" H 9420 10766 50  0000 L CNN
+F 1 "MouseBite" H 9420 10675 50  0000 L CNN
+F 2 "ulc-mm:MouseBite_0.508mm" H 9320 10720 60  0001 C CNN
+F 3 "" H 9320 10720 60  0001 C CNN
+	1    9320 10720
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5900 9130 5900 9190
+$Comp
+L Device:R_Small R30
+U 1 1 62ED6A6F
+P 12620 2570
+F 0 "R30" V 12685 2520 50  0000 L CNN
+F 1 "10k" V 12620 2495 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 12620 2570 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 12620 2570 50  0001 C CNN
+	1    12620 2570
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	12620 2470 12620 2450
+Connection ~ 12620 2450
+Wire Wire Line
+	12620 2450 12650 2450
+$Comp
+L power:GND #PWR0142
+U 1 1 62F37623
+P 12620 2670
+F 0 "#PWR0142" H 12620 2420 50  0001 C CNN
+F 1 "GND" H 12625 2497 50  0000 C CNN
+F 2 "" H 12620 2670 50  0001 C CNN
+F 3 "" H 12620 2670 50  0001 C CNN
+	1    12620 2670
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	12830 5510 13150 5510
+Wire Wire Line
+	14505 5515 14825 5515
+Wire Wire Line
+	1075 2075 2225 2075
+Text Label 1075 2075 0    50   ~ 0
+3V3_GPIO
+Wire Wire Line
+	940  2175 2225 2175
+$Comp
+L power:+3.3V #PWR0140
+U 1 1 6348B003
+P 5900 9130
+F 0 "#PWR0140" H 5900 8980 50  0001 C CNN
+F 1 "+3.3V" H 5900 9270 50  0000 C CNN
+F 2 "" H 5900 9130 50  0000 C CNN
+F 3 "" H 5900 9130 50  0000 C CNN
+	1    5900 9130
+	1    0    0    -1  
+$EndComp
+Text Label 2585 4815 2    39   ~ 0
+R_MPRLS_RST
+Wire Wire Line
+	2070 1775 2070 2335
+Wire Wire Line
+	1075 2275 2225 2275
+Text Label 1075 2275 0    50   ~ 0
+MPRLS_RST
+$Comp
+L Connector_Generic:Conn_01x02 J18
+U 1 1 6307B75A
+P 3025 8675
+F 0 "J18" H 3105 8667 50  0000 L CNN
+F 1 "TOUCHSCREEN" H 3105 8576 50  0000 L CNN
+F 2 "Connector_Molex:Molex_Pico-Clasp_501331-0207_1x02-1MP_P1.00mm_Vertical" H 3025 8675 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/5013310207/1531471" H 3025 8675 50  0001 C CNN
+F 4 "https://www.digikey.com/en/products/detail/molex/0151330202/6696990" H 3025 8675 50  0001 C CNN "Mating Conn"
+	1    3025 8675
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0144
+U 1 1 6307F407
+P 2825 8775
+F 0 "#PWR0144" H 2825 8525 50  0001 C CNN
+F 1 "GND" H 2830 8602 50  0000 C CNN
+F 2 "" H 2825 8775 50  0001 C CNN
+F 3 "" H 2825 8775 50  0001 C CNN
+	1    2825 8775
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:MPRLS0025PA00001A U7
+U 1 1 62F75D86
+P 3285 5015
+F 0 "U7" H 3260 5480 50  0000 C CNN
+F 1 "MPRLS0025PA00001A" H 3260 5389 50  0000 C CNN
+F 2 "XDCR_MPRLS0025PA00001A" H 2685 5165 50  0001 L BNN
+F 3 "" H 3285 5015 50  0001 L BNN
+F 4 "03/18" H 3285 5015 50  0001 L BNN "PARTREV"
+F 5 "Honeywell Sensing" H 2685 5165 50  0001 L BNN "MANUFACTURER"
+F 6 "Manufacturer Recommendations" H 2685 5165 50  0001 L BNN "STANDARD"
+	1    3285 5015
+	1    0    0    -1  
+$EndComp
+NoConn ~ 3935 5265
+NoConn ~ 2585 5015
+NoConn ~ 2585 5315
+$Comp
+L Device:R_Small R31
+U 1 1 63014294
+P 2215 4915
+F 0 "R31" H 2274 4961 50  0000 L CNN
+F 1 "10k" V 2215 4845 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 2215 4915 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 2215 4915 50  0001 C CNN
+	1    2215 4915
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2215 4815 2585 4815
+Wire Wire Line
+	3980 4765 3935 4765
+$Comp
+L Device:C_Small C7
+U 1 1 63179AFB
+P 4135 5020
+F 0 "C7" H 4227 5066 50  0000 L CNN
+F 1 "1 nF" H 4227 4975 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric" H 4135 5020 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/vishay-vitramon/VJ0805D102JXJQJHT/14292856" H 4135 5020 50  0001 C CNN
+	1    4135 5020
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4135 4920 3935 4920
+Wire Wire Line
+	3935 4920 3935 4965
+Wire Wire Line
+	4135 5120 3935 5120
+Wire Wire Line
+	3935 5120 3935 5065
+Wire Wire Line
+	3980 4595 3980 4675
+$Comp
+L Device:C_Small C20
+U 1 1 632F10F7
+P 4220 4675
+F 0 "C20" V 4040 4720 50  0000 C CNN
+F 1 "0.1 uF" V 4115 4725 50  0000 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 4220 4675 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/kemet/C0603C104M3RACAUTO/10642429" H 4220 4675 50  0001 C CNN
+	1    4220 4675
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4120 4675 3980 4675
+Connection ~ 3980 4675
+Wire Wire Line
+	3980 4675 3980 4765
+Wire Wire Line
+	4385 4675 4320 4675
+$Comp
+L Transistor_FET:ZVN3306F Q1
+U 1 1 6298E7D1
+P 1685 4775
+F 0 "Q1" V 1890 4821 50  0000 L CNN
+F 1 "BSS214NWH6327XTSA1" V 1970 4340 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-323_SC-70" H 1685 4775 50  0001 C CIN
+F 3 "https://www.infineon.com/dgdl/Infineon-BSS214NW-DS-v02_02-en.pdf?fileId=db3a30431b3e89eb011b695aebc01bde" H 1685 4775 50  0001 L CNN
+	1    1685 4775
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1635 5000 1785 5000
+$Comp
+L Device:R_Small R2
+U 1 1 66944006
+P 1535 5000
+F 0 "R2" V 1600 4950 50  0000 L CNN
+F 1 "10k" V 1535 4925 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 1535 5000 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 1535 5000 50  0001 C CNN
+	1    1535 5000
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	1785 4400 1785 4575
+Text Notes 1885 4355 2    59   ~ 0
+Valve Switch
+Wire Wire Line
+	1135 5000 1435 5000
+Wire Wire Line
+	1135 4775 760  4775
+Connection ~ 1135 4775
+Wire Wire Line
+	1210 4775 1135 4775
+Wire Wire Line
+	1485 4775 1410 4775
+$Comp
+L Device:R_Small R1
+U 1 1 63CC0AEB
+P 1310 4775
+F 0 "R1" V 1235 4775 50  0000 C CNN
+F 1 "330" V 1310 4775 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" H 1310 4775 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 1310 4775 50  0001 C CNN
+	1    1310 4775
+	0    1    1    0   
+$EndComp
+Text Label 1785 4400 3    39   ~ 0
+VALVE
+Wire Wire Line
+	1785 5000 1785 5075
+Connection ~ 1785 5000
+Wire Wire Line
+	1135 5000 1135 4775
+Wire Wire Line
+	1785 4975 1785 5000
+$Comp
+L power:GND #PWR03
+U 1 1 63CC0ACF
+P 1785 5075
+F 0 "#PWR03" H 1785 4825 50  0001 C CNN
+F 1 "GND" H 1790 4902 50  0000 C CNN
+F 2 "" H 1785 5075 50  0001 C CNN
+F 3 "" H 1785 5075 50  0001 C CNN
+	1    1785 5075
+	1    0    0    -1  
+$EndComp
+Text Label 760  4775 0    39   ~ 0
+VALVE_GPIO
+Text Notes 2755 5805 2    59   ~ 0
+Main Board Connector
+Wire Wire Line
+	2245 6190 2120 6190
+Wire Wire Line
+	2245 6290 2120 6290
+Text Label 2120 6190 0    39   ~ 0
+SCL
+Text Label 2120 6290 0    39   ~ 0
+SDA
+Text Label 1875 6390 0    39   ~ 0
+MPRLS_RST
+Wire Wire Line
+	2245 6390 1875 6390
+Wire Wire Line
+	2245 6090 1910 6090
+Text Label 3285 6065 1    39   ~ 0
+R_MPRLS_GND
+Wire Notes Line
+	475  6620 4885 6620
+Wire Notes Line
+	4885 8175 10275 8175
+Wire Wire Line
+	3870 5840 3980 5840
+Wire Wire Line
+	3980 6040 3855 6040
+Wire Wire Line
+	3980 6140 3855 6140
+Text Label 3855 6040 0    39   ~ 0
+R_SCL
+Text Label 3855 6140 0    39   ~ 0
+R_SDA
+Text Label 3610 6240 0    39   ~ 0
+R_MPRLS_RST
+Wire Wire Line
+	3980 6240 3610 6240
+Text Label 3600 5940 0    39   ~ 0
+R_MPRLS_GND
+Text Notes 6370 4270 0    39   ~ 0
+nSLEEP and nRESET must be high for the driver to be enabled.
+$Comp
+L malaria_parts:MPR_Pressure_Breakout_Conn J2
+U 1 1 633DCB3D
+P 2445 6190
+F 0 "J2" H 2405 5875 50  0000 L CNN
+F 1 "MPR_Pressure_Breakout_Conn" H 1900 5810 50  0000 L CNN
+F 2 "Connector_Molex:Molex_PicoBlade_53047-0510_1x05_P1.25mm_Vertical" H 2445 6190 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0530470510/242856" H 2445 6190 50  0001 C CNN
+	1    2445 6190
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:MPR_Pressure_Breakout_Conn J19
+U 1 1 6390BE1D
+P 4180 6040
+F 0 "J19" H 4130 5735 50  0000 L CNN
+F 1 "MPR_Pressure_Breakout_Conn" H 3625 5670 50  0000 L CNN
+F 2 "Connector_Molex:Molex_PicoBlade_53047-0510_1x05_P1.25mm_Vertical" H 4180 6040 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/0530470510/242856" H 4180 6040 50  0001 C CNN
+	1    4180 6040
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:MPR_+3.3V #PWR0150
+U 1 1 63BF8EA0
+P 3870 5840
+F 0 "#PWR0150" H 3870 5690 50  0001 C CNN
+F 1 "MPR_+3.3V" H 3885 6013 50  0000 C CNN
+F 2 "" H 3870 5840 50  0001 C CNN
+F 3 "" H 3870 5840 50  0001 C CNN
+	1    3870 5840
+	1    0    0    -1  
+$EndComp
+$Comp
+L malaria_parts:MPR_+3.3V #PWR0151
+U 1 1 63D033F4
+P 3980 4595
+F 0 "#PWR0151" H 3980 4445 50  0001 C CNN
+F 1 "MPR_+3.3V" H 3995 4768 50  0000 C CNN
+F 2 "" H 3980 4595 50  0001 C CNN
+F 3 "" H 3980 4595 50  0001 C CNN
+	1    3980 4595
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3285 5565 3285 6065
+Wire Wire Line
+	2215 5015 2215 5565
+Wire Wire Line
+	2215 5565 3285 5565
+Connection ~ 3285 5565
+Wire Wire Line
+	4385 4675 4385 5565
+Wire Wire Line
+	4385 5565 3285 5565
+$Comp
+L Mechanical:Mounting_Hole MK22
+U 1 1 63E622FA
+P 9175 11075
+F 0 "MK22" H 9275 11121 50  0000 L CNN
+F 1 "#2" H 9275 11030 50  0000 L CNN
+F 2 "ulc-mm:MountingHole_#2_CloseFit" H 9175 11075 60  0001 C CNN
+F 3 "" H 9175 11075 60  0001 C CNN
+	1    9175 11075
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Mounting_Hole MK23
+U 1 1 63E62300
+P 9535 11080
+F 0 "MK23" H 9635 11126 50  0000 L CNN
+F 1 "#2" H 9635 11035 50  0000 L CNN
+F 2 "ulc-mm:MountingHole_#2_CloseFit" H 9535 11080 60  0001 C CNN
+F 3 "" H 9535 11080 60  0001 C CNN
+	1    9535 11080
+	1    0    0    -1  
+$EndComp
+Text Notes 9650 10960 0    50   ~ 0
+MPR PCB\n
+$Comp
+L Mechanical:Mounting_Hole MK26
+U 1 1 63FDE07B
+P 10310 11090
+F 0 "MK26" H 10410 11136 50  0000 L CNN
+F 1 "MouseBite" H 10410 11045 50  0000 L CNN
+F 2 "ulc-mm:MouseBite_0.508mm" H 10310 11090 60  0001 C CNN
+F 3 "" H 10310 11090 60  0001 C CNN
+	1    10310 11090
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Mounting_Hole MK25
+U 1 1 63FDE081
+P 10105 11095
+F 0 "MK25" H 10205 11141 50  0000 L CNN
+F 1 "MouseBite" H 10205 11050 50  0000 L CNN
+F 2 "ulc-mm:MouseBite_0.508mm" H 10105 11095 60  0001 C CNN
+F 3 "" H 10105 11095 60  0001 C CNN
+	1    10105 11095
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Mounting_Hole MK24
+U 1 1 63FDE087
+P 9895 11090
+F 0 "MK24" H 9995 11136 50  0000 L CNN
+F 1 "MouseBite" H 9995 11045 50  0000 L CNN
+F 2 "ulc-mm:MouseBite_0.508mm" H 9895 11090 60  0001 C CNN
+F 3 "" H 9895 11090 60  0001 C CNN
+	1    9895 11090
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H1
+U 1 1 640E2966
+P 4400 6010
+F 0 "H1" H 4500 6056 50  0000 L CNN
+F 1 "GageRef" H 4500 5965 50  0000 L CNN
+F 2 "ulc-mm:GageRef_Hole" H 4400 6010 50  0001 C CNN
+F 3 "~" H 4400 6010 50  0001 C CNN
+	1    4400 6010
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3600 5940 3980 5940
+$Comp
+L power:GND #PWR09
+U 1 1 6122663C
+P 1910 6090
+F 0 "#PWR09" H 1910 5840 50  0001 C CNN
+F 1 "GND" H 1915 5917 50  0000 C CNN
+F 2 "" H 1910 6090 50  0001 C CNN
+F 3 "" H 1910 6090 50  0001 C CNN
+	1    1910 6090
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_FET:BSS84 Q7
+U 1 1 6324DA55
+P 1400 5740
+F 0 "Q7" H 1650 5685 50  0000 L CNN
+F 1 "BSS84AK,215" H 1570 5615 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 1400 5740 50  0001 C CIN
+F 3 "https://assets.nexperia.com/documents/data-sheet/BSS84AK.pdf" H 1400 5740 50  0001 L CNN
+	1    1400 5740
+	1    0    0    1   
+$EndComp
+Text Label 640  5740 0    39   ~ 0
+3V3_GPIO
+Wire Wire Line
+	640  5740 975  5740
+$Comp
+L Device:R_Small R20
+U 1 1 633C7E5A
+P 1175 5585
+F 0 "R20" V 1240 5480 50  0000 L CNN
+F 1 "10k" V 1175 5510 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 1175 5585 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/vishay-dale/RCS060310K0JNEA/5866963" H 1175 5585 50  0001 C CNN
+	1    1175 5585
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	1175 5465 1175 5485
+Wire Wire Line
+	1500 5465 1500 5540
+Wire Wire Line
+	1175 5685 1175 5740
+Wire Wire Line
+	1175 5740 1200 5740
+$Comp
+L Device:R_Small R15
+U 1 1 634F01C2
+P 1075 5740
+F 0 "R15" V 1000 5740 50  0000 C CNN
+F 1 "330" V 1075 5740 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" H 1075 5740 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/RMCF0805FT330R/1760484" H 1075 5740 50  0001 C CNN
+	1    1075 5740
+	0    1    1    0   
+$EndComp
+Connection ~ 1175 5740
+$Comp
+L power:+3.3V #PWR0141
+U 1 1 635756BB
+P 1500 5465
+F 0 "#PWR0141" H 1500 5315 50  0001 C CNN
+F 1 "+3.3V" H 1500 5605 50  0000 C CNN
+F 2 "" H 1500 5465 50  0000 C CNN
+F 3 "" H 1500 5465 50  0000 C CNN
+	1    1500 5465
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1175 5465 1500 5465
+Connection ~ 1500 5465
+Wire Wire Line
+	1500 5940 1500 5990
+Wire Wire Line
+	1500 5990 2245 5990
+$Comp
+L Connector_Generic:Conn_01x02 J20
+U 1 1 62FD3BD6
+P 3945 8680
+F 0 "J20" H 4025 8672 50  0000 L CNN
+F 1 "USB" H 4025 8581 50  0000 L CNN
+F 2 "Connector_Molex:Molex_Pico-Clasp_501331-0207_1x02-1MP_P1.00mm_Vertical" H 3945 8680 50  0001 C CNN
+F 3 "https://www.digikey.com/en/products/detail/molex/5013310207/1531471" H 3945 8680 50  0001 C CNN
+F 4 "https://www.digikey.com/en/products/detail/molex/0151330202/6696990" H 3945 8680 50  0001 C CNN "Mating Conn"
+	1    3945 8680
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR0148
+U 1 1 62FD3BDC
+P 3745 8680
+F 0 "#PWR0148" H 3745 8530 50  0001 C CNN
+F 1 "+5V" H 3760 8853 50  0000 C CNN
+F 2 "" H 3745 8680 50  0001 C CNN
+F 3 "" H 3745 8680 50  0001 C CNN
+	1    3745 8680
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0149
+U 1 1 62FD3BE2
+P 3745 8780
+F 0 "#PWR0149" H 3745 8530 50  0001 C CNN
+F 1 "GND" H 3750 8607 50  0000 C CNN
+F 2 "" H 3745 8780 50  0001 C CNN
+F 3 "" H 3745 8780 50  0001 C CNN
+	1    3745 8780
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5VP #PWR0143
+U 1 1 630D77A1
+P 2825 8675
+F 0 "#PWR0143" H 2825 8525 50  0001 C CNN
+F 1 "+5VP" H 2840 8848 50  0000 C CNN
+F 2 "" H 2825 8675 50  0001 C CNN
+F 3 "" H 2825 8675 50  0001 C CNN
+	1    2825 8675
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

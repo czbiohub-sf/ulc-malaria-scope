@@ -62,6 +62,7 @@ class Acquisition(QObject):
         self.period = period
         self.liveview_timer.setInterval(self.period)
 
+    @pyqtSlot(MalariaScope)
     def get_mscope(self, mscope: MalariaScope):
         self.mscope = mscope
 
