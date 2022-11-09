@@ -98,14 +98,13 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
     mscope.motor.move_abs(motor_pos)
 
     print("Running SSAF")
-    ssaf = singleShotAutofocusRoutine(mscope, None)
+    ssaf = continuousSSAFRoutine(mscope, None)
     ssaf.send(None)
     for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
-        try:
-            ssaf.send(img)
-        except StopIteration as e:
-            print(f"SSAF complete, motor moved by: {e.value} steps")
+        steps_from_focus = ssaf.send(img)
+        if isinstance(steps_from_focus, int):
+            print(f"SSAF complete, motor moved by: {steps_from_focus} steps")
             break
 
 

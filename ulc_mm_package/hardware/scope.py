@@ -221,5 +221,8 @@ class MalariaScope:
             print(f"Failed to initialize the TPU: {e}")
 
     def _init_RTC(self):
-        self.rtc = RTC_PCF8523()
-        self.rtc_enabled = True
+        try:
+            self.rtc = RTC_PCF8523()
+            self.rtc_enabled = True
+        except Exception as e:
+            print(f"Failed to initialize RTC: {e}")
