@@ -165,6 +165,9 @@ class DRV8825Nema:
         degree_value = steps * self.step_degree
         return degree_value
 
+    def getCurrentPosition(self):
+        return self.pos
+
     def getMinimumTravelDistance_um(self):
         return self.dist_per_step_um
 
