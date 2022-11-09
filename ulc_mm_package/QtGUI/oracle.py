@@ -24,11 +24,11 @@ from ulc_mm_package.scope_constants import (
     CAMERA_SELECTION,
 )
 from ulc_mm_package.image_processing.processing_constants import (
-    TOP_PERC_TARGET_VAL, 
+    TOP_PERC_TARGET_VAL,
     TARGET_FLOWRATE,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
-    ICON_PATH, 
+    ICON_PATH,
     FLOWCELL_QC_FORM_LINK,
 )
 
@@ -176,7 +176,7 @@ class Oracle(Machine):
         self.dialog_window.setWindowTitle(f"{title}")
 
         self.dialog_window.setText(f"{text}")
-   
+
         if buttons != None:
             self.dialog_window.setStandardButtons(buttons.value)
 
@@ -234,12 +234,15 @@ class Oracle(Machine):
         # Assign other metadata parameters
         self.experiment_metadata["scope"] = socket.gethostname()
         self.experiment_metadata["camera"] = CAMERA_SELECTION.name
-        self.experiment_metadata["exposure"] = self.scopeop.mscope.camera.exposureTime_ms
+        self.experiment_metadata[
+            "exposure"
+        ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_flowrate"] = TARGET_FLOWRATE
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
-        self.scopeop.mscope.data_storage.createNewExperiment("", self.experiment_metadata, PER_IMAGE_METADATA_KEYS)
-
+        self.scopeop.mscope.data_storage.createNewExperiment(
+            "", self.experiment_metadata, PER_IMAGE_METADATA_KEYS
+        )
 
         self.next_state()
 

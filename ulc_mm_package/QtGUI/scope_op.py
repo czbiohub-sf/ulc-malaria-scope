@@ -374,10 +374,16 @@ class ScopeOp(QObject, Machine):
 
             # Update remaining metadata
             self.image_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
-            self.image_metadata["pressure_hpa"] = self.mscope.pneumatic_module.getPressure()
-            self.image_metadata["syringe_pos"] = self.mscope.pneumatic_module.getCurrentDutyCycle()
+            self.image_metadata[
+                "pressure_hpa"
+            ] = self.mscope.pneumatic_module.getPressure()
+            self.image_metadata[
+                "syringe_pos"
+            ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.image_metadata["flowrate"] = flowrate
-            self.image_metadata["temperature"] = self.mscope.ht_sensor.getRelativeHumidity()
+            self.image_metadata[
+                "temperature"
+            ] = self.mscope.ht_sensor.getRelativeHumidity()
             self.image_metadata["humidity"] = self.mscope.ht_sensor.getTemperature()
 
             self.count += 1

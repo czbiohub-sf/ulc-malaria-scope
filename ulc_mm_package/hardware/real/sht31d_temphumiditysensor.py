@@ -10,7 +10,9 @@ Adafruit's PCF8523 Python library:
 import adafruit_sht31d
 import board
 
-from ulc_mm_package.hardware.sht31d_temphumiditysensor import TemperatureSensorNotInstantiated
+from ulc_mm_package.hardware.sht31d_temphumiditysensor import (
+    TemperatureSensorNotInstantiated,
+)
 
 
 class SHT3X:

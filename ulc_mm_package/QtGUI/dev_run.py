@@ -245,15 +245,12 @@ class AcquisitionThread(QThread):
 
     def takeImage(self):
         if self.main_dir == None:
-            self.main_dir = self.external_dir + datetime.now().strftime(
-                DATETIME_FORMAT
-            )
+            self.main_dir = self.external_dir + datetime.now().strftime(DATETIME_FORMAT)
             mkdir(self.main_dir)
 
         if self.continuous_save:
             self.continuous_dir_name = (
-                datetime.now().strftime(DATETIME_FORMAT)
-                + f"{self.custom_image_prefix}"
+                datetime.now().strftime(DATETIME_FORMAT) + f"{self.custom_image_prefix}"
             )
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
 
