@@ -338,7 +338,6 @@ class ScopeOp(QObject, Machine):
             self.to_intermission()
         else:
             # Record timestamp before running routines
-            # TODO change this to RTC
             self.image_metadata["timestamp"] = self.mscope.rtc.get_time()
             self.image_metadata["im_counter"] = self.count
 

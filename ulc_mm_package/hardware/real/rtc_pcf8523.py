@@ -13,6 +13,8 @@ import board
 
 from datetime import date
 
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+
 
 class RTC_PCF8523:
     """A simplistic (and somewhat gratuitous) wrapper class for Adafruit's PCF8523 library"""
@@ -48,4 +50,7 @@ class RTC_PCF8523:
             - tm_wday (day of the week as a number, ranges from [0-6] with Monday being 0)
             - tm_yday (day of the year, ranges from [1-366])
         """
-        return self.rtc.datetime
+
+        datetime_str = time.strftime(DATETIME_FORMAT, self.rtc.datetime)
+
+        return datetime_str

@@ -10,6 +10,7 @@ import cv2
 
 from ulc_mm_package.QtGUI.gui_constants import SIMULATION
 from ulc_mm_package.scope_constants import DEFAULT_SSD, ALT_SSD
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
     MIN_GB_REQUIRED,
@@ -33,7 +34,7 @@ class DataStorage:
     def createTopLevelFolder(self, external_dir: str):
         # Create top-level directory for this program run.
         self.external_dir = external_dir
-        self.main_dir = external_dir + datetime.now().strftime("%Y-%m-%d-%H%M%S")
+        self.main_dir = external_dir + datetime.now().strftime(DATETIME_FORMAT)
 
         try:
             mkdir(self.main_dir)
@@ -75,7 +76,7 @@ class DataStorage:
             self.createTopLevelFolder(external_dir)
 
         # Create per-image metadata file
-        time_str = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+        time_str = datetime.now().strftime(DATETIME_FORMAT)
         self.experiment_folder = time_str + f"_{custom_experiment_name}"
 
         try:
@@ -142,7 +143,7 @@ class DataStorage:
         """
 
         filename = (
-            path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S"))
+            path.join(self.main_dir, datetime.now().strftime(DATETIME_FORMAT))
             + f"_{custom_image_name}.png"
         )
         cv2.imwrite(filename, image)

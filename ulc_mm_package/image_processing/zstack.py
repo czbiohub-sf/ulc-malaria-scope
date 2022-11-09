@@ -11,7 +11,7 @@ from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction
 def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=None):
 
     if save_loc != None:
-        timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+        timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")
         try:
             os.mkdir(save_dir)
@@ -50,7 +50,7 @@ def takeZStackCoroutine(
     save_loc=None,
 ):
     if save_loc != None:
-        timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+        timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")
         try:
             os.mkdir(save_dir)
@@ -129,7 +129,7 @@ def symmetricZStack(
     """
 
     if save_loc != None:
-        timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+        timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-local_zstack/")
         try:
             os.mkdir(save_dir)
@@ -170,7 +170,7 @@ def symmetricZStackCoroutine(
     """The coroutine companion to symmetricZStack"""
 
     if save_loc != None:
-        timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+        timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-local_zstack/")
         try:
             os.mkdir(save_dir)
