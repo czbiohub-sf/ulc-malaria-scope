@@ -238,8 +238,6 @@ class Oracle(Machine):
         self.experiment_metadata["target_flowrate"] = TARGET_FLOWRATE
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
-        print(self.experiment_metadata)
-
         self.scopeop.mscope.data_storage.createNewExperiment("", self.experiment_metadata, PER_IMAGE_METADATA_KEYS)
 
 
