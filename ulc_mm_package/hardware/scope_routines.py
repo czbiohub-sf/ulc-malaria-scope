@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional, Sequence
+from typing import List, Tuple, Optional, Sequence, Generator, Union
 from time import perf_counter
 import numpy as np
 
@@ -23,17 +23,16 @@ def focusRoutine(
     mscope.motor.move_abs(best_focus_pos)
 
 
-def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
+def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) -> int:
     """Single shot autofocus routine.
 
-    Use the neural compute stick and the single shot autofocus network
-    to determine the number of steps to take to move back into focus.
+    Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
+    using the SSAF model, averages the results, and adjusts the motor position by that step value.
 
-    This function batches and averages several inferences before making an adjustment. The number
-    of images to look at before adjusting the motor is determined by the `AF_BATCH_SIZE` constant in
-    `neural_nets/nn_constants.py`.
-
-    This function runs until one motor adjustment is completed, then returns.
+    Parameters
+    ----------
+    List[np.ndarray]:
+        Array of images (np.ndarray)
 
     Returns
     -------
@@ -41,14 +40,12 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
         The number of steps that the motor was moved.
     """
 
-    ssaf_steps_from_focus = []
+    ssaf_steps_from_focus = [-int(mscope.autofocus_model(img)) for img in img_arr]
+    steps_from_focus = int(np.mean(ssaf_steps_from_focus))
 
-    while len(ssaf_steps_from_focus) != nn_constants.AF_BATCH_SIZE:
-        img = yield img
-        ssaf_steps_from_focus.append(-int(mscope.autofocus_model(img)))
-
-    # Once batch is full, get mean and move motor
-    steps_from_focus = np.mean(ssaf_steps_from_focus)
+    # Change to async batch inference? Check w/ Axel
+    # mscope.autofocus_model.asyn(img_arr)
+    # ssaf_steps_from_focus = mscope.autofocus_model.get_asyn_results()
 
     try:
         dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
@@ -61,48 +58,56 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img: np.ndarray):
     return steps_from_focus
 
 
-def continuousSSAFRoutine(mscope: MalariaScope, img: np.ndarray):
-    """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes adjustments.
+def continuousSSAFRoutine(
+    mscope: MalariaScope, img: np.ndarray
+) -> Generator[Union[None, int], np.ndarray, None]:
+    """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
 
-    `singleShotAutofocusRoutine` runs a single time before returning. This function is a simple
-    continuous wrapper so continuously receive and send images to the autofocus model.
-    """
-
-    ssaf = singleShotAutofocusRoutine(mscope, None)
-    ssaf.send(None)
+    img_arr = []
+    steps_from_focus = None
 
     while True:
-        img = yield img
-        try:
-            ssaf.send(img)
-        except StopIteration as e:
-            steps_taken = e.value
-            print(f"SSAF - moved motor: {steps_taken}")
-            ssaf = singleShotAutofocusRoutine(mscope, None)
-            ssaf.send(None)
+        img = yield steps_from_focus
+        steps_from_focus = None
+        img_arr.append(img)
+
+        if len(img_arr) == nn_constants.AF_BATCH_SIZE:
+            steps_from_focus = singleShotAutofocusRoutine(mscope, img_arr)
+            img_arr = []
 
 
-def periodicAutofocusWrapper(mscope: MalariaScope, img: np.ndarray):
+def periodicAutofocusWrapper(
+    mscope: MalariaScope, img: np.ndarray
+) -> Generator[Union[None, int], np.ndarray, None]:
     """A periodic wrapper around the `continuousSSAFRoutine`.
 
     This function adds a simple time wrapper around `continuousSSAFRoutine`
-    such that inferences and motor adjustments are done every `AF_PERIOD_S`seconds
-    (located under `neuraL_nets/nn_constants.py`).
+    such that inferences (in batches) and motor adjustments are done every `AF_PERIOD_S`seconds.
 
-    In other words, instead of every image being inferenced and an adjustment being done once
-    AF_BATCH_SIZE images have been analyzed, inferences and adjustments are done only if AF_PERIOD_S
-    has elapsed since the last adjustment.
+    When not making an adjustment, this Generator yields None. After an adjustment has been completed, the next
+    `.send(img)` will yield a float value.
+
+    The caller of this function should have an isinstance(float) or isinstance(None) check to the output received.
+
+    Returns
+    -------
+    None:
+        In between periods, images are not being sent to SSAF.
+    int:
+        Number of motor steps taken, returned after a full batch of images have been sent once
+        AF_PERIOD_S has elapsed since the last adjustment.
     """
 
-    prev_adjustment_time = perf_counter()
     counter = 0
+    steps_from_focus = None
+    prev_adjustment_time = perf_counter()
     ssaf_routine = continuousSSAFRoutine(mscope, None)
     ssaf_routine.send(None)
 
     while True:
-        img = yield img
+        img = yield steps_from_focus
         if perf_counter() - prev_adjustment_time > nn_constants.AF_PERIOD_S:
-            ssaf_routine.send(img)
+            steps_from_focus = ssaf_routine.send(img)
             counter += 1
             if counter >= nn_constants.AF_BATCH_SIZE:
                 counter = 0
@@ -119,7 +124,7 @@ def count_parasitemia(
 
 def flowControlRoutine(
     mscope: MalariaScope, target_flowrate: float, img: np.ndarray
-) -> float:
+) -> Generator[float, np.ndarray, None]:
     """Keep the flowrate steady by continuously calculating the flowrate and periodically
     adjusting the syringe position. Need to initially pass in the flowrate to maintain.
 
@@ -130,11 +135,16 @@ def flowControlRoutine(
         The flowrate value to attempt to keep steady
     img: np.ndarray
         Image to be passed into the FlowController
+
+    Exceptions
+    ----------
+    CantReachTargetFlowrate:
+        Raised when the syringe is already at its maximally extended position but the flowrate
+        is still outside the tolerance band.
     """
 
     img, timestamp = yield
     flow_val = 0
-    prev_flow_val = 0
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
@@ -151,7 +161,7 @@ def fastFlowRoutine(
     mscope: MalariaScope,
     img: np.ndarray,
     target_flowrate: float = processing_constants.TARGET_FLOWRATE_FAST,
-) -> float:
+) -> Generator[float, np.ndarray, float]:
     """Faster flowrate feedback for initial flow ramp-up.
 
     See FlowController.fastFlowAdjustment for specifics.
@@ -184,7 +194,9 @@ def fastFlowRoutine(
 
     Exceptions
     ----------
-    CantReachTargetFlowrate - raised if the flowrate is above/below where it needs to be, but the syringe can no longer move in the direction necessary
+    CantReachTargetFlowrate:
+        Raised when the syringe is already at its maximally extended position but the flowrate
+        is still outside the tolerance band.
     """
 
     flow_val = 0
