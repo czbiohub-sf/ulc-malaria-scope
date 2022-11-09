@@ -100,11 +100,11 @@ class ZarrWriter:
             return
 
         try:
+            self.prev_write_time = perf_counter()
             ds = self.group.array(
                 f"{self.arr_counter}", data=data, compressor=self.compressor
             )
             self.arr_counter += 1
-            self.prev_write_time = perf_counter()
             return self.arr_counter
         except Exception:
             raise AttemptingWriteWithoutFile()

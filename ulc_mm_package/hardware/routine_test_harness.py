@@ -209,6 +209,8 @@ def main_acquisition_loop(mscope: MalariaScope):
             count = cell_density.send(img)
         except LowDensity as e:
             print(e)
+            cell_density = cell_density_routine(None)
+            cell_density.send(None)
         print(f"Cell density : {count}, {perf_counter() - density_start_time}")
 
         try:
