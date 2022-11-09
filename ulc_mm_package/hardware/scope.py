@@ -60,7 +60,6 @@ class MalariaScope:
         self._init_humidity_temp_sensor()
         self._init_data_storage()
         self._init_TPU()
-        self._init_RTC()
 
     def shutoff(self):
         print("MSCOPE: Shutting off hardware")
@@ -219,7 +218,3 @@ class MalariaScope:
         except TPUError as e:
             # TODO - change to logging
             print(f"Failed to initialize the TPU: {e}")
-
-    def _init_RTC(self):
-        self.rtc = RTC_PCF8523()
-        self.rtc_enabled = True
