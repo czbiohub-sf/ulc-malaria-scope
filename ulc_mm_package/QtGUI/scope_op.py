@@ -11,7 +11,6 @@ from transitions import Machine
 from time import perf_counter, sleep
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
-from zmq import pyzmq_version
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
