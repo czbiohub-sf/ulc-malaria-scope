@@ -18,7 +18,7 @@ from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
-from ulc_mm_package.hardware.hardware_constants import SIMULATION
+from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
@@ -338,7 +338,7 @@ class ScopeOp(QObject, Machine):
             self.to_intermission()
         else:
             # Record timestamp before running routines
-            self.image_metadata["timestamp"] = self.mscope.rtc.get_time()
+            self.image_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
             self.image_metadata["im_counter"] = self.count
 
             self.update_img_count.emit(self.count)
