@@ -343,6 +343,8 @@ class ScopeOp(QObject, Machine):
 
             self.update_img_count.emit(self.count)
 
+            self.mscope.data_storage.writeSingleImage(img, self.count)
+
             prev_res = count_parasitemia(self.mscope, img, [self.count])
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)

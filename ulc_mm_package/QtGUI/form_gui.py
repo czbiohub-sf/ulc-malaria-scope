@@ -75,6 +75,9 @@ class FormGUI(QDialog):
         self.exit_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
 
+        # Set tab behavior
+        self.notes_val.setTabChangesFocus(True)
+
         # Place widgets
         self.main_layout.addWidget(self.operator_lbl, 0, 0)
         self.main_layout.addWidget(self.participant_lbl, 1, 0)
@@ -96,10 +99,11 @@ class FormGUI(QDialog):
 
         # Set the focus order
         self.operator_val.setFocus()
-        self.setTabOrder(self.notes_val, self.start_btn)
 
     def unfreeze_buttons(self):
         self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
+
+        self.setTabOrder(self.notes_val, self.start_btn)
 
         self.exit_btn.setEnabled(True)
         self.start_btn.setEnabled(True)
