@@ -98,14 +98,13 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
     mscope.motor.move_abs(motor_pos)
 
     print("Running SSAF")
-    ssaf = singleShotAutofocusRoutine(mscope, None)
+    ssaf = continuousSSAFRoutine(mscope, None)
     ssaf.send(None)
     for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
-        try:
-            ssaf.send(img)
-        except StopIteration as e:
-            print(f"SSAF complete, motor moved by: {e.value} steps")
+        steps_from_focus = ssaf.send(img)
+        if isinstance(steps_from_focus, int):
+            print(f"SSAF complete, motor moved by: {steps_from_focus} steps")
             break
 
 
@@ -198,11 +197,10 @@ def main_acquisition_loop(mscope: MalariaScope):
         # Display
         _displayImage(img)
 
-        # Save data
-        mscope.data_storage.writeData(img, fake_per_img_metadata)
-
         # Periodically adjust focus using single shot autofocus
-        periodic_ssaf.send(img)
+        steps_from_focus = periodic_ssaf.send(img)
+        if isinstance(steps_from_focus, int):
+            print(f"SSAF: Motor move - {steps_from_focus} steps")
 
         prev_results = count_parasitemia(mscope, img)
 
@@ -211,12 +209,28 @@ def main_acquisition_loop(mscope: MalariaScope):
             count = cell_density.send(img)
         except LowDensity as e:
             print(e)
+            cell_density = cell_density_routine(None)
+            cell_density.send(None)
         print(f"Cell density : {count}, {perf_counter() - density_start_time}")
 
         try:
-            flow_control.send((img, timestamp))
+            flow_val = flow_control.send((img, timestamp))
+            if isinstance(flow_val, float):
+                print(f"Flow control: Flow val - {flow_val}")
         except CantReachTargetFlowrate:
             print("Can't reach target flowrate.")
+
+        # Save data
+        fake_per_img_metadata["timestamp"] = timestamp
+        fake_per_img_metadata["motor_pos"] = mscope.motor.pos
+        fake_per_img_metadata["pressure_hpa"] = mscope.pneumatic_module.getPressure()
+        fake_per_img_metadata[
+            "syringe_pos"
+        ] = mscope.pneumatic_module.getCurrentDutyCycle()
+        fake_per_img_metadata["flowrate"] = flow_val
+        fake_per_img_metadata["temperature"] = mscope.ht_sensor.getTemperature()
+        fake_per_img_metadata["humidity"] = mscope.ht_sensor.getRelativeHumidity()
+        mscope.data_storage.writeData(img, fake_per_img_metadata)
 
         # Timed stop condition
         if perf_counter() - start > stop_time_s:
@@ -224,13 +238,6 @@ def main_acquisition_loop(mscope: MalariaScope):
         elif perf_counter() - prev_print_time >= 10:
             print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
             prev_print_time = perf_counter()
-
-            # Timed stop condition
-            if perf_counter() - start > stop_time_s:
-                break
-            elif perf_counter() - prev_print_time >= 10:
-                print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
-                prev_print_time = perf_counter()
 
     mscope.data_storage.save_uniform_random_sample()
     closing_file_future = mscope.data_storage.close()
