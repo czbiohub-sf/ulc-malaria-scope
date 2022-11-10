@@ -39,7 +39,7 @@ class SHT3X:
 
     def getTemperature(self):
         try:
-            temp = self.sensor.temperature()
+            temp = self.sensor.temperature
             return temp
         except Exception as e:
             print(f"Error getting temperature: {e}")
