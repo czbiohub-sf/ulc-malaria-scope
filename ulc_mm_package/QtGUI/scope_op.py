@@ -117,7 +117,7 @@ class ScopeOp(QObject, Machine):
 
     def _init_variables(self):
 
-        self.image_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
+        self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.autobrightness_result = None
         self.cellfinder_result = None
@@ -214,6 +214,9 @@ class ScopeOp(QObject, Machine):
             self.mscope, TARGET_FLOWRATE, None
         )
         self.flowcontrol_routine.send(None)
+
+        self.density_routine = cell_density_routine(None)
+        self.density_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
@@ -338,12 +341,10 @@ class ScopeOp(QObject, Machine):
             self.to_intermission()
         else:
             # Record timestamp before running routines
-            self.image_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
-            self.image_metadata["im_counter"] = self.count
+            self.img_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
+            self.img_metadata["im_counter"] = self.count
 
             self.update_img_count.emit(self.count)
-
-            self.mscope.data_storage.writeSingleImage(img, self.count)
 
             prev_res = count_parasitemia(self.mscope, img, [self.count])
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
@@ -351,13 +352,14 @@ class ScopeOp(QObject, Machine):
 
             # Adjust the flow
             try:
-                # Periodically adjust focus using single shot autofocus
-                self.PSSAF_routine.send(img)
-                # TODO add density check here
-
+                # Periodic routines
+                focus_err = self.PSSAF_routine.send(img)
+                density = self.density_routine.send(img)
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
-                if flowrate != None:
-                    self.update_flowrate.emit(int(flowrate))
+            except LowDensity:
+                # TODO add recovery operation for low cell density
+                print("LOW CELL DENSITY")
+                pass
             except CantReachTargetFlowrate:
                 if not SIMULATION:
                     self.error.emit(
@@ -365,8 +367,7 @@ class ScopeOp(QObject, Machine):
                         "Unable to achieve desired flowrate with syringe at max position.",
                     )
                     return
-            # TODO add recovery operation for low cell density
-            except Exception as e:
+            except MotorControllerError as e:
                 if not SIMULATION:
                     self.error.emit(
                         "Autofocus failed",
@@ -374,19 +375,30 @@ class ScopeOp(QObject, Machine):
                     )
                     return
 
+            # Update infopanel
+            if focus_err != None:
+                # TODO change this to non int?
+                self.update_focus.emit(int(focus_err))
+            if flowrate != None:
+                self.update_flowrate.emit(int(flowrate))
+            
             # Update remaining metadata
-            self.image_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
-            self.image_metadata[
+            self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
+            self.img_metadata[
                 "pressure_hpa"
             ] = self.mscope.pneumatic_module.getPressure()
-            self.image_metadata[
+            self.img_metadata[
                 "syringe_pos"
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
-            self.image_metadata["flowrate"] = flowrate
-            self.image_metadata[
+            self.img_metadata["flowrate"] = flowrate
+            self.img_metadata["focus_error"] = focus_err
+            self.img_metadata["cell_density"] = density
+            self.img_metadata[
                 "temperature"
             ] = self.mscope.ht_sensor.getRelativeHumidity()
-            self.image_metadata["humidity"] = self.mscope.ht_sensor.getTemperature()
+            self.img_metadata["humidity"] = self.mscope.ht_sensor.getTemperature()
+
+            self.mscope.data_storage.writeData(img, self.img_metadata)
 
             self.count += 1
             self.img_signal.connect(self.run_experiment)
