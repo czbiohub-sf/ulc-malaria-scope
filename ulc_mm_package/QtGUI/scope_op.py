@@ -51,7 +51,6 @@ class ScopeOp(QObject, Machine):
     update_cell_count = pyqtSignal(list)
     update_msg = pyqtSignal(str)
 
-    update_brightness = pyqtSignal(int)
     update_flowrate = pyqtSignal(int)
     update_focus = pyqtSignal(int)
 
@@ -253,7 +252,6 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.autobrightness_result = e.value
             print(f"SCOPEOP: Mean pixel val = {self.autobrightness_result}")
-            self.update_brightness.emit(int(self.autobrightness_result))
             # TODO save autobrightness value to metadata instead
             self.next_state()
         except BrightnessTargetNotAchieved as e:
@@ -261,7 +259,6 @@ class ScopeOp(QObject, Machine):
             print(
                 f"SCOPEOP: Brightness not quite high enough but still ok - mean pixel val = {self.autobrightness_result}"
             )
-            self.update_brightness.emit(int(self.autobrightness_result))
             self.next_state()
         except BrightnessCriticallyLow as e:
             self.error.emit(

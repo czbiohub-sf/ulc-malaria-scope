@@ -137,7 +137,6 @@ class Oracle(Machine):
         self.scopeop.update_cell_count.connect(self.liveview_window.update_cell_count)
         self.scopeop.update_msg.connect(self.liveview_window.update_msg)
 
-        self.scopeop.update_brightness.connect(self.liveview_window.update_brightness)
         self.scopeop.update_flowrate.connect(self.liveview_window.update_flowrate)
         self.scopeop.update_focus.connect(self.liveview_window.update_focus)
 
