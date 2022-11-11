@@ -61,7 +61,7 @@ class ScopeOp(QObject, Machine):
         self.mscope = None
         self.img_signal = img_signal
 
-        self.digits = int(np.log10(MAX_FRAMES-1))+1
+        self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
         states = [
             {
@@ -380,7 +380,7 @@ class ScopeOp(QObject, Machine):
                 self.update_focus.emit(int(focus_err))
             if flowrate != None:
                 self.update_flowrate.emit(int(flowrate))
-            
+
             # Update remaining metadata
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
             self.img_metadata[
