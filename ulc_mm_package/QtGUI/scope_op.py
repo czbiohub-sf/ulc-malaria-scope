@@ -62,7 +62,7 @@ class ScopeOp(QObject, Machine):
         self.mscope = None
         self.img_signal = img_signal
 
-        self.digits = int(np.log10(MAX_FRAMES))+1
+        self.digits = int(np.log10(MAX_FRAMES-1))+1
 
         states = [
             {
