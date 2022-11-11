@@ -62,6 +62,8 @@ class ScopeOp(QObject, Machine):
         self.mscope = None
         self.img_signal = img_signal
 
+        self.digits = int(np.log10(MAX_FRAMES))+1
+
         states = [
             {
                 "name": "standby",
@@ -341,7 +343,7 @@ class ScopeOp(QObject, Machine):
         else:
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
-            self.img_metadata["im_counter"] = self.count
+            self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
 
             self.update_img_count.emit(self.count)
 
