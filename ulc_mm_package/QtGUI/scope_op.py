@@ -352,7 +352,8 @@ class ScopeOp(QObject, Machine):
             try:
                 # Periodic routines
                 focus_err = self.PSSAF_routine.send(img)
-                density = self.density_routine.send(img)
+                # TEMP comment out density because it runs slow
+                # density = self.density_routine.send(img)
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
             except LowDensity:
                 # TODO add recovery operation for low cell density
@@ -390,7 +391,8 @@ class ScopeOp(QObject, Machine):
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
-            self.img_metadata["cell_density"] = density
+            # TEMP comment out density because it runs slow
+            # self.img_metadata["cell_density"] = density
             self.img_metadata[
                 "temperature"
             ] = self.mscope.ht_sensor.getRelativeHumidity()
