@@ -22,5 +22,3 @@ from ulc_mm_package.hardware.sht31d_temphumiditysensor import (
     SHT3X,
     TemperatureSensorNotInstantiated,
 )
-
-from ulc_mm_package.hardware.rtc_pcf8523 import RTC_PCF8523
