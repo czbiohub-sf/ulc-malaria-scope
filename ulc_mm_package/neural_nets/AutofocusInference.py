@@ -20,3 +20,19 @@ class AutoFocus(NCSModel):
 
     def __call__(self, input_img):
         return self.syn(input_img)[0][0]
+
+
+if __name__ == "__main__":
+    import os
+    import cv2
+    import sys
+    import numpy as np
+    import time
+    from pathlib import Path
+    import matplotlib.pyplot as plt
+
+    A = AutoFocus()
+
+    for imgpath in Path(sys.argv[1]).glob("*.png"):
+        im = cv2.imread(str(imgpath), cv2.IMREAD_GRAYSCALE).astype(np.float16)
+        print(A(im))

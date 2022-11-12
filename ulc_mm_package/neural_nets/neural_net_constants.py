@@ -1,7 +1,7 @@
 # ================ Autofocus constants ================ #
 AF_PERIOD_S = 10
 AF_BATCH_SIZE = 10
-AUTOFOCUS_MODEL_DIR = "../neural_nets/autofocus_model_files/autofocus.xml"
+AUTOFOCUS_MODEL_DIR = "../neural_nets/autofocus_model_files/half.onnx"
 
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.3

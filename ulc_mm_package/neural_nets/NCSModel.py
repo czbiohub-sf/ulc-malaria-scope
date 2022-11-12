@@ -98,26 +98,25 @@ class NCSModel:
 
     def _compile_model(self, model_path, perf_hint: OptimizationHint):
         if self.connected:
-            # TODO: reconnect param?
             return
 
         model = self.core.read_model(model_path)
 
         input_tensor_shape = (
             1,
-            CAMERA_SELECTION.IMG_HEIGHT,
-            CAMERA_SELECTION.IMG_WIDTH,
             1,
+            CAMERA_SELECTION.IMG_WIDTH,
+            CAMERA_SELECTION.IMG_HEIGHT,
         )
 
         # https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
         ppp = PrePostProcessor(model)
         ppp.input().tensor().set_shape(input_tensor_shape).set_element_type(
-            Type.u8
-        ).set_layout(Layout("NHWC"))
+            Type.f16
+        ).set_layout(Layout("NCHW"))
         ppp.input().model().set_layout(Layout("NCHW"))
         ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)
-        ppp.output().tensor().set_element_type(Type.f32)
+        ppp.output().tensor().set_element_type(Type.f16)
         model = ppp.build()
 
         err_msg = ""
@@ -128,7 +127,9 @@ class NCSModel:
             try:
                 # TODO: benchmark_app.py says PERFORMANCE_HINT = 'none' w/ nstreams=1 is fastest!!
                 compiled_model = self.core.compile_model(
-                    model, self.device_name, {"PERFORMANCE_HINT": perf_hint.name}
+                    model,
+                    self.device_name,
+                    # {"PERFORMANCE_HINT": perf_hint},
                 )
                 self.connected = True
                 return compiled_model
@@ -148,7 +149,7 @@ class NCSModel:
 
     def syn(self, input_img):
         """input_img is 2d array (i.e. grayscale img)"""
-        input_tensor = [Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)]
+        input_tensor = [Tensor(np.expand_dims(input_img, (0, 1)), shared_memory=True)]
         results = self.model(input_tensor)
         return next(iter(results.values()))
 
@@ -183,51 +184,3 @@ class NCSModel:
 
     def wait_all(self):
         self.asyn_infer_queue.wait_all()
-
-
-if __name__ == "__main__":
-    import cv2
-
-    def _asyn_calling(model, images):
-        print("starting asyncing")
-        t0 = time.perf_counter()
-
-        for image in images:
-            model.asyn(image)
-
-        model.wait_all()
-
-        t1 = time.perf_counter()
-        print(f"Total runtime {t1 - t0}")
-        print(f"Throughput {len(images) / (t1 - t0)} FPS")
-
-    def _syn_calling(model, images):
-        print("starting syncing")
-        times = []
-        for image in images:
-            t0 = time.perf_counter()
-            model.syn(image)
-            t1 = time.perf_counter()
-            times.append(t1 - t0)
-        ts = np.asarray(times)
-        print(
-            f"Total runtime {sum(ts)} \t mean inference {ts.mean()} \t std dev {ts.std()}"
-        )
-        print(f"Throughput {len(images) / sum(ts)} FPS")
-
-    if len(sys.argv) != 3:
-        print(
-            f"usage: {sys.argv[0]} <path to model.xml> <path to image or dir of tiffs>"
-        )
-        exit()
-
-    image_path = Path(sys.argv[2])
-    if image_path.is_file():
-        images = [cv2.imread(sys.argv[2], cv2.IMREAD_GRAYSCALE)]
-    else:
-        sorted_fnames = sorted([str(p) for p in image_path.glob("*.tiff")])
-        images = [cv2.imread(fname, cv2.IMREAD_GRAYSCALE) for fname in sorted_fnames]
-
-    A = NCSModel(sys.argv[1], OptimizationHint.THROUGHPUT)
-    _syn_calling(A, images)
-    _asyn_calling(A, images)
