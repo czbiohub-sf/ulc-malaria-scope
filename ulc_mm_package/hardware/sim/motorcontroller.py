@@ -131,6 +131,9 @@ class DRV8825Nema(RealDRV8825Nema):
     def close(self):
         pass
 
+    def getCurrentPosition(self):
+        return self.pos
+
     def homeToLimitSwitches(self):
         """Move to the limit switch and the set the zero position (with an offset).
 

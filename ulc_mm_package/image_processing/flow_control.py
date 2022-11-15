@@ -2,7 +2,7 @@
 FlowController
 """
 
-from typing import Tuple
+from typing import Tuple, Union
 import numpy as np
 
 from ulc_mm_package.image_processing.processing_constants import (
@@ -94,7 +94,7 @@ class FlowController:
 
     def fastFlowAdjustment(
         self, img: np.ndarray, timestamp: int
-    ) -> Tuple[float, float]:
+    ) -> Union[Tuple[None, None], Tuple[float, float]]:
         """
         Adjust flow on a faster feedback cycle (i.e w/o the EWMA batching)
         until the target flowrate is achieved.
@@ -150,7 +150,7 @@ class FlowController:
         else:
             return (None, None)
 
-    def controlFlow(self, img: np.ndarray, timestamp: int) -> float:
+    def controlFlow(self, img: np.ndarray, timestamp: int) -> Union[None, float]:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
 
         If the `self.target_flowrate` has not been set, the first full measurement is used as the target, and all subsequent measurements
