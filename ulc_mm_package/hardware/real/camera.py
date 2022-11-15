@@ -105,12 +105,26 @@ class AVTCamera:
             self.camera.stop_streaming()
 
     def yieldImages(self) -> Generator[Tuple[np.ndarray, float], None, None]:
+        """Generator of images
+
+        Yields
+        ------
+        Tuple[np.ndarray, float]:
+            Returns an image array and a timestamp (float)
+
+        Exceptions
+        ----------
+        queue.Empty:
+            Raised if no frames are received within 0.5s while the camera is streaming
+        """
+
         if not self.camera.is_streaming():
             self._flush_queue()
             self.startAcquisition()
 
         while self.camera.is_streaming():
-            yield self.queue.get()
+            # Half a second timeout before queue Empty exception is raised
+            yield self.queue.get(timeout=0.5)
 
     def setBinning(self, mode: str = "Average", bin_factor=1):
         while self.camera.is_streaming():
