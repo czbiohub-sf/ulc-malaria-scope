@@ -13,7 +13,7 @@ from contextlib import contextmanager
 
 from typing import Any, Callable, List, Sequence, Optional, Tuple
 
-from ulc_mm_package.scope_constants import CAMERA_SELECTION
+from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import (
@@ -81,6 +81,7 @@ class NCSModel:
         self,
         model_path: str,
         optimization_hint: OptimizationHint = OptimizationHint.THROUGHPUT,
+        camera_selection: CameraOptions = CAMERA_SELECTION,
     ):
         """
         params:
@@ -89,14 +90,21 @@ class NCSModel:
         self.lock = threading.Lock()
         self.connected = False
         self.device_name = "MYRIAD"
-        self.model = self._compile_model(model_path, optimization_hint)
+        self.model = self._compile_model(
+            model_path, optimization_hint, camera_selection
+        )
         self.num_requests = self.model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")
         self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
         # list of list of tuples - (xcenter, ycenter, width, height, class, confidence)
         self._asyn_results: List[List[Tuple[int, Tuple[float]]]] = []
 
-    def _compile_model(self, model_path, perf_hint: OptimizationHint):
+    def _compile_model(
+        self,
+        model_path: str,
+        perf_hint: OptimizationHint,
+        camera_selection: CameraOptions,
+    ):
         if self.connected:
             return
 
@@ -105,8 +113,8 @@ class NCSModel:
         input_tensor_shape = (
             1,
             1,
-            CAMERA_SELECTION.IMG_WIDTH,
-            CAMERA_SELECTION.IMG_HEIGHT,
+            camera_selection.IMG_WIDTH,
+            camera_selection.IMG_HEIGHT,
         )
 
         # https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
