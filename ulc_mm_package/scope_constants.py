@@ -78,16 +78,21 @@ AVT_PRODUCT_ID = 0x0001
 BASLER_VENDOR_ID = 0x2676
 BASLER_PRODUCT_ID = 0xBA03
 
-_avt_dev = usb.core.find(idVendor=AVT_VENDOR_ID, idProduct=AVT_PRODUCT_ID)
-_basler_dev = usb.core.find(idVendor=BASLER_VENDOR_ID, idProduct=BASLER_PRODUCT_ID)
+try:
+    _avt_dev = usb.core.find(idVendor=AVT_VENDOR_ID, idProduct=AVT_PRODUCT_ID)
+    _basler_dev = usb.core.find(idVendor=BASLER_VENDOR_ID, idProduct=BASLER_PRODUCT_ID)
 
-if SIMULATION:
+    if SIMULATION:
+        CAMERA_SELECTION = CameraOptions.SIMULATED
+    else:
+        if _avt_dev is not None:
+            CAMERA_SELECTION = CameraOptions.AVT
+        elif _basler_dev is not None:
+            CAMERA_SELECTION = CameraOptions.BASLER
+        else:
+            raise MissingCameraError(
+                "There is no camera found on the device and we are not simulating: "
+            )
+            
+except usb.core.NoBackendError:
     CAMERA_SELECTION = CameraOptions.SIMULATED
-elif _avt_dev is not None:
-    CAMERA_SELECTION = CameraOptions.AVT
-elif _basler_dev is not None:
-    CAMERA_SELECTION = CameraOptions.BASLER
-else:
-    raise MissingCameraError(
-        "There is no camera found on the device and we are not simulating: "
-    )
