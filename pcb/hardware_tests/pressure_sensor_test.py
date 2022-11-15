@@ -20,7 +20,7 @@ time.sleep(0.5)
 GPIO.output(pwr_pin, GPIO.LOW)
 time.sleep(1)
 GPIO.output(rst_pin, GPIO.HIGH)
-#reset = digitalio.DigitalInOut(board.D25)
+# reset = digitalio.DigitalInOut(board.D25)
 i2c = board.I2C()
 
 # Simplest use, connect to default over I2C

@@ -94,6 +94,6 @@ try:
             raise MissingCameraError(
                 "There is no camera found on the device and we are not simulating: "
             )
-            
+
 except usb.core.NoBackendError:
     CAMERA_SELECTION = CameraOptions.SIMULATED
