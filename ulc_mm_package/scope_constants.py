@@ -20,11 +20,11 @@ class CameraOptions(Enum):
 
     def img_dims(self) -> ImageDims:
         if self == CameraOptions.AVT:
-            return ImageDims(width=772, height=1032)
+            return ImageDims(width=1032, height=772)
         elif self == CameraOptions.BASLER:
-            return ImageDims(width=600, height=800)
+            return ImageDims(width=800, height=600)
         elif self == CameraOptions.SIMULATED:
-            return ImageDims(width=600, height=800)
+            return ImageDims(width=800, height=600)
 
     @property
     def IMG_WIDTH(self) -> int:
