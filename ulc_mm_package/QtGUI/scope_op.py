@@ -1,4 +1,4 @@
-""" Low-level/hardware state machine manager
+""" Mid-level/hardware state machine manager
 
 Controls hardware (ie. the Scope) operations.
 Manages hardware routines and interactions with Oracle and Acquisition.
@@ -7,6 +7,7 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 import numpy as np
 
+from datetime import datetime
 from transitions import Machine
 from time import perf_counter, sleep
 
@@ -16,7 +17,7 @@ from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
-from ulc_mm_package.hardware.hardware_constants import SIMULATION
+from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
@@ -24,6 +25,9 @@ from ulc_mm_package.QtGUI.gui_constants import (
     MAX_FRAMES,
     STATUS,
 )
+
+# TODO populate info?
+# TODO remove -1 flag from TH sensor?
 
 
 class ScopeOp(QObject, Machine):
@@ -47,7 +51,6 @@ class ScopeOp(QObject, Machine):
     update_cell_count = pyqtSignal(list)
     update_msg = pyqtSignal(str)
 
-    update_brightness = pyqtSignal(int)
     update_flowrate = pyqtSignal(int)
     update_focus = pyqtSignal(int)
 
@@ -57,6 +60,8 @@ class ScopeOp(QObject, Machine):
         self._init_variables()
         self.mscope = None
         self.img_signal = img_signal
+
+        self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
         states = [
             {
@@ -89,7 +94,7 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            skipped_states = ["autofocus"]
+            skipped_states = ["autofocus", "fastflow"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -112,7 +117,7 @@ class ScopeOp(QObject, Machine):
 
     def _init_variables(self):
 
-        self.image_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
+        self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.autobrightness_result = None
         self.cellfinder_result = None
@@ -143,7 +148,7 @@ class ScopeOp(QObject, Machine):
             self.error.emit(
                 "Hardware pre-check failed",
                 "The following component(s) could not be instantiated: {}.".format(
-                    (",".join(failed_components)).capitalize()
+                    (", ".join(failed_components)).capitalize()
                 ),
             )
 
@@ -210,6 +215,9 @@ class ScopeOp(QObject, Machine):
         )
         self.flowcontrol_routine.send(None)
 
+        self.density_routine = cell_density_routine(None)
+        self.density_routine.send(None)
+
         self.set_period.emit(LIVEVIEW_PERIOD)
 
         self.img_signal.connect(self.run_experiment)
@@ -229,7 +237,8 @@ class ScopeOp(QObject, Machine):
         print("SCOPEOP: Turning off LED")
         self.mscope.led.turnOff()
 
-        # TODO close data_storage
+        print("SCOPEOP: Closing data storage")
+        self.mscope.data_storage.close()
 
     def _start_intermission(self):
         self.experiment_done.emit()
@@ -243,7 +252,6 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.autobrightness_result = e.value
             print(f"SCOPEOP: Mean pixel val = {self.autobrightness_result}")
-            self.update_brightness.emit(int(self.autobrightness_result))
             # TODO save autobrightness value to metadata instead
             self.next_state()
         except BrightnessTargetNotAchieved as e:
@@ -251,7 +259,6 @@ class ScopeOp(QObject, Machine):
             print(
                 f"SCOPEOP: Brightness not quite high enough but still ok - mean pixel val = {self.autobrightness_result}"
             )
-            self.update_brightness.emit(int(self.autobrightness_result))
             self.next_state()
         except BrightnessCriticallyLow as e:
             self.error.emit(
@@ -331,6 +338,10 @@ class ScopeOp(QObject, Machine):
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
+            # Record timestamp before running routines
+            self.img_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
+            self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
+
             self.update_img_count.emit(self.count)
 
             prev_res = count_parasitemia(self.mscope, img, [self.count])
@@ -339,13 +350,15 @@ class ScopeOp(QObject, Machine):
 
             # Adjust the flow
             try:
-                # Periodically adjust focus using single shot autofocus
-                self.PSSAF_routine.send(img)
-                # TODO add density check here
-
+                # Periodic routines
+                focus_err = self.PSSAF_routine.send(img)
+                # TEMP comment out density because it runs slow
+                # density = self.density_routine.send(img)
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
-                if flowrate != None:
-                    self.update_flowrate.emit(int(flowrate))
+            except LowDensity:
+                # TODO add recovery operation for low cell density
+                print("LOW CELL DENSITY")
+                pass
             except CantReachTargetFlowrate:
                 if not SIMULATION:
                     self.error.emit(
@@ -353,8 +366,7 @@ class ScopeOp(QObject, Machine):
                         "Unable to achieve desired flowrate with syringe at max position.",
                     )
                     return
-            # TODO add recovery operation for low cell density
-            except Exception as e:
+            except MotorControllerError as e:
                 if not SIMULATION:
                     self.error.emit(
                         "Autofocus failed",
@@ -362,17 +374,31 @@ class ScopeOp(QObject, Machine):
                     )
                     return
 
-            # # TODO populate this and add brightness, focus, and parasitemia count
-            # self.image_metadata = {
-            #     "im_counter" : self.count,
-            #     "timestamp" : None,
-            #     "motor_pos" : None,
-            #     "pressure_hpa" : None,
-            #     "syringe_pos" : None,
-            #     "flowrate" : flowrate,
-            #     "temperature" : None,
-            #     "humidity" : None,
-            # }
+            # Update infopanel
+            if focus_err != None:
+                # TODO change this to non int?
+                self.update_focus.emit(int(focus_err))
+            if flowrate != None:
+                self.update_flowrate.emit(int(flowrate))
+
+            # Update remaining metadata
+            self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
+            self.img_metadata[
+                "pressure_hpa"
+            ] = self.mscope.pneumatic_module.getPressure()
+            self.img_metadata[
+                "syringe_pos"
+            ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
+            self.img_metadata["flowrate"] = flowrate
+            self.img_metadata["focus_error"] = focus_err
+            # TEMP comment out density because it runs slow
+            # self.img_metadata["cell_density"] = density
+            self.img_metadata[
+                "temperature"
+            ] = self.mscope.ht_sensor.getRelativeHumidity()
+            self.img_metadata["humidity"] = self.mscope.ht_sensor.getTemperature()
+
+            self.mscope.data_storage.writeData(img, self.img_metadata)
 
             self.count += 1
             self.img_signal.connect(self.run_experiment)

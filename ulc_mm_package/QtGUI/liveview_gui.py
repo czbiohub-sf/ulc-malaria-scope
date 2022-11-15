@@ -84,10 +84,6 @@ class LiveviewGUI(QMainWindow):
         self.terminal_txt.setPlainText(self.terminal_msg)
 
     @pyqtSlot(int)
-    def update_brightness(self, val):
-        self.brightness_val.setText(f"Actual = {val}")
-
-    @pyqtSlot(int)
     def update_focus(self, val):
         self.focus_val.setText(f"Actual = {val}")
 
@@ -150,20 +146,16 @@ class LiveviewGUI(QMainWindow):
         self.troph_count_val = QLabel("-")
 
         # Populate infopanel with routine results
-        self.brightness_title = QLabel("AVERAGE BRIGHTNESS")
         self.focus_title = QLabel("FOCUS ERROR (motor steps)")
         self.flowrate_title = QLabel("CELL FLOWRATE (pix/sec)")
-        self.brightness_lbl = QLabel(f"Target = {TOP_PERC_TARGET_VAL}")
         self.focus_lbl = QLabel("Target = 0")
         self.flowrate_lbl = QLabel(f"Target = {int(TARGET_FLOWRATE)}")
-        self.brightness_val = QLabel("-")
         self.focus_val = QLabel("-")
         self.flowrate_val = QLabel("-")
 
         # Set title alignments
         self.state_lbl.setAlignment(Qt.AlignCenter)
         self.cell_count_title.setAlignment(Qt.AlignCenter)
-        self.brightness_title.setAlignment(Qt.AlignCenter)
         self.focus_title.setAlignment(Qt.AlignCenter)
         self.flowrate_title.setAlignment(Qt.AlignCenter)
 
@@ -195,9 +187,6 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.schizont_count_val, 6, 2)
         self.infopanel_layout.addWidget(self.troph_count_val, 7, 2)
 
-        self.infopanel_layout.addWidget(self.brightness_title, 8, 1, 1, 2)
-        self.infopanel_layout.addWidget(self.brightness_lbl, 9, 2)
-        self.infopanel_layout.addWidget(self.brightness_val, 9, 1)
         self.infopanel_layout.addWidget(self.focus_title, 10, 1, 1, 2)
         self.infopanel_layout.addWidget(self.focus_lbl, 11, 2)
         self.infopanel_layout.addWidget(self.focus_val, 11, 1)
@@ -211,7 +200,6 @@ class LiveviewGUI(QMainWindow):
         self.update_img_count("---")
         self.update_cell_count(["---", "---", "---", "---"])
 
-        self.update_brightness("---")
         self.update_focus("---")
         self.update_flowrate("---")
 
@@ -219,12 +207,10 @@ class LiveviewGUI(QMainWindow):
         self._set_color(self.state_lbl, STATUS.IN_PROGRESS)
 
         self._set_color(self.cell_count_title, STATUS.STANDBY)
-        self._set_color(self.brightness_title, STATUS.STANDBY)
         self._set_color(self.focus_title, STATUS.STANDBY)
         self._set_color(self.flowrate_title, STATUS.STANDBY)
 
         # TODO decide if routine statuses need colors
-        # self._set_color(self.brightness_val, STATUS.STANDBY)
         # self._set_color(self.focus_val, STATUS.STANDBY)
         # self._set_color(self.flowrate_val, STATUS.STANDBY)
 

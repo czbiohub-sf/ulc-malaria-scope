@@ -1,3 +1,5 @@
+import numpy as np
+
 from time import sleep, perf_counter
 
 from ulc_mm_package.hardware.hardware_constants import (
@@ -61,7 +63,7 @@ class PneumaticModule(RealPneumaticModule):
                 try:
                     # mock mps pressure sensor w/ uniform, from 450 hPa (max pull)
                     # to 1000 hPa (atmospheric pressure)
-                    new_pressure = random.uniform(450, 1000)
+                    new_pressure = np.random.uniform(450, 1000)
                     self.prev_pressure = new_pressure
                     self.prev_poll_time_s = perf_counter()
                     return new_pressure

@@ -3,6 +3,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     VIDEO_PATH,
     VIDEO_REC,
     SIMULATION,
+    DATETIME_FORMAT,
 )
 
 from ulc_mm_package.scope_constants import DEFAULT_SSD, ALT_SSD
@@ -196,7 +197,7 @@ class AcquisitionThread(QThread):
     def save(self, image):
         if self.single_save:
             filename = (
-                path.join(self.main_dir, datetime.now().strftime("%Y-%m-%d-%H%M%S"))
+                path.join(self.main_dir, datetime.now().strftime(DATETIME_FORMAT))
                 + f"{self.custom_image_prefix}.png"
             )
             imwrite(filename, image)
@@ -244,15 +245,12 @@ class AcquisitionThread(QThread):
 
     def takeImage(self):
         if self.main_dir == None:
-            self.main_dir = self.external_dir + datetime.now().strftime(
-                "%Y-%m-%d-%H%M%S"
-            )
+            self.main_dir = self.external_dir + datetime.now().strftime(DATETIME_FORMAT)
             mkdir(self.main_dir)
 
         if self.continuous_save:
             self.continuous_dir_name = (
-                datetime.now().strftime("%Y-%m-%d-%H%M%S")
-                + f"{self.custom_image_prefix}"
+                datetime.now().strftime(DATETIME_FORMAT) + f"{self.custom_image_prefix}"
             )
             mkdir(path.join(self.main_dir, self.continuous_dir_name))
 
@@ -260,7 +258,7 @@ class AcquisitionThread(QThread):
                 path.join(
                     self.main_dir,
                     self.continuous_dir_name,
-                    datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+                    datetime.now().strftime(DATETIME_FORMAT),
                 )
                 + f"{self.custom_image_prefix}"
             )

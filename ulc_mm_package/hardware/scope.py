@@ -33,7 +33,7 @@ class Components(enum.Enum):
     HT_SENSOR = 6
     DATA_STORAGE = 7
     TPU = 8
-    RTC = 9
+    # RTC = 9
 
 
 class MalariaScope:
@@ -48,7 +48,6 @@ class MalariaScope:
         self.ht_sensor_enabled = False
         self.data_storage_enabled = False
         self.tpu_enabled = False
-        self.rtc_enabled = False
 
         # Initialize Components
         self._init_motor()
@@ -85,7 +84,6 @@ class MalariaScope:
             Components.HT_SENSOR: self.ht_sensor_enabled,
             Components.DATA_STORAGE: self.data_storage_enabled,
             Components.TPU: self.tpu_enabled,
-            Components.RTC: self.rtc_enabled,
         }
 
     def _init_motor(self):

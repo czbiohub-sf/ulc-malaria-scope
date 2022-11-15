@@ -47,9 +47,8 @@ EXPERIMENT_METADATA_KEYS = [
     "protocol",
     "site",
     "notes",
-    # "scope", # TO BE ADDED
-    "camera",  # AVT / Basler
-    "target_flowrate",
+    "scope",
+    "camera",
     "exposure",
     "target_flowrate",
     "target_brightness",
@@ -62,6 +61,8 @@ PER_IMAGE_METADATA_KEYS = [
     "pressure_hpa",
     "syringe_pos",
     "flowrate",
+    "focus_error",
+    "cell_density",
     "temperature",
     "humidity",
 ]

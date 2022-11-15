@@ -75,6 +75,9 @@ FAN_GPIO = 5
 CAM_FAN_1 = 23
 CAM_FAN_2 = 24
 
+# ================ RTC constants ================ #
+DATETIME_FORMAT = "%Y-%m-%d-%H%M%S"
+
 # ================ Simulation constants ================ #
 # Enable simulation mode by creating blank simulation.py file under main script's directory
 # eg. to run ulc_mm_package/QtGUI/oracle.py, create an empty file under ulc_mm_package/QtGUI/simulation.py
