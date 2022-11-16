@@ -38,6 +38,7 @@ RBC_THUMBNAIL_PATH = (
 
 # This value was found empirically, looking at several focal stacks with and without cells
 CELLS_FOUND_THRESHOLD = 9000  # It's got to be... OVER 9000!!!!!!
+CROSS_CORR_CELL_DENSITY_THRESHOLD = 6500
 
 MIN_CELL_COUNT = 10
 CELL_DENSITY_CHECK_PERIOD_S = 0.5  # How often to check cell density
