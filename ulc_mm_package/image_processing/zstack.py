@@ -6,6 +6,7 @@ from time import sleep
 
 from ulc_mm_package.image_processing.focus_metrics import *
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
 
 def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=None):
