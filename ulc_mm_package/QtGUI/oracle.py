@@ -9,10 +9,14 @@ import sys
 import socket
 import webbrowser
 import enum
+import logging
 import numpy as np
 
 from transitions import Machine
 from time import perf_counter, sleep
+from logging.handlers import RotatingFileHandler
+from logging.config import fileConfig
+from os.path import join
 
 from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel
 from PyQt5.QtCore import Qt, QThread
@@ -22,7 +26,9 @@ from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
+    EXT_DIR,
 )
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
     TARGET_FLOWRATE,
@@ -54,6 +60,24 @@ class Buttons(enum.Enum):
 
 class Oracle(Machine):
     def __init__(self):
+        # Setup logger
+        # self.logger = logging.getLogger(__name__)
+        # self.logger.setLevel(logging.DEBUG)
+
+        # formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s [%(name)s]', datefmt=DATETIME_FORMAT)
+        # handler_file = RotatingFileHandler(filename=join(EXT_DIR, "oracle.log"),backupCount=3,maxBytes=1000)
+        # handler_file.setLevel(logging.DEBUG)
+        # handler_file.setFormatter(formatter)
+
+        # self.logger.addHandler(handler_file)
+
+        fileConfig(fname="logger.config", disable_existing_loggers=True, defaults={"filename" : join(EXT_DIR, "oracle.log")})
+        self.logger=logging.root
+
+        self.logger.info("STARTED")
+
+        # logging.getLogger('transitions').setLevel(logging.DEBUG)
+
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
@@ -68,7 +92,7 @@ class Oracle(Machine):
         self.acquisition.moveToThread(self.acquisition_thread)
 
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp(self.acquisition.update_scopeop)
+        self.scopeop = ScopeOp(self.acquisition.update_scopeop, self.logger)
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 

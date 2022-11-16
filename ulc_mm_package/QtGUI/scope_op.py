@@ -57,23 +57,24 @@ class ScopeOp(QObject, Machine):
     update_flowrate = pyqtSignal(int)
     update_focus = pyqtSignal(int)
 
-    def __init__(self, img_signal):
+    def __init__(self, img_signal, logger):
         super().__init__()
 
         # Setup logger
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s [%(name)s]', datefmt=DATETIME_FORMAT)
-        handler_file = RotatingFileHandler(filename=join(EXT_DIR, "oracle.log"),backupCount=3,maxBytes=1000)
-        handler_file.setLevel(logging.DEBUG)
-        handler_file.setFormatter(formatter)
+        # formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s [%(name)s]', datefmt=DATETIME_FORMAT)
+        # handler_file = RotatingFileHandler(filename=join(EXT_DIR, "oracle.log"),backupCount=3,maxBytes=1000)
+        # handler_file.setLevel(logging.DEBUG)
+        # handler_file.setFormatter(formatter)
 
-        self.logger.addHandler(handler_file)
+        # self.logger.addHandler(handler_file)
 
         self._init_variables()
         self.mscope = None
         self.img_signal = img_signal
+        # self.logger = logger
 
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
@@ -166,9 +167,6 @@ class ScopeOp(QObject, Machine):
                     (", ".join(failed_components)).capitalize()
                 ),
             )
-
-        # Setup logging
-        self.main_dir 
 
     def start(self):
         self.start_timers.emit()
@@ -352,6 +350,8 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
         self.img_signal.disconnect(self.run_experiment)
+
+        self.logger.info(f"COUNT: {self.count}")
 
         if self.count >= MAX_FRAMES:
             self.to_intermission()
