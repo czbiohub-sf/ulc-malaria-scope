@@ -1,6 +1,7 @@
 import os
 import usb
 
+from os import listdir
 from typing import Tuple
 from enum import auto, Enum
 from collections import namedtuple
@@ -34,11 +35,6 @@ class CameraOptions(Enum):
     def IMG_HEIGHT(self) -> int:
         return self.img_dims().height
 
-
-# ================ SSD directory constants ================ #
-DEFAULT_SSD = "/media/pi/"
-ALT_SSD = "../QtGUI/sim_media/pi/"
-
 # ================ Data storage metadata ================ #
 EXPERIMENT_METADATA_KEYS = [
     "operator_id",
@@ -71,6 +67,13 @@ PER_IMAGE_METADATA_KEYS = [
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
 SIMULATION = MS_SIMULATE_FLAG > 0
 print(f"Simulation mode: {SIMULATION}")
+
+# ================ SSD directory constants ================ #
+if SIMULATION:
+    SSD_DIR = "../QtGUI/sim_media/pi/"
+else:
+    SSD_DIR = "/media/pi/"
+EXT_DIR = SSD_DIR + listdir(SSD_DIR)[0] + "/"
 
 # ================ Camera constants ================ #
 AVT_VENDOR_ID = 0x1AB2

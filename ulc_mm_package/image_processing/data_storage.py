@@ -1,4 +1,4 @@
-from os import mkdir, path, listdir
+from os import mkdir, path
 from datetime import datetime
 import csv
 import random
@@ -8,8 +8,7 @@ import shutil
 import numpy as np
 import cv2
 
-from ulc_mm_package.QtGUI.gui_constants import SIMULATION
-from ulc_mm_package.scope_constants import DEFAULT_SSD, ALT_SSD
+from ulc_mm_package.scope_constants import EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
@@ -68,12 +67,7 @@ class DataStorage:
         """
 
         if self.main_dir == None:
-            if SIMULATION:
-                media_dir = ALT_SSD
-            else:
-                media_dir = DEFAULT_SSD
-            external_dir = media_dir + listdir(media_dir)[0] + "/"
-            self.createTopLevelFolder(external_dir)
+            self.createTopLevelFolder(EXT_DIR)
 
         # Create per-image metadata file
         time_str = datetime.now().strftime(DATETIME_FORMAT)
