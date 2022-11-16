@@ -2,6 +2,7 @@
 
 mkdir -p ~/Documents/steps
 
+echo "to be run on a Raspberry Pi for measuring Autofocus inference"
 echo "starting inference"
 
 MS_SIMULATE=1 python3 AutofocusInference.py ~/Documents/test-data/2022-11-03-164007-local_zstack > ~/Documents/steps/avt-03-11-164007-zstack.txt
