@@ -1,11 +1,12 @@
-from datetime import datetime
 import os
+from datetime import datetime
+import csv
+
 import cv2
 import zarr
 import numpy as np
 import typer
 from tqdm import tqdm
-import pandas as pd
 
 from ulc_mm_package.image_processing.background_subtraction import MedianBGSubtraction
 
@@ -46,12 +47,18 @@ def get_csv_file(folder):
 
 def get_fps_from_csv_timestamps(csv_file):
     """Reads a csv file and determines what the average framerate was based on timestamps"""
-    df = pd.read_csv(csv_file)
-    start = get_timestamp(df["timestamp"][0])
-    end = get_timestamp(df["timestamp"][len(df["timestamp"]) - 1])
+
+    timestamps = []
+    with open(csv_file) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            timestamps.append(get_timestamp(row["timestamp"]))
+
+    start = timestamps[0]
+    end = timestamps[-1]
     tdiff = (end - start).total_seconds()
 
-    return len(df["timestamp"]) / tdiff
+    return len(timestamps) / tdiff
 
 
 def get_zarr_metadata(zarr_store):
