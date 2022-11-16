@@ -108,7 +108,7 @@ def isDensitySufficient(img, downsample_factor: int = 4) -> Tuple[bool, int]:
         int: count of cells detected
     """
 
-    count = cross_corr_count_cells(img, downsample_factor)
+    count = cross_corr_count_cells(img)
     return count >= MIN_CELL_COUNT, count
 
 
