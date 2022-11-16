@@ -388,7 +388,7 @@ def cell_density_routine(
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
             img = yield prev_measurements[(idx - 1) % 10]
-            prev_measurements[idx] = binarize_count_cells(img)
+            _, prev_measurements[idx] = isDensitySufficient(img)
             idx = (idx + 1) % len(prev_measurements)
 
             if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):
