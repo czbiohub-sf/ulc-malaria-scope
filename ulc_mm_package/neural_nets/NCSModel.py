@@ -106,9 +106,8 @@ class NCSModel:
         camera_selection: CameraOptions,
     ):
         if self.connected:
-            return
+            raise RuntimeError(f"model {self} already compiled")
 
-        # https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
         model = self.core.read_model(model_path)
 
         ppp = PrePostProcessor(model)

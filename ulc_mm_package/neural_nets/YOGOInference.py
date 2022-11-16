@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
-from ulc_mm_package.neural_nets.neural_net_constants import (
+from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
 )

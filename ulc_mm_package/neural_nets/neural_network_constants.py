@@ -2,7 +2,8 @@
 AF_PERIOD_S = 10
 AF_BATCH_SIZE = 10
 # AUTOFOCUS_MODEL_DIR = "autofocus_model_files/valliant-disco-119/best.xml"
-AUTOFOCUS_MODEL_DIR = "autofocus_model_files/valiant-disco-119-half-export/best.xml"
+# AUTOFOCUS_MODEL_DIR = "autofocus_model_files/valiant-disco-119-half-export/best.xml"
+AUTOFOCUS_MODEL_DIR = "autofocus_model_files/driven-puddle-120/best.xml"
 
 
 # ================ YOGO constants ================ #
