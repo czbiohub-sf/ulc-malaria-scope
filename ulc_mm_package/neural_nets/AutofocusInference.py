@@ -32,7 +32,7 @@ class AutoFocus(NCSModel):
 
 
 def pre_process_image(image_path):
-    image = Image.open(image_path).convert('L')
+    image = Image.open(image_path).convert("L")
     image = image.resize((300, 400), resample=Image.BILINEAR)
     return np.array(image).astype(np.float16)
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     for imgpath in sorted(Path(sys.argv[1]).glob("*.png")):
         # im = read_grayscale(imgpath)
-        im = cv2.imread(str(imgpath), cv2.IMREAD_GRAYSCALE) #.astype(np.float16)
+        im = cv2.imread(str(imgpath), cv2.IMREAD_GRAYSCALE)  # .astype(np.float16)
         # im = pre_process_image(str(imgpath))
         print(A(im))
 
