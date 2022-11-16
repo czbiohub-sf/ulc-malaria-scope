@@ -166,7 +166,6 @@ class Oracle(Machine):
     def display_message(
         self, icon: QMessageBox.Icon, title, text, buttons=None, image=None
     ):
-
         self.dialog_window.close()
 
         self.dialog_window = QMessageBox()

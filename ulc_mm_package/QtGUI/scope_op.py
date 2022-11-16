@@ -6,17 +6,20 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 """
 
 import numpy as np
+import logging
 
+from os.path import join
 from datetime import datetime
 from transitions import Machine
 from time import perf_counter, sleep
+from logging.handlers import RotatingFileHandler
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
-from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
+from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS, EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
 from ulc_mm_package.QtGUI.gui_constants import (
@@ -56,6 +59,17 @@ class ScopeOp(QObject, Machine):
 
     def __init__(self, img_signal):
         super().__init__()
+
+        # Setup logger
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s [%(name)s]', datefmt=DATETIME_FORMAT)
+        handler_file = RotatingFileHandler(filename=join(EXT_DIR, "oracle.log"),backupCount=3,maxBytes=1000)
+        handler_file.setLevel(logging.DEBUG)
+        handler_file.setFormatter(formatter)
+
+        self.logger.addHandler(handler_file)
 
         self._init_variables()
         self.mscope = None
@@ -99,7 +113,7 @@ class ScopeOp(QObject, Machine):
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
-        self.add_transition(
+        self.add_transition(    
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
 
@@ -107,11 +121,12 @@ class ScopeOp(QObject, Machine):
         self.freeze_liveview.emit(True)
 
     def _unfreeze_liveview(self):
-        self.freeze_liveview.emit(False)
+        self.freeze_liveview.emit(False)     
 
     def send_state(self):
         # TODO perhaps delete this to print more useful statements. See future "logging" branch
         self.update_msg.emit(f"Changing state to {self.state}")
+        self.logger.info(f"Changing state to {self.state}")
 
         self.update_state.emit(self.state)
 
@@ -151,6 +166,9 @@ class ScopeOp(QObject, Machine):
                     (", ".join(failed_components)).capitalize()
                 ),
             )
+
+        # Setup logging
+        self.main_dir 
 
     def start(self):
         self.start_timers.emit()
