@@ -31,6 +31,17 @@ class AutoFocus(NCSModel):
         return self.syn(input_img)[0][0]
 
 
+def pre_process_image(image_path):
+    image = Image.open(image_path).convert('L')
+    image = image.resize((300, 400), resample=Image.BILINEAR)
+    return np.array(image).astype(np.float16)
+
+
+def read_grayscale(path):
+    im = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    return cv2.resize(im, (400, 300))
+
+
 if __name__ == "__main__":
     import os
     import cv2
@@ -40,6 +51,7 @@ if __name__ == "__main__":
     from pathlib import Path
     import matplotlib.pyplot as plt
     from ulc_mm_package.scope_constants import CameraOptions
+    from PIL import Image
 
     ex = cv2.imread(str(next(Path(sys.argv[1]).glob("*.png"))), cv2.IMREAD_GRAYSCALE)
 
@@ -48,6 +60,10 @@ if __name__ == "__main__":
     else:
         A = AutoFocus(camera_selection=CameraOptions.AVT)
 
-    for imgpath in Path(sys.argv[1]).glob("*.png"):
-        im = cv2.imread(str(imgpath), cv2.IMREAD_GRAYSCALE).astype(np.float16)
+    for imgpath in sorted(Path(sys.argv[1]).glob("*.png")):
+        # im = read_grayscale(imgpath)
+        im = cv2.imread(str(imgpath), cv2.IMREAD_GRAYSCALE) #.astype(np.float16)
+        # im = pre_process_image(str(imgpath))
         print(A(im))
+
+    sys.exit(0)

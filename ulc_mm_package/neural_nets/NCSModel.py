@@ -6,6 +6,7 @@ import threading
 import numpy as np
 import numpy.typing as npt
 
+from PIL import Image
 from enum import Enum
 from pathlib import Path
 from copy import deepcopy
@@ -23,7 +24,6 @@ from openvino.runtime import (
     InferRequest,
     AsyncInferQueue,
     Tensor,
-    compile_model,
 )
 
 
@@ -108,23 +108,23 @@ class NCSModel:
         if self.connected:
             return
 
+        # https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
         model = self.core.read_model(model_path)
 
-        input_tensor_shape = (
-            1,
-            1,
-            camera_selection.IMG_WIDTH,
-            camera_selection.IMG_HEIGHT,
-        )
-
-        # https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Details.html#resize-image
         ppp = PrePostProcessor(model)
-        ppp.input().tensor().set_shape(input_tensor_shape).set_element_type(
-            Type.f16
-        ).set_layout(Layout("NCHW"))
-        ppp.input().model().set_layout(Layout("NCHW"))
+        ppp.input().tensor() \
+            .set_element_type(Type.u8) \
+            .set_layout(Layout("NHWC")) \
+            .set_spatial_static_shape(
+                camera_selection.IMG_HEIGHT, camera_selection.IMG_WIDTH
+            )
+
         ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)
-        ppp.output().tensor().set_element_type(Type.f16)
+
+        ppp.input().model().set_layout(Layout("NCHW"))
+
+        ppp.output().tensor().set_element_type(Type.f32)
+
         model = ppp.build()
 
         err_msg = ""
@@ -148,18 +148,17 @@ class NCSModel:
                         f"Failed to connect NCS: {e}.\nRemaining connection attempts: {4 - connection_attempts}. Retrying..."
                     )
                 err_msg = str(e)
-
         raise TPUError(f"Failed to connect to NCS: {err_msg}")
+
+    def syn(self, input_img):
+        """input_img is 2d array (i.e. grayscale img)"""
+        input_tensor = [Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)]
+        output_layer = self.model.output(0)
+        return self.model(input_tensor)[output_layer]
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
         with lock_timout(self.lock):
             self._asyn_results.append(infer_request.output_tensors[0].data)
-
-    def syn(self, input_img):
-        """input_img is 2d array (i.e. grayscale img)"""
-        input_tensor = [Tensor(np.expand_dims(input_img, (0, 1)), shared_memory=True)]
-        results = self.model(input_tensor)
-        return next(iter(results.values()))
 
     def asyn(
         self, input_imgs: List[npt.NDArray], idxs: Optional[Sequence[int]] = None
