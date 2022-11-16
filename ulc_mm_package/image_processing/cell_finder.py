@@ -162,6 +162,6 @@ class CellFinder:
         """
 
         cross_corr_map = get_correlation_map(
-            self.thumbnail, img, self.downsample_factor
+            img, self.thumbnail, self.downsample_factor
         )
         return np.max(cross_corr_map)
