@@ -27,7 +27,6 @@ from PyQt5.QtGui import QPixmap, QIcon
 
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
-    TARGET_FLOWRATE,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
@@ -43,6 +42,9 @@ class LiveviewGUI(QMainWindow):
 
         super().__init__()
         self._load_main_ui()
+
+    def update_target_flowrate(self, target_flowrate):
+        self.flowrate_lbl.setText(f"Target = {target_flowrate}")
 
     def update_experiment(self, metadata: dict):
         # TODO standardize dict input
@@ -149,7 +151,7 @@ class LiveviewGUI(QMainWindow):
         self.focus_title = QLabel("FOCUS ERROR (motor steps)")
         self.flowrate_title = QLabel("CELL FLOWRATE (pix/sec)")
         self.focus_lbl = QLabel("Target = 0")
-        self.flowrate_lbl = QLabel(f"Target = {int(TARGET_FLOWRATE)}")
+        self.flowrate_lbl = QLabel(f"Target = -")
         self.focus_val = QLabel("-")
         self.flowrate_val = QLabel("-")
 

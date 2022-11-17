@@ -44,13 +44,12 @@ EXPERIMENT_METADATA_KEYS = [
     "operator_id",
     "participant_id",
     "flowcell_id",
-    "protocol",
+    "target_flowrate",
     "site",
     "notes",
     "scope",
     "camera",
     "exposure",
-    "target_flowrate",
     "target_brightness",
 ]
 
@@ -71,6 +70,7 @@ PER_IMAGE_METADATA_KEYS = [
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
 SIMULATION = MS_SIMULATE_FLAG > 0
 print(f"Simulation mode: {SIMULATION}")
+print("HI")
 
 # ================ Camera constants ================ #
 AVT_VENDOR_ID = 0x1AB2

@@ -18,7 +18,7 @@ from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
-from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
+from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
@@ -119,6 +119,8 @@ class ScopeOp(QObject, Machine):
 
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
+        self.target_flowrate = None
+
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.autofocus_result = None
@@ -211,7 +213,7 @@ class ScopeOp(QObject, Machine):
         self.PSSAF_routine.send(None)
 
         self.flowcontrol_routine = flowControlRoutine(
-            self.mscope, TARGET_FLOWRATE, None
+            self.mscope, self.target_flowrate, None
         )
         self.flowcontrol_routine.send(None)
 
@@ -312,7 +314,7 @@ class ScopeOp(QObject, Machine):
             self.fastflow_routine.send((img, timestamp))
         except CantReachTargetFlowrate:
             if SIMULATION:
-                self.fastflow_result = TARGET_FLOWRATE
+                self.fastflow_result = self.target_flowrate
                 print(f"SCOPEOP: Flowrate (simulated) = {int(self.fastflow_result)}")
                 self.update_flowrate.emit(int(self.fastflow_result))
                 # TODO save flowrate result to metadata instead

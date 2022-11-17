@@ -6,7 +6,7 @@ from ulc_mm_package.scope_constants import (
 )
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
-from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
+from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 from ulc_mm_package.image_processing.cell_finder import LowDensity
 
@@ -110,7 +110,7 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
 
 def fast_flow_wrapper(mscope: MalariaScope):
     print("Running fast_flow_routine")
-    fast_flow_routine = fastFlowRoutine(mscope, None, TARGET_FLOWRATE)
+    fast_flow_routine = fastFlowRoutine(mscope, None, FLOWRATE.FAST.value)
     fast_flow_routine.send(None)
     for img, timestamp in mscope.camera.yieldImages():
         _displayImage(img)
@@ -187,7 +187,7 @@ def main_acquisition_loop(mscope: MalariaScope):
     periodic_ssaf = periodicAutofocusWrapper(mscope, None)
     periodic_ssaf.send(None)
 
-    flow_control = flowControlRoutine(mscope, TARGET_FLOWRATE, None)
+    flow_control = flowControlRoutine(mscope, FLOWRATE.FAST.value, None)
     flow_control.send(None)
 
     cell_density = cell_density_routine(None)

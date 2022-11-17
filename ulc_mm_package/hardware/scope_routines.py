@@ -160,7 +160,7 @@ def flowControlRoutine(
 def fastFlowRoutine(
     mscope: MalariaScope,
     img: np.ndarray,
-    target_flowrate: float = processing_constants.TARGET_FLOWRATE_FAST,
+    target_flowrate: float = processing_constants.FLOWRATE.FAST.value,
 ) -> Generator[float, np.ndarray, float]:
     """Faster flowrate feedback for initial flow ramp-up.
 
