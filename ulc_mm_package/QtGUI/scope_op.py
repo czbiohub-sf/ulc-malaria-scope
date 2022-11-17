@@ -229,6 +229,7 @@ class ScopeOp(QObject, Machine):
 
     def _end_experiment(self):
 
+        # TODO also wait for all slots to finish executing? Is there a straightforward way to check queue of slots
         # TODO is there a better way to check for pyqtSignal connections?
         try:
             self.img_signal.disconnect()
