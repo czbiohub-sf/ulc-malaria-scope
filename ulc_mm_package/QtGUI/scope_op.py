@@ -204,7 +204,7 @@ class ScopeOp(QObject, Machine):
     def _start_fastflow(self):
         print("SCOPEOP: Starting fastflow")
 
-        self.fastflow_routine = fastFlowRoutine(self.mscope, None)
+        self.fastflow_routine = fastFlowRoutine(self.mscope, None, target_flowrate=self.target_flowrate)
         self.fastflow_routine.send(None)
 
         self.img_signal.connect(self.run_fastflow)
