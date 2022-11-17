@@ -35,6 +35,7 @@ class CameraOptions(Enum):
     def IMG_HEIGHT(self) -> int:
         return self.img_dims().height
 
+
 # ================ Data storage metadata ================ #
 EXPERIMENT_METADATA_KEYS = [
     "operator_id",

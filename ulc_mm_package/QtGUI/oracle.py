@@ -59,8 +59,11 @@ class Buttons(enum.Enum):
 class Oracle(Machine):
     def __init__(self):
         # Setup logger
-        fileConfig(fname="logger.config", defaults={"filename" : path.join(EXT_DIR, "oracle.log")})
-        self.logger=logging.root
+        fileConfig(
+            fname="logger.config",
+            defaults={"filename": path.join(EXT_DIR, "oracle.log")},
+        )
+        self.logger = logging.root
 
         # Instantiate GUI windows
         self.form_window = FormGUI()

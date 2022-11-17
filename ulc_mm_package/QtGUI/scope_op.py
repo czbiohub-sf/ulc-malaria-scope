@@ -102,7 +102,7 @@ class ScopeOp(QObject, Machine):
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
-        self.add_transition(    
+        self.add_transition(
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
 
@@ -110,7 +110,7 @@ class ScopeOp(QObject, Machine):
         self.freeze_liveview.emit(True)
 
     def _unfreeze_liveview(self):
-        self.freeze_liveview.emit(False)     
+        self.freeze_liveview.emit(False)
 
     def send_state(self):
         # TODO perhaps delete this to print more useful statements. See future "logging" branch

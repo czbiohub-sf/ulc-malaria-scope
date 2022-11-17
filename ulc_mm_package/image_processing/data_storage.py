@@ -195,7 +195,9 @@ class DataStorage:
         num_files = len(self.zw.group)
         try:
             indices = self._unif_rand_with_min_distance(
-                max_val=num_files, num_samples=NUM_SUBSEQUENCE, min_dist=SUBSEQUENCE_LENGTH
+                max_val=num_files,
+                num_samples=NUM_SUBSEQUENCE,
+                min_dist=SUBSEQUENCE_LENGTH,
             )
         except ValueError:
             # TODO: change to logging
@@ -225,7 +227,9 @@ class DataStorage:
 
         if self.zw.store != None:
             try:
-                dir_path = path.join(self.main_dir, self.experiment_folder, "sub_sample_imgs/")
+                dir_path = path.join(
+                    self.main_dir, self.experiment_folder, "sub_sample_imgs/"
+                )
                 mkdir(dir_path)
                 return dir_path
             except:
