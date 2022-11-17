@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<mapping>
+	<map>
+		<framework name="onnx::Cast_0" output_port_id="/Cast_output_0" />
+		<IR name="onnx::Cast_0" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="onnx::Cast_0" output_port_id="onnx::Cast_0" />
+		<IR name="onnx::Cast_0" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_43" output_port_id="onnx::Conv_43" />
+		<IR name="onnx::Conv_43" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="/conv_block_1/conv_block_1.0/Conv" output_port_id="/conv_block_1/conv_block_1.0/Conv_output_0" />
+		<IR name="/conv_block_1/conv_block_1.0/Conv" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="/conv_block_1/conv_block_1.2/LeakyRelu" output_port_id="/conv_block_1/conv_block_1.2/LeakyRelu_output_0" />
+		<IR name="/conv_block_1/conv_block_1.2/LeakyRelu" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="/conv_block_1/conv_block_1.3/MaxPool" output_port_id="/conv_block_1/conv_block_1.3/MaxPool_output_0" />
+		<IR name="/conv_block_1/conv_block_1.3/MaxPool" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_46" output_port_id="onnx::Conv_46" />
+		<IR name="onnx::Conv_46" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="/conv_block_2/conv_block_2.0/Conv" output_port_id="/conv_block_2/conv_block_2.0/Conv_output_0" />
+		<IR name="/conv_block_2/conv_block_2.0/Conv" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="/conv_block_2/conv_block_2.2/LeakyRelu" output_port_id="/conv_block_2/conv_block_2.2/LeakyRelu_output_0" />
+		<IR name="/conv_block_2/conv_block_2.2/LeakyRelu" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="/conv_block_2/conv_block_2.3/MaxPool" output_port_id="/conv_block_2/conv_block_2.3/MaxPool_output_0" />
+		<IR name="/conv_block_2/conv_block_2.3/MaxPool" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_49" output_port_id="onnx::Conv_49" />
+		<IR name="onnx::Conv_49" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="/conv_block_3/conv_block_3.0/Conv" output_port_id="/conv_block_3/conv_block_3.0/Conv_output_0" />
+		<IR name="/conv_block_3/conv_block_3.0/Conv" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="/conv_block_3/conv_block_3.2/LeakyRelu" output_port_id="/conv_block_3/conv_block_3.2/LeakyRelu_output_0" />
+		<IR name="/conv_block_3/conv_block_3.2/LeakyRelu" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="/conv_block_3/conv_block_3.3/MaxPool" output_port_id="/conv_block_3/conv_block_3.3/MaxPool_output_0" />
+		<IR name="/conv_block_3/conv_block_3.3/MaxPool" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="conv_block_4.0.weight" output_port_id="conv_block_4.0.weight" />
+		<IR name="conv_block_4.0.weight" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="/conv_block_4/conv_block_4.0/Conv" output_port_id="/conv_block_4/conv_block_4.0/Conv_output_0" />
+		<IR name="/conv_block_4/conv_block_4.0/Conv" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="/conv_block_4/conv_block_4.1/Flatten" output_port_id="/conv_block_4/conv_block_4.1/Flatten_output_0" />
+		<IR name="/conv_block_4/conv_block_4.1/Flatten" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="conv_block_4.2.weight" output_port_id="conv_block_4.2.weight" />
+		<IR name="conv_block_4.2.weight" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="41" output_port_id="41" />
+		<IR name="41" output_port_id="2" />
+	</map>
+</mapping>
