@@ -1,7 +1,7 @@
 import enum
 
 from ulc_mm_package.scope_constants import SIMULATION
-from ulc_mm_package.processing_constants import FLOWRATE
+from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 # ================ Status colors ================ #
 class STATUS(enum.Enum):
@@ -11,7 +11,7 @@ class STATUS(enum.Enum):
     BAD = "red"
 
 # ================ Dropdown menu options ================ #
-FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATES]
+FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = ["Tororo, Uganda"]
 
 # ================ FPS constants ================ #
