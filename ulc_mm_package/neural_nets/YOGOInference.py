@@ -5,6 +5,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
 )
+from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
 
 class YOGO(NCSModel):
