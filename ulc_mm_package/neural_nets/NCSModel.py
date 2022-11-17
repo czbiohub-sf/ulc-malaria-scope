@@ -27,10 +27,6 @@ from openvino.runtime import (
 )
 
 
-"""
-"""
-
-
 class TPUError(Exception):
     pass
 

@@ -58,4 +58,3 @@ if __name__ == "__main__":
     print(f"min dt: {min(ts)}")
     print(f"max dt: {max(ts)}")
     print(f"avg fps: {len(ts) / sum(ts)}")
-    time.sleep(5)
