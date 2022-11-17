@@ -11,7 +11,6 @@ import logging
 from datetime import datetime
 from transitions import Machine
 from time import perf_counter, sleep
-from logging.handlers import RotatingFileHandler
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
@@ -56,7 +55,7 @@ class ScopeOp(QObject, Machine):
     update_flowrate = pyqtSignal(int)
     update_focus = pyqtSignal(int)
 
-    def __init__(self, img_signal, logger):
+    def __init__(self, img_signal):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)

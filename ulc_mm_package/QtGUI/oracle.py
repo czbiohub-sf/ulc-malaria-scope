@@ -79,7 +79,7 @@ class Oracle(Machine):
         self.acquisition.moveToThread(self.acquisition_thread)
 
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp(self.acquisition.update_scopeop, self.logger)
+        self.scopeop = ScopeOp(self.acquisition.update_scopeop)
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
