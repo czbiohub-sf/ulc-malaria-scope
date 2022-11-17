@@ -76,6 +76,16 @@ class FormGUI(QDialog):
         self.exit_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
 
+        # Disable text boxes at startup
+        self.operator_val.setDisabled(True)
+        self.participant_val.setDisabled(True)
+        self.flowcell_val.setDisabled(True)
+        self.notes_val.setDisabled(True)
+
+        # Disable dropdown menus at startup
+        self.flowrate_val.setDisabled(True)
+        self.site_val.setDisabled(True)
+
         # Set tab behavior
         self.notes_val.setTabChangesFocus(True)
 
@@ -106,16 +116,29 @@ class FormGUI(QDialog):
 
         self.setTabOrder(self.notes_val, self.start_btn)
 
+        # Enable buttons
         self.exit_btn.setEnabled(True)
         self.start_btn.setEnabled(True)
 
+        # Enable text boxes
+        self.operator_val.setDisabled(False)
+        self.participant_val.setDisabled(False)
+        self.flowcell_val.setDisabled(False)
+        self.notes_val.setDisabled(False)
+
+        # Enable dropdown menus
+        self.flowrate_val.setDisabled(False)
+        self.site_val.setDisabled(False)
+
     def get_form_input(self) -> dict:
         # Match keys with EXPERIMENT_METADATA_KEYS from processing_constants.py
+        flowrate_name = self.flowrate_val.currentText()
+
         form_metadata = {
             "operator_id": self.operator_val.text(),
             "participant_id": self.participant_val.text(),
             "flowcell_id": self.flowcell_val.text(),
-            "target_flowrate": FLOWRATE[self.flowrate_val.currentText().upper()].value,
+            "target_flowrate": (flowrate_name, FLOWRATE[flowrate_name.upper()].value),
             "site": self.site_val.currentText(),
             "notes": self.notes_val.toPlainText(),
         }

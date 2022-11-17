@@ -6,7 +6,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     DATETIME_FORMAT,
 )
 
-from ulc_mm_package.scope_constants import DEFAULT_SSD, ALT_SSD
+from ulc_mm_package.scope_constants import SSD_DIR
 from ulc_mm_package.hardware.scope import MalariaScope, Components
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlRoutine
@@ -16,7 +16,7 @@ from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
 
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
-import ulc_mm_package.neural_nets.neural_net_constants as nn_constants
+import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 
 import sys
 import csv
@@ -527,7 +527,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
 
-        media_dir = DEFAULT_SSD
+        media_dir = SSD_DIR
 
         if SIMULATION:
             print("---------------------\n|  SIMULATION MODE  |\n---------------------")
@@ -540,12 +540,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
                     + VIDEO_REC
                 )
                 quit()
-
-            if not path.exists(media_dir) or len(listdir(media_dir)) == 0:
-                media_dir = ALT_SSD
-                print(
-                    "No external harddrive / SSD detected. Saving media to " + media_dir
-                )
 
         try:
             self.external_dir = media_dir + listdir(media_dir)[0] + "/"

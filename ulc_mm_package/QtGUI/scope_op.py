@@ -6,6 +6,7 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 """
 
 import numpy as np
+import logging
 
 from datetime import datetime
 from transitions import Machine
@@ -57,6 +58,7 @@ class ScopeOp(QObject, Machine):
     def __init__(self, img_signal):
         super().__init__()
 
+        self.logger = logging.getLogger(__name__)
         self._init_variables()
         self.mscope = None
         self.img_signal = img_signal
@@ -112,6 +114,7 @@ class ScopeOp(QObject, Machine):
     def send_state(self):
         # TODO perhaps delete this to print more useful statements. See future "logging" branch
         self.update_msg.emit(f"Changing state to {self.state}")
+        self.logger.info(f"Changing state to {self.state}")
 
         self.update_state.emit(self.state)
 
@@ -361,20 +364,27 @@ class ScopeOp(QObject, Machine):
                 # TODO add recovery operation for low cell density
                 print("LOW CELL DENSITY")
                 pass
-            except CantReachTargetFlowrate:
+            except CantReachTargetFlowrate as e:
                 if not SIMULATION:
                     self.error.emit(
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
                     )
                     return
+                else:
+                    print(f"Ignoring exception in simulation mode:\n{e}")
+                    focus_err = None
             except MotorControllerError as e:
+                print(e)
                 if not SIMULATION:
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
                     )
                     return
+                else:
+                    print(f"Ignoring exception in simulation mode:\n{e}")
+                    flowrate = None
 
             # Update infopanel
             if focus_err != None:

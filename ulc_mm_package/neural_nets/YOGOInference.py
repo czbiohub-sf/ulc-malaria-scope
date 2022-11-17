@@ -1,10 +1,11 @@
 #! /usr/bin/env python3
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
-from ulc_mm_package.neural_nets.neural_net_constants import (
+from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
 )
+from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
 
 class YOGO(NCSModel):
@@ -23,8 +24,12 @@ class YOGO(NCSModel):
         <Bounding Boxes!>
     """
 
-    def __init__(self, model_path: str = YOGO_MODEL_DIR):
-        super().__init__(model_path, OptimizationHint.THROUGHPUT)
+    def __init__(
+        self,
+        model_path: str = YOGO_MODEL_DIR,
+        camera_selection: CameraOptions = CAMERA_SELECTION,
+    ):
+        super().__init__(model_path)
 
     def __call__(self, input_img, idxs=None):
         return self.asyn(input_img, idxs)

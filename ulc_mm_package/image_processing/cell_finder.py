@@ -4,8 +4,11 @@ import cv2
 from ulc_mm_package.image_processing.processing_constants import (
     RBC_THUMBNAIL_PATH,
     CELLS_FOUND_THRESHOLD,
+    CROSS_CORR_CELL_DENSITY_THRESHOLD,
     MIN_CELL_COUNT,
 )
+
+RBC_THUMBNAIL = cv2.imread(RBC_THUMBNAIL_PATH, 0)
 
 
 def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
@@ -16,7 +19,9 @@ def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
 
 
 def get_correlation_map(
-    template_img: np.ndarray, img: np.ndarray, downsample_factor: int = 10
+    img: np.ndarray,
+    template_img: np.ndarray = RBC_THUMBNAIL,
+    downsample_factor: int = 20,
 ) -> np.ndarray:
     """Downsamples the image and returns the 2D cross-correlation map.
 
@@ -34,10 +39,10 @@ def get_correlation_map(
 
     Parameters
     ----------
-    template_img: np.ndarray
-        Image to use as a template for the cross-correlation
     img: np.ndarray
         Base image
+    template_img: np.ndarray
+        Image to use as a template for the cross-correlation
     downsample_factor: int=10
 
     Returns
@@ -48,6 +53,24 @@ def get_correlation_map(
 
     img_ds = downsample_image(img, downsample_factor)
     return cv2.matchTemplate(img_ds, template_img, cv2.TM_CCOEFF)
+
+
+def cross_corr_count_cells(img: np.ndarray) -> int:
+    """Count the number of cells using cross-correlation and thresholding.
+
+    Parameters
+    ----------
+    img: np.ndarray
+
+    Returns
+    -------
+    int:
+        The number of cells found
+    """
+
+    return np.count_nonzero(
+        get_correlation_map(img) > CROSS_CORR_CELL_DENSITY_THRESHOLD
+    )
 
 
 def binarize_count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
@@ -85,7 +108,7 @@ def isDensitySufficient(img, downsample_factor: int = 4) -> Tuple[bool, int]:
         int: count of cells detected
     """
 
-    count = binarize_count_cells(img, downsample_factor)
+    count = cross_corr_count_cells(img)
     return count >= MIN_CELL_COUNT, count
 
 
@@ -139,6 +162,6 @@ class CellFinder:
         """
 
         cross_corr_map = get_correlation_map(
-            self.thumbnail, img, self.downsample_factor
+            img, self.thumbnail, self.downsample_factor
         )
         return np.max(cross_corr_map)

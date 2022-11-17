@@ -5,7 +5,7 @@ import numpy as np
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
-import ulc_mm_package.neural_nets.neural_net_constants as nn_constants
+import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
 
@@ -388,7 +388,7 @@ def cell_density_routine(
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
             img = yield prev_measurements[(idx - 1) % 10]
-            prev_measurements[idx] = binarize_count_cells(img)
+            _, prev_measurements[idx] = isDensitySufficient(img)
             idx = (idx + 1) % len(prev_measurements)
 
             if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):

@@ -41,17 +41,17 @@ class LiveviewGUI(QMainWindow):
         super().__init__()
         self._load_main_ui()
 
-    def update_target_flowrate(self, target_flowrate):
-        self.flowrate_lbl.setText(f"Target = {target_flowrate}")
-
     def update_experiment(self, metadata: dict):
         # TODO standardize dict input
         self.operator_val.setText(f"{metadata['operator_id']}")
         self.participant_val.setText(f"{metadata['participant_id']}")
         self.flowcell_val.setText(f"{metadata['flowcell_id']}")
-        self.protocol_val.setText(f"{metadata['protocol']}")
+        self.target_flowrate_val.setText(f"{metadata['target_flowrate'][0]}")
         self.site_val.setText(f"{metadata['site']}")
         self.notes_val.setPlainText(f"{metadata['notes']}")
+
+        # Update target flowrate in infopanel
+        self.flowrate_lbl.setText(f"Target = {metadata['target_flowrate'][1]}")
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img: np.ndarray):
@@ -266,35 +266,35 @@ class LiveviewGUI(QMainWindow):
         self.operator_lbl = QLabel("Operator ID")
         self.participant_lbl = QLabel("Participant ID")
         self.flowcell_lbl = QLabel("Flowcell ID")
-        self.protocol_lbl = QLabel("Protocol")
+        self.target_flowrate_lbl = QLabel("Flowrate")
         self.site_lbl = QLabel("Site")
         self.notes_lbl = QLabel("Other notes")
 
         self.operator_val = QLineEdit()
         self.participant_val = QLineEdit()
         self.flowcell_val = QLineEdit()
-        self.protocol_val = QLineEdit()
+        self.target_flowrate_val = QLineEdit()
         self.site_val = QLineEdit()
         self.notes_val = QPlainTextEdit()
 
         self.operator_val.setReadOnly(True)
         self.participant_val.setReadOnly(True)
         self.flowcell_val.setReadOnly(True)
-        self.protocol_val.setReadOnly(True)
+        self.target_flowrate_val.setReadOnly(True)
         self.site_val.setReadOnly(True)
         self.notes_val.setReadOnly(True)
 
         self.metadata_layout.addWidget(self.operator_lbl, 1, 1)
         self.metadata_layout.addWidget(self.participant_lbl, 2, 1)
         self.metadata_layout.addWidget(self.flowcell_lbl, 3, 1)
-        self.metadata_layout.addWidget(self.protocol_lbl, 4, 1)
+        self.metadata_layout.addWidget(self.target_flowrate_lbl, 4, 1)
         self.metadata_layout.addWidget(self.site_lbl, 5, 1)
         self.metadata_layout.addWidget(self.notes_lbl, 6, 1)
 
         self.metadata_layout.addWidget(self.operator_val, 1, 2)
         self.metadata_layout.addWidget(self.participant_val, 2, 2)
         self.metadata_layout.addWidget(self.flowcell_val, 3, 2)
-        self.metadata_layout.addWidget(self.protocol_val, 4, 2)
+        self.metadata_layout.addWidget(self.target_flowrate_val, 4, 2)
         self.metadata_layout.addWidget(self.site_val, 5, 2)
         self.metadata_layout.addWidget(self.notes_val, 6, 2)
 
@@ -307,7 +307,7 @@ if __name__ == "__main__":
         "operator_id": "1234",
         "participant_id": "567",
         "flowcell_id": "A2",
-        "protocol": "Default",
+        "flowrate": "Fast",
         "site": "Uganda",
         "notes": "*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*",
     }

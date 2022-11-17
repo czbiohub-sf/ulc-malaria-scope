@@ -1,4 +1,4 @@
-from os import mkdir, path, listdir
+from os import mkdir, path
 from datetime import datetime
 import csv
 import random
@@ -8,8 +8,7 @@ import shutil
 import numpy as np
 import cv2
 
-from ulc_mm_package.QtGUI.gui_constants import SIMULATION
-from ulc_mm_package.scope_constants import DEFAULT_SSD, ALT_SSD
+from ulc_mm_package.scope_constants import EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
@@ -68,12 +67,7 @@ class DataStorage:
         """
 
         if self.main_dir == None:
-            if SIMULATION:
-                media_dir = ALT_SSD
-            else:
-                media_dir = DEFAULT_SSD
-            external_dir = media_dir + listdir(media_dir)[0] + "/"
-            self.createTopLevelFolder(external_dir)
+            self.createTopLevelFolder(EXT_DIR)
 
         # Create per-image metadata file
         time_str = datetime.now().strftime(DATETIME_FORMAT)
@@ -158,6 +152,8 @@ class DataStorage:
             (future.done())
         """
 
+        self.save_uniform_random_sample()
+
         if self.metadata_file != None:
             self.metadata_file.close()
             self.metadata_file = None
@@ -197,9 +193,16 @@ class DataStorage:
         """
 
         num_files = len(self.zw.group)
-        indices = self._unif_rand_with_min_distance(
-            max_val=num_files, num_samples=NUM_SUBSEQUENCE, min_dist=SUBSEQUENCE_LENGTH
-        )
+        try:
+            indices = self._unif_rand_with_min_distance(
+                max_val=num_files,
+                num_samples=NUM_SUBSEQUENCE,
+                min_dist=SUBSEQUENCE_LENGTH,
+            )
+        except ValueError:
+            # TODO: change to logging
+            print("Too few images, no subsample saved.")
+            return
 
         try:
             sub_seq_path = self._create_subseq_folder()
@@ -224,7 +227,9 @@ class DataStorage:
 
         if self.zw.store != None:
             try:
-                dir_path = path.join(self.main_dir, "sub_sample_imgs/")
+                dir_path = path.join(
+                    self.main_dir, self.experiment_folder, "sub_sample_imgs/"
+                )
                 mkdir(dir_path)
                 return dir_path
             except:

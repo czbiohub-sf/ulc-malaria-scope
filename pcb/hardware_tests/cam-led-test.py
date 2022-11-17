@@ -11,7 +11,7 @@ if __name__ == "__main__":
     start = perf_counter()
 
     for img in cam.yieldImages():
-        cv2.imshow('preview', img)
+        cv2.imshow("preview", img)
         cv2.waitKey(2)
 
         if perf_counter() - start >= 5:
