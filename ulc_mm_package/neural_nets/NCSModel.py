@@ -27,15 +27,7 @@ from openvino.runtime import (
 )
 
 
-""" TODOs
-- All the performance things!
-- best place to put autofocus.xml && autofocus.bin? root dir?
-
-See https://github.com/czbiohub/ulc-malaria-autofocus#openvino-performance-optimizations for
-more performance things I want to do
-
-Best docs
-https://docs.openvino.ai/latest/openvino_docs_OV_UG_Python_API_exclusives.html
+"""
 """
 
 
@@ -64,10 +56,9 @@ class NCSModel:
     Allows you to run a model (defined by an intel intermediate representation of your
     model, e.g. model.xml & model.bin) on the neural compute stick
 
-    see https://github.com/luxonis/depthai-experiments/pull/57
-
-    Examples
-    https://github.com/decemberpei/openvino-ncs2-python-samples/blob/master/async_api_multi-threads.py
+    Best docs
+    https://docs.openvino.ai/latest/api/ie_python_api/api.html
+    https://docs.openvino.ai/latest/openvino_docs_OV_UG_Python_API_exclusives.html
     """
 
     core = None
@@ -80,7 +71,6 @@ class NCSModel:
     def __init__(
         self,
         model_path: str,
-        optimization_hint: OptimizationHint = OptimizationHint.THROUGHPUT,
         camera_selection: CameraOptions = CAMERA_SELECTION,
     ):
         """
@@ -90,9 +80,7 @@ class NCSModel:
         self.lock = threading.Lock()
         self.connected = False
         self.device_name = "MYRIAD"
-        self.model = self._compile_model(
-            model_path, optimization_hint, camera_selection
-        )
+        self.model = self._compile_model(model_path, camera_selection)
         self.num_requests = self.model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")
         self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
@@ -102,7 +90,6 @@ class NCSModel:
     def _compile_model(
         self,
         model_path: str,
-        perf_hint: OptimizationHint,
         camera_selection: CameraOptions,
     ):
         if self.connected:
@@ -111,18 +98,19 @@ class NCSModel:
         model = self.core.read_model(model_path)
 
         ppp = PrePostProcessor(model)
-        ppp.input().tensor().set_element_type(Type.u8).set_layout(
-            Layout("NHWC")
-        ).set_spatial_static_shape(
-            camera_selection.IMG_HEIGHT, camera_selection.IMG_WIDTH
-        )
-
+        # black likes to format this into a very unreadable format :(
+        # fmt: off
+        ppp.input() \
+            .tensor() \
+            .set_element_type(Type.u8) \
+            .set_layout(Layout("NHWC")) \
+            .set_spatial_static_shape(
+                camera_selection.IMG_HEIGHT, camera_selection.IMG_WIDTH
+            )
+        # fmt: on
         ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)
-
         ppp.input().model().set_layout(Layout("NCHW"))
-
         ppp.output().tensor().set_element_type(Type.f32)
-
         model = ppp.build()
 
         err_msg = ""
@@ -135,7 +123,6 @@ class NCSModel:
                 compiled_model = self.core.compile_model(
                     model,
                     self.device_name,
-                    # {"PERFORMANCE_HINT": perf_hint},
                 )
                 self.connected = True
                 return compiled_model

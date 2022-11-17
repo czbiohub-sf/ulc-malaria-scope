@@ -23,7 +23,6 @@ class AutoFocus(NCSModel):
     ):
         super().__init__(
             model_path=model_path,
-            optimization_hint=OptimizationHint.LATENCY,
             camera_selection=camera_selection,
         )
 
