@@ -11,7 +11,7 @@ class STATUS(enum.Enum):
     BAD = "red"
 
 # ================ Dropdown menu options ================ #
-FLOWRATE_LIST = [e.value for e in FLOWRATES]
+FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATES]
 SITE_LIST = ["Tororo, Uganda"]
 
 # ================ FPS constants ================ #
