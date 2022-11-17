@@ -338,8 +338,6 @@ class ScopeOp(QObject, Machine):
     def run_experiment(self, img, timestamp):
         self.img_signal.disconnect(self.run_experiment)
 
-        self.logger.info(f"COUNT: {self.count}")
-
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
