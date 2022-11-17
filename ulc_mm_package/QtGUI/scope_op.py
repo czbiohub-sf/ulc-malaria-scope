@@ -365,20 +365,27 @@ class ScopeOp(QObject, Machine):
                 # TODO add recovery operation for low cell density
                 print("LOW CELL DENSITY")
                 pass
-            except CantReachTargetFlowrate:
+            except CantReachTargetFlowrate as e:
                 if not SIMULATION:
                     self.error.emit(
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
                     )
                     return
+                else:
+                    print(f"Ignoring exception in simulation mode:\n{e}")
+                    focus_err = None
             except MotorControllerError as e:
+                print(e)
                 if not SIMULATION:
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
                     )
                     return
+                else:
+                    print(f"Ignoring exception in simulation mode:\n{e}")
+                    flowrate = None
 
             # Update infopanel
             if focus_err != None:
