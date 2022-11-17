@@ -75,6 +75,16 @@ class FormGUI(QDialog):
         self.exit_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
 
+        # Disable text boxes at startup
+        self.operator_val.setDisabled(True)
+        self.participant_val.setDisabled(True)
+        self.flowcell_val.setDisabled(True)
+        self.notes_val.setDisabled(True)
+
+        # Disable dropdown menus at startup
+        self.protocol_val.setDisabled(True)
+        self.site_val.setDisabled(True)
+
         # Set tab behavior
         self.notes_val.setTabChangesFocus(True)
 
@@ -105,8 +115,19 @@ class FormGUI(QDialog):
 
         self.setTabOrder(self.notes_val, self.start_btn)
 
+        # Enable buttons
         self.exit_btn.setEnabled(True)
         self.start_btn.setEnabled(True)
+
+        # Enable text boxes
+        self.operator_val.setDisabled(False)
+        self.participant_val.setDisabled(False)
+        self.flowcell_val.setDisabled(False)
+        self.notes_val.setDisabled(False)
+
+        # Enable dropdown menus
+        self.protocol_val.setDisabled(False)
+        self.site_val.setDisabled(False)
 
     def get_form_input(self) -> dict:
         # Match keys with EXPERIMENT_METADATA_KEYS from processing_constants.py
