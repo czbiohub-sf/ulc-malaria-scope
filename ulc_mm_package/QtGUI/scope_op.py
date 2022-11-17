@@ -8,7 +8,6 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 import numpy as np
 import logging
 
-from os.path import join
 from datetime import datetime
 from transitions import Machine
 from time import perf_counter, sleep
@@ -19,7 +18,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
-from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS, EXT_DIR
+from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
 from ulc_mm_package.QtGUI.gui_constants import (
@@ -60,21 +59,10 @@ class ScopeOp(QObject, Machine):
     def __init__(self, img_signal, logger):
         super().__init__()
 
-        # Setup logger
         self.logger = logging.getLogger(__name__)
-        # self.logger.setLevel(logging.DEBUG)
-
-        # formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s [%(name)s]', datefmt=DATETIME_FORMAT)
-        # handler_file = RotatingFileHandler(filename=join(EXT_DIR, "oracle.log"),backupCount=3,maxBytes=1000)
-        # handler_file.setLevel(logging.DEBUG)
-        # handler_file.setFormatter(formatter)
-
-        # self.logger.addHandler(handler_file)
-
         self._init_variables()
         self.mscope = None
         self.img_signal = img_signal
-        # self.logger = logger
 
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 

@@ -33,7 +33,6 @@ class Components(enum.Enum):
     HT_SENSOR = 6
     DATA_STORAGE = 7
     TPU = 8
-    # RTC = 9
 
 
 class MalariaScope:
