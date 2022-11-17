@@ -2,9 +2,10 @@ import enum
 
 # ================ Flowrate options ================ #
 class FLOWRATE(enum.Enum):
-	FAST = 15.15  # 2 frames per cell
-	MEDIUM = 7.58  # 4 frames per cell
-	SLOW = 3.79  # 8 frames per cell
+    FAST = 15.15  # 2 frames per cell
+    MEDIUM = 7.58  # 4 frames per cell
+    SLOW = 3.79  # 8 frames per cell
+
 
 # ================ Autobrightness constants ================ #
 TOP_PERC_TARGET_VAL = 245
@@ -29,7 +30,7 @@ CORRELATION_THRESH = 0.5
 DESIRED_FRAMES_PER_CELL = 2
 MS_PER_FRAME = 33
 TARGET_FLOWRATE = 1000 / (DESIRED_FRAMES_PER_CELL * MS_PER_FRAME)
- 
+
 # ================ Data storage constants ================ #
 MIN_GB_REQUIRED = 50
 NUM_SUBSEQUENCE = 10

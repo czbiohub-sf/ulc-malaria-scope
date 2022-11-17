@@ -253,7 +253,7 @@ class Oracle(Machine):
         )
 
         # Update target flowrate in scopeop
-        self.scopeop.target_flowrate = self.form_metadata['target_flowrate'][1]
+        self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
 
         self.next_state()
 

@@ -10,6 +10,7 @@ class STATUS(enum.Enum):
     GOOD = "lightgreen"
     BAD = "red"
 
+
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = ["Tororo, Uganda"]
