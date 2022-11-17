@@ -9,10 +9,13 @@ import sys
 import socket
 import webbrowser
 import enum
+import logging
 import numpy as np
 
 from transitions import Machine
 from time import perf_counter, sleep
+from logging.config import fileConfig
+from os import path
 
 from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel
 from PyQt5.QtCore import Qt, QThread
@@ -22,6 +25,7 @@ from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
+    EXT_DIR,
 )
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
@@ -54,6 +58,13 @@ class Buttons(enum.Enum):
 
 class Oracle(Machine):
     def __init__(self):
+        # Setup logger
+        fileConfig(
+            fname="logger.config",
+            defaults={"filename": path.join(EXT_DIR, "oracle.log")},
+        )
+        self.logger = logging.root
+
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
@@ -166,7 +177,6 @@ class Oracle(Machine):
     def display_message(
         self, icon: QMessageBox.Icon, title, text, buttons=None, image=None
     ):
-
         self.dialog_window.close()
 
         self.dialog_window = QMessageBox()
