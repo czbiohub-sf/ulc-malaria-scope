@@ -29,7 +29,7 @@ from ulc_mm_package.scope_constants import (
 )
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
-    TARGET_FLOWRATE,
+    FLOWRATE,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
@@ -246,12 +246,14 @@ class Oracle(Machine):
         self.experiment_metadata[
             "exposure"
         ] = self.scopeop.mscope.camera.exposureTime_ms
-        self.experiment_metadata["target_flowrate"] = TARGET_FLOWRATE
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
         self.scopeop.mscope.data_storage.createNewExperiment(
             "", self.experiment_metadata, PER_IMAGE_METADATA_KEYS
         )
+
+        # Update target flowrate in scopeop
+        self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
 
         self.next_state()
 
