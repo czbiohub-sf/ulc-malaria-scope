@@ -73,7 +73,7 @@ def infer(model, image_loader: ImageLoader):
         yield model(image)
 
 
-def calculate_allan_dev(model, image_loader: ImageLoader, fname="allan-dev.png"):
+def calculate_allan_dev(model, image_loader: ImageLoader, fname):
     ds = at.Dataset(data=[v for v in infer(model, tqdm(image_loader))])
     res = ds.compute("tdev")
     taus = res["taus"]
@@ -84,7 +84,6 @@ def calculate_allan_dev(model, image_loader: ImageLoader, fname="allan-dev.png")
     pl.ax.set_xlabel("frames")
     pl.ax.set_ylabel("Allan Deviation")
     pl.save(fname)
-    print(f"saved to {fname}")
 
 
 def infer_parser():
@@ -155,5 +154,10 @@ if __name__ == "__main__":
         )
         calculate_allan_dev(A, image_loader, str(fname))
     else:
-        for res in infer(A, image_loader):
-            print(res)
+        if args.output is None:
+            for res in infer(A, image_loader):
+                print(res)
+        else:
+            with open(args.output, "w") as f:
+                for res in infer(A, tqdm(image_loader)):
+                    f.write(f"{res}\n")
