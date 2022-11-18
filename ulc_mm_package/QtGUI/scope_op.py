@@ -96,7 +96,8 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            skipped_states = ["autofocus", "fastflow"]
+            skipped_states = ["fastflow"]
+            # skipped_states = ["autofocus", "fastflow"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -196,9 +197,6 @@ class ScopeOp(QObject, Machine):
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
-        self.autofocus_routine = singleShotAutofocusRoutine(self.mscope, None)
-        self.autofocus_routine.send(None)
-
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
@@ -297,7 +295,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_autofocus)
 
         try:
-            self.autofocus_routine.send(img)
+            self.autofocus_routine = singleShotAutofocusRoutine(self.mscope, [img])
         except InvalidMove:
             self.error.emit(
                 "Calibration failed",
