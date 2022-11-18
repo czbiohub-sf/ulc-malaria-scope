@@ -125,11 +125,13 @@ if __name__ == "__main__":
         print("you must supply a value for only one of --images or --zarr")
         sys.exit(1)
 
-    im = next(iter(
-        ImageLoader.load_image_data(args.images)
-        if no_zarr
-        else ImageLoader.load_zarr_data(args.zarr)
-    ))
+    im = next(
+        iter(
+            ImageLoader.load_image_data(args.images)
+            if no_zarr
+            else ImageLoader.load_zarr_data(args.zarr)
+        )
+    )
 
     image_loader = (
         ImageLoader.load_image_data(args.images)
@@ -143,8 +145,14 @@ if __name__ == "__main__":
         A = AutoFocus(camera_selection=CameraOptions.AVT)
 
     if args.allan_dev:
-        data_path = Path(args.output if args.output is not None else (args.images if no_zarr else args.zarr))
-        fname = data_path.parent / Path(data_path.stem + "_allan_dev").with_suffix(".png")
+        data_path = Path(
+            args.output
+            if args.output is not None
+            else (args.images if no_zarr else args.zarr)
+        )
+        fname = data_path.parent / Path(data_path.stem + "_allan_dev").with_suffix(
+            ".png"
+        )
         calculate_allan_dev(A, image_loader, str(fname))
     else:
         for res in infer(A, image_loader):
