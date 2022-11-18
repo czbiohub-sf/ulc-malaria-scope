@@ -38,12 +38,12 @@ class YOGO(NCSModel):
         res = super().syn(input_img)
         return self.filter_res(res)
 
-    def filter_res(self, res):
+    def filter_res(self, res, threshold=YOGO_PRED_THRESHOLD):
         if res.ndim == 4:
             bs, pred_dim, Sy, Sx = res.shape
             # constant time op, just changes view of res
             res.shape = (bs, pred_dim, Sy * Sx)
-        mask = (res[:, 4:5, :] > YOGO_PRED_THRESHOLD).flatten()
+        mask = (res[:, 4:5, :] > threshold).flatten()
         return res[:, :, mask]
 
     def _default_callback(self, infer_request, userdata):
