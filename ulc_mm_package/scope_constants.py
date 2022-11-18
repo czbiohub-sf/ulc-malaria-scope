@@ -41,13 +41,12 @@ EXPERIMENT_METADATA_KEYS = [
     "operator_id",
     "participant_id",
     "flowcell_id",
-    "protocol",
+    "target_flowrate",
     "site",
     "notes",
     "scope",
     "camera",
     "exposure",
-    "target_flowrate",
     "target_brightness",
 ]
 

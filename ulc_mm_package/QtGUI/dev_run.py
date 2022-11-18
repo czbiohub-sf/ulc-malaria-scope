@@ -11,11 +11,7 @@ from ulc_mm_package.hardware.scope import MalariaScope, Components
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlRoutine
 from ulc_mm_package.image_processing.processing_modules import *
-from ulc_mm_package.image_processing.processing_constants import (
-    TARGET_FLOWRATE_SLOW,
-    TARGET_FLOWRATE_MED,
-    TARGET_FLOWRATE_FAST,
-)
+from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
 
@@ -681,7 +677,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.flowValChanged.connect(self.updateFlowVal)
         self.acquisitionThread.autobrightnessDone.connect(self.autobrightnessDone)
         self.acquisitionThread.doneSaving.connect(self.enableRecording)
-        self.acquisitionThread._set_target_flowrate(TARGET_FLOWRATE_MED)
+        self.acquisitionThread._set_target_flowrate(FLOWRATE.MEDIUM.value)
 
         self.acquisitionThread.start()
 
@@ -1113,14 +1109,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     def setFlowrate(self):
         if self.radFlowSlow.isChecked():
-            self.acquisitionThread._set_target_flowrate(TARGET_FLOWRATE_SLOW)
-            print(f"Slow flow target: {TARGET_FLOWRATE_SLOW}")
+            self.acquisitionThread._set_target_flowrate(FLOWRATE.SLOW.value)
+            print(f"Slow flow target: {FLOWRATE.SLOW.value}")
         elif self.radFlowMed.isChecked():
-            self.acquisitionThread._set_target_flowrate(TARGET_FLOWRATE_MED)
-            print(f"Med flow target: {TARGET_FLOWRATE_MED}")
+            self.acquisitionThread._set_target_flowrate(FLOWRATE.MEDIUM.value)
+            print(f"Med flow target: {FLOWRATE.MEDIUM.value}")
         elif self.radFlowFast.isChecked():
-            self.acquisitionThread._set_target_flowrate(TARGET_FLOWRATE_FAST)
-            print(f"Fast flow target: {TARGET_FLOWRATE_FAST}")
+            self.acquisitionThread._set_target_flowrate(FLOWRATE.FAST.value)
+            print(f"Fast flow target: {FLOWRATE.FAST.value}")
 
     def enablePressureUIElements(self):
         self.vsFlow.blockSignals(False)
