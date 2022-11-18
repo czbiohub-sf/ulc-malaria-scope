@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
+from ulc_mm_package.neural_nets.NCSModel import NCSModel, lock_timeout
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
@@ -31,25 +31,22 @@ class YOGO(NCSModel):
     ):
         super().__init__(model_path)
 
+    @staticmethod
+    def filter_res(res):
+        # TODO: make sure this is filtering correctly
+        mask = (res[:, 4:5, :] > YOGO_PRED_THRESHOLD).flatten()
+        return res[:, :, mask]
+
     def __call__(self, input_img, idxs=None):
         return self.asyn(input_img, idxs)
 
-    def syn(self, input_img):
-        res = super().syn(input_img)
-        return self.filter_res(res)
-
-    def filter_res(self, res, threshold=YOGO_PRED_THRESHOLD):
-        if res.ndim == 4:
-            bs, pred_dim, Sy, Sx = res.shape
-            # constant time op, just changes view of res
-            res.shape = (bs, pred_dim, Sy * Sx)
-        mask = (res[:, 4:5, :] > threshold).flatten()
-        return res[:, :, mask]
-
     def _default_callback(self, infer_request, userdata):
-        self._asyn_results.append(
-            (userdata, self.filter_res(infer_request.output_tensors[0].data))
-        )
+        res = infer_request.output_tensors[0].data
+        bs, pred_dim, Sy, Sx = res.shape
+        res.shape = (bs, pred_dim, Sy * Sx)
+
+        with lock_timeout(self.lock):
+            self._asyn_results.append((userdata, res))
 
 
 if __name__ == "__main__":
