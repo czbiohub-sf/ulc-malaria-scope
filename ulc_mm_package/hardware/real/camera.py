@@ -124,7 +124,8 @@ class AVTCamera:
 
         while self.camera.is_streaming():
             # Half a second timeout before queue Empty exception is raised
-            yield self.queue.get(timeout=0.5)
+            if not self.queue.empty():
+                yield self.queue.get(timeout=0.5)
 
     def setBinning(self, mode: str = "Average", bin_factor=1):
         while self.camera.is_streaming():
