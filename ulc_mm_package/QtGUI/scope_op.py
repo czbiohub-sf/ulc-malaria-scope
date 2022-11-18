@@ -297,18 +297,20 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_autofocus)
 
         if self.batch_count < AF_BATCH_SIZE:
-            self.autofocus_batch.append(img)    
+            self.autofocus_batch.append(img)
 
             self.batch_count += 1
             self.img_signal.connect(self.run_autofocus)
         else:
             try:
                 print("Trying autofocus")
-                self.autofocus_result = singleShotAutofocusRoutine(self.mscope, self.autofocus_batch)
+                self.autofocus_result = singleShotAutofocusRoutine(
+                    self.mscope, self.autofocus_batch
+                )
                 print(
                     f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
                 )
-                self.next_state()            
+                self.next_state()
             except InvalidMove:
                 self.error.emit(
                     "Calibration failed",
