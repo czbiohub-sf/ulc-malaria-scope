@@ -9,7 +9,7 @@ import numpy.typing as npt
 from PIL import Image
 from enum import Enum
 from pathlib import Path
-from copy import deepcopy
+from copy import copy
 from contextlib import contextmanager
 
 from typing import Any, Callable, List, Sequence, Optional, Tuple
@@ -37,7 +37,11 @@ class OptimizationHint(Enum):
 
 
 @contextmanager
-def lock_timeout(lock, timeout=0.01):
+def lock_timeout(lock, timeout=-1):
+    """lock context manager w/ timeout
+
+    timeout value of -1 disables timeout
+    """
     lock.acquire(timeout=timeout)
     try:
         yield
@@ -141,34 +145,15 @@ class NCSModel:
         with lock_timeout(self.lock):
             self._asyn_results.append(infer_request.output_tensors[0].data)
 
-    def asyn(
-        self, input_imgs: List[npt.NDArray], idxs: Optional[Sequence[int]] = None
-    ) -> None:
-        if isinstance(input_imgs, list):
-            input_imgs = [
-                Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)
-                for img in input_imgs
-            ]
-        else:
-            input_imgs = [
-                Tensor(np.expand_dims(input_imgs, (0, 3)), shared_memory=True)
-            ]
-
-        if idxs is not None:
-            assert len(input_imgs) == len(
-                idxs
-            ), f"must have len(input_imgs) == len(idxs); got {len(input_imgs)} != {len(idxs)}"
-        else:
-            idxs = range(len(input_imgs))
-
-        for i, input_tensor in zip(idxs, input_imgs):
-            self.asyn_infer_queue.start_async({0: input_tensor}, userdata=i)
+    def asyn(self, input_img: npt.NDArray, idx: int = None) -> None:
+        input_tensor = Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)
+        self.asyn_infer_queue.start_async({0: input_tensor}, userdata=idx)
 
     def get_asyn_results(self):
-        with lock_timeout(self.lock):
-            res = deepcopy(self._asyn_results)
+        with lock_timeout(self.lock, timeout=0.01):
+            res = copy(self._asyn_results)
             self._asyn_results = []
-        return res
+            return res
 
     def wait_all(self):
         self.asyn_infer_queue.wait_all()
