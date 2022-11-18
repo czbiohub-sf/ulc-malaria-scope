@@ -19,7 +19,7 @@ from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
-from ulc_mm_package.image_processing.processing_constants import FLOWRATE
+from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
@@ -96,7 +96,8 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            skipped_states = ["autofocus", "fastflow"]
+            skipped_states = ["fastflow"]
+            # skipped_states = ["autofocus", "fastflow"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -120,6 +121,7 @@ class ScopeOp(QObject, Machine):
 
     def _init_variables(self):
 
+        self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.target_flowrate = None
@@ -129,6 +131,7 @@ class ScopeOp(QObject, Machine):
         self.autofocus_result = None
         self.fastflow_result = None
         self.count = 0
+        self.batch_count = 0
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -195,9 +198,6 @@ class ScopeOp(QObject, Machine):
 
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
-
-        self.autofocus_routine = singleShotAutofocusRoutine(self.mscope, None)
-        self.autofocus_routine.send(None)
 
         self.img_signal.connect(self.run_autofocus)
 
@@ -296,21 +296,26 @@ class ScopeOp(QObject, Machine):
     def run_autofocus(self, img, _timestamp):
         self.img_signal.disconnect(self.run_autofocus)
 
-        try:
-            self.autofocus_routine.send(img)
-        except InvalidMove:
-            self.error.emit(
-                "Calibration failed",
-                "Unable to achieve desired focus within condenser's depth of field.",
-            )
-        except StopIteration as e:
-            self.autofocus_result = e.value
-            print(
-                f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
-            )
-            self.next_state()
-        else:
+        if self.batch_count < AF_BATCH_SIZE:
+            self.autofocus_batch.append(img)
+
+            self.batch_count += 1
             self.img_signal.connect(self.run_autofocus)
+        else:
+            try:
+                print("Trying autofocus")
+                self.autofocus_result = singleShotAutofocusRoutine(
+                    self.mscope, self.autofocus_batch
+                )
+                print(
+                    f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
+                )
+                self.next_state()
+            except InvalidMove:
+                self.error.emit(
+                    "Calibration failed",
+                    "Unable to achieve desired focus within condenser's depth of field.",
+                )
 
     @pyqtSlot(np.ndarray, float)
     def run_fastflow(self, img, timestamp):
