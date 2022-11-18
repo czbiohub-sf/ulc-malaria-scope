@@ -31,29 +31,22 @@ class YOGO(NCSModel):
     ):
         super().__init__(model_path)
 
-    def __call__(self, input_img, idxs=None):
-        return self.asyn(input_img, idxs)
-
-    def syn(self, input_img, filter=True):
-        res = super().syn(input_img)
-        if filter:
-            return self.filter_res(res)
-        return res
-
     @staticmethod
     def filter_res(res):
         # TODO: make sure this is filtering correctly
         mask = (res[:, 4:5, :] > YOGO_PRED_THRESHOLD).flatten()
         return res[:, :, mask]
 
+    def __call__(self, input_img, idxs=None):
+        return self.asyn(input_img, idxs)
+
     def _default_callback(self, infer_request, userdata):
         res = infer_request.output_tensors[0].data
         bs, pred_dim, Sy, Sx = res.shape
         res.shape = (bs, pred_dim, Sy * Sx)
+
         with lock_timeout(self.lock):
-            self._asyn_results.append(
-                (userdata, res)
-            )
+            self._asyn_results.append((userdata, res))
 
 
 if __name__ == "__main__":

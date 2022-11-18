@@ -38,7 +38,7 @@ class OptimizationHint(Enum):
 
 @contextmanager
 def lock_timeout(lock, timeout=-1):
-    """ lock context manager w/ timeout
+    """lock context manager w/ timeout
 
     timeout value of -1 disables timeout
     """
@@ -150,7 +150,7 @@ class NCSModel:
         self.asyn_infer_queue.start_async({0: input_tensor}, userdata=idx)
 
     def get_asyn_results(self):
-        with lock_timeout(self.lock):
+        with lock_timeout(self.lock, timeout=0.01):
             res = copy(self._asyn_results)
             self._asyn_results = []
             return res
