@@ -50,7 +50,7 @@ def lock_timeout(lock, timeout=-1):
         lock.release()
 
 
-AsyncInferenceResult = namedtuple("AsyncInferenceResult", ["id", "result"])
+AsyncInferenceResult = namedtuple("AsyncInferenceResult", ("id", "result"))
 
 
 class NCSModel:

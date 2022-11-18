@@ -20,6 +20,7 @@ from ulc_mm_package.hardware.scope_routines import *
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
+from ulc_mm_package.image_processing.thumbnail_handler import ThumbnailHandler
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
@@ -148,7 +149,7 @@ class ScopeOp(QObject, Machine):
             failed_components = [
                 comp.name
                 for comp in component_status
-                if component_status.get(comp) == False
+                if component_status.get(comp, False) == False
             ]
             self.error.emit(
                 "Hardware pre-check failed",
@@ -224,6 +225,8 @@ class ScopeOp(QObject, Machine):
 
         self.density_routine = cell_density_routine(None)
         self.density_routine.send(None)
+
+        self.thumbnail_handler = ThumbnailHandler()
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
@@ -352,11 +355,17 @@ class ScopeOp(QObject, Machine):
 
             self.update_img_count.emit(self.count)
 
+            self.thumbnail_handler.save_image(self.count, img)
             prev_res = count_parasitemia(self.mscope, img, self.count)
+
+            thumbnails = self.thumbnail_handler.process_results(prev_res)
+            # self.thumbnail_signal.emit(thumbnails)
+
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
 
             # Adjust the flow
+            focus_err = None
             try:
                 # Periodic routines
                 focus_err = self.PSSAF_routine.send(img)
@@ -390,10 +399,10 @@ class ScopeOp(QObject, Machine):
                     flowrate = None
 
             # Update infopanel
-            if focus_err != None:
+            if focus_err is not None:
                 # TODO change this to non int?
                 self.update_focus.emit(int(focus_err))
-            if flowrate != None:
+            if flowrate is not None:
                 self.update_flowrate.emit(int(flowrate))
 
             # Update remaining metadata
