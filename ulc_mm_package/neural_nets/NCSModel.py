@@ -12,6 +12,7 @@ from pathlib import Path
 from copy import copy
 from contextlib import contextmanager
 
+from collections import namedtuple
 from typing import Any, Callable, List, Sequence, Optional, Tuple
 
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
@@ -47,6 +48,9 @@ def lock_timeout(lock, timeout=-1):
         yield
     finally:
         lock.release()
+
+
+AsyncInferenceResult = namedtuple("AsyncInferenceResult", ["id", "result"])
 
 
 class NCSModel:
@@ -85,7 +89,7 @@ class NCSModel:
         self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
         # list of list of tuples - (xcenter, ycenter, width, height, class, confidence)
-        self._asyn_results: List[List[Tuple[int, Tuple[float]]]] = []
+        self._asyn_results: List[AsyncInferenceResult] = []
 
     def _compile_model(
         self,
@@ -141,15 +145,19 @@ class NCSModel:
         output_layer = self.model.output(0)
         return self.model(input_tensor)[output_layer]
 
-    def _default_callback(self, infer_request: InferRequest, userdata) -> None:
+    def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
         with lock_timeout(self.lock):
-            self._asyn_results.append(infer_request.output_tensors[0].data)
+            self._asyn_results.append(
+                AsyncInferenceResult(
+                    id=userdata, result=infer_request.output_tensors[0].data
+                )
+            )
 
     def asyn(self, input_img: npt.NDArray, idx: int = None) -> None:
         input_tensor = Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)
         self.asyn_infer_queue.start_async({0: input_tensor}, userdata=idx)
 
-    def get_asyn_results(self):
+    def get_asyn_results(self) -> List[AsyncInferenceResult]:
         with lock_timeout(self.lock, timeout=0.01):
             res = copy(self._asyn_results)
             self._asyn_results = []

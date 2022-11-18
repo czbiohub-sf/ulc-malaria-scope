@@ -1,6 +1,11 @@
 #! /usr/bin/env python3
 
-from ulc_mm_package.neural_nets.NCSModel import NCSModel, lock_timeout
+
+from ulc_mm_package.neural_nets.NCSModel import (
+    NCSModel,
+    AsyncInferenceResult,
+    lock_timeout,
+)
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
@@ -32,9 +37,9 @@ class YOGO(NCSModel):
         super().__init__(model_path)
 
     @staticmethod
-    def filter_res(res):
+    def filter_res(res, threshold=YOGO_PRED_THRESHOLD):
         # TODO: make sure this is filtering correctly
-        mask = (res[:, 4:5, :] > YOGO_PRED_THRESHOLD).flatten()
+        mask = (res[:, 4:5, :] > threshold).flatten()
         return res[:, :, mask]
 
     def __call__(self, input_img, idxs=None):
@@ -46,7 +51,7 @@ class YOGO(NCSModel):
         res.shape = (bs, pred_dim, Sy * Sx)
 
         with lock_timeout(self.lock):
-            self._asyn_results.append((userdata, res))
+            self._asyn_results.append(AsyncInferenceResult(id=userdata, result=res))
 
 
 if __name__ == "__main__":
