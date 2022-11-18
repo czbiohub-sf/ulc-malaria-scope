@@ -37,7 +37,7 @@ class OptimizationHint(Enum):
 
 
 @contextmanager
-def lock_timout(lock, timeout=0.01):
+def lock_timeout(lock, timeout=0.01):
     lock.acquire(timeout=timeout)
     try:
         yield
@@ -138,7 +138,7 @@ class NCSModel:
         return self.model(input_tensor)[output_layer]
 
     def _default_callback(self, infer_request: InferRequest, userdata) -> None:
-        with lock_timout(self.lock):
+        with lock_timeout(self.lock):
             self._asyn_results.append(infer_request.output_tensors[0].data)
 
     def asyn(
@@ -165,7 +165,7 @@ class NCSModel:
             self.asyn_infer_queue.start_async({0: input_tensor}, userdata=i)
 
     def get_asyn_results(self):
-        with lock_timout(self.lock):
+        with lock_timeout(self.lock):
             res = deepcopy(self._asyn_results)
             self._asyn_results = []
         return res
