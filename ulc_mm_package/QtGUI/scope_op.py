@@ -246,7 +246,10 @@ class ScopeOp(QObject, Machine):
         self.mscope.led.turnOff()
 
         print("SCOPEOP: Closing data storage")
-        self.mscope.data_storage.close()
+        closing_file_future = self.mscope.data_storage.close()
+        
+        while not closing_file_future.done():
+            sleep(1)
 
     def _start_intermission(self):
         self.experiment_done.emit()

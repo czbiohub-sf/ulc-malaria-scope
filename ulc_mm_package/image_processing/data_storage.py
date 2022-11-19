@@ -151,15 +151,17 @@ class DataStorage:
             Can be polled to determine when the file has been successfully closed
             (future.done())
         """
-
+        
         self.save_uniform_random_sample()
+        if self.zw.writable:
+            self.zw.writable = False
+            future = self.zw.threadedCloseFile()
 
         if self.metadata_file != None:
             self.metadata_file.close()
             self.metadata_file = None
 
-        if self.zw.writable:
-            return self.zw.threadedCloseFile()
+            return future
 
     def _get_remaining_storage_size_GB(self) -> float:
         """Get the remaining storage size in GB of the SSD.
