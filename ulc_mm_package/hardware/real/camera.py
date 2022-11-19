@@ -124,8 +124,11 @@ class AVTCamera:
 
         while self.camera.is_streaming():
             # Half a second timeout before queue Empty exception is raised
-            if not self.queue.empty():
+            try:
                 yield self.queue.get(timeout=0.5)
+            except queue.Empty:
+                # TODO change to logging
+                print("Dropped frame.")
 
     def setBinning(self, mode: str = "Average", bin_factor=1):
         while self.camera.is_streaming():
