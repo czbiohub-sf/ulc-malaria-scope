@@ -20,7 +20,7 @@ from ulc_mm_package.hardware.scope_routines import *
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
-from ulc_mm_package.image_processing.thumbnail_handler import (
+from ulc_mm_package.image_processing.yogo_result_handlers import (
     ThumbnailHandler,
     count_classes,
 )
