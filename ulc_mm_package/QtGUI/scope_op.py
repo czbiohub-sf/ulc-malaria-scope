@@ -20,7 +20,10 @@ from ulc_mm_package.hardware.scope_routines import *
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
-from ulc_mm_package.image_processing.thumbnail_handler import ThumbnailHandler
+from ulc_mm_package.image_processing.thumbnail_handler import (
+    ThumbnailHandler,
+    count_classes,
+)
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
@@ -356,9 +359,12 @@ class ScopeOp(QObject, Machine):
             self.update_img_count.emit(self.count)
 
             self.thumbnail_handler.save_image(self.count, img)
-            prev_res = count_parasitemia(self.mscope, img, self.count)
+            prev_results = count_parasitemia(self.mscope, img, self.count)
+            for r in prev_results:
+                # TODO: hook up to info panel
+                class_counts = count_classes(r)
 
-            thumbnails = self.thumbnail_handler.process_results(prev_res)
+            thumbnails = self.thumbnail_handler.process_results(prev_results)
             # self.thumbnail_signal.emit(thumbnails)
 
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]

@@ -3,8 +3,8 @@ import numpy as np
 from collections import namedtuple
 from typing import Any, List, Callable
 
-from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 
 
 def argmax(arr):
@@ -65,3 +65,17 @@ class ThumbnailHandler:
             thumbnails.append(Thumbnail(class_=class_, img=thumbnail))
 
         return thumbnails
+
+
+def count_classes(res: AsyncInferenceResult):
+    """
+    returns a dictionary mapping the class (represented as an integer) to its count
+    for the given prediction
+    """
+    filtered_pred = YOGO.filter_res(res.result)
+    class_preds = np.argmax(filtered_pred[0, 5:, :], axis=0)
+    unique, counts = np.unique(class_preds, return_counts=True)
+    # this dict (raw_counts) will be missing a given class if that class isn't predicted at all
+    # this may be confusing and a pain to handle, so just handle it on our side
+    raw_counts = dict(zip(unique, counts))
+    return {i: raw_counts.get(i, 0) for i in range(len(filtered_pred[0, 5:, 0]))}
