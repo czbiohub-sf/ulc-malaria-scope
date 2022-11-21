@@ -2,12 +2,15 @@ import cv2
 import zarr
 import argparse
 
+import numpy as np
 import allantools as at
 
 from pathlib import Path
 
-from AutofocusInference import AutoFocus
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 from ulc_mm_package.scope_constants import CameraOptions
+
+from typing import Any, List, Generator, Iterable
 
 
 def _tqdm(iterable, **kwargs):
@@ -68,8 +71,31 @@ class ImageLoader:
         return cls(_iter, _num_els)
 
 
+def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
+    if n < 1:
+        raise ValueError(f"n must be greater than 1 for yield_n: got {n}")
+
+    values = []
+    for val in itr:
+        values.append(val)
+        if len(values) == n:
+            yield values
+            values = []
+
+
 def infer(model, image_loader: ImageLoader):
     for image in image_loader:
+        yield model(image)
+
+
+def batch_infer(model, image_loader: ImageLoader):
+    for images in yield_n(image_loader, 4):
+        yield model(images)
+
+
+def manual_batch_infer(model, image_loader: ImageLoader):
+    for images in yield_n(image_loader, 4):
+        image = np.stack(images)
         yield model(image)
 
 
