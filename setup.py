@@ -45,5 +45,8 @@ setup(
         "tqdm==4.63.0",
         "transitions==0.8.11",
     ],
+    extras_require = {
+        "autofocus-testing":  ["AllanTools"]
+    },
     classifiers=["CZ Biohub :: Bioengineering"],
 )
