@@ -99,8 +99,8 @@ def manual_batch_infer(model, image_loader: ImageLoader):
         yield model(image)
 
 
-def calculate_allan_dev(model, image_loader: ImageLoader, fname):
-    ds = at.Dataset(data=[v for v in infer(model, tqdm(image_loader))])
+def calculate_allan_dev(data, fname):
+    ds = at.Dataset(data=data)
     res = ds.compute("tdev")
     taus = res["taus"]
     stat = res["stat"]
@@ -169,6 +169,25 @@ if __name__ == "__main__":
     else:
         A = AutoFocus(camera_selection=CameraOptions.AVT)
 
+    """
+    if just infer, print to stdout
+    if infer and --output, print to output
+    if allan dev in both cases, calculate allan dev too
+    """
+    results = []
+
+    if args.output is None:
+        for res in infer(A, image_loader):
+            print(res)
+            if args.allan_dev:
+                results.append(res)
+    else:
+        with open(args.output, "w") as f:
+            for res in infer(A, tqdm(image_loader)):
+                f.write(f"{res}\n")
+                if args.allan_dev:
+                    results.append(res)
+
     if args.allan_dev:
         data_path = Path(
             args.output
@@ -178,12 +197,4 @@ if __name__ == "__main__":
         fname = data_path.parent / Path(data_path.stem + "_allan_dev").with_suffix(
             ".png"
         )
-        calculate_allan_dev(A, image_loader, str(fname))
-    else:
-        if args.output is None:
-            for res in infer(A, image_loader):
-                print(res)
-        else:
-            with open(args.output, "w") as f:
-                for res in infer(A, tqdm(image_loader)):
-                    f.write(f"{res}\n")
+        calculate_allan_dev(results, str(fname))

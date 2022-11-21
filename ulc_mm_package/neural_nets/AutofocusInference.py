@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from ulc_mm_package.neural_nets.NCSModel import NCSModel, OptimizationHint
+from ulc_mm_package.neural_nets.NCSModel import NCSModel
 from ulc_mm_package.neural_nets.neural_network_constants import AUTOFOCUS_MODEL_DIR
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 

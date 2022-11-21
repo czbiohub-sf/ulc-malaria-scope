@@ -24,11 +24,3 @@ MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/autofocus-test-dat
 echo "."
 MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/autofocus-test-data/2022-11-10-181748_focaldrift.zip --output ~/Documents/autofocus-test-data/results/allan/2022-11-10-181748_focaldrift.png
 echo "."
-
-echo "calculating steps..."
-
-MS_SIMULATE=1 python3 infer.py --zarr ~/Documents/autofocus-test-data/2022-11-17-112855_medflow_ohmu_focaldrift.zip --output ~/Documents/autofocus-test-data/results/allan/2022-11-17-112855_medflow_ohmu_focaldrift.txt
-echo "."
-MS_SIMULATE=1 python3 infer.py --zarr ~/Documents/autofocus-test-data/2022-11-17-113250_medflow_ohmu_focaldrift.zip --output ~/Documents/autofocus-test-data/results/allan/2022-11-17-113250_medflow_ohmu_focaldrift.txt
-echo "."
-MS_SIMULATE=1 python3 infer.py --zarr ~/Documents/autofocus-test-data/2022-11-10-181748_focaldrift.zip --output ~/Documents/autofocus-test-data/results/allan/2022-11-10-181748_focaldrift.txt
