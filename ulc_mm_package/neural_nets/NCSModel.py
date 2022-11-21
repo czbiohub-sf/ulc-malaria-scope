@@ -6,14 +6,19 @@ import threading
 import numpy as np
 import numpy.typing as npt
 
-from PIL import Image
-from enum import Enum
-from pathlib import Path
 from copy import copy
 from contextlib import contextmanager
 
 from collections import namedtuple
-from typing import Any, Callable, List, Sequence, Optional, Tuple
+from typing import (
+    Any,
+    List,
+    Sequence,
+    Optional,
+    Union,
+    TypeVar,
+    cast,
+)
 
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
@@ -28,13 +33,11 @@ from openvino.runtime import (
 )
 
 
+T = TypeVar("T", covariant=True)
+
+
 class TPUError(Exception):
     pass
-
-
-class OptimizationHint(Enum):
-    LATENCY = 1
-    THROUGHPUT = 2
 
 
 @contextmanager
@@ -80,6 +83,7 @@ class NCSModel:
         """
         params:
             model_path: path to the 'xml' file
+            camera_selection: the camera that is used for inference. Just used for img dims
         """
         self.lock = threading.Lock()
         self.connected = False
@@ -98,6 +102,9 @@ class NCSModel:
     ):
         if self.connected:
             raise RuntimeError(f"model {self} already compiled")
+
+        # when the first subclass is initialized, core will be given a value
+        assert self.core is not None, "initialize a subclass of NCSModel, not NCSModel itself"
 
         model = self.core.read_model(model_path)
 
@@ -139,11 +146,16 @@ class NCSModel:
                 err_msg = str(e)
         raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
-    def syn(self, input_img):
-        """input_img is 2d array (i.e. grayscale img)"""
-        input_tensor = [Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)]
+    def syn(self, input_imgs: Union[npt.NDArray, List[npt.NDArray]]):
+        """ Synchronously infers images on the NCS
+
+        params:
+            input_imgs: the image/images to be inferred.
+        """
+        input_imgs = self._as_list(input_imgs)
+        input_tensors = self._format_images_to_tensors(input_imgs)
         output_layer = self.model.output(0)
-        return self.model(input_tensor)[output_layer]
+        return self.model(input_tensors)[output_layer]
 
     def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
         with lock_timeout(self.lock):
@@ -153,15 +165,58 @@ class NCSModel:
                 )
             )
 
-    def asyn(self, input_img: npt.NDArray, idx: int = None) -> None:
-        input_tensor = Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)
-        self.asyn_infer_queue.start_async({0: input_tensor}, userdata=idx)
+    def asyn(
+        self,
+        input_imgs: Union[npt.NDArray, List[npt.NDArray]],
+        ids: Optional[Union[int, Sequence[int]]] = None,
+    ) -> None:
+        """ Asynchronously submits inference jobs to the NCS
 
-    def get_asyn_results(self) -> List[AsyncInferenceResult]:
-        with lock_timeout(self.lock, timeout=0.01):
+        params:
+            input_imgs: the image/images to be inferred.
+            ids: the ids that are passed through the asynchronous inference,
+                 used for associating the predicted tensor with the input image.
+
+        To get results, call 'get_asyn_results'
+        """
+        input_imgs = self._as_list(input_imgs)
+
+        if ids is None:
+            ids = range(len(input_imgs))
+
+        ids = self._as_list(ids)
+
+        if len(ids) != len(input_imgs):
+            raise ValueError(
+                f"the number of ids must be the number of input images. "
+                f"len(input_imgs) == {len(input_imgs)}, len(ids) == {len(ids)}"
+            )
+
+        input_tensors = self._format_images_to_tensors(input_imgs)
+        self.asyn_infer_queue.start_async({0: input_tensors}, userdata=ids)
+
+    def get_asyn_results(self, timeout=0.01) -> Optional[List[AsyncInferenceResult]]:
+        """
+        Maybe return some asyn_results. Will return None if it can not get the lock
+        on results within `timeout`. To disable timeout (i.e. just block indefinitely),
+        use a negative number for timeout.
+        """
+        with lock_timeout(self.lock, timeout=timeout):
             res = copy(self._asyn_results)
             self._asyn_results = []
             return res
 
     def wait_all(self):
         self.asyn_infer_queue.wait_all()
+
+    def _as_list(self, val: Union[T, Sequence[T]]) -> List[T]:
+        "returns val as a list; if it is already a list, leave it be"
+        if not isinstance(val, Sequence):
+            val = [val]
+        return cast(list, val)
+
+    def _format_images_to_tensors(self, imgs: List[npt.NDArray]) -> List[Tensor]:
+        return [
+            Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)
+            for img in imgs
+        ]
