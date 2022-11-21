@@ -8,6 +8,7 @@ import numpy.typing as npt
 
 from copy import copy
 from contextlib import contextmanager
+from concurrent.futures import ThreadPoolExecutor
 
 from collections import namedtuple
 from typing import (
@@ -90,9 +91,10 @@ class NCSModel:
         self.device_name = "MYRIAD"
         self.model = self._compile_model(model_path, camera_selection)
         self.num_requests = self.model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")
+
         self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        # list of list of tuples - (xcenter, ycenter, width, height, class, confidence)
+
         self._asyn_results: List[AsyncInferenceResult] = []
 
     def _compile_model(
@@ -157,14 +159,6 @@ class NCSModel:
         output_layer = self.model.output(0)
         return self.model(input_tensors)[output_layer]
 
-    def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
-        with lock_timeout(self.lock):
-            self._asyn_results.append(
-                AsyncInferenceResult(
-                    id=userdata, result=infer_request.output_tensors[0].data
-                )
-            )
-
     def asyn(
         self,
         input_imgs: Union[npt.NDArray, List[npt.NDArray]],
@@ -208,6 +202,14 @@ class NCSModel:
 
     def wait_all(self):
         self.asyn_infer_queue.wait_all()
+
+    def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
+        with lock_timeout(self.lock):
+            self._asyn_results.append(
+                AsyncInferenceResult(
+                    id=userdata, result=infer_request.output_tensors[0].data
+                )
+            )
 
     def _as_list(self, val: Union[T, Sequence[T]]) -> List[T]:
         "returns val as a list; if it is already a list, leave it be"
