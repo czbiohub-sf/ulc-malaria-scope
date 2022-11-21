@@ -28,6 +28,8 @@ in the root of this project. This will autoformat your files for you.
 
 In the root folder, run `pip install -e .` to install all pip dependencies.
 
+To develop, run `pip install -e .[dev]`
+
 ### Running the GUI
 
 Navigate to ulc_mm_package/QtGUI and run `python3 oracle.py`.
