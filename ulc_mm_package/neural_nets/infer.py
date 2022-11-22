@@ -17,12 +17,6 @@ def _tqdm(iterable, **kwargs):
     return iterable
 
 
-try:
-    from tqdm import tqdm
-except ImportError:
-    tqdm = _tqdm
-
-
 class ImageLoader:
     def __init__(self, _iter, _num_els):
         self._iter = _iter
@@ -98,6 +92,9 @@ def manual_batch_infer(model, image_loader: ImageLoader):
         image = np.stack(images)
         yield model(image)
 
+def no_infer(model, image_loader: ImageLoader):
+    for image in image_loader:
+        yield 0
 
 def calculate_allan_dev(data, fname):
     ds = at.Dataset(data=data)
@@ -134,6 +131,12 @@ def infer_parser():
         action=boolean_action,
         default=False,
     )
+    parser.add_argument(
+        "--verbose",
+        help="print progress bar",
+        action=boolean_action,
+        default=False,
+    )
 
     return parser
 
@@ -149,6 +152,15 @@ if __name__ == "__main__":
     if (no_imgs and no_zarr) or (not no_imgs and not no_zarr):
         print("you must supply a value for only one of --images or --zarr")
         sys.exit(1)
+
+    if not args.verbose:
+        tqdm = _tqdm
+    else:
+        try:
+            from tqdm import tqdm
+        except ImportError:
+            print("install tqdm for progress bars")
+            tqdm = _tqdm
 
     im = next(
         iter(
@@ -169,21 +181,30 @@ if __name__ == "__main__":
     else:
         A = AutoFocus(camera_selection=CameraOptions.AVT)
 
-    """
-    if just infer, print to stdout
-    if infer and --output, print to output
-    if allan dev in both cases, calculate allan dev too
-    """
+
+    import os
+    batch_type = os.environ.get("MS_BATCH", "").lower()
+    if batch_type == 'batch':
+        infer_func = batch_infer
+    elif batch_type == 'manual_batch':
+        infer_func = manual_batch_infer
+    elif batch_type == 'no_infer':
+        infer_func = no_infer
+    else:
+        infer_func = infer
+
+    print(f"using {infer_func}")
+
     results = []
 
     if args.output is None:
-        for res in infer(A, image_loader):
+        for res in infer_func(A, image_loader):
             print(res)
             if args.allan_dev:
                 results.append(res)
     else:
         with open(args.output, "w") as f:
-            for res in infer(A, tqdm(image_loader)):
+            for res in infer_func(A, tqdm(image_loader)):
                 f.write(f"{res}\n")
                 if args.allan_dev:
                     results.append(res)
