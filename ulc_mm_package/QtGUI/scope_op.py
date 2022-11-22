@@ -259,22 +259,27 @@ class ScopeOp(QObject, Machine):
             self.autobrightness_routine.send(img)
         except StopIteration as e:
             self.autobrightness_result = e.value
-            print(f"SCOPEOP: Mean pixel val = {self.autobrightness_result}")
+            self.logger.info(f"Autobrightness successful. Mean pixel val: {self.autobrightness_result}")
+            # print(f"SCOPEOP: Mean pixel val = {self.autobrightness_result}")
             # TODO save autobrightness value to metadata instead
             self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
-            print(
-                f"SCOPEOP: Brightness not quite high enough but still ok - mean pixel val = {self.autobrightness_result}"
+            self.logger.warning(
+            # print(
+                f"Autobrightness target not achieved, but still ok. Mean pixel val: {self.autobrightness_result}"
             )
             self.next_state()
         except BrightnessCriticallyLow as e:
+            self.logger.error(
+                f"Autobrightness failed. Mean pixel value: {e.value}",
+            )
             self.error.emit(
                 "Autobrightness failed",
                 f"Too dim to run an experiment - aborting. Mean pixel value: {e.value}",
             )
         else:
-            self.img_signal.connect(self.run_autobrightness)
+            self.img_signal.connect(self.run_autobrightness)            
 
     @pyqtSlot(np.ndarray, float)
     def run_cellfinder(self, img, _timestamp):
@@ -284,10 +289,12 @@ class ScopeOp(QObject, Machine):
             self.cellfinder_routine.send(img)
         except StopIteration as e:
             self.cellfinder_result = e.value
-            print(f"SCOPEOP: Cells found @ motor pos = {self.cellfinder_result}")
+            self.logger.info(f"Cellfinder successful. Cells found @ motor pos: {self.cellfinder_result}")
+            # print(f"SCOPEOP: Cells found @ motor pos = {self.cellfinder_result}")
             self.next_state()
         except NoCellsFound:
             self.cellfinder_result = -1
+            self.logger.error("Cellfinder failed. No cells found.")
             self.error.emit("Calibration failed", "No cells found.")
         else:
             self.img_signal.connect(self.run_cellfinder)
@@ -299,15 +306,17 @@ class ScopeOp(QObject, Machine):
         try:
             self.autofocus_routine.send(img)
         except InvalidMove:
+            self.logger.error("Autofocus failed. Unable to achieve desired focus withing depth of field.")
             self.error.emit(
                 "Calibration failed",
                 "Unable to achieve desired focus within condenser's depth of field.",
             )
         except StopIteration as e:
             self.autofocus_result = e.value
-            print(
-                f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
-            )
+            self.logger.info(f"Autofocus successful. Motor moved: {self.autofocus_result} steps")
+            # print(
+            #     f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
+            # )
             self.next_state()
         else:
             self.img_signal.connect(self.run_autofocus)
@@ -321,19 +330,22 @@ class ScopeOp(QObject, Machine):
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = self.target_flowrate
-                print(f"SCOPEOP: Flowrate (simulated) = {int(self.fastflow_result)}")
+                self.logger.info(f"Fastflow successful. Flowrate (simulated): {int(self.fastflow_result)}")
+                # print(f"SCOPEOP: Flowrate (simulated) = {int(self.fastflow_result)}")
                 self.update_flowrate.emit(int(self.fastflow_result))
                 # TODO save flowrate result to metadata instead
                 self.next_state()
             else:
                 self.fastflow_result = -1
+                self.logger.error("Fastflow failed.")
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired flowrate with syringe at max position.",
                 )
         except StopIteration as e:
             self.fastflow_result = e.value
-            print(f"SCOPEOP: Flowrate = {self.fastflow_result}")
+            self.logger.info(f"Fastflow successful. Flowrate (simulated): {int(self.fastflow_result)}")
+            # print(f"SCOPEOP: Flowrate = {self.fastflow_result}")
             self.update_flowrate.emit(self.fastflow_result)
             self.next_state()
         else:
@@ -392,8 +404,10 @@ class ScopeOp(QObject, Machine):
             # Update infopanel
             if focus_err != None:
                 # TODO change this to non int?
+                # self.logger.info(f"Focus error: {focus_err} steps")
                 self.update_focus.emit(int(focus_err))
             if flowrate != None:
+                # self.logger.info(f"Flowrate: {flowrate}")
                 self.update_flowrate.emit(int(flowrate))
 
             # Update remaining metadata
