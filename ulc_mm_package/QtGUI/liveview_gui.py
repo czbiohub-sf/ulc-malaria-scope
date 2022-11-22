@@ -238,7 +238,7 @@ class LiveviewGUI(QMainWindow):
         self.troph_lbl = QLabel("Troph")
         self.schizont_lbl = QLabel("Schizont")
         self.ring_img = QLabel()
-        self.troph_img = QLabel()
+        self.troph_img = QLabel()   
         self.schizont_img = QLabel()
 
         self.ring_lbl.setAlignment(Qt.AlignHCenter)

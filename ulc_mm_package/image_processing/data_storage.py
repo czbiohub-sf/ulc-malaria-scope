@@ -195,6 +195,7 @@ class DataStorage:
         """
 
         num_files = len(self.zw.group)
+        print(num_files)
         try:
             indices = self._unif_rand_with_min_distance(
                 max_val=num_files,
@@ -241,38 +242,35 @@ class DataStorage:
         else:
             raise
 
-# @staticmethod
-def _unif_rand_with_min_distance(
-    max_val: int, subsequence_length: int, num_subsequences: int
-) -> List[int]:
+    @staticmethod
+    def _unif_rand_with_min_distance(
+        max_val: int, subsequence_length: int, num_subsequences: int
+    ) -> List[int]:
 
-    """Generate a set number of uniformly distributed subsequences.
+        """Generate a set number of uniformly distributed subsequences.
 
-    Parameters
-    ----------
-    max_val: int
-        Maximum value of the sequence
-    subsequence_length: int
-        Number of samples in each subsequence
-    num_subsequences: int
-        Number of subsequences
+        Parameters
+        ----------
+        max_val: int
+            Maximum value of the sequence
+        subsequence_length: int
+            Number of samples in each subsequence
+        num_subsequences: int
+            Number of subsequences
 
-    Returns
-    -------
-    List[int]:
-        List of {num_sample} values between 0-max_val, each with at least min_dist between subsequences.
-    """
+        Returns
+        -------
+        List[int]:
+            List of {num_sample} values between 0-max_val, each with at least min_dist between subsequences.
+        """
 
-    interval = np.floor((max_val - subsequence_length) / (num_subsequences-1))
-    if interval < subsequence_length:
-        raise ValueError(f"Too few images to extract {num_subsequences} subsequences of size {subsequence_length}")
+        interval = np.floor((max_val - subsequence_length) / (num_subsequences-1))
+        if interval < subsequence_length:
+            raise ValueError(f"Too few images to extract {num_subsequences} subsequences of size {subsequence_length}")
 
-    all_indices = []
-    for multiple in range(0, num_subsequences):
-        idx = int(multiple*interval)
-        all_indices = all_indices + list(range(idx, idx+subsequence_length))
+        all_indices = []
+        for multiple in range(0, num_subsequences):
+            idx = int(multiple*interval)
+            all_indices = all_indices + list(range(idx, idx+subsequence_length))
 
-    return all_indices
-
-if __name__ == "__main__":
-    print(_unif_rand_with_min_distance(90, 10, 5))
+        return all_indices

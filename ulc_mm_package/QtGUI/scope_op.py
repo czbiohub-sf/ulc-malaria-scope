@@ -68,6 +68,7 @@ class ScopeOp(QObject, Machine):
         states = [
             {
                 "name": "standby",
+                "on_enter": [self.send_state],
             },
             {
                 "name": "autobrightness",
@@ -91,7 +92,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "intermission",
-                "on_enter": [self._end_experiment, self._start_intermission],
+                "on_enter": [self._end_experiment, self.send_state, self._start_intermission],
             },
         ]
 
@@ -120,6 +121,7 @@ class ScopeOp(QObject, Machine):
         self.update_state.emit(self.state)
 
     def _init_variables(self):
+        self.running = None
 
         self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
@@ -161,11 +163,12 @@ class ScopeOp(QObject, Machine):
             )
 
     def start(self):
+        self.running = True
         self.start_timers.emit()
         self.next_state()
 
     def reset(self):
-        print("SCOPEOP: Resetting pneumatic module")
+        self.logger("Resetting pneumatic module")
         self.mscope.pneumatic_module.setDutyCycle(
             self.mscope.pneumatic_module.getMaxDutyCycle()
         )
@@ -173,12 +176,11 @@ class ScopeOp(QObject, Machine):
         # Reset variables
         self._init_variables()
 
+        self.logger(f"Setting period to {ACQUISITION_PERIOD}")
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
 
     def _start_autobrightness(self):
-
-        print("SCOPEOP: Starting autobrightness")
 
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
@@ -186,24 +188,18 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_autobrightness)
 
     def _start_cellfinder(self):
-        print("SCOPEOP: Starting cellfinder")
-
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
     def _start_autofocus(self):
-        print("SCOPEOP: Starting autofocus")
-
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
-        print("SCOPEOP: Starting fastflow")
-
         self.fastflow_routine = fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
         )
@@ -212,8 +208,6 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self):
-        print("SCOPEOP: Starting experiment")
-
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
@@ -230,6 +224,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
+        self.running = False
 
         # TODO also wait for all slots to finish executing? Is there a straightforward way to check queue of slots
         # TODO is there a better way to check for pyqtSignal connections?
@@ -264,20 +259,25 @@ class ScopeOp(QObject, Machine):
             self.autobrightness_result = e.value
             print(f"SCOPEOP: Mean pixel val = {self.autobrightness_result}")
             # TODO save autobrightness value to metadata instead
-            self.next_state()
+            if self.running:
+                self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
             print(
                 f"SCOPEOP: Brightness not quite high enough but still ok - mean pixel val = {self.autobrightness_result}"
             )
-            self.next_state()
+            if self.running:
+                self.next_state()
         except BrightnessCriticallyLow as e:
             self.error.emit(
                 "Autobrightness failed",
                 f"Too dim to run an experiment - aborting. Mean pixel value: {e.value}",
             )
         else:
-            self.img_signal.connect(self.run_autobrightness)
+            if self.running:
+                self.img_signal.connect(self.run_autobrightness)
+            else:
+                print("Prevented race condition!")
 
     @pyqtSlot(np.ndarray, float)
     def run_cellfinder(self, img, _timestamp):
@@ -288,12 +288,16 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.cellfinder_result = e.value
             print(f"SCOPEOP: Cells found @ motor pos = {self.cellfinder_result}")
-            self.next_state()
+            if self.running:
+                self.next_state()
         except NoCellsFound:
             self.cellfinder_result = -1
             self.error.emit("Calibration failed", "No cells found.")
         else:
-            self.img_signal.connect(self.run_cellfinder)
+            if self.running:
+                self.img_signal.connect(self.run_cellfinder)
+            else:
+                print("Prevented race condition!")
 
     @pyqtSlot(np.ndarray, float)
     def run_autofocus(self, img, _timestamp):
@@ -301,9 +305,12 @@ class ScopeOp(QObject, Machine):
 
         if self.batch_count < AF_BATCH_SIZE:
             self.autofocus_batch.append(img)
-
             self.batch_count += 1
-            self.img_signal.connect(self.run_autofocus)
+
+            if self.running:
+                self.img_signal.connect(self.run_autofocus)
+            else:
+                print("Prevented race condition!")
         else:
             try:
                 print("Trying autofocus")
@@ -313,7 +320,8 @@ class ScopeOp(QObject, Machine):
                 print(
                     f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
                 )
-                self.next_state()
+                if self.running:
+                    self.next_state()
             except InvalidMove:
                 self.error.emit(
                     "Calibration failed",
@@ -332,7 +340,8 @@ class ScopeOp(QObject, Machine):
                 print(f"SCOPEOP: Flowrate (simulated) = {int(self.fastflow_result)}")
                 self.update_flowrate.emit(int(self.fastflow_result))
                 # TODO save flowrate result to metadata instead
-                self.next_state()
+                if self.running:
+                    self.next_state()
             else:
                 self.fastflow_result = -1
                 self.error.emit(
@@ -343,9 +352,13 @@ class ScopeOp(QObject, Machine):
             self.fastflow_result = e.value
             print(f"SCOPEOP: Flowrate = {self.fastflow_result}")
             self.update_flowrate.emit(self.fastflow_result)
-            self.next_state()
+            if self.running:
+                self.next_state()
         else:
-            self.img_signal.connect(self.run_fastflow)
+            if self.running:
+                self.img_signal.connect(self.run_fastflow)
+            else:
+                print("Prevented race condition!")
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
@@ -424,4 +437,8 @@ class ScopeOp(QObject, Machine):
             self.mscope.data_storage.writeData(img, self.img_metadata)
 
             self.count += 1
-            self.img_signal.connect(self.run_experiment)
+
+            if self.running:
+                self.img_signal.connect(self.run_experiment)
+            else:
+                print("Prevented race condition!")
