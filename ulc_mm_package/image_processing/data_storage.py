@@ -151,7 +151,7 @@ class DataStorage:
             Can be polled to determine when the file has been successfully closed
             (future.done())
         """
-        
+
         self.save_uniform_random_sample()
         if self.zw.writable:
             self.zw.writable = False
