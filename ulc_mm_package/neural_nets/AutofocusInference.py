@@ -27,7 +27,7 @@ class AutoFocus(NCSModel):
         )
 
     def __call__(self, input_img):
-        return self.syn(input_img)[0][0]
+        return self.syn(input_img)
 
 
 if __name__ == "__main__":
