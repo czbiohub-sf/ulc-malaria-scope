@@ -195,7 +195,6 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.flowrate_val, 13, 1)
 
     def set_infopanel_vals(self):
-        print("LIVEVIEW: Setting initial infopanel values")
         # Set label values
         self.update_img_count("---")
         self.update_cell_count(["---", "---", "---", "---"])

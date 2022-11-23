@@ -1,12 +1,13 @@
-from os import mkdir, path
-from datetime import datetime
+import logging
+import cv2
 import csv
 import random
-from typing import Dict, List
 import shutil
-
 import numpy as np
-import cv2
+
+from typing import Dict, List
+from os import mkdir, path
+from datetime import datetime
 
 from ulc_mm_package.scope_constants import EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -24,6 +25,7 @@ class DataStorageError(Exception):
 
 class DataStorage:
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.zw = ZarrWriter()
         self.md_writer = None
         self.metadata_file = None
@@ -152,6 +154,8 @@ class DataStorage:
             (future.done())
         """
 
+        self.logger.info("Closing data storage.")
+
         self.save_uniform_random_sample()
         if self.zw.writable:
             self.zw.writable = False
@@ -202,15 +206,15 @@ class DataStorage:
                 num_subsequences=NUM_SUBSEQUENCES,
             )
         except ValueError:
-            # TODO: change to logging
-            print("Too few images, no subsample saved.")
+            self.logger.info("Too few images, no subsample saved.")
             return
 
         try:
             sub_seq_path = self._create_subseq_folder()
         except:
-            # TODO: change to logging
-            print("Unable to create the subsample folder - aborting subsampling.")
+            self.logger.info(
+                "Unable to create the subsample folder. Aborting subsampling."
+            )
             return
 
         for idx in indices:
