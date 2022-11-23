@@ -190,9 +190,7 @@ class MalariaScope:
             self.ht_sensor = SHT3X()
             self.ht_sensor_enabled = True
         except Exception as e:
-            self.logger.error(
-                f"Temperature/humidity sensor initialization failed. {e}"
-            )
+            self.logger.error(f"Temperature/humidity sensor initialization failed. {e}")
 
     def _init_data_storage(self):
         try:
