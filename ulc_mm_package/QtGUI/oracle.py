@@ -157,7 +157,6 @@ class Oracle(Machine):
         # Trigger first transition
         self.next_state()
 
-
     def exit_handler(self):
         dialog_result = self.display_message(
             QMessageBox.Icon.Information,

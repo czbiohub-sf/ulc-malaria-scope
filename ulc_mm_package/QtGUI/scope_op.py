@@ -92,7 +92,11 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "intermission",
-                "on_enter": [self._end_experiment, self.send_state, self._start_intermission],
+                "on_enter": [
+                    self._end_experiment,
+                    self.send_state,
+                    self._start_intermission,
+                ],
             },
         ]
 
@@ -242,7 +246,7 @@ class ScopeOp(QObject, Machine):
 
         print("SCOPEOP: Closing data storage")
         closing_file_future = self.mscope.data_storage.close()
-        
+
         while not closing_file_future.done():
             sleep(1)
 

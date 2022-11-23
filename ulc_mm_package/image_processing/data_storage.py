@@ -151,7 +151,7 @@ class DataStorage:
             Can be polled to determine when the file has been successfully closed
             (future.done())
         """
-        
+
         self.save_uniform_random_sample()
         if self.zw.writable:
             self.zw.writable = False
@@ -263,13 +263,15 @@ class DataStorage:
             List of {num_sample} values between 0-max_val, each with at least min_dist between subsequences.
         """
 
-        interval = np.floor((max_val - subsequence_length) / (num_subsequences-1))
+        interval = np.floor((max_val - subsequence_length) / (num_subsequences - 1))
         if interval < subsequence_length:
-            raise ValueError(f"Too few images to extract {num_subsequences} subsequences of size {subsequence_length}")
+            raise ValueError(
+                f"Too few images to extract {num_subsequences} subsequences of size {subsequence_length}"
+            )
 
         all_indices = []
         for multiple in range(0, num_subsequences):
-            idx = int(multiple*interval)
-            all_indices = all_indices + list(range(idx, idx+subsequence_length))
+            idx = int(multiple * interval)
+            all_indices = all_indices + list(range(idx, idx + subsequence_length))
 
         return all_indices
