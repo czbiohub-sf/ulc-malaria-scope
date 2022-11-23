@@ -195,7 +195,6 @@ class DataStorage:
         """
 
         num_files = len(self.zw.group)
-        print(num_files)
         try:
             indices = self._unif_rand_with_min_distance(
                 max_val=num_files,

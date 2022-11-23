@@ -168,7 +168,7 @@ class ScopeOp(QObject, Machine):
         self.next_state()
 
     def reset(self):
-        self.logger("Resetting pneumatic module")
+        self.logger.debug("Resetting pneumatic module")
         self.mscope.pneumatic_module.setDutyCycle(
             self.mscope.pneumatic_module.getMaxDutyCycle()
         )
@@ -176,7 +176,7 @@ class ScopeOp(QObject, Machine):
         # Reset variables
         self._init_variables()
 
-        self.logger(f"Setting period to {ACQUISITION_PERIOD}")
+        self.logger.debug(f"Setting period to {ACQUISITION_PERIOD}")
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
 
