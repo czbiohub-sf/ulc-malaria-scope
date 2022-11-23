@@ -255,6 +255,10 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_autobrightness)
 
         try:
@@ -263,28 +267,27 @@ class ScopeOp(QObject, Machine):
             self.autobrightness_result = e.value
             print(f"SCOPEOP: Mean pixel val = {self.autobrightness_result}")
             # TODO save autobrightness value to metadata instead
-            if self.running:
-                self.next_state()
+            self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
             print(
                 f"SCOPEOP: Brightness not quite high enough but still ok - mean pixel val = {self.autobrightness_result}"
             )
-            if self.running:
-                self.next_state()
+            self.next_state()
         except BrightnessCriticallyLow as e:
             self.error.emit(
                 "Autobrightness failed",
                 f"Too dim to run an experiment - aborting. Mean pixel value: {e.value}",
             )
         else:
-            if self.running:
-                self.img_signal.connect(self.run_autobrightness)
-            else:
-                print("Prevented race condition!")
+            self.img_signal.connect(self.run_autobrightness)
 
     @pyqtSlot(np.ndarray, float)
     def run_cellfinder(self, img, _timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_cellfinder)
 
         try:
@@ -292,29 +295,26 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.cellfinder_result = e.value
             print(f"SCOPEOP: Cells found @ motor pos = {self.cellfinder_result}")
-            if self.running:
-                self.next_state()
+            self.next_state()
         except NoCellsFound:
             self.cellfinder_result = -1
             self.error.emit("Calibration failed", "No cells found.")
         else:
-            if self.running:
-                self.img_signal.connect(self.run_cellfinder)
-            else:
-                print("Prevented race condition!")
+            self.img_signal.connect(self.run_cellfinder)
 
     @pyqtSlot(np.ndarray, float)
     def run_autofocus(self, img, _timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_autofocus)
 
         if self.batch_count < AF_BATCH_SIZE:
             self.autofocus_batch.append(img)
             self.batch_count += 1
 
-            if self.running:
-                self.img_signal.connect(self.run_autofocus)
-            else:
-                print("Prevented race condition!")
+            self.img_signal.connect(self.run_autofocus)
         else:
             try:
                 print("Trying autofocus")
@@ -324,8 +324,7 @@ class ScopeOp(QObject, Machine):
                 print(
                     f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
                 )
-                if self.running:
-                    self.next_state()
+                self.next_state()
             except InvalidMove:
                 self.error.emit(
                     "Calibration failed",
@@ -334,6 +333,10 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray, float)
     def run_fastflow(self, img, timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
@@ -344,8 +347,7 @@ class ScopeOp(QObject, Machine):
                 print(f"SCOPEOP: Flowrate (simulated) = {int(self.fastflow_result)}")
                 self.update_flowrate.emit(int(self.fastflow_result))
                 # TODO save flowrate result to metadata instead
-                if self.running:
-                    self.next_state()
+                self.next_state()
             else:
                 self.fastflow_result = -1
                 self.error.emit(
@@ -356,16 +358,16 @@ class ScopeOp(QObject, Machine):
             self.fastflow_result = e.value
             print(f"SCOPEOP: Flowrate = {self.fastflow_result}")
             self.update_flowrate.emit(self.fastflow_result)
-            if self.running:
-                self.next_state()
+            self.next_state()
         else:
-            if self.running:
-                self.img_signal.connect(self.run_fastflow)
-            else:
-                print("Prevented race condition!")
+            self.img_signal.connect(self.run_fastflow)
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_experiment)
 
         if self.count >= MAX_FRAMES:
@@ -442,7 +444,4 @@ class ScopeOp(QObject, Machine):
 
             self.count += 1
 
-            if self.running:
-                self.img_signal.connect(self.run_experiment)
-            else:
-                print("Prevented race condition!")
+            self.img_signal.connect(self.run_experiment)

@@ -196,7 +196,7 @@ class DataStorage:
 
         num_files = len(self.zw.group)
         try:
-            indices = self._unif_rand_with_min_distance(
+            indices = self._unif_subsequence_distribution(
                 max_val=num_files,
                 subsequence_length=SUBSEQUENCE_LENGTH,
                 num_subsequences=NUM_SUBSEQUENCES,
@@ -242,7 +242,7 @@ class DataStorage:
             raise
 
     @staticmethod
-    def _unif_rand_with_min_distance(
+    def _unif_subsequence_distribution(
         max_val: int, subsequence_length: int, num_subsequences: int
     ) -> List[int]:
 
