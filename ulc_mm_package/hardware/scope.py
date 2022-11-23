@@ -13,7 +13,9 @@ Components
     - Temperature/humidity sensor (SHT31-D)
 """
 
+import logging
 import enum
+
 from time import sleep
 from typing import Dict
 
@@ -37,6 +39,7 @@ class Components(enum.Enum):
 
 class MalariaScope:
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
 
         self.motor_enabled = False
         self.camera_enabled = False
@@ -59,8 +62,10 @@ class MalariaScope:
         self._init_data_storage()
         self._init_TPU()
 
+        self.logger.info("Initialized scope hardware")
+
     def shutoff(self):
-        print("MSCOPE: Shutting off hardware")
+        self.logger.info("Shutting off scope hardware")
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.camera.deactivateCamera()
@@ -95,9 +100,8 @@ class MalariaScope:
             # self.motor.move_abs(int(self.motor.max_pos // 2))
             self.motor_enabled = True
         except MotorControllerError as e:
-            # TODO - change to logging, critical error
-            print(
-                f"Error initializing DRV8825. Disabling focus actuation GUI elements.\nSpecific error: {e}"
+            self.logger.error(
+                f"Error initializing DRV8825. {e}"
             )
 
     def _init_camera(self):
@@ -118,9 +122,8 @@ class MalariaScope:
                 )
             self.camera_activated = True
         except CameraError as e:
-            # TODO - change to logging, critical error
-            print(
-                f"Error initializing camera (selection: {CAMERA_SELECTION}), error: {e}"
+            self.logger.error(
+                f"Error initializing camera. {e}"
             )
 
     def _init_pneumatic_module(self):
@@ -132,16 +135,14 @@ class MalariaScope:
             if not self.pneumatic_module.mpr_enabled:
                 # If pressure sensor not created, raises PressureSensorNotInstantiated error
                 # when calling `pneumatic_module.getPressure()`
-                # TODO - change to logging
-                print(
-                    f"Error initializing pressure sensor: {self.pneumatic_module.mpr_err_msg}"
+                self.logger.error(
+                    f"Error initializing pressure sensor. {self.pneumatic_module.mpr_err_msg}"
                 )
 
             self.pneumatic_module_enabled = True
         except PneumaticModuleError as e:
-            # TODO - change to logging, critical error
-            print(
-                f"Error initializing Pressure Controller. Disabling flow GUI elements. Error: {e}"
+            self.logger.error(
+                f"Error initializing pressure controller. {e}"
             )
 
     def _init_led(self):
@@ -152,18 +153,17 @@ class MalariaScope:
             self.led.setDutyCycle(0)
             self.led_enabled = True
         except LEDError as e:
-            # TODO - change to logging, critical error
-            print(f"Error instantiating LED driver: {e}")
+            self.logger.error(f"Error instantiating LED driver. {e}")
 
     def _init_fan(self):
         # Create and turn on the fans
         try:
+            raise Exception
             self.fan = Fan()
             self.fan.turn_on_all()
             self.fan_enabled = True
         except Exception as e:
-            # TODO - change to logging
-            print(f"Error initializing fan. Error: {e}")
+            self.logger.error(f"Error initializing fan. {e}")
 
     def _init_encoder(self):
         if self.motor_enabled:
@@ -186,26 +186,24 @@ class MalariaScope:
                 self.encoder = PIM522RotaryEncoder(manualFocusWithEncoder)
                 self.encoder_enabled = True
             except EncoderI2CError as e:
-                # TODO - change to logging
-                print(f"ENCODER I2C ERROR: {e}")
+                self.logger.error(f"Encoder I2C error. {e}")
+                # TODO: Do any corrective actions need to be taken, or error raise?
         else:
-            print(f"Motor failed to initialize, encoder will not initialize.")
+            self.logger.error(f"Motor failed to initialize, encoder will not initialize.")
 
     def _init_humidity_temp_sensor(self):
         try:
             self.ht_sensor = SHT3X()
             self.ht_sensor_enabled = True
         except Exception as e:
-            # TODO - change to logging
-            print(f"Failed to initialize temperature/humidity sensor (SHT31D): {e}")
+            self.logger.error(f"Failed to initialize temperature/humidity sensor (SHT31D). {e}")
 
     def _init_data_storage(self):
         try:
             self.data_storage = DataStorage()
             self.data_storage_enabled = True
         except DataStorageError as e:
-            # TODO - change to logging
-            print(f"Failed to initialize DataStorage: {e}")
+            self.logger.error(f"Failed to initialize data storage. {e}")
 
     def _init_TPU(self):
         try:
@@ -213,5 +211,4 @@ class MalariaScope:
             self.cell_diagnosis_model = YOGO()
             self.tpu_enabled = True
         except TPUError as e:
-            # TODO - change to logging
-            print(f"Failed to initialize the TPU: {e}")
+            self.logger.error(f"Failed to initialize the TPU. {e}")

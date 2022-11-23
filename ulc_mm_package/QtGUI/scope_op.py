@@ -119,8 +119,8 @@ class ScopeOp(QObject, Machine):
 
     def send_state(self):
         # TODO perhaps delete this to print more useful statements. See future "logging" branch
-        self.update_msg.emit(f"Changing state to {self.state}")
-        self.logger.info(f"Changing state to {self.state}")
+        self.update_msg.emit(f"Changing state to {self.state}.")
+        self.logger.info(f"Changing state to {self.state}.")
 
         self.update_state.emit(self.state)
 
@@ -143,10 +143,8 @@ class ScopeOp(QObject, Machine):
         self.update_msg.emit("Starting new experiment")
 
     def setup(self):
-        print("SCOPEOP: Creating timers...")
         self.create_timers.emit()
 
-        print("SCOPEOP: Initializing scope...")
         self.mscope = MalariaScope()
         self.yield_mscope.emit(self.mscope)
         component_status = self.mscope.getComponentStatus()
@@ -166,14 +164,13 @@ class ScopeOp(QObject, Machine):
                 ),
             )
 
-    # TODO add logging for most of these functions
     def start(self):
         self.running = True
         self.start_timers.emit()
         self.next_state()
 
     def reset(self):
-        self.logger.debug("Resetting pneumatic module")
+        self.logger.debug("Resetting pneumatic module.")
         self.mscope.pneumatic_module.setDutyCycle(
             self.mscope.pneumatic_module.getMaxDutyCycle()
         )
@@ -181,7 +178,6 @@ class ScopeOp(QObject, Machine):
         # Reset variables
         self._init_variables()
 
-        self.logger.debug(f"Setting period to {ACQUISITION_PERIOD}")
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
 
@@ -199,7 +195,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_cellfinder)
 
     def _start_autofocus(self):
-        self.logger.info(f"Moving motor to {self.cellfinder_result}")
+        self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
         self.img_signal.connect(self.run_autofocus)
@@ -234,7 +230,7 @@ class ScopeOp(QObject, Machine):
         try:
             self.img_signal.disconnect()
         except TypeError:
-            self.logger.info("Since img_signal is already disconnected, no signal/slot changes were made")
+            self.logger.info("Since img_signal is already disconnected, no signal/slot changes were made.")
 
         self.stop_timers.emit()
 
@@ -250,7 +246,7 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
         if not self.running:
-            self.logger.info("Slot executed after experiment ended")
+            self.logger.info("Slot executed after experiment ended.")
             return
 
         self.img_signal.disconnect(self.run_autobrightness)
@@ -259,17 +255,17 @@ class ScopeOp(QObject, Machine):
             self.autobrightness_routine.send(img)
         except StopIteration as e:
             self.autobrightness_result = e.value
-            self.logger.info(f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}")
+            self.logger.info(f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}.")
             self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
             self.logger.warning(
-                f"Autobrightness target not achieved, but still ok. Mean pixel val = {self.autobrightness_result}"
+                f"Autobrightness target not achieved, but still ok. Mean pixel val = {self.autobrightness_result}."
             )
             self.next_state()
         except BrightnessCriticallyLow as e:
             self.logger.error(
-                f"Autobrightness failed. Mean pixel value = {e.value}",
+                f"Autobrightness failed. Mean pixel value = {e.value}.",
             )
             self.error.emit(
                 "Autobrightness failed",
@@ -290,7 +286,7 @@ class ScopeOp(QObject, Machine):
             self.cellfinder_routine.send(img)
         except StopIteration as e:
             self.cellfinder_result = e.value
-            self.logger.info(f"Cellfinder successful. Cells found at motor pos = {self.cellfinder_result}")
+            self.logger.info(f"Cellfinder successful. Cells found at motor pos = {self.cellfinder_result}.")
             self.next_state()
         except NoCellsFound:
             self.cellfinder_result = -1
@@ -302,7 +298,7 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray, float)
     def run_autofocus(self, img, _timestamp):
         if not self.running:
-            self.logger.info("Slot executed after experiment ended")
+            self.logger.info("Slot executed after experiment ended.")
             return
 
         self.img_signal.disconnect(self.run_autofocus)
@@ -318,11 +314,11 @@ class ScopeOp(QObject, Machine):
                     self.mscope, self.autofocus_batch
                 )
                 self.logger.info(
-                    f"Autofocus complete. Calculated focus error = {self.autofocus_result} steps"
+                    f"Autofocus complete. Calculated focus error = {self.autofocus_result} steps."
                 )
                 self.next_state()
             except InvalidMove:
-                self.logger.error("Autofocus failed. Can't achieve focus within condenser's depth of field")
+                self.logger.error("Autofocus failed. Can't achieve focus within condenser's depth of field.")
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired focus within condenser's depth of field.",
@@ -331,7 +327,7 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray, float)
     def run_fastflow(self, img, timestamp):
         if not self.running:
-            self.logger.info("Slot executed after experiment ended")
+            self.logger.info("Slot executed after experiment ended.")
             return
 
         self.img_signal.disconnect(self.run_fastflow)
@@ -341,19 +337,19 @@ class ScopeOp(QObject, Machine):
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = self.target_flowrate
-                self.logger.info(f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}")
+                self.logger.info(f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}.")
                 self.update_flowrate.emit(int(self.fastflow_result))
                 self.next_state()
             else:
                 self.fastflow_result = -1
-                self.logger.error("Fastflow failed. Syringe already at max position")
+                self.logger.error("Fastflow failed. Syringe already at max position.")
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired flowrate with syringe at max position.",
                 )
         except StopIteration as e:
             self.fastflow_result = e.value
-            self.logger.info(f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}")
+            self.logger.info(f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}.")
             self.update_flowrate.emit(self.fastflow_result)
             self.next_state()
         else:
@@ -362,7 +358,7 @@ class ScopeOp(QObject, Machine):
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
         if not self.running:
-            self.logger.info("Slot executed after experiment ended")
+            self.logger.info("Slot executed after experiment ended.")
             return
 
         self.img_signal.disconnect(self.run_experiment)
@@ -392,26 +388,26 @@ class ScopeOp(QObject, Machine):
                 pass
             except CantReachTargetFlowrate as e:
                 if not SIMULATION:
-                    self.logger.error("Flow control failed. Syringe already at max position")
+                    self.logger.error("Flow control failed. Syringe already at max position.")
                     self.error.emit(
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
                     )
                     return
                 else:
-                    self.logger.warning(f"Ignoring exception in simulation mode:\n{e}")
+                    self.logger.warning(f"Ignoring exception in simulation mode. {e}")
                     focus_err = None
             except MotorControllerError as e:
                 print(e)
                 if not SIMULATION:
-                    self.logger.error("Autofocus failed. Can't achieve focus within condenser's depth of field")
+                    self.logger.error("Autofocus failed. Can't achieve focus within condenser's depth of field.")
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
                     )
                     return
                 else:
-                    self.logger.warning(f"Ignoring exception in simulation mode:\n{e}")
+                    self.logger.warning(f"Ignoring exception in simulation mode. {e}")
                     flowrate = None
 
             # Update infopanel

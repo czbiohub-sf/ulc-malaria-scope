@@ -275,7 +275,7 @@ class Oracle(Machine):
     def _end_liveview(self):
         self.liveview_window.close()
 
-        self.logger.debug("Opening survey")
+        self.logger.debug("Opening survey.")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
     def _start_intermission(self):
@@ -289,18 +289,18 @@ class Oracle(Machine):
         if dialog_result == QMessageBox.Cancel:
             self.shutoff()
         elif dialog_result == QMessageBox.Ok:
-            self.logger.info("Starting new experiment")
+            self.logger.info("Starting new experiment.")
             self.scopeop.rerun()
 
     def shutoff(self):
         # Wait for QTimers to shutoff
-        self.logger.debug("Waiting for acquisition and liveview timer to terminate...")
+        self.logger.debug("Waiting for acquisition and liveview timer to terminate.")
         while (
             self.acquisition.acquisition_timer.isActive()
             or self.acquisition.liveview_timer.isActive()
         ):
             pass
-        self.logger.debug("ORACLE: Successfully terminated acquisition and liveview timer.")
+        self.logger.debug("Successfully terminated acquisition and liveview timer.")
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
@@ -308,17 +308,17 @@ class Oracle(Machine):
         # Shut off acquisition thread
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
-        self.logger.debug("Shut off acquisition thread")
+        self.logger.debug("Shut off acquisition thread.")
 
         # Shut off scopeop thread
         self.scopeop_thread.quit()
         self.scopeop_thread.wait()
-        self.logger.debug("Shut off scopeop thread")
+        self.logger.debug("Shut off scopeop thread.")
 
         self.form_window.close()
-        self.logger.debug("Closed experiment form window")
+        self.logger.debug("Closed experiment form window.")
         self.liveview_window.close()
-        self.logger.debug("Closed liveview window")
+        self.logger.debug("Closed liveview window.")
 
 
 if __name__ == "__main__":
