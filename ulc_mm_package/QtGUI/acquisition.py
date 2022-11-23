@@ -46,7 +46,9 @@ class Acquisition(QObject):
         self.acquisition_timer.start(ACQUISITION_PERIOD)
         self.liveview_timer.start(self.period)
 
-        self.logger.debug(f"Started acquisition timer with {ACQUISITION_PERIOD} ms period and liveview timer with {self.period} ms period.")
+        self.logger.debug(
+            f"Started acquisition timer with {ACQUISITION_PERIOD} ms period and liveview timer with {self.period} ms period."
+        )
 
     @pyqtSlot()
     def stop_timers(self):

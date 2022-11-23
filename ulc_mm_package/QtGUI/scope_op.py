@@ -230,7 +230,9 @@ class ScopeOp(QObject, Machine):
         try:
             self.img_signal.disconnect()
         except TypeError:
-            self.logger.info("Since img_signal is already disconnected, no signal/slot changes were made.")
+            self.logger.info(
+                "Since img_signal is already disconnected, no signal/slot changes were made."
+            )
 
         self.stop_timers.emit()
 
@@ -255,7 +257,9 @@ class ScopeOp(QObject, Machine):
             self.autobrightness_routine.send(img)
         except StopIteration as e:
             self.autobrightness_result = e.value
-            self.logger.info(f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}.")
+            self.logger.info(
+                f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}."
+            )
             self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
@@ -272,7 +276,7 @@ class ScopeOp(QObject, Machine):
                 "LED is too dim to run experiment.",
             )
         else:
-            self.img_signal.connect(self.run_autobrightness)            
+            self.img_signal.connect(self.run_autobrightness)
 
     @pyqtSlot(np.ndarray, float)
     def run_cellfinder(self, img, _timestamp):
@@ -286,7 +290,9 @@ class ScopeOp(QObject, Machine):
             self.cellfinder_routine.send(img)
         except StopIteration as e:
             self.cellfinder_result = e.value
-            self.logger.info(f"Cellfinder successful. Cells found at motor pos = {self.cellfinder_result}.")
+            self.logger.info(
+                f"Cellfinder successful. Cells found at motor pos = {self.cellfinder_result}."
+            )
             self.next_state()
         except NoCellsFound:
             self.cellfinder_result = -1
@@ -318,7 +324,9 @@ class ScopeOp(QObject, Machine):
                 )
                 self.next_state()
             except InvalidMove:
-                self.logger.error("Autofocus failed. Can't achieve focus within condenser's depth of field.")
+                self.logger.error(
+                    "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                )
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired focus within condenser's depth of field.",
@@ -337,7 +345,9 @@ class ScopeOp(QObject, Machine):
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = self.target_flowrate
-                self.logger.info(f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}.")
+                self.logger.info(
+                    f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}."
+                )
                 self.update_flowrate.emit(int(self.fastflow_result))
                 self.next_state()
             else:
@@ -349,7 +359,9 @@ class ScopeOp(QObject, Machine):
                 )
         except StopIteration as e:
             self.fastflow_result = e.value
-            self.logger.info(f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}.")
+            self.logger.info(
+                f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}."
+            )
             self.update_flowrate.emit(self.fastflow_result)
             self.next_state()
         else:
@@ -388,7 +400,9 @@ class ScopeOp(QObject, Machine):
                 pass
             except CantReachTargetFlowrate as e:
                 if not SIMULATION:
-                    self.logger.error("Flow control failed. Syringe already at max position.")
+                    self.logger.error(
+                        "Flow control failed. Syringe already at max position."
+                    )
                     self.error.emit(
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
@@ -400,7 +414,9 @@ class ScopeOp(QObject, Machine):
             except MotorControllerError as e:
                 print(e)
                 if not SIMULATION:
-                    self.logger.error("Autofocus failed. Can't achieve focus within condenser's depth of field.")
+                    self.logger.error(
+                        "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    )
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",

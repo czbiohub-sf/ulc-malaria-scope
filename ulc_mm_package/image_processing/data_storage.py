@@ -212,7 +212,9 @@ class DataStorage:
         try:
             sub_seq_path = self._create_subseq_folder()
         except:
-            self.logger.info("Unable to create the subsample folder. Aborting subsampling.")
+            self.logger.info(
+                "Unable to create the subsample folder. Aborting subsampling."
+            )
             return
 
         for idx in indices:

@@ -100,9 +100,7 @@ class MalariaScope:
             # self.motor.move_abs(int(self.motor.max_pos // 2))
             self.motor_enabled = True
         except MotorControllerError as e:
-            self.logger.error(
-                f"DRV8825 initialization failed. {e}"
-            )
+            self.logger.error(f"DRV8825 initialization failed. {e}")
 
     def _init_camera(self):
         try:
@@ -122,9 +120,7 @@ class MalariaScope:
                 )
             self.camera_activated = True
         except CameraError as e:
-            self.logger.error(
-                f"Camera initialization failed. {e}"
-            )
+            self.logger.error(f"Camera initialization failed. {e}")
 
     def _init_pneumatic_module(self):
         # Create pressure controller (sensor + servo)
@@ -141,9 +137,7 @@ class MalariaScope:
 
             self.pneumatic_module_enabled = True
         except PneumaticModuleError as e:
-            self.logger.error(
-                f"Pressure controller initialization failed. {e}"
-            )
+            self.logger.error(f"Pressure controller initialization failed. {e}")
 
     def _init_led(self):
         # Create the LED
@@ -187,14 +181,18 @@ class MalariaScope:
             except EncoderI2CError as e:
                 self.logger.error(f"Encoder I2C initialization failed. {e}")
         else:
-            self.logger.error(f"Motor failed to initialize, encoder will not initialize.")
+            self.logger.error(
+                f"Motor failed to initialize, encoder will not initialize."
+            )
 
     def _init_humidity_temp_sensor(self):
         try:
             self.ht_sensor = SHT3X()
             self.ht_sensor_enabled = True
         except Exception as e:
-            self.logger.error(f"Failed to initialize temperature/humidity sensor (SHT31D). {e}")
+            self.logger.error(
+                f"Failed to initialize temperature/humidity sensor (SHT31D). {e}"
+            )
 
     def _init_data_storage(self):
         try:
