@@ -22,7 +22,7 @@ LIVEVIEW_PERIOD = 1000
 # ================ Experiment timeout ================ #
 MAX_FRAMES = 40000  # Rounded up from 20 minutes of data at 30 FPS
 if SIMULATION:
-    MAX_FRAMES = 200
+    MAX_FRAMES = 2000
 
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"
