@@ -396,7 +396,7 @@ class ScopeOp(QObject, Machine):
             except LowDensity:
                 # TODO add recovery operation for low cell density
                 # TODO add cell density value
-                self.logger.warning("Low cell density")
+                self.logger.warning("Low cell density.")
                 pass
             except CantReachTargetFlowrate as e:
                 if not SIMULATION:
