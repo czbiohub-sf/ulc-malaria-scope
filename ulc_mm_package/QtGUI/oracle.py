@@ -60,7 +60,7 @@ class Oracle(Machine):
     def __init__(self):
         # Setup logger
         fileConfig(
-            fname="logger.config",
+            fname="../logger.config",
             defaults={"filename": path.join(EXT_DIR, "oracle.log")},
         )
         self.logger = logging.root
