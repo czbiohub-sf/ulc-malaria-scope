@@ -19,7 +19,7 @@ from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
-from ulc_mm_package.image_processing.processing_constants import FLOWRATE
+from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
@@ -68,6 +68,7 @@ class ScopeOp(QObject, Machine):
         states = [
             {
                 "name": "standby",
+                "on_enter": [self.send_state],
             },
             {
                 "name": "autobrightness",
@@ -91,12 +92,17 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "intermission",
-                "on_enter": [self._end_experiment, self._start_intermission],
+                "on_enter": [
+                    self._end_experiment,
+                    self.send_state,
+                    self._start_intermission,
+                ],
             },
         ]
 
         if SIMULATION:
-            skipped_states = ["autofocus", "fastflow"]
+            skipped_states = ["fastflow"]
+            # skipped_states = ["autofocus", "fastflow"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -119,7 +125,9 @@ class ScopeOp(QObject, Machine):
         self.update_state.emit(self.state)
 
     def _init_variables(self):
+        self.running = None
 
+        self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.target_flowrate = None
@@ -129,6 +137,7 @@ class ScopeOp(QObject, Machine):
         self.autofocus_result = None
         self.fastflow_result = None
         self.count = 0
+        self.batch_count = 0
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -158,11 +167,12 @@ class ScopeOp(QObject, Machine):
             )
 
     def start(self):
+        self.running = True
         self.start_timers.emit()
         self.next_state()
 
     def reset(self):
-        print("SCOPEOP: Resetting pneumatic module")
+        self.logger.debug("Resetting pneumatic module")
         self.mscope.pneumatic_module.setDutyCycle(
             self.mscope.pneumatic_module.getMaxDutyCycle()
         )
@@ -170,12 +180,11 @@ class ScopeOp(QObject, Machine):
         # Reset variables
         self._init_variables()
 
+        self.logger.debug(f"Setting period to {ACQUISITION_PERIOD}")
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
 
     def _start_autobrightness(self):
-
-        print("SCOPEOP: Starting autobrightness")
 
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
@@ -183,27 +192,18 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_autobrightness)
 
     def _start_cellfinder(self):
-        print("SCOPEOP: Starting cellfinder")
-
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
     def _start_autofocus(self):
-        print("SCOPEOP: Starting autofocus")
-
         print(f"Moving motor to {self.cellfinder_result}")
         self.mscope.motor.move_abs(self.cellfinder_result)
-
-        self.autofocus_routine = singleShotAutofocusRoutine(self.mscope, None)
-        self.autofocus_routine.send(None)
 
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
-        print("SCOPEOP: Starting fastflow")
-
         self.fastflow_routine = fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
         )
@@ -212,8 +212,6 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self):
-        print("SCOPEOP: Starting experiment")
-
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
@@ -230,6 +228,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
+        self.running = False
 
         # TODO also wait for all slots to finish executing? Is there a straightforward way to check queue of slots
         # TODO is there a better way to check for pyqtSignal connections?
@@ -246,13 +245,20 @@ class ScopeOp(QObject, Machine):
         self.mscope.led.turnOff()
 
         print("SCOPEOP: Closing data storage")
-        self.mscope.data_storage.close()
+        closing_file_future = self.mscope.data_storage.close()
+
+        while not closing_file_future.done():
+            sleep(1)
 
     def _start_intermission(self):
         self.experiment_done.emit()
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_autobrightness)
 
         try:
@@ -283,6 +289,10 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray, float)
     def run_cellfinder(self, img, _timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_cellfinder)
 
         try:
@@ -301,8 +311,13 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray, float)
     def run_autofocus(self, img, _timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_autofocus)
 
+<<<<<<< HEAD
         try:
             self.autofocus_routine.send(img)
         except InvalidMove:
@@ -319,10 +334,35 @@ class ScopeOp(QObject, Machine):
             # )
             self.next_state()
         else:
+=======
+        if self.batch_count < AF_BATCH_SIZE:
+            self.autofocus_batch.append(img)
+            self.batch_count += 1
+
+>>>>>>> subsequence-fix
             self.img_signal.connect(self.run_autofocus)
+        else:
+            try:
+                print("Trying autofocus")
+                self.autofocus_result = singleShotAutofocusRoutine(
+                    self.mscope, self.autofocus_batch
+                )
+                print(
+                    f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
+                )
+                self.next_state()
+            except InvalidMove:
+                self.error.emit(
+                    "Calibration failed",
+                    "Unable to achieve desired focus within condenser's depth of field.",
+                )
 
     @pyqtSlot(np.ndarray, float)
     def run_fastflow(self, img, timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
@@ -353,6 +393,10 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
+        if not self.running:
+            print("Slot executed after experiment ended")
+            return
+
         self.img_signal.disconnect(self.run_experiment)
 
         if self.count >= MAX_FRAMES:
@@ -364,7 +408,7 @@ class ScopeOp(QObject, Machine):
 
             self.update_img_count.emit(self.count)
 
-            prev_res = count_parasitemia(self.mscope, img, [self.count])
+            prev_res = count_parasitemia(self.mscope, img, self.count)
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
 
@@ -430,4 +474,5 @@ class ScopeOp(QObject, Machine):
             self.mscope.data_storage.writeData(img, self.img_metadata)
 
             self.count += 1
+
             self.img_signal.connect(self.run_experiment)

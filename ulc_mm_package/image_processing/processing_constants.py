@@ -33,7 +33,7 @@ TARGET_FLOWRATE = 1000 / (DESIRED_FRAMES_PER_CELL * MS_PER_FRAME)
 
 # ================ Data storage constants ================ #
 MIN_GB_REQUIRED = 50
-NUM_SUBSEQUENCE = 10
+NUM_SUBSEQUENCES = 10
 SUBSEQUENCE_LENGTH = 10
 
 # ================ Cell detection constants ================ #

@@ -9,9 +9,10 @@ import numpy.typing as npt
 from PIL import Image
 from enum import Enum
 from pathlib import Path
-from copy import deepcopy
+from copy import copy
 from contextlib import contextmanager
 
+from collections import namedtuple
 from typing import Any, Callable, List, Sequence, Optional, Tuple
 
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
@@ -27,10 +28,6 @@ from openvino.runtime import (
 )
 
 
-"""
-"""
-
-
 class TPUError(Exception):
     pass
 
@@ -41,12 +38,19 @@ class OptimizationHint(Enum):
 
 
 @contextmanager
-def lock_timout(lock, timeout=0.01):
+def lock_timeout(lock, timeout=-1):
+    """lock context manager w/ timeout
+
+    timeout value of -1 disables timeout
+    """
     lock.acquire(timeout=timeout)
     try:
         yield
     finally:
         lock.release()
+
+
+AsyncInferenceResult = namedtuple("AsyncInferenceResult", ["id", "result"])
 
 
 class NCSModel:
@@ -85,7 +89,7 @@ class NCSModel:
         self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
         self.asyn_infer_queue.set_callback(self._default_callback)
         # list of list of tuples - (xcenter, ycenter, width, height, class, confidence)
-        self._asyn_results: List[List[Tuple[int, Tuple[float]]]] = []
+        self._asyn_results: List[AsyncInferenceResult] = []
 
     def _compile_model(
         self,
@@ -141,38 +145,23 @@ class NCSModel:
         output_layer = self.model.output(0)
         return self.model(input_tensor)[output_layer]
 
-    def _default_callback(self, infer_request: InferRequest, userdata) -> None:
-        with lock_timout(self.lock):
-            self._asyn_results.append(infer_request.output_tensors[0].data)
+    def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
+        with lock_timeout(self.lock):
+            self._asyn_results.append(
+                AsyncInferenceResult(
+                    id=userdata, result=infer_request.output_tensors[0].data
+                )
+            )
 
-    def asyn(
-        self, input_imgs: List[npt.NDArray], idxs: Optional[Sequence[int]] = None
-    ) -> None:
-        if isinstance(input_imgs, list):
-            input_imgs = [
-                Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)
-                for img in input_imgs
-            ]
-        else:
-            input_imgs = [
-                Tensor(np.expand_dims(input_imgs, (0, 3)), shared_memory=True)
-            ]
+    def asyn(self, input_img: npt.NDArray, idx: int = None) -> None:
+        input_tensor = Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)
+        self.asyn_infer_queue.start_async({0: input_tensor}, userdata=idx)
 
-        if idxs is not None:
-            assert len(input_imgs) == len(
-                idxs
-            ), f"must have len(input_imgs) == len(idxs); got {len(input_imgs)} != {len(idxs)}"
-        else:
-            idxs = range(len(input_imgs))
-
-        for i, input_tensor in zip(idxs, input_imgs):
-            self.asyn_infer_queue.start_async({0: input_tensor}, userdata=i)
-
-    def get_asyn_results(self):
-        with lock_timout(self.lock):
-            res = deepcopy(self._asyn_results)
+    def get_asyn_results(self) -> List[AsyncInferenceResult]:
+        with lock_timeout(self.lock, timeout=0.01):
+            res = copy(self._asyn_results)
             self._asyn_results = []
-        return res
+            return res
 
     def wait_all(self):
         self.asyn_infer_queue.wait_all()

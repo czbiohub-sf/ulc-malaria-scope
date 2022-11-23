@@ -45,8 +45,8 @@ def get_csv_file(folder):
     return file
 
 
-def get_fps_from_csv_timestamps(csv_file):
-    """Reads a csv file and determines what the average framerate was based on timestamps"""
+def get_elapsed_time_from_csv(csv_file):
+    """Reads a csv file and determines the elapsed time"""
 
     timestamps = []
     with open(csv_file) as f:
@@ -58,7 +58,7 @@ def get_fps_from_csv_timestamps(csv_file):
     end = timestamps[-1]
     tdiff = (end - start).total_seconds()
 
-    return len(timestamps) / tdiff
+    return tdiff
 
 
 def get_zarr_metadata(zarr_store):
@@ -165,7 +165,7 @@ def main(
             continue
         try:
             csv_path = get_csv_file(folder)
-            fps = int(get_fps_from_csv_timestamps(csv_path))
+            fps = len(zstore) / int(get_elapsed_time_from_csv(csv_path))
             print(f"Video at average framerate of: {fps}")
         except Exception as e:
             print("Error parsing timestamps and setting fps. Defaulting to fps=30\n")
