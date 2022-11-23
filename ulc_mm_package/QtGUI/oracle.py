@@ -275,7 +275,7 @@ class Oracle(Machine):
     def _end_liveview(self):
         self.liveview_window.close()
 
-        print("ORACLE: Opening survey")
+        self.logger.debug("Opening survey")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
     def _start_intermission(self):
@@ -289,36 +289,36 @@ class Oracle(Machine):
         if dialog_result == QMessageBox.Cancel:
             self.shutoff()
         elif dialog_result == QMessageBox.Ok:
-            print("ORACLE: Running new experiment")
+            self.logger.info("Starting new experiment")
             self.scopeop.rerun()
 
     def shutoff(self):
         # Wait for QTimers to shutoff
-        print("ORACLE: Waiting for timer to terminate...")
+        self.logger.debug("Waiting for acquisition and liveview timer to terminate...")
         while (
             self.acquisition.acquisition_timer.isActive()
             or self.acquisition.liveview_timer.isActive()
         ):
             pass
-        print("ORACLE: Successfully terminated timer.")
+        self.logger.debug("ORACLE: Successfully terminated acquisition and liveview timer.")
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
-        # TODO does this shutoff before scopeop quits?
 
         # Shut off acquisition thread
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
+        self.logger.debug("Shut off acquisition thread")
 
         # Shut off scopeop thread
         self.scopeop_thread.quit()
         self.scopeop_thread.wait()
+        self.logger.debug("Shut off scopeop thread")
 
-        print("ORACLE: Exiting program")
         self.form_window.close()
-        print("ORACLE: Closed experiment form")
+        self.logger.debug("Closed experiment form window")
         self.liveview_window.close()
-        print("ORACLE: Closed liveview")
+        self.logger.debug("Closed liveview window")
 
 
 if __name__ == "__main__":
