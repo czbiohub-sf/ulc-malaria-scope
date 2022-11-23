@@ -62,10 +62,10 @@ class MalariaScope:
         self._init_data_storage()
         self._init_TPU()
 
-        self.logger.info("Initialized scope hardware")
+        self.logger.info("Initialized scope hardware.")
 
     def shutoff(self):
-        self.logger.info("Shutting off scope hardware")
+        self.logger.info("Shutting off scope hardware.")
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.camera.deactivateCamera()
@@ -101,7 +101,7 @@ class MalariaScope:
             self.motor_enabled = True
         except MotorControllerError as e:
             self.logger.error(
-                f"Error initializing DRV8825. {e}"
+                f"DRV8825 initialization failed. {e}"
             )
 
     def _init_camera(self):
@@ -123,7 +123,7 @@ class MalariaScope:
             self.camera_activated = True
         except CameraError as e:
             self.logger.error(
-                f"Error initializing camera. {e}"
+                f"Camera initialization failed. {e}"
             )
 
     def _init_pneumatic_module(self):
@@ -136,13 +136,13 @@ class MalariaScope:
                 # If pressure sensor not created, raises PressureSensorNotInstantiated error
                 # when calling `pneumatic_module.getPressure()`
                 self.logger.error(
-                    f"Error initializing pressure sensor. {self.pneumatic_module.mpr_err_msg}"
+                    f"Pressure sensor initialization failed. {self.pneumatic_module.mpr_err_msg}"
                 )
 
             self.pneumatic_module_enabled = True
         except PneumaticModuleError as e:
             self.logger.error(
-                f"Error initializing pressure controller. {e}"
+                f"Pressure controller initialization failed. {e}"
             )
 
     def _init_led(self):
@@ -153,17 +153,16 @@ class MalariaScope:
             self.led.setDutyCycle(0)
             self.led_enabled = True
         except LEDError as e:
-            self.logger.error(f"Error instantiating LED driver. {e}")
+            self.logger.error(f"LED driver initialization failed. {e}")
 
     def _init_fan(self):
         # Create and turn on the fans
         try:
-            raise Exception
             self.fan = Fan()
             self.fan.turn_on_all()
             self.fan_enabled = True
         except Exception as e:
-            self.logger.error(f"Error initializing fan. {e}")
+            self.logger.error(f"Fan initialization failed. {e}")
 
     def _init_encoder(self):
         if self.motor_enabled:
@@ -186,8 +185,7 @@ class MalariaScope:
                 self.encoder = PIM522RotaryEncoder(manualFocusWithEncoder)
                 self.encoder_enabled = True
             except EncoderI2CError as e:
-                self.logger.error(f"Encoder I2C error. {e}")
-                # TODO: Do any corrective actions need to be taken, or error raise?
+                self.logger.error(f"Encoder I2C initialization failed. {e}")
         else:
             self.logger.error(f"Motor failed to initialize, encoder will not initialize.")
 
@@ -203,7 +201,7 @@ class MalariaScope:
             self.data_storage = DataStorage()
             self.data_storage_enabled = True
         except DataStorageError as e:
-            self.logger.error(f"Failed to initialize data storage. {e}")
+            self.logger.error(f"Data storage initialization failed. {e}")
 
     def _init_TPU(self):
         try:
@@ -211,4 +209,4 @@ class MalariaScope:
             self.cell_diagnosis_model = YOGO()
             self.tpu_enabled = True
         except TPUError as e:
-            self.logger.error(f"Failed to initialize the TPU. {e}")
+            self.logger.error(f"TPU initialization failed. {e}")

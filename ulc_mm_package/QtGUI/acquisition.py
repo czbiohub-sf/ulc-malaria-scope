@@ -39,30 +39,30 @@ class Acquisition(QObject):
         self.liveview_timer = QTimer()
         self.liveview_timer.timeout.connect(self.send_img)
 
-        self.logger.debug("Created acquisition and liveview timers")
+        self.logger.debug("Created acquisition and liveview timers.")
 
     @pyqtSlot()
     def start_timers(self):
         self.acquisition_timer.start(ACQUISITION_PERIOD)
         self.liveview_timer.start(self.period)
 
-        self.logger.debug(f"Started acquisition timer with {ACQUISITION_PERIOD} ms period and liveview timer with {self.period} ms period")
+        self.logger.debug(f"Started acquisition timer with {ACQUISITION_PERIOD} ms period and liveview timer with {self.period} ms period.")
 
     @pyqtSlot()
     def stop_timers(self):
         self.acquisition_timer.stop()
         self.liveview_timer.stop()
 
-        self.logger.debug("Stopped acquisition and liveview timers")
+        self.logger.debug("Stopped acquisition and liveview timers.")
 
     @pyqtSlot(bool)
     def freeze_liveview(self, freeze):
         if freeze:
             self.liveview_timer.stop()
-            self.logger.debug("Stopped liveview timer")
+            self.logger.debug("Stopped liveview timer.")
         else:
             self.liveview_timer.start(self.period)
-            self.logger.debug(f"Started liveview timer with {self.period} ms period")
+            self.logger.debug(f"Started liveview timer with {self.period} ms period.")
 
     @pyqtSlot(float)
     def set_period(self, period):

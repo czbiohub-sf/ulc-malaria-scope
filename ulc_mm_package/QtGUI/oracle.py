@@ -64,6 +64,7 @@ class Oracle(Machine):
             defaults={"filename": path.join(EXT_DIR, "oracle.log")},
         )
         self.logger = logging.root
+        self.logger.debug("Starting oracle.")
 
         # Instantiate GUI windows
         self.form_window = FormGUI()

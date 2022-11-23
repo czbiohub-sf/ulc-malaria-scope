@@ -201,7 +201,7 @@ class DRV8825Nema:
         # Adjust the timeout based on the microstepping mode
         homing_timeout = DEFAULT_FULL_STEP_HOMING_TIMEOUT * self.microstepping
 
-        self.logger.info("Homing motor, please wait")
+        self.logger.info("Waiting for motor to complete homing.")
 
         # Move the motor until it hits the CCW limit switch
         try:
@@ -229,7 +229,7 @@ class DRV8825Nema:
                     self._move_rel_steps(dir=Direction.CCW, steps=1)
                 self.max_pos = self.pos
 
-        self.logger.info("Done homing motor")
+        self.logger.info("Done homing motor.")
         self.homed = True
 
     def motor_stop(self, *args):

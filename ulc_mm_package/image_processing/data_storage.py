@@ -154,7 +154,7 @@ class DataStorage:
             (future.done())
         """
 
-        self.logger.info("Closing data storage")
+        self.logger.info("Closing data storage.")
 
         self.save_uniform_random_sample()
         if self.zw.writable:
