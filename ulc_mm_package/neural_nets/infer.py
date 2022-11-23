@@ -64,11 +64,10 @@ class ImageLoader:
 
         return cls(_iter, _num_els)
 
-
     @classmethod
     def load_random_data(cls, image_shape, n_iters):
         if len(image_shape) == 2:
-            image_shape = (1,1,*image_shape)
+            image_shape = (1, 1, *image_shape)
         else:
             raise ValueError(f"image shape must be (h,w) - got {image_shape}")
 
@@ -111,9 +110,11 @@ def manual_batch_infer(model, image_loader: ImageLoader):
         image = np.stack(images)
         yield model(image)
 
+
 def no_infer(model, image_loader: ImageLoader):
     for image in image_loader:
         yield 0
+
 
 def calculate_allan_dev(data, fname):
     ds = at.Dataset(data=data)
@@ -202,12 +203,13 @@ if __name__ == "__main__":
 
     import os
     import time
+
     batch_type = os.environ.get("MS_BATCH", "").lower()
-    if batch_type == 'batch':
+    if batch_type == "batch":
         infer_func = batch_infer
-    elif batch_type == 'manual_batch':
+    elif batch_type == "manual_batch":
         infer_func = manual_batch_infer
-    elif batch_type == 'no_infer':
+    elif batch_type == "no_infer":
         infer_func = no_infer
     else:
         infer_func = infer

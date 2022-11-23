@@ -105,7 +105,9 @@ class NCSModel:
             raise RuntimeError(f"model {self} already compiled")
 
         # when the first subclass is initialized, core will be given a value
-        assert self.core is not None, "initialize a subclass of NCSModel, not NCSModel itself"
+        assert (
+            self.core is not None
+        ), "initialize a subclass of NCSModel, not NCSModel itself"
 
         model = self.core.read_model(model_path)
 
@@ -148,7 +150,7 @@ class NCSModel:
         raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
     def syn(self, input_imgs: Union[npt.NDArray, List[npt.NDArray]]):
-        """ Synchronously infers images on the NCS
+        """Synchronously infers images on the NCS
 
         params:
             input_imgs: the image/images to be inferred.
@@ -163,7 +165,7 @@ class NCSModel:
         input_imgs: Union[npt.NDArray, List[npt.NDArray]],
         ids: Optional[Union[int, Sequence[int]]] = None,
     ) -> None:
-        """ Asynchronously submits inference jobs to the NCS
+        """Asynchronously submits inference jobs to the NCS
 
         params:
             input_imgs: the image/images to be inferred.
@@ -188,7 +190,9 @@ class NCSModel:
         input_tensors = self._format_images_to_tensors(input_imgs)[0]
         self.asyn_infer_queue.start_async({0: input_tensors}, userdata=ids)
 
-    def get_asyn_results(self, timeout: Optional[float]=0.01) -> Optional[List[AsyncInferenceResult]]:
+    def get_asyn_results(
+        self, timeout: Optional[float] = 0.01
+    ) -> Optional[List[AsyncInferenceResult]]:
         """
         Maybe return some asyn_results. Will return None if it can not get the lock
         on results within `timeout`. To disable timeout (i.e. just block indefinitely),
@@ -241,7 +245,4 @@ class NCSModel:
         return cast(list, val)
 
     def _format_images_to_tensors(self, imgs: List[npt.NDArray]) -> List[Tensor]:
-        return [
-            Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)
-            for img in imgs
-        ]
+        return [Tensor(np.expand_dims(img, (0, 3)), shared_memory=True) for img in imgs]
