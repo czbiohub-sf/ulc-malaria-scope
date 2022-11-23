@@ -65,6 +65,24 @@ class ImageLoader:
         return cls(_iter, _num_els)
 
 
+    @classmethod
+    def load_random_data(cls, image_shape, n_iters):
+        if len(image_shape) == 2:
+            image_shape = (1,1,*image_shape)
+        else:
+            raise ValueError(f"image shape must be (h,w) - got {image_shape}")
+
+        rand_tensor = np.random.randn(image_shape)
+
+        def _iter():
+            for _ in range(n_iters):
+                yield rand_tensor
+
+        _num_els = n_iters
+
+        return cls(_iter, _num_els)
+
+
 def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
     if n < 1:
         raise ValueError(f"n must be greater than 1 for yield_n: got {n}")
@@ -96,16 +114,6 @@ def manual_batch_infer(model, image_loader: ImageLoader):
 def no_infer(model, image_loader: ImageLoader):
     for image in image_loader:
         yield 0
-
-def infer_timing(model, image_shape, n_iters):
-    if len(image_shape) == 2:
-        image_shape = (1,1,*image_shape)
-
-    inp = np.random.randn(image_shape)
-    for _ in n_iters:
-        model(inp)
-        yield
-
 
 def calculate_allan_dev(data, fname):
     ds = at.Dataset(data=data)
