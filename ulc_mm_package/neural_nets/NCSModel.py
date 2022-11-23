@@ -90,9 +90,8 @@ class NCSModel:
         self.connected = False
         self.device_name = "MYRIAD"
         self.model = self._compile_model(model_path, camera_selection)
-        self.num_requests = self.model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")
 
-        self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
+        self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
 
         self._asyn_results: List[AsyncInferenceResult] = []
@@ -176,7 +175,7 @@ class NCSModel:
         input_imgs = self._as_list(input_imgs)
 
         if ids is None:
-            ids = range(len(input_imgs))
+            ids = list(range(len(input_imgs)))
 
         ids = self._as_list(ids)
 
@@ -186,19 +185,43 @@ class NCSModel:
                 f"len(input_imgs) == {len(input_imgs)}, len(ids) == {len(ids)}"
             )
 
-        input_tensors = self._format_images_to_tensors(input_imgs)
+        input_tensors = self._format_images_to_tensors(input_imgs)[0]
         self.asyn_infer_queue.start_async({0: input_tensors}, userdata=ids)
 
-    def get_asyn_results(self, timeout=0.01) -> Optional[List[AsyncInferenceResult]]:
+    def get_asyn_results(self, timeout: Optional[float]=0.01) -> Optional[List[AsyncInferenceResult]]:
         """
         Maybe return some asyn_results. Will return None if it can not get the lock
         on results within `timeout`. To disable timeout (i.e. just block indefinitely),
-        use a negative number for timeout.
+        set timeout to None
         """
+        # openvino sets timeout to indefinite on timeout < 0, not timeout == None
+        if timeout is None:
+            timeout = -1
+
         with lock_timeout(self.lock, timeout=timeout):
             res = copy(self._asyn_results)
             self._asyn_results = []
             return res
+
+    def syn_batch(self, input_imgs: List[npt.NDArray]):
+        temp_infer_queue = AsyncInferQueue(self.compiled_model)
+        res = []
+
+        def cb(infer_request: InferRequest, userdata: Any) -> None:
+            res.append(
+                AsyncInferenceResult(
+                    id=userdata, result=infer_request.output_tensors[0].data[:]
+                )
+            )
+
+        temp_infer_queue.set_callback(cb)
+
+        for i, tensor in enumerate(self._format_images_to_tensors(input_imgs)):
+            self.asyn_infer_queue.start_async({0: tensor}, userdata=i)
+
+        self.asyn_infer_queue.wait_all()
+
+        return res
 
     def wait_all(self):
         self.asyn_infer_queue.wait_all()
@@ -207,7 +230,7 @@ class NCSModel:
         with lock_timeout(self.lock):
             self._asyn_results.append(
                 AsyncInferenceResult(
-                    id=userdata, result=infer_request.output_tensors[0].data
+                    id=userdata, result=infer_request.output_tensors[0].data[:]
                 )
             )
 

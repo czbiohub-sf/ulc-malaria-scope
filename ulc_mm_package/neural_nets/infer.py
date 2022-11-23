@@ -79,7 +79,8 @@ def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
 
 def infer(model, image_loader: ImageLoader):
     for image in image_loader:
-        yield model(image)
+        model.asyn(image)
+        yield model.get_asyn_results(timeout=0.001)
 
 
 def batch_infer(model, image_loader: ImageLoader):
@@ -95,6 +96,16 @@ def manual_batch_infer(model, image_loader: ImageLoader):
 def no_infer(model, image_loader: ImageLoader):
     for image in image_loader:
         yield 0
+
+def infer_timing(model, image_shape, n_iters):
+    if len(image_shape) == 2:
+        image_shape = (1,1,*image_shape)
+
+    inp = np.random.randn(image_shape)
+    for _ in n_iters:
+        model(inp)
+        yield
+
 
 def calculate_allan_dev(data, fname):
     ds = at.Dataset(data=data)
@@ -182,6 +193,7 @@ if __name__ == "__main__":
         A = AutoFocus(camera_selection=CameraOptions.AVT)
 
     import os
+    import time
     batch_type = os.environ.get("MS_BATCH", "").lower()
     if batch_type == 'batch':
         infer_func = batch_infer
@@ -193,6 +205,9 @@ if __name__ == "__main__":
         infer_func = infer
 
     print(f"using {infer_func}")
+    print(f"num streams {A.core.get_property('MYRIAD', 'NUM_STREAMS')}")
+    print(f"perf hint {A.model.get_property('PERFORMANCE_HINT')}")
+    print(f"optim.num req {A.model.get_property('OPTIMAL_NUMBER_OF_INFER_REQUESTS')}")
 
     results = []
 
@@ -208,6 +223,12 @@ if __name__ == "__main__":
                 if args.allan_dev:
                     results.append(res)
 
+    t0 = time.perf_counter()
+    print("about to wait")
+    A.wait_all()
+    t1 = time.perf_counter()
+    print(f"waiting for {t1 - t0} secs")
+
     if args.allan_dev:
         data_path = Path(
             args.output
@@ -218,3 +239,5 @@ if __name__ == "__main__":
             ".png"
         )
         calculate_allan_dev(results, str(fname))
+
+    print("all done in infer.py")
