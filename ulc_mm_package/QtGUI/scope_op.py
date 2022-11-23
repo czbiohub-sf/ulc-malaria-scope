@@ -317,29 +317,10 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.disconnect(self.run_autofocus)
 
-<<<<<<< HEAD
-        try:
-            self.autofocus_routine.send(img)
-        except InvalidMove:
-            self.logger.error("Autofocus failed. Unable to achieve desired focus withing depth of field.")
-            self.error.emit(
-                "Calibration failed",
-                "Unable to achieve desired focus within condenser's depth of field.",
-            )
-        except StopIteration as e:
-            self.autofocus_result = e.value
-            self.logger.info(f"Autofocus successful. Motor moved: {self.autofocus_result} steps")
-            # print(
-            #     f"SCOPEOP: Autofocus complete, motor moved by {self.autofocus_result} steps"
-            # )
-            self.next_state()
-        else:
-=======
         if self.batch_count < AF_BATCH_SIZE:
             self.autofocus_batch.append(img)
             self.batch_count += 1
 
->>>>>>> subsequence-fix
             self.img_signal.connect(self.run_autofocus)
         else:
             try:
