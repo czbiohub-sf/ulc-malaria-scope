@@ -182,7 +182,7 @@ class MalariaScope:
                 self.logger.error(f"Encoder I2C initialization failed. {e}")
         else:
             self.logger.error(
-                f"Motor failed to initialize, encoder will not initialize."
+                f"Motor initialization failed, so encoder will not initialize."
             )
 
     def _init_humidity_temp_sensor(self):
@@ -191,7 +191,7 @@ class MalariaScope:
             self.ht_sensor_enabled = True
         except Exception as e:
             self.logger.error(
-                f"Failed to initialize temperature/humidity sensor (SHT31D). {e}"
+                f"Temperature/humidity sensor initialization failed. {e}"
             )
 
     def _init_data_storage(self):
