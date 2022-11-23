@@ -64,7 +64,7 @@ class Oracle(Machine):
             defaults={"filename": path.join(EXT_DIR, "oracle.log")},
         )
         self.logger = logging.root
-        self.logger.debug("Starting oracle.")
+        self.logger.debug("STARTING EXPERIMENT.")
 
         # Instantiate GUI windows
         self.form_window = FormGUI()
@@ -320,6 +320,8 @@ class Oracle(Machine):
         self.logger.debug("Closed experiment form window.")
         self.liveview_window.close()
         self.logger.debug("Closed liveview window.")
+
+        self.logger.debug("SHUTTING OFF EXPERIMENT.")
 
 
 if __name__ == "__main__":
