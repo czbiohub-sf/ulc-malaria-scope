@@ -181,7 +181,6 @@ if __name__ == "__main__":
     else:
         A = AutoFocus(camera_selection=CameraOptions.AVT)
 
-
     import os
     batch_type = os.environ.get("MS_BATCH", "").lower()
     if batch_type == 'batch':
