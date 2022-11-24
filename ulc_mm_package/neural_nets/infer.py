@@ -96,6 +96,11 @@ def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
 
 def infer(model, image_loader: ImageLoader):
     for image in image_loader:
+        yield model(image)
+
+
+def asyn_infer(model, image_loader: ImageLoader):
+    for image in image_loader:
         model.asyn(image)
         yield model.get_asyn_results(timeout=0.001)
 
@@ -211,6 +216,8 @@ if __name__ == "__main__":
         infer_func = manual_batch_infer
     elif batch_type == "no_infer":
         infer_func = no_infer
+    elif batch_type == "asyn_infer":
+        infer_func = asyn_infer
     else:
         infer_func = infer
 
