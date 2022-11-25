@@ -1,5 +1,7 @@
+import os
 import cv2
 import zarr
+import time
 import argparse
 
 import numpy as np
@@ -105,22 +107,6 @@ def asyn_infer(model, image_loader: ImageLoader):
         yield model.get_asyn_results(timeout=0.001)
 
 
-def batch_infer(model, image_loader: ImageLoader):
-    for images in yield_n(image_loader, 4):
-        yield model(images)
-
-
-def manual_batch_infer(model, image_loader: ImageLoader):
-    for images in yield_n(image_loader, 4):
-        image = np.stack(images)
-        yield model(image)
-
-
-def no_infer(model, image_loader: ImageLoader):
-    for image in image_loader:
-        yield 0
-
-
 def calculate_allan_dev(data, fname):
     ds = at.Dataset(data=data)
     res = ds.compute("tdev")
@@ -206,20 +192,9 @@ if __name__ == "__main__":
     else:
         A = AutoFocus(camera_selection=CameraOptions.AVT)
 
-    import os
-    import time
-
     batch_type = os.environ.get("MS_BATCH", "").lower()
-    if batch_type == "batch":
-        infer_func = batch_infer
-    elif batch_type == "manual_batch":
-        infer_func = manual_batch_infer
-    elif batch_type == "no_infer":
-        infer_func = no_infer
-    elif batch_type == "asyn_infer":
+    if batch_type == "asyn_infer":
         infer_func = asyn_infer
-    elif batch_type == "syn_batch_infer":
-        infer_func = syn_batch_infer
     else:
         infer_func = infer
 
@@ -236,11 +211,7 @@ if __name__ == "__main__":
                 if args.allan_dev:
                     results.append(res)
 
-    t0 = time.perf_counter()
-    print("about to wait")
     A.wait_all()
-    t1 = time.perf_counter()
-    print(f"waiting for {t1 - t0} secs")
 
     if args.allan_dev:
         data_path = Path(
