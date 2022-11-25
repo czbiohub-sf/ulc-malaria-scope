@@ -34,6 +34,8 @@ class BaslerCamera(Basler):
         try:
             super().__init__()
 
+            self.logger = logging.getLogger(__name__)
+
             # 2x2 binning w/ averaging (https://docs.baslerweb.com/binning)
             # Note that setting the binning mode to "Sum" saturates the values (i.e if
             # the pixel mode is 8-bit (0-256), summing does NOT increase the maximum value to 512)
@@ -127,8 +129,7 @@ class AVTCamera:
             try:
                 yield self.queue.get(timeout=0.5)
             except queue.Empty:
-                # TODO change to logging
-                print("Dropped frame.")
+                self.logger.warning("Dropped frame.")
 
     def setBinning(self, mode: str = "Average", bin_factor=1):
         while self.camera.is_streaming():

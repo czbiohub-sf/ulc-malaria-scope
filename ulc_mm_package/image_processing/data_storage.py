@@ -1,19 +1,20 @@
-from os import mkdir, path
-from datetime import datetime
+import logging
+import cv2
 import csv
 import random
-from typing import Dict, List
 import shutil
-
 import numpy as np
-import cv2
+
+from typing import Dict, List
+from os import mkdir, path
+from datetime import datetime
 
 from ulc_mm_package.scope_constants import EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
     MIN_GB_REQUIRED,
-    NUM_SUBSEQUENCE,
+    NUM_SUBSEQUENCES,
     SUBSEQUENCE_LENGTH,
 )
 
@@ -24,6 +25,7 @@ class DataStorageError(Exception):
 
 class DataStorage:
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.zw = ZarrWriter()
         self.md_writer = None
         self.metadata_file = None
@@ -152,6 +154,8 @@ class DataStorage:
             (future.done())
         """
 
+        self.logger.info("Closing data storage.")
+
         self.save_uniform_random_sample()
         if self.zw.writable:
             self.zw.writable = False
@@ -196,21 +200,21 @@ class DataStorage:
 
         num_files = len(self.zw.group)
         try:
-            indices = self._unif_rand_with_min_distance(
+            indices = self._unif_subsequence_distribution(
                 max_val=num_files,
-                num_samples=NUM_SUBSEQUENCE,
-                min_dist=SUBSEQUENCE_LENGTH,
+                subsequence_length=SUBSEQUENCE_LENGTH,
+                num_subsequences=NUM_SUBSEQUENCES,
             )
         except ValueError:
-            # TODO: change to logging
-            print("Too few images, no subsample saved.")
+            self.logger.info("Too few images, no subsample saved.")
             return
 
         try:
             sub_seq_path = self._create_subseq_folder()
         except:
-            # TODO: change to logging
-            print("Unable to create the subsample folder - aborting subsampling.")
+            self.logger.info(
+                "Unable to create the subsample folder. Aborting subsampling."
+            )
             return
 
         for idx in indices:
@@ -242,34 +246,36 @@ class DataStorage:
             raise
 
     @staticmethod
-    def _unif_rand_with_min_distance(
-        max_val: int, num_samples: int, min_dist: int
+    def _unif_subsequence_distribution(
+        max_val: int, subsequence_length: int, num_subsequences: int
     ) -> List[int]:
 
-        """Generate a uniform distributed random sample with a minimum distance between samples.
+        """Generate a set number of uniformly distributed subsequences.
 
         Parameters
         ----------
         max_val: int
             Maximum value of the sequence
-        num_samples; int
-            Number of samples to return
-        min_dist: int
-            Minimum distance between returned samples
+        subsequence_length: int
+            Number of samples in each subsequence
+        num_subsequences: int
+            Number of subsequences
 
         Returns
         -------
         List[int]:
-            List of {num_sample} values between 0-max_val, each with at least min_dist between them.
+            List of {num_sample} values between 0-max_val, each with at least min_dist between subsequences.
         """
 
-        return [
-            (min_dist - 1) * i + val
-            for i, val in enumerate(
-                sorted(
-                    random.sample(
-                        range(max_val - (min_dist - 1) * num_samples), num_samples
-                    )
-                )
+        interval = np.floor((max_val - subsequence_length) / (num_subsequences - 1))
+        if interval < subsequence_length:
+            raise ValueError(
+                f"Too few images to extract {num_subsequences} subsequences of size {subsequence_length}"
             )
-        ]
+
+        all_indices = []
+        for multiple in range(0, num_subsequences):
+            idx = int(multiple * interval)
+            all_indices = all_indices + list(range(idx, idx + subsequence_length))
+
+        return all_indices

@@ -1,3 +1,4 @@
+import logging
 import time
 import functools
 import threading
@@ -86,6 +87,8 @@ class DRV8825Nema(RealDRV8825Nema):
             Optional parameter to pass an existing pigpio.pi() object. This would be passed in for cases where you may want two or more hardware objects to
             both use the same callback thread
         """
+        self.logger = logging.getLogger(__name__)
+
         self.motor_type = motor_type
         self.direction_pin = direction_pin
         self.step_pin = step_pin
@@ -143,8 +146,7 @@ class DRV8825Nema(RealDRV8825Nema):
         # Adjust the timeout based on the microstepping mode
         homing_timeout = DEFAULT_FULL_STEP_HOMING_TIMEOUT * self.microstepping
 
-        # TODO: Change to logging
-        print("MSCOPE: Homing motor, please wait...")
+        self.logger.info("Waiting for motor to finish homing.")
 
         # Move the motor until it hits the CCW limit switch
         try:
@@ -180,8 +182,7 @@ class DRV8825Nema(RealDRV8825Nema):
             except StopMotorInterrupt:
                 self.max_pos = self.pos
 
-        # TODO Change to logging
-        print("MSCOPE: Done homing.")
+        self.logger.info("Done homing motor.")
         self.homed = True
 
     def _move_rel_steps(self, steps: int, dir=Direction.CCW, stepdelay=0.005):
