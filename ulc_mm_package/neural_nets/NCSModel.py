@@ -4,12 +4,14 @@ import sys
 import time
 import threading
 import numpy as np
+import operator as op
 import numpy.typing as npt
 
 from copy import copy
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
 
+from functools import partial
 from collections import namedtuple
 from typing import (
     Any,
@@ -91,9 +93,12 @@ class NCSModel:
         self.device_name = "MYRIAD"
         self.model = self._compile_model(model_path, camera_selection)
 
+        # used for syn
+        self._temp_infer_queue = AsyncInferQueue(self.model)
+
+        # used for asyn
         self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
-
         self._asyn_results: List[AsyncInferenceResult] = []
 
     def _compile_model(
@@ -133,7 +138,6 @@ class NCSModel:
             # sleep 0, then 1, then 3, then 7
             time.sleep(2**connection_attempts - 1)
             try:
-                # TODO: benchmark_app.py says PERFORMANCE_HINT = 'none' w/ nstreams=1 is fastest!!
                 compiled_model = self.core.compile_model(
                     model,
                     self.device_name,
@@ -144,26 +148,46 @@ class NCSModel:
                 connection_attempts += 1
                 if connection_attempts < 4:
                     print(
-                        f"Failed to connect NCS: {e}.\nRemaining connection attempts: {4 - connection_attempts}. Retrying..."
+                        f"Failed to connect NCS: {e}.\nRemaining connection "
+                        f"attempts: {4 - connection_attempts}. Retrying..."
                     )
                 err_msg = str(e)
         raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
-    def syn(self, input_imgs: Union[npt.NDArray, List[npt.NDArray]]):
-        """Synchronously infers images on the NCS
+    def syn(
+        self, input_imgs: Union[npt.NDArray, List[npt.NDArray]], sort: bool = False
+    ):
+        """'Synchronously' infers images on the NCS
+
+        Under the hood, it is asynchronous, because asynchronous performance matches synchronous
+        or bests synchronous performance, even for n = 1.
+
+        This is a "synchronous" function
+        in the sense that it blocks. I.e. it blocks until it returns a result, as opposed to
+        asynchronous inference which would immediately return.
 
         params:
             input_imgs: the image/images to be inferred.
+            sort: sort the outputs
         """
-        input_imgs = self._as_list(input_imgs)
-        input_tensors = self._format_images_to_tensors(input_imgs)
-        output_layer = self.model.output(0)
-        return self.model(input_tensors)[output_layer]
+        res = []
+
+        self._temp_infer_queue.set_callback(partial(self._cb, res))
+
+        for i, image in enumerate(input_imgs):
+            tensor = self._format_image_to_tensor(image)
+            self._temp_infer_queue.start_async({0: tensor}, userdata=i)
+
+        self._temp_infer_queue.wait_all()
+
+        if sort:
+            return sorted(res, key=op.attrgetter("id"))
+        return res
 
     def asyn(
         self,
-        input_imgs: Union[npt.NDArray, List[npt.NDArray]],
-        ids: Optional[Union[int, Sequence[int]]] = None,
+        input_img: npt.NDArray,
+        id: Optional[int] = None,
     ) -> None:
         """Asynchronously submits inference jobs to the NCS
 
@@ -174,21 +198,8 @@ class NCSModel:
 
         To get results, call 'get_asyn_results'
         """
-        input_imgs = self._as_list(input_imgs)
-
-        if ids is None:
-            ids = list(range(len(input_imgs)))
-
-        ids = self._as_list(ids)
-
-        if len(ids) != len(input_imgs):
-            raise ValueError(
-                f"the number of ids must be the number of input images. "
-                f"len(input_imgs) == {len(input_imgs)}, len(ids) == {len(ids)}"
-            )
-
-        input_tensors = self._format_images_to_tensors(input_imgs)[0]
-        self.asyn_infer_queue.start_async({0: input_tensors}, userdata=ids)
+        input_tensor = self._format_image_to_tensor(input_img)
+        self.asyn_infer_queue.start_async({0: input_tensor}, userdata=id)
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
@@ -207,26 +218,6 @@ class NCSModel:
             self._asyn_results = []
             return res
 
-    def syn_batch(self, input_imgs: List[npt.NDArray]):
-        temp_infer_queue = AsyncInferQueue(self.compiled_model)
-        res = []
-
-        def cb(infer_request: InferRequest, userdata: Any) -> None:
-            res.append(
-                AsyncInferenceResult(
-                    id=userdata, result=infer_request.output_tensors[0].data[:]
-                )
-            )
-
-        temp_infer_queue.set_callback(cb)
-
-        for i, tensor in enumerate(self._format_images_to_tensors(input_imgs)):
-            self.asyn_infer_queue.start_async({0: tensor}, userdata=i)
-
-        self.asyn_infer_queue.wait_all()
-
-        return res
-
     def wait_all(self):
         self.asyn_infer_queue.wait_all()
 
@@ -238,11 +229,14 @@ class NCSModel:
                 )
             )
 
-    def _as_list(self, val: Union[T, Sequence[T]]) -> List[T]:
-        "returns val as a list; if it is already a list, leave it be"
-        if not isinstance(val, Sequence):
-            val = [val]
-        return cast(list, val)
+    def _cb(
+        self, result_list: List, infer_request: InferRequest, userdata: Any
+    ) -> None:
+        result_list.append(
+            AsyncInferenceResult(
+                id=userdata, result=infer_request.output_tensors[0].data[:]
+            )
+        )
 
-    def _format_images_to_tensors(self, imgs: List[npt.NDArray]) -> List[Tensor]:
-        return [Tensor(np.expand_dims(img, (0, 3)), shared_memory=True) for img in imgs]
+    def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
+        return Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)

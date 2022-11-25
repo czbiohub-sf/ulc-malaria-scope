@@ -218,16 +218,12 @@ if __name__ == "__main__":
         infer_func = no_infer
     elif batch_type == "asyn_infer":
         infer_func = asyn_infer
+    elif batch_type == "syn_batch_infer":
+        infer_func = syn_batch_infer
     else:
         infer_func = infer
 
-    print(f"using {infer_func}")
-    print(f"num streams {A.core.get_property('MYRIAD', 'NUM_STREAMS')}")
-    print(f"perf hint {A.model.get_property('PERFORMANCE_HINT')}")
-    print(f"optim.num req {A.model.get_property('OPTIMAL_NUMBER_OF_INFER_REQUESTS')}")
-
     results = []
-
     if args.output is None:
         for res in infer_func(A, image_loader):
             print(res)
