@@ -114,10 +114,3 @@ simulation.py
 profiles
 
 functiontrace*
-
-base_infer_results.txt
-batch_infer_results.txt
-manual_batch_infer_results.txt
-no_infer_results.txt
-
-
