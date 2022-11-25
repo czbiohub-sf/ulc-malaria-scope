@@ -239,7 +239,6 @@ class ScopeOp(QObject, Machine):
         self.mscope.led.turnOff()
 
         closing_file_future = self.mscope.data_storage.close()
-
         while not closing_file_future.done():
             sleep(1)
 
