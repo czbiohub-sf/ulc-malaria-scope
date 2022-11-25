@@ -28,33 +28,3 @@ class AutoFocus(NCSModel):
 
     def __call__(self, input_img):
         return self.syn(input_img)
-
-
-if __name__ == "__main__":
-    import time
-    import cv2
-    import sys
-    from pathlib import Path
-    from ulc_mm_package.scope_constants import CameraOptions
-
-    ex = cv2.imread(str(next(Path(sys.argv[1]).glob("*.png"))), cv2.IMREAD_GRAYSCALE)
-
-    if ex.shape == (600, 800):
-        A = AutoFocus(camera_selection=CameraOptions.BASLER)
-    else:
-        A = AutoFocus(camera_selection=CameraOptions.AVT)
-
-    ts = []
-    for imgpath in sorted(Path(sys.argv[1]).glob("*.png")):
-        im = cv2.imread(str(imgpath), cv2.IMREAD_GRAYSCALE)
-
-        t0 = time.perf_counter()
-        r = A(im)
-        dt = time.perf_counter() - t0
-        ts.append(dt)
-        print(r)
-
-    print(f"avg dt: {sum(ts) / len(ts)}")
-    print(f"min dt: {min(ts)}")
-    print(f"max dt: {max(ts)}")
-    print(f"avg fps: {len(ts) / sum(ts)}")
