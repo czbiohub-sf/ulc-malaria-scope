@@ -156,7 +156,7 @@ class NCSModel:
 
     def syn(
         self, input_imgs: Union[npt.NDArray, List[npt.NDArray]], sort: bool = False
-    ):
+    ) -> List[npt.NDArray]:
         """'Synchronously' infers images on the NCS
 
         Under the hood, it is asynchronous, because asynchronous performance matches synchronous
@@ -170,19 +170,19 @@ class NCSModel:
             input_imgs: the image/images to be inferred.
             sort: sort the outputs
         """
-        res = []
+        res: List[AsyncInferenceResult] = []
 
         self._temp_infer_queue.set_callback(partial(self._cb, res))
 
-        for i, image in enumerate(input_imgs):
+        for i, image in enumerate(self._as_list(input_imgs)):
             tensor = self._format_image_to_tensor(image)
             self._temp_infer_queue.start_async({0: tensor}, userdata=i)
 
         self._temp_infer_queue.wait_all()
 
         if sort:
-            return sorted(res, key=op.attrgetter("id"))
-        return res
+            return [r.result for r in sorted(res, key=op.attrgetter("id"))]
+        return [r.result for r in res]
 
     def asyn(
         self,
@@ -237,6 +237,11 @@ class NCSModel:
                 id=userdata, result=infer_request.output_tensors[0].data[:]
             )
         )
+
+    def _as_list(self, maybe_list: Union[T, List[T]]) -> List[T]:
+        if isinstance(maybe_list, list):
+            return maybe_list
+        return list(maybe_list)
 
     def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
         return Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)
