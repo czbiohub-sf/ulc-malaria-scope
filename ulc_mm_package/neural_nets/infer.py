@@ -1,23 +1,22 @@
+import os
 import cv2
 import zarr
+import time
 import argparse
 
+import numpy as np
 import allantools as at
 
 from pathlib import Path
 
-from AutofocusInference import AutoFocus
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 from ulc_mm_package.scope_constants import CameraOptions
+
+from typing import Any, List, Generator, Iterable
 
 
 def _tqdm(iterable, **kwargs):
     return iterable
-
-
-try:
-    from tqdm import tqdm
-except ImportError:
-    tqdm = _tqdm
 
 
 class ImageLoader:
@@ -67,14 +66,49 @@ class ImageLoader:
 
         return cls(_iter, _num_els)
 
+    @classmethod
+    def load_random_data(cls, image_shape, n_iters):
+        if len(image_shape) == 2:
+            image_shape = (1, 1, *image_shape)
+        else:
+            raise ValueError(f"image shape must be (h,w) - got {image_shape}")
+
+        rand_tensor = np.random.randn(image_shape)
+
+        def _iter():
+            for _ in range(n_iters):
+                yield rand_tensor
+
+        _num_els = n_iters
+
+        return cls(_iter, _num_els)
+
+
+def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
+    if n < 1:
+        raise ValueError(f"n must be greater than 1 for yield_n: got {n}")
+
+    values = []
+    for val in itr:
+        values.append(val)
+        if len(values) == n:
+            yield values
+            values = []
+
 
 def infer(model, image_loader: ImageLoader):
     for image in image_loader:
         yield model(image)
 
 
-def calculate_allan_dev(model, image_loader: ImageLoader, fname):
-    ds = at.Dataset(data=[v for v in infer(model, tqdm(image_loader))])
+def asyn_infer(model, image_loader: ImageLoader):
+    for image in image_loader:
+        model.asyn(image)
+        yield model.get_asyn_results(timeout=0.001)
+
+
+def calculate_allan_dev(data, fname):
+    ds = at.Dataset(data=data)
     res = ds.compute("tdev")
     taus = res["taus"]
     stat = res["stat"]
@@ -108,6 +142,12 @@ def infer_parser():
         action=boolean_action,
         default=False,
     )
+    parser.add_argument(
+        "--verbose",
+        help="print progress bar",
+        action=boolean_action,
+        default=False,
+    )
 
     return parser
 
@@ -123,6 +163,15 @@ if __name__ == "__main__":
     if (no_imgs and no_zarr) or (not no_imgs and not no_zarr):
         print("you must supply a value for only one of --images or --zarr")
         sys.exit(1)
+
+    if not args.verbose:
+        tqdm = _tqdm
+    else:
+        try:
+            from tqdm import tqdm
+        except ImportError:
+            print("install tqdm for progress bars")
+            tqdm = _tqdm
 
     im = next(
         iter(
@@ -143,6 +192,27 @@ if __name__ == "__main__":
     else:
         A = AutoFocus(camera_selection=CameraOptions.AVT)
 
+    batch_type = os.environ.get("MS_BATCH", "").lower()
+    if batch_type == "asyn_infer":
+        infer_func = asyn_infer
+    else:
+        infer_func = infer
+
+    results = []
+    if args.output is None:
+        for res in infer_func(A, image_loader):
+            print(res)
+            if args.allan_dev:
+                results.append(res)
+    else:
+        with open(args.output, "w") as f:
+            for res in infer_func(A, tqdm(image_loader)):
+                f.write(f"{res}\n")
+                if args.allan_dev:
+                    results.append(res)
+
+    A.wait_all()
+
     if args.allan_dev:
         data_path = Path(
             args.output
@@ -152,12 +222,6 @@ if __name__ == "__main__":
         fname = data_path.parent / Path(data_path.stem + "_allan_dev").with_suffix(
             ".png"
         )
-        calculate_allan_dev(A, image_loader, str(fname))
-    else:
-        if args.output is None:
-            for res in infer(A, image_loader):
-                print(res)
-        else:
-            with open(args.output, "w") as f:
-                for res in infer(A, tqdm(image_loader)):
-                    f.write(f"{res}\n")
+        calculate_allan_dev(results, str(fname))
+
+    print("all done in infer.py")

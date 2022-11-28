@@ -4,16 +4,24 @@ import sys
 import time
 import threading
 import numpy as np
+import operator as op
 import numpy.typing as npt
 
-from PIL import Image
-from enum import Enum
-from pathlib import Path
 from copy import copy
 from contextlib import contextmanager
+from concurrent.futures import ThreadPoolExecutor
 
+from functools import partial
 from collections import namedtuple
-from typing import Any, Callable, List, Sequence, Optional, Tuple
+from typing import (
+    Any,
+    List,
+    Sequence,
+    Optional,
+    Union,
+    TypeVar,
+    cast,
+)
 
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
@@ -28,13 +36,11 @@ from openvino.runtime import (
 )
 
 
+T = TypeVar("T", covariant=True)
+
+
 class TPUError(Exception):
     pass
-
-
-class OptimizationHint(Enum):
-    LATENCY = 1
-    THROUGHPUT = 2
 
 
 @contextmanager
@@ -80,15 +86,19 @@ class NCSModel:
         """
         params:
             model_path: path to the 'xml' file
+            camera_selection: the camera that is used for inference. Just used for img dims
         """
         self.lock = threading.Lock()
         self.connected = False
         self.device_name = "MYRIAD"
         self.model = self._compile_model(model_path, camera_selection)
-        self.num_requests = self.model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")
-        self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=self.num_requests)
+
+        # used for syn
+        self._temp_infer_queue = AsyncInferQueue(self.model)
+
+        # used for asyn
+        self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        # list of list of tuples - (xcenter, ycenter, width, height, class, confidence)
         self._asyn_results: List[AsyncInferenceResult] = []
 
     def _compile_model(
@@ -98,6 +108,11 @@ class NCSModel:
     ):
         if self.connected:
             raise RuntimeError(f"model {self} already compiled")
+
+        # when the first subclass is initialized, core will be given a value
+        assert (
+            self.core is not None
+        ), "initialize a subclass of NCSModel, not NCSModel itself"
 
         model = self.core.read_model(model_path)
 
@@ -123,7 +138,6 @@ class NCSModel:
             # sleep 0, then 1, then 3, then 7
             time.sleep(2**connection_attempts - 1)
             try:
-                # TODO: benchmark_app.py says PERFORMANCE_HINT = 'none' w/ nstreams=1 is fastest!!
                 compiled_model = self.core.compile_model(
                     model,
                     self.device_name,
@@ -134,34 +148,100 @@ class NCSModel:
                 connection_attempts += 1
                 if connection_attempts < 4:
                     print(
-                        f"Failed to connect NCS: {e}.\nRemaining connection attempts: {4 - connection_attempts}. Retrying..."
+                        f"Failed to connect NCS: {e}.\nRemaining connection "
+                        f"attempts: {4 - connection_attempts}. Retrying..."
                     )
                 err_msg = str(e)
         raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
-    def syn(self, input_img):
-        """input_img is 2d array (i.e. grayscale img)"""
-        input_tensor = [Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)]
-        output_layer = self.model.output(0)
-        return self.model(input_tensor)[output_layer]
+    def syn(
+        self, input_imgs: Union[npt.NDArray, List[npt.NDArray]], sort: bool = False
+    ) -> List[npt.NDArray]:
+        """'Synchronously' infers images on the NCS
 
-    def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
-        with lock_timeout(self.lock):
-            self._asyn_results.append(
-                AsyncInferenceResult(
-                    id=userdata, result=infer_request.output_tensors[0].data
-                )
-            )
+        Under the hood, it is asynchronous, because asynchronous performance matches synchronous
+        or bests synchronous performance, even for n = 1.
 
-    def asyn(self, input_img: npt.NDArray, idx: int = None) -> None:
-        input_tensor = Tensor(np.expand_dims(input_img, (0, 3)), shared_memory=True)
-        self.asyn_infer_queue.start_async({0: input_tensor}, userdata=idx)
+        This is a "synchronous" function
+        in the sense that it blocks. I.e. it blocks until it returns a result, as opposed to
+        asynchronous inference which would immediately return.
 
-    def get_asyn_results(self) -> List[AsyncInferenceResult]:
-        with lock_timeout(self.lock, timeout=0.01):
+        params:
+            input_imgs: the image/images to be inferred.
+            sort: sort the outputs
+        """
+        res: List[AsyncInferenceResult] = []
+
+        self._temp_infer_queue.set_callback(partial(self._cb, res))
+
+        for i, image in enumerate(self._as_list(input_imgs)):
+            tensor = self._format_image_to_tensor(image)
+            self._temp_infer_queue.start_async({0: tensor}, userdata=i)
+
+        self._temp_infer_queue.wait_all()
+
+        if sort:
+            return [r.result for r in sorted(res, key=op.attrgetter("id"))]
+        return [r.result for r in res]
+
+    def asyn(
+        self,
+        input_img: npt.NDArray,
+        id: Optional[int] = None,
+    ) -> None:
+        """Asynchronously submits inference jobs to the NCS
+
+        params:
+            input_imgs: the image/images to be inferred.
+            ids: the ids that are passed through the asynchronous inference,
+                 used for associating the predicted tensor with the input image.
+
+        To get results, call 'get_asyn_results'
+        """
+        input_tensor = self._format_image_to_tensor(input_img)
+        self.asyn_infer_queue.start_async({0: input_tensor}, userdata=id)
+
+    def get_asyn_results(
+        self, timeout: Optional[float] = 0.01
+    ) -> Optional[List[AsyncInferenceResult]]:
+        """
+        Maybe return some asyn_results. Will return None if it can not get the lock
+        on results within `timeout`. To disable timeout (i.e. just block indefinitely),
+        set timeout to None
+        """
+        # openvino sets timeout to indefinite on timeout < 0, not timeout == None
+        if timeout is None:
+            timeout = -1
+
+        with lock_timeout(self.lock, timeout=timeout):
             res = copy(self._asyn_results)
             self._asyn_results = []
             return res
 
     def wait_all(self):
         self.asyn_infer_queue.wait_all()
+
+    def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
+        with lock_timeout(self.lock):
+            self._asyn_results.append(
+                AsyncInferenceResult(
+                    id=userdata, result=infer_request.output_tensors[0].data[:]
+                )
+            )
+
+    def _cb(
+        self, result_list: List, infer_request: InferRequest, userdata: Any
+    ) -> None:
+        result_list.append(
+            AsyncInferenceResult(
+                id=userdata, result=infer_request.output_tensors[0].data[:]
+            )
+        )
+
+    def _as_list(self, maybe_list: Union[T, List[T]]) -> List[T]:
+        if isinstance(maybe_list, list):
+            return maybe_list
+        return list(maybe_list)
+
+    def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
+        return Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)

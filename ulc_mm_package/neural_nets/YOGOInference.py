@@ -46,24 +46,9 @@ class YOGO(NCSModel):
         return self.asyn(input_img, idxs)
 
     def _default_callback(self, infer_request, userdata):
-        res = infer_request.output_tensors[0].data
+        res = infer_request.output_tensors[0].data[:]
         bs, pred_dim, Sy, Sx = res.shape
         res.shape = (bs, pred_dim, Sy * Sx)
 
         with lock_timeout(self.lock):
             self._asyn_results.append(AsyncInferenceResult(id=userdata, result=res))
-
-
-if __name__ == "__main__":
-    import cv2
-    import sys
-    import numpy as np
-    import time
-
-    Y = YOGO()
-    img = cv2.imread(sys.argv[1], cv2.IMREAD_GRAYSCALE)
-
-    Y([img, img])
-    time.sleep(1)
-    res = Y.get_asyn_results()
-    print(res)
