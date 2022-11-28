@@ -44,6 +44,7 @@ setup(
         "typer==0.4.1",
         "tqdm==4.63.0",
         "transitions==0.8.11",
+        "pyngrok==5.1.0",
     ],
     classifiers=["CZ Biohub :: Bioengineering"],
 )
