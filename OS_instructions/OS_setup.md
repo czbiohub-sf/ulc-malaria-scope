@@ -1,8 +1,13 @@
+# Creating a fresh OS from scratch
+
+These are instructions for creating a fresh OS image from scratch. 99% of the time, you will most likely just want to flash one of our pre-made images - see `OS_fash.md`.
+
+## Full Installation Instructions
+
 Install Raspbian GNU/Linux 11 (bullseye) on a fresh 64GB SD card. Make sure to update the OS
 hostname and wifi/password by pressing shift-ctrl-x. After it is flashed, pop it into a Pi and
 follow the commands below.
 
-### Starting out
 ```console
 sudp apt update
 sudo apt upgrade
@@ -133,18 +138,6 @@ sudo systemctl enable fan.service
 sudo systemctl enable ngrok.service
 ```
 
-### Setting up ngrok
-[Ngrok](https://ngrok.com/) is a service used to create `ssh` tunnels for accessing our scopes when they are behind private networks. At the time of writing (2022-11-28),
-`ngrok` free-tier accounts allow you to have one persistent `ssh` connection per account.
+### Congrats!
 
-Each scope needs to sign up for its own ngrok account (using a unique email) to be able to open and maintain a persistent ssh connection when the program starts.
-To create an `ngrok` account, "Google Distribution email accounts" (i.e a forwarding received emails-only email account)
-are sufficient. (According to IT at the time of writing, having an inbound/outbox default @czbiohub.org mailbox costs $7/mo.)
-
-1. Ask IT to make a new account for the scope (and ask them to set your email as the forwarding one), e.g `lfm_newscope@czbiohub.org`
-2. Sign up for `ngrok`, and note down the unique token.
-3. Add this token to the scope's persistent environment variables by doing the following:
-  - Open the bashrc file: `nano /home/pi/.bashrc`
-  - Add `export NGROK_AUTH_TOKEN=<TOKEN_HERE>` to the bottom of the file.
-4. TODO - set up the emailing functionality (`lfm_central@czbiohub.org`) (instead of each scope having a regular mailbox, which costs $7/mo for a
-@czbiohub.org address, we have a single @czbiohub.org address that all the scopes use to send emails.) **Fill this in with details once we have this implemented.
+You are done!
