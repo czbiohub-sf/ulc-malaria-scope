@@ -1,8 +1,13 @@
+# Creating a fresh OS from scratch
+
+These are instructions for creating a fresh OS image from scratch. 99% of the time, you will most likely just want to flash one of our pre-made images - see `OS_fash.md`.
+
+## Full Installation Instructions
+
 Install Raspbian GNU/Linux 11 (bullseye) on a fresh 64GB SD card. Make sure to update the OS
 hostname and wifi/password by pressing shift-ctrl-x. After it is flashed, pop it into a Pi and
 follow the commands below.
 
-### Starting out
 ```console
 sudp apt update
 sudo apt upgrade
@@ -132,3 +137,7 @@ sudo systemctl enable init_led_pneumatic.service
 sudo systemctl enable fan.service
 sudo systemctl enable ngrok.service
 ```
+
+### Congrats!
+
+You are done!
