@@ -156,7 +156,6 @@ class DataStorage:
 
         self.logger.info("Closing data storage.")
 
-        self.save_uniform_random_sample()
         if self.zw.writable:
             self.zw.writable = False
             future = self.zw.threadedCloseFile()
@@ -164,6 +163,8 @@ class DataStorage:
         if self.metadata_file != None:
             self.metadata_file.close()
             self.metadata_file = None
+
+            self.save_uniform_random_sample()
 
             return future
 
