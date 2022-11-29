@@ -58,6 +58,8 @@ class Buttons(enum.Enum):
 
 class Oracle(Machine):
     def __init__(self):
+        self.done_shutoff = False
+
         # Setup logger
         fileConfig(
             fname="../logger.config",
@@ -321,11 +323,18 @@ class Oracle(Machine):
         self.liveview_window.close()
         self.logger.debug("Closed liveview window.")
 
+        self.done_shutoff = True
         self.logger.debug("SHUTTING OFF ORACLE.")
 
 
 if __name__ == "__main__":
 
-    app = QApplication(sys.argv)
-    oracle = Oracle()
-    sys.exit(app.exec_())
+    try:
+        app = QApplication(sys.argv)
+        oracle = Oracle()
+        sys.exit(app.exec_())
+    except:
+        oracle.shutoff()
+    finally:
+        if not oracle.done_shutoff:
+            oracle.shutoff()
