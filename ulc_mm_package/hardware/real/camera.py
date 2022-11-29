@@ -10,6 +10,7 @@ Basler PyPlon Library:
 """
 
 import sys
+import logging
 from time import perf_counter
 import queue
 from typing import Generator, Tuple
@@ -55,6 +56,7 @@ class BaslerCamera(Basler):
 
 class AVTCamera:
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self._isActivated = False
         self.vimba = Vimba.get_instance().__enter__()
         self.queue = queue.Queue(maxsize=1)
