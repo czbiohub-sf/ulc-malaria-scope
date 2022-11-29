@@ -34,6 +34,9 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 from cv2 import imwrite
 from qimage2ndarray import gray2qimage
+from gpiozero import CPUTemperature
+
+cpu = CPUTemperature()
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
@@ -56,6 +59,7 @@ class AcquisitionThread(QThread):
     updatePressure = pyqtSignal(float)
     measurementTime = pyqtSignal(int)
     fps = pyqtSignal(int)
+    temperatures = pyqtSignal(int)
     pressureLeakDetected = pyqtSignal(int)
     syringePosChanged = pyqtSignal(int)
     flowValChanged = pyqtSignal(float)
@@ -225,6 +229,9 @@ class AcquisitionThread(QThread):
                     self.updatePressure.emit(pressure)
             self.fps.emit(int(self.num_loops / (perf_counter() - self.fps_timer)))
             self.fps_timer = perf_counter()
+
+            # Update temperatures
+            self.temperatures.emit(1)
 
         if self.finish_saving_future != None:
             print(self.finish_saving_future)
@@ -671,6 +678,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.zStackFinished.connect(self.enableMotorUIElements)
         self.acquisitionThread.updatePressure.connect(self.updatePressureLabel)
         self.acquisitionThread.fps.connect(self.updateFPS)
+        self.acquisitionThread.temperatures.connect(self.updateTemperatures)
         self.acquisitionThread.measurementTime.connect(self.updateMeasurementTimer)
         self.acquisitionThread.pressureLeakDetected.connect(self.pressureLeak)
         self.acquisitionThread.syringePosChanged.connect(self.updateSyringePos)
@@ -845,6 +853,19 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     @pyqtSlot(int)
     def updateFPS(self, val):
         self.lblFPS.setText(f"{val}fps")
+
+    @pyqtSlot(int)
+    def updateTemperatures(self, _):
+        cam_temp = -1
+        try:
+            cam_temp = self.acquisitionThread.mscope.camera._getTemperature()
+        except Exception as e:
+            print(f"Unable to get camera temperature: {e}")
+        sens_temp = self.acquisitionThread.mscope.ht_sensor.getTemperature()
+
+        self.lblTemperatures.setText(
+            f"Cam: {cam_temp:.2f} CPU: {cpu.temperature:.2f}: Sens: {sens_temp:.2f} (C)"
+        )
 
     @pyqtSlot(int)
     def updateMeasurementTimer(self, val):
