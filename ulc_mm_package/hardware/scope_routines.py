@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional, Sequence, Generator, Union
+from typing import List, Tuple, Optional, Sequence, Generator
 from time import perf_counter
 import numpy as np
 
@@ -43,7 +43,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, steps_from_focus: float) ->
         raise e
 
 
-def continuousSSAFRoutine(mscope: MalariaScope) -> Generator[Union[None, int], np.ndarray, None]:
+def continuousSSAFRoutine(mscope: MalariaScope) -> Generator[Optional[float], np.ndarray, None]:
     """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
 
     images_sent: int = 0
@@ -59,14 +59,14 @@ def continuousSSAFRoutine(mscope: MalariaScope) -> Generator[Union[None, int], n
 
         if images_sent == nn_constants.AF_BATCH_SIZE:
             async_results = mscope.autofocus_model.get_asyn_results(timeout=None)
-            steps_from_focus = np.mean(v.result for v in async_results)
+            steps_from_focus = np.mean([v.result for v in async_results])
             singleShotAutofocusRoutine(mscope, steps_from_focus)
             images_sent = 0
 
 
 def periodicAutofocusWrapper(
     mscope: MalariaScope
-) -> Generator[Union[None, int], np.ndarray, None]:
+) -> Generator[Optional[float], np.ndarray, None]:
     """A periodic wrapper around the `continuousSSAFRoutine`.
 
     This function adds a simple time wrapper around `continuousSSAFRoutine`
