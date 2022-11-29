@@ -10,7 +10,7 @@ Second, go to the drive link:
 
 https://drive.google.com/drive/u/0/folders/1lGbjsn2M_-sXlK0GY4xKjBfApmT6D6bf
 
-Download the image - it should be a `.img` or `.img.xz` file.
+Download the most recent image (currently in folder `2022-11-28 Base OS`) - it should be a `.img` or `.img.xz` file.
 
 Now you simply flash the image. Open the program, plug in your SD card, and follow these options:
 
