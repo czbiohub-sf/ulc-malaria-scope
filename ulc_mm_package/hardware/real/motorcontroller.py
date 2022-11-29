@@ -3,7 +3,7 @@
 -- Important Links --
 Datasheet:
     https://www.ti.com/lit/ds/symlink/drv8825.pdf
-    
+
 *Adapted from Gavin Lyons' RPiMotorLib repository (https://github.com/gavinlyonsrepo/RpiMotorLib/blob/master/RpiMotorLib/RpiMotorLib.py)
 """
 
@@ -108,7 +108,7 @@ class DRV8825Nema:
         self.lim1 = lim1
         self.lim2 = lim2
         self.steptype = steptype
-        self.pos = -1e6
+        self.pos = -int(1e6)
         self.homed = False
         self.stop_motor = False
 
