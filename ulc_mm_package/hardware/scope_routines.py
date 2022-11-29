@@ -39,9 +39,8 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) 
     int: steps_from_focus
         The number of steps that the motor was moved.
     """
-
-    ssaf_steps_from_focus = [-int(mscope.autofocus_model(img)) for img in img_arr]
-    steps_from_focus = int(np.mean(ssaf_steps_from_focus))
+    ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
+    steps_from_focus = -int(np.mean(ssaf_steps_from_focus))
 
     # Change to async batch inference? Check w/ Axel
     # mscope.autofocus_model.asyn(img_arr)
