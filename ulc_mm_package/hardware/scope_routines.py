@@ -43,7 +43,9 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, steps_from_focus: float) ->
         raise e
 
 
-def continuousSSAFRoutine(mscope: MalariaScope) -> Generator[Optional[float], np.ndarray, None]:
+def continuousSSAFRoutine(
+    mscope: MalariaScope,
+) -> Generator[Optional[float], np.ndarray, None]:
     """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
 
     images_sent: int = 0
@@ -65,7 +67,7 @@ def continuousSSAFRoutine(mscope: MalariaScope) -> Generator[Optional[float], np
 
 
 def periodicAutofocusWrapper(
-    mscope: MalariaScope
+    mscope: MalariaScope,
 ) -> Generator[Optional[float], np.ndarray, None]:
     """A periodic wrapper around the `continuousSSAFRoutine`.
 
