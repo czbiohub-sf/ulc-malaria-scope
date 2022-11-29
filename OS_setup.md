@@ -134,7 +134,7 @@ sudo systemctl enable ngrok.service
 ```
 
 ### Setting up ngrok
-[Ngrok][https://ngrok.com/] is a service used to create `ssh` tunnels for accessing our scopes when they are behind private networks. At the time of writing (2022-11-28),
+[Ngrok](https://ngrok.com/) is a service used to create `ssh` tunnels for accessing our scopes when they are behind private networks. At the time of writing (2022-11-28),
 `ngrok` free-tier accounts allow you to have one persistent `ssh` connection per account.
 
 Each scope needs to sign up for its own ngrok account (using a unique email) to be able to open and maintain a persistent ssh connection when the program starts.
