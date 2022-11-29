@@ -23,58 +23,49 @@ def focusRoutine(
     mscope.motor.move_abs(best_focus_pos)
 
 
-def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) -> int:
+def singleShotAutofocusRoutine(mscope: MalariaScope, steps_from_focus: float) -> None:
     """Single shot autofocus routine.
 
-    Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
-    using the SSAF model, averages the results, and adjusts the motor position by that step value.
+    Takes in the predicted number of steps from focus and adjusts the motor position to try
+    to get the stage back into focus. In practice, it moves -int(steps_from_focus).
 
     Parameters
     ----------
     List[np.ndarray]:
         Array of images (np.ndarray)
-
-    Returns
-    -------
-    int: steps_from_focus
-        The number of steps that the motor was moved.
     """
-    ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
-    steps_from_focus = -int(np.mean(ssaf_steps_from_focus))
-
-    # Change to async batch inference? Check w/ Axel
-    # mscope.autofocus_model.asyn(img_arr)
-    # ssaf_steps_from_focus = mscope.autofocus_model.get_asyn_results()
-
     try:
-        dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-        mscope.motor.move_rel(dir=dir, steps=abs(steps_from_focus))
+        # needs to move in the opposite direction of `steps_from_focus` to get to focus! Therefore
+        # if we are below focus, move CW, and vice versa.
+        dir = Direction.CW if steps_from_focus < 0 else Direction.CCW
+        mscope.motor.move_rel(dir=dir, steps=steps_from_focus)
     except MotorControllerError as e:
         raise e
 
-    return steps_from_focus
 
-
-def continuousSSAFRoutine(
-    mscope: MalariaScope, img: np.ndarray
-) -> Generator[Union[None, int], np.ndarray, None]:
+def continuousSSAFRoutine(mscope: MalariaScope) -> Generator[Union[None, int], np.ndarray, None]:
     """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
 
-    img_arr = []
-    steps_from_focus = None
+    images_sent: int = 0
+    steps_from_focus: Optional[float] = None
 
     while True:
-        img = yield steps_from_focus
-        steps_from_focus = None
-        img_arr.append(img)
+        img: np.ndarray = yield steps_from_focus
 
-        if len(img_arr) == nn_constants.AF_BATCH_SIZE:
-            steps_from_focus = singleShotAutofocusRoutine(mscope, img_arr)
-            img_arr = []
+        mscope.autofocus_model.asyn(img)
+        images_sent += 1
+
+        steps_from_focus = None
+
+        if images_sent == nn_constants.AF_BATCH_SIZE:
+            async_results = mscope.autofocus_model.get_asyn_results(timeout=None)
+            steps_from_focus = np.mean(v.result for v in async_results)
+            singleShotAutofocusRoutine(mscope, steps_from_focus)
+            images_sent = 0
 
 
 def periodicAutofocusWrapper(
-    mscope: MalariaScope, img: np.ndarray
+    mscope: MalariaScope
 ) -> Generator[Union[None, int], np.ndarray, None]:
     """A periodic wrapper around the `continuousSSAFRoutine`.
 
@@ -94,15 +85,14 @@ def periodicAutofocusWrapper(
         Number of motor steps taken, returned after a full batch of images have been sent once
         AF_PERIOD_S has elapsed since the last adjustment.
     """
-
-    counter = 0
-    steps_from_focus = None
+    counter: int = 0
+    steps_from_focus: Optional[float] = None
     prev_adjustment_time = perf_counter()
-    ssaf_routine = continuousSSAFRoutine(mscope, None)
+    ssaf_routine = continuousSSAFRoutine(mscope)
     ssaf_routine.send(None)
 
     while True:
-        img = yield steps_from_focus
+        img: np.ndarray = yield steps_from_focus
         if perf_counter() - prev_adjustment_time > nn_constants.AF_PERIOD_S:
             steps_from_focus = ssaf_routine.send(img)
             counter += 1

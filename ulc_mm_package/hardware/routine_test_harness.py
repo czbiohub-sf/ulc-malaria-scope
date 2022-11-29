@@ -184,7 +184,7 @@ def main_acquisition_loop(mscope: MalariaScope):
         "", fake_exp_metadata, fake_per_img_metadata
     )
 
-    periodic_ssaf = periodicAutofocusWrapper(mscope, None)
+    periodic_ssaf = periodicAutofocusWrapper(mscope)
     periodic_ssaf.send(None)
 
     flow_control = flowControlRoutine(mscope, FLOWRATE.FAST.value, None)
