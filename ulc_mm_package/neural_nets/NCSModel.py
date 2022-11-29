@@ -174,7 +174,7 @@ class NCSModel:
 
         self._temp_infer_queue.set_callback(partial(self._cb, res))
 
-        for i, image in enumerate(self._as_list(input_imgs)):
+        for i, image in enumerate(self._as_sequence(input_imgs)):
             tensor = self._format_image_to_tensor(image)
             self._temp_infer_queue.start_async({0: tensor}, userdata=i)
 
@@ -238,10 +238,10 @@ class NCSModel:
             )
         )
 
-    def _as_list(self, maybe_list: Union[T, List[T]]) -> List[T]:
-        if isinstance(maybe_list, list):
+    def _as_sequence(self, maybe_list: Union[T, List[T]]) -> Sequence[T]:
+        if isinstance(maybe_list, Sequence):
             return maybe_list
-        return list(maybe_list)
+        return [maybe_list]
 
     def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
         return Tensor(np.expand_dims(img, (0, 3)), shared_memory=True)
