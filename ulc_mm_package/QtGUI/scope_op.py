@@ -101,8 +101,8 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            skipped_states = ["fastflow"]
-            # skipped_states = ["autofocus", "fastflow"]
+            # skipped_states = ["fastflow"]
+            skipped_states = ["autofocus", "fastflow"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -391,14 +391,27 @@ class ScopeOp(QObject, Machine):
 
             try:
                 focus_err = self.PSSAF_routine.send(img)
-                # TEMP comment out density because it runs slow
-                # density = self.density_routine.send(img)
+            except MotorControllerError as e:
+                if not SIMULATION:
+                    self.logger.error(
+                        "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    )
+                    self.error.emit(
+                        "Autofocus failed",
+                        "Unable to achieve desired focus within condenser's depth of field.",
+                    )
+                    return
+                else:
+                    self.logger.warning(
+                        f"Ignoring periodic SSAF exception in simulation mode. {e}"
+                    )
+                    focus_err = None
+
+                    self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
+                    self.PSSAF_routine.send(None)
+
+            try:
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
-            except LowDensity:
-                # TODO add recovery operation for low cell density
-                # TODO add cell density value
-                self.logger.warning("Low cell density.")
-                pass
             except CantReachTargetFlowrate as e:
                 if not SIMULATION:
                     self.logger.error(
@@ -410,22 +423,19 @@ class ScopeOp(QObject, Machine):
                     )
                     return
                 else:
-                    self.logger.warning(f"Ignoring exception in simulation mode. {e}")
-                    focus_err = None
-            except MotorControllerError as e:
-                print(e)
-                if not SIMULATION:
-                    self.logger.error(
-                        "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    self.logger.warning(
+                        f"Ignoring flowcontrol exception in simulation mode. {e}"
                     )
-                    self.error.emit(
-                        "Autofocus failed",
-                        "Unable to achieve desired focus within condenser's depth of field.",
-                    )
-                    return
-                else:
-                    self.logger.warning(f"Ignoring exception in simulation mode. {e}")
                     flowrate = None
+
+                # TEMP comment out cell density routine, since this should be moved to NCS calculations
+                # try:
+                #     # density = self.density_routine.send(img)
+                # except LowDensity:
+                #     # TODO add recovery operation for low cell density
+                #     # TODO add cell density value
+                #     self.logger.warning("Low cell density.")
+                #     pass
 
             # Update infopanel
             if focus_err != None:
