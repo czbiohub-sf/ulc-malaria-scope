@@ -23,7 +23,8 @@ def focusRoutine(
     mscope.motor.move_abs(best_focus_pos)
 
 
-def singleShotAutofocusRoutine(mscope: MalariaScope, steps_from_focus: float) -> None:
+
+def adjust_focus(mscope: MalariaScope, steps_from_focus: float) -> None:
     """Single shot autofocus routine.
 
     Takes in the predicted number of steps from focus and adjusts the motor position to try
@@ -35,12 +36,31 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, steps_from_focus: float) ->
         Array of images (np.ndarray)
     """
     try:
-        # needs to move in the opposite direction of `steps_from_focus` to get to focus! Therefore
-        # if we are below focus, move CW, and vice versa.
-        dir = Direction.CW if steps_from_focus < 0 else Direction.CCW
-        mscope.motor.move_rel(dir=dir, steps=steps_from_focus)
+        dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
+        mscope.motor.move_rel(dir=dir, steps=abs(steps_from_focus))
     except MotorControllerError as e:
         raise e
+
+
+def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) -> int:
+    """Single shot autofocus routine.
+    Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
+    using the SSAF model, averages the results, and adjusts the motor position by that step value.
+    Parameters
+    ----------
+    List[np.ndarray]:
+        Array of images (np.ndarray)
+    Returns
+    -------
+    int: steps_from_focus
+        The number of steps that the motor was moved.
+    """
+    ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
+    steps_from_focus = -int(np.mean(ssaf_steps_from_focus))
+
+    adjust_focus(mscope, steps_from_focus)
+
+    return steps_from_focus
 
 
 def continuousSSAFRoutine(
@@ -62,7 +82,7 @@ def continuousSSAFRoutine(
         if images_sent == nn_constants.AF_BATCH_SIZE:
             async_results = mscope.autofocus_model.get_asyn_results(timeout=None)
             steps_from_focus = np.mean([v.result for v in async_results])
-            singleShotAutofocusRoutine(mscope, steps_from_focus)
+            adjust_focus(mscope, steps_from_focus)
             images_sent = 0
 
 
