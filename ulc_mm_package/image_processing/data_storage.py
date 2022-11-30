@@ -32,10 +32,10 @@ class DataStorage:
         self.main_dir = None
         self.md_keys = None
 
-    def createTopLevelFolder(self, external_dir: str):
+    def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
         self.external_dir = external_dir
-        self.main_dir = external_dir + datetime.now().strftime(DATETIME_FORMAT)
+        self.main_dir = external_dir + datetime_str
 
         try:
             mkdir(self.main_dir)
@@ -51,6 +51,7 @@ class DataStorage:
     def createNewExperiment(
         self,
         custom_experiment_name: str,
+        datetime_str: str,
         experiment_initialization_metdata: Dict,
         per_image_metadata_keys: list,
     ):
@@ -69,7 +70,7 @@ class DataStorage:
         """
 
         if self.main_dir == None:
-            self.createTopLevelFolder(EXT_DIR)
+            self.createTopLevelFolder(EXT_DIR, datetime_str)
 
         # Create per-image metadata file
         time_str = datetime.now().strftime(DATETIME_FORMAT)

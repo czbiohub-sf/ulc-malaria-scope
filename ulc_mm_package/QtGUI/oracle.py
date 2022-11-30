@@ -15,7 +15,8 @@ import numpy as np
 from transitions import Machine
 from time import perf_counter, sleep
 from logging.config import fileConfig
-from os import path
+from os import path, mkdir
+from datetime import datetime
 
 from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel
 from PyQt5.QtCore import Qt, QThread
@@ -27,6 +28,7 @@ from ulc_mm_package.scope_constants import (
     CAMERA_SELECTION,
     EXT_DIR,
 )
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
     FLOWRATE,
@@ -58,10 +60,19 @@ class Buttons(enum.Enum):
 
 class Oracle(Machine):
     def __init__(self):
+
+        # Save startup datetime
+        self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
+
+        # Setup directory for logs
+        log_dir = path.join(EXT_DIR, "logs")
+        if not path.isdir(log_dir):
+            mkdir(log_dir)
+
         # Setup logger
         fileConfig(
             fname="../logger.config",
-            defaults={"filename": path.join(EXT_DIR, "oracle.log")},
+            defaults={"filename": path.join(log_dir, f"{self.datetime_str}.log")},
         )
         self.logger = logging.root
         self.logger.debug("STARTING ORACLE.")
@@ -250,7 +261,7 @@ class Oracle(Machine):
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
         self.scopeop.mscope.data_storage.createNewExperiment(
-            "", self.experiment_metadata, PER_IMAGE_METADATA_KEYS
+            "", self.datetime_str, self.experiment_metadata, PER_IMAGE_METADATA_KEYS
         )
 
         # Update target flowrate in scopeop
