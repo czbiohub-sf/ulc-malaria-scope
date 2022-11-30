@@ -669,6 +669,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.encoder = mscope.encoder
         except EncoderI2CError as e:
             print(f"ENCODER I2C ERROR: {e}")
+        except Exception as e:
+            print(f"Encoder uncaught error: {e}")
 
         ### Connect UI elements to actions ###
 
