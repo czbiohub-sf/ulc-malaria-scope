@@ -55,7 +55,8 @@ _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
 
 class Buttons(enum.Enum):
     OK = QMessageBox.Ok
-    CANCEL = QMessageBox.Ok | QMessageBox.Cancel
+    CANCEL =  QMessageBox.Cancel | QMessageBox.Ok
+    YN =  QMessageBox.No | QMessageBox.Yes
 
 
 class Oracle(Machine):
@@ -310,12 +311,12 @@ class Oracle(Machine):
         dialog_result = self.display_message(
             QMessageBox.Icon.Information,
             "Run another experiment?",
-            'Click "New run" to start a new run or "Exit" to shutoff.',
-            buttons=Buttons.CANCEL,
+            'Click "Yes" to start a new run or "No" to shutoff scope.',
+            buttons=Buttons.YN,
         )
-        if dialog_result == QMessageBox.Cancel:
+        if dialog_result == QMessageBox.No:
             self.shutoff()
-        elif dialog_result == QMessageBox.Ok:
+        elif dialog_result == QMessageBox.Yes:
             self.logger.info("Starting new experiment.")
             self.scopeop.rerun()
 
