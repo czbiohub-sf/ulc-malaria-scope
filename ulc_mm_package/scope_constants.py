@@ -73,7 +73,11 @@ if SIMULATION:
     SSD_DIR = "../QtGUI/sim_media/pi/"
 else:
     SSD_DIR = "/media/pi/"
-EXT_DIR = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+
+try:
+    EXT_DIR = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+except FileNotFoundError as e:
+    print(f"Could not find any folders within {SSD_DIR}")
 
 # ================ Camera constants ================ #
 AVT_VENDOR_ID = 0x1AB2
