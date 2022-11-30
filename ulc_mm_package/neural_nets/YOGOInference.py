@@ -34,7 +34,7 @@ class YOGO(NCSModel):
         model_path: str = YOGO_MODEL_DIR,
         camera_selection: CameraOptions = CAMERA_SELECTION,
     ):
-        super().__init__(model_path)
+        super().__init__(model_path, camera_selection)
 
     @staticmethod
     def filter_res(res, threshold=YOGO_PRED_THRESHOLD):
