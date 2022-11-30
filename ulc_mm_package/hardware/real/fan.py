@@ -1,6 +1,10 @@
 import pigpio
 
-from ulc_mm_package.hardware.hardware_constants import FAN_GPIO, CAM_FAN_1, CAM_FAN_2
+
+# ================ Fan constants ================ #
+FAN_GPIO = 5
+CAM_FAN_1 = 23
+CAM_FAN_2 = 24
 
 
 class Fan:

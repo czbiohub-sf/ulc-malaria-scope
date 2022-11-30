@@ -70,11 +70,6 @@ AFC_NUM_IMAGE_PAIRS = 12
 MPRLS_RST = 10
 MPRLS_PWR = 22
 
-# ================ Fan constants ================ #
-FAN_GPIO = 5
-CAM_FAN_1 = 23
-CAM_FAN_2 = 24
-
 # ================ RTC constants ================ #
 DATETIME_FORMAT = "%Y-%m-%d-%H%M%S"
 
