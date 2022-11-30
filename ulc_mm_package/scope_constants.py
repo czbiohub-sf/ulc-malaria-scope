@@ -77,7 +77,7 @@ else:
 try:
     EXT_DIR = SSD_DIR + listdir(SSD_DIR)[0] + "/"
 except FileNotFoundError as e:
-    print(f"Could not find any folders within {SSD_DIR}")
+    raise FileNotFoundError(f"Could not find any folders within {SSD_DIR}") from None
 
 # ================ Camera constants ================ #
 AVT_VENDOR_ID = 0x1AB2
