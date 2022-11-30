@@ -69,11 +69,14 @@ SIMULATION = MS_SIMULATE_FLAG > 0
 print(f"Simulation mode: {SIMULATION}")
 
 # ================ SSD directory constants ================ #
-if SIMULATION:
+SSD_DIR = "/media/pi/"
+try:
+    EXT_DIR = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+except FileNotFoundError:
     SSD_DIR = "../QtGUI/sim_media/pi/"
-else:
-    SSD_DIR = "/media/pi/"
-EXT_DIR = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+    EXT_DIR = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+
+print(f"External directory: {EXT_DIR}")
 
 # ================ Camera constants ================ #
 AVT_VENDOR_ID = 0x1AB2
