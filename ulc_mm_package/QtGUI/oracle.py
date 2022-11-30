@@ -332,9 +332,11 @@ if __name__ == "__main__":
     try:
         app = QApplication(sys.argv)
         oracle = Oracle()
-        sys.exit(app.exec_())
+        app.exec_()
     except Exception as e:
+        print("Caught exception")
         print(e)
     finally:
         if not oracle.done_shutoff:
             oracle.shutoff()
+        sys.exit()

@@ -101,8 +101,8 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            skipped_states = ["fastflow"]
-            # skipped_states = ["autofocus", "fastflow"]
+            # skipped_states = ["fastflow"]
+            skipped_states = ["autofocus", "fastflow"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -369,6 +369,7 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
+        
         if not self.running:
             self.logger.info("Slot executed after experiment ended.")
             return
