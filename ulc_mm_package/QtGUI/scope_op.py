@@ -238,6 +238,7 @@ class ScopeOp(QObject, Machine):
 
         self.mscope.led.turnOff()
 
+        self.mscope.data_storage.save_uniform_random_sample()
         closing_file_future = self.mscope.data_storage.close()
         while not closing_file_future.done():
             sleep(1)

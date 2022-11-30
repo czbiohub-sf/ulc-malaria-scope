@@ -8,6 +8,7 @@ import numpy as np
 from typing import Dict, List
 from os import mkdir, path
 from datetime import datetime
+from concurrent.futures import ALL_COMPLETED, wait
 
 from ulc_mm_package.scope_constants import EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -156,7 +157,6 @@ class DataStorage:
 
         self.logger.info("Closing data storage.")
 
-        self.save_uniform_random_sample()
         if self.zw.writable:
             self.zw.writable = False
             future = self.zw.threadedCloseFile()
@@ -197,7 +197,7 @@ class DataStorage:
         Saves images in subsequences - i.e {N}-continuous sequences of images at {M} random locations.
         A new subfolder is created in the same folder as the experiment and images are saved as .pngs.
         """
-
+        wait(self.zw.futures, return_when=ALL_COMPLETED)
         num_files = len(self.zw.group)
         try:
             indices = self._unif_subsequence_distribution(
