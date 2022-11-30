@@ -170,7 +170,11 @@ class Oracle(Machine):
 
     def error_handler(self, title, text, abort):
         self.display_message(
-            QMessageBox.Icon.Critical, title, text + _ERROR_MSG, buttons=Buttons.OK, abort=abort
+            QMessageBox.Icon.Critical,
+            title,
+            text + _ERROR_MSG,
+            buttons=Buttons.OK,
+            abort=abort,
         )
 
         if not abort:
