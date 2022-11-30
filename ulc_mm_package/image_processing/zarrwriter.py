@@ -85,7 +85,7 @@ class ZarrWriter:
             raise IOError(f"Error creating {filename}.zip")
 
     @lockNoBlock(WRITE_LOCK)
-    def writeSingleArray(self, data):
+    def writeSingleArray(self, data) -> int:
         """Write a single array and optional metadata to the Zarr store.
 
         Parameters
@@ -93,15 +93,16 @@ class ZarrWriter:
         data : np.ndarray
         metadata : dict
             A dictionary of keys to values to be associated with the given data.
-        """
 
-        # Rate-limit writing to disk to `self.fps``
-        if perf_counter() - self.prev_write_time < self.dt:
-            return
+        Returns
+        -------
+        int:
+            arr_count (id)
+        """
 
         try:
             self.prev_write_time = perf_counter()
-            ds = self.group.array(
+            self.group.array(
                 f"{self.arr_counter}", data=data, compressor=self.compressor
             )
             self.arr_counter += 1

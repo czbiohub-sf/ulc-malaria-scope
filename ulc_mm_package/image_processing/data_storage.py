@@ -1,13 +1,13 @@
 import logging
-import cv2
 import csv
-import random
+from time import perf_counter
 import shutil
-import numpy as np
-
 from typing import Dict, List
 from os import mkdir, path
 from datetime import datetime
+
+import cv2
+import numpy as np
 
 from ulc_mm_package.scope_constants import EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -31,6 +31,9 @@ class DataStorage:
         self.metadata_file = None
         self.main_dir = None
         self.md_keys = None
+        self.fps = 30
+        self.dt = 1 / self.fps
+        self.prev_write_time = 0
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
@@ -123,7 +126,8 @@ class DataStorage:
             initialize the metadata file in `createNewExperiment(...)`
         """
 
-        if self.zw.writable:
+        if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
+            self.prev_write_time = perf_counter()
             self.zw.threadedWriteSingleArray(image)
             self.md_writer.writerow(metadata)
 
