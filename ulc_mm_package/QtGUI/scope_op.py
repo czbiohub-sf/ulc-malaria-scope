@@ -59,10 +59,10 @@ class ScopeOp(QObject, Machine):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
+
         self._init_variables()
         self.mscope = None
         self.img_signal = img_signal
-
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
         states = [
@@ -71,12 +71,16 @@ class ScopeOp(QObject, Machine):
                 "on_enter": [self.send_state],
             },
             {
-                "name": "autobrightness",
+                "name": "autobrightness_precells",
                 "on_enter": [self.send_state, self._start_autobrightness],
             },
             {
                 "name": "cellfinder",
                 "on_enter": [self.send_state, self._start_cellfinder],
+            },
+            {
+                "name": "autobrightness_postcells",
+                "on_enter": [self.send_state, self._start_autobrightness],
             },
             {
                 "name": "autofocus",
@@ -119,10 +123,12 @@ class ScopeOp(QObject, Machine):
 
     def send_state(self):
         # TODO perhaps delete this to print more useful statements. See future "logging" branch
-        self.update_msg.emit(f"Changing state to {self.state}.")
+        state_name = self.state.split('_')[0]
+
+        self.update_msg.emit(f"{state_name.capitalize()} in progress...")
         self.logger.info(f"Changing state to {self.state}.")
 
-        self.update_state.emit(self.state)
+        self.update_state.emit(state_name)
 
     def _init_variables(self):
         self.running = None
