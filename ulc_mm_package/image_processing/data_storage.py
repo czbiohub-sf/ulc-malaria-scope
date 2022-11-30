@@ -58,7 +58,7 @@ class DataStorage:
 
         Parameters
         ----------
-        custom_experiment_name: str  
+        custom_experiment_name: str
             Appended to the end of the filename. Can also pass in an empty string ("") if no experiment name is needed.
 
         experiment_initialization_metadata: Dict [str : val]

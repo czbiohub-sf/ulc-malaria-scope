@@ -388,8 +388,6 @@ class ScopeOp(QObject, Machine):
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
 
-
-
             try:
                 focus_err = self.PSSAF_routine.send(img)
             except MotorControllerError as e:
@@ -403,12 +401,13 @@ class ScopeOp(QObject, Machine):
                     )
                     return
                 else:
-                    self.logger.warning(f"Ignoring periodic SSAF exception in simulation mode. {e}")
+                    self.logger.warning(
+                        f"Ignoring periodic SSAF exception in simulation mode. {e}"
+                    )
                     focus_err = None
 
                     self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
                     self.PSSAF_routine.send(None)
-
 
             try:
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
@@ -423,7 +422,9 @@ class ScopeOp(QObject, Machine):
                     )
                     return
                 else:
-                    self.logger.warning(f"Ignoring flowcontrol exception in simulation mode. {e}")
+                    self.logger.warning(
+                        f"Ignoring flowcontrol exception in simulation mode. {e}"
+                    )
                     flowrate = None
 
                 # TEMP comment out cell density routine, since this should be moved to NCS calculations
