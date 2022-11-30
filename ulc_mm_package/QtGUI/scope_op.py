@@ -38,7 +38,7 @@ class ScopeOp(QObject, Machine):
 
     yield_mscope = pyqtSignal(MalariaScope)
 
-    error = pyqtSignal(str, str)
+    error = pyqtSignal(str, str, bool)
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -162,6 +162,7 @@ class ScopeOp(QObject, Machine):
                 "The following component(s) could not be instantiated: {}.".format(
                     (", ".join(failed_components)).capitalize()
                 ),
+                True,
             )
 
     def start(self):
@@ -274,6 +275,7 @@ class ScopeOp(QObject, Machine):
             self.error.emit(
                 "Autobrightness failed",
                 "LED is too dim to run experiment.",
+                False,
             )
         else:
             self.img_signal.connect(self.run_autobrightness)
@@ -297,7 +299,7 @@ class ScopeOp(QObject, Machine):
         except NoCellsFound:
             self.cellfinder_result = -1
             self.logger.error("Cellfinder failed. No cells found.")
-            self.error.emit("Calibration failed", "No cells found.")
+            self.error.emit("Calibration failed", "No cells found.", False)
         else:
             self.img_signal.connect(self.run_cellfinder)
 
@@ -330,6 +332,7 @@ class ScopeOp(QObject, Machine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired focus within condenser's depth of field.",
+                    False,
                 )
 
     @pyqtSlot(np.ndarray, float)
@@ -356,6 +359,7 @@ class ScopeOp(QObject, Machine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired flowrate with syringe at max position.",
+                    False,
                 )
         except StopIteration as e:
             self.fastflow_result = e.value
@@ -398,6 +402,7 @@ class ScopeOp(QObject, Machine):
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
+                        False,
                     )
                     return
                 else:
