@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
     results = []
     if args.output is None:
-        for res in infer_func(models, tqdm(image_loader)):
+        for res in infer_func(models, image_loader):
             print(res)
             if args.allan_dev:
                 results.append(res)
