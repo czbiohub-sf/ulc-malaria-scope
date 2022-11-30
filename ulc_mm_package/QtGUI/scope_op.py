@@ -72,7 +72,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness_precells",
-                "on_enter": [self.send_state, self._start_autobrightness],
+                "on_enter": [self.send_state, self._start_autobrightness_precells],
             },
             {
                 "name": "cellfinder",
@@ -80,7 +80,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness_postcells",
-                "on_enter": [self.send_state, self._start_autobrightness],
+                "on_enter": [self.send_state, self._start_autobrightness_postcells],
             },
             {
                 "name": "autofocus",
@@ -188,8 +188,7 @@ class ScopeOp(QObject, Machine):
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
 
-    def _start_autobrightness(self):
-
+    def _start_autobrightness_precells(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
@@ -201,10 +200,16 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _start_autofocus(self):
+    def _start_autobrightness_postcells(self):
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
+        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
+        self.autobrightness_routine.send(None)
+
+        self.img_signal.connect(self.run_autobrightness)
+
+    def _start_autofocus(self):
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
@@ -395,6 +400,7 @@ class ScopeOp(QObject, Machine):
             self.update_img_count.emit(self.count)
 
             prev_res = count_parasitemia(self.mscope, img, self.count)
+
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
 
