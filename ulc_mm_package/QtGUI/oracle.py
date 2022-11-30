@@ -299,12 +299,19 @@ class Oracle(Machine):
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
     def _start_intermission(self):
-        dialog_result = self.display_message(
+        self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
-            buttons=Buttons.CANCEL,
+            'Remove flow cell now. Click "OK" once it is removed.',
+            buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
+        )
+
+        dialog_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "Run another experiment?",
+            'Click "New run" to start a new run or "Exit" to shutoff.',
+            buttons=Buttons.CANCEL,
         )
         if dialog_result == QMessageBox.Cancel:
             self.shutoff()
