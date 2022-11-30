@@ -184,7 +184,10 @@ def main_acquisition_loop(mscope: MalariaScope):
     fake_per_img_metadata = {k: k for k in PER_IMAGE_METADATA_KEYS}
 
     mscope.data_storage.createNewExperiment(
-        "", datetime.now().strftime(DATETIME_FORMAT), fake_exp_metadata, fake_per_img_metadata
+        "",
+        datetime.now().strftime(DATETIME_FORMAT),
+        fake_exp_metadata,
+        fake_per_img_metadata,
     )
 
     periodic_ssaf = periodicAutofocusWrapper(mscope, None)
