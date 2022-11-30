@@ -155,7 +155,7 @@ class DataStorage:
         """
 
         self.logger.info("Closing data storage.")
-        self.save_uniform_random_sample()
+        self.save_uniform_sample()
 
         if self.zw.writable:
             self.zw.writable = False
@@ -191,7 +191,7 @@ class DataStorage:
         storage_remaining_gb = self._get_remaining_storage_size_GB()
         return storage_remaining_gb > MIN_GB_REQUIRED
 
-    def save_uniform_random_sample(self) -> None:
+    def save_uniform_sample(self) -> None:
         """Extract and save a uniform random sample of images from the currently active Zarr store.
 
         Saves images in subsequences - i.e {N}-continuous sequences of images at {M} random locations.

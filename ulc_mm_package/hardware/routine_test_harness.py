@@ -239,7 +239,7 @@ def main_acquisition_loop(mscope: MalariaScope):
             print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
             prev_print_time = perf_counter()
 
-    mscope.data_storage.save_uniform_random_sample()
+    mscope.data_storage.save_uniform_sample()
     closing_file_future = mscope.data_storage.close()
     mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
