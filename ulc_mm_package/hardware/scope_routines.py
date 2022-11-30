@@ -24,7 +24,7 @@ def focusRoutine(
 
 
 
-def adjust_focus(mscope: MalariaScope, steps_from_focus: float) -> None:
+def adjust_focus(mscope: MalariaScope, steps: float) -> None:
     """Single shot autofocus routine.
 
     Takes in the predicted number of steps from focus and adjusts the motor position to try
@@ -32,12 +32,12 @@ def adjust_focus(mscope: MalariaScope, steps_from_focus: float) -> None:
 
     Parameters
     ----------
-    List[np.ndarray]:
-        Array of images (np.ndarray)
+    steps:
+        steps to move to get to focus
     """
     try:
-        dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-        mscope.motor.move_rel(dir=dir, steps=abs(steps_from_focus))
+        dir = Direction.CW if steps > 0 else Direction.CCW
+        mscope.motor.move_rel(dir=dir, steps=abs(int(steps)))
     except MotorControllerError as e:
         raise e
 
@@ -46,6 +46,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) 
     """Single shot autofocus routine.
     Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
     using the SSAF model, averages the results, and adjusts the motor position by that step value.
+
     Parameters
     ----------
     List[np.ndarray]:
@@ -82,7 +83,7 @@ def continuousSSAFRoutine(
         if images_sent == nn_constants.AF_BATCH_SIZE:
             async_results = mscope.autofocus_model.get_asyn_results(timeout=None)
             steps_from_focus = np.mean([v.result for v in async_results])
-            adjust_focus(mscope, steps_from_focus)
+            adjust_focus(mscope, -int(steps_from_focus))
             images_sent = 0
 
 
