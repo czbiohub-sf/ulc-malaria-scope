@@ -58,7 +58,7 @@ class DataStorage:
 
         Parameters
         ----------
-        custom_experiment_name: str
+        custom_experiment_name: str  
             Appended to the end of the filename. Can also pass in an empty string ("") if no experiment name is needed.
 
         experiment_initialization_metadata: Dict [str : val]
@@ -155,6 +155,7 @@ class DataStorage:
         """
 
         self.logger.info("Closing data storage.")
+        self.save_uniform_random_sample()
 
         if self.zw.writable:
             self.zw.writable = False
@@ -163,8 +164,6 @@ class DataStorage:
         if self.metadata_file != None:
             self.metadata_file.close()
             self.metadata_file = None
-
-            self.save_uniform_random_sample()
 
             return future
 
