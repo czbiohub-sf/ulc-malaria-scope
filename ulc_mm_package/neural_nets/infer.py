@@ -1,5 +1,6 @@
 import os
 import cv2
+import sys
 import zarr
 import time
 import argparse
@@ -9,8 +10,10 @@ import allantools as at
 
 from pathlib import Path
 
-from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 from ulc_mm_package.scope_constants import CameraOptions
+from ulc_mm_package.neural_nets.NCSModel import NCSModel
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 
 from typing import Any, List, Generator, Iterable
 
@@ -96,15 +99,17 @@ def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
             values = []
 
 
-def infer(model, image_loader: ImageLoader):
+def infer(models, image_loader: ImageLoader):
     for image in image_loader:
-        yield model(image)
+        for model in models:
+            yield model.syn(image)
 
 
-def asyn_infer(model, image_loader: ImageLoader):
+def asyn_infer(models, image_loader: ImageLoader):
     for image in image_loader:
-        model.asyn(image)
-        yield model.get_asyn_results(timeout=0.001)
+        for model in models:
+            model.asyn(image)
+            yield model.get_asyn_results(timeout=0.001)
 
 
 def calculate_allan_dev(data, fname):
@@ -131,6 +136,14 @@ def infer_parser():
     parser.add_argument("--images", type=str, help="path to image or images")
     parser.add_argument("--zarr", type=str, help="path to zarr store")
     parser.add_argument(
+        "--model",
+        help="choose the model to use for inference",
+        default="autofocus",
+        const="autofocus",
+        nargs="?",
+        choices=["autofocus", "yogo", "both"],
+    )
+    parser.add_argument(
         "--output",
         type=str,
         help="place to write data to",
@@ -139,6 +152,12 @@ def infer_parser():
     parser.add_argument(
         "--allan-dev",
         help="calculate allan deviation",
+        action=boolean_action,
+        default=False,
+    )
+    parser.add_argument(
+        "--asyn",
+        help="run asynchronously",
         action=boolean_action,
         default=False,
     )
@@ -153,8 +172,6 @@ def infer_parser():
 
 
 if __name__ == "__main__":
-    import sys
-
     parser = infer_parser()
     args = parser.parse_args()
 
@@ -173,6 +190,7 @@ if __name__ == "__main__":
             print("install tqdm for progress bars")
             tqdm = _tqdm
 
+    # hacky way to get dimension of first image
     im = next(
         iter(
             ImageLoader.load_image_data(args.images)
@@ -187,31 +205,43 @@ if __name__ == "__main__":
         else ImageLoader.load_zarr_data(args.zarr)
     )
 
-    if im.shape == (600, 800):
-        A = AutoFocus(camera_selection=CameraOptions.BASLER)
-    else:
-        A = AutoFocus(camera_selection=CameraOptions.AVT)
+    if args.allan_dev and args.model != "autofocus":
+        raise ValueError("allan deviation can only be used with autofocus")
 
-    batch_type = os.environ.get("MS_BATCH", "").lower()
-    if batch_type == "asyn_infer":
+    if args.model == "autofocus":
+        model_classes = [AutoFocus]
+    elif args.model == "yogo":
+        model_classes = [YOGO]
+    elif args.model == "both":
+        model_classes = [YOGO, AutoFocus]
+    else:
+        raise ValueError(f"got invalid value for model: {args.model}")
+
+    if im.shape == (600, 800):
+        models = [m(camera_selection=CameraOptions.BASLER) for m in model_classes]
+    else:
+        models = [m(camera_selection=CameraOptions.AVT) for m in model_classes]
+
+    if args.asyn:
         infer_func = asyn_infer
     else:
         infer_func = infer
 
     results = []
     if args.output is None:
-        for res in infer_func(A, image_loader):
+        for res in infer_func(models, tqdm(image_loader)):
             print(res)
             if args.allan_dev:
                 results.append(res)
     else:
         with open(args.output, "w") as f:
-            for res in infer_func(A, tqdm(image_loader)):
+            for res in infer_func(models, tqdm(image_loader)):
                 f.write(f"{res}\n")
                 if args.allan_dev:
                     results.append(res)
 
-    A.wait_all()
+    # safety
+    [m.wait_all() for m in models]
 
     if args.allan_dev:
         data_path = Path(
@@ -223,5 +253,3 @@ if __name__ == "__main__":
             ".png"
         )
         calculate_allan_dev(results, str(fname))
-
-    print("all done in infer.py")
