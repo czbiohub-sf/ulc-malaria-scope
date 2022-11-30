@@ -23,7 +23,6 @@ def focusRoutine(
     mscope.motor.move_abs(best_focus_pos)
 
 
-
 def adjust_focus(mscope: MalariaScope, steps: float) -> None:
     """Single shot autofocus routine.
 
