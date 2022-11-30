@@ -207,7 +207,7 @@ class DataStorage:
                 num_subsequences=NUM_SUBSEQUENCES,
             )
         except ValueError:
-            self.logger.info("Too few images, no subsample saved.")
+            self.logger.info("Too few images, so no subsample was generated.")
             return
 
         try:

@@ -75,7 +75,7 @@ class Oracle(Machine):
             defaults={"filename": path.join(log_dir, f"{self.datetime_str}.log")},
         )
         self.logger = logging.root
-        self.logger.debug("STARTING ORACLE.")
+        self.logger.info("STARTING ORACLE.")
 
         # Instantiate GUI windows
         self.form_window = FormGUI()
@@ -179,15 +179,20 @@ class Oracle(Machine):
         if dialog_result == QMessageBox.Ok:
             self.scopeop.to_intermission()
 
-    def error_handler(self, title, text):
+    def error_handler(self, title, text, abort):
         self.display_message(
-            QMessageBox.Icon.Critical, title, text + _ERROR_MSG, buttons=Buttons.OK
+            QMessageBox.Icon.Critical,
+            title,
+            text + _ERROR_MSG,
+            buttons=Buttons.OK,
+            abort=abort,
         )
 
-        self.scopeop.to_intermission()
+        if not abort:
+            self.scopeop.to_intermission()
 
     def display_message(
-        self, icon: QMessageBox.Icon, title, text, buttons=None, image=None
+        self, icon: QMessageBox.Icon, title, text, buttons=None, image=None, abort=False
     ):
         self.dialog_window.close()
 
@@ -211,6 +216,9 @@ class Oracle(Machine):
             layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)
 
         dialog_result = self.dialog_window.exec()
+
+        if abort:
+            self.shutoff()
 
         return dialog_result
 
@@ -332,7 +340,7 @@ class Oracle(Machine):
         self.liveview_window.close()
         self.logger.debug("Closed liveview window.")
 
-        self.logger.debug("SHUTTING OFF ORACLE.")
+        self.logger.info("SHUTTING OFF ORACLE.")
 
 
 if __name__ == "__main__":
