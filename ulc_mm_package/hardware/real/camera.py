@@ -90,8 +90,11 @@ class AVTCamera:
         self.vimba.__exit__(*sys.exc_info())
 
     def _frame_handler(self, cam, frame):
-        if self.queue.full():
-            self.queue.get()
+        try:
+            self.queue.get_nowait()
+        except queue.Empty:
+            pass
+
         if frame.get_status() == vimba.FrameStatus.Complete:
             self.queue.put((np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter()))
         cam.queue_frame(frame)
