@@ -406,7 +406,7 @@ class AcquisitionThread(QThread):
         if self.active_autofocus:
             print("Autofocusing!")
             try:
-                steps_from_focus = -int(self.autofocus_model(img))
+                steps_from_focus = -int(self.autofocus_model(img).pop())
                 print(f"SSAF: {steps_from_focus} steps")
                 self.af_adjustment_done = True
 
