@@ -372,6 +372,7 @@ def find_cells_routine(
 
 
 def cell_density_routine(
+    mscope: MalariaScope,
     img: np.ndarray,
 ):
     prev_time = perf_counter()
@@ -386,7 +387,12 @@ def cell_density_routine(
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
             img = yield prev_measurements[(idx - 1) % 10]
-            _, prev_measurements[idx] = isDensitySufficient(img)
+
+            cell_preds = mscope.cell_diagnosis_model.syn(img).pop()
+            cell_preds = mscope.cell_diagnosis_model.filter_res(cell_preds)
+            bs, pred_dim, num_cells = cell_preds.shape
+
+            _, prev_measurements[idx] = num_cells
             idx = (idx + 1) % len(prev_measurements)
 
             if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):
