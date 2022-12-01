@@ -3,11 +3,14 @@ import cv2
 import sys
 import zarr
 import time
+import signal
 import argparse
 
 import numpy as np
 import allantools as at
+import matplotlib.pyplot as plt
 
+from PIL import Image, ImageDraw
 from pathlib import Path
 
 from ulc_mm_package.scope_constants import CameraOptions
@@ -16,6 +19,9 @@ from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 
 from typing import Any, List, Generator, Iterable
+
+
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
 def _tqdm(iterable, **kwargs):
@@ -99,17 +105,15 @@ def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
             values = []
 
 
-def infer(models, image_loader: ImageLoader):
+def infer(model, image_loader: ImageLoader):
     for image in image_loader:
-        for model in models:
-            yield model.syn(image)
+        yield model.syn(image)
 
 
-def asyn_infer(models, image_loader: ImageLoader):
+def asyn_infer(model, image_loader: ImageLoader):
     for image in image_loader:
-        for model in models:
-            model.asyn(image)
-            yield model.get_asyn_results(timeout=0.001)
+        model.asyn(image)
+        yield model.get_asyn_results(timeout=0.00005)
 
 
 def calculate_allan_dev(data, fname):
@@ -123,6 +127,35 @@ def calculate_allan_dev(data, fname):
     pl.ax.set_xlabel("frames")
     pl.ax.set_ylabel("Allan Deviation")
     pl.save(fname)
+
+
+def draw_rects(img: np.ndarray, rects: List[np.ndarray]) -> Image:
+    assert (
+        len(img.shape) == 2
+    ), f"takes single grayscale image - should be 2d, got {img.shape}"
+    h, w = img.shape
+
+    formatted_rects = [
+        [
+            int(w * (r[0] - r[2] / 2)),
+            int(h * (r[1] - r[3] / 2)),
+            int(w * (r[0] + r[2] / 2)),
+            int(h * (r[1] + r[3] / 2)),
+            np.argmax(r[5:]),
+        ]
+        for r in rects
+    ]
+
+    image = Image.fromarray(img)
+    rgb = Image.new("RGB", image.size)
+    rgb.paste(image)
+    draw = ImageDraw.Draw(rgb)
+
+    for r in formatted_rects:
+        draw.rectangle(r[:4], outline="red")
+        draw.text((r[0], r[1]), str(r[4]), (0, 0, 0))
+
+    return rgb
 
 
 def infer_parser():
@@ -141,7 +174,7 @@ def infer_parser():
         default="autofocus",
         const="autofocus",
         nargs="?",
-        choices=["autofocus", "yogo", "both"],
+        choices=["autofocus", "yogo"],
     )
     parser.add_argument(
         "--output",
@@ -164,6 +197,12 @@ def infer_parser():
     parser.add_argument(
         "--verbose",
         help="print progress bar",
+        action=boolean_action,
+        default=False,
+    )
+    parser.add_argument(
+        "--view-img",
+        help="view each image as it is inferred",
         action=boolean_action,
         default=False,
     )
@@ -208,27 +247,38 @@ if __name__ == "__main__":
     if args.allan_dev and args.model != "autofocus":
         raise ValueError("allan deviation can only be used with autofocus")
 
-    if args.model == "autofocus":
+    if args.view_img:
+        model_classes = [YOGO, AutoFocus]
+    elif args.model == "autofocus":
         model_classes = [AutoFocus]
     elif args.model == "yogo":
         model_classes = [YOGO]
-    elif args.model == "both":
-        model_classes = [YOGO, AutoFocus]
-    else:
-        raise ValueError(f"got invalid value for model: {args.model}")
 
     if im.shape == (600, 800):
         models = [m(camera_selection=CameraOptions.BASLER) for m in model_classes]
     else:
         models = [m(camera_selection=CameraOptions.AVT) for m in model_classes]
 
-    if args.asyn:
+    if args.asyn and not args.view_img:
         infer_func = asyn_infer
     else:
         infer_func = infer
 
     results = []
-    if args.output is None:
+    if args.view_img:
+        Y, A = models
+        for image in image_loader:
+            focus = A.syn(image).pop()
+
+            cell_preds = Y.syn(image).pop()
+            cell_preds = YOGO.filter_res(cell_preds, threshold=0.5)
+
+            drawn_img = draw_rects(image, cell_preds[0, ...].T)
+            plt.imshow(drawn_img)
+            plt.title(f"{focus[0][0]}")
+            plt.show()
+
+    elif args.output is None:
         for res in infer_func(models, image_loader):
             print(res)
             if args.allan_dev:
