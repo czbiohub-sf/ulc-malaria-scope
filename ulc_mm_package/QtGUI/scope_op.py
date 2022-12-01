@@ -127,7 +127,6 @@ class ScopeOp(QObject, Machine):
 
     def _init_variables(self):
         self.running = None
-        self.prev_state = None
 
         self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
