@@ -38,6 +38,7 @@ class ScopeOp(QObject, Machine):
 
     yield_mscope = pyqtSignal(MalariaScope)
 
+    puase = pyqtSignal()
     error = pyqtSignal(str, str, bool)
 
     create_timers = pyqtSignal()
@@ -66,6 +67,10 @@ class ScopeOp(QObject, Machine):
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
         states = [
+            {
+                "name": "pause",
+                "on_enter": [self.send_state, self._state_pause],
+            }
             {
                 "name": "standby",
                 "on_enter": [self.send_state],
@@ -105,8 +110,9 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            # skipped_states = ["fastflow"]
-            skipped_states = ["autofocus", "fastflow"]
+            # Fastflow state is also skipped in simulation mode, but this is defined in _start_fastflow,
+            # because "fastflow" state is referenced in the "unpause transition"
+            skipped_states = ["autofocus"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -114,6 +120,31 @@ class ScopeOp(QObject, Machine):
         self.add_transition(
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
+        self.add_transition(
+            trigger="pause_now", source="*", dest="pause", before="save_state"
+        )
+        self.add_transition(
+            trigger="unpause", source="pause", dest="fastflow"
+        )
+
+    def _init_variables(self):
+        self.running = None
+        self.prev_state = None
+
+        self.autofocus_batch = []
+        self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
+
+        self.target_flowrate = None
+
+        self.autobrightness_result = None
+        self.cellfinder_result = None
+        self.autofocus_result = None
+        self.fastflow_result = None
+        self.count = 0
+        self.batch_count = 0
+
+        self.update_img_count.emit(0)
+        self.update_msg.emit("Starting new experiment")
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -130,23 +161,8 @@ class ScopeOp(QObject, Machine):
 
         self.update_state.emit(state_name)
 
-    def _init_variables(self):
-        self.running = None
-
-        self.autofocus_batch = []
-        self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
-
-        self.target_flowrate = None
-
-        self.autobrightness_result = None
-        self.cellfinder_result = None
-        self.autofocus_result = None
-        self.fastflow_result = None
-        self.count = 0
-        self.batch_count = 0
-
-        self.update_img_count.emit(0)
-        self.update_msg.emit("Starting new experiment")
+    def save_state(self):
+        self.prev_state = self.state
 
     def setup(self):
         self.create_timers.emit()
@@ -187,6 +203,9 @@ class ScopeOp(QObject, Machine):
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
+    
+    def _start_pause(self):
+        self.pause.emit()
 
     def _start_autobrightness(self):
 
@@ -208,6 +227,11 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
+        if SIMULATION:
+            self.logger.info(f"Skipping {self.state} state in simulation mode.")
+            self.next_state()
+            return
+
         self.fastflow_routine = fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
         )
