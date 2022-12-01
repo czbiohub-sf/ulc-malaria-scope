@@ -32,10 +32,10 @@ class DataStorage:
         self.main_dir = None
         self.md_keys = None
 
-    def createTopLevelFolder(self, external_dir: str):
+    def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
         self.external_dir = external_dir
-        self.main_dir = external_dir + datetime.now().strftime(DATETIME_FORMAT)
+        self.main_dir = external_dir + datetime_str
 
         try:
             mkdir(self.main_dir)
@@ -51,6 +51,7 @@ class DataStorage:
     def createNewExperiment(
         self,
         custom_experiment_name: str,
+        datetime_str: str,
         experiment_initialization_metdata: Dict,
         per_image_metadata_keys: list,
     ):
@@ -69,7 +70,7 @@ class DataStorage:
         """
 
         if self.main_dir == None:
-            self.createTopLevelFolder(EXT_DIR)
+            self.createTopLevelFolder(EXT_DIR, datetime_str)
 
         # Create per-image metadata file
         time_str = datetime.now().strftime(DATETIME_FORMAT)
@@ -155,8 +156,8 @@ class DataStorage:
         """
 
         self.logger.info("Closing data storage.")
+        self.save_uniform_sample()
 
-        self.save_uniform_random_sample()
         if self.zw.writable:
             self.zw.writable = False
             future = self.zw.threadedCloseFile()
@@ -191,7 +192,7 @@ class DataStorage:
         storage_remaining_gb = self._get_remaining_storage_size_GB()
         return storage_remaining_gb > MIN_GB_REQUIRED
 
-    def save_uniform_random_sample(self) -> None:
+    def save_uniform_sample(self) -> None:
         """Extract and save a uniform random sample of images from the currently active Zarr store.
 
         Saves images in subsequences - i.e {N}-continuous sequences of images at {M} random locations.
@@ -206,7 +207,7 @@ class DataStorage:
                 num_subsequences=NUM_SUBSEQUENCES,
             )
         except ValueError:
-            self.logger.info("Too few images, no subsample saved.")
+            self.logger.info("Too few images, so no subsample was generated.")
             return
 
         try:

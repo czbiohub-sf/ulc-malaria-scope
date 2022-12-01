@@ -38,7 +38,7 @@ class ScopeOp(QObject, Machine):
 
     yield_mscope = pyqtSignal(MalariaScope)
 
-    error = pyqtSignal(str, str)
+    error = pyqtSignal(str, str, bool)
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -101,8 +101,8 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            skipped_states = ["fastflow"]
-            # skipped_states = ["autofocus", "fastflow"]
+            # skipped_states = ["fastflow"]
+            skipped_states = ["autofocus", "fastflow"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -162,6 +162,7 @@ class ScopeOp(QObject, Machine):
                 "The following component(s) could not be instantiated: {}.".format(
                     (", ".join(failed_components)).capitalize()
                 ),
+                True,
             )
 
     def start(self):
@@ -274,6 +275,7 @@ class ScopeOp(QObject, Machine):
             self.error.emit(
                 "Autobrightness failed",
                 "LED is too dim to run experiment.",
+                False,
             )
         else:
             self.img_signal.connect(self.run_autobrightness)
@@ -297,7 +299,7 @@ class ScopeOp(QObject, Machine):
         except NoCellsFound:
             self.cellfinder_result = -1
             self.logger.error("Cellfinder failed. No cells found.")
-            self.error.emit("Calibration failed", "No cells found.")
+            self.error.emit("Calibration failed", "No cells found.", False)
         else:
             self.img_signal.connect(self.run_cellfinder)
 
@@ -330,6 +332,7 @@ class ScopeOp(QObject, Machine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired focus within condenser's depth of field.",
+                    False,
                 )
 
     @pyqtSlot(np.ndarray, float)
@@ -356,6 +359,7 @@ class ScopeOp(QObject, Machine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired flowrate with syringe at max position.",
+                    False,
                 )
         except StopIteration as e:
             self.fastflow_result = e.value
@@ -390,14 +394,28 @@ class ScopeOp(QObject, Machine):
 
             try:
                 focus_err = self.PSSAF_routine.send(img)
-                # TEMP comment out density because it runs slow
-                # density = self.density_routine.send(img)
+            except MotorControllerError as e:
+                if not SIMULATION:
+                    self.logger.error(
+                        "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    )
+                    self.error.emit(
+                        "Autofocus failed",
+                        "Unable to achieve desired focus within condenser's depth of field.",
+                        False,
+                    )
+                    return
+                else:
+                    self.logger.warning(
+                        f"Ignoring periodic SSAF exception in simulation mode. {e}"
+                    )
+                    focus_err = None
+
+                    self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
+                    self.PSSAF_routine.send(None)
+
+            try:
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
-            except LowDensity:
-                # TODO add recovery operation for low cell density
-                # TODO add cell density value
-                self.logger.warning("Low cell density.")
-                pass
             except CantReachTargetFlowrate as e:
                 if not SIMULATION:
                     self.logger.error(
@@ -409,22 +427,19 @@ class ScopeOp(QObject, Machine):
                     )
                     return
                 else:
-                    self.logger.warning(f"Ignoring exception in simulation mode. {e}")
-                    focus_err = None
-            except MotorControllerError as e:
-                print(e)
-                if not SIMULATION:
-                    self.logger.error(
-                        "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    self.logger.warning(
+                        f"Ignoring flowcontrol exception in simulation mode. {e}"
                     )
-                    self.error.emit(
-                        "Autofocus failed",
-                        "Unable to achieve desired focus within condenser's depth of field.",
-                    )
-                    return
-                else:
-                    self.logger.warning(f"Ignoring exception in simulation mode. {e}")
                     flowrate = None
+
+                # TEMP comment out cell density routine, since this should be moved to NCS calculations
+                # try:
+                #     # density = self.density_routine.send(img)
+                # except LowDensity:
+                #     # TODO add recovery operation for low cell density
+                #     # TODO add cell density value
+                #     self.logger.warning("Low cell density.")
+                #     pass
 
             # Update infopanel
             if focus_err != None:

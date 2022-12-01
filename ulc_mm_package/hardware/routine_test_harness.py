@@ -1,3 +1,4 @@
+from datetime import datetime
 from time import perf_counter, sleep
 
 from ulc_mm_package.scope_constants import (
@@ -6,6 +7,8 @@ from ulc_mm_package.scope_constants import (
 )
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
+
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 from ulc_mm_package.image_processing.cell_finder import LowDensity
@@ -181,7 +184,10 @@ def main_acquisition_loop(mscope: MalariaScope):
     fake_per_img_metadata = {k: k for k in PER_IMAGE_METADATA_KEYS}
 
     mscope.data_storage.createNewExperiment(
-        "", fake_exp_metadata, fake_per_img_metadata
+        "",
+        datetime.now().strftime(DATETIME_FORMAT),
+        fake_exp_metadata,
+        fake_per_img_metadata,
     )
 
     periodic_ssaf = periodicAutofocusWrapper(mscope)
@@ -239,7 +245,7 @@ def main_acquisition_loop(mscope: MalariaScope):
             print(f"{perf_counter() - start:.1f}s elapsed out of ({stop_time_s}s)")
             prev_print_time = perf_counter()
 
-    mscope.data_storage.save_uniform_random_sample()
+    mscope.data_storage.save_uniform_sample()
     closing_file_future = mscope.data_storage.close()
     mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
 
