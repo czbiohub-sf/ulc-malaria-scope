@@ -80,6 +80,10 @@ except FileNotFoundError as e:
     raise FileNotFoundError(
         f"Could not find any folders within {SSD_DIR}, check that SSD is plugged in."
     ) from e
+except IndexError as e:
+    raise IndexError(
+        f"Could not find any folders within {SSD_DIR}, check that SSD is plugged in."
+    ) from e
 
 # ================ Camera constants ================ #
 AVT_VENDOR_ID = 0x1AB2
