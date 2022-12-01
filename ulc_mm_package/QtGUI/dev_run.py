@@ -247,7 +247,9 @@ class AcquisitionThread(QThread):
 
         if self.continuous_save:
             self.data_storage.createNewExperiment(
-                f"{self.custom_image_prefix}", {}, self.getMetadata()
+                f"{self.custom_image_prefix}",
+                experiment_initialization_metdata={},
+                per_image_metadata_keys=self.getMetadata().keys(),
             )
             if self.main_dir == None:
                 self.main_dir = self.data_storage.main_dir
@@ -1081,7 +1083,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    main_window = MalariaScopeGUI()
-    main_window.show()
-    sys.exit(app.exec_())
+    try:
+        app = QtWidgets.QApplication(sys.argv)
+        main_window = MalariaScopeGUI()
+        main_window.show()
+        app.exec_()
+    finally:
+        main_window.acquisitionThread.mscope.shutoff()
