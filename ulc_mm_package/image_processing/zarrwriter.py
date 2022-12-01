@@ -8,8 +8,10 @@ Library Documentation:
 
 import functools
 import threading
-from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from time import perf_counter
+import logging
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
+
 import zarr
 
 
@@ -57,8 +59,9 @@ class ZarrWriter:
         self.prev_write_time = 0
         self.futures = []
         self.executor = ThreadPoolExecutor(max_workers=1)
+        self.logger = logging.getLogger(__name__)
 
-    def createNewFile(self, filename: str, metadata={}, overwrite: bool = False):
+    def createNewFile(self, filename: str, overwrite: bool = False):
         """Create a new zarr file.
 
         Parameters
@@ -78,7 +81,10 @@ class ZarrWriter:
             self.group = zarr.group(store=self.store)
             self.arr_counter = 0
             self.writable = True
-        except AttributeError:
+        except AttributeError as e:
+            self.logger.error(
+                f"zarrwriter.py : createNewFile : Exception encountered - {e}"
+            )
             raise IOError(f"Error creating {filename}.zip")
 
     @lockNoBlock(WRITE_LOCK)
@@ -104,7 +110,10 @@ class ZarrWriter:
             )
             self.arr_counter += 1
             return self.arr_counter
-        except Exception:
+        except Exception as e:
+            self.logger.error(
+                f"zarrwriter.py : writeSingleArray : Exception encountered - {e}"
+            )
             raise AttemptingWriteWithoutFile()
 
     def threadedWriteSingleArray(self, *args, **kwargs):

@@ -31,7 +31,7 @@ class DataStorage:
         self.metadata_file = None
         self.main_dir = None
         self.md_keys = None
-        self.fps = 30
+        self.fps = 40
         self.dt = 1 / self.fps
         self.prev_write_time = 0
 
