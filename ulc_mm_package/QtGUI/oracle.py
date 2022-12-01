@@ -197,8 +197,10 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Paused run",
-            ('The condensor can now be removed.'
-            '\n\nAfter mixing the sample and replacing the condensor, click "OK" to resume this run.'),
+            (
+                "The condensor can now be removed."
+                '\n\nAfter mixing the sample and replacing the condensor, click "OK" to resume this run.'
+            ),
             buttons=Buttons.OK,
         )
         self.scopeop.unpause()
