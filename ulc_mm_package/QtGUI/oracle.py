@@ -177,9 +177,11 @@ class Oracle(Machine):
         dialog_result = self.display_message(
             QMessageBox.Icon.Information,
             "Pause run?",
-            ('While paused, you can mix/add more sample to the flow cell, '
-            'without losing the current brightness and focus calibration. '
-            'Click "OK" to pause this run.'),
+            (
+                "While paused, you can mix/add more sample to the flow cell, "
+                "without losing the current brightness and focus calibration. "
+                'Click "OK" to pause this run.'
+            ),
             buttons=Buttons.CANCEL,
         )
         if dialog_result == QMessageBox.Ok:
@@ -259,8 +261,10 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Initializing hardware",
-            ('If there is a flow cell in the scope, remove it now. '
-            'Click "OK" once it is removed.'),
+            (
+                "If there is a flow cell in the scope, remove it now. "
+                'Click "OK" once it is removed.'
+            ),
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
