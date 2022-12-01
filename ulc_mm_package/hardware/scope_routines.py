@@ -371,9 +371,7 @@ def find_cells_routine(
             print("MAX ATTEMPTS LEFT {}".format(max_attempts))
 
 
-def cell_density_routine(
-    img: np.ndarray,
-):
+def cell_density_routine() -> Generator[int, np.ndarray, None]:
     prev_time = perf_counter()
     prev_measurements = np.asarray(
         [100] * processing_constants.CELL_DENSITY_HISTORY_LEN
@@ -385,11 +383,14 @@ def cell_density_routine(
             perf_counter() - prev_time
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
-            img = yield prev_measurements[(idx - 1) % 10]
-            _, prev_measurements[idx] = isDensitySufficient(img)
+            inference_results = yield prev_measurements[(idx - 1) % 10]
+            prev_measurements[idx] = len(inference_results)
             idx = (idx + 1) % len(prev_measurements)
 
             if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):
-                raise LowDensity
+                raise LowDensity(
+                    f"mean density over last {processing_constants.CELL_DENSITY_HISTORY_LEN} "
+                    f"is {np.mean(prev_measurements)} cells - should be over {processing_constants.MIN_CELL_COUNT}"
+                )
 
             prev_time = perf_counter()

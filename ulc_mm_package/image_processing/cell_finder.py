@@ -98,20 +98,6 @@ def binarize_count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
     )  # First bbox is the background, so we exclude and return the reset
 
 
-def isDensitySufficient(img, downsample_factor: int = 4) -> Tuple[bool, int]:
-    """Check whether the cell count is sufficently high
-
-    Returns
-    -------
-    Tuple(bool, int):
-        bool: Whether the density is sufficiently high (based on a MIN_CELL_COUNT threshold)
-        int: count of cells detected
-    """
-
-    count = cross_corr_count_cells(img)
-    return count >= MIN_CELL_COUNT, count
-
-
 class LowDensity(Exception):
     pass
 
