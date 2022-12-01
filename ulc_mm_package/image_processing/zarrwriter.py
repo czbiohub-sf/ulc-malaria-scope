@@ -58,9 +58,6 @@ class ZarrWriter:
         self.futures = []
         self.executor = ThreadPoolExecutor(max_workers=1)
 
-        self.fps = 30
-        self.dt = 1 / self.fps
-
     def createNewFile(self, filename: str, metadata={}, overwrite: bool = False):
         """Create a new zarr file.
 
