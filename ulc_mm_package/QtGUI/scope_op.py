@@ -113,8 +113,7 @@ class ScopeOp(QObject, Machine):
         ]
 
         if SIMULATION:
-            # Fastflow state is also skipped in simulation mode, but this is defined in _start_fastflow,
-            # because "fastflow" state is referenced in the "unpause transition"
+            # Fastflow state is defined but skipped in simulation mode, see _start_fastflow
             skipped_states = ["autofocus"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
