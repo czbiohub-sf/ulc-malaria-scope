@@ -182,6 +182,8 @@ class Oracle(Machine):
         )
         if dialog_result == QMessageBox.Ok:
             self.scopeop.to_pause()
+        else:
+            return
 
         self.display_message(
             QMessageBox.Icon.Information,
