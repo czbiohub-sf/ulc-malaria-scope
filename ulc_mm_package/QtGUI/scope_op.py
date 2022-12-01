@@ -77,7 +77,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness_precells",
-                "on_enter": [self.send_state, self._start_autobrightness],
+                "on_enter": [self.send_state, self._start_autobrightness_precells],
             },
             {
                 "name": "cellfinder",
@@ -85,7 +85,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness_postcells",
-                "on_enter": [self.send_state, self._start_autobrightness],
+                "on_enter": [self.send_state, self._start_autobrightness_postcells],
             },
             {
                 "name": "autofocus",
@@ -128,6 +128,10 @@ class ScopeOp(QObject, Machine):
         )
 
     def _init_variables(self):
+        # TEMP
+        self.a = 0
+        self.b = 0
+
         self.running = None
         self.prev_state = None
 
@@ -207,8 +211,7 @@ class ScopeOp(QObject, Machine):
     def _start_pause(self):
         self.pause.emit()
 
-    def _start_autobrightness(self):
-
+    def _start_autobrightness_precells(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
@@ -220,10 +223,16 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _start_autofocus(self):
+    def _start_autobrightness_postcells(self):
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
+        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
+        self.autobrightness_routine.send(None)
+
+        self.img_signal.connect(self.run_autobrightness)
+
+    def _start_autofocus(self):
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
@@ -374,7 +383,10 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            self.fastflow_routine.send((img, timestamp))
+            flowrate = self.fastflow_routine.send((img, timestamp))
+
+            if flowrate != None:
+                self.update_flowrate.emit(int(flowrate))
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = self.target_flowrate
@@ -403,15 +415,21 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
+        c = perf_counter()
         if not self.running:
             self.logger.info("Slot executed after experiment ended.")
             return
 
         self.img_signal.disconnect(self.run_experiment)
 
+        self.b = perf_counter()
+        print(f"LOOP: {self.b-self.a}")
+        self.a = self.b
+
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
+            h = perf_counter()
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
             self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
@@ -419,8 +437,12 @@ class ScopeOp(QObject, Machine):
             self.update_img_count.emit(self.count)
 
             prev_res = count_parasitemia(self.mscope, img, self.count)
+
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
+
+            j = perf_counter()
+            print(f"START UP: {j-h}")
 
             try:
                 focus_err = self.PSSAF_routine.send(img)
@@ -444,6 +466,9 @@ class ScopeOp(QObject, Machine):
                     self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
                     self.PSSAF_routine.send(None)
 
+            k = perf_counter()
+            print(f"AUTOFOCUS: {k-j}")
+
             try:
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
@@ -462,6 +487,9 @@ class ScopeOp(QObject, Machine):
                     )
                     flowrate = None
 
+            l = perf_counter()
+            print(f"AUTOFOCUS: {l-k}")
+
                 # TEMP comment out cell density routine, since this should be moved to NCS calculations
                 # try:
                 #     # density = self.density_routine.send(img)
@@ -478,24 +506,51 @@ class ScopeOp(QObject, Machine):
             if flowrate != None:
                 self.update_flowrate.emit(int(flowrate))
 
+            e = perf_counter()
+            print(f"UPDATE INFOPANEL: {e-l}")
+
             # Update remaining metadata
+            start = perf_counter()
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
+            print(f"Motor time: {perf_counter() - start}")
+
+            start = perf_counter()
             self.img_metadata[
                 "pressure_hpa"
             ] = self.mscope.pneumatic_module.getPressure()
+            print(f"Pressure time: {perf_counter() - start}")
+
+            start = perf_counter()
             self.img_metadata[
                 "syringe_pos"
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
+            print(f"Syringe time: {perf_counter() - start}")
+            
+            start = perf_counter()
             self.img_metadata["flowrate"] = flowrate
+            print(f"Flowrate time: {perf_counter() - start}")
+
+            start = perf_counter()
             self.img_metadata["focus_error"] = focus_err
+            print(f"Focus time: {perf_counter() - start}")
+
             # TEMP comment out density because it runs slow
             # self.img_metadata["cell_density"] = density
-            self.img_metadata[
-                "temperature"
-            ] = self.mscope.ht_sensor.getRelativeHumidity()
-            self.img_metadata["humidity"] = self.mscope.ht_sensor.getTemperature()
+            # self.img_metadata[
+            #     "humidity"
+            # ] = self.mscope.ht_sensor.getRelativeHumidity()
+            # self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
+
+            f = perf_counter()
+            print(f"POPULATE METADATA ARRAY: {f-e}")
 
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 
             self.img_signal.connect(self.run_experiment)
+
+            g = perf_counter()
+            print(f"WRAP UP: {g-f}")
+            
+            d = perf_counter()
+            print(f"START-END: {d-c}")
