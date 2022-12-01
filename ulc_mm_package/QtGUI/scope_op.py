@@ -38,8 +38,9 @@ class ScopeOp(QObject, Machine):
 
     yield_mscope = pyqtSignal(MalariaScope)
 
-    puase = pyqtSignal()
     error = pyqtSignal(str, str, bool)
+
+    enable_pause = pyqtSignal()
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -69,41 +70,43 @@ class ScopeOp(QObject, Machine):
         states = [
             {
                 "name": "pause",
-                "on_enter": [self.send_state, self._state_pause],
-            }
+                "on_enter": [self._send_state, self._start_pause],
+                "on_exit": [self._end_pause],
+            },
             {
                 "name": "standby",
-                "on_enter": [self.send_state],
+                "on_enter": [self._send_state],
             },
             {
                 "name": "autobrightness_precells",
-                "on_enter": [self.send_state, self._start_autobrightness_precells],
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "cellfinder",
-                "on_enter": [self.send_state, self._start_cellfinder],
+                "on_enter": [self._send_state, self._start_cellfinder],
+                "on_exit": [self._end_cellfinder],
             },
             {
                 "name": "autobrightness_postcells",
-                "on_enter": [self.send_state, self._start_autobrightness_postcells],
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "autofocus",
-                "on_enter": [self.send_state, self._start_autofocus],
+                "on_enter": [self._send_state, self._start_autofocus],
             },
             {
                 "name": "fastflow",
-                "on_enter": [self.send_state, self._start_fastflow],
+                "on_enter": [self._send_state, self._start_fastflow],
             },
             {
                 "name": "experiment",
-                "on_enter": [self.send_state, self._start_experiment],
+                "on_enter": [self._send_state, self._start_experiment],
             },
             {
                 "name": "intermission",
                 "on_enter": [
                     self._end_experiment,
-                    self.send_state,
+                    self._send_state,
                     self._start_intermission,
                 ],
             },
@@ -120,18 +123,9 @@ class ScopeOp(QObject, Machine):
         self.add_transition(
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
-        self.add_transition(
-            trigger="pause_now", source="*", dest="pause", before="save_state"
-        )
-        self.add_transition(
-            trigger="unpause", source="pause", dest="fastflow"
-        )
+        self.add_transition(trigger="unpause", source="pause", dest="fastflow")
 
     def _init_variables(self):
-        # TEMP
-        self.a = 0
-        self.b = 0
-
         self.running = None
         self.prev_state = None
 
@@ -156,17 +150,15 @@ class ScopeOp(QObject, Machine):
     def _unfreeze_liveview(self):
         self.freeze_liveview.emit(False)
 
-    def send_state(self):
+    def _send_state(self):
         # TODO perhaps delete this to print more useful statements. See future "logging" branch
-        state_name = self.state.split('_')[0]
+        state_name = self.state.split("_")[0]
 
-        self.update_msg.emit(f"{state_name.capitalize()} in progress...")
+        if self.state != "standby":
+            self.update_msg.emit(f"{state_name.capitalize()} in progress...")
+            
         self.logger.info(f"Changing state to {self.state}.")
-
         self.update_state.emit(state_name)
-
-    def save_state(self):
-        self.prev_state = self.state
 
     def setup(self):
         self.create_timers.emit()
@@ -207,11 +199,24 @@ class ScopeOp(QObject, Machine):
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
-    
-    def _start_pause(self):
-        self.pause.emit()
 
-    def _start_autobrightness_precells(self):
+    def _start_pause(self):
+        self.running = False
+
+        try:
+            self.img_signal.disconnect()
+        except TypeError:
+            self.logger.info(
+                "Since img_signal is already disconnected, no signal/slot changes were made."
+            )
+
+        self.mscope.led.turnOff()
+
+    def _end_pause(self):
+        self.mscope.led.turnOn()
+        self.running = True
+
+    def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
@@ -223,21 +228,19 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _start_autobrightness_postcells(self):
+    def _end_cellfinder(self):
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
-
-        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
-        self.autobrightness_routine.send(None)
-
-        self.img_signal.connect(self.run_autobrightness)
 
     def _start_autofocus(self):
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
+        self.enable_pause.emit()
+
         if SIMULATION:
             self.logger.info(f"Skipping {self.state} state in simulation mode.")
+            sleep(1)
             self.next_state()
             return
 
@@ -415,21 +418,15 @@ class ScopeOp(QObject, Machine):
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
-        c = perf_counter()
         if not self.running:
             self.logger.info("Slot executed after experiment ended.")
             return
 
         self.img_signal.disconnect(self.run_experiment)
 
-        self.b = perf_counter()
-        print(f"LOOP: {self.b-self.a}")
-        self.a = self.b
-
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
-            h = perf_counter()
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
             self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
@@ -440,9 +437,6 @@ class ScopeOp(QObject, Machine):
 
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
-
-            j = perf_counter()
-            print(f"START UP: {j-h}")
 
             try:
                 focus_err = self.PSSAF_routine.send(img)
@@ -466,9 +460,6 @@ class ScopeOp(QObject, Machine):
                     self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
                     self.PSSAF_routine.send(None)
 
-            k = perf_counter()
-            print(f"AUTOFOCUS: {k-j}")
-
             try:
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
@@ -487,17 +478,14 @@ class ScopeOp(QObject, Machine):
                     )
                     flowrate = None
 
-            l = perf_counter()
-            print(f"AUTOFOCUS: {l-k}")
-
-                # TEMP comment out cell density routine, since this should be moved to NCS calculations
-                # try:
-                #     # density = self.density_routine.send(img)
-                # except LowDensity:
-                #     # TODO add recovery operation for low cell density
-                #     # TODO add cell density value
-                #     self.logger.warning("Low cell density.")
-                #     pass
+            # TEMP comment out cell density routine, since this should be moved to NCS calculations
+            # try:
+            #     # density = self.density_routine.send(img)
+            # except LowDensity:
+            #     # TODO add recovery operation for low cell density
+            #     # TODO add cell density value
+            #     self.logger.warning("Low cell density.")
+            #     pass
 
             # Update infopanel
             if focus_err != None:
@@ -506,33 +494,16 @@ class ScopeOp(QObject, Machine):
             if flowrate != None:
                 self.update_flowrate.emit(int(flowrate))
 
-            e = perf_counter()
-            print(f"UPDATE INFOPANEL: {e-l}")
-
             # Update remaining metadata
-            start = perf_counter()
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
-            print(f"Motor time: {perf_counter() - start}")
-
-            start = perf_counter()
             self.img_metadata[
                 "pressure_hpa"
             ] = self.mscope.pneumatic_module.getPressure()
-            print(f"Pressure time: {perf_counter() - start}")
-
-            start = perf_counter()
             self.img_metadata[
                 "syringe_pos"
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
-            print(f"Syringe time: {perf_counter() - start}")
-            
-            start = perf_counter()
             self.img_metadata["flowrate"] = flowrate
-            print(f"Flowrate time: {perf_counter() - start}")
-
-            start = perf_counter()
             self.img_metadata["focus_error"] = focus_err
-            print(f"Focus time: {perf_counter() - start}")
 
             # TEMP comment out density because it runs slow
             # self.img_metadata["cell_density"] = density
@@ -541,16 +512,7 @@ class ScopeOp(QObject, Machine):
             # ] = self.mscope.ht_sensor.getRelativeHumidity()
             # self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
 
-            f = perf_counter()
-            print(f"POPULATE METADATA ARRAY: {f-e}")
-
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 
             self.img_signal.connect(self.run_experiment)
-
-            g = perf_counter()
-            print(f"WRAP UP: {g-f}")
-            
-            d = perf_counter()
-            print(f"START-END: {d-c}")

@@ -91,6 +91,10 @@ class LiveviewGUI(QMainWindow):
     def update_flowrate(self, val):
         self.flowrate_val.setText(f"Actual = {val}")
 
+    @pyqtSlot()
+    def enable_pause(self):
+        self.pause_btn.setEnabled(True)
+
     def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
 
@@ -197,12 +201,19 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.flowrate_val, 13, 1)
 
     def set_infopanel_vals(self):
+        # Flush terminal
+        self.terminal_msg = ""
+        self.terminal_txt.clear()
+
         # Set label values
         self.update_img_count("---")
         self.update_cell_count(["---", "---", "---", "---"])
 
         self.update_focus("---")
         self.update_flowrate("---")
+
+        # Disable pause button at startup
+        self.pause_btn.setEnabled(False)
 
         # Setup status colors
         self._set_color(self.state_lbl, STATUS.IN_PROGRESS)
@@ -315,6 +326,8 @@ if __name__ == "__main__":
     gui.update_experiment(experiment_metadata)
 
     gui.set_infopanel_vals()
+
+    gui.update_msg("Sample message here")
 
     gui.show()
     sys.exit(app.exec_())

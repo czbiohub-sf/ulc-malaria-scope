@@ -55,8 +55,8 @@ _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
 
 class Buttons(enum.Enum):
     OK = QMessageBox.Ok
-    CANCEL =  QMessageBox.Cancel | QMessageBox.Ok
-    YN =  QMessageBox.No | QMessageBox.Yes
+    CANCEL = QMessageBox.Cancel | QMessageBox.Ok
+    YN = QMessageBox.No | QMessageBox.Yes
 
 
 class Oracle(Machine):
@@ -138,6 +138,7 @@ class Oracle(Machine):
         self.form_window.exit_btn.clicked.connect(self.shutoff)
 
         # Connect liveview buttons
+        self.liveview_window.pause_btn.clicked.connect(self.pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.exit_handler)
 
         # Connect scopeop signals and slots
@@ -151,6 +152,8 @@ class Oracle(Machine):
 
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
         self.scopeop.set_period.connect(self.acquisition.set_period)
+
+        self.scopeop.enable_pause.connect(self.liveview_window.enable_pause)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -169,6 +172,24 @@ class Oracle(Machine):
 
         # Trigger first transition
         self.next_state()
+
+    def pause_handler(self):
+        dialog_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "Pause run?",
+            'While paused, you can mix/add more sample to the flow cell, without losing the current brightness and focus calibration. Click "OK" to pause this run.',
+            buttons=Buttons.CANCEL,
+        )
+        if dialog_result == QMessageBox.Ok:
+            self.scopeop.to_pause()
+
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Resume run?",
+            'The scope is currently paused. Click "OK" to resume this run.',
+            buttons=Buttons.OK,
+        )
+        self.scopeop.unpause()
 
     def exit_handler(self):
         dialog_result = self.display_message(
