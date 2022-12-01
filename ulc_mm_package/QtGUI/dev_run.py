@@ -396,114 +396,6 @@ class AcquisitionThread(QThread):
                 print(f"Generic model inference error: {e}")
 
 
-class ExperimentSetupGUI(QtWidgets.QDialog):
-    """Form to input experiment parameters"""
-
-    def __init__(self, *args, **kwargs):
-        super(ExperimentSetupGUI, self).__init__(*args, **kwargs)
-
-        # Load the ui file
-        uic.loadUi(_EXPERIMENT_FORM_PATH, self)
-
-        # Set the focus order
-        self.setTabOrder(self.txtExperimentName, self.txtFlowCellID)
-        self.setTabOrder(self.txtFlowCellID, self.radBtn1x1)
-        self.setTabOrder(self.radBtn1x1, self.radBtn2x2)
-        self.setTabOrder(self.radBtn2x2, self.chkBoxExperimentSetupAutobrightness)
-        self.setTabOrder(
-            self.chkBoxExperimentSetupAutobrightness,
-            self.chkBoxExperimentSetupAutofocus,
-        )
-        self.setTabOrder(
-            self.chkBoxExperimentSetupAutofocus, self.chkBoxExperimentSetupFlowControl
-        )
-        self.setTabOrder(
-            self.chkBoxExperimentSetupFlowControl, self.sbExperimentSetupMinutes
-        )
-
-        self.txtExperimentName.setFocus()
-
-        # Parameters
-        self.experiment_name = ""
-        self.flowcell_id = ""
-        self.binningMode = 2
-        self.autobrightness = False
-        self.autofocus = False
-        self.autoflowcontrol = False
-        self.time_mins = None
-
-        # Set up event handlers
-        self.txtExperimentName.editingFinished.connect(self.txtExperimentNameHandler)
-        self.txtFlowCellID.editingFinished.connect(self.flowCellIDHandler)
-        self.radBtn1x1.toggled.connect(self.binningModeHandler)
-        self.radBtn2x2.toggled.connect(self.binningModeHandler)
-        self.chkBoxExperimentSetupAutobrightness.stateChanged.connect(
-            self.chkBoxAutobrightnessHandler
-        )
-        self.chkBoxExperimentSetupAutofocus.stateChanged.connect(
-            self.chkBoxAutofocusHandler
-        )
-        self.chkBoxExperimentSetupFlowControl.stateChanged.connect(
-            self.chkBoxFlowControlHandler
-        )
-        self.sbExperimentSetupMinutes.valueChanged.connect(self.sbTimerHandler)
-        self.btnStartExperiment.clicked.connect(self.btnStartExperimentHandler)
-
-    def txtExperimentNameHandler(self):
-        self.experiment_name = self.txtExperimentName.text()
-        print(self.experiment_name)
-
-    def flowCellIDHandler(self):
-        """TODO: Validate the flowcell ID"""
-        text = self.txtFlowCellID.text()
-        if is_luhn_valid(text):
-            self.flowcell_id = self.txtFlowCellID.text()
-        else:
-            pass
-        self.flowcell_id = self.txtFlowCellID.text()
-        print(self.flowcell_id)
-
-    def binningModeHandler(self):
-        if self.radBtn1x1.isChecked():
-            self.radBtn2x2.setChecked(False)
-            self.binningMode = 1
-        elif self.radBtn2x2.isChecked():
-            self.radBtn1x1.setChecked(False)
-            self.binningMode = 2
-        print(f"Binning mode: {self.binningMode}")
-
-    def chkBoxAutobrightnessHandler(self):
-        self.autobrightness = True if self.chkBoxAutobrightness.checkState() else False
-        print(self.autobrightness)
-
-    def chkBoxAutofocusHandler(self):
-        self.autofocus = True if self.chkBoxAutofocus.checkState() else False
-        print(self.autofocus)
-
-    def chkBoxFlowControlHandler(self):
-        self.autoflowcontrol = True if self.chkBoxFlowControl.checkState() else False
-        print(self.autoflowcontrol)
-
-    def sbTimerHandler(self):
-        self.time_mins = self.sbExperimentSetupMinutes.value()
-        print(self.time_mins)
-
-    def btnStartExperimentHandler(self):
-        print("Something interesting will happen here eventually...")
-        parameters = self.getAllParameters()
-
-    def getAllParameters(self) -> Dict:
-        return {
-            "experiment_name": self.experiment_name,
-            "flowcell_id": self.flowcell_id,
-            "binningMode": self.binningMode,
-            "autobrightness": self.autobrightness,
-            "autofocus": self.autofocus,
-            "autoflowcontrol": self.autoflowcontrol,
-            "time_mins": self.time_mins,
-        }
-
-
 class MalariaScopeGUI(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MalariaScopeGUI, self).__init__(*args, **kwargs)
@@ -548,9 +440,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         # Load the ui file
         uic.loadUi(_UI_FILE_DIR, self)
-
-        # Experiment parameter form dialog
-        self.experiment_form_dialog = ExperimentSetupGUI(self)
 
         # Start the video stream
         self.acquisitionThread = AcquisitionThread(self.external_dir, mscope)
@@ -746,9 +635,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnSnap.setEnabled(False)
             sleep(0.1)
             self.acquisitionThread.finish_saving_future = (
-                self.acquisitionThread.zw.threadedCloseFile()
+                self.acquisitionThread.data_storage.close()
             )
-            self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
             num_images = self.acquisitionThread.data_storage.zw.arr_counter
