@@ -187,7 +187,7 @@ class ScopeOp(QObject, Machine):
         self.next_state()
 
     def reset(self):
-        self.logger.debug("Resetting pneumatic module.")
+        self.logger.info("Resetting pneumatic module for rerun.")
         self.mscope.pneumatic_module.setDutyCycle(
             self.mscope.pneumatic_module.getMaxDutyCycle()
         )
@@ -208,6 +208,10 @@ class ScopeOp(QObject, Machine):
                 "Since img_signal is already disconnected, no signal/slot changes were made."
             )
 
+        self.logger.info("Resetting pneumatic module for pause.")
+        self.mscope.pneumatic_module.setDutyCycle(
+            self.mscope.pneumatic_module.getMaxDutyCycle()
+        )
         self.mscope.led.turnOff()
 
     def _end_pause(self):
