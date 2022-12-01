@@ -247,7 +247,8 @@ class AcquisitionThread(QThread):
 
         if self.continuous_save:
             self.data_storage.createNewExperiment(
-                f"{self.custom_image_prefix}",
+                custom_experiment_name=f"{self.custom_image_prefix}",
+                datetime_str=datetime.now().strftime(DATETIME_FORMAT),
                 experiment_initialization_metdata={},
                 per_image_metadata_keys=self.getMetadata().keys(),
             )
@@ -437,6 +438,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         # Create scope object
         mscope = MalariaScope()
+        self.mscope = mscope
         hardware_status = mscope.getComponentStatus()
         self.fan = mscope.fan
 
@@ -1089,4 +1091,4 @@ if __name__ == "__main__":
         main_window.show()
         app.exec_()
     finally:
-        main_window.acquisitionThread.mscope.shutoff()
+        main_window.mscope.shutoff()
