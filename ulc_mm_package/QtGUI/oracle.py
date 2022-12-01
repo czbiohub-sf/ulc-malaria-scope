@@ -18,7 +18,11 @@ from logging.config import fileConfig
 from os import path, mkdir
 from datetime import datetime
 
-from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMessageBox,
+    QLabel,
+)
 from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QIcon, QPixmap
 
@@ -55,7 +59,8 @@ _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
 
 class Buttons(enum.Enum):
     OK = QMessageBox.Ok
-    CANCEL = QMessageBox.Ok | QMessageBox.Cancel
+    CANCEL = QMessageBox.Cancel | QMessageBox.Ok
+    YN = QMessageBox.No | QMessageBox.Yes
 
 
 class Oracle(Machine):
@@ -80,7 +85,7 @@ class Oracle(Machine):
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
-        self.dialog_window = QMessageBox()
+        self.message_window = QMessageBox()
 
         # Instantiate variables
         self._init_variables()
@@ -137,6 +142,7 @@ class Oracle(Machine):
         self.form_window.exit_btn.clicked.connect(self.shutoff)
 
         # Connect liveview buttons
+        self.liveview_window.pause_btn.clicked.connect(self.pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.exit_handler)
 
         # Connect scopeop signals and slots
@@ -150,6 +156,8 @@ class Oracle(Machine):
 
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
         self.scopeop.set_period.connect(self.acquisition.set_period)
+
+        self.scopeop.enable_pause.connect(self.liveview_window.enable_pause)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -169,14 +177,42 @@ class Oracle(Machine):
         # Trigger first transition
         self.next_state()
 
+    def pause_handler(self):
+        message_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "Pause run?",
+            (
+                "While paused, you can mix/add more sample to the flow cell, "
+                "without losing the current brightness and focus calibration."
+                '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
+            ),
+            buttons=Buttons.CANCEL,
+        )
+        if message_result == QMessageBox.Ok:
+            self.scopeop.to_pause()
+        else:
+            return
+
+        sleep(2)
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Paused run",
+            (
+                "The condensor can now be removed."
+                '\n\nAfter mixing the sample and replacing the condensor, click "OK" to resume this run.'
+            ),
+            buttons=Buttons.OK,
+        )
+        self.scopeop.unpause()
+
     def exit_handler(self):
-        dialog_result = self.display_message(
+        message_result = self.display_message(
             QMessageBox.Icon.Information,
             "End run?",
             'Click "OK" to end this run.',
             buttons=Buttons.CANCEL,
         )
-        if dialog_result == QMessageBox.Ok:
+        if message_result == QMessageBox.Ok:
             self.scopeop.to_intermission()
 
     def error_handler(self, title, text, abort):
@@ -194,20 +230,20 @@ class Oracle(Machine):
     def display_message(
         self, icon: QMessageBox.Icon, title, text, buttons=None, image=None, abort=False
     ):
-        self.dialog_window.close()
+        self.message_window.close()
 
-        self.dialog_window = QMessageBox()
-        self.dialog_window.setWindowIcon(QIcon(ICON_PATH))
-        self.dialog_window.setIcon(icon)
-        self.dialog_window.setWindowTitle(f"{title}")
+        self.message_window = QMessageBox()
+        self.message_window.setWindowIcon(QIcon(ICON_PATH))
+        self.message_window.setIcon(icon)
+        self.message_window.setWindowTitle(f"{title}")
 
-        self.dialog_window.setText(f"{text}")
+        self.message_window.setText(f"{text}")
 
         if buttons != None:
-            self.dialog_window.setStandardButtons(buttons.value)
+            self.message_window.setStandardButtons(buttons.value)
 
         if image != None:
-            layout = self.dialog_window.layout()
+            layout = self.message_window.layout()
 
             image_lbl = QLabel()
             image_lbl.setPixmap(QPixmap(image))
@@ -215,12 +251,12 @@ class Oracle(Machine):
             # Row/column span determined using layout.rowCount() and layout.columnCount()
             layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)
 
-        dialog_result = self.dialog_window.exec()
+        message_result = self.message_window.exec()
 
         if abort:
             self.shutoff()
 
-        return dialog_result
+        return message_result
 
     def _init_variables(self):
         # Instantiate metadata dicts
@@ -233,7 +269,10 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Initializing hardware",
-            'If there is a flow cell in the scope, remove it now. Click "OK" once it is removed.',
+            (
+                "If there is a flow cell in the scope, remove it now."
+                '\n\nClick "OK" once the flow cell is removed.'
+            ),
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
@@ -284,7 +323,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
-            'Insert flow cell now. Click "OK" once it is in place.',
+            'Insert flow cell now.\n\nClick "OK" once it is in place.',
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
@@ -299,16 +338,23 @@ class Oracle(Machine):
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
     def _start_intermission(self):
-        dialog_result = self.display_message(
+        self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove flow cell now. Once it is removed, click "OK" to start a new run or "Cancel" to shutoff.',
-            buttons=Buttons.CANCEL,
+            'Remove flow cell now.\n\nClick "OK" once it is removed.',
+            buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
-        if dialog_result == QMessageBox.Cancel:
+
+        message_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "Run another experiment?",
+            'Click "Yes" to start a new run or "No" to shutoff scope.',
+            buttons=Buttons.YN,
+        )
+        if message_result == QMessageBox.No:
             self.shutoff()
-        elif dialog_result == QMessageBox.Ok:
+        elif message_result == QMessageBox.Yes:
             self.logger.info("Starting new experiment.")
             self.scopeop.rerun()
 
