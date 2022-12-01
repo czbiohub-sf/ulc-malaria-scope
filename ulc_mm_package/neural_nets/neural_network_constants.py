@@ -5,5 +5,5 @@ AUTOFOCUS_MODEL_DIR = "../neural_nets/autofocus_model_files/valiant-disco-119.xm
 
 
 # ================ YOGO constants ================ #
-YOGO_PRED_THRESHOLD = 0.3
+YOGO_PRED_THRESHOLD = 0.5
 YOGO_MODEL_DIR = "../neural_nets/yogo_model_files/scarlet-sun-338.xml"

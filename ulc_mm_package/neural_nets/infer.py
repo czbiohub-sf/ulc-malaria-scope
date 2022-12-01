@@ -277,7 +277,6 @@ if __name__ == "__main__":
             plt.imshow(drawn_img)
             plt.title(f"{focus[0][0]}")
             plt.show()
-
     elif args.output is None:
         for res in infer_func(models, image_loader):
             print(res)

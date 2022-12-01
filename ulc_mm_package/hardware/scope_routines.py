@@ -373,7 +373,6 @@ def find_cells_routine(
 
 def cell_density_routine(
     mscope: MalariaScope,
-    img: np.ndarray,
 ):
     prev_time = perf_counter()
     prev_measurements = np.asarray(

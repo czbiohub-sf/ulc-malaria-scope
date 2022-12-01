@@ -218,7 +218,7 @@ class ScopeOp(QObject, Machine):
         )
         self.flowcontrol_routine.send(None)
 
-        self.density_routine = cell_density_routine(None)
+        self.density_routine = cell_density_routine(self.mscope)
         self.density_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
