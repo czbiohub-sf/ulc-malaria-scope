@@ -82,7 +82,6 @@ class AcquisitionThread(QThread):
 
         # Flags and counters
         self.update_liveview = 1
-        self.im_counter = 0
         self.update_counter = 0
         self.num_loops = 50
         self.camera_activated = False
@@ -98,16 +97,13 @@ class AcquisitionThread(QThread):
         self.fps_timer = perf_counter()
         self.start_time = perf_counter()
         self.external_dir = external_dir
-        self.metadata_writer = None
         self.click_to_advance = False
-        self.md_writer = None
-        self.metadata_file = None
         self.finish_saving_future = None
 
         # Hardware peripherals
         self.motor = mscope.motor
         self.pneumatic_module: PneumaticModule = mscope.pneumatic_module
-        self.zw = ZarrWriter()
+        self.data_storage = mscope.data_storage
 
         self.flow_controller: FlowController = FlowController(
             self.pneumatic_module, 600, 800
@@ -180,7 +176,7 @@ class AcquisitionThread(QThread):
             pressure = -1
 
         return {
-            "im_counter": self.im_counter,
+            "im_counter": self.data_storage.zw.arr_counter,
             "measurement_type": "placeholder",
             "sample_type": "placeholder",
             "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
@@ -203,12 +199,9 @@ class AcquisitionThread(QThread):
             imwrite(filename, image)
             self.single_save = False
 
-        if self.continuous_save and self.continuous_dir_name != None:
-            if self.zw.writable:
-                self.zw.threadedWriteSingleArray(image)
-                self.md_writer.writerow(self.getMetadata())
+        if self.continuous_save:
+            self.data_storage.writeData(image, self.getMetadata())
             self.measurementTime.emit(int(perf_counter() - self.start_time))
-            self.im_counter += 1
 
     def updateGUIElements(self):
         self.update_counter += 1
@@ -250,35 +243,16 @@ class AcquisitionThread(QThread):
         if self.main_dir == None:
             self.main_dir = self.external_dir + datetime.now().strftime(DATETIME_FORMAT)
             mkdir(self.main_dir)
+            self.data_storage.main_dir = self.main_dir
 
         if self.continuous_save:
-            self.continuous_dir_name = (
-                datetime.now().strftime(DATETIME_FORMAT) + f"{self.custom_image_prefix}"
+            self.data_storage.createNewExperiment(
+                f"{self.custom_image_prefix}", {}, self.getMetadata()
             )
-            mkdir(path.join(self.main_dir, self.continuous_dir_name))
-
-            filename = (
-                path.join(
-                    self.main_dir,
-                    self.continuous_dir_name,
-                    datetime.now().strftime(DATETIME_FORMAT),
-                )
-                + f"{self.custom_image_prefix}"
-            )
-            if self.md_writer:
-                self.metadata_file.close()
-            self.metadata_file = open(f"{filename}_metadata.csv", "w")
-            self.md_writer = csv.DictWriter(
-                self.metadata_file, fieldnames=self.getMetadata().keys()
-            )
-            self.md_writer.writeheader()
-
-            self.zw.createNewFile(filename)
+            if self.main_dir == None:
+                self.main_dir = self.data_storage.main_dir
 
             self.start_time = perf_counter()
-
-            self.im_counter = 0
-            self.timings = []
 
     def changeBinningMode(self):
         if self.camera_activated:
@@ -777,7 +751,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
-            num_images = self.acquisitionThread.im_counter
+            num_images = self.acquisitionThread.data_storage.zw.arr_counter
             print(
                 f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
             )
