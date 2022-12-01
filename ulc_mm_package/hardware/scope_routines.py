@@ -73,7 +73,7 @@ def continuousSSAFRoutine(
     steps_from_focus: Optional[float] = None
 
     while True:
-        img: np.ndarray = yield steps_from_focus
+        img = yield steps_from_focus
 
         mscope.autofocus_model.asyn(img)
         images_sent += 1
@@ -115,7 +115,7 @@ def periodicAutofocusWrapper(
     ssaf_routine.send(None)
 
     while True:
-        img: np.ndarray = yield steps_from_focus
+        img = yield steps_from_focus
         if perf_counter() - prev_adjustment_time > nn_constants.AF_PERIOD_S:
             steps_from_focus = ssaf_routine.send(img)
             counter += 1
