@@ -193,8 +193,8 @@ class Oracle(Machine):
             self.logger.warning("Running with failed SSH tunnel")
             self.liveview_window.update_tcp("unavailable")
 
-            # Trigger first transition
-            self.next_state()
+        # Trigger first transition
+        self.next_state()
 
     def pause_handler(self):
         message_result = self.display_message(
