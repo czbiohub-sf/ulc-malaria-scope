@@ -436,7 +436,8 @@ class ScopeOp(QObject, Machine):
             self.to_intermission()
         else:
             # Record timestamp before running routines
-            self.img_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
+            self.img_metadata["timestamp"] = timestamp
+            # self.img_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
             self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
 
             self.update_img_count.emit(self.count)
