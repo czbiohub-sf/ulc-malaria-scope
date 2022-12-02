@@ -84,7 +84,6 @@ class Oracle(Machine):
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
 
-
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
@@ -186,8 +185,10 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Warning,
                 "SSH tunnel failed",
-                ('Could not create SSH tunnel so the scope cannot be accessed remotely unless it is rebooted.'
-                '\n\nClick "OK" to continue running without SSH.'),
+                (
+                    "Could not create SSH tunnel so the scope cannot be accessed remotely unless it is rebooted."
+                    '\n\nClick "OK" to continue running without SSH.'
+                ),
                 buttons=Buttons.OK,
             )
 
