@@ -10,7 +10,7 @@ import logging
 
 from datetime import datetime
 from transitions import Machine
-from time import perf_counter, sleep
+from time import sleep
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 

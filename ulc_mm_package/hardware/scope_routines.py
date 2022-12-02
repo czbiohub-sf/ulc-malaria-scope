@@ -371,7 +371,7 @@ def find_cells_routine(
             print("MAX ATTEMPTS LEFT {}".format(max_attempts))
 
 
-def cell_density_routine() -> Generator[int, np.ndarray, None]:
+def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
     prev_time = perf_counter()
     prev_measurements = np.asarray(
         [100] * processing_constants.CELL_DENSITY_HISTORY_LEN
@@ -397,3 +397,6 @@ def cell_density_routine() -> Generator[int, np.ndarray, None]:
                 )
 
             prev_time = perf_counter()
+        else:
+            # if we haven't waited period yet, yield immediately
+            yield
