@@ -281,9 +281,10 @@ class ScopeOp(QObject, Machine):
                 "Since img_signal is already disconnected, no signal/slot changes were made."
             )
 
-        runtime = perf_counter()-self.start_time
-        self.logger.info(f"Runtime was {runtime}")
-        self.logger.info(f"Effective fps was {self.count / runtime}")
+        if self.start_time != None:
+            runtime = perf_counter()-self.start_time
+            self.logger.info(f"Runtime was {runtime}")
+            self.logger.info(f"Effective fps was {self.count / runtime}")
 
         self.stop_timers.emit()
 
