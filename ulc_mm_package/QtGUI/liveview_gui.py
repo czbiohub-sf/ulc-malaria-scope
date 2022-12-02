@@ -54,7 +54,7 @@ class LiveviewGUI(QMainWindow):
         self.flowrate_lbl.setText(f"Target = {metadata['target_flowrate'][1]}")
 
     def update_tcp(self, tcp_addr):
-        self.tcp_lbl.setText(f"SSH tunnel address: {tcp_addr}")
+        self.tcp_lbl.setText(f"SSH address: {tcp_addr}")
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img: np.ndarray):

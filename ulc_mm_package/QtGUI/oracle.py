@@ -180,6 +180,7 @@ class Oracle(Machine):
         # Get tcp tunnel
         try:
             tcp_addr = make_tcp_tunnel()
+            self.logger.info(f"SSH address is {tcp_addr}")
             self.liveview_window.update_tcp(tcp_addr)
         except NgrokError:
             self.display_message(
