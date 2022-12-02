@@ -1,18 +1,27 @@
 import os
 import cv2
+import sys
 import zarr
 import time
+import signal
 import argparse
 
 import numpy as np
 import allantools as at
+import matplotlib.pyplot as plt
 
+from PIL import Image, ImageDraw
 from pathlib import Path
 
-from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 from ulc_mm_package.scope_constants import CameraOptions
+from ulc_mm_package.neural_nets.NCSModel import NCSModel
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 
 from typing import Any, List, Generator, Iterable
+
+
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
 def _tqdm(iterable, **kwargs):
@@ -98,13 +107,13 @@ def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
 
 def infer(model, image_loader: ImageLoader):
     for image in image_loader:
-        yield model(image)
+        yield model.syn(image)
 
 
 def asyn_infer(model, image_loader: ImageLoader):
     for image in image_loader:
         model.asyn(image)
-        yield model.get_asyn_results(timeout=0.001)
+        yield model.get_asyn_results(timeout=0.00005)
 
 
 def calculate_allan_dev(data, fname):
@@ -120,6 +129,35 @@ def calculate_allan_dev(data, fname):
     pl.save(fname)
 
 
+def draw_rects(img: np.ndarray, rects: List[np.ndarray]) -> Image:
+    assert (
+        len(img.shape) == 2
+    ), f"takes single grayscale image - should be 2d, got {img.shape}"
+    h, w = img.shape
+
+    formatted_rects = [
+        [
+            int(w * (r[0] - r[2] / 2)),
+            int(h * (r[1] - r[3] / 2)),
+            int(w * (r[0] + r[2] / 2)),
+            int(h * (r[1] + r[3] / 2)),
+            np.argmax(r[5:]),
+        ]
+        for r in rects
+    ]
+
+    image = Image.fromarray(img)
+    rgb = Image.new("RGB", image.size)
+    rgb.paste(image)
+    draw = ImageDraw.Draw(rgb)
+
+    for r in formatted_rects:
+        draw.rectangle(r[:4], outline="red")
+        draw.text((r[0], r[1]), str(r[4]), (0, 0, 0))
+
+    return rgb
+
+
 def infer_parser():
     try:
         boolean_action = argparse.BooleanOptionalAction  # type: ignore
@@ -130,6 +168,14 @@ def infer_parser():
 
     parser.add_argument("--images", type=str, help="path to image or images")
     parser.add_argument("--zarr", type=str, help="path to zarr store")
+    parser.add_argument(
+        "--model",
+        help="choose the model to use for inference",
+        default="autofocus",
+        const="autofocus",
+        nargs="?",
+        choices=["autofocus", "yogo"],
+    )
     parser.add_argument(
         "--output",
         type=str,
@@ -143,8 +189,20 @@ def infer_parser():
         default=False,
     )
     parser.add_argument(
+        "--asyn",
+        help="run asynchronously",
+        action=boolean_action,
+        default=False,
+    )
+    parser.add_argument(
         "--verbose",
         help="print progress bar",
+        action=boolean_action,
+        default=False,
+    )
+    parser.add_argument(
+        "--view-img",
+        help="view each image as it is inferred",
         action=boolean_action,
         default=False,
     )
@@ -153,8 +211,6 @@ def infer_parser():
 
 
 if __name__ == "__main__":
-    import sys
-
     parser = infer_parser()
     args = parser.parse_args()
 
@@ -173,6 +229,7 @@ if __name__ == "__main__":
             print("install tqdm for progress bars")
             tqdm = _tqdm
 
+    # hacky way to get dimension of first image
     im = next(
         iter(
             ImageLoader.load_image_data(args.images)
@@ -187,31 +244,54 @@ if __name__ == "__main__":
         else ImageLoader.load_zarr_data(args.zarr)
     )
 
-    if im.shape == (600, 800):
-        A = AutoFocus(camera_selection=CameraOptions.BASLER)
-    else:
-        A = AutoFocus(camera_selection=CameraOptions.AVT)
+    if args.allan_dev and args.model != "autofocus":
+        raise ValueError("allan deviation can only be used with autofocus")
 
-    batch_type = os.environ.get("MS_BATCH", "").lower()
-    if batch_type == "asyn_infer":
+    if args.view_img:
+        model_classes = [YOGO, AutoFocus]
+    elif args.model == "autofocus":
+        model_classes = [AutoFocus]
+    elif args.model == "yogo":
+        model_classes = [YOGO]
+
+    if im.shape == (600, 800):
+        models = [m(camera_selection=CameraOptions.BASLER) for m in model_classes]
+    else:
+        models = [m(camera_selection=CameraOptions.AVT) for m in model_classes]
+
+    if args.asyn and not args.view_img:
         infer_func = asyn_infer
     else:
         infer_func = infer
 
     results = []
-    if args.output is None:
-        for res in infer_func(A, image_loader):
+    if args.view_img:
+        Y, A = models
+        for image in image_loader:
+            focus = A.syn(image).pop()
+
+            cell_preds = Y.syn(image).pop()
+            cell_preds = YOGO.filter_res(cell_preds, threshold=0.5)
+
+            drawn_img = draw_rects(image, cell_preds[0, ...].T)
+            plt.imshow(drawn_img)
+            plt.title(f"{focus[0][0]}")
+            plt.show()
+
+    elif args.output is None:
+        for res in infer_func(models, image_loader):
             print(res)
             if args.allan_dev:
                 results.append(res)
     else:
         with open(args.output, "w") as f:
-            for res in infer_func(A, tqdm(image_loader)):
+            for res in infer_func(models, tqdm(image_loader)):
                 f.write(f"{res}\n")
                 if args.allan_dev:
                     results.append(res)
 
-    A.wait_all()
+    # safety
+    [m.wait_all() for m in models]
 
     if args.allan_dev:
         data_path = Path(
@@ -223,5 +303,3 @@ if __name__ == "__main__":
             ".png"
         )
         calculate_allan_dev(results, str(fname))
-
-    print("all done in infer.py")

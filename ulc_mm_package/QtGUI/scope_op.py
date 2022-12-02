@@ -38,7 +38,9 @@ class ScopeOp(QObject, Machine):
 
     yield_mscope = pyqtSignal(MalariaScope)
 
-    error = pyqtSignal(str, str)
+    error = pyqtSignal(str, str, bool)
+
+    enable_pause = pyqtSignal()
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -59,50 +61,60 @@ class ScopeOp(QObject, Machine):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
+
         self._init_variables()
         self.mscope = None
         self.img_signal = img_signal
-
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
         states = [
             {
-                "name": "standby",
-                "on_enter": [self.send_state],
+                "name": "pause",
+                "on_enter": [self._send_state, self._start_pause],
+                "on_exit": [self._end_pause],
             },
             {
-                "name": "autobrightness",
-                "on_enter": [self.send_state, self._start_autobrightness],
+                "name": "standby",
+                "on_enter": [self._send_state],
+            },
+            {
+                "name": "autobrightness_precells",
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "cellfinder",
-                "on_enter": [self.send_state, self._start_cellfinder],
+                "on_enter": [self._send_state, self._start_cellfinder],
+                "on_exit": [self._end_cellfinder],
+            },
+            {
+                "name": "autobrightness_postcells",
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "autofocus",
-                "on_enter": [self.send_state, self._start_autofocus],
+                "on_enter": [self._send_state, self._start_autofocus],
             },
             {
                 "name": "fastflow",
-                "on_enter": [self.send_state, self._start_fastflow],
+                "on_enter": [self._send_state, self._start_fastflow],
             },
             {
                 "name": "experiment",
-                "on_enter": [self.send_state, self._start_experiment],
+                "on_enter": [self._send_state, self._start_experiment],
             },
             {
                 "name": "intermission",
                 "on_enter": [
                     self._end_experiment,
-                    self.send_state,
+                    self._send_state,
                     self._start_intermission,
                 ],
             },
         ]
 
         if SIMULATION:
-            # skipped_states = ["fastflow"]
-            skipped_states = ["autofocus", "fastflow"]
+            # Fastflow state is defined but skipped in simulation mode, see _start_fastflow
+            skipped_states = ["autofocus"]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -110,19 +122,7 @@ class ScopeOp(QObject, Machine):
         self.add_transition(
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
-
-    def _freeze_liveview(self):
-        self.freeze_liveview.emit(True)
-
-    def _unfreeze_liveview(self):
-        self.freeze_liveview.emit(False)
-
-    def send_state(self):
-        # TODO perhaps delete this to print more useful statements. See future "logging" branch
-        self.update_msg.emit(f"Changing state to {self.state}.")
-        self.logger.info(f"Changing state to {self.state}.")
-
-        self.update_state.emit(self.state)
+        self.add_transition(trigger="unpause", source="pause", dest="fastflow")
 
     def _init_variables(self):
         self.running = None
@@ -141,6 +141,22 @@ class ScopeOp(QObject, Machine):
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
+
+    def _freeze_liveview(self):
+        self.freeze_liveview.emit(True)
+
+    def _unfreeze_liveview(self):
+        self.freeze_liveview.emit(False)
+
+    def _send_state(self):
+        # TODO perhaps delete this to print more useful statements. See future "logging" branch
+        state_name = self.state.split("_")[0]
+
+        if self.state != "standby":
+            self.update_msg.emit(f"{state_name.capitalize()} in progress...")
+
+        self.logger.info(f"Changing state to {self.state}.")
+        self.update_state.emit(state_name)
 
     def setup(self):
         self.create_timers.emit()
@@ -162,6 +178,7 @@ class ScopeOp(QObject, Machine):
                 "The following component(s) could not be instantiated: {}.".format(
                     (", ".join(failed_components)).capitalize()
                 ),
+                True,
             )
 
     def start(self):
@@ -170,7 +187,7 @@ class ScopeOp(QObject, Machine):
         self.next_state()
 
     def reset(self):
-        self.logger.debug("Resetting pneumatic module.")
+        self.logger.info("Resetting pneumatic module for rerun.")
         self.mscope.pneumatic_module.setDutyCycle(
             self.mscope.pneumatic_module.getMaxDutyCycle()
         )
@@ -181,8 +198,27 @@ class ScopeOp(QObject, Machine):
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
 
-    def _start_autobrightness(self):
+    def _start_pause(self):
+        self.running = False
 
+        try:
+            self.img_signal.disconnect()
+        except TypeError:
+            self.logger.info(
+                "Since img_signal is already disconnected, no signal/slot changes were made."
+            )
+
+        self.logger.info("Resetting pneumatic module for pause.")
+        self.mscope.pneumatic_module.setDutyCycle(
+            self.mscope.pneumatic_module.getMaxDutyCycle()
+        )
+        self.mscope.led.turnOff()
+
+    def _end_pause(self):
+        self.mscope.led.turnOn()
+        self.running = True
+
+    def _start_autobrightness(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
@@ -194,13 +230,22 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _start_autofocus(self):
+    def _end_cellfinder(self):
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
+    def _start_autofocus(self):
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
+        self.enable_pause.emit()
+
+        if SIMULATION:
+            self.logger.info(f"Skipping {self.state} state in simulation mode.")
+            sleep(1)
+            self.next_state()
+            return
+
         self.fastflow_routine = fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
         )
@@ -274,6 +319,7 @@ class ScopeOp(QObject, Machine):
             self.error.emit(
                 "Autobrightness failed",
                 "LED is too dim to run experiment.",
+                False,
             )
         else:
             self.img_signal.connect(self.run_autobrightness)
@@ -297,7 +343,7 @@ class ScopeOp(QObject, Machine):
         except NoCellsFound:
             self.cellfinder_result = -1
             self.logger.error("Cellfinder failed. No cells found.")
-            self.error.emit("Calibration failed", "No cells found.")
+            self.error.emit("Calibration failed", "No cells found.", False)
         else:
             self.img_signal.connect(self.run_cellfinder)
 
@@ -330,6 +376,7 @@ class ScopeOp(QObject, Machine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired focus within condenser's depth of field.",
+                    False,
                 )
 
     @pyqtSlot(np.ndarray, float)
@@ -341,7 +388,10 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            self.fastflow_routine.send((img, timestamp))
+            flowrate = self.fastflow_routine.send((img, timestamp))
+
+            if flowrate != None:
+                self.update_flowrate.emit(int(flowrate))
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = self.target_flowrate
@@ -356,6 +406,7 @@ class ScopeOp(QObject, Machine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired flowrate with syringe at max position.",
+                    False,
                 )
         except StopIteration as e:
             self.fastflow_result = e.value
@@ -385,6 +436,7 @@ class ScopeOp(QObject, Machine):
             self.update_img_count.emit(self.count)
 
             prev_res = count_parasitemia(self.mscope, img, self.count)
+
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
 
@@ -398,6 +450,7 @@ class ScopeOp(QObject, Machine):
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
+                        False,
                     )
                     return
                 else:
@@ -427,14 +480,14 @@ class ScopeOp(QObject, Machine):
                     )
                     flowrate = None
 
-                # TEMP comment out cell density routine, since this should be moved to NCS calculations
-                # try:
-                #     # density = self.density_routine.send(img)
-                # except LowDensity:
-                #     # TODO add recovery operation for low cell density
-                #     # TODO add cell density value
-                #     self.logger.warning("Low cell density.")
-                #     pass
+            # TEMP comment out cell density routine, since this should be moved to NCS calculations
+            # try:
+            #     # density = self.density_routine.send(img)
+            # except LowDensity:
+            #     # TODO add recovery operation for low cell density
+            #     # TODO add cell density value
+            #     self.logger.warning("Low cell density.")
+            #     pass
 
             # Update infopanel
             if focus_err != None:
@@ -453,12 +506,13 @@ class ScopeOp(QObject, Machine):
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
+
             # TEMP comment out density because it runs slow
             # self.img_metadata["cell_density"] = density
-            self.img_metadata[
-                "temperature"
-            ] = self.mscope.ht_sensor.getRelativeHumidity()
-            self.img_metadata["humidity"] = self.mscope.ht_sensor.getTemperature()
+            # self.img_metadata[
+            #     "humidity"
+            # ] = self.mscope.ht_sensor.getRelativeHumidity()
+            # self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
 
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
