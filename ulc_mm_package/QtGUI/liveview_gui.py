@@ -53,6 +53,9 @@ class LiveviewGUI(QMainWindow):
         # Update target flowrate in infopanel
         self.flowrate_lbl.setText(f"Target = {metadata['target_flowrate'][1]}")
 
+    def update_tcp(self, tcp_addr):
+        self.tcp_lbl.setText(f"SSH address: {tcp_addr}")
+
     @pyqtSlot(np.ndarray)
     def update_img(self, img: np.ndarray):
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
@@ -138,6 +141,7 @@ class LiveviewGUI(QMainWindow):
         self.img_count_val = QLabel("-")
         self.terminal_txt = QPlainTextEdit(self.terminal_msg)
         self.terminal_scroll = QScrollBar()
+        self.tcp_lbl = QLabel("-")
 
         # Populate infopanel with cell counts
         self.cell_count_title = QLabel("CELL COUNTS")
@@ -182,6 +186,7 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.img_count_lbl, 2, 1)
         self.infopanel_layout.addWidget(self.img_count_val, 2, 2)
         self.infopanel_layout.addWidget(self.terminal_txt, 14, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
         self.infopanel_layout.addWidget(self.cell_count_title, 3, 1, 1, 2)
         self.infopanel_layout.addWidget(self.healthy_count_lbl, 4, 1)
@@ -206,6 +211,8 @@ class LiveviewGUI(QMainWindow):
         self.terminal_txt.clear()
 
         # Set label values
+        self.update_tcp("---")
+
         self.update_img_count("---")
         self.update_cell_count(["---", "---", "---", "---"])
 
