@@ -19,6 +19,7 @@ from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
+from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
 from ulc_mm_package.QtGUI.gui_constants import (
@@ -436,7 +437,7 @@ class ScopeOp(QObject, Machine):
 
             self.update_img_count.emit(self.count)
 
-            prev_yogo_results = count_parasitemia(self.mscope, img, self.count)
+            prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(self.mscope, img, self.count)
 
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
@@ -482,8 +483,9 @@ class ScopeOp(QObject, Machine):
                     flowrate = None
 
             try:
-                for res in prev_yogo_results:
-                    self.density_routine.send(YOGO.filter_res(res))
+                for async_result in prev_yogo_results:
+                    filtered_preds = YOGO.filter_res(async_result.result)
+                    self.density_routine.send(filtered_preds)
             except LowDensity as e:
                 # TODO: transition to state "pause" and print some error messages to user
                 self.logger.error(str(e))
