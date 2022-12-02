@@ -440,6 +440,8 @@ class ScopeOp(QObject, Machine):
             prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(
                 self.mscope, img, self.count
             )
+            # we can use this for cell counts in the future, and also density in the now
+            filtered_yogo_predictions = [YOGO.filter_res(r.result) for r in prev_yogo_results]
 
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
@@ -485,9 +487,8 @@ class ScopeOp(QObject, Machine):
                     flowrate = None
 
             try:
-                for async_result in prev_yogo_results:
-                    filtered_preds = YOGO.filter_res(async_result.result)
-                    self.density_routine.send(filtered_preds)
+                for filtered_pred in filtered_yogo_predictions:
+                    self.density_routine.send(filtered_pred)
             except LowDensity as e:
                 # TODO: transition to state "pause" and print some error messages to user
                 self.logger.error(str(e))
