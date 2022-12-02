@@ -441,7 +441,9 @@ class ScopeOp(QObject, Machine):
                 self.mscope, img, self.count
             )
             # we can use this for cell counts in the future, and also density in the now
-            filtered_yogo_predictions = [YOGO.filter_res(r.result) for r in prev_yogo_results]
+            filtered_yogo_predictions = [
+                YOGO.filter_res(r.result) for r in prev_yogo_results
+            ]
 
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
