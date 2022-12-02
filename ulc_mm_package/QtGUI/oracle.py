@@ -42,6 +42,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     FLOWCELL_QC_FORM_LINK,
 )
 
+from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
+
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.QtGUI.form_gui import FormGUI
@@ -81,6 +83,7 @@ class Oracle(Machine):
         )
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
+
 
         # Instantiate GUI windows
         self.form_window = FormGUI()
@@ -174,8 +177,24 @@ class Oracle(Machine):
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
 
-        # Trigger first transition
-        self.next_state()
+        # Get tcp tunnel
+        try:
+            tcp_addr = make_tcp_tunnel()
+            self.liveview_window.update_tcp(tcp_addr)
+        except NgrokError:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH tunnel failed",
+                ('Could not create SSH tunnel so the scope cannot be accessed remotely unless it is rebooted.'
+                '\n\nClick "OK" to continue running without SSH.'),
+                buttons=Buttons.OK,
+            )
+
+            self.logger.warning("Running with failed SSH tunnel")
+            self.liveview_window.update_tcp("unavailable")
+
+            # Trigger first transition
+            self.next_state()
 
     def pause_handler(self):
         message_result = self.display_message(
@@ -388,9 +407,11 @@ class Oracle(Machine):
 
         self.logger.info("SHUTTING OFF ORACLE.")
 
+        self.message_window.close()
+
 
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     oracle = Oracle()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
