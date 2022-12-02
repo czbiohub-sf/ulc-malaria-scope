@@ -76,6 +76,7 @@ class Acquisition(QObject):
         self.mscope = mscope
 
     def get_img(self):
+        print(f'get_img at {perf_counter()}')
         try:
             self.img, self.img_timestamp = next(self.mscope.camera.yieldImages())
             self.update_scopeop.emit(self.img, self.img_timestamp)

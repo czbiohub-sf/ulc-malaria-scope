@@ -81,7 +81,7 @@ class AVTCamera:
 
     def connect(self) -> None:
         self.camera = self._get_camera()
-        self.camera.__enter__()
+        #self.camera.__enter__()
         self._camera_setup()
         self._isActivated = True
 
@@ -103,8 +103,9 @@ class AVTCamera:
             self.queue.queue.clear()
 
     def startAcquisition(self) -> None:
-        if not self.camera.is_streaming():
-            self.camera.start_streaming(self._frame_handler)
+        #if not self.camera.is_streaming():
+        #    self.camera.start_streaming(self._frame_handler)
+        pass
 
     def stopAcquisition(self) -> None:
         if self.camera.is_streaming():
@@ -124,11 +125,13 @@ class AVTCamera:
             Raised if no frames are received within 0.5s while the camera is streaming
         """
 
-        while True:
-            p0 = perf_counter()
-            frame = self.camera.get_frame()
-            print(f"got frame in {perf_counter() - p0} s")
-            yield frame, perf_counter()
+        with self.camera:
+            g = self.camera.get_frame_generator()
+            while True:
+                p0 = perf_counter()
+                frame = next(g).as_numpy_ndarray()[:, :, 0]
+                print(f"got frame in {perf_counter() - p0} s")
+                yield frame, perf_counter()
         """
         if not self.camera.is_streaming():
             self._flush_queue()
