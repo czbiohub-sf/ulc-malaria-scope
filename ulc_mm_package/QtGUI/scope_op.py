@@ -79,16 +79,15 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness_precells",
-                "on_enter": [self._send_state, self._start_autobrightness],
+                "on_enter": [self._send_state, self._start_autobrightness_precell],
             },
             {
                 "name": "cellfinder",
                 "on_enter": [self._send_state, self._start_cellfinder],
-                "on_exit": [self._end_cellfinder],
             },
             {
                 "name": "autobrightness_postcells",
-                "on_enter": [self._send_state, self._start_autobrightness],
+                "on_enter": [self._send_state, self._start_autobrightness_postcell],
             },
             {
                 "name": "autofocus",
@@ -218,7 +217,7 @@ class ScopeOp(QObject, Machine):
         self.mscope.led.turnOn()
         self.running = True
 
-    def _start_autobrightness(self):
+    def _start_autobrightness_precell(self):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
@@ -230,9 +229,14 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _end_cellfinder(self):
+    def _start_autobrightness_postcell(self):
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
+
+        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
+        self.autobrightness_routine.send(None)
+
+        self.img_signal.connect(self.run_autobrightness)
 
     def _start_autofocus(self):
         self.img_signal.connect(self.run_autofocus)
