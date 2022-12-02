@@ -124,6 +124,12 @@ class AVTCamera:
             Raised if no frames are received within 0.5s while the camera is streaming
         """
 
+        while True:
+            p0 = perf_counter()
+            frame = self.camera.get_frame()
+            print(f"got frame in {perf_counter() - p0} s")
+            yield frame, perf_counter()
+        """
         if not self.camera.is_streaming():
             self._flush_queue()
             self.startAcquisition()
@@ -134,6 +140,7 @@ class AVTCamera:
                 yield self.queue.get(timeout=0.5)
             except queue.Empty:
                 self.logger.warning("Dropped frame.")
+        """
 
     def setBinning(self, mode: str = "Average", bin_factor=1):
         while self.camera.is_streaming():
