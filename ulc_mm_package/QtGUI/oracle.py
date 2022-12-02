@@ -180,7 +180,7 @@ class Oracle(Machine):
         # Get tcp tunnel
         try:
             tcp_addr = make_tcp_tunnel()
-            self.logger.info(f"SSH address is {tcp_addr}")
+            self.logger.info(f"SSH address is {tcp_addr}.")
             self.liveview_window.update_tcp(tcp_addr)
         except NgrokError:
             self.display_message(
@@ -191,7 +191,7 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
 
-            self.logger.warning("Running with failed SSH tunnel")
+            self.logger.warning("SSH address could not be found.")
             self.liveview_window.update_tcp("unavailable")
 
         # Trigger first transition
