@@ -86,15 +86,14 @@ class AVTCamera:
 
     def setup_software_triggering(self):
         # always set the selector first so that folling features are applied correctly!
-        self.camera.triggerselector.set('framestart')
+        self.camera.TriggerSelector.set('FrameStart')
 
         # optional in this example but good practice as it might be needed for hadware triggering
-        self.camera.triggeractivation.set('risingedge')
+        self.camera.TriggerActivation.set('RisingEdge')
 
         # make self.camera listen to software trigger
-        self.camera.triggersource.set('software')
-        self.camera.triggermode.set('on')
-
+        self.camera.TriggerSource.set('Software')
+        self.camera.TriggerMode.set('On')
 
     def connect(self) -> None:
         self.camera = self._get_camera()
@@ -161,7 +160,7 @@ class AVTCamera:
         while self.camera.is_streaming():
             # Half a second timeout before queue Empty exception is raised
             try:
-                yield self._get_img(), perf_counter()
+                yield self._get_img()
             except queue.Empty:
                 self.dropped_count += 1
                 self.logger.warning("Dropped frame.")
