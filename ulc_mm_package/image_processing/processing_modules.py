@@ -19,7 +19,6 @@ from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
     NoCellsFound,
     LowDensity,
-    isDensitySufficient,
 )
 
 from ulc_mm_package.hardware.motorcontroller import InvalidMove

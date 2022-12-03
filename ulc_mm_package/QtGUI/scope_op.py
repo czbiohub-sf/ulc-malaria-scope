@@ -10,7 +10,7 @@ import logging
 
 from datetime import datetime
 from transitions import Machine
-from time import perf_counter, sleep
+from time import sleep
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
@@ -19,6 +19,8 @@ from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
+from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
@@ -266,7 +268,7 @@ class ScopeOp(QObject, Machine):
         )
         self.flowcontrol_routine.send(None)
 
-        self.density_routine = cell_density_routine(None)
+        self.density_routine = cell_density_routine()
         self.density_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
@@ -439,7 +441,13 @@ class ScopeOp(QObject, Machine):
 
             self.update_img_count.emit(self.count)
 
-            prev_res = count_parasitemia(self.mscope, img, self.count)
+            prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(
+                self.mscope, img, self.count
+            )
+            # we can use this for cell counts in the future, and also density in the now
+            filtered_yogo_predictions = [
+                YOGO.filter_res(r.result) for r in prev_yogo_results
+            ]
 
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
@@ -484,14 +492,13 @@ class ScopeOp(QObject, Machine):
                     )
                     flowrate = None
 
-            # TEMP comment out cell density routine, since this should be moved to NCS calculations
-            # try:
-            #     # density = self.density_routine.send(img)
-            # except LowDensity:
-            #     # TODO add recovery operation for low cell density
-            #     # TODO add cell density value
-            #     self.logger.warning("Low cell density.")
-            #     pass
+            try:
+                for filtered_pred in filtered_yogo_predictions:
+                    self.density_routine.send(filtered_pred)
+            except LowDensity as e:
+                # TODO: transition to state "pause" and print some error messages to user
+                self.logger.error(str(e))
+                raise e
 
             # Update infopanel
             if focus_err != None:
@@ -510,14 +517,12 @@ class ScopeOp(QObject, Machine):
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
-
             # TEMP comment out density because it runs slow
             # self.img_metadata["cell_density"] = density
             # self.img_metadata[
             #     "humidity"
             # ] = self.mscope.ht_sensor.getRelativeHumidity()
             # self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
-
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 
