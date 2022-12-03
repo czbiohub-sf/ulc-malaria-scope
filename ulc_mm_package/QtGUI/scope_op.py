@@ -125,6 +125,8 @@ class ScopeOp(QObject, Machine):
         self.add_transition(trigger="unpause", source="pause", dest="fastflow")
 
     def _init_variables(self):
+        self.start_time = None
+
         self.running = None
 
         self.autofocus_batch = []
@@ -187,11 +189,6 @@ class ScopeOp(QObject, Machine):
         self.next_state()
 
     def reset(self):
-        self.logger.info("Resetting pneumatic module for rerun.")
-        self.mscope.pneumatic_module.setDutyCycle(
-            self.mscope.pneumatic_module.getMaxDutyCycle()
-        )
-
         # Reset variables
         self._init_variables()
 
@@ -208,10 +205,6 @@ class ScopeOp(QObject, Machine):
                 "Since img_signal is already disconnected, no signal/slot changes were made."
             )
 
-        self.logger.info("Resetting pneumatic module for pause.")
-        self.mscope.pneumatic_module.setDutyCycle(
-            self.mscope.pneumatic_module.getMaxDutyCycle()
-        )
         self.mscope.led.turnOff()
 
     def _end_pause(self):
@@ -288,6 +281,10 @@ class ScopeOp(QObject, Machine):
 
         self.stop_timers.emit()
 
+        self.logger.info("Resetting pneumatic module for rerun.")
+        self.mscope.pneumatic_module.setDutyCycle(
+            self.mscope.pneumatic_module.getMaxDutyCycle()
+        )
         self.mscope.led.turnOff()
 
         closing_file_future = self.mscope.data_storage.close()
