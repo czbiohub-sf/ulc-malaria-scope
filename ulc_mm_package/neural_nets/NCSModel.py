@@ -202,7 +202,7 @@ class NCSModel:
         """
         input_tensor = self._format_image_to_tensor(input_img)
         self.executor.submit(
-            self.asyn_infer_queue.start_async, args={0: input_tensor}, kwargs={'userdata':id})
+            self.asyn_infer_queue.start_async, args=({0: input_tensor},), kwargs={'userdata':id}
         )
 
     def get_asyn_results(
