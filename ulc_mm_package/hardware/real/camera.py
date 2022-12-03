@@ -86,14 +86,14 @@ class AVTCamera:
 
     def setup_software_triggering(self):
         # always set the selector first so that folling features are applied correctly!
-        self.camera.TriggerSelector.set('FrameStart')
+        self.camera.TriggerSelector.set("FrameStart")
 
         # optional in this example but good practice as it might be needed for hadware triggering
-        self.camera.TriggerActivation.set('RisingEdge')
+        self.camera.TriggerActivation.set("RisingEdge")
 
         # make self.camera listen to software trigger
-        self.camera.TriggerSource.set('Software')
-        self.camera.TriggerMode.set('On')
+        self.camera.TriggerSource.set("Software")
+        self.camera.TriggerMode.set("On")
 
     def connect(self) -> None:
         self.camera = self._get_camera()
@@ -117,10 +117,14 @@ class AVTCamera:
         self.all_count += 1
         if frame.get_status() == vimba.FrameStatus.Complete:
             try:
-                self.queue.put_nowait((np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter()))
+                self.queue.put_nowait(
+                    (np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter())
+                )
             except queue.Full:
                 self.full_count += 1
-                self.logger.warning("camera returned incomplete frame. self.full_count={self.full_count}")
+                self.logger.warning(
+                    "camera returned incomplete frame. self.full_count={self.full_count}"
+                )
 
         cam.queue_frame(frame)
 
