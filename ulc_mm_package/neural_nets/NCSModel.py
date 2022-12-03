@@ -101,6 +101,8 @@ class NCSModel:
         self.asyn_infer_queue.set_callback(self._default_callback)
         self._asyn_results: List[AsyncInferenceResult] = []
 
+        self.executor = ThreadPoolExecutor()
+
     def _compile_model(
         self,
         model_path: str,
@@ -199,7 +201,9 @@ class NCSModel:
         To get results, call 'get_asyn_results'
         """
         input_tensor = self._format_image_to_tensor(input_img)
-        self.asyn_infer_queue.start_async({0: input_tensor}, userdata=id)
+        self.executor.submit(
+            self.asyn_infer_queue.start_async, args={0: input_tensor}, kwargs={'userdata':id})
+        )
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
@@ -245,3 +249,6 @@ class NCSModel:
 
     def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
         return Tensor(np.expand_dims(img, (0, 3)), shared_memory=False)
+
+    def shutdown(self):
+        self.executor.shutdown(wait=True)
