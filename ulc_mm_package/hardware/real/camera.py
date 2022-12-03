@@ -121,10 +121,19 @@ class AVTCamera:
                     (np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter())
                 )
             except queue.Full:
+                # we should bump up the size of the queue. When we get an image in _get_img,
+                # we should check the time that the image was added to the queue. If it is
+                # low enough, we should return that image. Would reduce possible instances
+                # of this error.
                 self.full_count += 1
                 self.logger.warning(
-                    "camera returned incomplete frame. self.full_count={self.full_count}"
+                    "queue full, couldn't add to frames. self.full_count={self.full_count}"
                 )
+        else:
+            self.logger.warning(
+                "camera returned incomplete frame. self.incomplete_count={self.incomplete_count}"
+            )
+            self.incomplete_count += 1
 
         cam.queue_frame(frame)
 
