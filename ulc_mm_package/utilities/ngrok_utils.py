@@ -196,3 +196,7 @@ def set_ngrok_auth_token():
 
     token = _get_ngrok_auth_token()
     _set_ngrok_auth_token(token)
+
+
+if __name__ == "__main__":
+    print(f"{make_tcp_tunnel()}")
