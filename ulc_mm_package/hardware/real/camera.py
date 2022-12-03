@@ -63,7 +63,7 @@ class AVTCamera:
         self.logger = logging.getLogger(__name__)
         self._isActivated = False
         self.vimba = Vimba.get_instance().__enter__()
-        self.queue = queue.Queue(maxsize=1)
+        self.queue: Queue[Tuple[np.ndarray, float]] = queue.Queue(maxsize=1)
         self.connect()
 
     def __del__(self):
@@ -140,8 +140,11 @@ class AVTCamera:
         if self.camera.is_streaming():
             self.camera.stop_streaming()
 
-    def _get_img(self) -> np.ndarray:
+    def _get_img(self) -> Tuple[np.ndarray, float]:
+        "trigger and then collect an image"
         self.camera.TriggerSoftware.run()
+        # if this times out, it will raise a queue.Empty exception
+        # this is caught by "yieldImages" and is reported as a dropped frame
         return self.queue.get(timeout=0.1)
 
     def yieldImages(self) -> Generator[Tuple[np.ndarray, float], None, None]:
