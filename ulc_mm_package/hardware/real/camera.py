@@ -105,7 +105,6 @@ class AVTCamera:
 
         self.all_count += 1
         if frame.get_status() == vimba.FrameStatus.Complete:
-            # self.queue.put((np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter()))
             try:
                 self.queue.put_nowait((np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter()))
             except queue.Full:
