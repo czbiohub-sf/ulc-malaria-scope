@@ -56,6 +56,10 @@ class BaslerCamera(Basler):
 
 class AVTCamera:
     def __init__(self):
+        self.all_count = 0
+        self.incomplete_count = 0
+        self.dropped_count = 0
+        self.full_count = 0
         self.logger = logging.getLogger(__name__)
         self._isActivated = False
         self.vimba = Vimba.get_instance().__enter__()
@@ -78,6 +82,19 @@ class AVTCamera:
         self.camera.ReverseY.set(True)
         self.setBinning(bin_factor=2)
         self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
+        self.setup_software_triggering()
+
+    def setup_software_triggering(self):
+        # always set the selector first so that folling features are applied correctly!
+        self.camera.triggerselector.set('framestart')
+
+        # optional in this example but good practice as it might be needed for hadware triggering
+        self.camera.triggeractivation.set('risingedge')
+
+        # make self.camera listen to software trigger
+        self.camera.triggersource.set('software')
+        self.camera.triggermode.set('on')
+
 
     def connect(self) -> None:
         self.camera = self._get_camera()
@@ -86,6 +103,9 @@ class AVTCamera:
         self._isActivated = True
 
     def deactivateCamera(self) -> None:
+        self.logger.info(
+            f"CAMERA status: all={self.all_count} | full={self.full_count} | incomplete={self.incomplete_count} | dropped={self.dropped_count}"
+        )
         self.stopAcquisition()
         self.vimba.__exit__(*sys.exc_info())
 
@@ -94,8 +114,15 @@ class AVTCamera:
             self.queue.get_nowait()
         except queue.Empty:
             pass
+
+        self.all_count += 1
         if frame.get_status() == vimba.FrameStatus.Complete:
-            self.queue.put((np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter()))
+            try:
+                self.queue.put_nowait((np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter()))
+            except queue.Full:
+                self.full_count += 1
+                self.logger.warning("camera returned incomplete frame. self.full_count={self.full_count}")
+
         cam.queue_frame(frame)
 
     def _flush_queue(self):
@@ -110,6 +137,10 @@ class AVTCamera:
         if self.camera.is_streaming():
             self.camera.stop_streaming()
 
+    def _get_img(self) -> np.ndarray:
+        self.camera.TriggerSoftware.run()
+        return self.queue.get(timeout=0.1)
+
     def yieldImages(self) -> Generator[Tuple[np.ndarray, float], None, None]:
         """Generator of images
 
@@ -123,7 +154,6 @@ class AVTCamera:
         queue.Empty:
             Raised if no frames are received within 0.5s while the camera is streaming
         """
-
         if not self.camera.is_streaming():
             self._flush_queue()
             self.startAcquisition()
@@ -131,8 +161,9 @@ class AVTCamera:
         while self.camera.is_streaming():
             # Half a second timeout before queue Empty exception is raised
             try:
-                yield self.queue.get(timeout=0.5)
+                yield self._get_img(), perf_counter()
             except queue.Empty:
+                self.dropped_count += 1
                 self.logger.warning("Dropped frame.")
 
     def setBinning(self, mode: str = "Average", bin_factor=1):
