@@ -131,7 +131,7 @@ class AVTCamera:
                 )
         else:
             self.logger.warning(
-                "camera returned incomplete frame. self.incomplete_count={self.incomplete_count}"
+                f"camera returned incomplete frame. self.incomplete_count={self.incomplete_count}"
             )
             self.incomplete_count += 1
 
