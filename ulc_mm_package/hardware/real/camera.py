@@ -127,8 +127,14 @@ class AVTCamera:
                 # of this error.
                 self.full_count += 1
                 self.logger.warning(
-                    "queue full, couldn't add to frames. self.full_count={self.full_count}"
+                    f"queue full, couldn't add to frames. self.full_count={self.full_count}"
                 )
+            except numpy.core._exceptions.MemoryError as e:
+                self.logger.error(
+                    "memory error when trying to copy image into numpy array"
+                )
+                raise e
+
         else:
             self.logger.warning(
                 f"camera returned incomplete frame. self.incomplete_count={self.incomplete_count}"
