@@ -200,3 +200,4 @@ def set_ngrok_auth_token():
 
 if __name__ == "__main__":
     print(f"{make_tcp_tunnel()}")
+    input("Press enter to exit and close the tunnel...")
