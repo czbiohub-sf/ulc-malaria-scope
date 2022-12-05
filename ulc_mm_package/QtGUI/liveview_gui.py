@@ -75,11 +75,10 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(list)
     def update_cell_count(self, cell_count):
-        # TODO Check that these are mapped properly and use cleaner implementation
-        self.healthy_count_val.setText(f"{cell_count[0]}")
-        self.ring_count_val.setText(f"{cell_count[1]}")
-        self.schizont_count_val.setText(f"{cell_count[2]}")
-        self.troph_count_val.setText(f"{cell_count[3]}")
+        self.healthy_count_val.setText(f"{cell_count.healthy}")
+        self.ring_count_val.setText(f"{cell_count.ring}")
+        self.schizont_count_val.setText(f"{cell_count.schizont}")
+        self.troph_count_val.setText(f"{cell_count.troph}")
 
     @pyqtSlot(str)
     def update_msg(self, msg):

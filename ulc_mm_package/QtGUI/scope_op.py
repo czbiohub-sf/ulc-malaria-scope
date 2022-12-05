@@ -20,7 +20,7 @@ from ulc_mm_package.hardware.scope_routines import *
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
@@ -53,7 +53,7 @@ class ScopeOp(QObject, Machine):
 
     update_state = pyqtSignal(str)
     update_img_count = pyqtSignal(int)
-    update_cell_count = pyqtSignal(list)
+    update_cell_count = pyqtSignal(ClassCountResult)
     update_msg = pyqtSignal(str)
 
     update_flowrate = pyqtSignal(int)
@@ -449,8 +449,8 @@ class ScopeOp(QObject, Machine):
                 YOGO.filter_res(r.result) for r in prev_yogo_results
             ]
 
-            # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
-            # self.update_cell_count.emit(cell_counts)
+            class_count_obj = YOGO.class_instance_count(filtered_yogo_predictions)
+            self.update_cell_count.emit(class_count_obj)
 
             try:
                 focus_err = self.PSSAF_routine.send(img)
