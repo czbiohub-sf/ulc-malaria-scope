@@ -2,6 +2,7 @@
 
 import sys
 import time
+import queue
 import threading
 import numpy as np
 import operator as op
@@ -9,13 +10,14 @@ import numpy.typing as npt
 
 from copy import copy
 from contextlib import contextmanager
-from concurrent.futures import ThreadPoolExecutor
 
+from threading import Thread
 from functools import partial
 from collections import namedtuple
 from typing import (
     Any,
     List,
+    Tuple,
     Sequence,
     Optional,
     Union,
@@ -99,7 +101,21 @@ class NCSModel:
         # used for asyn
         self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
+
+        self._asyn_infer_queue_buffer: queue.Queue[
+            Tuple[npt.NDArray, Optional[int]]
+        ] = queue.Queue()
+
         self._asyn_results: List[AsyncInferenceResult] = []
+
+        def work():
+            while True:
+                img, id_ = self._asyn_infer_queue_buffer.get()
+                self._asyn(img, id)
+                self._asyn_infer_queue_buffer.task_done()
+
+        self._asyn_buffer_queuer_thread = Thread(target=work)
+        self._asyn_buffer_queuer_thread.start()
 
     def _compile_model(
         self,
@@ -184,7 +200,7 @@ class NCSModel:
             return [r.result for r in sorted(res, key=op.attrgetter("id"))]
         return [r.result for r in res]
 
-    def asyn(
+    def _asyn(
         self,
         input_img: npt.NDArray,
         id: Optional[int] = None,
@@ -200,6 +216,13 @@ class NCSModel:
         """
         input_tensor = self._format_image_to_tensor(input_img)
         self.asyn_infer_queue.start_async({0: input_tensor}, userdata=id)
+
+    def asyn(
+        self,
+        input_img: npt.NDArray,
+        id: Optional[int] = None,
+    ) -> None:
+        self._asyn_infer_queue_buffer.put((input_img, id))
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
@@ -245,3 +268,6 @@ class NCSModel:
 
     def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
         return Tensor(np.expand_dims(img, (0, 3)), shared_memory=False)
+
+    def shutdown(self):
+        self._asyn_buffer_queuer_thread.join()
