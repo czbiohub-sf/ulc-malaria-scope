@@ -15,6 +15,7 @@ from functools import partial
 from collections import namedtuple
 from typing import (
     Any,
+    Set,
     List,
     Sequence,
     Optional,
@@ -101,7 +102,7 @@ class NCSModel:
         self.asyn_infer_queue.set_callback(self._default_callback)
         self._asyn_results: List[AsyncInferenceResult] = []
 
-        self._executor = ThreadPoolExecutor()
+        self._executor = ThreadPoolExecutor(max_workers=1)
         self._futures: Set[Future] = set()
 
     def _compile_model(
