@@ -229,10 +229,6 @@ class AcquisitionThread(QThread):
 
         if self.finish_saving_future != None:
             if self.finish_saving_future.done():
-                try:
-                    print(self.finish_saving_future.result())
-                except:
-                    print(self.finish_saving_future.exception())
                 self.doneSaving.emit(1)
                 self.finish_saving_future = None
 
