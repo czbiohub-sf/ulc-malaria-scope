@@ -23,6 +23,7 @@ from typing import (
     cast,
 )
 
+from ulc_mm_package.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
@@ -41,19 +42,6 @@ T = TypeVar("T", covariant=True)
 
 class TPUError(Exception):
     pass
-
-
-@contextmanager
-def lock_timeout(lock, timeout=-1):
-    """lock context manager w/ timeout
-
-    timeout value of -1 disables timeout
-    """
-    lock.acquire(timeout=timeout)
-    try:
-        yield
-    finally:
-        lock.release()
 
 
 AsyncInferenceResult = namedtuple("AsyncInferenceResult", ["id", "result"])

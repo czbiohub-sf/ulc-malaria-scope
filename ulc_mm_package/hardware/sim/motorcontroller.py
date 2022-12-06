@@ -3,6 +3,7 @@ import time
 import functools
 import threading
 
+from ulc_mm_package.lock_utils import lockNoBlock
 from ulc_mm_package.hardware.hardware_constants import (
     FULL_STEP_TO_TRAVEL_DIST_UM,
     DEFAULT_FULL_STEP_HOMING_TIMEOUT,
@@ -29,21 +30,6 @@ from ulc_mm_package.hardware.real.motorcontroller import DRV8825Nema as RealDRV8
 
 
 MOTOR_LOCK = threading.Lock()
-
-
-def lockNoBlock(lock):
-    def lockDecorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if not lock.locked():
-                with lock:
-                    return func(*args, **kwargs)
-            else:
-                raise MotorInMotion
-
-        return wrapper
-
-    return lockDecorator
 
 
 class DRV8825Nema(RealDRV8825Nema):
@@ -193,7 +179,7 @@ class DRV8825Nema(RealDRV8825Nema):
             time.sleep(stepdelay)
             self.pos += step_increment
 
-    @lockNoBlock(MOTOR_LOCK)
+    @lockNoBlock(MOTOR_LOCK, MotorInMotion)
     def move_rel(
         self,
         dir=Direction.CCW,
@@ -273,7 +259,7 @@ class DRV8825Nema(RealDRV8825Nema):
                 print("Intial delay = {}".format(initdelay))
                 print("Size of turn in degrees = {}".format(self.degree_calc(steps)))
 
-    @lockNoBlock(MOTOR_LOCK)
+    @lockNoBlock(MOTOR_LOCK, MotorInMotion)
     def move_abs(self, pos: int = 200, stepdelay=0.005, verbose=False, initdelay=0.05):
         """Move the motor to the given position (if valid).
 

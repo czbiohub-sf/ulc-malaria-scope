@@ -8,17 +8,17 @@ from collections import namedtuple
 from typing import Any, List, Union
 
 
+from ulc_mm_package.lock_utils import lock_timeout
+from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 from ulc_mm_package.neural_nets.NCSModel import (
     NCSModel,
     AsyncInferenceResult,
-    lock_timeout,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
     YOGO_CLASS_LIST,
 )
-from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
 
 ClassCountResult = namedtuple(
