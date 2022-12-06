@@ -10,4 +10,4 @@ YOGO_MODEL_DIR = "../neural_nets/yogo_model_files/glowing-sunset-342.xml"
 
 from typing import Tuple
 
-YOGO_CLASS_LIST: Tuple[str,...] = ("healthy", "ring", "schizont", "troph")
+YOGO_CLASS_LIST: Tuple[str, ...] = ("healthy", "ring", "schizont", "troph")

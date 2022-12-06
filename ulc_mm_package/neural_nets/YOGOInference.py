@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 
 from collections import namedtuple
-from typing import Any,List, Union
+from typing import Any, List, Union
 
 
 from ulc_mm_package.neural_nets.NCSModel import (
@@ -16,12 +16,14 @@ from ulc_mm_package.neural_nets.NCSModel import (
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
-    YOGO_CLASS_LIST
+    YOGO_CLASS_LIST,
 )
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
 
-ClassCountResult = namedtuple("ClassCountResult", YOGO_CLASS_LIST)
+ClassCountResult = namedtuple(
+    "ClassCountResult", YOGO_CLASS_LIST, defaults=[0 for _ in YOGO_CLASS_LIST]
+)
 
 
 class YOGO(NCSModel):
@@ -69,17 +71,16 @@ class YOGO(NCSModel):
         ClassCountResult mapping the class (represented as an integer) to its count
         for the given prediction
         """
-        filtered_pred = YOGO.filter_res(filtered_res)
-        class_preds = np.argmax(filtered_pred[0, 5:, :], axis=0)
+        class_preds = np.argmax(filtered_res[0, 5:, :], axis=0)
         unique, counts = np.unique(class_preds, return_counts=True)
         # this dict (raw_counts) will be missing a given class if that class isn't predicted at all
         # this may be confusing and a pain to handle, so just handle it on our side
         raw_counts = dict(zip(unique, counts))
-        num_classes = len(filtered_pred[0, 5:, 0])
+        num_classes = len(filtered_res[0, 5:, 0])
         class_counts = (raw_counts.get(i, 0) for i in range(num_classes))
         return ClassCountResult(*class_counts)
 
-    def __call__(self, input_img: npt.NDArray, idxs: Any=None):
+    def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)
 
     def syn(

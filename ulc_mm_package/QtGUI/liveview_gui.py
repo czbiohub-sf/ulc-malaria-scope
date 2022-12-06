@@ -2,12 +2,12 @@
 
 Displays camera preview and conveys info to user during runs."""
 
-from matplotlib.streamplot import streamplot
-import numpy as np
 import sys
+import numpy as np
 
 from time import perf_counter
 from qimage2ndarray import gray2qimage
+from matplotlib.streamplot import streamplot
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -31,6 +31,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     MAX_FRAMES,
 )
+from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
 class LiveviewGUI(QMainWindow):
@@ -73,8 +74,8 @@ class LiveviewGUI(QMainWindow):
     def update_img_count(self, img_count):
         self.img_count_val.setText(f"{img_count} / {MAX_FRAMES}")
 
-    @pyqtSlot(list)
-    def update_cell_count(self, cell_count):
+    @pyqtSlot(ClassCountResult)
+    def update_cell_count(self, cell_count: ClassCountResult):
         self.healthy_count_val.setText(f"{cell_count.healthy}")
         self.ring_count_val.setText(f"{cell_count.ring}")
         self.schizont_count_val.setText(f"{cell_count.schizont}")
@@ -213,7 +214,7 @@ class LiveviewGUI(QMainWindow):
         self.update_tcp("---")
 
         self.update_img_count("---")
-        self.update_cell_count(["---", "---", "---", "---"])
+        self.update_cell_count(ClassCountResult())
 
         self.update_focus("---")
         self.update_flowrate("---")
