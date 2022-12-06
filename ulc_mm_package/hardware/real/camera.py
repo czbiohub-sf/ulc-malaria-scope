@@ -113,7 +113,9 @@ class AVTCamera:
                 )
             except queue.Full:
                 self.full_count += 1
-                self.logger.warning(f"queue full in _frame_handler. full_count={self.full_count}")
+                self.logger.warning(
+                    f"queue full in _frame_handler. full_count={self.full_count}"
+                )
             except numpy.core._exceptions.MemoryError as e:
                 self.logger.error(
                     "memory error when trying to copy image into numpy array in _frame_handler"
