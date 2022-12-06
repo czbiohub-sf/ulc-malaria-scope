@@ -67,6 +67,7 @@ class Buttons(enum.Enum):
 
 class Oracle(Machine):
     def __init__(self):
+        self.shutoff_done = False
 
         # Save startup datetime
         self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
@@ -408,12 +409,17 @@ class Oracle(Machine):
         self.logger.debug("Closed liveview window.")
 
         self.logger.info("SHUTTING OFF ORACLE.")
+        self.shutoff_done = True
 
         self.message_window.close()
 
 
 if __name__ == "__main__":
-
     app = QApplication(sys.argv)
-    oracle = Oracle()
-    sys.exit(app.exec())
+
+    try:
+        oracle = Oracle()
+        app.exec()
+    finally:
+        if not self.shutoff_done:
+            oracle.shutoff()
