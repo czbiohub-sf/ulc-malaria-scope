@@ -56,6 +56,11 @@ class BaslerCamera(Basler):
 
 class AVTCamera:
     def __init__(self):
+        self.all_count = 0
+        self.incomplete_count = 0
+        self.dropped_count = 0
+        self.full_count = 0
+
         self.logger = logging.getLogger(__name__)
         self._isActivated = False
         self.vimba = Vimba.get_instance().__enter__()
@@ -86,6 +91,9 @@ class AVTCamera:
         self._isActivated = True
 
     def deactivateCamera(self) -> None:
+        self.logger.info(
+            f"CAMERA status: all={self.all_count} | full={self.full_count} | incomplete={self.incomplete_count} | dropped={self.dropped_count}"
+        )
         self.stopAcquisition()
         self.vimba.__exit__(*sys.exc_info())
 
@@ -94,8 +102,24 @@ class AVTCamera:
             self.queue.get_nowait()
         except queue.Empty:
             pass
+
+        self.all_count += 1
         if frame.get_status() == vimba.FrameStatus.Complete:
-            self.queue.put((np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter()))
+            try:
+                self.queue.put_nowait(
+                    (np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter())
+                )
+            except queue.Full:
+                self.full_count += 1
+                self.logger.warning(
+                    f"Queue was full in _frame_handler : (#{self.full_count})"
+                )
+        else:
+            self.incomplete_count += 1
+            self.logger.warning(
+                f"Camera returned incomplete frame! : (#{self.incomplete_count})"
+            )
+
         cam.queue_frame(frame)
 
     def _flush_queue(self):
@@ -133,7 +157,8 @@ class AVTCamera:
             try:
                 yield self.queue.get(timeout=0.5)
             except queue.Empty:
-                self.logger.warning("Dropped frame.")
+                self.dropped_count += 1
+                self.logger.warning(f"Dropped frame! : (#{self.dropped_count})")
 
     def setBinning(self, mode: str = "Average", bin_factor=1):
         while self.camera.is_streaming():
