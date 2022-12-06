@@ -737,6 +737,19 @@
           </property>
          </widget>
         </item>
+        <item row="4" column="1">
+         <widget class="QLabel" name="lblngrok">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>--- ngrok ---</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item row="4" column="2">

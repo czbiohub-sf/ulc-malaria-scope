@@ -13,7 +13,7 @@ from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlR
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
-from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
+from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
@@ -579,6 +579,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Misc
         self.fan.turn_on_all()
         self.btnExit.clicked.connect(self.exit)
+        try:
+            ngrok_address = make_tcp_tunnel()
+        except NgrokError as e:
+            print(f"Ngrok error : {e}")
+            ngrok_address = "-ngrok error-"
+        self.lblngrok.setText(f"{ngrok_address}")
 
         # Set slider min/max
         self.min_exposure_us = 100
