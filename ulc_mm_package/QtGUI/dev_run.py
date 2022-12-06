@@ -90,7 +90,6 @@ class AcquisitionThread(QThread):
         self.continuous_save = False
         self.liveview = True
         self.takeZStack = False
-        self.continuous_dir_name = None
         self.custom_image_prefix = ""
         self.updateMotorPos = True
         self.updateSyringePos = True

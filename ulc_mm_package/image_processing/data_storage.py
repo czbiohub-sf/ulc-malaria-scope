@@ -2,7 +2,7 @@ import logging
 import csv
 from time import perf_counter
 import shutil
-from typing import Dict, List
+from typing import Dict, List, Optional
 from os import mkdir, path
 from datetime import datetime
 
@@ -24,14 +24,14 @@ class DataStorageError(Exception):
 
 
 class DataStorage:
-    def __init__(self, default_fps: float = -1):
+    def __init__(self, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
         self.zw = ZarrWriter()
         self.md_writer = None
         self.metadata_file = None
         self.main_dir = None
         self.md_keys = None
-        if default_fps != -1:
+        if default_fps != None:
             self.fps = default_fps
             self.dt = 1 / self.fps
         else:
