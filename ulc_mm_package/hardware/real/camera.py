@@ -56,11 +56,6 @@ class BaslerCamera(Basler):
 
 class AVTCamera:
     def __init__(self):
-        self.all_count = 0
-        self.incomplete_count = 0
-        self.dropped_count = 0
-        self.full_count = 0
-
         self.logger = logging.getLogger(__name__)
 
         self.all_count = 0
