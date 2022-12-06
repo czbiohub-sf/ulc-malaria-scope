@@ -9,6 +9,7 @@ def lock_no_block(lock, exception):
     decorator to try to lock the given `lock`, and if you can
     not lock immediately, then raise `exception`
     """
+
     def lockDecorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
