@@ -228,7 +228,6 @@ class AcquisitionThread(QThread):
             self.temperatures.emit(1)
 
         if self.finish_saving_future != None:
-            print(self.finish_saving_future)
             if self.finish_saving_future.done():
                 try:
                     print(self.finish_saving_future.result())
