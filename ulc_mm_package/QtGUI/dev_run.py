@@ -866,7 +866,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         sens_temp = self.acquisitionThread.mscope.ht_sensor.getTemperature()
 
         self.lblTemperatures.setText(
-            f"Cam: {cam_temp:.2f} CPU: {cpu.temperature:.2f}: Sens: {sens_temp:.2f} (C)"
+            f"C: {cam_temp:.2f} CPU: {cpu.temperature:.2f} A: {sens_temp:.2f} (C)"
         )
 
     @pyqtSlot(int)
