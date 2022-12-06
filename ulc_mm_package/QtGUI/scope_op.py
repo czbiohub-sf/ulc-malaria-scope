@@ -189,11 +189,6 @@ class ScopeOp(QObject, Machine):
         self.next_state()
 
     def reset(self):
-        self.logger.info("Resetting pneumatic module for rerun.")
-        self.mscope.pneumatic_module.setDutyCycle(
-            self.mscope.pneumatic_module.getMaxDutyCycle()
-        )
-
         # Reset variables
         self._init_variables()
 
@@ -288,6 +283,10 @@ class ScopeOp(QObject, Machine):
 
         self.stop_timers.emit()
 
+        self.logger.info("Resetting pneumatic module for rerun.")
+        self.mscope.pneumatic_module.setDutyCycle(
+            self.mscope.pneumatic_module.getMaxDutyCycle()
+        )
         self.mscope.led.turnOff()
 
         closing_file_future = self.mscope.data_storage.close()
@@ -445,7 +444,7 @@ class ScopeOp(QObject, Machine):
             self.to_intermission()
         else:
             # Record timestamp before running routines
-            self.img_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
+            self.img_metadata["timestamp"] = timestamp
             self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
 
             self.update_img_count.emit(self.count)
@@ -529,12 +528,14 @@ class ScopeOp(QObject, Machine):
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
-            # TEMP comment out density because it runs slow
+
+            # TEMP comment out density and ht sensor because it runs slow
             # self.img_metadata["cell_density"] = density
             # self.img_metadata[
             #     "humidity"
             # ] = self.mscope.ht_sensor.getRelativeHumidity()
             # self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
+
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 

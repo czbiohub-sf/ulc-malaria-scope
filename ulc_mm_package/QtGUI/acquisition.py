@@ -28,7 +28,6 @@ class Acquisition(QObject):
         self.img_timestamp = None
         self.mscope = None
 
-        self.count = 0
         self.period = ACQUISITION_PERIOD
 
     @pyqtSlot()
@@ -79,7 +78,6 @@ class Acquisition(QObject):
         try:
             self.img, self.img_timestamp = next(self.mscope.camera.yieldImages())
             self.update_scopeop.emit(self.img, self.img_timestamp)
-            self.count += 1
         except Exception as e:
             # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
             # Once that happens, this can be swapped to catch the PyCameraException
