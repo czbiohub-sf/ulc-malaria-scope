@@ -2,12 +2,12 @@
 
 Displays camera preview and conveys info to user during runs."""
 
-from matplotlib.streamplot import streamplot
-import numpy as np
 import sys
+import numpy as np
 
 from time import perf_counter
 from qimage2ndarray import gray2qimage
+from matplotlib.streamplot import streamplot
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -31,6 +31,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     MAX_FRAMES,
 )
+from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
 class LiveviewGUI(QMainWindow):
@@ -73,13 +74,17 @@ class LiveviewGUI(QMainWindow):
     def update_img_count(self, img_count):
         self.img_count_val.setText(f"{img_count} / {MAX_FRAMES}")
 
-    @pyqtSlot(list)
-    def update_cell_count(self, cell_count):
-        # TODO Check that these are mapped properly and use cleaner implementation
-        self.healthy_count_val.setText(f"{cell_count[0]}")
-        self.ring_count_val.setText(f"{cell_count[1]}")
-        self.schizont_count_val.setText(f"{cell_count[2]}")
-        self.troph_count_val.setText(f"{cell_count[3]}")
+    @pyqtSlot(ClassCountResult)
+    def update_cell_count(self, cell_count: ClassCountResult):
+        healthy_count_str = f"{cell_count.healthy if cell_count.healthy > 0 else '---'}"
+        ring_count_str = f"{cell_count.ring if cell_count.ring > 0 else '---'}"
+        schiz_count_str = f"{cell_count.schizont if cell_count.schizont > 0 else '---'}"
+        troph_count_str = f"{cell_count.troph if cell_count.troph > 0 else '---'}"
+
+        self.healthy_count_val.setText(healthy_count_str)
+        self.ring_count_val.setText(ring_count_str)
+        self.schizont_count_val.setText(schiz_count_str)
+        self.troph_count_val.setText(troph_count_str)
 
     @pyqtSlot(str)
     def update_msg(self, msg):
@@ -214,7 +219,7 @@ class LiveviewGUI(QMainWindow):
         self.update_tcp("---")
 
         self.update_img_count("---")
-        self.update_cell_count(["---", "---", "---", "---"])
+        self.update_cell_count(ClassCountResult())
 
         self.update_focus("---")
         self.update_flowrate("---")

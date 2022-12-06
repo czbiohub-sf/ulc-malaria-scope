@@ -62,9 +62,15 @@ class AVTCamera:
         self.full_count = 0
 
         self.logger = logging.getLogger(__name__)
+
+        self.all_count = 0
+        self.incomplete_count = 0
+        self.dropped_count = 0
+        self.full_count = 0
+
         self._isActivated = False
         self.vimba = Vimba.get_instance().__enter__()
-        self.queue = queue.Queue(maxsize=1)
+        self.queue: queue.Queue[Tuple[np.ndarray, float]] = queue.Queue(maxsize=1)
         self.connect()
 
     def __del__(self):
@@ -92,7 +98,12 @@ class AVTCamera:
 
     def deactivateCamera(self) -> None:
         self.logger.info(
+<<<<<<< HEAD
             f"CAMERA status: all={self.all_count} | full={self.full_count} | incomplete={self.incomplete_count} | dropped={self.dropped_count}"
+=======
+            f"CAMERA status: all={self.all_count} | full={self.full_count} | "
+            f"incomplete={self.incomplete_count} | dropped={self.dropped_count}"
+>>>>>>> master
         )
         self.stopAcquisition()
         self.vimba.__exit__(*sys.exc_info())
@@ -106,6 +117,7 @@ class AVTCamera:
         self.all_count += 1
         if frame.get_status() == vimba.FrameStatus.Complete:
             try:
+<<<<<<< HEAD
                 self.queue.put_nowait((np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter()))
             except queue.Full:
                 self.full_count += 1
@@ -113,6 +125,26 @@ class AVTCamera:
         else:
             self.incomplete_count += 1
             self.logger.warning("Camera returned incomplete frame!")
+=======
+                self.queue.put_nowait(
+                    (frame.as_numpy_ndarray()[:, :, 0].copy(), perf_counter())
+                )
+            except queue.Full:
+                self.full_count += 1
+                self.logger.warning(
+                    f"queue full in _frame_handler. full_count={self.full_count}"
+                )
+            except numpy.core._exceptions.MemoryError as e:
+                self.logger.error(
+                    "memory error when trying to copy image into numpy array in _frame_handler"
+                )
+                raise e
+        else:
+            self.incomplete_count += 1
+            self.logger.warning(
+                f"camera returned incomplete frame. incomplete_count={self.incomplete_count}"
+            )
+>>>>>>> master
 
         cam.queue_frame(frame)
 
