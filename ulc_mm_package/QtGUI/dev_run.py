@@ -13,7 +13,7 @@ from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlR
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
-from ulc_mm_package.utilities.generate_msfc_ids import is_luhn_valid
+from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
@@ -82,7 +82,6 @@ class AcquisitionThread(QThread):
 
         # Flags and counters
         self.update_liveview = 1
-        self.im_counter = 0
         self.update_counter = 0
         self.num_loops = 50
         self.camera_activated = False
@@ -91,23 +90,20 @@ class AcquisitionThread(QThread):
         self.continuous_save = False
         self.liveview = True
         self.takeZStack = False
-        self.continuous_dir_name = None
         self.custom_image_prefix = ""
         self.updateMotorPos = True
         self.updateSyringePos = True
         self.fps_timer = perf_counter()
         self.start_time = perf_counter()
         self.external_dir = external_dir
-        self.metadata_writer = None
         self.click_to_advance = False
-        self.md_writer = None
-        self.metadata_file = None
         self.finish_saving_future = None
 
         # Hardware peripherals
         self.motor = mscope.motor
         self.pneumatic_module: PneumaticModule = mscope.pneumatic_module
-        self.zw = ZarrWriter()
+        mscope._init_data_storage(fps_lim=30)
+        self.data_storage = mscope.data_storage
 
         self.flow_controller: FlowController = FlowController(
             self.pneumatic_module, 600, 800
@@ -180,7 +176,7 @@ class AcquisitionThread(QThread):
             pressure = -1
 
         return {
-            "im_counter": self.im_counter,
+            "im_counter": self.data_storage.zw.arr_counter,
             "measurement_type": "placeholder",
             "sample_type": "placeholder",
             "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
@@ -203,12 +199,9 @@ class AcquisitionThread(QThread):
             imwrite(filename, image)
             self.single_save = False
 
-        if self.continuous_save and self.continuous_dir_name != None:
-            if self.zw.writable:
-                self.zw.threadedWriteSingleArray(image)
-                self.md_writer.writerow(self.getMetadata())
+        if self.continuous_save:
+            self.data_storage.writeData(image, self.getMetadata())
             self.measurementTime.emit(int(perf_counter() - self.start_time))
-            self.im_counter += 1
 
     def updateGUIElements(self):
         self.update_counter += 1
@@ -234,12 +227,7 @@ class AcquisitionThread(QThread):
             self.temperatures.emit(1)
 
         if self.finish_saving_future != None:
-            print(self.finish_saving_future)
             if self.finish_saving_future.done():
-                try:
-                    print(self.finish_saving_future.result())
-                except:
-                    print(self.finish_saving_future.exception())
                 self.doneSaving.emit(1)
                 self.finish_saving_future = None
 
@@ -250,35 +238,19 @@ class AcquisitionThread(QThread):
         if self.main_dir == None:
             self.main_dir = self.external_dir + datetime.now().strftime(DATETIME_FORMAT)
             mkdir(self.main_dir)
+            self.data_storage.main_dir = self.main_dir
 
         if self.continuous_save:
-            self.continuous_dir_name = (
-                datetime.now().strftime(DATETIME_FORMAT) + f"{self.custom_image_prefix}"
+            self.data_storage.createNewExperiment(
+                custom_experiment_name=f"{self.custom_image_prefix}",
+                datetime_str=datetime.now().strftime(DATETIME_FORMAT),
+                experiment_initialization_metdata={},
+                per_image_metadata_keys=self.getMetadata().keys(),
             )
-            mkdir(path.join(self.main_dir, self.continuous_dir_name))
-
-            filename = (
-                path.join(
-                    self.main_dir,
-                    self.continuous_dir_name,
-                    datetime.now().strftime(DATETIME_FORMAT),
-                )
-                + f"{self.custom_image_prefix}"
-            )
-            if self.md_writer:
-                self.metadata_file.close()
-            self.metadata_file = open(f"{filename}_metadata.csv", "w")
-            self.md_writer = csv.DictWriter(
-                self.metadata_file, fieldnames=self.getMetadata().keys()
-            )
-            self.md_writer.writeheader()
-
-            self.zw.createNewFile(filename)
+            if self.main_dir == None:
+                self.main_dir = self.data_storage.main_dir
 
             self.start_time = perf_counter()
-
-            self.im_counter = 0
-            self.timings = []
 
     def changeBinningMode(self):
         if self.camera_activated:
@@ -406,7 +378,7 @@ class AcquisitionThread(QThread):
         if self.active_autofocus:
             print("Autofocusing!")
             try:
-                steps_from_focus = -int(self.autofocus_model(img))
+                steps_from_focus = -int(self.autofocus_model(img).pop())
                 print(f"SSAF: {steps_from_focus} steps")
                 self.af_adjustment_done = True
 
@@ -420,114 +392,6 @@ class AcquisitionThread(QThread):
 
             except Exception as e:
                 print(f"Generic model inference error: {e}")
-
-
-class ExperimentSetupGUI(QtWidgets.QDialog):
-    """Form to input experiment parameters"""
-
-    def __init__(self, *args, **kwargs):
-        super(ExperimentSetupGUI, self).__init__(*args, **kwargs)
-
-        # Load the ui file
-        uic.loadUi(_EXPERIMENT_FORM_PATH, self)
-
-        # Set the focus order
-        self.setTabOrder(self.txtExperimentName, self.txtFlowCellID)
-        self.setTabOrder(self.txtFlowCellID, self.radBtn1x1)
-        self.setTabOrder(self.radBtn1x1, self.radBtn2x2)
-        self.setTabOrder(self.radBtn2x2, self.chkBoxExperimentSetupAutobrightness)
-        self.setTabOrder(
-            self.chkBoxExperimentSetupAutobrightness,
-            self.chkBoxExperimentSetupAutofocus,
-        )
-        self.setTabOrder(
-            self.chkBoxExperimentSetupAutofocus, self.chkBoxExperimentSetupFlowControl
-        )
-        self.setTabOrder(
-            self.chkBoxExperimentSetupFlowControl, self.sbExperimentSetupMinutes
-        )
-
-        self.txtExperimentName.setFocus()
-
-        # Parameters
-        self.experiment_name = ""
-        self.flowcell_id = ""
-        self.binningMode = 2
-        self.autobrightness = False
-        self.autofocus = False
-        self.autoflowcontrol = False
-        self.time_mins = None
-
-        # Set up event handlers
-        self.txtExperimentName.editingFinished.connect(self.txtExperimentNameHandler)
-        self.txtFlowCellID.editingFinished.connect(self.flowCellIDHandler)
-        self.radBtn1x1.toggled.connect(self.binningModeHandler)
-        self.radBtn2x2.toggled.connect(self.binningModeHandler)
-        self.chkBoxExperimentSetupAutobrightness.stateChanged.connect(
-            self.chkBoxAutobrightnessHandler
-        )
-        self.chkBoxExperimentSetupAutofocus.stateChanged.connect(
-            self.chkBoxAutofocusHandler
-        )
-        self.chkBoxExperimentSetupFlowControl.stateChanged.connect(
-            self.chkBoxFlowControlHandler
-        )
-        self.sbExperimentSetupMinutes.valueChanged.connect(self.sbTimerHandler)
-        self.btnStartExperiment.clicked.connect(self.btnStartExperimentHandler)
-
-    def txtExperimentNameHandler(self):
-        self.experiment_name = self.txtExperimentName.text()
-        print(self.experiment_name)
-
-    def flowCellIDHandler(self):
-        """TODO: Validate the flowcell ID"""
-        text = self.txtFlowCellID.text()
-        if is_luhn_valid(text):
-            self.flowcell_id = self.txtFlowCellID.text()
-        else:
-            pass
-        self.flowcell_id = self.txtFlowCellID.text()
-        print(self.flowcell_id)
-
-    def binningModeHandler(self):
-        if self.radBtn1x1.isChecked():
-            self.radBtn2x2.setChecked(False)
-            self.binningMode = 1
-        elif self.radBtn2x2.isChecked():
-            self.radBtn1x1.setChecked(False)
-            self.binningMode = 2
-        print(f"Binning mode: {self.binningMode}")
-
-    def chkBoxAutobrightnessHandler(self):
-        self.autobrightness = True if self.chkBoxAutobrightness.checkState() else False
-        print(self.autobrightness)
-
-    def chkBoxAutofocusHandler(self):
-        self.autofocus = True if self.chkBoxAutofocus.checkState() else False
-        print(self.autofocus)
-
-    def chkBoxFlowControlHandler(self):
-        self.autoflowcontrol = True if self.chkBoxFlowControl.checkState() else False
-        print(self.autoflowcontrol)
-
-    def sbTimerHandler(self):
-        self.time_mins = self.sbExperimentSetupMinutes.value()
-        print(self.time_mins)
-
-    def btnStartExperimentHandler(self):
-        print("Something interesting will happen here eventually...")
-        parameters = self.getAllParameters()
-
-    def getAllParameters(self) -> Dict:
-        return {
-            "experiment_name": self.experiment_name,
-            "flowcell_id": self.flowcell_id,
-            "binningMode": self.binningMode,
-            "autobrightness": self.autobrightness,
-            "autofocus": self.autofocus,
-            "autoflowcontrol": self.autoflowcontrol,
-            "time_mins": self.time_mins,
-        }
 
 
 class MalariaScopeGUI(QtWidgets.QMainWindow):
@@ -569,14 +433,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         # Create scope object
         mscope = MalariaScope()
+        self.mscope = mscope
         hardware_status = mscope.getComponentStatus()
         self.fan = mscope.fan
 
         # Load the ui file
         uic.loadUi(_UI_FILE_DIR, self)
-
-        # Experiment parameter form dialog
-        self.experiment_form_dialog = ExperimentSetupGUI(self)
 
         # Start the video stream
         self.acquisitionThread = AcquisitionThread(self.external_dir, mscope)
@@ -716,6 +578,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Misc
         self.fan.turn_on_all()
         self.btnExit.clicked.connect(self.exit)
+        try:
+            ngrok_address = make_tcp_tunnel()
+        except NgrokError as e:
+            print(f"Ngrok error : {e}")
+            ngrok_address = "-ngrok error-"
+        self.lblngrok.setText(f"{ngrok_address}")
 
         # Set slider min/max
         self.min_exposure_us = 100
@@ -772,12 +640,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.btnSnap.setEnabled(False)
             sleep(0.1)
             self.acquisitionThread.finish_saving_future = (
-                self.acquisitionThread.zw.threadedCloseFile()
+                self.acquisitionThread.data_storage.close()
             )
-            self.acquisitionThread.metadata_file.close()
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
-            num_images = self.acquisitionThread.im_counter
+            num_images = self.acquisitionThread.data_storage.zw.arr_counter
             print(
                 f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
             )
@@ -866,7 +733,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         sens_temp = self.acquisitionThread.mscope.ht_sensor.getTemperature()
 
         self.lblTemperatures.setText(
-            f"Cam: {cam_temp:.2f} CPU: {cpu.temperature:.2f}: Sens: {sens_temp:.2f} (C)"
+            f"C: {cam_temp:.2f} CPU: {cpu.temperature:.2f} A: {sens_temp:.2f} (C)"
         )
 
     @pyqtSlot(int)
@@ -1219,7 +1086,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    main_window = MalariaScopeGUI()
-    main_window.show()
-    sys.exit(app.exec_())
+    try:
+        app = QtWidgets.QApplication(sys.argv)
+        main_window = MalariaScopeGUI()
+        main_window.show()
+        app.exec_()
+    finally:
+        main_window.mscope.shutoff()

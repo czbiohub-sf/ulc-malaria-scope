@@ -2,12 +2,12 @@
 
 Displays camera preview and conveys info to user during runs."""
 
-from matplotlib.streamplot import streamplot
-import numpy as np
 import sys
+import numpy as np
 
 from time import perf_counter
 from qimage2ndarray import gray2qimage
+from matplotlib.streamplot import streamplot
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -31,6 +31,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     MAX_FRAMES,
 )
+from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
 class LiveviewGUI(QMainWindow):
@@ -53,6 +54,9 @@ class LiveviewGUI(QMainWindow):
         # Update target flowrate in infopanel
         self.flowrate_lbl.setText(f"Target = {metadata['target_flowrate'][1]}")
 
+    def update_tcp(self, tcp_addr):
+        self.tcp_lbl.setText(f"SSH address: {tcp_addr}")
+
     @pyqtSlot(np.ndarray)
     def update_img(self, img: np.ndarray):
         self.liveview_img.setPixmap(QPixmap.fromImage(gray2qimage(img)))
@@ -70,13 +74,17 @@ class LiveviewGUI(QMainWindow):
     def update_img_count(self, img_count):
         self.img_count_val.setText(f"{img_count} / {MAX_FRAMES}")
 
-    @pyqtSlot(list)
-    def update_cell_count(self, cell_count):
-        # TODO Check that these are mapped properly and use cleaner implementation
-        self.healthy_count_val.setText(f"{cell_count[0]}")
-        self.ring_count_val.setText(f"{cell_count[1]}")
-        self.schizont_count_val.setText(f"{cell_count[2]}")
-        self.troph_count_val.setText(f"{cell_count[3]}")
+    @pyqtSlot(ClassCountResult)
+    def update_cell_count(self, cell_count: ClassCountResult):
+        healthy_count_str = f"{cell_count.healthy if cell_count.healthy > 0 else '---'}"
+        ring_count_str = f"{cell_count.ring if cell_count.ring > 0 else '---'}"
+        schiz_count_str = f"{cell_count.schizont if cell_count.schizont > 0 else '---'}"
+        troph_count_str = f"{cell_count.troph if cell_count.troph > 0 else '---'}"
+
+        self.healthy_count_val.setText(healthy_count_str)
+        self.ring_count_val.setText(ring_count_str)
+        self.schizont_count_val.setText(schiz_count_str)
+        self.troph_count_val.setText(troph_count_str)
 
     @pyqtSlot(str)
     def update_msg(self, msg):
@@ -90,6 +98,10 @@ class LiveviewGUI(QMainWindow):
     @pyqtSlot(int)
     def update_flowrate(self, val):
         self.flowrate_val.setText(f"Actual = {val}")
+
+    @pyqtSlot()
+    def enable_pause(self):
+        self.pause_btn.setEnabled(True)
 
     def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
@@ -128,11 +140,13 @@ class LiveviewGUI(QMainWindow):
 
         # Populate infopanel with general components
         self.state_lbl = QLabel("-")
+        self.pause_btn = QPushButton("Pause")
         self.exit_btn = QPushButton("Exit")
         self.img_count_lbl = QLabel("Frame:")
         self.img_count_val = QLabel("-")
         self.terminal_txt = QPlainTextEdit(self.terminal_msg)
         self.terminal_scroll = QScrollBar()
+        self.tcp_lbl = QLabel("-")
 
         # Populate infopanel with cell counts
         self.cell_count_title = QLabel("CELL COUNTS")
@@ -168,14 +182,16 @@ class LiveviewGUI(QMainWindow):
         self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
         # Setup column size
-        self.state_lbl.setFixedWidth(150)
+        self.pause_btn.setFixedWidth(150)
         self.exit_btn.setFixedWidth(150)
 
-        self.infopanel_layout.addWidget(self.state_lbl, 1, 1)
+        self.infopanel_layout.addWidget(self.state_lbl, 0, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.pause_btn, 1, 1)
         self.infopanel_layout.addWidget(self.exit_btn, 1, 2)
         self.infopanel_layout.addWidget(self.img_count_lbl, 2, 1)
         self.infopanel_layout.addWidget(self.img_count_val, 2, 2)
         self.infopanel_layout.addWidget(self.terminal_txt, 14, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
         self.infopanel_layout.addWidget(self.cell_count_title, 3, 1, 1, 2)
         self.infopanel_layout.addWidget(self.healthy_count_lbl, 4, 1)
@@ -195,12 +211,21 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.flowrate_val, 13, 1)
 
     def set_infopanel_vals(self):
+        # Flush terminal
+        self.terminal_msg = ""
+        self.terminal_txt.clear()
+
         # Set label values
+        self.update_tcp("---")
+
         self.update_img_count("---")
-        self.update_cell_count(["---", "---", "---", "---"])
+        self.update_cell_count(ClassCountResult())
 
         self.update_focus("---")
         self.update_flowrate("---")
+
+        # Disable pause button at startup
+        self.pause_btn.setEnabled(False)
 
         # Setup status colors
         self._set_color(self.state_lbl, STATUS.IN_PROGRESS)
@@ -306,13 +331,15 @@ if __name__ == "__main__":
         "operator_id": "1234",
         "participant_id": "567",
         "flowcell_id": "A2",
-        "flowrate": "Fast",
+        "target_flowrate": ("Fast", 15),
         "site": "Uganda",
         "notes": "*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*\n*",
     }
     gui.update_experiment(experiment_metadata)
 
     gui.set_infopanel_vals()
+
+    gui.update_msg("Sample message here")
 
     gui.show()
     sys.exit(app.exec_())

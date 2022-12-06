@@ -1,4 +1,6 @@
 import os
+import subprocess
+import logging
 from urllib.error import URLError
 from urllib.request import urlopen
 import json
@@ -7,6 +9,7 @@ from typing import Dict
 from pyngrok import ngrok, conf
 
 NGROK_AUTH_TOKEN_ENV_VAR = "NGROK_AUTH_TOKEN"
+logger = logging.getLogger(__name__)
 
 
 class NgrokError(Exception):
@@ -36,7 +39,7 @@ def _get_ngrok_json() -> Dict:
         content = urlopen(addr).read().decode("utf-8")
         return json.loads(content)
     except URLError:
-        print("Address unavailable - ngrok is not on.")
+        logger.info("Address unavailable - ngrok is not on.")
 
 
 def is_ngrok_running() -> bool:
@@ -112,6 +115,27 @@ def _get_public_url_from_ngrok_tunnel_obj(tunnel_obj: ngrok.NgrokTunnel) -> str:
     return tunnel_obj.public_url
 
 
+def _kill_old_ngrok_sessions() -> None:
+    """Ensure any old ngrok tunnels are terminated.
+
+    The free-tier account is limited to one active tunnel. Ensure that any stale
+    sessions are terminated before a new one is made.
+
+    Exceptions
+    ----------
+    None:
+        Catch-all which logs the exception+traceback
+    """
+
+    try:
+        # Redirect subprocess output to DEVNULL to avoid cluttering the console.
+        subprocess.run(
+            ["killall", "ngrok"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT
+        )
+    except Exception:
+        logger.exception(f"Unknown failure when attempting to `killall ngrok`: {e}")
+
+
 def make_tcp_tunnel() -> str:
     """Returns the publicly accessible ngrok ssh address.
 
@@ -127,6 +151,7 @@ def make_tcp_tunnel() -> str:
     """
 
     try:
+        _kill_old_ngrok_sessions()
         set_ngrok_auth_token()
         return _get_public_url_from_ngrok_tunnel_obj(_make_tcp_tunnel())
     except NgrokError:
@@ -171,3 +196,8 @@ def set_ngrok_auth_token():
 
     token = _get_ngrok_auth_token()
     _set_ngrok_auth_token(token)
+
+
+if __name__ == "__main__":
+    print(f"{make_tcp_tunnel()}")
+    input("Press enter to exit and close the tunnel...")

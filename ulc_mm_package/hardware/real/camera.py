@@ -57,9 +57,15 @@ class BaslerCamera(Basler):
 class AVTCamera:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+
+        self.all_count = 0
+        self.incomplete_count = 0
+        self.dropped_count = 0
+        self.full_count = 0
+
         self._isActivated = False
         self.vimba = Vimba.get_instance().__enter__()
-        self.queue = queue.Queue(maxsize=1)
+        self.queue: queue.Queue[Tuple[np.ndarray, float]] = queue.Queue(maxsize=1)
         self.connect()
 
     def __del__(self):
@@ -86,14 +92,41 @@ class AVTCamera:
         self._isActivated = True
 
     def deactivateCamera(self) -> None:
+        self.logger.info(
+            f"CAMERA status: all={self.all_count} | full={self.full_count} | "
+            f"incomplete={self.incomplete_count} | dropped={self.dropped_count}"
+        )
         self.stopAcquisition()
         self.vimba.__exit__(*sys.exc_info())
 
     def _frame_handler(self, cam, frame):
-        if self.queue.full():
-            self.queue.get()
+        try:
+            self.queue.get_nowait()
+        except queue.Empty:
+            pass
+
+        self.all_count += 1
         if frame.get_status() == vimba.FrameStatus.Complete:
-            self.queue.put((np.copy(frame.as_numpy_ndarray()[:, :, 0]), perf_counter()))
+            try:
+                self.queue.put_nowait(
+                    (frame.as_numpy_ndarray()[:, :, 0].copy(), perf_counter())
+                )
+            except queue.Full:
+                self.full_count += 1
+                self.logger.warning(
+                    f"queue full in _frame_handler. full_count={self.full_count}"
+                )
+            except numpy.core._exceptions.MemoryError as e:
+                self.logger.error(
+                    "memory error when trying to copy image into numpy array in _frame_handler"
+                )
+                raise e
+        else:
+            self.incomplete_count += 1
+            self.logger.warning(
+                f"camera returned incomplete frame. incomplete_count={self.incomplete_count}"
+            )
+
         cam.queue_frame(frame)
 
     def _flush_queue(self):
@@ -131,6 +164,7 @@ class AVTCamera:
             try:
                 yield self.queue.get(timeout=0.5)
             except queue.Empty:
+                self.dropped_count += 1
                 self.logger.warning("Dropped frame.")
 
     def setBinning(self, mode: str = "Average", bin_factor=1):
