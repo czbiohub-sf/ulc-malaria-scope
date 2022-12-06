@@ -4,7 +4,7 @@ from typing import Optional
 from contextlib import contextmanager
 
 
-def lockNoBlock(lock, exception):
+def lock_no_block(lock, exception):
     def lockDecorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):

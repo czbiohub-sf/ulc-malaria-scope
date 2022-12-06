@@ -16,7 +16,7 @@ import adafruit_mprls
 
 from time import sleep, perf_counter
 
-from ulc_mm_package.lock_utils import lockNoBlock
+from ulc_mm_package.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_5V_PIN,
     SERVO_PWM_PIN,
@@ -134,7 +134,7 @@ class PneumaticModule:
         else:
             raise SyringeEndOfTravel()
 
-    @lockNoBlock(SYRINGE_LOCK, SyringeInMotion)
+    @lock_no_block(SYRINGE_LOCK, SyringeInMotion)
     def setDutyCycle(self, duty_cycle: int):
         if self.min_duty_cycle <= duty_cycle <= self.max_duty_cycle:
             if self.duty_cycle < duty_cycle:

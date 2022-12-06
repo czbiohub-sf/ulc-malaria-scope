@@ -12,7 +12,7 @@ import threading
 from time import perf_counter
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 
-from ulc_mm_package.lock_utils import lockNoBlock
+from ulc_mm_package.lock_utils import lock_no_block
 
 
 WRITE_LOCK = threading.Lock()
@@ -71,7 +71,7 @@ class ZarrWriter:
         except AttributeError:
             raise IOError(f"Error creating {filename}.zip")
 
-    @lockNoBlock(WRITE_LOCK, WriteInProgress)
+    @lock_no_block(WRITE_LOCK, WriteInProgress)
     def writeSingleArray(self, data):
         """Write a single array and optional metadata to the Zarr store.
 
@@ -99,7 +99,7 @@ class ZarrWriter:
     def threadedWriteSingleArray(self, *args, **kwargs):
         self.futures.append(self.executor.submit(self.writeSingleArray, *args))
 
-    @lockNoBlock(WRITE_LOCK, WriteInProgress)
+    @lock_no_block(WRITE_LOCK, WriteInProgress)
     def closeFile(self):
         """Close the Zarr store."""
         self.writable = False
