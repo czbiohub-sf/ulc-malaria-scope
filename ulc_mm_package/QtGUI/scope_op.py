@@ -20,7 +20,7 @@ from ulc_mm_package.hardware.scope_routines import *
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
@@ -53,7 +53,7 @@ class ScopeOp(QObject, Machine):
 
     update_state = pyqtSignal(str)
     update_img_count = pyqtSignal(int)
-    update_cell_count = pyqtSignal(list)
+    update_cell_count = pyqtSignal(ClassCountResult)
     update_msg = pyqtSignal(str)
 
     update_flowrate = pyqtSignal(int)
@@ -139,6 +139,7 @@ class ScopeOp(QObject, Machine):
         self.fastflow_result = None
         self.count = 0
         self.batch_count = 0
+        self.cell_counts = ClassCountResult()
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -296,6 +297,14 @@ class ScopeOp(QObject, Machine):
     def _start_intermission(self):
         self.experiment_done.emit()
 
+    def _update_cell_counts(self, recent_cell_counts: ClassCountResult) -> None:
+        new_counts = {
+            class_name: getattr(self.cell_counts, class_name)
+            + getattr(recent_cell_counts, class_name)
+            for class_name in self.cell_counts._fields
+        }
+        self.cell_counts = ClassCountResult(**new_counts)
+
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
         if not self.running:
@@ -449,8 +458,11 @@ class ScopeOp(QObject, Machine):
                 YOGO.filter_res(r.result) for r in prev_yogo_results
             ]
 
-            # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
-            # self.update_cell_count.emit(cell_counts)
+            for filtered_prediction in filtered_yogo_predictions:
+                class_count_obj = YOGO.class_instance_count(filtered_prediction)
+                self._update_cell_counts(class_count_obj)
+
+            self.update_cell_count.emit(self.cell_counts)
 
             try:
                 focus_err = self.PSSAF_routine.send(img)
