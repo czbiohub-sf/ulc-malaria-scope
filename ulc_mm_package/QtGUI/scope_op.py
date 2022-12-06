@@ -286,7 +286,7 @@ class ScopeOp(QObject, Machine):
             )
 
         if self.start_time != None:
-            runtime = perf_counter()-self.start_time
+            runtime = perf_counter() - self.start_time
             self.logger.info(f"Runtime was {runtime}")
             self.logger.info(f"Effective fps was {self.count / runtime}")
 
