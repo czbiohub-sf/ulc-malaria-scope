@@ -126,8 +126,6 @@ class ScopeOp(QObject, Machine):
         self.add_transition(trigger="unpause", source="pause", dest="fastflow")
 
     def _init_variables(self):
-        self.start_time = None
-
         self.running = None
 
         self.autofocus_batch = []
@@ -271,8 +269,6 @@ class ScopeOp(QObject, Machine):
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
-        self.start_time = perf_counter()
-
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
@@ -284,11 +280,6 @@ class ScopeOp(QObject, Machine):
             self.logger.info(
                 "Since img_signal is already disconnected, no signal/slot changes were made."
             )
-
-        if self.start_time != None:
-            runtime = perf_counter() - self.start_time
-            self.logger.info(f"Runtime was {runtime}")
-            self.logger.info(f"Effective fps was {self.count / runtime}")
 
         self.stop_timers.emit()
 
