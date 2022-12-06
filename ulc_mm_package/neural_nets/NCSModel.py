@@ -202,11 +202,13 @@ class NCSModel:
         To get results, call 'get_asyn_results'
         """
         input_tensor = self._format_image_to_tensor(input_img)
-        self._futures.add(self._executor.submit(
-            self.asyn_infer_queue.start_async,
-            args=({0: input_tensor},),
-            kwargs={"userdata": id},
-        ))
+        self._futures.add(
+            self._executor.submit(
+                self.asyn_infer_queue.start_async,
+                args=({0: input_tensor},),
+                kwargs={"userdata": id},
+            )
+        )
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
@@ -228,8 +230,7 @@ class NCSModel:
             return res
 
     def wait_all(self):
-        """ wait for all pending InferRequests to resolve
-        """
+        """wait for all pending InferRequests to resolve"""
         self.asyn_infer_queue.wait_all()
 
     def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
