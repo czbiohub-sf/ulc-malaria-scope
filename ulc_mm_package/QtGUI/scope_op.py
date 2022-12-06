@@ -494,7 +494,7 @@ class ScopeOp(QObject, Machine):
                     self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
                     self.PSSAF_routine.send(None)
 
-            # try:
+            try:
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
                 if not SIMULATION:
@@ -537,17 +537,14 @@ class ScopeOp(QObject, Machine):
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
-<<<<<<< HEAD
 
             # TEMP comment out density and ht sensor because it runs slow
-=======
-            # TEMP comment out density because it runs slow
->>>>>>> master
             # self.img_metadata["cell_density"] = density
             # self.img_metadata[
             #     "humidity"
             # ] = self.mscope.ht_sensor.getRelativeHumidity()
             # self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
+
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 
