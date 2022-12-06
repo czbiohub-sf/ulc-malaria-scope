@@ -205,6 +205,10 @@ class ScopeOp(QObject, Machine):
                 "Since img_signal is already disconnected, no signal/slot changes were made."
             )
 
+        self.logger.info("Resetting pneumatic module for pause.")
+        self.mscope.pneumatic_module.setDutyCycle(
+            self.mscope.pneumatic_module.getMaxDutyCycle()
+        )
         self.mscope.led.turnOff()
 
     def _end_pause(self):
@@ -435,55 +439,54 @@ class ScopeOp(QObject, Machine):
         else:
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = timestamp
-            # self.img_metadata["timestamp"] = datetime.now().strftime(DATETIME_FORMAT)
             self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
 
             self.update_img_count.emit(self.count)
 
-            # prev_res = count_parasitemia(self.mscope, img, self.count)
+            prev_res = count_parasitemia(self.mscope, img, self.count)
 
             # TODO update cell counts here, where cell_counts=[healthy #, ring #, schizont #, troph #]
             # self.update_cell_count.emit(cell_counts)
 
-            # try:
-            #     focus_err = self.PSSAF_routine.send(img)
-            # except MotorControllerError as e:
-            #     if not SIMULATION:
-            #         self.logger.error(
-            #             "Autofocus failed. Can't achieve focus within condenser's depth of field."
-            #         )
-            #         self.error.emit(
-            #             "Autofocus failed",
-            #             "Unable to achieve desired focus within condenser's depth of field.",
-            #             False,
-            #         )
-            #         return
-            #     else:
-            #         self.logger.warning(
-            #             f"Ignoring periodic SSAF exception in simulation mode. {e}"
-            #         )
-            #         focus_err = None
+            try:
+                focus_err = self.PSSAF_routine.send(img)
+            except MotorControllerError as e:
+                if not SIMULATION:
+                    self.logger.error(
+                        "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    )
+                    self.error.emit(
+                        "Autofocus failed",
+                        "Unable to achieve desired focus within condenser's depth of field.",
+                        False,
+                    )
+                    return
+                else:
+                    self.logger.warning(
+                        f"Ignoring periodic SSAF exception in simulation mode. {e}"
+                    )
+                    focus_err = None
 
-            #         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
-            #         self.PSSAF_routine.send(None)
+                    self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
+                    self.PSSAF_routine.send(None)
 
             # try:
-            #     flowrate = self.flowcontrol_routine.send((img, timestamp))
-            # except CantReachTargetFlowrate as e:
-            #     if not SIMULATION:
-            #         self.logger.error(
-            #             "Flow control failed. Syringe already at max position."
-            #         )
-            #         self.error.emit(
-            #             "Flow control failed",
-            #             "Unable to achieve desired flowrate with syringe at max position.",
-            #         )
-            #         return
-            #     else:
-            #         self.logger.warning(
-            #             f"Ignoring flowcontrol exception in simulation mode. {e}"
-            #         )
-            #         flowrate = None
+                flowrate = self.flowcontrol_routine.send((img, timestamp))
+            except CantReachTargetFlowrate as e:
+                if not SIMULATION:
+                    self.logger.error(
+                        "Flow control failed. Syringe already at max position."
+                    )
+                    self.error.emit(
+                        "Flow control failed",
+                        "Unable to achieve desired flowrate with syringe at max position.",
+                    )
+                    return
+                else:
+                    self.logger.warning(
+                        f"Ignoring flowcontrol exception in simulation mode. {e}"
+                    )
+                    flowrate = None
 
             # TEMP comment out cell density routine, since this should be moved to NCS calculations
             # try:
@@ -495,24 +498,24 @@ class ScopeOp(QObject, Machine):
             #     pass
 
             # Update infopanel
-            # if focus_err != None:
-            #     # TODO change this to non int?
-            #     self.update_focus.emit(int(focus_err))
-            # if flowrate != None:
-            #     self.update_flowrate.emit(int(flowrate))
+            if focus_err != None:
+                # TODO change this to non int?
+                self.update_focus.emit(int(focus_err))
+            if flowrate != None:
+                self.update_flowrate.emit(int(flowrate))
 
             # Update remaining metadata
-            # self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
-            # self.img_metadata[
-            #     "pressure_hpa"
-            # ] = self.mscope.pneumatic_module.getPressure()
-            # self.img_metadata[
-            #     "syringe_pos"
-            # ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
-            # self.img_metadata["flowrate"] = flowrate
-            # self.img_metadata["focus_error"] = focus_err
+            self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
+            self.img_metadata[
+                "pressure_hpa"
+            ] = self.mscope.pneumatic_module.getPressure()
+            self.img_metadata[
+                "syringe_pos"
+            ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
+            self.img_metadata["flowrate"] = flowrate
+            self.img_metadata["focus_error"] = focus_err
 
-            # TEMP comment out density because it runs slow
+            # TEMP comment out density and ht sensor because it runs slow
             # self.img_metadata["cell_density"] = density
             # self.img_metadata[
             #     "humidity"
