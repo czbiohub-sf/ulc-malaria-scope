@@ -31,6 +31,9 @@ class DataStorage:
         self.metadata_file = None
         self.main_dir = None
         self.md_keys = None
+        self.fps = 40
+        self.dt = 1 / self.fps
+        self.prev_write_time = 0
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
@@ -123,7 +126,8 @@ class DataStorage:
             initialize the metadata file in `createNewExperiment(...)`
         """
 
-        if self.zw.writable:
+        if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
+            self.prev_write_time = perf_counter()
             self.zw.threadedWriteSingleArray(image)
             self.md_writer.writerow(metadata)
 
