@@ -192,9 +192,9 @@ class MalariaScope:
         except Exception as e:
             self.logger.error(f"Temperature/humidity sensor initialization failed. {e}")
 
-    def _init_data_storage(self):
+    def _init_data_storage(self, fps_lim: float = -1):
         try:
-            self.data_storage = DataStorage()
+            self.data_storage = DataStorage(default_fps=fps_lim)
             self.data_storage_enabled = True
         except DataStorageError as e:
             self.logger.error(f"Data storage initialization failed. {e}")

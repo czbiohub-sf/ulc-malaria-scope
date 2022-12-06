@@ -103,6 +103,7 @@ class AcquisitionThread(QThread):
         # Hardware peripherals
         self.motor = mscope.motor
         self.pneumatic_module: PneumaticModule = mscope.pneumatic_module
+        mscope._init_data_storage(fps_lim=30)
         self.data_storage = mscope.data_storage
 
         self.flow_controller: FlowController = FlowController(

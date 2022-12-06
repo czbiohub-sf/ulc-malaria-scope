@@ -24,18 +24,18 @@ class DataStorageError(Exception):
 
 
 class DataStorage:
-    def __init__(self, default_dt: float = 0):
+    def __init__(self, default_fps: float = -1):
         self.logger = logging.getLogger(__name__)
         self.zw = ZarrWriter()
         self.md_writer = None
         self.metadata_file = None
         self.main_dir = None
         self.md_keys = None
-        if default_dt != 0:
-            self.fps = 40
+        if default_fps != -1:
+            self.fps = default_fps
             self.dt = 1 / self.fps
         else:
-            self.dt = default_dt
+            self.dt = 0
         self.prev_write_time = 0
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
