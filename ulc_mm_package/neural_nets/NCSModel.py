@@ -9,7 +9,7 @@ import numpy.typing as npt
 
 from copy import copy
 from contextlib import contextmanager
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 
 from functools import partial
 from collections import namedtuple
@@ -101,7 +101,8 @@ class NCSModel:
         self.asyn_infer_queue.set_callback(self._default_callback)
         self._asyn_results: List[AsyncInferenceResult] = []
 
-        self.executor = ThreadPoolExecutor()
+        self._executor = ThreadPoolExecutor()
+        self._futures: Set[Future] = set()
 
     def _compile_model(
         self,
@@ -201,11 +202,11 @@ class NCSModel:
         To get results, call 'get_asyn_results'
         """
         input_tensor = self._format_image_to_tensor(input_img)
-        self.executor.submit(
+        self._futures.add(self._executor.submit(
             self.asyn_infer_queue.start_async,
             args=({0: input_tensor},),
             kwargs={"userdata": id},
-        )
+        ))
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
@@ -219,12 +220,16 @@ class NCSModel:
         if timeout is None:
             timeout = -1
 
+        self._futures = {f for f in self._futures if not f.done()}
+
         with lock_timeout(self.lock, timeout=timeout):
             res = copy(self._asyn_results)
             self._asyn_results = []
             return res
 
     def wait_all(self):
+        """ wait for all pending InferRequests to resolve
+        """
         self.asyn_infer_queue.wait_all()
 
     def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
@@ -253,4 +258,4 @@ class NCSModel:
         return Tensor(np.expand_dims(img, (0, 3)), shared_memory=False)
 
     def shutdown(self):
-        self.executor.shutdown(wait=True)
+        self._executor.shutdown(wait=True)
