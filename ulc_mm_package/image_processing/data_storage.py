@@ -1,13 +1,13 @@
 import logging
-import cv2
 import csv
-import random
+from time import perf_counter
 import shutil
-import numpy as np
-
-from typing import Dict, List
+from typing import Dict, List, Optional
 from os import mkdir, path
 from datetime import datetime
+
+import cv2
+import numpy as np
 
 from ulc_mm_package.scope_constants import EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -24,13 +24,19 @@ class DataStorageError(Exception):
 
 
 class DataStorage:
-    def __init__(self):
+    def __init__(self, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
         self.zw = ZarrWriter()
         self.md_writer = None
         self.metadata_file = None
         self.main_dir = None
         self.md_keys = None
+        if default_fps != None:
+            self.fps = default_fps
+            self.dt = 1 / self.fps
+        else:
+            self.dt = 0
+        self.prev_write_time = 0
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
@@ -123,7 +129,8 @@ class DataStorage:
             initialize the metadata file in `createNewExperiment(...)`
         """
 
-        if self.zw.writable:
+        if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
+            self.prev_write_time = perf_counter()
             self.zw.threadedWriteSingleArray(image)
             self.md_writer.writerow(metadata)
 
