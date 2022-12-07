@@ -9,8 +9,6 @@ Servo Motor Pololu HD-1810MG:
     https://www.pololu.com/product/1047
 """
 
-import functools
-from re import S
 import threading
 import pigpio
 import board
@@ -18,6 +16,7 @@ import adafruit_mprls
 
 from time import sleep, perf_counter
 
+from ulc_mm_package.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_5V_PIN,
     SERVO_PWM_PIN,
@@ -39,21 +38,6 @@ from ulc_mm_package.hardware.pneumatic_module import (
 
 
 SYRINGE_LOCK = threading.Lock()
-
-
-def lockNoBlock(lock):
-    def lockDecorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if not lock.locked():
-                with lock:
-                    return func(*args, **kwargs)
-            else:
-                raise SyringeInMotion
-
-        return wrapper
-
-    return lockDecorator
 
 
 class PneumaticModule:
@@ -150,7 +134,7 @@ class PneumaticModule:
         else:
             raise SyringeEndOfTravel()
 
-    @lockNoBlock(SYRINGE_LOCK)
+    @lock_no_block(SYRINGE_LOCK, SyringeInMotion)
     def setDutyCycle(self, duty_cycle: int):
         if self.min_duty_cycle <= duty_cycle <= self.max_duty_cycle:
             if self.duty_cycle < duty_cycle:
