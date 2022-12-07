@@ -103,7 +103,7 @@ class NCSModel:
         self._asyn_results: List[AsyncInferenceResult] = []
 
         self._executor = ThreadPoolExecutor(max_workers=1)
-        self._futures: Set[Future] = set()
+        self._futures: List[Future] = []
 
     def _compile_model(
         self,
@@ -203,7 +203,7 @@ class NCSModel:
         To get results, call 'get_asyn_results'
         """
         input_tensor = self._format_image_to_tensor(input_img)
-        self._futures.add(
+        self._futures.append(
             self._executor.submit(
                 self.asyn_infer_queue.start_async,
                 args=({0: input_tensor},),
@@ -223,7 +223,7 @@ class NCSModel:
         if timeout is None:
             timeout = -1
 
-        self._futures = {f for f in self._futures if not f.done()}
+        self._futures = [f for f in self._futures if not f.done()]
 
         with lock_timeout(self.lock, timeout=timeout):
             res = copy(self._asyn_results)
