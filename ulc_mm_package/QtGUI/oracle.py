@@ -237,20 +237,20 @@ class Oracle(Machine):
         if message_result == QMessageBox.Ok:
             self.scopeop.to_intermission()
 
-    def error_handler(self, title, text, abort):
+    def error_handler(self, title, text, instant_abort):
         self.display_message(
             QMessageBox.Icon.Critical,
             title,
             text + _ERROR_MSG,
             buttons=Buttons.OK,
-            abort=abort,
+            instant_abort=instant_abort,
         )
 
-        if not abort:
+        if not instant_abort:
             self.scopeop.to_intermission()
 
     def display_message(
-        self, icon: QMessageBox.Icon, title, text, buttons=None, image=None, abort=False
+        self, icon: QMessageBox.Icon, title, text, buttons=None, image=None, instant_abort=False
     ):
         self.message_window.close()
 
@@ -275,7 +275,7 @@ class Oracle(Machine):
 
         message_result = self.message_window.exec()
 
-        if abort:
+        if instant_instant_abort:
             self.shutoff()
 
         return message_result
