@@ -444,13 +444,9 @@ if __name__ == "__main__":
         sys.__excepthook__(type, value, traceback)
         try:
             app.shutoff.emit()
-
-            # Pause so that QTimers can shut down before quitting
-            # sleep(1)
-            
             oracle.emergency_shutoff()
         except:
-            oracle.logger.fatal("EMERGENCY SHUTOFF FAILED IN ORACLE.")
+            oracle.logger.fatal("EMERGENCY ORACLE SHUT OFF FAILED.")
         sys.exit(1)
     sys.excepthook = shutoff_excepthook
 
