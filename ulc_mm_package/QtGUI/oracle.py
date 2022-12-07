@@ -257,7 +257,13 @@ class Oracle(Machine):
             self.scopeop.to_intermission()
 
     def display_message(
-        self, icon: QMessageBox.Icon, title, text, buttons=None, image=None, instant_abort=False
+        self,
+        icon: QMessageBox.Icon,
+        title,
+        text,
+        buttons=None,
+        image=None,
+        instant_abort=False,
     ):
         self.message_window.close()
 
@@ -428,12 +434,15 @@ class Oracle(Machine):
             if self.scopeop.mscope.data_storage.zw.writable:
                 self.scopeop.mscope.data_storage.close()
             else:
-                self.logger.info("Since data storage is already closed, no data storage operations were needed.")
+                self.logger.info(
+                    "Since data storage is already closed, no data storage operations were needed."
+                )
 
             # Shut off hardware
             self.scopeop.mscope.shutoff()
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
+
 
 if __name__ == "__main__":
     app = ShutoffApplication(sys.argv)
@@ -451,6 +460,7 @@ if __name__ == "__main__":
         except:
             oracle.logger.fatal("EMERGENCY ORACLE SHUT OFF FAILED.")
         sys.exit(1)
+
     sys.excepthook = shutoff_excepthook
 
     app.exec()
