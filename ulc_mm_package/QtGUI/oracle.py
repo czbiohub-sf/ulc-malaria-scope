@@ -387,6 +387,8 @@ class Oracle(Machine):
             self.scopeop.rerun()
 
     def shutoff(self):
+        self.logger.info("Starting oracle shut off.")
+
         # Wait for QTimers to shutoff
         self.logger.debug("Waiting for acquisition and liveview timer to terminate.")
         while (
@@ -417,9 +419,9 @@ class Oracle(Machine):
         self.logger.info("ORACLE SHUT OFF SUCCESSFUL.")
         self.shutoff_done = True
 
-        # self.message_window.close()
-
     def emergency_shutoff(self):
+        self.logger.warning("Starting emergency oracle shut off.")
+
         if not self.shutoff_done:
             # Close data storage if it's not already closed
             if self.scopeop.mscope.data_storage.zw.writable:
@@ -430,7 +432,7 @@ class Oracle(Machine):
             # Shut off hardware
             self.scopeop.mscope.shutoff()
 
-            print("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
+            self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
 if __name__ == "__main__":
     app = ShutoffApplication(sys.argv)
