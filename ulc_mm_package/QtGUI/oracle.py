@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QLabel,
 )
-from PyQt5.QtCore import Qt, QThread
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.scope_constants import (
@@ -63,6 +63,12 @@ class Buttons(enum.Enum):
     OK = QMessageBox.Ok
     CANCEL = QMessageBox.Cancel | QMessageBox.Ok
     YN = QMessageBox.No | QMessageBox.Yes
+
+class ShutoffApplication(QApplication):
+    shutoff = pyqtSignal()
+
+    def connect_signal(self, func):
+        self.shutoff.connect(func)
 
 
 class Oracle(Machine):
@@ -427,12 +433,19 @@ class Oracle(Machine):
             print("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    app = ShutoffApplication(sys.argv)
     oracle = Oracle()
+
+    app.connect_signal(oracle.scopeop.shutoff)
 
     def shutoff_excepthook(type, value, traceback):
         sys.__excepthook__(type, value, traceback)
         try:
+            app.shutoff.emit()
+
+            # Pause so that QTimers can shut down before quitting
+            # sleep(1)
+            
             oracle.emergency_shutoff()
         except:
             oracle.logger.fatal("EMERGENCY SHUTOFF FAILED IN ORACLE.")
