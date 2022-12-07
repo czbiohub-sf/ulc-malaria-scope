@@ -15,7 +15,6 @@ from functools import partial
 from collections import namedtuple
 from typing import (
     Any,
-    Set,
     List,
     Sequence,
     Optional,
