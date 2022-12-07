@@ -275,7 +275,7 @@ class Oracle(Machine):
 
         message_result = self.message_window.exec()
 
-        if instant_instant_abort:
+        if instant_abort:
             self.shutoff()
 
         return message_result
@@ -408,7 +408,7 @@ class Oracle(Machine):
         self.liveview_window.close()
         self.logger.debug("Closed liveview window.")
 
-        self.logger.info("SHUT OFF ORACLE.")
+        self.logger.info("ORACLE SHUT OFF SUCCESSFUL.")
         self.shutoff_done = True
 
         # self.message_window.close()
@@ -424,7 +424,7 @@ class Oracle(Machine):
             # Shut off hardware
             self.scopeop.mscope.shutoff()
 
-            print("EMERGENCY SHUT OFF ORACLE.")
+            print("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
