@@ -64,6 +64,7 @@ class Buttons(enum.Enum):
     CANCEL = QMessageBox.Cancel | QMessageBox.Ok
     YN = QMessageBox.No | QMessageBox.Yes
 
+
 class ShutoffApplication(QApplication):
     shutoff = pyqtSignal()
 
@@ -444,6 +445,8 @@ if __name__ == "__main__":
         sys.__excepthook__(type, value, traceback)
         try:
             app.shutoff.emit()
+            # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
+            sleep(3)
             oracle.emergency_shutoff()
         except:
             oracle.logger.fatal("EMERGENCY ORACLE SHUT OFF FAILED.")
