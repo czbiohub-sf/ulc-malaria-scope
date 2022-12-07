@@ -408,18 +408,35 @@ class Oracle(Machine):
         self.liveview_window.close()
         self.logger.debug("Closed liveview window.")
 
-        self.logger.info("SHUTTING OFF ORACLE.")
+        self.logger.info("SHUT OFF ORACLE.")
         self.shutoff_done = True
 
-        self.message_window.close()
+        # self.message_window.close()
 
+    def emergency_shutoff(self):
+        if not self.shutoff_done:
+            # Close data storage if it's not already closed
+            if self.scopeop.mscope.data_storage.zw.writable:
+                self.scopeop.mscope.data_storage.close()
+            else:
+                self.logger.info("Since data storage is already closed, no data storage operations were needed.")
+
+            # Shut off hardware
+            self.scopeop.mscope.shutoff()
+
+            print("EMERGENCY SHUT OFF ORACLE.")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    oracle = Oracle()
 
-    try:
-        oracle = Oracle()
-        app.exec()
-    finally:
-        if not oracle.shutoff_done:
-            oracle.shutoff()
+    def shutoff_excepthook(type, value, traceback):
+        sys.__excepthook__(type, value, traceback)
+        try:
+            oracle.emergency_shutoff()
+        except:
+            oracle.logger.fatal("EMERGENCY SHUTOFF FAILED IN ORACLE.")
+        sys.exit(1)
+    sys.excepthook = shutoff_excepthook
+
+    app.exec()
