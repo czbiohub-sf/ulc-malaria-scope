@@ -421,5 +421,5 @@ if __name__ == "__main__":
         oracle = Oracle()
         app.exec()
     finally:
-        if not self.shutoff_done:
+        if not oracle.shutoff_done:
             oracle.shutoff()
