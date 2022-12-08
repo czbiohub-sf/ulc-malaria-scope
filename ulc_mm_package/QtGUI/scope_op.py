@@ -506,7 +506,7 @@ class ScopeOp(QObject, Machine):
 
             try:
                 for filtered_pred in filtered_yogo_predictions:
-                    density = self.density_routine.send(filtered_pred)
+                    self.density_routine.send(filtered_pred)
             except LowDensity as e:
                 self.logger.warning(f"Cell density is too low.")
                 self.send_pause.emit(
@@ -535,7 +535,6 @@ class ScopeOp(QObject, Machine):
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
-            self.img_metadata["cell_density"] = density
 
             # TEMP comment out ht sensor because it runs slow
             # self.img_metadata[
