@@ -1,5 +1,6 @@
 from datetime import datetime
 from time import perf_counter, sleep
+from os import listdir
 
 from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
