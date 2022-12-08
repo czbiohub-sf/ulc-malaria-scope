@@ -150,23 +150,23 @@ def make_tcp_tunnel() -> str:
         Unable to create the ngrok tunnel.
     """
 
-    # First check for existing ngrok tunnel
     try:
+        # Check for existing ngrok tunnel
         if is_ngrok_running():
             addr = get_addr()
             return addr
+        else:
+            # Create a new tunnel
+            try:
+                _kill_old_ngrok_sessions()
+                set_ngrok_auth_token()
+                return _get_public_url_from_ngrok_tunnel_obj(_make_tcp_tunnel())
+            except NgrokError:
+                raise
     except:
         raise NgrokError(
             "NgrokError : existing ngrok tunnel detected but errored out during either is_ngrok_running() or get_addr()."
         )
-
-    # Create a new tunnel
-    try:
-        _kill_old_ngrok_sessions()
-        set_ngrok_auth_token()
-        return _get_public_url_from_ngrok_tunnel_obj(_make_tcp_tunnel())
-    except NgrokError:
-        raise
 
 
 def _get_ngrok_auth_token() -> str:
