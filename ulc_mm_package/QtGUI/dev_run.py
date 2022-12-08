@@ -14,12 +14,12 @@ from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
+from ulc_mm_package.utilities.email_utils import send_ngrok_email
 
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 
 import sys
-import csv
 import traceback
 import numpy as np
 import webbrowser
@@ -580,6 +580,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnExit.clicked.connect(self.exit)
         try:
             ngrok_address = make_tcp_tunnel()
+            send_ngrok_email()
         except NgrokError as e:
             print(f"Ngrok error : {e}")
             ngrok_address = "-ngrok error-"

@@ -41,4 +41,12 @@ Each scope needs to sign up for its own ngrok account (using a unique email) to 
 3. Add this token to the scope's persistent environment variables by doing the following:
   - Open the bashrc file: `nano /home/pi/.bashrc`
   - Add `export NGROK_AUTH_TOKEN=<TOKEN_HERE>` to the bottom of the file.
-4. TODO - set up the emailing functionality (`lfm_central@czbiohub.org`) (instead of each scope having a regular mailbox, which costs $7/mo for a @czbiohub.org address, we have a single @czbiohub.org address that all the scopes use to send emails.) **Fill this in with details once we have this implemented.
+
+
+### Setting up email functionality for sending back the ngrok address automatically
+We use a non Biohub free gmail account to do basic email sending. The email, `lfmscope@gmail.com` sends an email to itself which is then forwarded to all the people on its forwarding list.
+Gmail allows you to generate a unique password for each new device that you want to run on. Instructions to generate application-specific-passwords are [here](https://support.google.com/accounts/answer/185833?hl=en). Every microscope needs to have its own unique application-specific-password.
+1. Create an application specific password using the `lfmscope@gmail.com` account
+2. Place the password in the microscope's persistent environment variables (similar to what we did above for `ngrok`):
+  - Open the bashrc file: `nano /home/pi/.bashrc`
+  - Add `export GMAIL_TOKEN=<TOKEN_HERE>` to the bottom of the file.
