@@ -12,6 +12,8 @@ from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 DEFAULT_EMAIL_LINE = (
     "A million miles away and it's you who has the key to my tcp tunnel <3"  # Default
 )
+DATE_FMT = "%Y-%m-%d"
+
 logger = logging.getLogger(__name__)
 
 
@@ -81,7 +83,7 @@ def send_ngrok_email(
     except NgrokError:
         raise
     scope_name = _get_scope_name()
-    subject = scope_name + " " + f"{ngrok_addr}"
+    subject = f"{scope_name} - {ngrok_addr}"
     curr_time = datetime.now().strftime("%Y-%m-%d-%H%M%S")
     msg = (
         f"Current time: {curr_time}\n"
@@ -119,18 +121,18 @@ def _get_scope_name() -> str:
     return socket.gethostname()
 
 
-def _parse_date_str(datetime_str: str, fmt: str = "%Y-%m-%d"):
+def _parse_date_str(datetime_str: str, fmt: str = DATE_FMT):
     return datetime.strptime(datetime_str, fmt)
 
 
 def _get_days_since_inception(reset: bool = False) -> int:
     if reset:
-        start_date = os.environ.get("INCEPTION", datetime.now().strftime("%Y-%m-%d"))
-        os.environ["INCEPTION"] = datetime.now().strftime("%Y-%m-%d")
+        start_date = os.environ.get("INCEPTION", datetime.now().strftime(DATE_FMT))
+        os.environ["INCEPTION"] = datetime.now().strftime(DATE_FMT)
         return 0
     else:
-        start_date = os.environ.get("INCEPTION", datetime.now().strftime("%Y-%m-%d"))
-        curr_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = os.environ.get("INCEPTION", datetime.now().strftime(DATE_FMT))
+        curr_date = datetime.now().strftime(DATE_FMT)
         start_date, curr_date = _parse_date_str(start_date), _parse_date_str(curr_date)
         return (curr_date - start_date).days
 
