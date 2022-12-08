@@ -82,7 +82,7 @@ def get_addr() -> str:
 
 
 def _make_tcp_tunnel() -> ngrok.NgrokTunnel:
-    """Attempt to create an ngrok tcp tunnel.
+    """Attempt to create an ngrok tcp tunnel. Return an existing tunnel if one is already open.
 
     Returns
     -------
@@ -150,6 +150,17 @@ def make_tcp_tunnel() -> str:
         Unable to create the ngrok tunnel.
     """
 
+    # First check for existing ngrok tunnel
+    try:
+        if is_ngrok_running():
+            addr = get_addr()
+            return addr
+    except:
+        raise NgrokError(
+            "NgrokError : existing ngrok tunnel detected but errored out during either is_ngrok_running() or get_addr()."
+        )
+
+    # Create a new tunnel
     try:
         _kill_old_ngrok_sessions()
         set_ngrok_auth_token()
