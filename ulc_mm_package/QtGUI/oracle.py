@@ -31,7 +31,7 @@ from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
-    SIMULATION,
+    SSD_DIR,
 )
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import (
@@ -84,19 +84,14 @@ class Oracle(Machine):
         self._init_sigslots()
 
         # Get SSD directory
-        if SIMULATION:
-            ssd_dir = "../QtGUI/sim_media/pi/"
-        else:
-            ssd_dir = "/media/pi/"
-
         try:
-            self.ext_dir = ssd_dir + listdir(ssd_dir)[0] + "/"
+            self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
         except (FileNotFoundError, IndexError) as e:
-            print(f"Could not find any folders within {ssd_dir}. Check that the SSD is plugged in.")
+            print(f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in.")
             self.display_message(
                 QMessageBox.Icon.Critical,
                 "SSD not found",
-                f"Could not find any folders within {ssd_dir}. Check that the SSD is plugged in." + _ERROR_MSG,
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in." + _ERROR_MSG,
                 buttons=Buttons.OK,
                 abort=False,
             )
@@ -357,7 +352,7 @@ class Oracle(Machine):
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
         self.scopeop.mscope.data_storage.createNewExperiment(
-            "", self.datetime_str, self.experiment_metadata, PER_IMAGE_METADATA_KEYS
+            self.ext_dir, "", self.datetime_str, self.experiment_metadata, PER_IMAGE_METADATA_KEYS
         )
 
         # Update target flowrate in scopeop
