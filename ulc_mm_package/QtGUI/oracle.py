@@ -200,13 +200,16 @@ class Oracle(Machine):
         self.next_state()
 
     def pause_receiver(self, title, message):
+        self.scopeop.to_pause()
+
         self.pause_handler(
             icon=QMessageBox.Icon.Warning,
             title=title,
             message=message,
             buttons=Buttons.OK,
+            pause_done = True
         )
-        
+
     def pause_handler(self, 
                         icon=QMessageBox.Icon.Information, 
                         title="Pause run?", 
@@ -215,15 +218,18 @@ class Oracle(Machine):
                                 "without losing the current brightness and focus calibration."
                                 '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
                                 ),
-                        buttons=Buttons.CANCEL):
+                        buttons=Buttons.CANCEL,
+                        pause_done=False):
         message_result = self.display_message(
             icon,
             title,
             message,
             buttons=buttons,
         )
-        if message_result == QMessageBox.Ok:
+        if message_result == QMessageBox.Ok and not pause_done:
             self.scopeop.to_pause()
+        elif pause_done:
+            pass
         else:
             return
 

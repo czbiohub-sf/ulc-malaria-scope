@@ -507,16 +507,14 @@ class ScopeOp(QObject, Machine):
             try:
                 for filtered_pred in filtered_yogo_predictions:
                     density = self.density_routine.send(filtered_pred)
-                    
-                raise LowDensity("UHOH")
             except LowDensity as e:
                 self.logger.warning(f"Cell density is too low.")
                 self.send_pause.emit(
                     "Low cell density",
                     (
-                        "Cell density is too low, pausing operation so that more sample can be added "
+                        "Cell density is too low. Pausing operation so that more sample can be added, "
                         "without losing the current brightness and focus calibration."
-                        '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor and adding more sample.'
+                        '\n\nClick "OK" and wait for the next dialog before removing the condensor and adding more sample.'
                     )
                 )
 
@@ -537,9 +535,9 @@ class ScopeOp(QObject, Machine):
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
+            self.img_metadata["cell_density"] = density
 
-            # TEMP comment out density and ht sensor because it runs slow
-            # self.img_metadata["cell_density"] = density
+            # TEMP comment out ht sensor because it runs slow
             # self.img_metadata[
             #     "humidity"
             # ] = self.mscope.ht_sensor.getRelativeHumidity()
