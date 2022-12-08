@@ -8,7 +8,8 @@ from typing import Dict
 
 from pyngrok import ngrok, conf
 
-NGROK_AUTH_TOKEN_ENV_VAR = "NGROK_AUTH_TOKEN"
+from ulc_mm_package.scope_constants import NGROK_AUTH_TOKEN_ENV_VAR
+
 logger = logging.getLogger(__name__)
 
 
