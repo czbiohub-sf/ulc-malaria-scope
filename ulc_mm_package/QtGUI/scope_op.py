@@ -123,7 +123,9 @@ class ScopeOp(QObject, Machine):
         self.add_transition(
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
-        self.add_transition(trigger="unpause", source="pause", dest="fastflow")
+        self.add_transition(
+            trigger="unpause", source="pause", dest="autobrightness_postcells"
+        )
 
     def _init_variables(self):
         self.running = None
@@ -200,6 +202,7 @@ class ScopeOp(QObject, Machine):
 
         try:
             self.img_signal.disconnect()
+            self.logger.info("Disconnected img_signal.")
         except TypeError:
             self.logger.info(
                 "Since img_signal is already disconnected, no signal/slot changes were made."
@@ -340,7 +343,8 @@ class ScopeOp(QObject, Machine):
                 False,
             )
         else:
-            self.img_signal.connect(self.run_autobrightness)
+            if self.running:
+                self.img_signal.connect(self.run_autobrightness)
 
     @pyqtSlot(np.ndarray, float)
     def run_cellfinder(self, img, _timestamp):
@@ -363,7 +367,8 @@ class ScopeOp(QObject, Machine):
             self.logger.error("Cellfinder failed. No cells found.")
             self.error.emit("Calibration failed", "No cells found.", False)
         else:
-            self.img_signal.connect(self.run_cellfinder)
+            if self.running:
+                self.img_signal.connect(self.run_cellfinder)
 
     @pyqtSlot(np.ndarray, float)
     def run_autofocus(self, img, _timestamp):
@@ -377,7 +382,8 @@ class ScopeOp(QObject, Machine):
             self.autofocus_batch.append(img)
             self.batch_count += 1
 
-            self.img_signal.connect(self.run_autofocus)
+            if self.running:
+                self.img_signal.connect(self.run_autofocus)
         else:
             try:
                 self.autofocus_result = singleShotAutofocusRoutine(
@@ -434,7 +440,8 @@ class ScopeOp(QObject, Machine):
             self.update_flowrate.emit(self.fastflow_result)
             self.next_state()
         else:
-            self.img_signal.connect(self.run_fastflow)
+            if self.running:
+                self.img_signal.connect(self.run_fastflow)
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
@@ -543,4 +550,5 @@ class ScopeOp(QObject, Machine):
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 
-            self.img_signal.connect(self.run_experiment)
+            if self.running:
+                self.img_signal.connect(self.run_experiment)

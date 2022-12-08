@@ -142,7 +142,7 @@ def flowControlRoutine(
     """
 
     img, timestamp = yield
-    flow_val = 0
+    flow_val = None
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
