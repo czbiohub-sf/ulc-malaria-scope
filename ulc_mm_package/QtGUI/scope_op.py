@@ -43,6 +43,7 @@ class ScopeOp(QObject, Machine):
     error = pyqtSignal(str, str, bool)
 
     enable_pause = pyqtSignal()
+    send_pause = pyqtSignal(str, str)
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -505,11 +506,19 @@ class ScopeOp(QObject, Machine):
 
             try:
                 for filtered_pred in filtered_yogo_predictions:
-                    self.density_routine.send(filtered_pred)
+                    density = self.density_routine.send(filtered_pred)
+                    
+                raise LowDensity("UHOH")
             except LowDensity as e:
-                # TODO: transition to state "pause" and print some error messages to user
-                self.logger.error(str(e))
-                raise e
+                self.logger.warning(f"Cell density is too low.")
+                self.send_pause.emit(
+                    "Low cell density",
+                    (
+                        "Cell density is too low, pausing operation so that more sample can be added "
+                        "without losing the current brightness and focus calibration."
+                        '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor and adding more sample.'
+                    )
+                )
 
             # Update infopanel
             if focus_err != None:

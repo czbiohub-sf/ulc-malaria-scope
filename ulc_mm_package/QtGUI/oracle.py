@@ -160,6 +160,7 @@ class Oracle(Machine):
         self.scopeop.set_period.connect(self.acquisition.set_period)
 
         self.scopeop.enable_pause.connect(self.liveview_window.enable_pause)
+        self.scopeop.send_pause.connect(self.pause_receiver)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -198,16 +199,28 @@ class Oracle(Machine):
         # Trigger first transition
         self.next_state()
 
-    def pause_handler(self):
+    def pause_receiver(self, title, message):
+        self.pause_handler(
+            icon=QMessageBox.Icon.Warning,
+            title=title,
+            message=message,
+            buttons=Buttons.OK,
+        )
+        
+    def pause_handler(self, 
+                        icon=QMessageBox.Icon.Information, 
+                        title="Pause run?", 
+                        message=(
+                                "While paused, you can add more sample to the flow cell, "
+                                "without losing the current brightness and focus calibration."
+                                '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
+                                ),
+                        buttons=Buttons.CANCEL):
         message_result = self.display_message(
-            QMessageBox.Icon.Information,
-            "Pause run?",
-            (
-                "While paused, you can mix/add more sample to the flow cell, "
-                "without losing the current brightness and focus calibration."
-                '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
-            ),
-            buttons=Buttons.CANCEL,
+            icon,
+            title,
+            message,
+            buttons=buttons,
         )
         if message_result == QMessageBox.Ok:
             self.scopeop.to_pause()
@@ -220,7 +233,7 @@ class Oracle(Machine):
             "Paused run",
             (
                 "The condensor can now be removed."
-                '\n\nAfter mixing the sample and replacing the condensor, click "OK" to resume this run.'
+                '\n\nAfter adding the sample and replacing the condensor, click "OK" to resume this run.'
             ),
             buttons=Buttons.OK,
         )
