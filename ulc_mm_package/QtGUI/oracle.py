@@ -104,7 +104,7 @@ class Oracle(Machine):
                 f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
                 + _ERROR_MSG,
                 buttons=Buttons.OK,
-                abort=False,
+                instant_abort=False,
             )
             sys.exit(1)
 
