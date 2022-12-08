@@ -50,3 +50,4 @@ Gmail allows you to generate a unique password for each new device that you want
 2. Place the password in the microscope's persistent environment variables (similar to what we did above for `ngrok`):
   - Open the bashrc file: `nano /home/pi/.bashrc`
   - Add `export GMAIL_TOKEN=<TOKEN_HERE>` to the bottom of the file.
+3. Run both `oracle.py` and `dev_run.py` to ensure you're receiving emails and that there are no errors (for example, if you forget to set the email token, that will raise a custom `EmailError: no token set` error. Similarly if an ngrok token isn't set, a custom `NgrokError: no token set` error will be raised.)
