@@ -188,9 +188,9 @@ class Oracle(Machine):
         # Get tcp tunnel
         try:
             tcp_addr = make_tcp_tunnel()
-            send_ngrok_email()
             self.logger.info(f"SSH address is {tcp_addr}.")
             self.liveview_window.update_tcp(tcp_addr)
+            send_ngrok_email()
         except NgrokError:
             self.display_message(
                 QMessageBox.Icon.Warning,
