@@ -184,11 +184,13 @@ def main_acquisition_loop(mscope: MalariaScope):
     fake_exp_metadata = {k: k for k in EXPERIMENT_METADATA_KEYS}
     fake_per_img_metadata = {k: k for k in PER_IMAGE_METADATA_KEYS}
 
-    # Get SSD directory 
+    # Get SSD directory
     try:
         self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
     except (FileNotFoundError, IndexError) as e:
-        print(f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in.")
+        print(
+            f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+        )
         sys.exit(1)
 
     mscope.data_storage.createNewExperiment(

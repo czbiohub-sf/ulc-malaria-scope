@@ -87,11 +87,14 @@ class Oracle(Machine):
         try:
             self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
         except (FileNotFoundError, IndexError) as e:
-            print(f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in.")
+            print(
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+            )
             self.display_message(
                 QMessageBox.Icon.Critical,
                 "SSD not found",
-                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in." + _ERROR_MSG,
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+                + _ERROR_MSG,
                 buttons=Buttons.OK,
                 abort=False,
             )
@@ -352,7 +355,11 @@ class Oracle(Machine):
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
         self.scopeop.mscope.data_storage.createNewExperiment(
-            self.ext_dir, "", self.datetime_str, self.experiment_metadata, PER_IMAGE_METADATA_KEYS
+            self.ext_dir,
+            "",
+            self.datetime_str,
+            self.experiment_metadata,
+            PER_IMAGE_METADATA_KEYS,
         )
 
         # Update target flowrate in scopeop
