@@ -196,6 +196,18 @@ class ScopeOp(QObject, Machine):
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
 
+    def shutoff(self):
+        self.running = False
+
+        try:
+            self.img_signal.disconnect()
+        except TypeError:
+            self.logger.info(
+                "Since img_signal is already disconnected, no signal/slot changes were made."
+            )
+
+        self.stop_timers.emit()
+
     def _start_pause(self):
         self.running = False
 
@@ -217,6 +229,7 @@ class ScopeOp(QObject, Machine):
         self.running = True
 
     def _start_autobrightness_precell(self):
+
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
@@ -273,16 +286,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
-        self.running = False
-
-        try:
-            self.img_signal.disconnect()
-        except TypeError:
-            self.logger.info(
-                "Since img_signal is already disconnected, no signal/slot changes were made."
-            )
-
-        self.stop_timers.emit()
+        self.shutoff()
 
         self.logger.info("Resetting pneumatic module for rerun.")
         self.mscope.pneumatic_module.setDutyCycle(

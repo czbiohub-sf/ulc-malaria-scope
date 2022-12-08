@@ -18,6 +18,8 @@ from ulc_mm_package.hardware.camera import CameraError
 
 class SimCamera:
     def __init__(self):
+        self._isActivated = True
+
         try:
             self.binning = 1
             self.exposureTime_ms = DEFAULT_EXPOSURE_MS
