@@ -515,7 +515,7 @@ class ScopeOp(QObject, Machine):
                         "Cell density is too low. Pausing operation so that more sample can be added, "
                         "without losing the current brightness and focus calibration."
                         '\n\nClick "OK" and wait for the next dialog before removing the condensor and adding more sample.'
-                    )
+                    ),
                 )
 
             # Update infopanel

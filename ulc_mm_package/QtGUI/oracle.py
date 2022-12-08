@@ -207,19 +207,21 @@ class Oracle(Machine):
             title=title,
             message=message,
             buttons=Buttons.OK,
-            pause_done = True
+            pause_done=True,
         )
 
-    def pause_handler(self, 
-                        icon=QMessageBox.Icon.Information, 
-                        title="Pause run?", 
-                        message=(
-                                "While paused, you can add more sample to the flow cell, "
-                                "without losing the current brightness and focus calibration."
-                                '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
-                                ),
-                        buttons=Buttons.CANCEL,
-                        pause_done=False):
+    def pause_handler(
+        self,
+        icon=QMessageBox.Icon.Information,
+        title="Pause run?",
+        message=(
+            "While paused, you can add more sample to the flow cell, "
+            "without losing the current brightness and focus calibration."
+            '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
+        ),
+        buttons=Buttons.CANCEL,
+        pause_done=False,
+    ):
         message_result = self.display_message(
             icon,
             title,
