@@ -68,7 +68,11 @@ class MalariaScope:
         self.logger.info("Shutting off scope hardware.")
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
-        self.camera.deactivateCamera()
+        if self.camera._isActivated:
+            self.camera.deactivateCamera()
+            self.logger.info("Deactivated camera.")
+        else:
+            self.logger.info("Camera was not activated, no operations needed.")
 
     def getComponentStatus(self) -> Dict:
         """Returns a dictionary of component to initialization status.

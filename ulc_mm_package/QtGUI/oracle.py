@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QLabel,
 )
-from PyQt5.QtCore import Qt, QThread
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.scope_constants import (
@@ -65,8 +65,16 @@ class Buttons(enum.Enum):
     YN = QMessageBox.No | QMessageBox.Yes
 
 
+class ShutoffApplication(QApplication):
+    shutoff = pyqtSignal()
+
+    def connect_signal(self, func):
+        self.shutoff.connect(func)
+
+
 class Oracle(Machine):
     def __init__(self):
+        self.shutoff_done = False
 
         # Save startup datetime
         self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
@@ -236,20 +244,26 @@ class Oracle(Machine):
         if message_result == QMessageBox.Ok:
             self.scopeop.to_intermission()
 
-    def error_handler(self, title, text, abort):
+    def error_handler(self, title, text, instant_abort):
         self.display_message(
             QMessageBox.Icon.Critical,
             title,
             text + _ERROR_MSG,
             buttons=Buttons.OK,
-            abort=abort,
+            instant_abort=instant_abort,
         )
 
-        if not abort:
+        if not instant_abort:
             self.scopeop.to_intermission()
 
     def display_message(
-        self, icon: QMessageBox.Icon, title, text, buttons=None, image=None, abort=False
+        self,
+        icon: QMessageBox.Icon,
+        title,
+        text,
+        buttons=None,
+        image=None,
+        instant_abort=False,
     ):
         self.message_window.close()
 
@@ -274,7 +288,7 @@ class Oracle(Machine):
 
         message_result = self.message_window.exec()
 
-        if abort:
+        if instant_abort:
             self.shutoff()
 
         return message_result
@@ -380,6 +394,8 @@ class Oracle(Machine):
             self.scopeop.rerun()
 
     def shutoff(self):
+        self.logger.info("Starting oracle shut off.")
+
         # Wait for QTimers to shutoff
         self.logger.debug("Waiting for acquisition and liveview timer to terminate.")
         while (
@@ -407,13 +423,44 @@ class Oracle(Machine):
         self.liveview_window.close()
         self.logger.debug("Closed liveview window.")
 
-        self.logger.info("SHUTTING OFF ORACLE.")
+        self.logger.info("ORACLE SHUT OFF SUCCESSFUL.")
+        self.shutoff_done = True
 
-        self.message_window.close()
+    def emergency_shutoff(self):
+        self.logger.warning("Starting emergency oracle shut off.")
+
+        if not self.shutoff_done:
+            # Close data storage if it's not already closed
+            if self.scopeop.mscope.data_storage.zw.writable:
+                self.scopeop.mscope.data_storage.close()
+            else:
+                self.logger.info(
+                    "Since data storage is already closed, no data storage operations were needed."
+                )
+
+            # Shut off hardware
+            self.scopeop.mscope.shutoff()
+
+            self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
 
 if __name__ == "__main__":
-
-    app = QApplication(sys.argv)
+    app = ShutoffApplication(sys.argv)
     oracle = Oracle()
-    sys.exit(app.exec())
+
+    app.connect_signal(oracle.scopeop.shutoff)
+
+    def shutoff_excepthook(type, value, traceback):
+        sys.__excepthook__(type, value, traceback)
+        try:
+            app.shutoff.emit()
+            # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
+            sleep(3)
+            oracle.emergency_shutoff()
+        except:
+            oracle.logger.fatal("EMERGENCY ORACLE SHUT OFF FAILED.")
+        sys.exit(1)
+
+    sys.excepthook = shutoff_excepthook
+
+    app.exec()
