@@ -12,6 +12,7 @@ import enum
 import logging
 import numpy as np
 
+from os import listdir
 from transitions import Machine
 from time import perf_counter, sleep
 from logging.config import fileConfig
@@ -30,7 +31,7 @@ from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
-    EXT_DIR,
+    SSD_DIR,
 )
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import (
@@ -54,7 +55,7 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
 _VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
-_ERROR_MSG = ' Click "OK" to end this run.'
+_ERROR_MSG = '\n\nClick "OK" to end this run.'
 
 _IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
 _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
@@ -80,8 +81,36 @@ class Oracle(Machine):
         # Save startup datetime
         self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
 
+        # Instantiate GUI windows
+        self.form_window = FormGUI()
+        self.liveview_window = LiveviewGUI()
+        self.message_window = QMessageBox()
+
+        # Instantiate and configure Oracle elements
+        self._init_variables()
+        self._init_threads()
+        self._init_states()
+        self._init_sigslots()
+
+        # Get SSD directory
+        try:
+            self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+        except (FileNotFoundError, IndexError) as e:
+            print(
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+            )
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                "SSD not found",
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+                + _ERROR_MSG,
+                buttons=Buttons.OK,
+                instant_abort=False,
+            )
+            sys.exit(1)
+
         # Setup directory for logs
-        log_dir = path.join(EXT_DIR, "logs")
+        log_dir = path.join(self.ext_dir, "logs")
         if not path.isdir(log_dir):
             mkdir(log_dir)
 
@@ -93,14 +122,20 @@ class Oracle(Machine):
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
 
-        # Instantiate GUI windows
-        self.form_window = FormGUI()
-        self.liveview_window = LiveviewGUI()
-        self.message_window = QMessageBox()
+        # Get tcp tunnel
+        self._init_tcp()
 
-        # Instantiate variables
-        self._init_variables()
+        # Trigger first transition
+        self.next_state()
 
+    def _init_variables(self):
+        # Instantiate metadata dicts
+        self.form_metadata = None
+        self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
+
+        self.liveview_window.set_infopanel_vals()
+
+    def _init_threads(self):
         # Instantiate camera acquisition and thread
         self.acquisition = Acquisition()
         self.acquisition_thread = QThread()
@@ -113,7 +148,7 @@ class Oracle(Machine):
 
         self.scopeop_thread.started.connect(self.scopeop.setup)
 
-        # Configure state machine
+    def _init_states(self):
         states = [
             {
                 "name": "standby",
@@ -148,6 +183,7 @@ class Oracle(Machine):
             before=self._init_variables,
         )
 
+    def _init_sigslots(self):
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
         self.form_window.exit_btn.clicked.connect(self.shutoff)
@@ -185,7 +221,7 @@ class Oracle(Machine):
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
 
-        # Get tcp tunnel
+    def _init_tcp(self):
         try:
             tcp_addr = make_tcp_tunnel()
             self.logger.info(f"SSH address is {tcp_addr}.")
@@ -196,7 +232,8 @@ class Oracle(Machine):
                 QMessageBox.Icon.Warning,
                 "SSH tunnel failed",
                 (
-                    "Could not create SSH tunnel so the scope cannot be accessed remotely unless it is rebooted."
+                    "Could not create SSH tunnel so the scope cannot be accessed remotely. "
+                    "To recreate the SSH tunnel the scope needs to be rebooted."
                     '\n\nClick "OK" to continue running without SSH.'
                 ),
                 buttons=Buttons.OK,
@@ -204,9 +241,6 @@ class Oracle(Machine):
 
             self.logger.warning("SSH address could not be found.")
             self.liveview_window.update_tcp("unavailable")
-
-        # Trigger first transition
-        self.next_state()
 
     def pause_handler(self):
         message_result = self.display_message(
@@ -295,13 +329,6 @@ class Oracle(Machine):
 
         return message_result
 
-    def _init_variables(self):
-        # Instantiate metadata dicts
-        self.form_metadata = None
-        self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
-
-        self.liveview_window.set_infopanel_vals()
-
     def _start_setup(self):
         self.display_message(
             QMessageBox.Icon.Information,
@@ -345,7 +372,11 @@ class Oracle(Machine):
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
         self.scopeop.mscope.data_storage.createNewExperiment(
-            "", self.datetime_str, self.experiment_metadata, PER_IMAGE_METADATA_KEYS
+            self.ext_dir,
+            "",
+            self.datetime_str,
+            self.experiment_metadata,
+            PER_IMAGE_METADATA_KEYS,
         )
 
         # Update target flowrate in scopeop

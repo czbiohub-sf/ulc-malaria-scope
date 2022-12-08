@@ -9,7 +9,6 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from ulc_mm_package.scope_constants import EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
@@ -56,6 +55,7 @@ class DataStorage:
 
     def createNewExperiment(
         self,
+        ext_dir: str,
         custom_experiment_name: str,
         datetime_str: str,
         experiment_initialization_metdata: Dict,
@@ -76,7 +76,7 @@ class DataStorage:
         """
 
         if self.main_dir == None:
-            self.createTopLevelFolder(EXT_DIR, datetime_str)
+            self.createTopLevelFolder(ext_dir, datetime_str)
 
         # Create per-image metadata file
         time_str = datetime.now().strftime(DATETIME_FORMAT)

@@ -242,6 +242,7 @@ class AcquisitionThread(QThread):
 
         if self.continuous_save:
             self.data_storage.createNewExperiment(
+                self.external_dir,
                 custom_experiment_name=f"{self.custom_image_prefix}",
                 datetime_str=datetime.now().strftime(DATETIME_FORMAT),
                 experiment_initialization_metdata={},

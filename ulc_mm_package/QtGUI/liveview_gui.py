@@ -215,9 +215,6 @@ class LiveviewGUI(QMainWindow):
         self.terminal_msg = ""
         self.terminal_txt.clear()
 
-        # Set label values
-        self.update_tcp("---")
-
         self.update_img_count("---")
         self.update_cell_count(ClassCountResult())
 

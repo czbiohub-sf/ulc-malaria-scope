@@ -20,7 +20,7 @@ ACQUISITION_PERIOD = 1000.0 / 30.0
 LIVEVIEW_PERIOD = 1000
 
 # ================ Experiment timeout ================ #
-MAX_FRAMES = 40000  # Rounded up from 20 minutes of data at 30 FPS
+MAX_FRAMES = 20000  # Rounded up from 10 minutes of data at 30 FPS
 if SIMULATION:
     MAX_FRAMES = 2000
 
