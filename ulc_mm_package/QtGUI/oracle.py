@@ -240,9 +240,6 @@ class Oracle(Machine):
             self.logger.warning("SSH address could not be found.")
             self.liveview_window.update_tcp("unavailable")
 
-        # Trigger first transition
-        self.next_state()
-
     def pause_receiver(self, title, message):
         self.scopeop.to_pause()
 
