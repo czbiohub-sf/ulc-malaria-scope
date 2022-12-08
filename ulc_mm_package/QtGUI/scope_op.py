@@ -123,7 +123,9 @@ class ScopeOp(QObject, Machine):
         self.add_transition(
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
-        self.add_transition(trigger="unpause", source="pause", dest="autobrightness_postcells")
+        self.add_transition(
+            trigger="unpause", source="pause", dest="autobrightness_postcells"
+        )
 
     def _init_variables(self):
         self.running = None
@@ -379,7 +381,7 @@ class ScopeOp(QObject, Machine):
         if self.batch_count < AF_BATCH_SIZE:
             self.autofocus_batch.append(img)
             self.batch_count += 1
-            
+
             if self.running:
                 self.img_signal.connect(self.run_autofocus)
         else:
