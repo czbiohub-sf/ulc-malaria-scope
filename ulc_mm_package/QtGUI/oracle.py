@@ -42,6 +42,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     FLOWCELL_QC_FORM_LINK,
 )
 
+from ulc_mm_package.utilities.email_utils import send_ngrok_email
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -187,6 +188,7 @@ class Oracle(Machine):
         # Get tcp tunnel
         try:
             tcp_addr = make_tcp_tunnel()
+            send_ngrok_email()
             self.logger.info(f"SSH address is {tcp_addr}.")
             self.liveview_window.update_tcp(tcp_addr)
         except NgrokError:
