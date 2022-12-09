@@ -162,6 +162,14 @@ class ScopeOp(QObject, Machine):
         self.logger.info(f"Changing state to {self.state}.")
         self.update_state.emit(state_name)
 
+    def _update_cell_counts(self, recent_cell_counts: ClassCountResult) -> None:
+        new_counts = {
+            class_name: getattr(self.cell_counts, class_name)
+            + getattr(recent_cell_counts, class_name)
+            for class_name in self.cell_counts._fields
+        }
+        self.cell_counts = ClassCountResult(**new_counts)
+
     def setup(self):
         self.create_timers.emit()
 
@@ -302,14 +310,6 @@ class ScopeOp(QObject, Machine):
 
     def _start_intermission(self):
         self.experiment_done.emit()
-
-    def _update_cell_counts(self, recent_cell_counts: ClassCountResult) -> None:
-        new_counts = {
-            class_name: getattr(self.cell_counts, class_name)
-            + getattr(recent_cell_counts, class_name)
-            for class_name in self.cell_counts._fields
-        }
-        self.cell_counts = ClassCountResult(**new_counts)
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
