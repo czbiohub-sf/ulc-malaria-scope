@@ -92,5 +92,5 @@ class YOGO(NCSModel):
         res = infer_request.output_tensors[0].data[:]
         res = YOGO._format_res(res)
 
-        with lock_timeout(self.lock):
+        with lock_timeout(self.asyn_result_lock):
             self._asyn_results.append(AsyncInferenceResult(id=userdata, result=res))
