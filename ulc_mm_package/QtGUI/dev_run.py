@@ -435,6 +435,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Create scope object
         mscope = MalariaScope()
         self.mscope = mscope
+        self.mscope.set_gpio_callback(self.lid_open_handler)
         hardware_status = mscope.getComponentStatus()
         self.fan = mscope.fan
 
@@ -749,18 +750,24 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.chkBoxRecord.setEnabled(True)
         self.chkBoxMaxFPS.setEnabled(True)
 
+    def _enableLEDGUIElements(self):
+        self.vsLED.blockSignals(False)
+        self.vsLED.setEnabled(True)
+        self.led.setDutyCycle(int(self.vsLED.value()) / 100)
+        self.btnLEDToggle.setText(f"Turn off")
+
+    def _disableLEDGUIElements(self):
+        self.vsLED.blockSignals(True)
+        self.vsLED.setEnabled(False)
+        self.btnLEDToggle.setText(f"Turn on")
+
     def btnLEDToggleHandler(self):
         if self.led._isOn:
             self.led.turnOff()
-            self.vsLED.blockSignals(True)
-            self.vsLED.setEnabled(False)
-            self.btnLEDToggle.setText(f"Turn on")
+            self._disableLEDGUIElements()
         else:
-            self.vsLED.blockSignals(False)
-            self.vsLED.setEnabled(True)
             self.led.turnOn()
-            self.led.setDutyCycle(int(self.vsLED.value()) / 100)
-            self.btnLEDToggle.setText(f"Turn off")
+            self._enableLEDGUIElements()
 
     def btnAutobrightnessHandler(self):
         self.acquisitionThread.autobrightness.reset()
@@ -785,6 +792,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         perc = int(self.vsLED.value())
         self.lblLED.setText(f"{int(perc)}%")
         self.led.setDutyCycle(perc / 100)
+
+    def lid_open_handler(self, *args):
+        if self.mscope.led._isOn:
+            self.mscope.led.turnOff()
+            self._disableLEDGUIElements()
 
     def exposureSliderHandler(self):
         exposure = int(self.vsExposure.value())
