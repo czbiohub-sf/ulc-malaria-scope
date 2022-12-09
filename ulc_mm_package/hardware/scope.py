@@ -15,14 +15,22 @@ Components
 
 import logging
 import enum
-
 from time import sleep
-from typing import Dict, Optional
+from typing import Dict, Optional, Callable
 
+import pigpio
+
+from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
+
+
+class GPIOEdge(enum.Enum):
+    RISING_EDGE = 0
+    FALLING_EDGE = 1
+    EITHER_EDGE = 2
 
 
 class Components(enum.Enum):
@@ -210,3 +218,28 @@ class MalariaScope:
             self.tpu_enabled = True
         except TPUError as e:
             self.logger.error(f"TPU initialization failed. {e}")
+
+    def set_lim_sw_2_callback(
+        self,
+        callback_func: Callable,
+        interrupt_pin: int = LID_LIMIT_SWITCH2,
+        edge: GPIOEdge = GPIOEdge.RISING_EDGE,
+    ):
+        """Set a callback to run when the given interrupt pin is triggered.
+
+        Parameters
+        ----------
+        callback_func: Callable
+            Function to call when the interrupt is triggered.
+        interrupt_pin: int=15
+            Defaults to the lid limit switch.
+        edge: GPIOEdge
+
+        """
+        if not SIMULATION:
+            import pigpio  # Not the cleanest way to do this
+
+            pi = pigpio.pi()
+            pi.callback(interrupt_pin, edge.value, callback_func)
+        else:
+            self.logger.info(f"We're simulating, no callback set.")
