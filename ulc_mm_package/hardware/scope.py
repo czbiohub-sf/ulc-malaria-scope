@@ -224,6 +224,7 @@ class MalariaScope:
         callback_func: Callable,
         interrupt_pin: int = LID_LIMIT_SWITCH2,
         edge: GPIOEdge = GPIOEdge.RISING_EDGE,
+        glitch_filer_us: int = 5000,
     ):
         """Set a callback to run when the given interrupt pin is triggered.
 
@@ -234,12 +235,16 @@ class MalariaScope:
         interrupt_pin: int=15
             Defaults to the lid limit switch.
         edge: GPIOEdge
-
+        glitch_filer_us: int
+            Number of microseconds that a GPIO level change needs to stay steady for
+            before a level change is reported (this is meant for debouncing)
         """
+
         if not SIMULATION:
             import pigpio  # Not the cleanest way to do this
 
             pi = pigpio.pi()
+            pi.set_glitch_filter(interrupt_pin, glitch_filer_us)
             pi.callback(interrupt_pin, edge.value, callback_func)
         else:
             self.logger.info(f"We're simulating, no callback set.")
