@@ -107,10 +107,10 @@ def _get_pw() -> str:
     if pw == None:
         raise EmailError(
             f"{EMAIL_PW_TOKEN} environment variable not set.\n"
-            "You can set the ngrok token in the .bashrc file by:\n"
+            "You can set the email token in the .bashrc file by:\n"
             "Open the file with: nano /home/pi/.bashrc\n"
             "then add the following line (without the '<' '>' signs) to the file:\n"
-            "EXPORT NGROK_AUTH_TOKEN=<TOKEN_HERE>"
+            f"export {EMAIL_PW_TOKEN}=<TOKEN_HERE>"
         )
     return pw
 
