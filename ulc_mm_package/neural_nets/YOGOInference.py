@@ -8,7 +8,7 @@ from collections import namedtuple
 from typing import Any, List, Union
 
 
-from ulc_mm_package.lock_utils import lock_timeout
+from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 from ulc_mm_package.neural_nets.NCSModel import (
     NCSModel,
@@ -92,5 +92,5 @@ class YOGO(NCSModel):
         res = infer_request.output_tensors[0].data[:]
         res = YOGO._format_res(res)
 
-        with lock_timeout(self.lock):
+        with lock_timeout(self.asyn_result_lock):
             self._asyn_results.append(AsyncInferenceResult(id=userdata, result=res))

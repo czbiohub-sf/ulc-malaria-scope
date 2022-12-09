@@ -119,13 +119,13 @@ class LiveviewGUI(QMainWindow):
 
         self._load_infopanel_ui()
         self._load_liveview_ui()
-        self._load_thumbnail_ui()
+        # self._load_thumbnail_ui()
         self._load_metadata_ui()
 
         # Set up tabs
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
-        self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnails")
+        # self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnails")
         self.tab_widget.addTab(self.metadata_widget, "Experiment metadata")
 
         # Populate window
@@ -214,9 +214,6 @@ class LiveviewGUI(QMainWindow):
         # Flush terminal
         self.terminal_msg = ""
         self.terminal_txt.clear()
-
-        # Set label values
-        self.update_tcp("---")
 
         self.update_img_count("---")
         self.update_cell_count(ClassCountResult())

@@ -66,6 +66,10 @@ MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
 SIMULATION = MS_SIMULATE_FLAG > 0
 print(f"Simulation mode: {SIMULATION}")
 
+# ================ Environment variables ================ #
+NGROK_AUTH_TOKEN_ENV_VAR = "NGROK_AUTH_TOKEN"
+EMAIL_PW_TOKEN = "GMAIL_TOKEN"
+
 # ================ SSD directory constants ================ #
 if SIMULATION:
     SSD_DIR = "../QtGUI/sim_media/pi/"

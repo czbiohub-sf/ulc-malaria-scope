@@ -7,19 +7,19 @@ from ulc_mm_package.hardware.hardware_constants import (
 )
 
 from ulc_mm_package.scope_constants import SSD_DIR
-from ulc_mm_package.hardware.scope import MalariaScope, Components
+from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlRoutine
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
+from ulc_mm_package.utilities.email_utils import send_ngrok_email
 
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 
 import sys
-import csv
 import traceback
 import numpy as np
 import webbrowser
@@ -435,6 +435,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Create scope object
         mscope = MalariaScope()
         self.mscope = mscope
+        self.mscope.set_gpio_callback(self.lid_open_handler)
+        self.mscope.set_gpio_callback(
+            self.lid_closed_handler, edge=GPIOEdge.FALLING_EDGE
+        )
         hardware_status = mscope.getComponentStatus()
         self.fan = mscope.fan
 
@@ -581,6 +585,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnExit.clicked.connect(self.exit)
         try:
             ngrok_address = make_tcp_tunnel()
+            send_ngrok_email()
         except NgrokError as e:
             print(f"Ngrok error : {e}")
             ngrok_address = "-ngrok error-"
@@ -748,18 +753,24 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.chkBoxRecord.setEnabled(True)
         self.chkBoxMaxFPS.setEnabled(True)
 
+    def _enableLEDGUIElements(self):
+        self.vsLED.blockSignals(False)
+        self.vsLED.setEnabled(True)
+        self.led.setDutyCycle(int(self.vsLED.value()) / 100)
+        self.btnLEDToggle.setText(f"Turn off")
+
+    def _disableLEDGUIElements(self):
+        self.vsLED.blockSignals(True)
+        self.vsLED.setEnabled(False)
+        self.btnLEDToggle.setText(f"Turn on")
+
     def btnLEDToggleHandler(self):
         if self.led._isOn:
             self.led.turnOff()
-            self.vsLED.blockSignals(True)
-            self.vsLED.setEnabled(False)
-            self.btnLEDToggle.setText(f"Turn on")
+            self._disableLEDGUIElements()
         else:
-            self.vsLED.blockSignals(False)
-            self.vsLED.setEnabled(True)
             self.led.turnOn()
-            self.led.setDutyCycle(int(self.vsLED.value()) / 100)
-            self.btnLEDToggle.setText(f"Turn off")
+            self._enableLEDGUIElements()
 
     def btnAutobrightnessHandler(self):
         self.acquisitionThread.autobrightness.reset()
@@ -784,6 +795,16 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         perc = int(self.vsLED.value())
         self.lblLED.setText(f"{int(perc)}%")
         self.led.setDutyCycle(perc / 100)
+
+    def lid_open_handler(self, *args):
+        if self.mscope.led._isOn:
+            self.mscope.led.turnOff()
+            self._disableLEDGUIElements()
+
+    def lid_closed_handler(self, *args):
+        if not self.mscope.led._isOn:
+            self.mscope.led.turnOn()
+            self._enableLEDGUIElements()
 
     def exposureSliderHandler(self):
         exposure = int(self.vsExposure.value())

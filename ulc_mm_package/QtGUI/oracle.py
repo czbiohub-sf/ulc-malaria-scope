@@ -43,6 +43,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     FLOWCELL_QC_FORM_LINK,
 )
 
+from ulc_mm_package.utilities.email_utils import send_ngrok_email
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -223,15 +224,17 @@ class Oracle(Machine):
 
     def _init_tcp(self):
         try:
-            self.tcp_addr = make_tcp_tunnel()
-            self.logger.info(f"SSH address is {self.tcp_addr}.")
-            self.liveview_window.update_tcp(self.tcp_addr)
+            tcp_addr = make_tcp_tunnel()
+            self.logger.info(f"SSH address is {tcp_addr}.")
+            self.liveview_window.update_tcp(tcp_addr)
+            send_ngrok_email()
         except NgrokError:
             self.display_message(
                 QMessageBox.Icon.Warning,
                 "SSH tunnel failed",
                 (
-                    "Could not create SSH tunnel so the scope cannot be accessed remotely unless it is rebooted."
+                    "Could not create SSH tunnel so the scope cannot be accessed remotely. "
+                    "To recreate the SSH tunnel the scope needs to be rebooted."
                     '\n\nClick "OK" to continue running without SSH.'
                 ),
                 buttons=Buttons.OK,
@@ -264,10 +267,14 @@ class Oracle(Machine):
         pause_done=False,
     ):
         message_result = self.display_message(
-            icon,
-            title,
-            message,
-            buttons=buttons,
+            QMessageBox.Icon.Information,
+            "Pause run?",
+            (
+                "While paused, you can mix/add more sample to the flow cell "
+                "without ending the experiment."
+                '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
+            ),
+            buttons=Buttons.CANCEL,
         )
         if message_result == QMessageBox.Cancel:
             return
@@ -506,8 +513,9 @@ if __name__ == "__main__":
             # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
             sleep(3)
             oracle.emergency_shutoff()
-        except:
-            oracle.logger.fatal("EMERGENCY ORACLE SHUT OFF FAILED.")
+        except Exception as e:
+            oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED: {e}")
+
         sys.exit(1)
 
     sys.excepthook = shutoff_excepthook
