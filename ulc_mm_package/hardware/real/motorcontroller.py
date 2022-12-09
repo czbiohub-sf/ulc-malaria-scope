@@ -9,7 +9,6 @@ Datasheet:
 
 import logging
 import time
-import functools
 import threading
 import pigpio
 
@@ -24,7 +23,6 @@ from ulc_mm_package.hardware.hardware_constants import (
     MOTOR_DIR_PIN,
     MOTOR_FAULT_PIN,
     MOTOR_LIMIT_SWITCH1,
-    MOTOR_LIMIT_SWITCH2,
     ZERO_OFFSET_STEPS,
 )
 from ulc_mm_package.hardware.motorcontroller import (
