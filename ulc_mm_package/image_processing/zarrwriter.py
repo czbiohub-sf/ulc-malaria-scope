@@ -1,9 +1,9 @@
 f""" Simple Zarr storage format wrapper
 
--- Important Links -- 
+-- Important Links --
 Library Documentation:
     https://zarr.readthedocs.io/en/stable/index.html
-    
+
 """
 
 import functools
@@ -18,7 +18,7 @@ import threading
 from time import perf_counter
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 
-from ulc_mm_package.lock_utils import lock_no_block
+from ulc_mm_package.utilities.lock_utils import lock_no_block
 
 
 WRITE_LOCK = threading.Lock()
