@@ -219,7 +219,7 @@ class MalariaScope:
         except TPUError as e:
             self.logger.error(f"TPU initialization failed. {e}")
 
-    def set_lim_sw_2_callback(
+    def set_gpio_callback(
         self,
         callback_func: Callable,
         interrupt_pin: int = LID_LIMIT_SWITCH2,
@@ -246,5 +246,8 @@ class MalariaScope:
             pi = pigpio.pi()
             pi.set_glitch_filter(interrupt_pin, glitch_filer_us)
             pi.callback(interrupt_pin, edge.value, callback_func)
+            self.logger.info(
+                f"Set callback on pin: {interrupt_pin} w/ debounce time of {glitch_filer_us} us."
+            )
         else:
             self.logger.info(f"We're simulating, no callback set.")
