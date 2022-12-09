@@ -269,12 +269,10 @@ class Oracle(Machine):
             message,
             buttons=buttons,
         )
-        if message_result == QMessageBox.Ok and not pause_done:
-            self.scopeop.to_pause()
-        elif pause_done:
-            pass
-        else:
+        if message_result == QMessageBox.Cancel:
             return
+        elif not pause_done:
+            self.scopeop.to_pause()
 
         sleep(2)
         self.display_message(
