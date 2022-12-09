@@ -129,13 +129,9 @@ sudo chmod 644 /lib/systemd/system/init_led_pneumatic.service
 sudo cp ~/Documents/ulc-malaria-scope/ulc_mm_package/utilities/systemd_init_scripts/fan.service /lib/systemd/system
 sudo chmod 644 /lib/systemd/system/fan.service
 
-sudo cp ~/Documents/ulc-malaria-scope/ulc_mm_package/utilities/systemd_init_scripts/ngrok.service /lib/systemd/system
-sudo chmod 644 /lib/systemd/system/ngrok.service
-
 sudo systemctl daemon-reload
 sudo systemctl enable init_led_pneumatic.service
 sudo systemctl enable fan.service
-sudo systemctl enable ngrok.service
 ```
 
 ### Congrats!
