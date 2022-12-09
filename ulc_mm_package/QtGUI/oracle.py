@@ -490,8 +490,9 @@ if __name__ == "__main__":
             # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
             sleep(3)
             oracle.emergency_shutoff()
-        except:
-            oracle.logger.fatal("EMERGENCY ORACLE SHUT OFF FAILED.")
+        except Exception as e:
+            oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED: {e}")
+
         sys.exit(1)
 
     sys.excepthook = shutoff_excepthook
