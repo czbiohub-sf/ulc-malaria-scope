@@ -27,6 +27,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     LIVEVIEW_PERIOD,
     MAX_FRAMES,
     STATUS,
+    TH_PERIOD,
 )
 
 # TODO populate info?
@@ -139,9 +140,12 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_result = None
         self.autofocus_result = None
         self.fastflow_result = None
+
         self.count = 0
         self.batch_count = 0
         self.cell_counts = ClassCountResult()
+
+        self.TH_time = None
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -292,6 +296,8 @@ class ScopeOp(QObject, Machine):
         self.density_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
+
+        self.TH_time = perf_counter()
 
         self.img_signal.connect(self.run_experiment)
 
@@ -540,12 +546,14 @@ class ScopeOp(QObject, Machine):
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
 
-            # TEMP comment out density and ht sensor because it runs slow
-            # self.img_metadata["cell_density"] = density
-            # self.img_metadata[
-            #     "humidity"
-            # ] = self.mscope.ht_sensor.getRelativeHumidity()
-            # self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
+            current_time = perf_counter()
+            if current_time - self.TH_time > TH_PERIOD:
+                self.TH_time = current_time
+
+                self.img_metadata[
+                    "humidity"
+                ] = self.mscope.ht_sensor.getRelativeHumidity()
+                self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
 
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
