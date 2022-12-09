@@ -16,7 +16,7 @@ import adafruit_mprls
 
 from time import sleep, perf_counter
 
-from ulc_mm_package.lock_utils import lock_no_block
+from ulc_mm_package.utilities.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_5V_PIN,
     SERVO_PWM_PIN,
