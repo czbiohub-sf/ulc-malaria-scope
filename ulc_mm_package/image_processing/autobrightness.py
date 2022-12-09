@@ -30,10 +30,10 @@ class BrightnessTargetNotAchieved(AutobrightnessError):
 
     def __init__(self, brightness_val):
         msg = (
-            f"Unable to achieve the target brightness. The exposure may be too low (and the target pixel value too high) ",
-            f"or there may be an issue with the LED. Final mean pixel value: {brightness_val}. ",
-            f"The brightness value is still above the minimum acceptable value ",
-            f"of ({MIN_ACCEPTABLE_MEAN_BRIGHTNESS}).",
+            f"Unable to achieve the target brightness. The exposure may be too low (and the target pixel value too high) "
+            f"or there may be an issue with the LED. Final mean pixel value: {brightness_val}. "
+            f"The brightness value is still above the minimum acceptable value "
+            f"of ({MIN_ACCEPTABLE_MEAN_BRIGHTNESS})."
         )
         self.value = brightness_val
         super().__init__(f"{msg}")
