@@ -7,7 +7,7 @@ from ulc_mm_package.hardware.hardware_constants import (
 )
 
 from ulc_mm_package.scope_constants import SSD_DIR
-from ulc_mm_package.hardware.scope import MalariaScope, Components
+from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlRoutine
 from ulc_mm_package.image_processing.processing_modules import *
@@ -436,6 +436,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         mscope = MalariaScope()
         self.mscope = mscope
         self.mscope.set_gpio_callback(self.lid_open_handler)
+        self.mscope.set_gpio_callback(
+            self.lid_closed_handler, edge=GPIOEdge.FALLING_EDGE
+        )
         hardware_status = mscope.getComponentStatus()
         self.fan = mscope.fan
 
@@ -797,6 +800,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         if self.mscope.led._isOn:
             self.mscope.led.turnOff()
             self._disableLEDGUIElements()
+
+    def lid_closed_handler(self, *args):
+        if not self.mscope.led._isOn:
+            self.mscope.led.turnOn()
+            self._enableLEDGUIElements()
 
     def exposureSliderHandler(self):
         exposure = int(self.vsExposure.value())
