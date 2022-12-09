@@ -247,8 +247,8 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Pause run?",
             (
-                "While paused, you can mix/add more sample to the flow cell, "
-                "without losing the current brightness and focus calibration."
+                "While paused, you can mix/add more sample to the flow cell "
+                "without ending the experiment."
                 '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
             ),
             buttons=Buttons.CANCEL,

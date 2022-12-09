@@ -124,7 +124,7 @@ class ScopeOp(QObject, Machine):
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
         self.add_transition(
-            trigger="unpause", source="pause", dest="autobrightness_postcells"
+            trigger="unpause", source="pause", dest="autobrightness_precells"
         )
 
     def _init_variables(self):
@@ -256,8 +256,6 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
-        self.enable_pause.emit()
-
         if SIMULATION:
             self.logger.info(f"Skipping {self.state} state in simulation mode.")
             sleep(1)
@@ -284,6 +282,7 @@ class ScopeOp(QObject, Machine):
         self.density_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
+        self.enable_pause.emit()
 
         self.img_signal.connect(self.run_experiment)
 
