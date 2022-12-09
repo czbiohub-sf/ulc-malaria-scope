@@ -516,8 +516,8 @@ class ScopeOp(QObject, Machine):
                 self.send_pause.emit(
                     "Low cell density",
                     (
-                        "Cell density is too low. Pausing operation so that more sample can be added, "
-                        "without losing the current brightness and focus calibration."
+                        "Cell density is too low. "
+                        "Pausing operation so that more sample can be added without ending the experiment."
                         '\n\nClick "OK" and wait for the next dialog before removing the condensor and adding more sample.'
                     ),
                 )
