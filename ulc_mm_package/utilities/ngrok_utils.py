@@ -185,7 +185,7 @@ def _get_ngrok_auth_token() -> str:
             "You can set the ngrok token in the .bashrc file by:\n"
             "Open the file with: nano /home/pi/.bashrc\n"
             "then add the following line (without the '<' '>' signs) to the file:\n"
-            "EXPORT NGROK_AUTH_TOKEN=<TOKEN_HERE>"
+            f"export {NGROK_AUTH_TOKEN_ENV_VAR}=<TOKEN_HERE>"
         )
     else:
         return token
