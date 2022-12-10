@@ -511,6 +511,7 @@ class ScopeOp(QObject, Machine):
                     self.error.emit(
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
+                        False,
                     )
                     return
                 else:
