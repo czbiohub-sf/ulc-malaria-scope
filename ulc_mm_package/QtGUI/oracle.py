@@ -239,7 +239,7 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
             self.logger.warning(f"SSH address could not be found: {e}")
-            self.liveview_window.update_tcp("unavailable")     
+            self.liveview_window.update_tcp("unavailable")
         except EmailError as e:
             self.display_message(
                 QMessageBox.Icon.Warning,
