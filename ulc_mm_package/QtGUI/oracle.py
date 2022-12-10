@@ -238,9 +238,20 @@ class Oracle(Machine):
                 ),
                 buttons=Buttons.OK,
             )
-
-            self.logger.warning("SSH address could not be found.")
-            self.liveview_window.update_tcp("unavailable")
+            self.logger.warning(f"SSH address could not be found: {e}")
+            self.liveview_window.update_tcp("unavailable")     
+        except EmailError as e:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH email failed",
+                (
+                    "Could not automatically email SSH tunnel address. "
+                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
+                    '\n\nClick "OK" to continue running.'
+                ),
+                buttons=Buttons.OK,
+            )
+            self.logger.warning(f"SSH address could not be emailed: {e}")
 
     def pause_handler(self):
         message_result = self.display_message(
