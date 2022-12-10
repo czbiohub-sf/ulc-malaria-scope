@@ -167,7 +167,7 @@ def make_tcp_tunnel() -> str:
                 logger.error(
                     "ngrok is running but unable to get address from api/tunnels."
                 )
-                 _kill_old_ngrok_sessions()
+                _kill_old_ngrok_sessions()
                 set_ngrok_auth_token()
                 return _get_public_url_from_ngrok_tunnel_obj(_make_tcp_tunnel())
         else:
