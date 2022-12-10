@@ -251,12 +251,12 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Critical,
                 "SSD is full",
-                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!" + _ERROR_MSG,
+                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+                + _ERROR_MSG,
                 buttons=Buttons.OK,
                 instant_abort=False,
             )
             sys.exit(1)
-
 
     def pause_handler(self):
         message_result = self.display_message(
