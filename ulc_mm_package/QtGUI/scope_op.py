@@ -553,7 +553,9 @@ class ScopeOp(QObject, Machine):
                 self.img_metadata[
                     "humidity"
                 ] = self.mscope.ht_sensor.getRelativeHumidity()
-                self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
+                self.img_metadata[
+                    "temperature"
+                ] = self.mscope.ht_sensor.getTemperature()
 
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
