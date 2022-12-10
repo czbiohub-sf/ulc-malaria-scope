@@ -394,6 +394,7 @@ class ScopeOp(QObject, Machine):
                 self.autofocus_result = singleShotAutofocusRoutine(
                     self.mscope, self.autofocus_batch
                 )
+                self.autofocus_batch = []
                 self.logger.info(
                     f"Autofocus complete. Calculated focus error = {self.autofocus_result} steps."
                 )
