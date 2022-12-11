@@ -81,17 +81,6 @@ class Oracle(Machine):
         # Save startup datetime
         self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
 
-        # Instantiate GUI windows
-        self.form_window = FormGUI()
-        self.liveview_window = LiveviewGUI()
-        self.message_window = QMessageBox()
-
-        # Instantiate and configure Oracle elements
-        self._init_variables()
-        self._init_threads()
-        self._init_states()
-        self._init_sigslots()
-
         # Get SSD directory
         try:
             self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
@@ -122,6 +111,18 @@ class Oracle(Machine):
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
 
+
+        # Instantiate GUI windows
+        self.form_window = FormGUI()
+        self.liveview_window = LiveviewGUI()
+        self.message_window = QMessageBox()
+
+        # Instantiate and configure Oracle elements
+        self._init_variables()
+        self._init_threads()
+        self._init_states()
+        self._init_sigslots()
+        
         # Get tcp tunnel
         self._init_tcp()
 

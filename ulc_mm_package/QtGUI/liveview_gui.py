@@ -222,6 +222,7 @@ class LiveviewGUI(QMainWindow):
         self.update_flowrate("---")
 
         # Disable pause button at startup
+        print("DISABLING PAUSE BUTTON")
         self.pause_btn.setEnabled(False)
 
         # Setup status colors

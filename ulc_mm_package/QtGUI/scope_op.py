@@ -300,13 +300,15 @@ class ScopeOp(QObject, Machine):
         self.TH_time = perf_counter()
         self.start_time = perf_counter()
 
+        self.last_time = perf_counter()
+
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
         self.shutoff()
 
         if self.start_time != None:
-            self.logger.info(f"Net FPS is {self.count/(perf_counter-self.start_time)}")
+            self.logger.info(f"Net FPS is {self.count/(perf_counter()-self.start_time)}")
 
         self.logger.info("Resetting pneumatic module for rerun.")
         self.mscope.pneumatic_module.setDutyCycle(
@@ -460,6 +462,10 @@ class ScopeOp(QObject, Machine):
             return
 
         self.img_signal.disconnect(self.run_experiment)
+
+        curr_time = perf_counter()
+        print(f"Loop period: {curr_time-self.last_time}")
+        self.last_time = curr_time
 
         if self.count >= MAX_FRAMES:
             self.to_intermission()
