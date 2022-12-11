@@ -146,6 +146,7 @@ class ScopeOp(QObject, Machine):
         self.cell_counts = ClassCountResult()
 
         self.TH_time = None
+        self.start_time = None
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -297,11 +298,15 @@ class ScopeOp(QObject, Machine):
         self.enable_pause.emit()
 
         self.TH_time = perf_counter()
+        self.start_time = perf_counter()
 
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
         self.shutoff()
+
+        if self.start_time != None:
+            self.logger.info(f"Net FPS is {self.count/(perf_counter-self.start_time)}")
 
         self.logger.info("Resetting pneumatic module for rerun.")
         self.mscope.pneumatic_module.setDutyCycle(
@@ -466,16 +471,16 @@ class ScopeOp(QObject, Machine):
             self.update_img_count.emit(self.count)
 
             prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(
-                self.mscope, img, self.count
+               self.mscope, img, self.count
             )
             # we can use this for cell counts in the future, and also density in the now
             filtered_yogo_predictions = [
-                YOGO.filter_res(r.result) for r in prev_yogo_results
+               YOGO.filter_res(r.result) for r in prev_yogo_results
             ]
 
             for filtered_prediction in filtered_yogo_predictions:
-                class_count_obj = YOGO.class_instance_count(filtered_prediction)
-                self._update_cell_counts(class_count_obj)
+               class_count_obj = YOGO.class_instance_count(filtered_prediction)
+               self._update_cell_counts(class_count_obj)
 
             self.update_cell_count.emit(self.cell_counts)
 
@@ -502,37 +507,37 @@ class ScopeOp(QObject, Machine):
                     self.PSSAF_routine.send(None)
 
             try:
-                flowrate = self.flowcontrol_routine.send((img, timestamp))
+               flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
-                if not SIMULATION:
-                    self.logger.error(
-                        "Flow control failed. Syringe already at max position."
-                    )
-                    self.error.emit(
-                        "Flow control failed",
-                        "Unable to achieve desired flowrate with syringe at max position.",
-                    )
-                    return
-                else:
-                    self.logger.warning(
-                        f"Ignoring flowcontrol exception in simulation mode. {e}"
-                    )
-                    flowrate = None
+               if not SIMULATION:
+                   self.logger.error(
+                       "Flow control failed. Syringe already at max position."
+                   )
+                   self.error.emit(
+                       "Flow control failed",
+                       "Unable to achieve desired flowrate with syringe at max position.",
+                   )
+                   return
+               else:
+                   self.logger.warning(
+                       f"Ignoring flowcontrol exception in simulation mode. {e}"
+                   )
+                   flowrate = None
 
             try:
-                for filtered_pred in filtered_yogo_predictions:
-                    self.density_routine.send(filtered_pred)
+               for filtered_pred in filtered_yogo_predictions:
+                   self.density_routine.send(filtered_pred)
             except LowDensity as e:
-                # TODO: transition to state "pause" and print some error messages to user
-                self.logger.error(str(e))
-                raise e
+               # TODO: transition to state "pause" and print some error messages to user
+               self.logger.error(str(e))
+               raise e
 
             # Update infopanel
             if focus_err != None:
-                # TODO change this to non int?
-                self.update_focus.emit(int(focus_err))
+               # TODO change this to non int?
+               self.update_focus.emit(int(focus_err))
             if flowrate != None:
-                self.update_flowrate.emit(int(flowrate))
+               self.update_flowrate.emit(int(flowrate))
 
             # Update remaining metadata
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
@@ -555,6 +560,9 @@ class ScopeOp(QObject, Machine):
                 self.img_metadata[
                     "temperature"
                 ] = self.mscope.ht_sensor.getTemperature()
+            else:
+                self.img_metadata["humidity"] = None
+                self.img_metadata["temperature"] = None
 
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
