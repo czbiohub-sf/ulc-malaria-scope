@@ -189,9 +189,7 @@ class DataStorage:
             Remaining storage (GB)
         """
 
-        return (
-            shutil.disk_usage(ssd_dir).free / 2**30
-        )  # 2^30 bytes in a gigabyte
+        return shutil.disk_usage(ssd_dir).free / 2**30  # 2^30 bytes in a gigabyte
 
     @classmethod
     def is_there_sufficient_storage(cls, ssd_dir: str) -> bool:
