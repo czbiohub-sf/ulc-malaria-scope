@@ -142,7 +142,6 @@ class ScopeOp(QObject, Machine):
         self.fastflow_result = None
 
         self.count = 0
-        self.batch_count = 0
         self.cell_counts = ClassCountResult()
 
         self.TH_time = None
@@ -383,9 +382,8 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.disconnect(self.run_autofocus)
 
-        if self.batch_count < AF_BATCH_SIZE:
+        if len(self.autofocus_batch) < AF_BATCH_SIZE:
             self.autofocus_batch.append(img)
-            self.batch_count += 1
 
             if self.running:
                 self.img_signal.connect(self.run_autofocus)
