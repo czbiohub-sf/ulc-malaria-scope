@@ -42,7 +42,6 @@ QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # Qt GUI Files
 _UI_FILE_DIR = "dev_run.ui"
-_EXPERIMENT_FORM_PATH = "dev_form.ui"
 
 
 class ApplicationError(Exception):
@@ -166,14 +165,16 @@ class AcquisitionThread(QThread):
         """
 
         try:
-            pressure = self.pneumatic_module.getPressure()
+            pressure, status = self.pneumatic_module.getPressure()
         except PressureSensorNotInstantiated:
             # TODO: Add logging
             pressure = -1
-        except Exception:
+            status = -1
+        except PressureSensorStaleValue as e:
             # TODO: Add logging
-            # print("Unknown pneumatic module / pressure sensor error")
+            print(f"Stale value from pressure sensor: {e}")
             pressure = -1
+            status = -1
 
         return {
             "im_counter": self.data_storage.zw.arr_counter,
@@ -183,6 +184,7 @@ class AcquisitionThread(QThread):
             "exposure": self.camera.exposureTime_ms,
             "motor_pos": self.motor.pos,
             "pressure_hpa": pressure,
+            "pressure_status_flag": status.value,
             "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
             "flow_control_on": self.flowcontrol_enabled,
             "target_flowrate": self.flow_controller.target_flowrate,
@@ -215,7 +217,8 @@ class AcquisitionThread(QThread):
             self.update_counter = 0
             if self.pneumatic_module != None:
                 try:
-                    pressure = self.pneumatic_module.getPressure()
+                    # TODO: do something with the status
+                    pressure, status = self.pneumatic_module.getPressure()
                     self.updatePressure.emit(pressure)
                 except Exception:
                     pressure = -1

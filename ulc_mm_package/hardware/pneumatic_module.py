@@ -23,6 +23,14 @@ class PressureLeak(PneumaticModuleError):
     """Raised when a pressure leak is detected."""
 
 
+class PressureSensorBusy(PneumaticModuleError):
+    """Attempting a read from the mprls sensor but it is still busy."""
+
+
+class PressureSensorStaleValue(PneumaticModuleError):
+    """Raised when the cached value has gone 'stale' (based on a value in hardware_constants.py'"""
+
+
 class SyringeInMotion(PneumaticModuleError):
     pass
 
@@ -41,6 +49,14 @@ class SyringeDirection(enum.Enum):
 
     UP = 1
     DOWN = -1
+
+
+class PressureSensorRead(enum.Enum):
+    """Enum for pressure sensor read status."""
+
+    ALL_GOOD = 0
+    SATURATION = 1
+    INTEGRITY = 2
 
 
 @hardware
