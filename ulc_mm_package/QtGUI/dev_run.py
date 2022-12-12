@@ -436,9 +436,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         mscope = MalariaScope()
         self.mscope = mscope
         self.mscope.set_gpio_callback(self.lid_open_handler)
-        # self.mscope.set_gpio_callback(
-        #     self.lid_closed_handler, edge=GPIOEdge.FALLING_EDGE
-        # )
+
         hardware_status = mscope.getComponentStatus()
         self.fan = mscope.fan
 
