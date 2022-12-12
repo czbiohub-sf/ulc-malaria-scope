@@ -298,7 +298,6 @@ class ScopeOp(QObject, Machine):
 
         self.TH_time = perf_counter()
         self.start_time = perf_counter()
-
         self.last_time = perf_counter()
 
         self.img_signal.connect(self.run_experiment)
