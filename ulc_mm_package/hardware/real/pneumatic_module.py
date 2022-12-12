@@ -248,7 +248,7 @@ class PneumaticModule:
                         "'self.mpr._eoc.value' is False (which is why this exception was raised)."
                     )
             # or you can read the status byte
-            i2c.readinto(self._buffer, end=1)
+            i2c.readinto(self.mpr._buffer, end=1)
             if self.mpr._buffer[0] & 0x20:
                 raise PressureSensorBusy(
                     "Pressure sensor is currently busy. I've got a life too y'know?"
