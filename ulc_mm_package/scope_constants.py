@@ -1,7 +1,6 @@
 import os
 import usb
 
-from os import listdir
 from typing import Tuple
 from enum import auto, Enum
 from collections import namedtuple
@@ -68,22 +67,15 @@ MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
 SIMULATION = MS_SIMULATE_FLAG > 0
 print(f"Simulation mode: {SIMULATION}")
 
+# ================ Environment variables ================ #
+NGROK_AUTH_TOKEN_ENV_VAR = "NGROK_AUTH_TOKEN"
+EMAIL_PW_TOKEN = "GMAIL_TOKEN"
+
 # ================ SSD directory constants ================ #
 if SIMULATION:
     SSD_DIR = "../QtGUI/sim_media/pi/"
 else:
     SSD_DIR = "/media/pi/"
-
-try:
-    EXT_DIR = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-except FileNotFoundError as e:
-    raise FileNotFoundError(
-        f"Could not find any folders within {SSD_DIR}, check that SSD is plugged in."
-    ) from e
-except IndexError as e:
-    raise IndexError(
-        f"Could not find any folders within {SSD_DIR}, check that SSD is plugged in."
-    ) from e
 
 # ================ Camera constants ================ #
 AVT_VENDOR_ID = 0x1AB2

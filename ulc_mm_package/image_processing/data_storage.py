@@ -9,7 +9,6 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from ulc_mm_package.scope_constants import EXT_DIR
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
@@ -56,6 +55,7 @@ class DataStorage:
 
     def createNewExperiment(
         self,
+        ext_dir: str,
         custom_experiment_name: str,
         datetime_str: str,
         experiment_initialization_metdata: Dict,
@@ -76,7 +76,7 @@ class DataStorage:
         """
 
         if self.main_dir == None:
-            self.createTopLevelFolder(EXT_DIR, datetime_str)
+            self.createTopLevelFolder(ext_dir, datetime_str)
 
         # Create per-image metadata file
         time_str = datetime.now().strftime(DATETIME_FORMAT)
@@ -175,8 +175,13 @@ class DataStorage:
 
             return future
 
-    def _get_remaining_storage_size_GB(self) -> float:
+    @classmethod
+    def _get_remaining_storage_size_GB(cls, ssd_dir: str) -> float:
         """Get the remaining storage size in GB of the SSD.
+
+        Parameters
+        ----------
+        path to the SSD
 
         Returns
         -------
@@ -184,19 +189,22 @@ class DataStorage:
             Remaining storage (GB)
         """
 
-        return (
-            shutil.disk_usage(self.external_dir).free / 2**30
-        )  # 2^30 bytes in a gigabyte
+        return shutil.disk_usage(ssd_dir).free / 2**30  # 2^30 bytes in a gigabyte
 
-    def is_there_sufficient_storage(self) -> bool:
+    @classmethod
+    def is_there_sufficient_storage(cls, ssd_dir: str) -> bool:
         """Check if there is sufficient storage to run an experiment.
+
+        Parameters
+        ----------
+        path to the SSD
 
         Returns
         -------
         bool
         """
 
-        storage_remaining_gb = self._get_remaining_storage_size_GB()
+        storage_remaining_gb = cls._get_remaining_storage_size_GB(ssd_dir)
         return storage_remaining_gb > MIN_GB_REQUIRED
 
     def save_uniform_sample(self) -> None:

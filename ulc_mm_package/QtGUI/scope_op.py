@@ -27,6 +27,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     LIVEVIEW_PERIOD,
     MAX_FRAMES,
     STATUS,
+    TH_PERIOD,
 )
 
 # TODO populate info?
@@ -123,7 +124,9 @@ class ScopeOp(QObject, Machine):
         self.add_transition(
             trigger="rerun", source="intermission", dest="standby", before="reset"
         )
-        self.add_transition(trigger="unpause", source="pause", dest="fastflow")
+        self.add_transition(
+            trigger="unpause", source="pause", dest="autobrightness_precells"
+        )
 
     def _init_variables(self):
         self.running = None
@@ -137,9 +140,11 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_result = None
         self.autofocus_result = None
         self.fastflow_result = None
+
         self.count = 0
-        self.batch_count = 0
         self.cell_counts = ClassCountResult()
+
+        self.TH_time = None
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -159,6 +164,14 @@ class ScopeOp(QObject, Machine):
 
         self.logger.info(f"Changing state to {self.state}.")
         self.update_state.emit(state_name)
+
+    def _update_cell_counts(self, recent_cell_counts: ClassCountResult) -> None:
+        new_counts = {
+            class_name: getattr(self.cell_counts, class_name)
+            + getattr(recent_cell_counts, class_name)
+            for class_name in self.cell_counts._fields
+        }
+        self.cell_counts = ClassCountResult(**new_counts)
 
     def setup(self):
         self.create_timers.emit()
@@ -195,6 +208,19 @@ class ScopeOp(QObject, Machine):
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
 
+    def shutoff(self):
+        self.running = False
+
+        try:
+            self.img_signal.disconnect()
+            self.logger.info("Disconnected img_signal.")
+        except TypeError:
+            self.logger.info(
+                "Since img_signal is already disconnected, no signal/slot changes were made."
+            )
+
+        self.stop_timers.emit()
+
     def _start_pause(self):
         self.running = False
 
@@ -216,6 +242,7 @@ class ScopeOp(QObject, Machine):
         self.running = True
 
     def _start_autobrightness_precell(self):
+
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
@@ -240,8 +267,6 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self):
-        self.enable_pause.emit()
-
         if SIMULATION:
             self.logger.info(f"Skipping {self.state} state in simulation mode.")
             sleep(1)
@@ -268,20 +293,14 @@ class ScopeOp(QObject, Machine):
         self.density_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
+        self.enable_pause.emit()
+
+        self.TH_time = perf_counter()
 
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
-        self.running = False
-
-        try:
-            self.img_signal.disconnect()
-        except TypeError:
-            self.logger.info(
-                "Since img_signal is already disconnected, no signal/slot changes were made."
-            )
-
-        self.stop_timers.emit()
+        self.shutoff()
 
         self.logger.info("Resetting pneumatic module for rerun.")
         self.mscope.pneumatic_module.setDutyCycle(
@@ -295,14 +314,6 @@ class ScopeOp(QObject, Machine):
 
     def _start_intermission(self):
         self.experiment_done.emit()
-
-    def _update_cell_counts(self, recent_cell_counts: ClassCountResult) -> None:
-        new_counts = {
-            class_name: getattr(self.cell_counts, class_name)
-            + getattr(recent_cell_counts, class_name)
-            for class_name in self.cell_counts._fields
-        }
-        self.cell_counts = ClassCountResult(**new_counts)
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
@@ -336,7 +347,8 @@ class ScopeOp(QObject, Machine):
                 False,
             )
         else:
-            self.img_signal.connect(self.run_autobrightness)
+            if self.running:
+                self.img_signal.connect(self.run_autobrightness)
 
     @pyqtSlot(np.ndarray, float)
     def run_cellfinder(self, img, _timestamp):
@@ -359,7 +371,8 @@ class ScopeOp(QObject, Machine):
             self.logger.error("Cellfinder failed. No cells found.")
             self.error.emit("Calibration failed", "No cells found.", False)
         else:
-            self.img_signal.connect(self.run_cellfinder)
+            if self.running:
+                self.img_signal.connect(self.run_cellfinder)
 
     @pyqtSlot(np.ndarray, float)
     def run_autofocus(self, img, _timestamp):
@@ -369,16 +382,17 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.disconnect(self.run_autofocus)
 
-        if self.batch_count < AF_BATCH_SIZE:
+        if len(self.autofocus_batch) < AF_BATCH_SIZE:
             self.autofocus_batch.append(img)
-            self.batch_count += 1
 
-            self.img_signal.connect(self.run_autofocus)
+            if self.running:
+                self.img_signal.connect(self.run_autofocus)
         else:
             try:
                 self.autofocus_result = singleShotAutofocusRoutine(
                     self.mscope, self.autofocus_batch
                 )
+                self.autofocus_batch = []
                 self.logger.info(
                     f"Autofocus complete. Calculated focus error = {self.autofocus_result} steps."
                 )
@@ -430,7 +444,8 @@ class ScopeOp(QObject, Machine):
             self.update_flowrate.emit(self.fastflow_result)
             self.next_state()
         else:
-            self.img_signal.connect(self.run_fastflow)
+            if self.running:
+                self.img_signal.connect(self.run_fastflow)
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
@@ -495,6 +510,7 @@ class ScopeOp(QObject, Machine):
                     self.error.emit(
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
+                        False,
                     )
                     return
                 else:
@@ -529,14 +545,19 @@ class ScopeOp(QObject, Machine):
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
 
-            # TEMP comment out density and ht sensor because it runs slow
-            # self.img_metadata["cell_density"] = density
-            # self.img_metadata[
-            #     "humidity"
-            # ] = self.mscope.ht_sensor.getRelativeHumidity()
-            # self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
+            current_time = perf_counter()
+            if current_time - self.TH_time > TH_PERIOD:
+                self.TH_time = current_time
+
+                self.img_metadata[
+                    "humidity"
+                ] = self.mscope.ht_sensor.getRelativeHumidity()
+                self.img_metadata[
+                    "temperature"
+                ] = self.mscope.ht_sensor.getTemperature()
 
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 
-            self.img_signal.connect(self.run_experiment)
+            if self.running:
+                self.img_signal.connect(self.run_experiment)

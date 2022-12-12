@@ -22,7 +22,6 @@ MOTOR_STEP_PIN = 19
 MOTOR_DIR_PIN = 16
 MOTOR_FAULT_PIN = 20
 MOTOR_LIMIT_SWITCH1 = 18
-MOTOR_LIMIT_SWITCH2 = 15
 ZERO_OFFSET_STEPS = 20
 
 # DRR8825 stepping mode reference
@@ -43,6 +42,7 @@ ROT_C_PIN = 11
 
 # ================ LED Driver constants ================ #
 LED_PWM_PIN = 13
+LID_LIMIT_SWITCH2 = 15
 
 # To activate analog dimming mode, the voltage must be between the following bounds. For analog
 # dimming mode, the voltage must be higher than the upper bound listed below.

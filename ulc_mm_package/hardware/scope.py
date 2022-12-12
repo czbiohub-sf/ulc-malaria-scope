@@ -15,14 +15,22 @@ Components
 
 import logging
 import enum
-
 from time import sleep
-from typing import Dict, Optional
+from typing import Dict, Optional, Callable
 
+import pigpio
+
+from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
+
+
+class GPIOEdge(enum.Enum):
+    RISING_EDGE = 0
+    FALLING_EDGE = 1
+    EITHER_EDGE = 2
 
 
 class Components(enum.Enum):
@@ -68,7 +76,11 @@ class MalariaScope:
         self.logger.info("Shutting off scope hardware.")
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
-        self.camera.deactivateCamera()
+        if self.camera._isActivated:
+            self.camera.deactivateCamera()
+            self.logger.info("Deactivated camera.")
+        else:
+            self.logger.info("Camera was not activated, no operations needed.")
 
     def getComponentStatus(self) -> Dict:
         """Returns a dictionary of component to initialization status.
@@ -206,3 +218,36 @@ class MalariaScope:
             self.tpu_enabled = True
         except TPUError as e:
             self.logger.error(f"TPU initialization failed. {e}")
+
+    def set_gpio_callback(
+        self,
+        callback_func: Callable,
+        interrupt_pin: int = LID_LIMIT_SWITCH2,
+        edge: GPIOEdge = GPIOEdge.RISING_EDGE,
+        glitch_filer_us: int = 5000,
+    ):
+        """Set a callback to run when the given interrupt pin is triggered.
+
+        Parameters
+        ----------
+        callback_func: Callable
+            Function to call when the interrupt is triggered.
+        interrupt_pin: int=15
+            Defaults to the lid limit switch.
+        edge: GPIOEdge
+        glitch_filer_us: int
+            Number of microseconds that a GPIO level change needs to stay steady for
+            before a level change is reported (this is meant for debouncing)
+        """
+
+        if not SIMULATION:
+            import pigpio  # Not the cleanest way to do this
+
+            pi = pigpio.pi()
+            pi.set_glitch_filter(interrupt_pin, glitch_filer_us)
+            pi.callback(interrupt_pin, edge.value, callback_func)
+            self.logger.info(
+                f"Set callback on pin: {interrupt_pin} w/ debounce time of {glitch_filer_us} us."
+            )
+        else:
+            self.logger.info(f"We're simulating, no callback set.")

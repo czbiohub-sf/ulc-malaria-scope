@@ -8,7 +8,8 @@ from typing import Dict
 
 from pyngrok import ngrok, conf
 
-NGROK_AUTH_TOKEN_ENV_VAR = "NGROK_AUTH_TOKEN"
+from ulc_mm_package.scope_constants import NGROK_AUTH_TOKEN_ENV_VAR
+
 logger = logging.getLogger(__name__)
 
 
@@ -82,7 +83,7 @@ def get_addr() -> str:
 
 
 def _make_tcp_tunnel() -> ngrok.NgrokTunnel:
-    """Attempt to create an ngrok tcp tunnel.
+    """Attempt to create an ngrok tcp tunnel. Return an existing tunnel if one is already open.
 
     Returns
     -------
@@ -136,6 +137,12 @@ def _kill_old_ngrok_sessions() -> None:
         logger.exception(f"Unknown failure when attempting to `killall ngrok`: {e}")
 
 
+def _create_new_tunnel() -> str:
+    _kill_old_ngrok_sessions()
+    set_ngrok_auth_token()
+    return _get_public_url_from_ngrok_tunnel_obj(_make_tcp_tunnel())
+
+
 def make_tcp_tunnel() -> str:
     """Returns the publicly accessible ngrok ssh address.
 
@@ -151,11 +158,28 @@ def make_tcp_tunnel() -> str:
     """
 
     try:
-        _kill_old_ngrok_sessions()
-        set_ngrok_auth_token()
-        return _get_public_url_from_ngrok_tunnel_obj(_make_tcp_tunnel())
-    except NgrokError:
-        raise
+        # Check for existing ngrok tunnel
+        if is_ngrok_running():
+            try:
+                addr = get_addr()
+                return addr
+            except IndexError:
+                logger.error(
+                    "ngrok is running but unable to get address from api/tunnels."
+                )
+                _kill_old_ngrok_sessions()
+                set_ngrok_auth_token()
+                return _get_public_url_from_ngrok_tunnel_obj(_make_tcp_tunnel())
+        else:
+            # Create a new tunnel
+            try:
+                return _create_new_tunnel()
+            except NgrokError:
+                raise
+    except:
+        raise NgrokError(
+            "NgrokError : existing ngrok tunnel detected but errored out during either is_ngrok_running() or get_addr()."
+        )
 
 
 def _get_ngrok_auth_token() -> str:
@@ -173,7 +197,7 @@ def _get_ngrok_auth_token() -> str:
             "You can set the ngrok token in the .bashrc file by:\n"
             "Open the file with: nano /home/pi/.bashrc\n"
             "then add the following line (without the '<' '>' signs) to the file:\n"
-            "EXPORT NGROK_AUTH_TOKEN=<TOKEN_HERE>"
+            f"export {NGROK_AUTH_TOKEN_ENV_VAR}=<TOKEN_HERE>"
         )
     else:
         return token
