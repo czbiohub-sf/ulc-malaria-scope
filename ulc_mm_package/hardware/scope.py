@@ -173,14 +173,13 @@ class MalariaScope:
     def _init_encoder(self):
         if self.motor_enabled:
 
-            def manualFocusWithEncoder(self, increment: int):
+            def manualFocusWithEncoder(increment: int):
                 try:
                     if increment == 1:
                         self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
                     elif increment == -1:
                         self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
                     sleep(0.01)
-                    self.updateMotorPosition(self.motor.pos)
                 except MotorControllerError:
                     self.encoder.setColor(255, 0, 0)
                     sleep(0.1)
