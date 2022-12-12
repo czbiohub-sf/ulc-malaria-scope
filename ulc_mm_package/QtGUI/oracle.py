@@ -245,7 +245,6 @@ class Oracle(Machine):
         try:
             self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
         except (FileNotFoundError, IndexError) as e:
-        self.logger.info("STARTING ORACLE.")
             print(
                 f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
             )

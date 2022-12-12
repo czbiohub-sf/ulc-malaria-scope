@@ -514,22 +514,6 @@ class ScopeOp(QObject, Machine):
             try:
                flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
-<<<<<<< HEAD
-               if not SIMULATION:
-                   self.logger.error(
-                       "Flow control failed. Syringe already at max position."
-                   )
-                   self.error.emit(
-                       "Flow control failed",
-                       "Unable to achieve desired flowrate with syringe at max position.",
-                   )
-                   return
-               else:
-                   self.logger.warning(
-                       f"Ignoring flowcontrol exception in simulation mode. {e}"
-                   )
-                   flowrate = None
-=======
                 if not SIMULATION:
                     self.logger.error(
                         "Flow control failed. Syringe already at max position."
@@ -545,7 +529,6 @@ class ScopeOp(QObject, Machine):
                         f"Ignoring flowcontrol exception in simulation mode. {e}"
                     )
                     flowrate = None
->>>>>>> master
 
             try:
                for filtered_pred in filtered_yogo_predictions:
