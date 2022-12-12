@@ -33,7 +33,8 @@ from ulc_mm_package.scope_constants import (
     CAMERA_SELECTION,
     SSD_DIR,
 )
-from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
+from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
     FLOWRATE,
@@ -81,22 +82,8 @@ class Oracle(Machine):
         # Save startup datetime
         self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
 
-        # Get SSD directory
-        try:
-            self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-        except (FileNotFoundError, IndexError) as e:
-            print(
-                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
-            )
-            self.display_message(
-                QMessageBox.Icon.Critical,
-                "SSD not found",
-                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
-                + _ERROR_MSG,
-                buttons=Buttons.OK,
-                instant_abort=False,
-            )
-            sys.exit(1)
+        # Setup SSD
+        self._init_ssd()
 
         # Setup directory for logs
         log_dir = path.join(self.ext_dir, "logs")
@@ -110,7 +97,6 @@ class Oracle(Machine):
         )
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
-
 
         # Instantiate GUI windows
         self.form_window = FormGUI()
@@ -245,6 +231,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Warning,
                 "SSH email failed",
+        self.logger.info("STARTING ORACLE.")
                 (
                     "Could not automatically email SSH tunnel address. "
                     "If SSH is needed, please use the address printed in the liveviewer or terminal. "
@@ -253,6 +240,38 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
             self.logger.warning(f"SSH address could not be emailed: {e}")
+
+    def _init_ssd(self):
+        try:
+            self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+        except (FileNotFoundError, IndexError) as e:
+        self.logger.info("STARTING ORACLE.")
+            print(
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+            )
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                "SSD not found",
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+                + _ERROR_MSG,
+                buttons=Buttons.OK,
+                instant_abort=False,
+            )
+            sys.exit(1)
+
+        if not SIMULATION and not DataStorage.is_there_sufficient_storage(self.ext_dir):
+            print(
+                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            )
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                "SSD is full",
+                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+                + _ERROR_MSG,
+                buttons=Buttons.OK,
+                instant_abort=False,
+            )
+            sys.exit(1)
 
     def pause_handler(self):
         message_result = self.display_message(

@@ -8,7 +8,7 @@ Components
     - Pneumatic module (pressure sensor + servo)
     - LED (TPS54201DDCT driver)
     - Cooling fans
-    - Rotary encoder
+    - Rotary encoder (disabled for now)
     - Real time clock (PCF8523)
     - Temperature/humidity sensor (SHT31-D)
 """
@@ -54,7 +54,6 @@ class MalariaScope:
         self.pneumatic_module_enabled = False
         self.led_enabled = False
         self.fan_enabled = False
-        self.encoder_enabled = False
         self.ht_sensor_enabled = False
         self.data_storage_enabled = False
         self.tpu_enabled = False
@@ -65,7 +64,6 @@ class MalariaScope:
         self._init_pneumatic_module()
         self._init_led()
         self._init_fan()
-        self._init_encoder()
         self._init_humidity_temp_sensor()
         self._init_data_storage()
         self._init_TPU()
@@ -96,7 +94,6 @@ class MalariaScope:
             Components.PNEUMATIC_MODULE: self.pneumatic_module_enabled,
             Components.LED: self.led_enabled,
             Components.FAN: self.fan_enabled,
-            Components.ENCODER: self.encoder_enabled,
             Components.HT_SENSOR: self.ht_sensor_enabled,
             Components.DATA_STORAGE: self.data_storage_enabled,
             Components.TPU: self.tpu_enabled,
@@ -173,14 +170,13 @@ class MalariaScope:
     def _init_encoder(self):
         if self.motor_enabled:
 
-            def manualFocusWithEncoder(self, increment: int):
+            def manualFocusWithEncoder(increment: int):
                 try:
                     if increment == 1:
                         self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
                     elif increment == -1:
                         self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
                     sleep(0.01)
-                    self.updateMotorPosition(self.motor.pos)
                 except MotorControllerError:
                     self.encoder.setColor(255, 0, 0)
                     sleep(0.1)

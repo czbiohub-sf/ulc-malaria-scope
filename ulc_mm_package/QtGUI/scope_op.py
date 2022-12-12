@@ -142,7 +142,6 @@ class ScopeOp(QObject, Machine):
         self.fastflow_result = None
 
         self.count = 0
-        self.batch_count = 0
         self.cell_counts = ClassCountResult()
 
         self.TH_time = None
@@ -390,9 +389,8 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.disconnect(self.run_autofocus)
 
-        if self.batch_count < AF_BATCH_SIZE:
+        if len(self.autofocus_batch) < AF_BATCH_SIZE:
             self.autofocus_batch.append(img)
-            self.batch_count += 1
 
             if self.running:
                 self.img_signal.connect(self.run_autofocus)
@@ -401,6 +399,7 @@ class ScopeOp(QObject, Machine):
                 self.autofocus_result = singleShotAutofocusRoutine(
                     self.mscope, self.autofocus_batch
                 )
+                self.autofocus_batch = []
                 self.logger.info(
                     f"Autofocus complete. Calculated focus error = {self.autofocus_result} steps."
                 )
@@ -515,6 +514,7 @@ class ScopeOp(QObject, Machine):
             try:
                flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
+<<<<<<< HEAD
                if not SIMULATION:
                    self.logger.error(
                        "Flow control failed. Syringe already at max position."
@@ -529,6 +529,23 @@ class ScopeOp(QObject, Machine):
                        f"Ignoring flowcontrol exception in simulation mode. {e}"
                    )
                    flowrate = None
+=======
+                if not SIMULATION:
+                    self.logger.error(
+                        "Flow control failed. Syringe already at max position."
+                    )
+                    self.error.emit(
+                        "Flow control failed",
+                        "Unable to achieve desired flowrate with syringe at max position.",
+                        False,
+                    )
+                    return
+                else:
+                    self.logger.warning(
+                        f"Ignoring flowcontrol exception in simulation mode. {e}"
+                    )
+                    flowrate = None
+>>>>>>> master
 
             try:
                for filtered_pred in filtered_yogo_predictions:
