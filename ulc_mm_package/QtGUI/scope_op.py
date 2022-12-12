@@ -306,7 +306,9 @@ class ScopeOp(QObject, Machine):
         self.shutoff()
 
         if self.start_time != None:
-            self.logger.info(f"Net FPS is {self.count/(perf_counter()-self.start_time)}")
+            self.logger.info(
+                f"Net FPS is {self.count/(perf_counter()-self.start_time)}"
+            )
 
         self.logger.info("Resetting pneumatic module for rerun.")
         self.mscope.pneumatic_module.setDutyCycle(
@@ -475,16 +477,16 @@ class ScopeOp(QObject, Machine):
             self.update_img_count.emit(self.count)
 
             prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(
-               self.mscope, img, self.count
+                self.mscope, img, self.count
             )
             # we can use this for cell counts in the future, and also density in the now
             filtered_yogo_predictions = [
-               YOGO.filter_res(r.result) for r in prev_yogo_results
+                YOGO.filter_res(r.result) for r in prev_yogo_results
             ]
 
             for filtered_prediction in filtered_yogo_predictions:
-               class_count_obj = YOGO.class_instance_count(filtered_prediction)
-               self._update_cell_counts(class_count_obj)
+                class_count_obj = YOGO.class_instance_count(filtered_prediction)
+                self._update_cell_counts(class_count_obj)
 
             self.update_cell_count.emit(self.cell_counts)
 
@@ -511,7 +513,7 @@ class ScopeOp(QObject, Machine):
                     self.PSSAF_routine.send(None)
 
             try:
-               flowrate = self.flowcontrol_routine.send((img, timestamp))
+                flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
                 if not SIMULATION:
                     self.logger.error(
@@ -530,19 +532,19 @@ class ScopeOp(QObject, Machine):
                     flowrate = None
 
             try:
-               for filtered_pred in filtered_yogo_predictions:
-                   self.density_routine.send(filtered_pred)
+                for filtered_pred in filtered_yogo_predictions:
+                    self.density_routine.send(filtered_pred)
             except LowDensity as e:
-               # TODO: transition to state "pause" and print some error messages to user
-               self.logger.error(str(e))
-               raise e
+                # TODO: transition to state "pause" and print some error messages to user
+                self.logger.error(str(e))
+                raise e
 
             # Update infopanel
             if focus_err != None:
-               # TODO change this to non int?
-               self.update_focus.emit(int(focus_err))
+                # TODO change this to non int?
+                self.update_focus.emit(int(focus_err))
             if flowrate != None:
-               self.update_flowrate.emit(int(flowrate))
+                self.update_flowrate.emit(int(flowrate))
 
             # Update remaining metadata
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()

@@ -108,7 +108,7 @@ class Oracle(Machine):
         self._init_threads()
         self._init_states()
         self._init_sigslots()
-        
+
         # Get tcp tunnel
         self._init_tcp()
 
@@ -231,8 +231,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Warning,
                 "SSH email failed",
-        self.logger.info("STARTING ORACLE.")
-                (
+                self.logger.info("STARTING ORACLE.")(
                     "Could not automatically email SSH tunnel address. "
                     "If SSH is needed, please use the address printed in the liveviewer or terminal. "
                     '\n\nClick "OK" to continue running.'
