@@ -205,6 +205,7 @@ class PneumaticModule:
             try:
                 pressure, status = self.direct_read()
                 self.prev_pressure, self.prev_status = pressure, status
+                self.prev_poll_time_s = perf_counter()
                 return (pressure, status)
             except PressureSensorBusy as e:
                 self.logger.info(
