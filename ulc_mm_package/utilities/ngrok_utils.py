@@ -137,6 +137,12 @@ def _kill_old_ngrok_sessions() -> None:
         logger.exception(f"Unknown failure when attempting to `killall ngrok`: {e}")
 
 
+def _create_new_tunnel() -> str:
+    _kill_old_ngrok_sessions()
+    set_ngrok_auth_token()
+    return _get_public_url_from_ngrok_tunnel_obj(_make_tcp_tunnel())
+
+
 def make_tcp_tunnel() -> str:
     """Returns the publicly accessible ngrok ssh address.
 
@@ -154,14 +160,20 @@ def make_tcp_tunnel() -> str:
     try:
         # Check for existing ngrok tunnel
         if is_ngrok_running():
-            addr = get_addr()
-            return addr
-        else:
-            # Create a new tunnel
             try:
+                addr = get_addr()
+                return addr
+            except IndexError:
+                logger.error(
+                    "ngrok is running but unable to get address from api/tunnels."
+                )
                 _kill_old_ngrok_sessions()
                 set_ngrok_auth_token()
                 return _get_public_url_from_ngrok_tunnel_obj(_make_tcp_tunnel())
+        else:
+            # Create a new tunnel
+            try:
+                return _create_new_tunnel()
             except NgrokError:
                 raise
     except:

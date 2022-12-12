@@ -161,3 +161,12 @@ def _load_saga() -> str:
     days_since_inception = _get_days_since_inception()
     line = _get_saga_line()
     return f"Day {days_since_inception}: {line}"
+
+
+if __name__ == "__main__":
+    try:
+        send_ngrok_email()
+    except NgrokError as e:
+        print(f"Error when sending email - NgrokError: {e}")
+    except EmailError as e:
+        print(f"Error when sending email - EmailError: {e}")

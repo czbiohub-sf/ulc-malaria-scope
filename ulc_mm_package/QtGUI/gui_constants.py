@@ -19,6 +19,10 @@ SITE_LIST = ["Tororo, Uganda"]
 ACQUISITION_PERIOD = 1000.0 / 30.0
 LIVEVIEW_PERIOD = 1000
 
+# ================ Hardware update period ================ #
+# TH sensor update period
+TH_PERIOD = 5
+
 # ================ Experiment timeout ================ #
 MAX_FRAMES = 20000  # Rounded up from 10 minutes of data at 30 FPS
 if SIMULATION:

@@ -33,7 +33,8 @@ from ulc_mm_package.scope_constants import (
     CAMERA_SELECTION,
     SSD_DIR,
 )
-from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
+from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
     FLOWRATE,
@@ -91,23 +92,7 @@ class Oracle(Machine):
         self._init_threads()
         self._init_states()
         self._init_sigslots()
-
-        # Get SSD directory
-        try:
-            self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-        except (FileNotFoundError, IndexError) as e:
-            print(
-                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
-            )
-            self.display_message(
-                QMessageBox.Icon.Critical,
-                "SSD not found",
-                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
-                + _ERROR_MSG,
-                buttons=Buttons.OK,
-                instant_abort=False,
-            )
-            sys.exit(1)
+        self._init_ssd()
 
         # Setup directory for logs
         log_dir = path.join(self.ext_dir, "logs")
@@ -239,9 +224,51 @@ class Oracle(Machine):
                 ),
                 buttons=Buttons.OK,
             )
-
-            self.logger.warning("SSH address could not be found.")
+            self.logger.warning(f"SSH address could not be found: {e}")
             self.liveview_window.update_tcp("unavailable")
+        except EmailError as e:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH email failed",
+                (
+                    "Could not automatically email SSH tunnel address. "
+                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
+                    '\n\nClick "OK" to continue running.'
+                ),
+                buttons=Buttons.OK,
+            )
+            self.logger.warning(f"SSH address could not be emailed: {e}")
+
+    def _init_ssd(self):
+        try:
+            self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+        except (FileNotFoundError, IndexError) as e:
+            print(
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+            )
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                "SSD not found",
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+                + _ERROR_MSG,
+                buttons=Buttons.OK,
+                instant_abort=False,
+            )
+            sys.exit(1)
+
+        if not SIMULATION and not DataStorage.is_there_sufficient_storage(self.ext_dir):
+            print(
+                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            )
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                "SSD is full",
+                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+                + _ERROR_MSG,
+                buttons=Buttons.OK,
+                instant_abort=False,
+            )
+            sys.exit(1)
 
     def pause_receiver(self, title, message):
         self.scopeop.to_pause()

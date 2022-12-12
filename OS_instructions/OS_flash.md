@@ -51,3 +51,15 @@ Gmail allows you to generate a unique password for each new device that you want
   - Open the bashrc file: `nano /home/pi/.bashrc`
   - Add `export GMAIL_TOKEN=<TOKEN_HERE>` to the bottom of the file.
 3. Run both `oracle.py` and `dev_run.py` to ensure you're receiving emails and that there are no errors (for example, if you forget to set the email token, that will raise a custom `EmailError: no token set` error. Similarly if an ngrok token isn't set, a custom `NgrokError: no token set` error will be raised.)
+
+### Setting up bash aliases
+1. To avoid users having to enter in an arduous path into the terminal to run a program (which is also likely to be error-prone), we have a few bash aliases instead. These aliases are stored under `ulc-malaria-scope/ulc_mm_package/utilities/.bash_aliases`. `cd` into that directory and `cp` that file to `/home/pi`, i.e:
+```
+cd Documents/ulc-malaria-scope/ulc_mm_package/utilities
+cp .bash_aliases /home/pi
+```
+
+The commands in the file can now be run from the terminal. At the time of writing (2022-12-09), the following commands are available:
+- `lfm_run` - runs `oracle.py`
+- `lfm_dev` - runs `dev_run.py`
+- `send_address` - runs `email_utils.py` (attempts to send the ngrok address to `lfmscope@gmail.com`)

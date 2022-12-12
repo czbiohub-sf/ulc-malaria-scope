@@ -27,6 +27,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     LIVEVIEW_PERIOD,
     MAX_FRAMES,
     STATUS,
+    TH_PERIOD,
 )
 
 # TODO populate info?
@@ -140,9 +141,11 @@ class ScopeOp(QObject, Machine):
         self.cellfinder_result = None
         self.autofocus_result = None
         self.fastflow_result = None
+
         self.count = 0
-        self.batch_count = 0
         self.cell_counts = ClassCountResult()
+
+        self.TH_time = None
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -162,6 +165,14 @@ class ScopeOp(QObject, Machine):
 
         self.logger.info(f"Changing state to {self.state}.")
         self.update_state.emit(state_name)
+
+    def _update_cell_counts(self, recent_cell_counts: ClassCountResult) -> None:
+        new_counts = {
+            class_name: getattr(self.cell_counts, class_name)
+            + getattr(recent_cell_counts, class_name)
+            for class_name in self.cell_counts._fields
+        }
+        self.cell_counts = ClassCountResult(**new_counts)
 
     def setup(self):
         self.create_timers.emit()
@@ -285,6 +296,8 @@ class ScopeOp(QObject, Machine):
         self.set_period.emit(LIVEVIEW_PERIOD)
         self.enable_pause.emit()
 
+        self.TH_time = perf_counter()
+
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
@@ -302,14 +315,6 @@ class ScopeOp(QObject, Machine):
 
     def _start_intermission(self):
         self.experiment_done.emit()
-
-    def _update_cell_counts(self, recent_cell_counts: ClassCountResult) -> None:
-        new_counts = {
-            class_name: getattr(self.cell_counts, class_name)
-            + getattr(recent_cell_counts, class_name)
-            for class_name in self.cell_counts._fields
-        }
-        self.cell_counts = ClassCountResult(**new_counts)
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
@@ -378,9 +383,8 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.disconnect(self.run_autofocus)
 
-        if self.batch_count < AF_BATCH_SIZE:
+        if len(self.autofocus_batch) < AF_BATCH_SIZE:
             self.autofocus_batch.append(img)
-            self.batch_count += 1
 
             if self.running:
                 self.img_signal.connect(self.run_autofocus)
@@ -389,6 +393,7 @@ class ScopeOp(QObject, Machine):
                 self.autofocus_result = singleShotAutofocusRoutine(
                     self.mscope, self.autofocus_batch
                 )
+                self.autofocus_batch = []
                 self.logger.info(
                     f"Autofocus complete. Calculated focus error = {self.autofocus_result} steps."
                 )
@@ -506,6 +511,7 @@ class ScopeOp(QObject, Machine):
                     self.error.emit(
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
+                        False,
                     )
                     return
                 else:
@@ -546,11 +552,16 @@ class ScopeOp(QObject, Machine):
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
 
-            # TEMP comment out ht sensor because it runs slow
-            # self.img_metadata[
-            #     "humidity"
-            # ] = self.mscope.ht_sensor.getRelativeHumidity()
-            # self.img_metadata["temperature"] = self.mscope.ht_sensor.getTemperature()
+            current_time = perf_counter()
+            if current_time - self.TH_time > TH_PERIOD:
+                self.TH_time = current_time
+
+                self.img_metadata[
+                    "humidity"
+                ] = self.mscope.ht_sensor.getRelativeHumidity()
+                self.img_metadata[
+                    "temperature"
+                ] = self.mscope.ht_sensor.getTemperature()
 
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
