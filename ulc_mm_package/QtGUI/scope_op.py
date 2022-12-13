@@ -145,6 +145,7 @@ class ScopeOp(QObject, Machine):
         self.cell_counts = ClassCountResult()
 
         self.TH_time = None
+        self.start_time = None
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -296,11 +297,18 @@ class ScopeOp(QObject, Machine):
         self.enable_pause.emit()
 
         self.TH_time = perf_counter()
+        self.start_time = perf_counter()
+        self.last_time = perf_counter()
 
         self.img_signal.connect(self.run_experiment)
 
     def _end_experiment(self):
         self.shutoff()
+
+        if self.start_time != None:
+            self.logger.info(
+                f"Net FPS is {self.count/(perf_counter()-self.start_time)}"
+            )
 
         self.logger.info("Resetting pneumatic module for rerun.")
         self.mscope.pneumatic_module.setDutyCycle(
@@ -455,6 +463,10 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.disconnect(self.run_experiment)
 
+        curr_time = perf_counter()
+        self.logger.debug(f"Loop time was {curr_time-self.last_time}")
+        self.last_time = curr_time
+
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         else:
@@ -555,6 +567,9 @@ class ScopeOp(QObject, Machine):
                 self.img_metadata[
                     "temperature"
                 ] = self.mscope.ht_sensor.getTemperature()
+            else:
+                self.img_metadata["humidity"] = None
+                self.img_metadata["temperature"] = None
 
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
