@@ -216,7 +216,7 @@ class Oracle(Machine):
             self.logger.info(f"SSH address is {tcp_addr}.")
             self.liveview_window.update_tcp(tcp_addr)
             send_ngrok_email()
-        except NgrokError:
+        except NgrokError as e:
             self.display_message(
                 QMessageBox.Icon.Warning,
                 "SSH tunnel failed",
@@ -227,7 +227,7 @@ class Oracle(Machine):
                 ),
                 buttons=Buttons.OK,
             )
-            self.logger.warning(f"SSH address could not be found: {e}")
+            self.logger.warning(f"SSH address could not be found - {e}")
             self.liveview_window.update_tcp("unavailable")
         except EmailError as e:
             self.display_message(
@@ -240,7 +240,7 @@ class Oracle(Machine):
                 ),
                 buttons=Buttons.OK,
             )
-            self.logger.warning(f"SSH address could not be emailed: {e}")
+            self.logger.warning(f"SSH address could not be emailed - {e}")
 
     def _init_ssd(self):
         try:
