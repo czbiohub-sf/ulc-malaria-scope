@@ -83,6 +83,9 @@ class Oracle(Machine):
         # Save startup datetime
         self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
 
+        # Instantiate message dialog
+        self.message_window = QMessageBox()
+
         # Setup SSD
         self._init_ssd()
 
@@ -105,7 +108,6 @@ class Oracle(Machine):
         # Instantiate GUI windows
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
-        self.message_window = QMessageBox()
 
         # Instantiate and configure Oracle elements
         self._init_variables()
