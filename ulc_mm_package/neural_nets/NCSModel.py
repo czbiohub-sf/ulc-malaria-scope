@@ -203,7 +203,7 @@ class NCSModel:
             )
 
     def get_asyn_results(
-        self, timeout: Optional[float] = 0.01
+            self, timeout: Optional[float] = 0.01, wait_for_results: bool=False
     ) -> Optional[List[AsyncInferenceResult]]:
         """
         Maybe return some asyn_results. Will return None if it can not get the lock
@@ -226,6 +226,9 @@ class NCSModel:
                         raise exc
 
             self._futures = futures
+
+        if wait_for_results:
+            self.wait_all()
 
         with lock_timeout(self.asyn_result_lock, timeout=timeout):
             res = copy(self._asyn_results)
