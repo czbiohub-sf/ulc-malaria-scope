@@ -73,4 +73,4 @@ class PneumaticModule(RealPneumaticModule):
             self.prev_poll_time_s = perf_counter()
             return (new_pressure, status)
         else:
-            return (self.prev_pressure, status)
+            return (self.prev_pressure, self.prev_status)
