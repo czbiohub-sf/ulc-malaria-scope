@@ -94,8 +94,10 @@ class Oracle(Machine):
         # Setup logger
         fileConfig(
             fname="../logger.config",
-            defaults={"filename": path.join(log_dir, f"{self.datetime_str}.log"),
-                        "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO" },
+            defaults={
+                "filename": path.join(log_dir, f"{self.datetime_str}.log"),
+                "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO",
+            },
         )
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
