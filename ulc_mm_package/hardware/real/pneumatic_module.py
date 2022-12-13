@@ -12,7 +12,6 @@ Servo Motor Pololu HD-1810MG:
 from time import sleep, perf_counter
 from typing import Tuple
 import threading
-import enum
 import logging
 
 import pigpio
@@ -41,7 +40,6 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorStaleValue,
     PressureSensorRead,
 )
-
 
 SYRINGE_LOCK = threading.Lock()
 PSI_TO_HPA = 68.947572932
@@ -219,44 +217,31 @@ class PneumaticModule:
         else:
             raise PressureSensorNotInstantiated(self.mpr_err_msg)
 
-    def _direct_read(self) -> bool:
-        """Attempt to read the pressure sensor status and 24-bit data reading into the buffer.
-
-        Returns
-        -------
-        bool:
-            True if read successful
-
-        Exceptions
-        ----------
-        PressureSensorBusy
-        """
-
-        self.mpr._buffer[0] = 0xAA
-        self.mpr._buffer[1] = 0
-        self.mpr._buffer[2] = 0
+    def _direct_read(self, timeout_s: float = 1e6):
+        # Attempt to read the sensor first
+        self._buffer[0] = 0xAA
+        self._buffer[1] = 0
+        self._buffer[2] = 0
+        start = perf_counter()
         with self.mpr._i2c as i2c:
             # send command
             i2c.write(self.mpr._buffer, end=3)
+            # ready busy flag/status
+            while True:
+                # check End of Convert pin first, if we can
+                if self.mpr._eoc is not None:
+                    if self.mpr._eoc.value:
+                        break
+                # or you can read the status byte
+                i2c.readinto(self.mpr._buffer, end=1)
+                if not self.mpr._buffer[0] & 0x20:
+                    break
 
-            # Check if sensor busy
+                # Breakout if pressure sensor is too slow
+                if perf_counter() - start > timeout_s:
+                    return False
 
-            # check End of Convert pin first, if we can
-            if self.mpr._eoc is not None:
-                if not self.mpr._eoc.value:
-                    raise PressureSensorBusy(
-                        "Pressure sensor is currently busy. I've got a life too y'know?"
-                        "'self.mpr._eoc.value' is False (which is why this exception was raised)."
-                    )
-            # or you can read the status byte
-            i2c.readinto(self.mpr._buffer, end=1)
-            if self.mpr._buffer[0] & 0x20:
-                raise PressureSensorBusy(
-                    "Pressure sensor is currently busy. I've got a life too y'know?"
-                    "Status byte, 'self.mpr._buffer[0] & 0x20' returned True (which is why this exception was raised)."
-                )
-
-            # Otherwise sensor is ok to read
+            # no longer busy!
             i2c.readinto(self.mpr._buffer, end=4)
             return True
 
@@ -268,13 +253,26 @@ class PneumaticModule:
 
         This function just bypasses the exceptions that are normally thrown by Adafruit's MPRLS library and
         returns the pressure value (in addition with an enum detailing if any exceptions were thrown.
-        """
 
-        # Attempt to read the sensor first
-        try:
-            read_success = self._direct_read()
-        except PressureSensorBusy as e:
-            raise PressureSensorBusy(e)
+        Returns
+        -------
+        Tuple[float, PressureSensorRead]:
+            float - pressure
+            PressureSensorRead - status bit (all good, saturation, or integrity error)
+
+        Exceptions
+        ----------
+        PressureSensorBusy:
+            Raised if sensor takes longer than the set time to respond
+        """
+        # Attempt to read, cap timeout at 0.5s
+        timeout_s = 0.1
+        read_success = self._direct_read(timeout_s=0.5)
+
+        if not read_success:
+            raise PressureSensorBusy(
+                f"Pressure sensor took too long (>= {timeout_s}s) to respond."
+            )
 
         # If read successful, check status flags
         if read_success:
