@@ -18,6 +18,7 @@ from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
+from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
@@ -548,9 +549,16 @@ class ScopeOp(QObject, Machine):
 
             # Update remaining metadata
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
-            self.img_metadata[
-                "pressure_hpa"
-            ] = self.mscope.pneumatic_module.getPressure()
+            try:
+                pressure, status = self.mscope.pneumatic_module.getPressure()
+                (
+                    self.img_metadata["pressure_hpa"],
+                    self.img_metadata["pressure_status_flag"],
+                ) = (pressure, status)
+            except PressureSensorStaleValue as e:
+                ## TODO???
+                self.logger.info(f"Stale pressure sensor value: {e}")
+
             self.img_metadata[
                 "syringe_pos"
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()

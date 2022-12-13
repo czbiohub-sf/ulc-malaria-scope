@@ -54,6 +54,7 @@ PER_IMAGE_METADATA_KEYS = [
     "timestamp",
     "motor_pos",
     "pressure_hpa",
+    "pressure_status_flag",
     "syringe_pos",
     "flowrate",
     "focus_error",
