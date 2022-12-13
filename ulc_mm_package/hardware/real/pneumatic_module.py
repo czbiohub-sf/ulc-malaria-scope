@@ -219,9 +219,9 @@ class PneumaticModule:
 
     def _direct_read(self, timeout_s: float = 1e6):
         # Attempt to read the sensor first
-        self._buffer[0] = 0xAA
-        self._buffer[1] = 0
-        self._buffer[2] = 0
+        self.mpr._buffer[0] = 0xAA
+        self.mpr._buffer[1] = 0
+        self.mpr._buffer[2] = 0
         start = perf_counter()
         with self.mpr._i2c as i2c:
             # send command
