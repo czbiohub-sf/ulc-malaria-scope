@@ -28,7 +28,7 @@ class PressureSensorBusy(PneumaticModuleError):
 
 
 class PressureSensorStaleValue(PneumaticModuleError):
-    """Raised when the cached value has gone 'stale' (based on a value in hardware_constants.py'"""
+    """Raised when the cached value has gone 'stale' (based on a value in hardware_constants.py)"""
 
 
 class SyringeInMotion(PneumaticModuleError):
