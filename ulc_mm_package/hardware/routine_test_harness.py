@@ -241,7 +241,7 @@ def main_acquisition_loop(mscope: MalariaScope):
         # Save data
         fake_per_img_metadata["timestamp"] = timestamp
         fake_per_img_metadata["motor_pos"] = mscope.motor.pos
-        fake_per_img_metadata["pressure_hpa"] = mscope.pneumatic_module.getPressure()
+        fake_per_img_metadata["pressure_hpa"], _ = mscope.pneumatic_module.getPressure()
         fake_per_img_metadata[
             "syringe_pos"
         ] = mscope.pneumatic_module.getCurrentDutyCycle()

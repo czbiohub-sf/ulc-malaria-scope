@@ -54,6 +54,7 @@ PER_IMAGE_METADATA_KEYS = [
     "timestamp",
     "motor_pos",
     "pressure_hpa",
+    "pressure_status_flag",
     "syringe_pos",
     "flowrate",
     "focus_error",
@@ -70,6 +71,7 @@ print(f"Simulation mode: {SIMULATION}")
 # ================ Environment variables ================ #
 NGROK_AUTH_TOKEN_ENV_VAR = "NGROK_AUTH_TOKEN"
 EMAIL_PW_TOKEN = "GMAIL_TOKEN"
+VERBOSE = int(os.environ.get("MS_VERBOSE", 0))
 
 # ================ SSD directory constants ================ #
 if SIMULATION:
