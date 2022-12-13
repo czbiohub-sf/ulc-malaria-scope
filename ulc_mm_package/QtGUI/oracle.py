@@ -32,6 +32,7 @@ from ulc_mm_package.scope_constants import (
     PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
     SSD_DIR,
+    VERBOSE,
 )
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.image_processing.data_storage import DataStorage
@@ -93,7 +94,8 @@ class Oracle(Machine):
         # Setup logger
         fileConfig(
             fname="../logger.config",
-            defaults={"filename": path.join(log_dir, f"{self.datetime_str}.log")},
+            defaults={"filename": path.join(log_dir, f"{self.datetime_str}.log"),
+                        "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO" },
         )
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
@@ -431,7 +433,7 @@ class Oracle(Machine):
     def _end_liveview(self):
         self.liveview_window.close()
 
-        self.logger.debug("Opening survey.")
+        self.logger.info("Opening survey.")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
     def _start_intermission(self):
@@ -459,13 +461,13 @@ class Oracle(Machine):
         self.logger.info("Starting oracle shut off.")
 
         # Wait for QTimers to shutoff
-        self.logger.debug("Waiting for acquisition and liveview timer to terminate.")
+        self.logger.info("Waiting for acquisition and liveview timer to terminate.")
         while (
             self.acquisition.acquisition_timer.isActive()
             or self.acquisition.liveview_timer.isActive()
         ):
             pass
-        self.logger.debug("Successfully terminated acquisition and liveview timer.")
+        self.logger.info("Successfully terminated acquisition and liveview timer.")
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
@@ -473,17 +475,17 @@ class Oracle(Machine):
         # Shut off acquisition thread
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
-        self.logger.debug("Shut off acquisition thread.")
+        self.logger.info("Shut off acquisition thread.")
 
         # Shut off scopeop thread
         self.scopeop_thread.quit()
         self.scopeop_thread.wait()
-        self.logger.debug("Shut off scopeop thread.")
+        self.logger.info("Shut off scopeop thread.")
 
         self.form_window.close()
-        self.logger.debug("Closed experiment form window.")
+        self.logger.info("Closed experiment form window.")
         self.liveview_window.close()
-        self.logger.debug("Closed liveview window.")
+        self.logger.info("Closed liveview window.")
 
         self.logger.info("ORACLE SHUT OFF SUCCESSFUL.")
         self.shutoff_done = True
