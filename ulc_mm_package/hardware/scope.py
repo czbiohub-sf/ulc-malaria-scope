@@ -170,32 +170,61 @@ class MalariaScope:
         except Exception as e:
             self.logger.error(f"Fan initialization failed. {e}")
 
+    def disable_encoder(self):
+        '''
+        Sends a dummy callback so that the user cannot adjust the focus manually
+        '''
+        def _encoder_dummy_callback(self, increment)
+            pass
+
+        self.encoder.setInterruptCallback(_encoder_dummy_callback)
+        self.encoder_enabled = False
+
+
+    def enable_encoder(self):
+        '''
+        Sets the callback to connect manual encoder rotation with focus stage motion
+        '''
+
+        def _encoder_manual_focus_callback(increment: int):
+            '''
+            Callback to send commands to the motor and update the internal class variable 
+            '''
+            try:
+                if increment == 1:
+                    self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
+                elif increment == -1:
+                    self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
+                sleep(0.01)
+                self.updateMotorPosition(self.motor.pos)
+                
+            except MotorControllerError:
+                self.encoder.setColor(255, 0, 0)
+                sleep(0.1)
+                self.encoder.setColor(12, 159, 217)
+
+        self.encoder.setInterruptCallback(_encoder_manual_focus_callback)
+        self.encoder_enabled = True
+
+
     def _init_encoder(self):
         if self.motor_enabled:
 
-            def manualFocusWithEncoder(self, increment: int):
-                try:
-                    if increment == 1:
-                        self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
-                    elif increment == -1:
-                        self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
-                    sleep(0.01)
-                    self.updateMotorPosition(self.motor.pos)
-                except MotorControllerError:
-                    self.encoder.setColor(255, 0, 0)
-                    sleep(0.1)
-                    self.encoder.setColor(12, 159, 217)
-
             # Connect the encoder
             try:
-                self.encoder = PIM522RotaryEncoder(manualFocusWithEncoder)
-                self.encoder_enabled = True
+                self.encoder = PIM522RotaryEncoder(self._encoder_dummy_callback)
+                self.enable_encoder()
             except EncoderI2CError as e:
                 self.logger.error(f"Encoder I2C initialization failed. {e}")
         else:
             self.logger.error(
                 f"Motor initialization failed, so encoder will not initialize."
             )
+
+    def enable_encoder_focus(self, callback_func: Callable):
+        '''
+        Sets the encoder callback 
+        '''
 
     def _init_humidity_temp_sensor(self):
         try:
