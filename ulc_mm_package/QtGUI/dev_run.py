@@ -1066,20 +1066,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             cancel=False,
         )
 
-    def manualFocusWithEncoder(self, increment: int):
-        # Is this used? The
-        try:
-            if increment == 1:
-                self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
-            elif increment == -1:
-                self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
-            sleep(0.01)
-            self.updateMotorPosition(self.motor.pos)
-        except MotorControllerError:
-            self.encoder.setColor(255, 0, 0)
-            sleep(0.1)
-            self.encoder.setColor(12, 159, 217)
-
     def exit(self):
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,
