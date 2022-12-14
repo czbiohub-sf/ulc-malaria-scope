@@ -81,7 +81,9 @@ def continuousSSAFRoutine(
         steps_from_focus = None
 
         if images_sent == nn_constants.AF_BATCH_SIZE:
-            async_results = mscope.autofocus_model.get_asyn_results(timeout=None, wait_for_results=True)
+            async_results = mscope.autofocus_model.get_asyn_results(
+                timeout=None, wait_for_results=True
+            )
             steps_from_focus = np.mean([v.result for v in async_results])
             adjust_focus(mscope, -int(steps_from_focus))
             images_sent = 0

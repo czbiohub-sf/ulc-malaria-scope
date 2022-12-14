@@ -510,7 +510,7 @@ class ScopeOp(QObject, Machine):
                     )
                     focus_err = None
 
-                    self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
+                    self.PSSAF_routine = periodicAutofocusWrapper(self.mscope)
                     self.PSSAF_routine.send(None)
 
             try:
