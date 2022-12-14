@@ -180,6 +180,8 @@ class ScopeOp(QObject, Machine):
 
         self.mscope = MalariaScope()
         self.yield_mscope.emit(self.mscope)
+        self.mscope.disable_encoder()
+        
         component_status = self.mscope.getComponentStatus()
 
         if all([status == True for status in component_status.values()]):
