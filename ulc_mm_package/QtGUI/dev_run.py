@@ -441,6 +441,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         # Create scope object
         mscope = MalariaScope()
         self.mscope = mscope
+        self.mscope.enable_manual_focus()
         self.mscope.set_gpio_callback(self.lid_open_handler)
 
         hardware_status = mscope.getComponentStatus()
@@ -1066,6 +1067,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         )
 
     def manualFocusWithEncoder(self, increment: int):
+        # Is this used? The
         try:
             if increment == 1:
                 self.motor.threaded_move_rel(dir=Direction.CW, steps=1)

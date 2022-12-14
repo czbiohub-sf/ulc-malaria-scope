@@ -8,6 +8,7 @@ from ulc_mm_package.hardware.motorcontroller import (
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 from ulc_mm_package.hardware.pim522_rotary_encoder import (
     PIM522RotaryEncoder,
+    EncoderType,
     EncoderI2CError,
 )
 from ulc_mm_package.hardware.pneumatic_module import (

@@ -13,6 +13,7 @@ import ioexpander as io
 
 from time import sleep
 from typing import Callable
+from enum import Enum
 
 from ulc_mm_package.hardware.hardware_constants import (
     ROT_A_PIN,
@@ -22,23 +23,26 @@ from ulc_mm_package.hardware.hardware_constants import (
 )
 from ulc_mm_package.hardware.pim522_rotary_encoder import EncoderI2CError
 
+PIN_RED = 1
+PIN_GREEN = 7
+PIN_BLUE = 2
+
+
+class EncoderType(Enum):
+    BREAKOUT = 0x0F
+    IOEXPANDER = 0x18
+
 
 class PIM522RotaryEncoder:
-    def __init__(self, callback_func: Callable):
-        """A convenience wrapper on top of the Pimoroni PIM522 library.
+    def __init__(self, device_type: EncoderType = EncoderType.BREAKOUT):
+        """A convenience wrapper on top of the Pimoroni PIM522 library."""
+        self.I2C_ADDR = (
+            device_type.Value
+        )  # 0x18 for IO Expander, 0x0F for the encoder breakout
 
-        Parameters
-        ----------
-        callback_func: A callbable function.
-            This function will be passed either a positive or negative number indicating the number of steps taken by the encoder
-            since the last read. When the encoder is rotated at a slow/moderate speed, this will usually always be +1/-1.
-            If the encoder is spun quickly however, this number may be larger.
-        """
-        self.I2C_ADDR = 0x0F  # 0x18 for IO Expander, 0x0F for the encoder breakout
-
-        self.pin_red = 1
-        self.pin_green = 7
-        self.pin_blue = 2
+        self.pin_red = PIN_RED
+        self.pin_green = PIN_GREEN
+        self.pin_blue = PIN_BLUE
 
         POT_ENC_A = ROT_A_PIN
         POT_ENC_B = ROT_B_PIN
@@ -54,9 +58,7 @@ class PIM522RotaryEncoder:
         try:
             ioe = io.IOE(i2c_addr=self.I2C_ADDR, interrupt_pin=ROT_INTERRUPT_PIN)
 
-            # Swap the interrupt pin for the Rotary Encoder breakout
-            if self.I2C_ADDR == 0x0F:
-                ioe.enable_interrupt_out(pin_swap=True)
+            self.enableInterrupt()
 
             ioe.setup_rotary_encoder(1, POT_ENC_A, POT_ENC_B, POT_ENC_C)
 
@@ -71,8 +73,6 @@ class PIM522RotaryEncoder:
             self.ioe = ioe
             self.count = self.ioe.read_rotary_encoder(1)
 
-            self.enableInterrupt()
-            self.setInterruptCallback(callback_func)
             self.setColor(12, 159, 217)  # Biohub blue
         except Exception as e:
             raise EncoderI2CError(e)
@@ -90,6 +90,16 @@ class PIM522RotaryEncoder:
             self.ioe.enable_interrupt_out(pin_swap=True)
 
     def setInterruptCallback(self, callback_func: Callable):
+        """
+        Parameters
+        ----------
+        callback_func: A callbable function.
+            This function will be passed either a positive or negative number indicating the number of steps taken by the encoder
+            since the last read. When the encoder is rotated at a slow/moderate speed, this will usually always be +1/-1.
+            If the encoder is spun quickly however, this number may be larger.
+        """
+
+        self.enableInterrupt()
         self.ioe._gpio.remove_event_detect(self.ioe._interrupt_pin)
 
         def callback(_):
@@ -119,7 +129,9 @@ if __name__ == "__main__":
         elif inc == 1:
             print("backward: Kitchen's empty.")
 
-    encoder = PIM522RotaryEncoder(test_callback)
+    encoder = PIM522RotaryEncoder()
+    encoder.setInterruptCallback(test_callback)
+
     encoder.setColor(12, 159, 217)
 
     print(f"Running for indefinitely, feel free to move the encoder! Ctrl+C to exit.")

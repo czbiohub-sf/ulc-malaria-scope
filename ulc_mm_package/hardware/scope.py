@@ -170,18 +170,32 @@ class MalariaScope:
         except Exception as e:
             self.logger.error(f"Fan initialization failed. {e}")
 
-    def disable_encoder(self):
+    def _init_encoder(self):
+        if self.motor_enabled:
+
+            # Connect the encoder
+            try:
+                self.encoder = PIM522RotaryEncoder(EncoderType.BREAKOUT)
+                self.encoder_enabled = True
+
+            except EncoderI2CError as e:
+                self.logger.error(f"Encoder I2C initialization failed. {e}")
+        else:
+            self.logger.error(
+                f"Motor initialization failed, so encoder will not initialize."
+            )
+
+    def disable_manual_focus(self):
         """
         Sends a dummy callback so that the user cannot adjust the focus manually
         """
 
-        def _encoder_dummy_callback(self, increment):
+        def _encoder_dummy_callback(increment: int):
             pass
 
         self.encoder.setInterruptCallback(_encoder_dummy_callback)
-        self.encoder_enabled = False
 
-    def enable_encoder(self):
+    def enable_manual_focus(self):
         """
         Sets the callback to connect manual encoder rotation with focus stage motion
         """
@@ -196,7 +210,6 @@ class MalariaScope:
                 elif increment == -1:
                     self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
                 sleep(0.01)
-                self.updateMotorPosition(self.motor.pos)
 
             except MotorControllerError:
                 self.encoder.setColor(255, 0, 0)
@@ -204,21 +217,6 @@ class MalariaScope:
                 self.encoder.setColor(12, 159, 217)
 
         self.encoder.setInterruptCallback(_encoder_manual_focus_callback)
-        self.encoder_enabled = True
-
-    def _init_encoder(self):
-        if self.motor_enabled:
-
-            # Connect the encoder
-            try:
-                self.encoder = PIM522RotaryEncoder(self._encoder_dummy_callback)
-                self.enable_encoder()
-            except EncoderI2CError as e:
-                self.logger.error(f"Encoder I2C initialization failed. {e}")
-        else:
-            self.logger.error(
-                f"Motor initialization failed, so encoder will not initialize."
-            )
 
     def enable_encoder_focus(self, callback_func: Callable):
         """
