@@ -85,7 +85,11 @@ VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7ch
 VIDEO_PATH = None
 
 if SIMULATION:
-    _viable_videos = ("../QtGUI/sim_media/sample.avi", "../QtGUI/sim_media/sample.mp4")
+    _viable_videos = (
+        "../QtGUI/sim_media/avt-sample.mp4",
+        "../QtGUI/sim_media/sample.avi",
+        "../QtGUI/sim_media/sample.mp4",
+    )
     VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
     if VIDEO_PATH == None:
         raise RuntimeError(
