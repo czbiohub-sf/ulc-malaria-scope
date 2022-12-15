@@ -16,11 +16,7 @@ from time import perf_counter
 from typing import List
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, Future, wait
 
-from ulc_mm_package.utilities.lock_utils import lock_no_block
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION, MAX_FRAMES
-
-
-WRITE_LOCK = threading.Lock()
 
 
 # ==================== Custom errors ===============================
@@ -43,7 +39,6 @@ class ZarrWriter:
     def __init__(self, camera_selection: CameraOptions = CAMERA_SELECTION):
         self.writable = False
         self.futures: List[Future] = []
-        self.futures_lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
         self.executor = ThreadPoolExecutor(max_workers=16)
 
@@ -108,8 +103,7 @@ class ZarrWriter:
 
     def threadedWriteSingleArray(self, *args, **kwargs):
         f = self.executor.submit(self.writeSingleArray, *args)
-        with lock_timeout(self.futures_lock):
-            self.futures.append(f)
+        self.futures.append(f)
 
     def wait_all(self):
         wait(self.futures, return_when=ALL_COMPLETED)
@@ -133,7 +127,7 @@ class ZarrWriter:
         self.futures = []
 
     def threadedCloseFile(self):
-        """Close the file in a separate thread (and locks the ability to write to the file).
+        """Close the file in a separate thread.
 
         This threaded close was written with UI.py in mind, so that the file can be closed while
         keeping the rest of the GUI responsive.
