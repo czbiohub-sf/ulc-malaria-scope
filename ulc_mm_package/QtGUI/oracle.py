@@ -225,7 +225,7 @@ class Oracle(Machine):
                 QMessageBox.Icon.Warning,
                 "SSH tunnel failed",
                 (
-                    "Could not create SSH tunnel so the scope cannot be accessed remotely. "
+                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
                     "The SSH tunnel is only recreated when the scope is rebooted."
                     '\n\nClick "OK" to continue running without SSH.'
                 ),

@@ -75,6 +75,7 @@ VERBOSE = int(os.environ.get("MS_VERBOSE", 0))
 
 # ================ SSD directory constants ================ #
 if SIMULATION:
+    # SSD_DIR = "/media/pi/"
     SSD_DIR = "../QtGUI/sim_media/pi/"
 else:
     SSD_DIR = "/media/pi/"
