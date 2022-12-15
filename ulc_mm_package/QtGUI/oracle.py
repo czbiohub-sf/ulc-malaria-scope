@@ -226,7 +226,7 @@ class Oracle(Machine):
                 "SSH tunnel failed",
                 (
                     "Could not create SSH tunnel so the scope cannot be accessed remotely. "
-                    "To recreate the SSH tunnel the scope needs to be rebooted."
+                    "The SSH tunnel is only recreated when the scope is rebooted."
                     '\n\nClick "OK" to continue running without SSH.'
                 ),
                 buttons=Buttons.OK,
