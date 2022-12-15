@@ -118,6 +118,18 @@ class ZarrWriter:
         """Close the Zarr store."""
         self.writable = False
         self.wait_all()
+
+        exceptions = []
+        for f in self.futures:
+            if f.exception is not None:
+                exceptions.append(f.exception)
+
+        for i, exc in enumerate(exceptions):
+            self.logger.error(f"exception in zarrwriter: {exc}")
+            if i > 10:
+                self.logger(f"{len(exceptions) - i} exceptions left; {len(exceptions)} total")
+                break
+
         self.futures = []
 
     def threadedCloseFile(self):
