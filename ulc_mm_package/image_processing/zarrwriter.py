@@ -1,4 +1,4 @@
-f""" Simple Zarr storage format wrapper
+""" Simple Zarr storage format wrapper
 
 -- Important Links --
 Library Documentation:
@@ -24,7 +24,6 @@ from ulc_mm_package.utilities.lock_utils import lock_no_block
 WRITE_LOCK = threading.Lock()
 
 
-# ==================== Custom errors ===============================
 class AttemptingWriteWithoutFile(Exception):
     def __str__(self):
         return """
@@ -39,7 +38,6 @@ class WriteInProgress(Exception):
         return "Write in progress."
 
 
-# ==================== Main class ===============================
 class ZarrWriter:
     def __init__(self):
         self.writable = False
