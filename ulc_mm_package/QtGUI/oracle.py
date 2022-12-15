@@ -372,8 +372,8 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Initializing hardware",
             (
-                "If there is a flow cell in the scope, remove it now."
-                '\n\nClick "OK" once the flow cell is removed.'
+                "Remove the CAP module if it is currently on."
+                '\n\nClick "OK" once it is removed.'
             ),
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
@@ -429,7 +429,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
-            'Insert flow cell now.\n\nClick "OK" once it is in place.',
+            'Insert flow cell and replace CAP module now.\n\nClick "OK" once they are in place.',
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
@@ -447,7 +447,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove flow cell now.\n\nClick "OK" once it is removed.',
+            'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
