@@ -579,7 +579,7 @@ class ScopeOp(QObject, Machine):
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
 
-            self.mscope.data_storage.writeData(img, self.img_metadata)
+            self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
             self.count += 1
 
             if self.running:

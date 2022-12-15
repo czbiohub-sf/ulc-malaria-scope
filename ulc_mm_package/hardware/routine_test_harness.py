@@ -211,7 +211,7 @@ def main_acquisition_loop(mscope: MalariaScope):
     cell_density = cell_density_routine(None)
     cell_density.send(None)
 
-    for img, timestamp in mscope.camera.yieldImages():
+    for i, (img, timestamp) in enumerate(mscope.camera.yieldImages()):
         # Display
         _displayImage(img)
 
@@ -248,7 +248,7 @@ def main_acquisition_loop(mscope: MalariaScope):
         fake_per_img_metadata["flowrate"] = flow_val
         fake_per_img_metadata["temperature"] = mscope.ht_sensor.getTemperature()
         fake_per_img_metadata["humidity"] = mscope.ht_sensor.getRelativeHumidity()
-        mscope.data_storage.writeData(img, fake_per_img_metadata)
+        mscope.data_storage.writeData(img, fake_per_img_metadata, i)
 
         # Timed stop condition
         if perf_counter() - start > stop_time_s:

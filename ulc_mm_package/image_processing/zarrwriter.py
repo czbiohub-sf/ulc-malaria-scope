@@ -42,14 +42,10 @@ class WriteInProgress(Exception):
 # ==================== Main class ===============================
 class ZarrWriter:
     def __init__(self):
-        self.store = None
-        self.group = None
-        self.arr_counter = 0
-        self.compressor = None
         self.writable = False
-        self.prev_write_time = 0
         self.futures = []
-        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.futures_lock = threading.Lock()
+        self.executor = ThreadPoolExecutor(max_workers=16)
         self.logger = logging.getLogger(__name__)
 
     def createNewFile(self, filename: str, overwrite: bool = False):
@@ -62,15 +58,16 @@ class ZarrWriter:
         overwrite : bool
             Will overwrite a file with the existing filename if it exists, otherwise will append.
         """
-
         try:
             filename = f"{filename}.zip"
-            if overwrite:
-                self.store = zarr.ZipStore(filename, mode="x")
-            else:
-                self.store = zarr.ZipStore(filename, mode="w")
-            self.group = zarr.group(store=self.store)
-            self.arr_counter = 0
+            self.array = zarr.open(
+                filename,
+                "x" if overwrite else "w",
+                shape=(772, 1032, int(2e9)),
+                chunks=(772, 1032, 1),
+                compressor=None,
+                dtype="u1",
+            )
             self.writable = True
         except AttributeError as e:
             self.logger.error(
@@ -78,8 +75,7 @@ class ZarrWriter:
             )
             raise IOError(f"Error creating {filename}.zip")
 
-    @lock_no_block(WRITE_LOCK, WriteInProgress)
-    def writeSingleArray(self, data) -> int:
+    def writeSingleArray(self, data, pos: int) -> None:
         """Write a single array and optional metadata to the Zarr store.
 
         Parameters
@@ -87,20 +83,9 @@ class ZarrWriter:
         data : np.ndarray
         metadata : dict
             A dictionary of keys to values to be associated with the given data.
-
-        Returns
-        -------
-        int:
-            arr_count (id)
         """
-
         try:
-            self.prev_write_time = perf_counter()
-            self.group.array(
-                f"{self.arr_counter}", data=data, compressor=self.compressor
-            )
-            self.arr_counter += 1
-            return self.arr_counter
+            self.array[:, :, pos] = data
         except Exception as e:
             self.logger.error(
                 f"zarrwriter.py : writeSingleArray : Exception encountered - {e}"
@@ -108,15 +93,26 @@ class ZarrWriter:
             raise AttemptingWriteWithoutFile()
 
     def threadedWriteSingleArray(self, *args, **kwargs):
-        self.futures.append(self.executor.submit(self.writeSingleArray, *args))
+        fs = []
+        with lock_timeout(self.futures_lock):
+            for f in self.futures:
+                if f.done():
+                    f.result()
+                else:
+                    fs.append(f)
+            self.futures = fs
 
-    @lock_no_block(WRITE_LOCK, WriteInProgress)
+        f = self.executor.submit(self.writeSingleArray, *args)
+        with lock_timeout(self.futures_lock):
+            self.futures.append(f)
+
+    def wait_all(self):
+        wait(self.futures, return_when=ALL_COMPLETED)
+
     def closeFile(self):
         """Close the Zarr store."""
         self.writable = False
         wait(self.futures, return_when=ALL_COMPLETED)
-        self.store.close()
-        self.store = None
         self.futures = []
 
     def threadedCloseFile(self):
@@ -130,8 +126,3 @@ class ZarrWriter:
         future: An object that can be polled to check if closing the file has completed
         """
         return self.executor.submit(self.closeFile)
-
-    def __del__(self):
-        # If the user did not manually close the storage, close it
-        if self.store != None:
-            self.store.close()

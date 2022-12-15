@@ -116,7 +116,7 @@ class DataStorage:
         )
         self.zw.createNewFile(filename)
 
-    def writeData(self, image: np.ndarray, metadata: Dict):
+    def writeData(self, image: np.ndarray, metadata: Dict, count: int):
         """Write a new image and its corresponding metadata.
 
         Parameters
@@ -131,7 +131,7 @@ class DataStorage:
 
         if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
             self.prev_write_time = perf_counter()
-            self.zw.threadedWriteSingleArray(image)
+            self.zw.threadedWriteSingleArray(image, count)
             self.md_writer.writerow(metadata)
 
     def writeSingleImage(self, image: np.ndarray, custom_image_name: str):

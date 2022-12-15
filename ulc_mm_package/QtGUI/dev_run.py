@@ -128,9 +128,9 @@ class AcquisitionThread(QThread):
         while True:
             if self.camera_activated:
                 try:
-                    for image, timestamp in self.camera.yieldImages():
+                    for i, (image, timestamp) in enumerate(self.camera.yieldImages()):
                         self.updateGUIElements()
-                        self.save(image)
+                        self.save(image, i)
                         self.zStack(image)
                         self.activeFlowControl(image, timestamp)
                         self._autobrightness(image)
@@ -192,7 +192,7 @@ class AcquisitionThread(QThread):
             "focus_adjustment": self.af_adjustment_done,
         }
 
-    def save(self, image):
+    def save(self, image, idx: int):
         if self.single_save:
             filename = (
                 path.join(self.main_dir, datetime.now().strftime(DATETIME_FORMAT))
@@ -202,7 +202,7 @@ class AcquisitionThread(QThread):
             self.single_save = False
 
         if self.continuous_save:
-            self.data_storage.writeData(image, self.getMetadata())
+            self.data_storage.writeData(image, self.getMetadata(), idx)
             self.measurementTime.emit(int(perf_counter() - self.start_time))
 
     def updateGUIElements(self):
