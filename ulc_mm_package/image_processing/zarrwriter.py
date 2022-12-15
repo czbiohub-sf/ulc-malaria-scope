@@ -6,22 +6,17 @@ Library Documentation:
 
 """
 
+import zarr
+import logging
+import threading
 import functools
 import threading
-from time import perf_counter
-import logging
-from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
-
-import zarr
-import threading
 
 from time import perf_counter
-from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
+from typing import List
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, Future, wait
 
-from ulc_mm_package.utilities.lock_utils import lock_no_block
-
-
-WRITE_LOCK = threading.Lock()
+from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION, MAX_FRAMES
 
 
 class AttemptingWriteWithoutFile(Exception):
@@ -39,14 +34,15 @@ class WriteInProgress(Exception):
 
 
 class ZarrWriter:
-    def __init__(self):
+    def __init__(self, camera_selection: CameraOptions = CAMERA_SELECTION):
         self.writable = False
-        self.futures = []
-        self.futures_lock = threading.Lock()
-        self.executor = ThreadPoolExecutor(max_workers=16)
+        self.futures: List[Future] = []
         self.logger = logging.getLogger(__name__)
+        self.executor = ThreadPoolExecutor(max_workers=16)
 
-    def createNewFile(self, filename: str, overwrite: bool = False):
+        self.camera_selection: CameraOptions = camera_selection
+
+    def createNewFile(self, filename: str, overwrite: bool = True):
         """Create a new zarr file.
 
         Parameters
@@ -60,9 +56,17 @@ class ZarrWriter:
             filename = f"{filename}.zip"
             self.array = zarr.open(
                 filename,
-                "x" if overwrite else "w",
-                shape=(772, 1032, int(2e9)),
-                chunks=(772, 1032, 1),
+                "w" if overwrite else "x",
+                shape=(
+                    self.camera_selection.IMG_HEIGHT,
+                    self.camera_selection.IMG_WIDTH,
+                    MAX_FRAMES,
+                ),
+                chunks=(
+                    self.camera_selection.IMG_HEIGHT,
+                    self.camera_selection.IMG_WIDTH,
+                    1,
+                ),
                 compressor=None,
                 dtype="u1",
             )
@@ -84,6 +88,9 @@ class ZarrWriter:
         Since each `pos` is a different chunk, it is threadsafe - see
         https://zarr.readthedocs.io/en/stable/tutorial.html#parallel-computing-and-synchronization
         """
+        if not self.writable:
+            return
+
         try:
             self.array[:, :, pos] = data
         except Exception as e:
@@ -93,18 +100,8 @@ class ZarrWriter:
             raise AttemptingWriteWithoutFile()
 
     def threadedWriteSingleArray(self, *args, **kwargs):
-        fs = []
-        with lock_timeout(self.futures_lock):
-            for f in self.futures:
-                if f.done():
-                    f.result()
-                else:
-                    fs.append(f)
-            self.futures = fs
-
         f = self.executor.submit(self.writeSingleArray, *args)
-        with lock_timeout(self.futures_lock):
-            self.futures.append(f)
+        self.futures.append(f)
 
     def wait_all(self):
         wait(self.futures, return_when=ALL_COMPLETED)
@@ -112,11 +109,25 @@ class ZarrWriter:
     def closeFile(self):
         """Close the Zarr store."""
         self.writable = False
-        wait(self.futures, return_when=ALL_COMPLETED)
+        self.wait_all()
+
+        exceptions = []
+        for f in self.futures:
+            if f.exception is not None:
+                exceptions.append(f.exception)
+
+        for i, exc in enumerate(exceptions):
+            self.logger.error(f"exception in zarrwriter: {exc}")
+            if i > 10:
+                self.logger.error(
+                    f"{len(exceptions) - i} exceptions left; {len(exceptions)} total"
+                )
+                break
+
         self.futures = []
 
     def threadedCloseFile(self):
-        """Close the file in a separate thread (and locks the ability to write to the file).
+        """Close the file in a separate thread.
 
         This threaded close was written with UI.py in mind, so that the file can be closed while
         keeping the rest of the GUI responsive.

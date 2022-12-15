@@ -17,7 +17,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
-from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
+from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS, MAX_FRAMES
 from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
@@ -26,7 +26,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
-    MAX_FRAMES,
     STATUS,
     TH_PERIOD,
 )
