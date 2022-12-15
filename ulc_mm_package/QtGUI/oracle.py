@@ -529,7 +529,7 @@ if __name__ == "__main__":
             sleep(3)
             oracle.emergency_shutoff()
         except Exception as e:
-            oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED: {e}")
+            oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED - {e}")
 
         sys.exit(1)
 

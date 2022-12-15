@@ -506,7 +506,7 @@ class ScopeOp(QObject, Machine):
                     return
                 else:
                     self.logger.warning(
-                        f"Ignoring periodic SSAF exception in simulation mode. {e}"
+                        f"Ignoring periodic SSAF exception in simulation mode - {e}"
                     )
                     focus_err = None
 
@@ -528,7 +528,7 @@ class ScopeOp(QObject, Machine):
                     return
                 else:
                     self.logger.warning(
-                        f"Ignoring flowcontrol exception in simulation mode. {e}"
+                        f"Ignoring flowcontrol exception in simulation mode - {e}"
                     )
                     flowrate = None
 
@@ -557,7 +557,7 @@ class ScopeOp(QObject, Machine):
                 ) = (pressure, status)
             except PressureSensorStaleValue as e:
                 ## TODO???
-                self.logger.info(f"Stale pressure sensor value: {e}")
+                self.logger.info(f"Stale pressure sensor value - {e}")
 
             self.img_metadata[
                 "syringe_pos"
