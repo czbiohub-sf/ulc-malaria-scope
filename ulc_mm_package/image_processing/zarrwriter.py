@@ -80,9 +80,11 @@ class ZarrWriter:
 
         Parameters
         ----------
-        data : np.ndarray
-        metadata : dict
-            A dictionary of keys to values to be associated with the given data.
+        data : np.ndarray - the image to write
+        pos: int - the index of the zarr array to write to
+
+        Since each `pos` is a different chunk, it is threadsafe - see
+        https://zarr.readthedocs.io/en/stable/tutorial.html#parallel-computing-and-synchronization
         """
         try:
             self.array[:, :, pos] = data
