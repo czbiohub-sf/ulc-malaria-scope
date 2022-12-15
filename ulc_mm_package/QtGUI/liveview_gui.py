@@ -97,7 +97,7 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(float)
     def update_flowrate(self, val):
-        self.flowrate_val.setText(f"Actual = {val:.2}")
+        self.flowrate_val.setText(f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}")
 
     @pyqtSlot()
     def enable_pause(self):
