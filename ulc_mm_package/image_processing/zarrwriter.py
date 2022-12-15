@@ -44,7 +44,7 @@ class ZarrWriter:
 
         self.camera_selection: CameraOptions = camera_selection
 
-    def createNewFile(self, filename: str, overwrite: bool = False):
+    def createNewFile(self, filename: str, overwrite: bool = True):
         """Create a new zarr file.
 
         Parameters
@@ -58,7 +58,7 @@ class ZarrWriter:
             filename = f"{filename}.zip"
             self.array = zarr.open(
                 filename,
-                "x" if overwrite else "w",
+                "w" if overwrite else "x",
                 shape=(
                     self.camera_selection.IMG_HEIGHT,
                     self.camera_selection.IMG_WIDTH,
