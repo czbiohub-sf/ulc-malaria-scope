@@ -142,7 +142,7 @@ class LiveviewGUI(QMainWindow):
         self.state_lbl = QLabel("-")
         self.pause_btn = QPushButton("Pause")
         self.exit_btn = QPushButton("Exit")
-        self.img_count_lbl = QLabel("Frame:")
+        self.img_count_lbl = QLabel("Fields of view:")
         self.img_count_val = QLabel("-")
         self.terminal_txt = QPlainTextEdit(self.terminal_msg)
         self.terminal_scroll = QScrollBar()
