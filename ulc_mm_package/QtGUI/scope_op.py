@@ -408,11 +408,11 @@ class ScopeOp(QObject, Machine):
                 self.next_state()
             except InvalidMove:
                 self.logger.error(
-                    "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
                 )
                 self.error.emit(
                     "Calibration failed",
-                    "Unable to achieve desired focus within condenser's depth of field.",
+                    "Unable to achieve focus because the stage has reached its range of motion limit..",
                     False,
                 )
 
