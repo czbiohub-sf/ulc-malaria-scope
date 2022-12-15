@@ -24,7 +24,7 @@ from typing import (
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
-from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
+from ulc_mm_package.hardware.camera import CameraDims
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import (
@@ -66,19 +66,14 @@ class NCSModel:
             NCSModel.core = Core()
         cls.core = NCSModel.core
 
-    def __init__(
-        self,
-        model_path: str,
-        camera_selection: CameraOptions = CAMERA_SELECTION,
-    ):
+    def __init__(self, model_path: str):
         """
         params:
             model_path: path to the 'xml' file
-            camera_selection: the camera that is used for inference. Just used for img dims
         """
         self.connected = False
         self.device_name = "MYRIAD"
-        self.model = self._compile_model(model_path, camera_selection)
+        self.model = self._compile_model(model_path)
 
         self.asyn_result_lock = threading.Lock()
         self.futures_lock = threading.Lock()
@@ -94,11 +89,7 @@ class NCSModel:
         self._executor = ThreadPoolExecutor(max_workers=1)
         self._futures: List[Future] = []
 
-    def _compile_model(
-        self,
-        model_path: str,
-        camera_selection: CameraOptions,
-    ):
+    def _compile_model(self, model_path: str):
         if self.connected:
             raise RuntimeError(f"model {self} already compiled")
 
@@ -117,7 +108,7 @@ class NCSModel:
             .set_element_type(Type.u8) \
             .set_layout(Layout("NHWC")) \
             .set_spatial_static_shape(
-                camera_selection.IMG_HEIGHT, camera_selection.IMG_WIDTH
+                CameraDims.IMG_HEIGHT, CameraDims.IMG_WIDTH
             )
         # fmt: on
         ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)

@@ -14,6 +14,7 @@ import logging
 from time import perf_counter
 import queue
 from typing import Generator, Tuple
+from collections import namedtuple
 
 import numpy as np
 import vimba
@@ -25,7 +26,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     DEFAULT_EXPOSURE_MS,
     DEVICELINK_THROUGHPUT,
 )
-from ulc_mm_package.hardware.camera import CameraError
+from ulc_mm_package.hardware.camera import CameraError, CameraDims
 
 
 class BaslerCamera(Basler):
@@ -44,14 +45,17 @@ class BaslerCamera(Basler):
             self.camera.PixelFormat.SetValue("Mono8")
             self.exposureTime_ms = DEFAULT_EXPOSURE_MS
             self.grabStrategy = GrabStrategy.LATEST_IMAGE_ONLY
+            CameraDims.set_resolution(self.getImgWidth(), self.getImgHeight())
         except Exception:
             raise CameraError("Camera could not be instantiated.")
 
-    def yieldImages(self):
+    def yieldImages(self) -> Generator[Tuple[npt.NDArray, int], None, None]:
         return super().yieldImages(self.grabStrategy)
 
-    def _getTemperature(self):
-        return self.camera.DeviceTemperature.GetValue()
+    def setBinning(self, bin_factor: int, mode: str = "Average") -> None:
+        """Override the existing function to also update CameraDims."""
+        super().setBinning(bin_factor, mode)
+        CameraDims.set_resolution(self.getImgWidth(), self.getImgHeight())
 
 
 class AVTCamera:
@@ -84,6 +88,7 @@ class AVTCamera:
         self.camera.ReverseY.set(True)
         self.setBinning(bin_factor=2)
         self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
+        CameraDims.set_resolution(self.getImgWidth(), self.getImgHeight())
 
     def connect(self) -> None:
         self.camera = self._get_camera()
@@ -182,8 +187,18 @@ class AVTCamera:
         self.camera.Width.set(self.camera.WidthMax.get())
         self.camera.Height.set(self.camera.HeightMax.get())
 
+        CameraDims.set_resolution(self.getImgWidth(), self.getImgHeight())
+
     def getBinning(self):
         return self.camera.BinningHorizontal.get()
+
+    def getImgHeight(self) -> int:
+        """Get the current image resolution's height"""
+        return self.camera.Height.get()
+
+    def getImgWidth(self) -> int:
+        """Get the current image resolution's width"""
+        return self.camera.Width.get()
 
     def setDeviceLinkThroughputLimit(self, bytes_per_second: int):
         self.camera.DeviceLinkThroughputLimit.set(bytes_per_second)

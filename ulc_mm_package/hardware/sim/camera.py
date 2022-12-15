@@ -13,7 +13,7 @@ import cv2
 from time import time, perf_counter, sleep
 
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS, VIDEO_PATH
-from ulc_mm_package.hardware.camera import CameraError
+from ulc_mm_package.hardware.camera import CameraError, CameraDims
 
 
 class SimCamera:
@@ -21,7 +21,8 @@ class SimCamera:
         self._isActivated = True
 
         try:
-            self.binning = 1
+            self.binning = 2
+            self.setBinning(self.binning)
             self.exposureTime_ms = DEFAULT_EXPOSURE_MS
 
             # Setup simulated video stream
@@ -37,6 +38,12 @@ class SimCamera:
 
     def setBinning(self, bin_factor=1, mode="Average"):
         self.binning = bin_factor
+        if bin_factor == 1:
+            w, h = CameraDims.get_dims()
+            CameraDims.set_resolution(w * 2, h * 2)
+        elif bin_factor == 2:
+            w, h = CameraDims.get_dims()
+            CameraDims.set_resolution(w // 2, h // 2)
 
     def getBinning(self):
         return self.binning
@@ -77,8 +84,8 @@ class SimCamera:
 
 
 class BaslerCamera(SimCamera):
-    pass
+    CameraDims.set_resolution(1200, 1600)
 
 
 class AVTCamera(SimCamera):
-    pass
+    CameraDims.set_resolution(1544, 2064)

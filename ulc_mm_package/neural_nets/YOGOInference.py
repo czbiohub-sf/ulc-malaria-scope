@@ -9,7 +9,6 @@ from typing import Any, List, Union
 
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
-from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 from ulc_mm_package.neural_nets.NCSModel import (
     NCSModel,
     AsyncInferenceResult,
@@ -47,12 +46,8 @@ class YOGO(NCSModel):
 
     """
 
-    def __init__(
-        self,
-        model_path: str = YOGO_MODEL_DIR,
-        camera_selection: CameraOptions = CAMERA_SELECTION,
-    ):
-        super().__init__(model_path, camera_selection)
+    def __init__(self, model_path: str = YOGO_MODEL_DIR):
+        super().__init__(model_path)
 
     @staticmethod
     def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD):

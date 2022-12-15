@@ -1,38 +1,16 @@
 import os
 import usb
-
-from typing import Tuple
 from enum import auto, Enum
-from collections import namedtuple
 
 
 class MissingCameraError(Exception):
     ...
 
 
-ImageDims = namedtuple("ImageDims", ["width", "height"])
-
-
 class CameraOptions(Enum):
     AVT = auto()
     BASLER = auto()
     SIMULATED = auto()
-
-    def img_dims(self) -> ImageDims:
-        if self == CameraOptions.AVT:
-            return ImageDims(height=772, width=1032)
-        elif self == CameraOptions.BASLER:
-            return ImageDims(height=600, width=800)
-        elif self == CameraOptions.SIMULATED:
-            return ImageDims(height=600, width=800)
-
-    @property
-    def IMG_WIDTH(self) -> int:
-        return self.img_dims().width
-
-    @property
-    def IMG_HEIGHT(self) -> int:
-        return self.img_dims().height
 
 
 # ================ Data storage metadata ================ #

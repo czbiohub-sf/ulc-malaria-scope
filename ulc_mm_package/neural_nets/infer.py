@@ -13,8 +13,6 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 from pathlib import Path
 
-from ulc_mm_package.scope_constants import CameraOptions
-from ulc_mm_package.neural_nets.NCSModel import NCSModel
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 
@@ -254,10 +252,7 @@ if __name__ == "__main__":
     elif args.model == "yogo":
         model_classes = [YOGO]
 
-    if im.shape == (600, 800):
-        models = [m(camera_selection=CameraOptions.BASLER) for m in model_classes]
-    else:
-        models = [m(camera_selection=CameraOptions.AVT) for m in model_classes]
+    models = [m() for m in model_classes]
 
     if args.asyn and not args.view_img:
         infer_func = asyn_infer

@@ -2,7 +2,7 @@
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel
 from ulc_mm_package.neural_nets.neural_network_constants import AUTOFOCUS_MODEL_DIR
-from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
+from ulc_mm_package.hardware.camera import Camera
 
 
 class AutoFocus(NCSModel):
@@ -16,15 +16,8 @@ class AutoFocus(NCSModel):
         <steps from 0!>
     """
 
-    def __init__(
-        self,
-        model_path: str = AUTOFOCUS_MODEL_DIR,
-        camera_selection: CameraOptions = CAMERA_SELECTION,
-    ):
-        super().__init__(
-            model_path=model_path,
-            camera_selection=camera_selection,
-        )
+    def __init__(self, model_path: str = AUTOFOCUS_MODEL_DIR):
+        super().__init__(model_path=model_path)
 
     def __call__(self, input_img):
         return self.syn(input_img)
