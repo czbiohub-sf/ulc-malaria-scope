@@ -282,9 +282,9 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Pause run?",
             (
-                "While paused, you can mix/add more sample to the flow cell "
-                "without ending the experiment."
-                '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
+                "While paused, you can add more sample to the flow cell without ending the experiment."
+                '\n\nClick "OK" to pause this run. '
+                'Wait for the next dialog before removing the CAP module.'
             ),
             buttons=Buttons.CANCEL,
         )
@@ -298,8 +298,11 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Paused run",
             (
-                "The condensor can now be removed."
-                '\n\nAfter mixing the sample and replacing the condensor, click "OK" to resume this run.'
+                "The CAP module can now be removed. "
+                "Please empty both reservoirs and reload 12 uL of fresh "
+                "diluted blood (from the same participant) into the sample reservoir."
+                '\n\nAfter reloading the reservoir and replacing the CAP module, '
+                'click "OK" to resume this run.'
             ),
             buttons=Buttons.OK,
         )
