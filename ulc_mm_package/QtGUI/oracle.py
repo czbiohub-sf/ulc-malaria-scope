@@ -61,6 +61,7 @@ _ERROR_MSG = '\n\nClick "OK" to end this run.'
 
 _IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
 _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
+_IMAGE_RELOAD_PATH = "gui_images/remove_infographic.png"
 
 
 class Buttons(enum.Enum):
@@ -298,13 +299,13 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Paused run",
             (
-                "The CAP module can now be removed. "
-                "Please empty both reservoirs and reload 12 uL of fresh "
-                "diluted blood (from the same participant) into the sample reservoir."
-                '\n\nAfter reloading the reservoir and replacing the CAP module, '
-                'click "OK" to resume this run.'
+                "The CAP module can now be removed."
+                "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
+                "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
+                '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
             ),
             buttons=Buttons.OK,
+            image=_IMAGE_RELOAD_PATH,
         )
         self.scopeop.unpause()
 
