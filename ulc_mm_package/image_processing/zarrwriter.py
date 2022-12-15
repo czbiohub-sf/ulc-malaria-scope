@@ -6,19 +6,18 @@ Library Documentation:
 
 """
 
+import zarr
+import logging
+import threading
 import functools
 import threading
-from time import perf_counter
-import logging
-from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
-
-import zarr
-import threading
 
 from time import perf_counter
-from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
+from typing import List
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, Future, wait
 
 from ulc_mm_package.utilities.lock_utils import lock_no_block
+from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION, MAX_FRAMES
 
 
 WRITE_LOCK = threading.Lock()
@@ -41,12 +40,14 @@ class WriteInProgress(Exception):
 
 # ==================== Main class ===============================
 class ZarrWriter:
-    def __init__(self):
+    def __init__(self, camera_selection: CameraOptions = CAMERA_SELECTION):
         self.writable = False
-        self.futures = []
+        self.futures: List[Future] = []
         self.futures_lock = threading.Lock()
-        self.executor = ThreadPoolExecutor(max_workers=16)
         self.logger = logging.getLogger(__name__)
+        self.executor = ThreadPoolExecutor(max_workers=16)
+
+        self.camera_selection: CameraOptions = camera_selection
 
     def createNewFile(self, filename: str, overwrite: bool = False):
         """Create a new zarr file.
@@ -63,8 +64,16 @@ class ZarrWriter:
             self.array = zarr.open(
                 filename,
                 "x" if overwrite else "w",
-                shape=(772, 1032, int(2e9)),
-                chunks=(772, 1032, 1),
+                shape=(
+                    self.camera_selection.IMG_HEIGHT,
+                    self.camera_selection.IMG_WIDTH,
+                    MAX_FRAMES,
+                ),
+                chunks=(
+                    self.camera_selection.IMG_HEIGHT,
+                    self.camera_selection.IMG_WIDTH,
+                    1,
+                ),
                 compressor=None,
                 dtype="u1",
             )
@@ -86,6 +95,9 @@ class ZarrWriter:
         Since each `pos` is a different chunk, it is threadsafe - see
         https://zarr.readthedocs.io/en/stable/tutorial.html#parallel-computing-and-synchronization
         """
+        if not self.writable:
+            return
+
         try:
             self.array[:, :, pos] = data
         except Exception as e:
@@ -95,15 +107,6 @@ class ZarrWriter:
             raise AttemptingWriteWithoutFile()
 
     def threadedWriteSingleArray(self, *args, **kwargs):
-        fs = []
-        with lock_timeout(self.futures_lock):
-            for f in self.futures:
-                if f.done():
-                    f.result()
-                else:
-                    fs.append(f)
-            self.futures = fs
-
         f = self.executor.submit(self.writeSingleArray, *args)
         with lock_timeout(self.futures_lock):
             self.futures.append(f)
@@ -114,7 +117,7 @@ class ZarrWriter:
     def closeFile(self):
         """Close the Zarr store."""
         self.writable = False
-        wait(self.futures, return_when=ALL_COMPLETED)
+        self.wait_all()
         self.futures = []
 
     def threadedCloseFile(self):

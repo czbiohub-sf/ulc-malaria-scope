@@ -25,6 +25,7 @@ class CameraOptions(Enum):
             return ImageDims(height=600, width=800)
         elif self == CameraOptions.SIMULATED:
             return ImageDims(height=600, width=800)
+        raise ValueError("this is impossible because this class is an enum")
 
     @property
     def IMG_WIDTH(self) -> int:
@@ -78,6 +79,11 @@ if SIMULATION:
     SSD_DIR = "../QtGUI/sim_media/pi/"
 else:
     SSD_DIR = "/media/pi/"
+
+# ================ Experiment timeout ================ #
+MAX_FRAMES = 20000  # Rounded up from 10 minutes of data at 30 FPS
+if SIMULATION:
+    MAX_FRAMES = 2000
 
 # ================ Camera constants ================ #
 AVT_VENDOR_ID = 0x1AB2
