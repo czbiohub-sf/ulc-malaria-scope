@@ -24,6 +24,10 @@ class CameraOptions(Enum):
         elif self == CameraOptions.BASLER:
             return ImageDims(height=600, width=800)
         elif self == CameraOptions.SIMULATED:
+            # FIXME: if 'avt' in videopath, assume it is an avt vid
+            # a bit hacky, but workable for just sim mode
+            if "avt" in VIDEO_PATH:
+                return ImageDims(height=772, width=1032)
             return ImageDims(height=600, width=800)
 
     @property
