@@ -121,7 +121,7 @@ class ZarrWriter:
         for i, exc in enumerate(exceptions):
             self.logger.error(f"exception in zarrwriter: {exc}")
             if i > 10:
-                self.logger(
+                self.logger.error(
                     f"{len(exceptions) - i} exceptions left; {len(exceptions)} total"
                 )
                 break
