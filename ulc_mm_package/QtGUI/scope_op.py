@@ -58,7 +58,7 @@ class ScopeOp(QObject, Machine):
     update_cell_count = pyqtSignal(ClassCountResult)
     update_msg = pyqtSignal(str)
 
-    update_flowrate = pyqtSignal(int)
+    update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(int)
 
     def __init__(self, img_signal):
@@ -428,14 +428,14 @@ class ScopeOp(QObject, Machine):
             flowrate = self.fastflow_routine.send((img, timestamp))
 
             if flowrate != None:
-                self.update_flowrate.emit(int(flowrate))
+                self.update_flowrate.emit(flowrate)
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = self.target_flowrate
                 self.logger.info(
-                    f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}."
+                    f"Fastflow successful. Flowrate (simulated) = {self.fastflow_result}."
                 )
-                self.update_flowrate.emit(int(self.fastflow_result))
+                self.update_flowrate.emit(self.fastflow_result)
                 self.next_state()
             else:
                 self.fastflow_result = -1
@@ -448,7 +448,7 @@ class ScopeOp(QObject, Machine):
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(
-                f"Fastflow successful. Flowrate = {int(self.fastflow_result)}."
+                f"Fastflow successful. Flowrate = {self.fastflow_result}."
             )
             self.update_flowrate.emit(self.fastflow_result)
             self.next_state()
@@ -545,7 +545,7 @@ class ScopeOp(QObject, Machine):
                 # TODO change this to non int?
                 self.update_focus.emit(int(focus_err))
             if flowrate != None:
-                self.update_flowrate.emit(int(flowrate))
+                self.update_flowrate.emit(flowrate)
 
             # Update remaining metadata
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
