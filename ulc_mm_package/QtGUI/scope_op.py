@@ -447,9 +447,7 @@ class ScopeOp(QObject, Machine):
                 )
         except StopIteration as e:
             self.fastflow_result = e.value
-            self.logger.info(
-                f"Fastflow successful. Flowrate = {self.fastflow_result}."
-            )
+            self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
             self.update_flowrate.emit(self.fastflow_result)
             self.next_state()
         else:

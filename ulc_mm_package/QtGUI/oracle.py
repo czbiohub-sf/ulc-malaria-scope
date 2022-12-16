@@ -285,7 +285,7 @@ class Oracle(Machine):
             (
                 "While paused, you can add more sample to the flow cell without ending the experiment."
                 '\n\nClick "OK" to pause this run. '
-                'Wait for the next dialog before removing the CAP module.'
+                "Wait for the next dialog before removing the CAP module."
             ),
             buttons=Buttons.CANCEL,
         )
