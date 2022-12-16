@@ -110,7 +110,7 @@ class Oracle(Machine):
         self.liveview_window = LiveviewGUI()
 
         # Instantiate and configure Oracle elements
-        self._init_variables()
+        self._set_variables()
         self._init_threads()
         self._init_states()
         self._init_sigslots()
@@ -121,7 +121,7 @@ class Oracle(Machine):
         # Trigger first transition
         self.next_state()
 
-    def _init_variables(self):
+    def _set_variables(self):
         # Instantiate metadata dicts
         self.form_metadata = None
         self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
@@ -173,7 +173,7 @@ class Oracle(Machine):
             trigger="rerun",
             source="intermission",
             dest="form",
-            before=self._init_variables,
+            before=self._set_variables,
         )
 
     def _init_sigslots(self):

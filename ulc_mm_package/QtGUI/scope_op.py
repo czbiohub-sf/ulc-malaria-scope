@@ -71,10 +71,10 @@ class ScopeOp(QObject, Machine):
         self.img_signal = self.acquisition.update_scopeop
 
         self.mscope = None
-        
+
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
-        self._init_variables()
+        self._set_variables()
 
         states = [
             {
@@ -134,7 +134,7 @@ class ScopeOp(QObject, Machine):
             trigger="unpause", source="pause", dest="autobrightness_precells"
         )
 
-    def _init_variables(self):
+    def _set_variables(self):
         self.running = None
 
         self.autofocus_batch = []
@@ -210,7 +210,7 @@ class ScopeOp(QObject, Machine):
 
     def reset(self):
         # Reset variables
-        self._init_variables()
+        self._set_variables()
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
