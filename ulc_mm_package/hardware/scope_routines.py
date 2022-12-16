@@ -5,6 +5,7 @@ import numpy as np
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
+from ulc_mm_package.hardware.hardware_modules import PressureLeak, PressureSensorBusy
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
 
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
@@ -285,6 +286,55 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
     return autobrightness.prev_mean_img_brightness
 
 
+def checkPressureDifference(mscope: MalariaScope) -> float:
+    """Check the pressure differential. Raises an exception if difference is insufficent
+    or if the pressure sensor cannot be read.
+
+    Returns
+    -------
+    float:
+        Pressure difference value
+
+    Exceptions
+    ----------
+    PressureSensorBusy:
+        Raised if a valid value cannot be read from the sensor after the specified number of max_attempts
+    PressureLeak:
+        Raised if the pressure difference between the fully extended and retracted syringe is insufficient.
+    """
+
+    # Record pre-pull pressure
+    try:
+        initial_pressure, _ = mscope.pneumatic_module.getPressureMaxReadAttempts(
+            max_attempts=10
+        )
+    except PressureSensorBusy:
+        raise
+
+    # Move syringe to its maximally extended (lowest) position
+    mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
+
+    # Record pressure at the bottom of the syringe range
+    try:
+        final_pressure, _ = mscope.pneumatic_module.getPressureMaxReadAttempts(
+            max_attempts=10
+        )
+    except PressureSensorBusy:
+        raise
+
+    # Check if there is a pressure leak
+    pressure_diff = initial_pressure - final_pressure
+    if pressure_diff < MIN_PRESSURE_DIFF:
+        raise PressureLeak(
+            f"Pressure leak detected, could only generate {pressure_diff} hPa pressure differential."
+        )
+    else:
+        # Return syringe to its initial position
+        mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
+
+        return pressure_diff
+
+
 def find_cells_routine(
     mscope: MalariaScope,
     pull_time: float = 5,
@@ -327,9 +377,8 @@ def find_cells_routine(
         Raised if no cells found after max_attempts iterations
     """
 
-    max_attempts = (
-        3  # Maximum number of times to run check for cells routine before aborting
-    )
+    # Maximum number of times to run check for cells routine before aborting
+    max_attempts = 3
     cell_finder = CellFinder()
     img = yield
 
@@ -351,22 +400,8 @@ def find_cells_routine(
         if max_attempts == 0:
             raise NoCellsFound()
 
-        # Record pre-pull pressure
-        initial_pressure = mscope.pneumatic_module.getPressure()
-
         # Pull the syringe maximally for `pull_time` seconds
         start = perf_counter()
-        mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
-
-        # Record mid-pull pressure
-        final_pressure = mscope.pneumatic_module.getPressure()
-
-        # Check if there is a pressure leak
-        pressure_diff = initial_pressure - final_pressure
-        if pressure_diff < MIN_PRESSURE_DIFF:
-            raise PressureLeak(
-                f"Pressure leak detected, could only generate {pressure_diff} hPa pressure differential."
-            )
 
         while perf_counter() - start < pull_time:
             img = yield
