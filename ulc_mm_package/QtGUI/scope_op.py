@@ -260,7 +260,13 @@ class ScopeOp(QObject, Machine):
             self.logger.info(f"Pressure difference ok: {pdiff} hPa.")
             self.next_state()
         except PressureSensorBusy:
-            raise
+            self.logger.error(f"Unable to read value from the pressure sensor - {e}")
+            # TODO What to do in a case where the sensor is acting funky?
+            self.error.emit(
+                "Calibration failed",
+                "Failed to read pressure sensor to perform pressure seal check.",
+                False,
+            )
         except PressureLeak as e:
             self.logger.error(f"Improper seal / pressure leak detected - {e}")
             # TODO provide instructions for dealing with pressure leak?
