@@ -1,7 +1,5 @@
 import os
 
-from ulc_mm_package.scope_constants import SIMULATION
-
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
