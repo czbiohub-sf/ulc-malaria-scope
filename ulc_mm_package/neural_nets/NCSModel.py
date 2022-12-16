@@ -23,7 +23,7 @@ from typing import (
     cast,
 )
 
-from ulc_mm_package.lock_utils import lock_timeout
+from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
@@ -76,10 +76,12 @@ class NCSModel:
             model_path: path to the 'xml' file
             camera_selection: the camera that is used for inference. Just used for img dims
         """
-        self.lock = threading.Lock()
         self.connected = False
         self.device_name = "MYRIAD"
         self.model = self._compile_model(model_path, camera_selection)
+
+        self.asyn_result_lock = threading.Lock()
+        self.futures_lock = threading.Lock()
 
         # used for syn
         self._temp_infer_queue = AsyncInferQueue(self.model)
@@ -190,13 +192,15 @@ class NCSModel:
         To get results, call 'get_asyn_results'
         """
         input_tensor = self._format_image_to_tensor(input_img)
-        self._futures.append(
-            self._executor.submit(
-                self.asyn_infer_queue.start_async,
-                args=({0: input_tensor},),
-                kwargs={"userdata": id},
+
+        with lock_timeout(self.futures_lock):
+            self._futures.append(
+                self._executor.submit(
+                    self.asyn_infer_queue.start_async,
+                    inputs={0: input_tensor},
+                    userdata=id,
+                )
             )
-        )
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
@@ -210,9 +214,20 @@ class NCSModel:
         if timeout is None:
             timeout = -1
 
-        self._futures = [f for f in self._futures if not f.done()]
+        futures = []
+        with lock_timeout(self.futures_lock, timeout=timeout):
+            for f in self._futures:
+                if not f.done():
+                    futures.append(f)
+                else:
+                    exc = f.exception()
+                    if exc is not None:
+                        # exceptions here are not-expected and critical so raise them
+                        raise exc
 
-        with lock_timeout(self.lock, timeout=timeout):
+            self._futures = futures
+
+        with lock_timeout(self.asyn_result_lock, timeout=timeout):
             res = copy(self._asyn_results)
             self._asyn_results = []
             return res
@@ -222,7 +237,7 @@ class NCSModel:
         self.asyn_infer_queue.wait_all()
 
     def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
-        with lock_timeout(self.lock):
+        with lock_timeout(self.asyn_result_lock):
             self._asyn_results.append(
                 AsyncInferenceResult(
                     id=userdata, result=infer_request.output_tensors[0].data[:]

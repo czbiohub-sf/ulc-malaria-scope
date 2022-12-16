@@ -1,6 +1,6 @@
 """ High-level state machine manager.
 
-The Oracle sees all and knows all. 
+The Oracle sees all and knows all.
 It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
@@ -32,8 +32,11 @@ from ulc_mm_package.scope_constants import (
     PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
     SSD_DIR,
+    VERBOSE,
+    SIMULATION,
 )
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
     FLOWRATE,
@@ -43,6 +46,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     FLOWCELL_QC_FORM_LINK,
 )
 
+from ulc_mm_package.utilities.email_utils import send_ngrok_email
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -53,11 +57,11 @@ from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
-_VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 _ERROR_MSG = '\n\nClick "OK" to end this run.'
 
 _IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
 _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
+_IMAGE_RELOAD_PATH = "gui_images/remove_infographic.png"
 
 
 class Buttons(enum.Enum):
@@ -80,33 +84,11 @@ class Oracle(Machine):
         # Save startup datetime
         self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
 
-        # Instantiate GUI windows
-        self.form_window = FormGUI()
-        self.liveview_window = LiveviewGUI()
+        # Instantiate message dialog
         self.message_window = QMessageBox()
 
-        # Instantiate and configure Oracle elements
-        self._init_variables()
-        self._init_threads()
-        self._init_states()
-        self._init_sigslots()
-
-        # Get SSD directory
-        try:
-            self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-        except (FileNotFoundError, IndexError) as e:
-            print(
-                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
-            )
-            self.display_message(
-                QMessageBox.Icon.Critical,
-                "SSD not found",
-                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
-                + _ERROR_MSG,
-                buttons=Buttons.OK,
-                instant_abort=False,
-            )
-            sys.exit(1)
+        # Setup SSD
+        self._init_ssd()
 
         # Setup directory for logs
         log_dir = path.join(self.ext_dir, "logs")
@@ -116,10 +98,23 @@ class Oracle(Machine):
         # Setup logger
         fileConfig(
             fname="../logger.config",
-            defaults={"filename": path.join(log_dir, f"{self.datetime_str}.log")},
+            defaults={
+                "filename": path.join(log_dir, f"{self.datetime_str}.log"),
+                "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO",
+            },
         )
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
+
+        # Instantiate GUI windows
+        self.form_window = FormGUI()
+        self.liveview_window = LiveviewGUI()
+
+        # Instantiate and configure Oracle elements
+        self._init_variables()
+        self._init_threads()
+        self._init_states()
+        self._init_sigslots()
 
         # Get tcp tunnel
         self._init_tcp()
@@ -223,22 +218,66 @@ class Oracle(Machine):
 
     def _init_tcp(self):
         try:
-            self.tcp_addr = make_tcp_tunnel()
-            self.logger.info(f"SSH address is {self.tcp_addr}.")
-            self.liveview_window.update_tcp(self.tcp_addr)
-        except NgrokError:
+            tcp_addr = make_tcp_tunnel()
+            self.logger.info(f"SSH address is {tcp_addr}.")
+            self.liveview_window.update_tcp(tcp_addr)
+            send_ngrok_email()
+        except NgrokError as e:
             self.display_message(
                 QMessageBox.Icon.Warning,
                 "SSH tunnel failed",
                 (
-                    "Could not create SSH tunnel so the scope cannot be accessed remotely unless it is rebooted."
+                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
+                    "The SSH tunnel is only recreated when the scope is rebooted."
                     '\n\nClick "OK" to continue running without SSH.'
                 ),
                 buttons=Buttons.OK,
             )
-
-            self.logger.warning("SSH address could not be found.")
+            self.logger.warning(f"SSH address could not be found - {e}")
             self.liveview_window.update_tcp("unavailable")
+        except EmailError as e:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH email failed",
+                self.logger.info("STARTING ORACLE.")(
+                    "Could not automatically email SSH tunnel address. "
+                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
+                    '\n\nClick "OK" to continue running.'
+                ),
+                buttons=Buttons.OK,
+            )
+            self.logger.warning(f"SSH address could not be emailed - {e}")
+
+    def _init_ssd(self):
+        try:
+            self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+        except (FileNotFoundError, IndexError) as e:
+            print(
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+            )
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                "SSD not found",
+                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+                + _ERROR_MSG,
+                buttons=Buttons.OK,
+                instant_abort=False,
+            )
+            sys.exit(1)
+
+        if not SIMULATION and not DataStorage.is_there_sufficient_storage(self.ext_dir):
+            print(
+                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            )
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                "SSD is full",
+                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+                + _ERROR_MSG,
+                buttons=Buttons.OK,
+                instant_abort=False,
+            )
+            sys.exit(1)
 
     def pause_receiver(self, title, message):
         self.scopeop.to_pause()
@@ -279,10 +318,13 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Paused run",
             (
-                "The condensor can now be removed."
-                '\n\nAfter adding the sample and replacing the condensor, click "OK" to resume this run.'
+                "The CAP module can now be removed."
+                "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
+                "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
+                '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
             ),
             buttons=Buttons.OK,
+            image=_IMAGE_RELOAD_PATH,
         )
         self.scopeop.unpause()
 
@@ -350,8 +392,8 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Initializing hardware",
             (
-                "If there is a flow cell in the scope, remove it now."
-                '\n\nClick "OK" once the flow cell is removed.'
+                "Remove the CAP module if it is currently on."
+                '\n\nClick "OK" once it is removed.'
             ),
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
@@ -407,7 +449,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
-            'Insert flow cell now.\n\nClick "OK" once it is in place.',
+            'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed',
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
@@ -418,14 +460,14 @@ class Oracle(Machine):
     def _end_liveview(self):
         self.liveview_window.close()
 
-        self.logger.debug("Opening survey.")
+        self.logger.info("Opening survey.")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
     def _start_intermission(self):
         self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove flow cell now.\n\nClick "OK" once it is removed.',
+            'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
@@ -446,13 +488,13 @@ class Oracle(Machine):
         self.logger.info("Starting oracle shut off.")
 
         # Wait for QTimers to shutoff
-        self.logger.debug("Waiting for acquisition and liveview timer to terminate.")
+        self.logger.info("Waiting for acquisition and liveview timer to terminate.")
         while (
             self.acquisition.acquisition_timer.isActive()
             or self.acquisition.liveview_timer.isActive()
         ):
             pass
-        self.logger.debug("Successfully terminated acquisition and liveview timer.")
+        self.logger.info("Successfully terminated acquisition and liveview timer.")
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
@@ -460,17 +502,17 @@ class Oracle(Machine):
         # Shut off acquisition thread
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
-        self.logger.debug("Shut off acquisition thread.")
+        self.logger.info("Shut off acquisition thread.")
 
         # Shut off scopeop thread
         self.scopeop_thread.quit()
         self.scopeop_thread.wait()
-        self.logger.debug("Shut off scopeop thread.")
+        self.logger.info("Shut off scopeop thread.")
 
         self.form_window.close()
-        self.logger.debug("Closed experiment form window.")
+        self.logger.info("Closed experiment form window.")
         self.liveview_window.close()
-        self.logger.debug("Closed liveview window.")
+        self.logger.info("Closed liveview window.")
 
         self.logger.info("ORACLE SHUT OFF SUCCESSFUL.")
         self.shutoff_done = True
@@ -506,8 +548,9 @@ if __name__ == "__main__":
             # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
             sleep(3)
             oracle.emergency_shutoff()
-        except:
-            oracle.logger.fatal("EMERGENCY ORACLE SHUT OFF FAILED.")
+        except Exception as e:
+            oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED - {e}")
+
         sys.exit(1)
 
     sys.excepthook = shutoff_excepthook

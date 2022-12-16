@@ -41,4 +41,25 @@ Each scope needs to sign up for its own ngrok account (using a unique email) to 
 3. Add this token to the scope's persistent environment variables by doing the following:
   - Open the bashrc file: `nano /home/pi/.bashrc`
   - Add `export NGROK_AUTH_TOKEN=<TOKEN_HERE>` to the bottom of the file.
-4. TODO - set up the emailing functionality (`lfm_central@czbiohub.org`) (instead of each scope having a regular mailbox, which costs $7/mo for a @czbiohub.org address, we have a single @czbiohub.org address that all the scopes use to send emails.) **Fill this in with details once we have this implemented.
+
+
+### Setting up email functionality for sending back the ngrok address automatically
+We use a non Biohub free gmail account to do basic email sending. The email, `lfmscope@gmail.com` sends an email to itself which is then forwarded to all the people on its forwarding list.
+Gmail allows you to generate a unique password for each new device that you want to run on. Instructions to generate application-specific-passwords are [here](https://support.google.com/accounts/answer/185833?hl=en). Every microscope needs to have its own unique application-specific-password.
+1. Create an application specific password using the `lfmscope@gmail.com` account
+2. Place the password in the microscope's persistent environment variables (similar to what we did above for `ngrok`):
+  - Open the bashrc file: `nano /home/pi/.bashrc`
+  - Add `export GMAIL_TOKEN=<TOKEN_HERE>` to the bottom of the file.
+3. Run both `oracle.py` and `dev_run.py` to ensure you're receiving emails and that there are no errors (for example, if you forget to set the email token, that will raise a custom `EmailError: no token set` error. Similarly if an ngrok token isn't set, a custom `NgrokError: no token set` error will be raised.)
+
+### Setting up bash aliases
+1. To avoid users having to enter in an arduous path into the terminal to run a program (which is also likely to be error-prone), we have a few bash aliases instead. These aliases are stored under `ulc-malaria-scope/ulc_mm_package/utilities/.bash_aliases`. `cd` into that directory and `cp` that file to `/home/pi`, i.e:
+```
+cd Documents/ulc-malaria-scope/ulc_mm_package/utilities
+cp .bash_aliases /home/pi
+```
+
+The commands in the file can now be run from the terminal. At the time of writing (2022-12-09), the following commands are available:
+- `lfm_run` - runs `oracle.py`
+- `lfm_dev` - runs `dev_run.py`
+- `send_address` - runs `email_utils.py` (attempts to send the ngrok address to `lfmscope@gmail.com`)

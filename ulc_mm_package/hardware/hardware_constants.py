@@ -1,7 +1,5 @@
 import os
 
-from ulc_mm_package.scope_constants import SIMULATION
-
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
@@ -22,7 +20,6 @@ MOTOR_STEP_PIN = 19
 MOTOR_DIR_PIN = 16
 MOTOR_FAULT_PIN = 20
 MOTOR_LIMIT_SWITCH1 = 18
-MOTOR_LIMIT_SWITCH2 = 15
 ZERO_OFFSET_STEPS = 20
 
 # DRR8825 stepping mode reference
@@ -43,6 +40,7 @@ ROT_C_PIN = 11
 
 # ================ LED Driver constants ================ #
 LED_PWM_PIN = 13
+LID_LIMIT_SWITCH2 = 15
 
 # To activate analog dimming mode, the voltage must be between the following bounds. For analog
 # dimming mode, the voltage must be higher than the upper bound listed below.
@@ -63,7 +61,7 @@ VALVE_PIN = 8
 SERVO_FREQ = 100
 
 PRESSURE_SENSOR_ENABLE_PIN = 22
-INVALID_READ_FLAG = -1
+STALE_PRESSURE_VAL_TIME_S = 3
 DEFAULT_AFC_DELAY_S = 1
 AFC_NUM_IMAGE_PAIRS = 12
 
@@ -77,18 +75,3 @@ CAM_FAN_2 = 24
 
 # ================ RTC constants ================ #
 DATETIME_FORMAT = "%Y-%m-%d-%H%M%S"
-
-# ================ Simulation constants ================ #
-# Enable simulation mode by creating blank simulation.py file under main script's directory
-# eg. to run ulc_mm_package/QtGUI/oracle.py, create an empty file under ulc_mm_package/QtGUI/simulation.py
-VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
-VIDEO_PATH = None
-
-if SIMULATION:
-    _viable_videos = ("../QtGUI/sim_media/sample.avi", "../QtGUI/sim_media/sample.mp4")
-    VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
-    if VIDEO_PATH == None:
-        raise RuntimeError(
-            "Sample video for simulation mode could not be found. "
-            f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
-        )

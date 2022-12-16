@@ -1,12 +1,12 @@
-import numpy as np
-
 from time import sleep, perf_counter
+from typing import Tuple
+
+import numpy as np
 
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_5V_PIN,
     SERVO_PWM_PIN,
     SERVO_FREQ,
-    INVALID_READ_FLAG,
 )
 from ulc_mm_package.hardware.dtoverlay_pwm import PWM_CHANNEL
 from ulc_mm_package.hardware.sim.dtoverlay_pwm import dtoverlay_PWM
@@ -19,6 +19,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     SyringeInMotion,
     SyringeDirection,
     SyringeEndOfTravel,
+    PressureSensorRead,
 )
 
 
@@ -40,6 +41,7 @@ class PneumaticModule(RealPneumaticModule):
         self.polling_time_s = 3
         self.prev_poll_time_s = 0
         self.prev_pressure = 0
+        self.prev_status = PressureSensorRead.ALL_GOOD
         self.io_error_counter = 0
         self.mpr_enabled = True
 
@@ -54,24 +56,21 @@ class PneumaticModule(RealPneumaticModule):
         self.pwm.setDutyCycle(0)
         sleep(0.5)
 
-    def getPressure(self):
+    def getPressure(self) -> Tuple[float, PressureSensorRead]:
+        ### TODO - mimic the real pressure sensor more
+
         if perf_counter() - self.prev_poll_time_s > self.polling_time_s:
-            max_attempts = 6
-            while max_attempts > 0:
-                # TODO: Can write in here mock errors - e.g. throw IOError
-                # with x probability
-                try:
-                    # mock mps pressure sensor w/ uniform, from 450 hPa (max pull)
-                    # to 1000 hPa (atmospheric pressure)
-                    new_pressure = np.random.uniform(450, 1000)
-                    self.prev_pressure = new_pressure
-                    self.prev_poll_time_s = perf_counter()
-                    return new_pressure
-                except IOError:
-                    max_attempts -= 1
-                except RuntimeError:
-                    max_attempts -= 1
-            self.io_error_counter += 1
-            return INVALID_READ_FLAG
+            # TODO: Can write in here mock errors - e.g. throw IOError
+
+            # mock mps pressure sensor w/ uniform, from 450 hPa (max pull)
+            # to 1000 hPa (atmospheric pressure)
+            new_pressure, status = (
+                np.random.uniform(450, 1000),
+                PressureSensorRead.ALL_GOOD,
+            )
+            self.prev_pressure = new_pressure
+            self.prev_status = status
+            self.prev_poll_time_s = perf_counter()
+            return (new_pressure, status)
         else:
-            return self.prev_pressure
+            return (self.prev_pressure, self.prev_status)

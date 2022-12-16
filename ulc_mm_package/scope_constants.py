@@ -6,6 +6,28 @@ from enum import auto, Enum
 from collections import namedtuple
 
 
+# ================ Simulation constants ================ #
+MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
+SIMULATION = MS_SIMULATE_FLAG > 0
+print(f"Simulation mode: {SIMULATION}")
+
+VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
+VIDEO_PATH = None
+
+if SIMULATION:
+    _viable_videos = (
+        "../QtGUI/sim_media/avt-sample.mp4",
+        "../QtGUI/sim_media/sample.avi",
+        "../QtGUI/sim_media/sample.mp4",
+    )
+    VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
+    if VIDEO_PATH == None:
+        raise RuntimeError(
+            "Sample video for simulation mode could not be found. "
+            f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
+        )
+
+
 class MissingCameraError(Exception):
     ...
 
@@ -24,7 +46,17 @@ class CameraOptions(Enum):
         elif self == CameraOptions.BASLER:
             return ImageDims(height=600, width=800)
         elif self == CameraOptions.SIMULATED:
+            # FIXME: if 'avt' in videopath, assume it is an avt vid
+            # a bit hacky, but workable for just sim mode
+            assert VIDEO_PATH is not None
+            if "avt" in VIDEO_PATH:
+                return ImageDims(height=772, width=1032)
             return ImageDims(height=600, width=800)
+
+        raise ValueError(
+            f"CameraOptions somehow gained an enum type {self}. "
+            "Please report this strange bug!"
+        )
 
     @property
     def IMG_WIDTH(self) -> int:
@@ -33,6 +65,34 @@ class CameraOptions(Enum):
     @property
     def IMG_HEIGHT(self) -> int:
         return self.img_dims().height
+
+
+# ================ Camera constants ================ #
+AVT_VENDOR_ID = 0x1AB2
+AVT_PRODUCT_ID = 0x0001
+
+BASLER_VENDOR_ID = 0x2676
+BASLER_PRODUCT_ID = 0xBA03
+
+try:
+    if SIMULATION:
+        CAMERA_SELECTION = CameraOptions.SIMULATED
+    else:
+        _avt_dev = usb.core.find(idVendor=AVT_VENDOR_ID, idProduct=AVT_PRODUCT_ID)
+        _basler_dev = usb.core.find(
+            idVendor=BASLER_VENDOR_ID, idProduct=BASLER_PRODUCT_ID
+        )
+
+        if _avt_dev is not None:
+            CAMERA_SELECTION = CameraOptions.AVT
+        elif _basler_dev is not None:
+            CAMERA_SELECTION = CameraOptions.BASLER
+        else:
+            raise MissingCameraError(
+                "There is no camera found on the device and we are not simulating: "
+            )
+except usb.core.NoBackendError:
+    CAMERA_SELECTION = CameraOptions.SIMULATED
 
 
 # ================ Data storage metadata ================ #
@@ -54,6 +114,7 @@ PER_IMAGE_METADATA_KEYS = [
     "timestamp",
     "motor_pos",
     "pressure_hpa",
+    "pressure_status_flag",
     "syringe_pos",
     "flowrate",
     "focus_error",
@@ -61,39 +122,13 @@ PER_IMAGE_METADATA_KEYS = [
     "humidity",
 ]
 
-# ================ Simulation constants ================ #
-MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
-SIMULATION = MS_SIMULATE_FLAG > 0
-print(f"Simulation mode: {SIMULATION}")
+# ================ Environment variables ================ #
+NGROK_AUTH_TOKEN_ENV_VAR = "NGROK_AUTH_TOKEN"
+EMAIL_PW_TOKEN = "GMAIL_TOKEN"
+VERBOSE = int(os.environ.get("MS_VERBOSE", 0))
 
 # ================ SSD directory constants ================ #
 if SIMULATION:
     SSD_DIR = "../QtGUI/sim_media/pi/"
 else:
     SSD_DIR = "/media/pi/"
-
-# ================ Camera constants ================ #
-AVT_VENDOR_ID = 0x1AB2
-AVT_PRODUCT_ID = 0x0001
-
-BASLER_VENDOR_ID = 0x2676
-BASLER_PRODUCT_ID = 0xBA03
-
-try:
-    _avt_dev = usb.core.find(idVendor=AVT_VENDOR_ID, idProduct=AVT_PRODUCT_ID)
-    _basler_dev = usb.core.find(idVendor=BASLER_VENDOR_ID, idProduct=BASLER_PRODUCT_ID)
-
-    if SIMULATION:
-        CAMERA_SELECTION = CameraOptions.SIMULATED
-    else:
-        if _avt_dev is not None:
-            CAMERA_SELECTION = CameraOptions.AVT
-        elif _basler_dev is not None:
-            CAMERA_SELECTION = CameraOptions.BASLER
-        else:
-            raise MissingCameraError(
-                "There is no camera found on the device and we are not simulating: "
-            )
-
-except usb.core.NoBackendError:
-    CAMERA_SELECTION = CameraOptions.SIMULATED

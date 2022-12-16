@@ -16,6 +16,8 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureLeak,
     PressureSensorNotInstantiated,
     SyringeInMotion,
+    PressureSensorRead,
+    PressureSensorStaleValue,
 )
 from ulc_mm_package.hardware.fan import Fan
 from ulc_mm_package.hardware.sht31d_temphumiditysensor import (

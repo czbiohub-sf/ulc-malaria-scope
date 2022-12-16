@@ -9,19 +9,21 @@ Servo Motor Pololu HD-1810MG:
     https://www.pololu.com/product/1047
 """
 
+from time import sleep, perf_counter
+from typing import Tuple
 import threading
+import logging
+
 import pigpio
 import board
 import adafruit_mprls
 
-from time import sleep, perf_counter
-
-from ulc_mm_package.lock_utils import lock_no_block
+from ulc_mm_package.utilities.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_5V_PIN,
     SERVO_PWM_PIN,
     SERVO_FREQ,
-    INVALID_READ_FLAG,
+    STALE_PRESSURE_VAL_TIME_S,
     MPRLS_RST,
     MPRLS_PWR,
 )
@@ -34,10 +36,13 @@ from ulc_mm_package.hardware.pneumatic_module import (
     SyringeInMotion,
     SyringeDirection,
     SyringeEndOfTravel,
+    PressureSensorBusy,
+    PressureSensorStaleValue,
+    PressureSensorRead,
 )
 
-
 SYRINGE_LOCK = threading.Lock()
+PSI_TO_HPA = 68.947572932
 
 
 class PneumaticModule:
@@ -54,6 +59,7 @@ class PneumaticModule:
         mprls_pwr_pin: int = MPRLS_PWR,
         pi: pigpio.pi = None,
     ):
+        self.logger = logging.getLogger(__name__)
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
         self.mprls_rst_pin = mprls_rst_pin
@@ -69,6 +75,7 @@ class PneumaticModule:
         self.polling_time_s = 3
         self.prev_poll_time_s = 0
         self.prev_pressure = 0
+        self.prev_status = PressureSensorRead.ALL_GOOD
         self.io_error_counter = 0
         self.mpr_enabled = False
         self.mpr_err_msg = ""
@@ -173,37 +180,123 @@ class PneumaticModule:
             self.decreaseDutyCycle()
         return pressure_readings_hpa
 
-    def getPressure(self):
-        """Read and return the latest pressure value if it has been at least `polling_time_s` seconds,
-        otherwise return the most recent pressure read. This is done because calls to the pressure sensor
-        are somewhat slow.
+    def getPressure(self) -> Tuple[float, PressureSensorRead]:
+        """Attempt to read the pressure sensor. Return pressure and status.
 
-        Additionally, the pressure sensor may raise I/O or Runtime errors intermittently.
+        If a read is done while the pressure sensor is busy, the previous value will be returned.
+        If more than 'STALE_PRESSURE_VAL_TIME_S' has elapsed since the last read, an exception is raised.
 
-        To mitigate a crash if that is the case, we attempt to read the
-        pressure sensor a few times until a valid value is returned. If a valid value is not received
-        after `max_attempts`, then a -1 flag is returned.
+        Returns
+        -------
+        Tuple[float, PressureSensorRead]:
+            float - pressure valuei.
+            PressureSensorRead - enum which shows whether a status bit was funky when reading the pressure.
+
+        Exceptions
+        ----------
+        PressureSensorStaleValue:
+            If more than 'STALE_PRESSURE_VAL_TIME_S' has passed since the last read, this exception is raised, indicating
+            that there might be something wrong with the sensor. This constant is defined in hardware_constants.py.
         """
 
-        if perf_counter() - self.prev_poll_time_s > self.polling_time_s:
-            if self.mpr_enabled:
-                max_attempts = 6
-                while max_attempts > 0:
-                    try:
-                        new_pressure = self.mpr.pressure
-                        self.prev_pressure = new_pressure
-                        self.prev_poll_time_s = perf_counter()
-                        return new_pressure
-                    except IOError:
-                        max_attempts -= 1
-                    except RuntimeError:
-                        max_attempts -= 1
-                self.io_error_counter += 1
-                return INVALID_READ_FLAG
-            else:
-                raise PressureSensorNotInstantiated(self.mpr_err_msg)
+        if self.mpr_enabled:
+            try:
+                pressure, status = self.direct_read()
+                self.prev_pressure, self.prev_status = pressure, status
+                self.prev_poll_time_s = perf_counter()
+                return (pressure, status)
+            except PressureSensorBusy as e:
+                self.logger.info(
+                    f"Attempted read but pressure sensor is busy: {e}. Returning previous pressure value."
+                )
+                if perf_counter() - self.prev_poll_time_s > STALE_PRESSURE_VAL_TIME_S:
+                    raise PressureSensorStaleValue(
+                        f"{perf_counter() - self.prev_poll_time_s}s elapsed since last read (last value was: {self.prev_pressure} w/ status {self.prev_status.value})."
+                    )
+                return self.prev_pressure, self.prev_status
         else:
-            return self.prev_pressure
+            raise PressureSensorNotInstantiated(self.mpr_err_msg)
+
+    def _direct_read(self, timeout_s: float = 1e6):
+        # Attempt to read the sensor first
+        self.mpr._buffer[0] = 0xAA
+        self.mpr._buffer[1] = 0
+        self.mpr._buffer[2] = 0
+        start = perf_counter()
+        with self.mpr._i2c as i2c:
+            # send command
+            i2c.write(self.mpr._buffer, end=3)
+            # ready busy flag/status
+            while True:
+                # check End of Convert pin first, if we can
+                if self.mpr._eoc is not None:
+                    if self.mpr._eoc.value:
+                        break
+                # or you can read the status byte
+                i2c.readinto(self.mpr._buffer, end=1)
+                if not self.mpr._buffer[0] & 0x20:
+                    break
+
+                # Breakout if pressure sensor is too slow
+                if perf_counter() - start > timeout_s:
+                    return False
+
+            # no longer busy!
+            i2c.readinto(self.mpr._buffer, end=4)
+            return True
+
+    def direct_read(self) -> Tuple[float, PressureSensorRead]:
+        """Pressure sensor direct read.
+
+        This pressure sensor has had a notorious track record of throwing Integrity Errors.
+        Reading directly from the buffer shows that the actual pressure values are as expected.
+
+        This function just bypasses the exceptions that are normally thrown by Adafruit's MPRLS library and
+        returns the pressure value (in addition with an enum detailing if any exceptions were thrown.
+
+        Returns
+        -------
+        Tuple[float, PressureSensorRead]:
+            float - pressure
+            PressureSensorRead - status bit (all good, saturation, or integrity error)
+
+        Exceptions
+        ----------
+        PressureSensorBusy:
+            Raised if sensor takes longer than the set time to respond
+        """
+        # Attempt to read, cap timeout at 0.5s
+        timeout_s = 0.1
+        read_success = self._direct_read(timeout_s=0.5)
+
+        if not read_success:
+            raise PressureSensorBusy(
+                f"Pressure sensor took too long (>= {timeout_s}s) to respond."
+            )
+
+        # If read successful, check status flags
+        if read_success:
+            error_flag = PressureSensorRead.ALL_GOOD
+            # check other status bits
+            if self.mpr._buffer[0] & 0x01:
+                error_flag = PressureSensorRead.SATURATION
+            if self.mpr._buffer[0] & 0x04:
+                error_flag = PressureSensorRead.INTEGRITY
+
+            # Calculate and return pressure
+            ##### Code below from Adafruit's MPRLS library! #####
+            raw_psi = (
+                (self.mpr._buffer[1] << 16)
+                | (self.mpr._buffer[2] << 8)
+                | self.mpr._buffer[3]
+            )
+            # use the 10-90 calibration curve
+            psi = (raw_psi - 0x19999A) * (self.mpr._psimax - self.mpr._psimin)
+            psi /= 0xE66666 - 0x19999A
+            psi += self.mpr._psimin
+
+            # convert PSI to hPA
+            return (psi * PSI_TO_HPA, error_flag)
 
     def isMovePossible(self, move_dir: SyringeDirection) -> bool:
         """Return true if the syringe can still move in the specified direction."""

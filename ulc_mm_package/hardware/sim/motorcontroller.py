@@ -1,9 +1,8 @@
 import logging
 import time
-import functools
 import threading
 
-from ulc_mm_package.lock_utils import lock_no_block
+from ulc_mm_package.utilities.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
     FULL_STEP_TO_TRAVEL_DIST_UM,
     DEFAULT_FULL_STEP_HOMING_TIMEOUT,
@@ -14,7 +13,6 @@ from ulc_mm_package.hardware.hardware_constants import (
     MOTOR_DIR_PIN,
     MOTOR_FAULT_PIN,
     MOTOR_LIMIT_SWITCH1,
-    MOTOR_LIMIT_SWITCH2,
     ZERO_OFFSET_STEPS,
 )
 from ulc_mm_package.hardware.motorcontroller import (
