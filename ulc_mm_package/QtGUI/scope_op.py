@@ -8,7 +8,6 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 import numpy as np
 import logging
 
-from datetime import datetime
 from transitions import Machine
 from time import sleep
 
@@ -19,7 +18,7 @@ from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
-from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import SIMULATION
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
@@ -84,6 +83,10 @@ class ScopeOp(QObject, Machine):
             {
                 "name": "autobrightness_precells",
                 "on_enter": [self._send_state, self._start_autobrightness_precell],
+            },
+            {
+                "name": "pressure_check",
+                "on_enter": [self._send_state, self._check_pressure_seal],
             },
             {
                 "name": "cellfinder",
@@ -250,6 +253,21 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_autobrightness)
 
+    def _check_pressure_seal(self):
+        # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
+        try:
+            pdiff = checkPressureDifference()
+            self.logger.info(f"Pressure difference ok: {pdiff}.")
+            self.next_state()
+        except PressureSensorBusy:
+            raise
+        except PressureLeak as e:
+            self.logger.error(f"Improper seal / pressure leak detected - {e}")
+            # TODO provide instructions for dealing with pressure leak?
+            self.error.emit(
+                "Calibration failed", "Improper seal / pressure leak detected.", False
+            )
+
     def _start_cellfinder(self):
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
@@ -378,10 +396,6 @@ class ScopeOp(QObject, Machine):
         except NoCellsFound:
             self.logger.error("Cellfinder failed. No cells found.")
             self.error.emit("Calibration failed", "No cells found.", False)
-        except PressureLeak as e:
-            self.logger.error(f"Cellfinder failed. Pressure leak detected - {e}")
-            # TODO provide instructions for dealing with pressure leak?
-            self.error.emit("Calibration failed", "Pressure leak detected.", False)
         else:
             if self.running:
                 self.img_signal.connect(self.run_cellfinder)
