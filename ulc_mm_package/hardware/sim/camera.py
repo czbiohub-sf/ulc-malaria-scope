@@ -5,14 +5,15 @@
 
 Purpose: Dummy hardware object simulating camera.
          See camera module under hardware/real/ for info on actual functionality.
-         
+
 """
 
 import cv2
 
 from time import time, perf_counter, sleep
 
-from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS, VIDEO_PATH
+from ulc_mm_package.scope_constants import VIDEO_PATH
+from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS
 from ulc_mm_package.hardware.camera import CameraError
 
 

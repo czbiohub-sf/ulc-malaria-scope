@@ -1,6 +1,6 @@
 """ High-level state machine manager.
 
-The Oracle sees all and knows all. 
+The Oracle sees all and knows all.
 It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
@@ -33,8 +33,9 @@ from ulc_mm_package.scope_constants import (
     CAMERA_SELECTION,
     SSD_DIR,
     VERBOSE,
+    SIMULATION,
 )
-from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
@@ -56,11 +57,11 @@ from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
-_VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 _ERROR_MSG = '\n\nClick "OK" to end this run.'
 
 _IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
 _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
+_IMAGE_RELOAD_PATH = "gui_images/remove_infographic.png"
 
 
 class Buttons(enum.Enum):
@@ -225,8 +226,8 @@ class Oracle(Machine):
                 QMessageBox.Icon.Warning,
                 "SSH tunnel failed",
                 (
-                    "Could not create SSH tunnel so the scope cannot be accessed remotely. "
-                    "To recreate the SSH tunnel the scope needs to be rebooted."
+                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
+                    "The SSH tunnel is only recreated when the scope is rebooted."
                     '\n\nClick "OK" to continue running without SSH.'
                 ),
                 buttons=Buttons.OK,
@@ -282,9 +283,9 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Pause run?",
             (
-                "While paused, you can mix/add more sample to the flow cell "
-                "without ending the experiment."
-                '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
+                "While paused, you can add more sample to the flow cell without ending the experiment."
+                '\n\nClick "OK" to pause this run. '
+                "Wait for the next dialog before removing the CAP module."
             ),
             buttons=Buttons.CANCEL,
         )
@@ -298,10 +299,13 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Paused run",
             (
-                "The condensor can now be removed."
-                '\n\nAfter mixing the sample and replacing the condensor, click "OK" to resume this run.'
+                "The CAP module can now be removed."
+                "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
+                "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
+                '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
             ),
             buttons=Buttons.OK,
+            image=_IMAGE_RELOAD_PATH,
         )
         self.scopeop.unpause()
 
@@ -369,8 +373,8 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Initializing hardware",
             (
-                "If there is a flow cell in the scope, remove it now."
-                '\n\nClick "OK" once the flow cell is removed.'
+                "Remove the CAP module if it is currently on."
+                '\n\nClick "OK" once it is removed.'
             ),
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
@@ -426,7 +430,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
-            'Insert flow cell now.\n\nClick "OK" once it is in place.',
+            'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed',
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
@@ -444,7 +448,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove flow cell now.\n\nClick "OK" once it is removed.',
+            'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
@@ -526,7 +530,7 @@ if __name__ == "__main__":
             sleep(3)
             oracle.emergency_shutoff()
         except Exception as e:
-            oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED: {e}")
+            oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED - {e}")
 
         sys.exit(1)
 
