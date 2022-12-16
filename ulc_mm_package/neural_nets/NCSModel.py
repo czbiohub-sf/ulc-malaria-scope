@@ -219,17 +219,19 @@ class NCSModel:
                 if not f.done():
                     futures.append(f)
                 else:
-                    exc = f.exception()
-                    if exc is not None:
-                        # exceptions here are not-expected and critical so raise them
-                        raise exc
+                    # this will return a result, or will raise an exception
+                    # if the future encountered one
+                    f.result()
 
             self._futures = futures
+
+        res = None
 
         with lock_timeout(self.asyn_result_lock, timeout=timeout):
             res = copy(self._asyn_results)
             self._asyn_results = []
-            return res
+
+        return res
 
     def wait_all(self):
         """wait for all pending InferRequests to resolve"""
