@@ -376,9 +376,12 @@ class ScopeOp(QObject, Machine):
             )
             self.next_state()
         except NoCellsFound:
-            self.cellfinder_result = -1
             self.logger.error("Cellfinder failed. No cells found.")
             self.error.emit("Calibration failed", "No cells found.", False)
+        except PressureLeak as e:
+            self.logger.error(f"Cellfinder failed. Pressure leak detected - {e}")
+            # TODO provide instructions for dealing with pressure leak?
+            self.error.emit("Calibration failed", "Pressure leak detected.", False)
         else:
             if self.running:
                 self.img_signal.connect(self.run_cellfinder)

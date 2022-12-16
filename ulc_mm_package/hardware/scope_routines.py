@@ -5,6 +5,8 @@ import numpy as np
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
+from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
+
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
@@ -349,9 +351,23 @@ def find_cells_routine(
         if max_attempts == 0:
             raise NoCellsFound()
 
+        # Record pre-pull pressure
+        initial_pressure = mscope.pneumatic_module.getPressure()
+
         # Pull the syringe maximally for `pull_time` seconds
         start = perf_counter()
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
+
+        # Record mid-pull pressure
+        final_pressure = mscope.pneumatic_module.getPressure()
+
+        # Check if there is a pressure leak
+        pressure_diff = initial_pressure - final_pressure
+        if pressure_diff < MIN_PRESSURE_DIFF:
+            raise PressureLeak(
+                f"Pressure leak detected, could only generate {pressure_diff} hPa pressure differential."
+            )
+
         while perf_counter() - start < pull_time:
             img = yield
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
