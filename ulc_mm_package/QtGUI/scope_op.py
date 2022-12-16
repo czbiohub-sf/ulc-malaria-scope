@@ -539,7 +539,7 @@ class ScopeOp(QObject, Machine):
                     (
                         "Cell density is too low. "
                         "Pausing operation so that more sample can be added without ending the experiment."
-                        '\n\nClick "OK" and wait for the next dialog before removing the condensor and adding more sample.'
+                        '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
                     ),
                 )
 
