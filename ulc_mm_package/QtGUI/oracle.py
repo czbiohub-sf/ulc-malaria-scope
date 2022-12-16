@@ -33,8 +33,9 @@ from ulc_mm_package.scope_constants import (
     CAMERA_SELECTION,
     SSD_DIR,
     VERBOSE,
+    SIMULATION,
 )
-from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
