@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QPlainTextEdit,
     QComboBox,
+    QDesktopWidget,
 )
 from PyQt5.QtGui import QIcon
 
@@ -111,6 +112,12 @@ class FormGUI(QDialog):
         # Set the focus order
         self.operator_val.setFocus()
         self.start_btn.setDefault(True)
+
+        # Move window to middle of screen
+        window_geometry = self.frameGeometry()
+        centerpoint = QDesktopWidget().availableGeometry().center()
+        window_geometry.moveCenter(centerpoint)
+        self.move(window_geometry.topLeft())
 
     def unfreeze_buttons(self):
         self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
