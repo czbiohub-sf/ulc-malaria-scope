@@ -1,6 +1,6 @@
 """ High-level state machine manager.
 
-The Oracle sees all and knows all. 
+The Oracle sees all and knows all.
 It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
@@ -56,7 +56,6 @@ from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
-_VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 _ERROR_MSG = '\n\nClick "OK" to end this run.'
 
 _IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
