@@ -44,7 +44,7 @@ class ScopeOp(QObject, Machine):
 
     error = pyqtSignal(str, str, bool)
 
-    enable_pause = pyqtSignal()
+    send_pause = pyqtSignal(str, str)
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -295,7 +295,6 @@ class ScopeOp(QObject, Machine):
         self.density_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
-        self.enable_pause.emit()
 
         self.TH_time = perf_counter()
         self.start_time = perf_counter()
@@ -534,9 +533,15 @@ class ScopeOp(QObject, Machine):
                 for filtered_pred in filtered_yogo_predictions:
                     self.density_routine.send(filtered_pred)
             except LowDensity as e:
-                # TODO: transition to state "pause" and print some error messages to user
-                self.logger.error(str(e))
-                raise e
+                self.logger.warning(f"Cell density is too low.")
+                self.send_pause.emit(
+                    "Low cell density",
+                    (
+                        "Cell density is too low. "
+                        "Pausing operation so that more sample can be added without ending the experiment."
+                        '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
+                    ),
+                )
 
             # Update infopanel
             if focus_err != None:

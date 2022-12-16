@@ -198,7 +198,7 @@ class Oracle(Machine):
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
         self.scopeop.set_period.connect(self.acquisition.set_period)
 
-        self.scopeop.enable_pause.connect(self.liveview_window.enable_pause)
+        self.scopeop.send_pause.connect(self.pause_receiver)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -278,21 +278,40 @@ class Oracle(Machine):
             )
             sys.exit(1)
 
-    def pause_handler(self):
-        message_result = self.display_message(
-            QMessageBox.Icon.Information,
-            "Pause run?",
-            (
-                "While paused, you can add more sample to the flow cell without ending the experiment."
-                '\n\nClick "OK" to pause this run. '
-                "Wait for the next dialog before removing the CAP module."
-            ),
-            buttons=Buttons.CANCEL,
+    def pause_receiver(self, title, message):
+        self.scopeop.to_pause()
+
+        self.pause_handler(
+            icon=QMessageBox.Icon.Warning,
+            title=title,
+            message=message,
+            buttons=Buttons.OK,
+            pause_done=True,
         )
-        if message_result == QMessageBox.Ok:
-            self.scopeop.to_pause()
-        else:
+
+    def pause_handler(
+        self,
+        icon=QMessageBox.Icon.Information,
+        title="Pause run?",
+        message=(
+            "While paused, you can add more sample to the flow cell, "
+            "without losing the current brightness and focus calibration. "
+            "After pausing, the scope will restart the calibration steps."
+            '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
+        ),
+        buttons=Buttons.CANCEL,
+        pause_done=False,
+    ):
+        message_result = self.display_message(
+            icon,
+            title,
+            message,
+            buttons=buttons,
+        )
+        if message_result == QMessageBox.Cancel:
             return
+        elif not pause_done:
+            self.scopeop.to_pause()
 
         sleep(2)
         self.display_message(
