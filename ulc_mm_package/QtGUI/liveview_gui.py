@@ -163,7 +163,7 @@ class LiveviewGUI(QMainWindow):
 
         # Populate infopanel with routine results
         self.focus_title = QLabel("FOCUS ERROR (motor steps)")
-        self.flowrate_title = QLabel("CELL FLOWRATE (px/frame)")
+        self.flowrate_title = QLabel("CELL FLOWRATE (FoVs/sec)")
         self.focus_lbl = QLabel("Target = 0")
         self.flowrate_lbl = QLabel(f"Target = -")
         self.focus_val = QLabel("-")
