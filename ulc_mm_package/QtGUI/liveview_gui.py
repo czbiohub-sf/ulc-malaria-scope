@@ -101,10 +101,6 @@ class LiveviewGUI(QMainWindow):
             f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}"
         )
 
-    @pyqtSlot()
-    def enable_pause(self):
-        self.pause_btn.setEnabled(True)
-
     def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
 
@@ -222,9 +218,6 @@ class LiveviewGUI(QMainWindow):
 
         self.update_focus("---")
         self.update_flowrate("---")
-
-        # Disable pause button at startup
-        self.pause_btn.setEnabled(False)
 
         # Setup status colors
         self._set_color(self.state_lbl, STATUS.IN_PROGRESS)

@@ -44,7 +44,6 @@ class ScopeOp(QObject, Machine):
 
     error = pyqtSignal(str, str, bool)
 
-    enable_pause = pyqtSignal()
     send_pause = pyqtSignal(str, str)
 
     create_timers = pyqtSignal()
@@ -296,7 +295,6 @@ class ScopeOp(QObject, Machine):
         self.density_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
-        self.enable_pause.emit()
 
         self.TH_time = perf_counter()
         self.start_time = perf_counter()

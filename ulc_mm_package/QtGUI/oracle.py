@@ -198,7 +198,6 @@ class Oracle(Machine):
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
         self.scopeop.set_period.connect(self.acquisition.set_period)
 
-        self.scopeop.enable_pause.connect(self.liveview_window.enable_pause)
         self.scopeop.send_pause.connect(self.pause_receiver)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
@@ -296,7 +295,8 @@ class Oracle(Machine):
         title="Pause run?",
         message=(
             "While paused, you can add more sample to the flow cell, "
-            "without losing the current brightness and focus calibration."
+            "without losing the current brightness and focus calibration. "
+            "After pausing, the scope will restart the calibration steps."
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
         buttons=Buttons.CANCEL,
