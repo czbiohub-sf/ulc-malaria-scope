@@ -58,19 +58,19 @@ class PneumaticModule(RealPneumaticModule):
 
     def getPressure(self) -> Tuple[float, PressureSensorRead]:
         ### TODO - mimic the real pressure sensor more
+        # TODO: Can write in here mock errors - e.g. throw IOError
 
-        if perf_counter() - self.prev_poll_time_s > self.polling_time_s:
-            # TODO: Can write in here mock errors - e.g. throw IOError
+        # mock mps pressure sensor w/ uniform, from 450 hPa (max pull)
+        # to 1000 hPa (atmospheric pressure)
 
-            # mock mps pressure sensor w/ uniform, from 450 hPa (max pull)
-            # to 1000 hPa (atmospheric pressure)
-            new_pressure, status = (
-                np.random.uniform(450, 1000),
-                PressureSensorRead.ALL_GOOD,
-            )
-            self.prev_pressure = new_pressure
-            self.prev_status = status
-            self.prev_poll_time_s = perf_counter()
-            return (new_pressure, status)
-        else:
-            return (self.prev_pressure, self.prev_status)
+        # Put this in here to pass oracle's pressure check
+        if self.getCurrentDutyCycle() == self.getMaxDutyCycle():
+            return (1025, PressureSensorRead.ALL_GOOD)
+        elif self.getCurrentDutyCycle() == self.getMinDutyCycle():
+            return (450, PressureSensorRead.ALL_GOOD)
+
+        new_pressure, status = (
+            np.random.uniform(450, 1000),
+            PressureSensorRead.ALL_GOOD,
+        )
+        return (new_pressure, status)
