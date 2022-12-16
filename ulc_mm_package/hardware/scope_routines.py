@@ -402,6 +402,7 @@ def find_cells_routine(
 
         # Pull the syringe maximally for `pull_time` seconds
         start = perf_counter()
+        mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
 
         while perf_counter() - start < pull_time:
             img = yield
