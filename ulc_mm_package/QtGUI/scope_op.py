@@ -71,9 +71,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal = self.acquisition.update_scopeop
 
         self.mscope = None
-
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
-
         self._set_variables()
 
         states = [
