@@ -49,7 +49,6 @@ from ulc_mm_package.utilities.email_utils import send_ngrok_email
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
-from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 
@@ -129,15 +128,15 @@ class Oracle(Machine):
         self.liveview_window.set_infopanel_vals()
 
     def _init_threads(self):
-        # Instantiate camera acquisition and thread
-        self.acquisition = Acquisition()
-        self.acquisition_thread = QThread()
-        self.acquisition.moveToThread(self.acquisition_thread)
-
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp(self.acquisition.update_scopeop)
+        self.scopeop = ScopeOp()
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
+
+        # Instantiate camera acquisition and thread
+        self.acquisition = self.scopeop.acquisition
+        self.acquisition_thread = QThread()
+        self.acquisition.moveToThread(self.acquisition_thread)
 
         self.scopeop_thread.started.connect(self.scopeop.setup)
 

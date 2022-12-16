@@ -17,6 +17,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
+from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS
 from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
 from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
@@ -61,14 +62,15 @@ class ScopeOp(QObject, Machine):
     update_flowrate = pyqtSignal(int)
     update_focus = pyqtSignal(int)
 
-    def __init__(self, img_signal):
+    def __init__(self):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
+        self.acquisition = Acquisition()
 
         self._init_variables()
         self.mscope = None
-        self.img_signal = img_signal
+        self.img_signal = self.acquisition.update_scopeop
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
         states = [
