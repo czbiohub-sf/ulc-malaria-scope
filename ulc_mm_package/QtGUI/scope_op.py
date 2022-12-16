@@ -17,6 +17,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
+from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS, SIMULATION
 from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -61,15 +62,17 @@ class ScopeOp(QObject, Machine):
     update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(int)
 
-    def __init__(self, img_signal):
+    def __init__(self):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
 
-        self._init_variables()
+        self.acquisition = Acquisition()
+        self.img_signal = self.acquisition.update_scopeop
+
         self.mscope = None
-        self.img_signal = img_signal
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
+        self._set_variables()
 
         states = [
             {
@@ -129,7 +132,7 @@ class ScopeOp(QObject, Machine):
             trigger="unpause", source="pause", dest="autobrightness_precells"
         )
 
-    def _init_variables(self):
+    def _set_variables(self):
         self.running = None
 
         self.autofocus_batch = []
@@ -205,7 +208,7 @@ class ScopeOp(QObject, Machine):
 
     def reset(self):
         # Reset variables
-        self._init_variables()
+        self._set_variables()
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()

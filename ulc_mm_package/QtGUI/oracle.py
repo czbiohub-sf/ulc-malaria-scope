@@ -50,7 +50,6 @@ from ulc_mm_package.utilities.email_utils import send_ngrok_email
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
-from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 
@@ -111,7 +110,7 @@ class Oracle(Machine):
         self.liveview_window = LiveviewGUI()
 
         # Instantiate and configure Oracle elements
-        self._init_variables()
+        self._set_variables()
         self._init_threads()
         self._init_states()
         self._init_sigslots()
@@ -122,7 +121,7 @@ class Oracle(Machine):
         # Trigger first transition
         self.next_state()
 
-    def _init_variables(self):
+    def _set_variables(self):
         # Instantiate metadata dicts
         self.form_metadata = None
         self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
@@ -130,15 +129,15 @@ class Oracle(Machine):
         self.liveview_window.set_infopanel_vals()
 
     def _init_threads(self):
-        # Instantiate camera acquisition and thread
-        self.acquisition = Acquisition()
-        self.acquisition_thread = QThread()
-        self.acquisition.moveToThread(self.acquisition_thread)
-
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp(self.acquisition.update_scopeop)
+        self.scopeop = ScopeOp()
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
+
+        # Instantiate camera acquisition and thread
+        self.acquisition = self.scopeop.acquisition
+        self.acquisition_thread = QThread()
+        self.acquisition.moveToThread(self.acquisition_thread)
 
         self.scopeop_thread.started.connect(self.scopeop.setup)
 
@@ -174,7 +173,7 @@ class Oracle(Machine):
             trigger="rerun",
             source="intermission",
             dest="form",
-            before=self._init_variables,
+            before=self._set_variables,
         )
 
     def _init_sigslots(self):
