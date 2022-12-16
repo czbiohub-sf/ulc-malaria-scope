@@ -297,7 +297,7 @@ class Oracle(Machine):
         message=(
             "While paused, you can add more sample to the flow cell, "
             "without losing the current brightness and focus calibration."
-            '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
+            '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
         buttons=Buttons.CANCEL,
         pause_done=False,
