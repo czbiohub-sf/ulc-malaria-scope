@@ -18,7 +18,11 @@ from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
-from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS, SIMULATION
+from ulc_mm_package.scope_constants import (
+    PER_IMAGE_METADATA_KEYS,
+    SIMULATION,
+    MAX_FRAMES,
+)
 from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
