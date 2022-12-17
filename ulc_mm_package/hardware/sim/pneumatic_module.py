@@ -74,3 +74,19 @@ class PneumaticModule(RealPneumaticModule):
             PressureSensorRead.ALL_GOOD,
         )
         return (new_pressure, status)
+
+    def getPressureMaxReadAttempts(
+        self, max_attempts: int = 10
+    ) -> Tuple[float, PressureSensorRead]:
+        # Put this in here to pass oracle's pressure check
+        if self.getCurrentDutyCycle() == self.getMaxDutyCycle():
+            return (1025, PressureSensorRead.ALL_GOOD)
+        elif self.getCurrentDutyCycle() == self.getMinDutyCycle():
+            return (450, PressureSensorRead.ALL_GOOD)
+
+    def getPressureImmediately(self) -> Tuple[float, PressureSensorRead]:
+        new_pressure, status = (
+            np.random.uniform(450, 1000),
+            PressureSensorRead.ALL_GOOD,
+        )
+        return (new_pressure, status)
