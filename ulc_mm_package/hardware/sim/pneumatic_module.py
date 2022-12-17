@@ -83,6 +83,11 @@ class PneumaticModule(RealPneumaticModule):
             return (1025, PressureSensorRead.ALL_GOOD)
         elif self.getCurrentDutyCycle() == self.getMinDutyCycle():
             return (450, PressureSensorRead.ALL_GOOD)
+        else:
+            return (
+                np.random.uniform(450, 1000),
+                PressureSensorRead.ALL_GOOD,
+            )
 
     def getPressureImmediately(self) -> Tuple[float, PressureSensorRead]:
         new_pressure, status = (
