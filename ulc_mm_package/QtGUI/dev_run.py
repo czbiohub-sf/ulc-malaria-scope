@@ -80,6 +80,7 @@ class AcquisitionThread(QThread):
         in this function to make the __init__ more readable."""
 
         # Flags and counters
+        self.im_counter = 0
         self.update_liveview = 1
         self.update_counter = 0
         self.num_loops = 50
@@ -101,7 +102,6 @@ class AcquisitionThread(QThread):
         # Hardware peripherals
         self.motor = mscope.motor
         self.pneumatic_module: PneumaticModule = mscope.pneumatic_module
-        mscope._init_data_storage(fps_lim=30)
         self.data_storage = mscope.data_storage
 
         self.flow_controller: FlowController = FlowController(
@@ -128,9 +128,9 @@ class AcquisitionThread(QThread):
         while True:
             if self.camera_activated:
                 try:
-                    for i, (image, timestamp) in enumerate(self.camera.yieldImages()):
+                    for image, timestamp in self.camera.yieldImages():
                         self.updateGUIElements()
-                        self.save(image, i)
+                        self.save(image)
                         self.zStack(image)
                         self.activeFlowControl(image, timestamp)
                         self._autobrightness(image)
@@ -177,7 +177,7 @@ class AcquisitionThread(QThread):
             pressure_sensor_status = -1
 
         return {
-            "im_counter": self.data_storage.zw.arr_counter,
+            "im_counter": self.im_counter,
             "measurement_type": "placeholder",
             "sample_type": "placeholder",
             "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
@@ -192,7 +192,7 @@ class AcquisitionThread(QThread):
             "focus_adjustment": self.af_adjustment_done,
         }
 
-    def save(self, image, idx: int):
+    def save(self, image):
         if self.single_save:
             filename = (
                 path.join(self.main_dir, datetime.now().strftime(DATETIME_FORMAT))
@@ -202,8 +202,9 @@ class AcquisitionThread(QThread):
             self.single_save = False
 
         if self.continuous_save:
-            self.data_storage.writeData(image, self.getMetadata(), idx)
+            self.data_storage.writeData(image, self.getMetadata(), self.im_counter)
             self.measurementTime.emit(int(perf_counter() - self.start_time))
+            self.im_counter += 1
 
     def updateGUIElements(self):
         self.update_counter += 1
@@ -257,6 +258,7 @@ class AcquisitionThread(QThread):
             if self.main_dir == None:
                 self.main_dir = self.data_storage.main_dir
 
+            self.im_counter = 0
             self.start_time = perf_counter()
 
     def changeBinningMode(self):
@@ -654,7 +656,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             )
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
-            num_images = self.acquisitionThread.data_storage.zw.arr_counter
+            num_images = self.acquisitionThread.im_counter
             print(
                 f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
             )
