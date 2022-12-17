@@ -8,7 +8,6 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 import numpy as np
 import logging
 
-from datetime import datetime
 from transitions import Machine
 from time import sleep
 
@@ -87,6 +86,10 @@ class ScopeOp(QObject, Machine):
             {
                 "name": "autobrightness_precells",
                 "on_enter": [self._send_state, self._start_autobrightness_precell],
+            },
+            {
+                "name": "pressure_check",
+                "on_enter": [self._send_state, self._check_pressure_seal],
             },
             {
                 "name": "cellfinder",
@@ -253,6 +256,27 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_autobrightness)
 
+    def _check_pressure_seal(self):
+        # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
+        try:
+            pdiff = checkPressureDifference(self.mscope)
+            self.logger.info(f"Pressure difference ok: {pdiff} hPa.")
+            self.next_state()
+        except PressureSensorBusy:
+            self.logger.error(f"Unable to read value from the pressure sensor - {e}")
+            # TODO What to do in a case where the sensor is acting funky?
+            self.error.emit(
+                "Calibration failed",
+                "Failed to read pressure sensor to perform pressure seal check.",
+                False,
+            )
+        except PressureLeak as e:
+            self.logger.error(f"Improper seal / pressure leak detected - {e}")
+            # TODO provide instructions for dealing with pressure leak?
+            self.error.emit(
+                "Calibration failed", "Improper seal / pressure leak detected.", False
+            )
+
     def _start_cellfinder(self):
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
@@ -378,7 +402,6 @@ class ScopeOp(QObject, Machine):
             )
             self.next_state()
         except NoCellsFound:
-            self.cellfinder_result = -1
             self.logger.error("Cellfinder failed. No cells found.")
             self.error.emit("Calibration failed", "No cells found.", False)
         else:
