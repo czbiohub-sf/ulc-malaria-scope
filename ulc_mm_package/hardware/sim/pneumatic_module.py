@@ -64,9 +64,9 @@ class PneumaticModule(RealPneumaticModule):
         # to 1000 hPa (atmospheric pressure)
 
         # Put this in here to pass oracle's pressure check
-        if self.getCurrentDutyCycle() == self.getMaxDutyCycle():
+        if self.getCurrentDutyCycle() > self.getMaxDutyCycle():
             return (1025, PressureSensorRead.ALL_GOOD)
-        elif self.getCurrentDutyCycle() == self.getMinDutyCycle():
+        elif self.getCurrentDutyCycle() < self.getMinDutyCycle():
             return (450, PressureSensorRead.ALL_GOOD)
 
         new_pressure, status = (
@@ -79,9 +79,9 @@ class PneumaticModule(RealPneumaticModule):
         self, max_attempts: int = 10
     ) -> Tuple[float, PressureSensorRead]:
         # Put this in here to pass oracle's pressure check
-        if self.getCurrentDutyCycle() == self.getMaxDutyCycle():
+        if self.getCurrentDutyCycle() > self.getMaxDutyCycle():
             return (1025, PressureSensorRead.ALL_GOOD)
-        elif self.getCurrentDutyCycle() == self.getMinDutyCycle():
+        elif self.getCurrentDutyCycle() < self.getMinDutyCycle():
             return (450, PressureSensorRead.ALL_GOOD)
         else:
             return (
