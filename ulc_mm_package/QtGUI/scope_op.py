@@ -256,7 +256,7 @@ class ScopeOp(QObject, Machine):
     def _check_pressure_seal(self):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
         try:
-            pdiff = checkPressureDifference()
+            pdiff = checkPressureDifference(self.mscope)
             self.logger.info(f"Pressure difference ok: {pdiff} hPa.")
             self.next_state()
         except PressureSensorBusy:
