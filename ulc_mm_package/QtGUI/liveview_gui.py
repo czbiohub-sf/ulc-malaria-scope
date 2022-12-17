@@ -92,13 +92,11 @@ class LiveviewGUI(QMainWindow):
     def update_focus(self, val):
         self.focus_val.setText(f"Actual = {val}")
 
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def update_flowrate(self, val):
-        self.flowrate_val.setText(f"Actual = {val}")
-
-    @pyqtSlot()
-    def enable_pause(self):
-        self.pause_btn.setEnabled(True)
+        self.flowrate_val.setText(
+            f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}"
+        )
 
     def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
@@ -139,7 +137,7 @@ class LiveviewGUI(QMainWindow):
         self.state_lbl = QLabel("-")
         self.pause_btn = QPushButton("Pause")
         self.exit_btn = QPushButton("Exit")
-        self.img_count_lbl = QLabel("Frame:")
+        self.img_count_lbl = QLabel("Fields of view:")
         self.img_count_val = QLabel("-")
         self.terminal_txt = QPlainTextEdit(self.terminal_msg)
         self.terminal_scroll = QScrollBar()
@@ -158,7 +156,7 @@ class LiveviewGUI(QMainWindow):
 
         # Populate infopanel with routine results
         self.focus_title = QLabel("FOCUS ERROR (motor steps)")
-        self.flowrate_title = QLabel("CELL FLOWRATE (pix/sec)")
+        self.flowrate_title = QLabel("CELL FLOWRATE (FoVs/sec)")
         self.focus_lbl = QLabel("Target = 0")
         self.flowrate_lbl = QLabel(f"Target = -")
         self.focus_val = QLabel("-")
@@ -218,9 +216,6 @@ class LiveviewGUI(QMainWindow):
         self.update_focus("---")
         self.update_flowrate("---")
 
-        # Disable pause button at startup
-        self.pause_btn.setEnabled(False)
-
         # Setup status colors
         self._set_color(self.state_lbl, STATUS.IN_PROGRESS)
 
@@ -242,6 +237,8 @@ class LiveviewGUI(QMainWindow):
         self.liveview_img = QLabel()
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
+        self.liveview_img.setMinimumSize(1, 1)
+        self.liveview_img.setScaledContents(True)
 
         self.liveview_layout.addWidget(self.liveview_img)
 

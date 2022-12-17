@@ -1,6 +1,6 @@
 """ High-level state machine manager.
 
-The Oracle sees all and knows all. 
+The Oracle sees all and knows all.
 It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
@@ -33,8 +33,9 @@ from ulc_mm_package.scope_constants import (
     CAMERA_SELECTION,
     SSD_DIR,
     VERBOSE,
+    SIMULATION,
 )
-from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
@@ -49,18 +50,17 @@ from ulc_mm_package.utilities.email_utils import send_ngrok_email
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
-from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
-_VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
 _ERROR_MSG = '\n\nClick "OK" to end this run.'
 
 _IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
 _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
+_IMAGE_RELOAD_PATH = "gui_images/remove_infographic.png"
 
 
 class Buttons(enum.Enum):
@@ -110,7 +110,7 @@ class Oracle(Machine):
         self.liveview_window = LiveviewGUI()
 
         # Instantiate and configure Oracle elements
-        self._init_variables()
+        self._set_variables()
         self._init_threads()
         self._init_states()
         self._init_sigslots()
@@ -121,7 +121,7 @@ class Oracle(Machine):
         # Trigger first transition
         self.next_state()
 
-    def _init_variables(self):
+    def _set_variables(self):
         # Instantiate metadata dicts
         self.form_metadata = None
         self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
@@ -129,15 +129,15 @@ class Oracle(Machine):
         self.liveview_window.set_infopanel_vals()
 
     def _init_threads(self):
-        # Instantiate camera acquisition and thread
-        self.acquisition = Acquisition()
-        self.acquisition_thread = QThread()
-        self.acquisition.moveToThread(self.acquisition_thread)
-
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp(self.acquisition.update_scopeop)
+        self.scopeop = ScopeOp()
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
+
+        # Instantiate camera acquisition and thread
+        self.acquisition = self.scopeop.acquisition
+        self.acquisition_thread = QThread()
+        self.acquisition.moveToThread(self.acquisition_thread)
 
         self.scopeop_thread.started.connect(self.scopeop.setup)
 
@@ -173,7 +173,7 @@ class Oracle(Machine):
             trigger="rerun",
             source="intermission",
             dest="form",
-            before=self._init_variables,
+            before=self._set_variables,
         )
 
     def _init_sigslots(self):
@@ -197,7 +197,7 @@ class Oracle(Machine):
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
         self.scopeop.set_period.connect(self.acquisition.set_period)
 
-        self.scopeop.enable_pause.connect(self.liveview_window.enable_pause)
+        self.scopeop.send_pause.connect(self.pause_receiver)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -225,8 +225,8 @@ class Oracle(Machine):
                 QMessageBox.Icon.Warning,
                 "SSH tunnel failed",
                 (
-                    "Could not create SSH tunnel so the scope cannot be accessed remotely. "
-                    "To recreate the SSH tunnel the scope needs to be rebooted."
+                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
+                    "The SSH tunnel is only recreated when the scope is rebooted."
                     '\n\nClick "OK" to continue running without SSH.'
                 ),
                 buttons=Buttons.OK,
@@ -277,31 +277,53 @@ class Oracle(Machine):
             )
             sys.exit(1)
 
-    def pause_handler(self):
-        message_result = self.display_message(
-            QMessageBox.Icon.Information,
-            "Pause run?",
-            (
-                "While paused, you can mix/add more sample to the flow cell "
-                "without ending the experiment."
-                '\n\nClick "OK" to pause this run and wait for the next dialog before removing the condensor.'
-            ),
-            buttons=Buttons.CANCEL,
+    def pause_receiver(self, title, message):
+        self.scopeop.to_pause()
+
+        self.pause_handler(
+            icon=QMessageBox.Icon.Warning,
+            title=title,
+            message=message,
+            buttons=Buttons.OK,
+            pause_done=True,
         )
-        if message_result == QMessageBox.Ok:
-            self.scopeop.to_pause()
-        else:
+
+    def pause_handler(
+        self,
+        icon=QMessageBox.Icon.Information,
+        title="Pause run?",
+        message=(
+            "While paused, you can add more sample to the flow cell, "
+            "without losing the current brightness and focus calibration. "
+            "After pausing, the scope will restart the calibration steps."
+            '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
+        ),
+        buttons=Buttons.CANCEL,
+        pause_done=False,
+    ):
+        message_result = self.display_message(
+            icon,
+            title,
+            message,
+            buttons=buttons,
+        )
+        if message_result == QMessageBox.Cancel:
             return
+        elif not pause_done:
+            self.scopeop.to_pause()
 
         sleep(2)
         self.display_message(
             QMessageBox.Icon.Information,
             "Paused run",
             (
-                "The condensor can now be removed."
-                '\n\nAfter mixing the sample and replacing the condensor, click "OK" to resume this run.'
+                "The CAP module can now be removed."
+                "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
+                "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
+                '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
             ),
             buttons=Buttons.OK,
+            image=_IMAGE_RELOAD_PATH,
         )
         self.scopeop.unpause()
 
@@ -369,8 +391,8 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Initializing hardware",
             (
-                "If there is a flow cell in the scope, remove it now."
-                '\n\nClick "OK" once the flow cell is removed.'
+                "Remove the CAP module if it is currently on."
+                '\n\nClick "OK" once it is removed.'
             ),
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
@@ -426,7 +448,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
-            'Insert flow cell now.\n\nClick "OK" once it is in place.',
+            'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed',
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
@@ -444,7 +466,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove flow cell now.\n\nClick "OK" once it is removed.',
+            'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
@@ -526,7 +548,7 @@ if __name__ == "__main__":
             sleep(3)
             oracle.emergency_shutoff()
         except Exception as e:
-            oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED: {e}")
+            oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED - {e}")
 
         sys.exit(1)
 

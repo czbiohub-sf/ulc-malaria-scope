@@ -1,12 +1,12 @@
 from ulc_mm_package.QtGUI.gui_constants import *
-from ulc_mm_package.hardware.hardware_constants import (
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+
+from ulc_mm_package.scope_constants import (
+    SSD_DIR,
     VIDEO_PATH,
     VIDEO_REC,
     SIMULATION,
-    DATETIME_FORMAT,
 )
-
-from ulc_mm_package.scope_constants import SSD_DIR
 from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlRoutine
