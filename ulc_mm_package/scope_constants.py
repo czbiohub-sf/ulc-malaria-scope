@@ -69,6 +69,10 @@ class CameraOptions(Enum):
 
 
 # ================ Camera constants ================ #
+MAX_FRAMES = 20000  # Rounded up from 10 minutes of data at 30 FPS
+if SIMULATION:
+    MAX_FRAMES = 2000
+
 AVT_VENDOR_ID = 0x1AB2
 AVT_PRODUCT_ID = 0x0001
 

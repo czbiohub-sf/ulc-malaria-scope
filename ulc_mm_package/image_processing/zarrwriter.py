@@ -115,8 +115,8 @@ class ZarrWriter:
 
         exceptions = []
         for f in self.futures:
-            if f.exception is not None:
-                exceptions.append(f.exception)
+            if f.exception() is not None:
+                exceptions.append(f.exception())
 
         for i, exc in enumerate(exceptions):
             self.logger.error(f"exception in zarrwriter: {exc}")
