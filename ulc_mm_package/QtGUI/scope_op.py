@@ -488,7 +488,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_experiment)
 
         curr_time = perf_counter()
-        self.logger.debug(f"Loop time was {curr_time-self.last_time}")
+        self.logger.debug(f"time between run_experiment calls {curr_time-self.last_time}")
         self.last_time = curr_time
 
         if self.count >= MAX_FRAMES:
@@ -613,3 +613,5 @@ class ScopeOp(QObject, Machine):
 
             if self.running:
                 self.img_signal.connect(self.run_experiment)
+
+            self.logger.debug(f"run_experiment runtime {perf_counter()-curr_time}")
