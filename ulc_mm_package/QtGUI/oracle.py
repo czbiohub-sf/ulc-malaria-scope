@@ -333,7 +333,7 @@ class Oracle(Machine):
             "End experiment?",
             'Click "OK" to end the experiment and shutoff the scope.',
             buttons=Buttons.CANCEL,
-        )       
+        )
         if message_result == QMessageBox.Ok:
             self.shutoff()
 
