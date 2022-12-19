@@ -616,4 +616,6 @@ class ScopeOp(QObject, Machine):
             if self.running:
                 self.img_signal.connect(self.run_experiment)
 
-            self.logger.debug(f"Runtime for run_experiment was {perf_counter()-curr_time}")
+            self.logger.debug(
+                f"Runtime for run_experiment was {perf_counter()-curr_time}"
+            )
