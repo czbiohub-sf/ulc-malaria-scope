@@ -179,11 +179,11 @@ class Oracle(Machine):
     def _init_sigslots(self):
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
-        self.form_window.exit_btn.clicked.connect(self.shutoff)
+        self.form_window.exit_btn.clicked.connect(self.form_exit_handler)
 
         # Connect liveview buttons
         self.liveview_window.pause_btn.clicked.connect(self.pause_handler)
-        self.liveview_window.exit_btn.clicked.connect(self.exit_handler)
+        self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.next_state)
@@ -327,7 +327,17 @@ class Oracle(Machine):
         )
         self.scopeop.unpause()
 
-    def exit_handler(self):
+    def form_exit_handler(self):
+        message_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "End experiment?",
+            'Click "OK" to end the experiment and shutoff the scope.',
+            buttons=Buttons.CANCEL,
+        )       
+        if message_result == QMessageBox.Ok:
+            self.shutoff()
+
+    def liveview_exit_handler(self):
         message_result = self.display_message(
             QMessageBox.Icon.Information,
             "End run?",

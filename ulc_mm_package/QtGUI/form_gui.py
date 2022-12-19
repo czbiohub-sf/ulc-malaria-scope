@@ -63,7 +63,7 @@ class FormGUI(QDialog):
         self.notes_val = QPlainTextEdit()
 
         # Buttons
-        self.exit_btn = QPushButton("Cancel")
+        self.exit_btn = QPushButton("Exit")
         self.start_btn = QPushButton("Start")
 
         # Dropdown menus
