@@ -128,6 +128,7 @@ EMAIL_PW_TOKEN = "GMAIL_TOKEN"
 VERBOSE = int(os.environ.get("MS_VERBOSE", 0))
 
 # ================ SSD directory constants ================ #
+SSD_NAME = "SamsungSSD"
 if SIMULATION:
     SSD_DIR = "../QtGUI/sim_media/pi/"
 else:
