@@ -252,7 +252,9 @@ class Oracle(Machine):
         if path.exists(samsung_ext_dir):
             self.ext_dir = samsung_ext_dir + "/"
         else:
-            print(f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for any folders in this directory.")
+            print(
+                f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for any folders in this directory."
+            )
             try:
                 self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
             except (FileNotFoundError, IndexError) as e:
