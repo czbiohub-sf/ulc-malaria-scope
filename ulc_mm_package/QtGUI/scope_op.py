@@ -489,7 +489,7 @@ class ScopeOp(QObject, Machine):
 
         curr_time = perf_counter()
         self.logger.debug(
-            f"time between run_experiment calls {curr_time-self.last_time}"
+            f"Time between run_experiment calls was {curr_time-self.last_time}"
         )
         self.last_time = curr_time
 
@@ -616,4 +616,4 @@ class ScopeOp(QObject, Machine):
             if self.running:
                 self.img_signal.connect(self.run_experiment)
 
-            self.logger.debug(f"run_experiment runtime {perf_counter()-curr_time}")
+            self.logger.debug(f"Runtime for run_experiment was {perf_counter()-curr_time}")
