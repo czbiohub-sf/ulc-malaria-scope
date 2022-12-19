@@ -1,7 +1,7 @@
 import threading
 import numpy as np
 
-from typing import Tuple, List
+from typing import List, Tuple, Optional
 
 
 class ChunkSelector:
@@ -10,7 +10,6 @@ class ChunkSelector:
         idx ranges to write to zarr array
         idx verification (we want to write an entire chunk)
     """
-
     def __init__(self, shape: Tuple[int, int, int], num_chunks: int):
         if len(shape) != 3:
             raise ValueError(
