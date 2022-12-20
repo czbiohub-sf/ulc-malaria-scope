@@ -381,6 +381,9 @@ class ScopeOp(QObject, Machine):
                 "LED is too dim to run experiment.",
                 False,
             )
+        except LEDNoPower as e:
+            self.logger.error(f"LED initial functionality test did not pass: {e}")
+            self.error.emit("LED failure", "The off/on LED test failed.", False)
         else:
             if self.running:
                 self.img_signal.connect(self.run_autobrightness)

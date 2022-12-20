@@ -46,6 +46,20 @@ class BrightnessCriticallyLow(AutobrightnessError):
         super().__init__(f"{msg}")
 
 
+class LEDNoPower(AutobrightnessError):
+    """Raised when it appears as if the LED is not working."""
+
+    def __init__(self, mean_off_img: float, off_img_sd: float, mean_on_img: float):
+        msg = (
+            f"The LED does not seem to be working. Mean pixel value w/ LED off is: {mean_off_img:.2f}."
+            f"Mean pixel value w/ LED on: {mean_on_img:.2f}."
+            f"SD of image w/ LED off is: {off_img_sd:.2f}"
+            f"The LED may be dead or a cable may have become disconnected."
+        )
+
+        super().__init__(f"{msg}")
+
+
 def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
     """Downsamples an image by `scale_factor`"""
 
@@ -111,6 +125,42 @@ def adjustBrightness(
     else:
         # Brightness achieved within tol
         return AB.JUST_RIGHT, current_brightness
+
+
+def checkLedWorking(
+    img_led_off: np.ndarray, img_led_on: np.ndarray, n_devs: int = 3
+) -> float:
+    """Check whether the led is on by comparing an image with the LED off vs. one with the LED on.
+
+    Parameters
+    ----------
+    img_led_off: np.ndarray
+        Image taken when the led is completely off
+    img_led_on: np.ndarray
+        Image taken when the led is on (ideally fully on so that we don't get a false negative due to the LED being dim)
+    n_devs: int=3
+        Number of standard deviations above the "off" image's mean that the "on" image needs to be to deem the LED as working.
+
+    Returns
+    -------
+    float:
+        The difference between mean pixel value when the led is on and
+
+    Exceptions
+    ----------
+    LEDNoPower:
+        An exception raised when `the difference between the mean pixel value when the LED is on is less than
+        `n_devs` standard deviations above the mean of the image taken with the led off.
+
+    """
+    sd_off: float = np.std(img_led_off)
+    mean_off: float = np.mean(img_led_off)
+    mean_on: float = np.mean(img_led_on)
+    diff = mean_on - (mean_off + n_devs * sd_off)
+    if diff >= 0:
+        return mean_on - mean_off
+    else:
+        raise LEDNoPower(mean_off, sd_off, mean_on)
 
 
 class Autobrightness:
