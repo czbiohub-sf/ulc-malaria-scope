@@ -316,8 +316,6 @@ class AcquisitionThread(QThread):
                 print(f"Mean pixel val: {final_brightness}")
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
-                self.autobrightness = autobrightnessRoutine(self.mscope)
-                self.autobrightness.send(None)
             except BrightnessTargetNotAchieved as e:
                 print(f"Autobrightness error - {e.__class__.__name__}.")
                 self.autobrightness_on = False
@@ -787,6 +785,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self._enableLEDGUIElements()
 
     def btnAutobrightnessHandler(self):
+        self.acquisitionThread.autobrightness = autobrightnessRoutine(self.mscope)
+        self.acquisitionThread.autobrightness.send(None)
         self.btnAutobrightness.setEnabled(False)
         self.btnLEDToggle.setEnabled(False)
         self.vsLED.blockSignals(True)
