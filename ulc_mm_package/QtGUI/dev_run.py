@@ -307,15 +307,17 @@ class AcquisitionThread(QThread):
             try:
                 done = self.autobrightness.runAutobrightness(img)
             except BrightnessTargetNotAchieved as e:
-                print(f"Autobrightness error : {e}.")
+                print(f"Autobrightness error - {e}.")
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
                 return
             except BrightnessCriticallyLow as e:
-                print(f"Autobrightness error : {e}")
+                print(f"Autobrightness error - {e}")
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
                 return
+            except LEDNoPower as e:
+                print(f"Autobrightness error - {e}")
 
             if done:
                 self.autobrightness_on = False

@@ -52,6 +52,9 @@ def autobrightness_wrappper(mscope: MalariaScope):
             break
         except BrightnessCriticallyLow:
             raise
+        except LEDNoPower:
+            print(f"LED is not working.")
+            raise
 
 
 def find_cells_wrapper(mscope: MalariaScope):

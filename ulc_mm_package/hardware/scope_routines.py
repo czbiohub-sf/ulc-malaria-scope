@@ -241,12 +241,16 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
                 val = e.value
 
     BrightnessCriticallyLow:
-        The targeg was not achieved and the brightness is too low to continue
+        The target was not achieved and the brightness is too low to continue
         with the run. The mean pixel brightness value can be accessed by:
             try:
                 ...
             exception BrightTargetNotAchieved as e:
                 val = e.value
+
+    LEDNoPower:
+        The initial check for LED functionality (comparing an image taken with the LED off vs. LED at full power)
+        failed. This means that the LED is likely not working (perhaps a cable is loose or the LED is dead).
 
     Usage
     -----
@@ -265,21 +269,30 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
         cam.stopAcquisition()
         print(mean_brightness_val)
     """
-
     autobrightness = Autobrightness(mscope.led)
     brightness_achieved = False
 
+    # First set the LED off and acquire an image
+    mscope.led.turnOff()
+    img_off: np.ndarray = yield
+
+    # Turn the led on to max and acquire an image
+    mscope.led.turnOn()
+    mscope.led.setDutyCycle(1)
+    img_on: np.ndarray = yield
+    checkLedWorking(img_off, img_on, n_devs=3)
+
+    # Turn the led back to 0
+    mscope.led.setDutyCycle(0)
+
+    # Run autobrightness
     while not brightness_achieved:
-        img = yield img
+        img = yield
         try:
             brightness_achieved = autobrightness.runAutobrightness(img)
         except BrightnessTargetNotAchieved as e:
-            # TODO switch to logging
-            print(f"Autobrightness routine exception : {e}")
             raise
         except BrightnessCriticallyLow as e:
-            # TODO switch to logging
-            print(f"Autobrightness routine exception : {e}")
             raise
 
     # Get the mean image brightness to store in the experiment metadata
