@@ -382,7 +382,7 @@ class ScopeOp(QObject, Machine):
                 False,
             )
         except LEDNoPower as e:
-            self.logger.error(f"LED initial functionality test did not pass: {e}")
+            self.logger.error(f"LED initial functionality test did not pass - {e}")
             self.error.emit("LED failure", "The off/on LED test failed.", False)
         else:
             if self.running:
