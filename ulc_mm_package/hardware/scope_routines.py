@@ -274,12 +274,12 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
 
     # First set the LED off and acquire an image
     mscope.led.turnOff()
-    img_off: np.ndarray = yield
+    img_off = yield
 
     # Turn the led on to max and acquire an image
     mscope.led.turnOn()
     mscope.led.setDutyCycle(1)
-    img_on: np.ndarray = yield
+    img_on = yield
     checkLedWorking(img_off, img_on, n_devs=3)
 
     # Turn the led back to 0
