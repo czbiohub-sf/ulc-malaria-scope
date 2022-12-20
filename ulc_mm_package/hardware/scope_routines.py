@@ -1,5 +1,5 @@
 from typing import List, Tuple, Optional, Sequence, Generator, Union
-from time import perf_counter
+from time import perf_counter, sleep
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
@@ -274,15 +274,18 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
 
     # First set the LED off and acquire an image
     mscope.led.turnOff()
+    sleep(0.25)
     img_off = yield
 
     # Turn the led on to max and acquire an image
     mscope.led.turnOn()
     mscope.led.setDutyCycle(1)
+    sleep(0.25)
     img_on = yield
     checkLedWorking(img_off, img_on, n_devs=3)
 
     # Turn the led back to 0
+    sleep(0.25)
     mscope.led.setDutyCycle(0)
 
     # Run autobrightness
