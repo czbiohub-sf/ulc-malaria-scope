@@ -317,6 +317,7 @@ class AcquisitionThread(QThread):
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
                 self.autobrightness = autobrightnessRoutine(self.mscope)
+                self.autobrightness.send(None)
             except BrightnessTargetNotAchieved as e:
                 print(f"Autobrightness error - {e.__class__.__name__}.")
                 self.autobrightness_on = False
