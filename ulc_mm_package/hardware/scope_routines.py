@@ -280,11 +280,7 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
     mscope.led.turnOn()
     mscope.led.setDutyCycle(1)
     img_on: np.ndarray = yield
-
-    try:
-        checkLedWorking(img_off, img_on, n_devs=3)
-    except LEDNoPower as e:
-        raise
+    checkLedWorking(img_off, img_on, n_devs=3)
 
     # Turn the led back to 0
     mscope.led.setDutyCycle(0)
