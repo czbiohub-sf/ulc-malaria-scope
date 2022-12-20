@@ -51,9 +51,9 @@ class LEDNoPower(AutobrightnessError):
 
     def __init__(self, mean_off_img: float, off_img_sd: float, mean_on_img: float):
         msg = (
-            f"The LED does not seem to be working. Mean pixel value w/ LED off is: {mean_off_img:.2f}."
-            f"Mean pixel value w/ LED on: {mean_on_img:.2f}."
-            f"SD of image w/ LED off is: {off_img_sd:.2f}"
+            f"The LED does not seem to be working. Mean pixel value w/ LED off is = {mean_off_img:.2f}."
+            f"Mean pixel value w/ LED on = {mean_on_img:.2f}."
+            f"SD of image w/ LED off is = {off_img_sd:.2f}"
             f"The LED may be dead or a cable may have become disconnected."
         )
 
