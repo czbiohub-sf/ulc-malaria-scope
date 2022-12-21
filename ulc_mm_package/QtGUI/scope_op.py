@@ -632,6 +632,10 @@ class ScopeOp(QObject, Machine):
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 
+            if self.count % 10 == 0:
+                qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
+                self.img_metadata["zarrwriter_qsize"] = qsize
+
             self.img_metadata["runtime"] = perf_counter() - curr_time
 
             if self.running:
