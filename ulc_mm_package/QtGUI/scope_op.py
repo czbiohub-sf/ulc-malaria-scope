@@ -634,6 +634,13 @@ class ScopeOp(QObject, Machine):
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 
+            if self.count % 10 == 0:
+                # log every 10 frames so we don't bother the executor too much
+                qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
+                self.logger.debug(
+                    f"ZarrWriter.executor._work_queue.qsize() = {qsize}"
+                )
+
             if self.running:
                 self.img_signal.connect(self.run_experiment)
 
