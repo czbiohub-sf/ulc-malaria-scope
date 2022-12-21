@@ -199,6 +199,7 @@ class Oracle(Machine):
         self.scopeop.set_period.connect(self.acquisition.set_period)
 
         self.scopeop.send_pause.connect(self.pause_receiver)
+        self.scopeop.lid_open_pause.connect(self.lid_open_pause_handler)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -285,6 +286,22 @@ class Oracle(Machine):
                 instant_abort=False,
             )
             sys.exit(1)
+
+    def lid_open_pause_handler(self):
+        self.scopeop.to_pause()
+
+        self.display_message(
+            icon=QMessageBox.Icon.Warning,
+            title="Lid opened, run paused",
+            message=(
+                "The lid was opened during a run. The experiment has been paused. "
+                "Close the lid and then press okay to resume the run. "
+                "I _cannot_ believe you've done this."
+            ),
+            buttons=Buttons.OK,
+        )
+
+        self.scopeop.unpause()
 
     def pause_receiver(self, title, message):
         self.scopeop.to_pause()

@@ -45,6 +45,7 @@ class ScopeOp(QObject, Machine):
     error = pyqtSignal(str, str, bool)
 
     send_pause = pyqtSignal(str, str)
+    lid_open_pause = pyqtSignal()
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -203,6 +204,11 @@ class ScopeOp(QObject, Machine):
                 ),
                 True,
             )
+
+    def lid_open_pause_handler(self, *args):
+        if self.mscope.led._isOn:
+            self.mscope.led.turnOff()
+            self.lid_open_pause.emit()
 
     def start(self):
         self.running = True
