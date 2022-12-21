@@ -198,6 +198,10 @@ def fastFlowRoutine(
     CantReachTargetFlowrate:
         Raised when the syringe is already at its maximally extended position but the flowrate
         is still outside the tolerance band.
+
+    LowConfidenceCorrelations:
+        Raised if the number of recent xcorrs which have 'failed' (had a low correlation value) exceeds
+        2 * the measurement window size.
     """
 
     flow_val = 0
@@ -211,6 +215,8 @@ def fastFlowRoutine(
         try:
             flow_val, flow_error = flow_controller.fastFlowAdjustment(img, timestamp)
         except CantReachTargetFlowrate:
+            raise
+        except LowConfidenceCorrelations:
             raise
 
         if flow_error == 0:
