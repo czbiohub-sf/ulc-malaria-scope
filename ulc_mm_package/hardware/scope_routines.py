@@ -1,5 +1,5 @@
 from typing import List, Tuple, Optional, Sequence, Generator, Union
-from time import perf_counter
+from time import perf_counter, sleep
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
@@ -198,6 +198,10 @@ def fastFlowRoutine(
     CantReachTargetFlowrate:
         Raised when the syringe is already at its maximally extended position but the flowrate
         is still outside the tolerance band.
+
+    LowConfidenceCorrelations:
+        Raised if the number of recent xcorrs which have 'failed' (had a low correlation value) exceeds
+        2 * the measurement window size.
     """
 
     flow_val = 0
@@ -211,6 +215,8 @@ def fastFlowRoutine(
         try:
             flow_val, flow_error = flow_controller.fastFlowAdjustment(img, timestamp)
         except CantReachTargetFlowrate:
+            raise
+        except LowConfidenceCorrelations:
             raise
 
         if flow_error == 0:
@@ -241,12 +247,16 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
                 val = e.value
 
     BrightnessCriticallyLow:
-        The targeg was not achieved and the brightness is too low to continue
+        The target was not achieved and the brightness is too low to continue
         with the run. The mean pixel brightness value can be accessed by:
             try:
                 ...
             exception BrightTargetNotAchieved as e:
                 val = e.value
+
+    LEDNoPower:
+        The initial check for LED functionality (comparing an image taken with the LED off vs. LED at full power)
+        failed. This means that the LED is likely not working (perhaps a cable is loose or the LED is dead).
 
     Usage
     -----
@@ -265,21 +275,33 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
         cam.stopAcquisition()
         print(mean_brightness_val)
     """
-
     autobrightness = Autobrightness(mscope.led)
     brightness_achieved = False
 
+    # First set the LED off and acquire an image
+    mscope.led.turnOff()
+    sleep(0.25)
+    img_off = yield
+
+    # Turn the led on to max and acquire an image
+    mscope.led.turnOn()
+    mscope.led.setDutyCycle(1)
+    sleep(0.25)
+    img_on = yield
+    checkLedWorking(img_off, img_on, n_devs=3)
+
+    # Turn the led back to 0
+    sleep(0.25)
+    mscope.led.setDutyCycle(0)
+
+    # Run autobrightness
     while not brightness_achieved:
-        img = yield img
+        img = yield
         try:
             brightness_achieved = autobrightness.runAutobrightness(img)
         except BrightnessTargetNotAchieved as e:
-            # TODO switch to logging
-            print(f"Autobrightness routine exception : {e}")
             raise
         except BrightnessCriticallyLow as e:
-            # TODO switch to logging
-            print(f"Autobrightness routine exception : {e}")
             raise
 
     # Get the mean image brightness to store in the experiment metadata

@@ -34,6 +34,7 @@ from ulc_mm_package.scope_constants import (
     SSD_DIR,
     VERBOSE,
     SIMULATION,
+    SSD_NAME,
 )
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.data_storage import DataStorage
@@ -179,11 +180,11 @@ class Oracle(Machine):
     def _init_sigslots(self):
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
-        self.form_window.exit_btn.clicked.connect(self.shutoff)
+        self.form_window.exit_btn.clicked.connect(self.form_exit_handler)
 
         # Connect liveview buttons
         self.liveview_window.pause_btn.clicked.connect(self.pause_handler)
-        self.liveview_window.exit_btn.clicked.connect(self.exit_handler)
+        self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.next_state)
@@ -247,21 +248,29 @@ class Oracle(Machine):
             self.logger.warning(f"SSH address could not be emailed - {e}")
 
     def _init_ssd(self):
-        try:
-            self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-        except (FileNotFoundError, IndexError) as e:
+        samsung_ext_dir = path.join(SSD_DIR, SSD_NAME)
+        if path.exists(samsung_ext_dir):
+            self.ext_dir = samsung_ext_dir + "/"
+        else:
             print(
-                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+                f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for any folders in this directory."
             )
-            self.display_message(
-                QMessageBox.Icon.Critical,
-                "SSD not found",
-                f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
-                + _ERROR_MSG,
-                buttons=Buttons.OK,
-                instant_abort=False,
-            )
-            sys.exit(1)
+            try:
+                self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+            except (FileNotFoundError, IndexError) as e:
+                print(
+                    f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+                )
+                self.display_message(
+                    QMessageBox.Icon.Critical,
+                    "SSD not found",
+                    f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
+                    + _ERROR_MSG,
+                    buttons=Buttons.OK,
+                    instant_abort=False,
+                )
+                sys.exit(1)
+        print(f"Saving data to {self.ext_dir}")
 
         if not SIMULATION and not DataStorage.is_there_sufficient_storage(self.ext_dir):
             print(
@@ -327,7 +336,17 @@ class Oracle(Machine):
         )
         self.scopeop.unpause()
 
-    def exit_handler(self):
+    def form_exit_handler(self):
+        message_result = self.display_message(
+            QMessageBox.Icon.Information,
+            "End experiment?",
+            'Click "OK" to end the experiment and shutoff the scope.',
+            buttons=Buttons.CANCEL,
+        )
+        if message_result == QMessageBox.Ok:
+            self.shutoff()
+
+    def liveview_exit_handler(self):
         message_result = self.display_message(
             QMessageBox.Icon.Information,
             "End run?",

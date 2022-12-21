@@ -125,6 +125,9 @@ PER_IMAGE_METADATA_KEYS = [
     "focus_error",
     "temperature",
     "humidity",
+    "looptime",
+    "runtime",
+    "zarrwriter_qsize",
 ]
 
 # ================ Environment variables ================ #
@@ -133,6 +136,7 @@ EMAIL_PW_TOKEN = "GMAIL_TOKEN"
 VERBOSE = int(os.environ.get("MS_VERBOSE", 0))
 
 # ================ SSD directory constants ================ #
+SSD_NAME = "SamsungSSD"
 if SIMULATION:
     SSD_DIR = "../QtGUI/sim_media/pi/"
 else:

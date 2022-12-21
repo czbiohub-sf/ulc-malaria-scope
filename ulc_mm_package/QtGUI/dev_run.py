@@ -9,7 +9,11 @@ from ulc_mm_package.scope_constants import (
 )
 from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
 from ulc_mm_package.hardware.hardware_modules import *
-from ulc_mm_package.hardware.scope_routines import fastFlowRoutine, flowControlRoutine
+from ulc_mm_package.hardware.scope_routines import (
+    fastFlowRoutine,
+    flowControlRoutine,
+    autobrightnessRoutine,
+)
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
@@ -110,7 +114,8 @@ class AcquisitionThread(QThread):
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
         self.fast_flow_enabled = False
-        self.autobrightness: Autobrightness = Autobrightness(mscope.led)
+        self.autobrightness = autobrightnessRoutine(mscope)
+        self.autobrightness.send(None)
         self.autobrightness_on = False
 
         # Single-shot autofocus
@@ -307,21 +312,24 @@ class AcquisitionThread(QThread):
     def _autobrightness(self, img: np.ndarray):
         if self.autobrightness_on:
             try:
-                done = self.autobrightness.runAutobrightness(img)
+                self.autobrightness.send(img)
+            except StopIteration as e:
+                final_brightness = e.value
+                print(f"Mean pixel val: {final_brightness}")
+                self.autobrightness_on = False
+                self.autobrightnessDone.emit(1)
             except BrightnessTargetNotAchieved as e:
-                print(f"Autobrightness error : {e}.")
+                print(f"Autobrightness error - {e.__class__.__name__}.")
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
                 return
             except BrightnessCriticallyLow as e:
-                print(f"Autobrightness error : {e}")
+                print(f"Autobrightness error - {e.__class__.__name__}")
                 self.autobrightness_on = False
                 self.autobrightnessDone.emit(1)
                 return
-
-            if done:
-                self.autobrightness_on = False
-                self.autobrightnessDone.emit(1)
+            except LEDNoPower as e:
+                print(f"Autobrightness error - {e.__class__.__name__}")
 
     def _set_target_flowrate(self, val):
         self.target_flowrate = val
@@ -359,6 +367,12 @@ class AcquisitionThread(QThread):
                 self.stopActiveFlowControl()
                 print(
                     f"Unable to reach target flowrate: {self.target_flowrate}. Disabling active flow control."
+                )
+                self.pressureLeakDetected.emit(1)
+            except LowConfidenceCorrelations:
+                self.stopActiveFlowControl()
+                print(
+                    f"A number of recent xcorr calculations have failed. Disabling active flow control."
                 )
                 self.pressureLeakDetected.emit(1)
 
@@ -779,7 +793,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self._enableLEDGUIElements()
 
     def btnAutobrightnessHandler(self):
-        self.acquisitionThread.autobrightness.reset()
+        self.acquisitionThread.autobrightness = autobrightnessRoutine(self.mscope)
+        self.acquisitionThread.autobrightness.send(None)
         self.btnAutobrightness.setEnabled(False)
         self.btnLEDToggle.setEnabled(False)
         self.vsLED.blockSignals(True)

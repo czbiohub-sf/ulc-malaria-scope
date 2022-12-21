@@ -384,6 +384,9 @@ class ScopeOp(QObject, Machine):
                 "LED is too dim to run experiment.",
                 False,
             )
+        except LEDNoPower as e:
+            self.logger.error(f"LED initial functionality test did not pass - {e}")
+            self.error.emit("LED failure", "The off/on LED test failed.", False)
         else:
             if self.running:
                 self.img_signal.connect(self.run_autobrightness)
@@ -473,6 +476,24 @@ class ScopeOp(QObject, Machine):
                     "Unable to achieve desired flowrate with syringe at max position.",
                     False,
                 )
+        except LowConfidenceCorrelations:
+            if SIMULATION:
+                self.fastflow_result = self.target_flowrate
+                self.logger.info(
+                    f"Fastflow successful. Flowrate (simulated) = {self.fastflow_result}."
+                )
+                self.update_flowrate.emit(self.fastflow_result)
+                self.next_state()
+            else:
+                self.fastflow_result = -1
+                self.logger.error(
+                    "Fastflow failed. Too many recent low confidence xcorr calculations."
+                )
+                self.error.emit(
+                    "Calibration failed",
+                    "Too many recent low confidence xcorr calculations",
+                    False,
+                )
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
@@ -491,7 +512,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_experiment)
 
         curr_time = perf_counter()
-        self.logger.debug(f"Loop time was {curr_time-self.last_time}")
+        self.img_metadata["looptime"] = curr_time - self.last_time
         self.last_time = curr_time
 
         if self.count >= MAX_FRAMES:
@@ -613,6 +634,11 @@ class ScopeOp(QObject, Machine):
 
             self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
             self.count += 1
+
+            qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
+            self.img_metadata["zarrwriter_qsize"] = qsize
+
+            self.img_metadata["runtime"] = perf_counter() - curr_time
 
             if self.running:
                 self.img_signal.connect(self.run_experiment)
