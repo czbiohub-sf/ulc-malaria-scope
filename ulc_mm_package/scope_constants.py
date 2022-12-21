@@ -120,6 +120,8 @@ PER_IMAGE_METADATA_KEYS = [
     "focus_error",
     "temperature",
     "humidity",
+    "looptime",
+    "runtime",
 ]
 
 # ================ Environment variables ================ #

@@ -509,9 +509,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_experiment)
 
         curr_time = perf_counter()
-        self.logger.debug(
-            f"Time between run_experiment calls was {curr_time-self.last_time}"
-        )
+        self.img_metadata["looptime"] = curr_time-self.last_time
         self.last_time = curr_time
 
         if self.count >= MAX_FRAMES:
@@ -634,9 +632,7 @@ class ScopeOp(QObject, Machine):
             self.mscope.data_storage.writeData(img, self.img_metadata)
             self.count += 1
 
+            self.img_metadata["runtime"] = perf_counter()-curr_time
+
             if self.running:
                 self.img_signal.connect(self.run_experiment)
-
-            self.logger.debug(
-                f"Runtime for run_experiment was {perf_counter()-curr_time}"
-            )
