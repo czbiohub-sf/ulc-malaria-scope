@@ -173,9 +173,9 @@ class FlowController:
         self.fre.addImageAndCalculatePair(img, timestamp)
 
         # If the number of low-confidence correlations is larger than 2x the window size, raise an error.
-        if self.fre.failed_corr_counter >= 2 * NUM_IMAGE_PAIRS:
+        if self.fre.failed_corr_counter >= 4 * NUM_IMAGE_PAIRS:
             raise LowConfidenceCorrelations(
-                self.fre.failed_corr_counter, NUM_IMAGE_PAIRS, 2
+                self.fre.failed_corr_counter, NUM_IMAGE_PAIRS, 4
             )
 
         if self.fre.isFull():
