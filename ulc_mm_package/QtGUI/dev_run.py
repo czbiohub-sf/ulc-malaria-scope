@@ -359,6 +359,12 @@ class AcquisitionThread(QThread):
                     f"Unable to reach target flowrate: {self.target_flowrate}. Disabling active flow control."
                 )
                 self.pressureLeakDetected.emit(1)
+            except LowConfidenceCorrelations:
+                self.stopActiveFlowControl()
+                print(
+                    f"A number of recent xcorr calculations have failed. Disabling active flow control."
+                )
+                self.pressureLeakDetected.emit(1)
 
         if self.flowcontrol_enabled:
             try:

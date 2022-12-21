@@ -127,6 +127,10 @@ def fast_flow_wrapper(mscope: MalariaScope):
             )
             flow_val = -1
             break
+        except LowConfidenceCorrelations:
+            print("Too many recent low confidence xcorr calculations.")
+            flow_val = -1
+            break
         except StopIteration as e:
             flow_val = e.value
             print(f"Flowrate: {flow_val}")

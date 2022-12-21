@@ -470,6 +470,24 @@ class ScopeOp(QObject, Machine):
                     "Unable to achieve desired flowrate with syringe at max position.",
                     False,
                 )
+        except LowConfidenceCorrelations:
+            if SIMULATION:
+                self.fastflow_result = self.target_flowrate
+                self.logger.info(
+                    f"Fastflow successful. Flowrate (simulated) = {self.fastflow_result}."
+                )
+                self.update_flowrate.emit(self.fastflow_result)
+                self.next_state()
+            else:
+                self.fastflow_result = -1
+                self.logger.error(
+                    "Fastflow failed. Too many recent low confidence xcorr calculations."
+                )
+                self.error.emit(
+                    "Calibration failed",
+                    "Too many recent low confidence xcorr calculations",
+                    False,
+                )
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
