@@ -164,6 +164,10 @@ class FlowController:
         CantReachTargetFlowrate:
             Raised if the target flowrate hasn't been reached and the syringe
             can't move any further in the necessary direction, this exception is raised
+
+        LowConfidenceCorrelations:
+            Raised if the number of recent xcorrs which have 'failed' (had a low correlation value) exceeds
+            2 * the measurement window size.
         """
 
         self.fre.addImageAndCalculatePair(img, timestamp)
