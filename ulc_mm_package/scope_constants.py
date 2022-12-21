@@ -120,6 +120,9 @@ PER_IMAGE_METADATA_KEYS = [
     "focus_error",
     "temperature",
     "humidity",
+    "looptime",
+    "runtime",
+    "zarrwriter_qsize",
 ]
 
 # ================ Environment variables ================ #
