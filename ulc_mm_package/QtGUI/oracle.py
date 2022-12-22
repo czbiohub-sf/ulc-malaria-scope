@@ -430,6 +430,7 @@ class Oracle(Machine):
 
     def save_form(self):
         self.form_metadata = self.form_window.get_form_input()
+        self.form_window.reset_parameters()
         self.liveview_window.update_experiment(self.form_metadata)
 
         for key in self.form_metadata:

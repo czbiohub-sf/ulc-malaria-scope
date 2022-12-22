@@ -156,6 +156,13 @@ class FormGUI(QDialog):
 
         return form_metadata
 
+    def reset_parameters(self) -> None:
+        """Clear specific inputs which are expected to be unique for the next run."""
+
+        self.participant_val.setText("")
+        self.flowcell_val.setText("")
+        self.notes_val.setPlainText("")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
