@@ -26,8 +26,7 @@ from os import path
 
 def metadata_parser(descriptor, file):
     # Get data
-    filepath = path.join("data", file)
-    data = pd.read_csv(filepath)
+    data = pd.read_csv(file)
 
     runtimes = data.runtime * 1000
     looptimes = data.looptime * 1000
