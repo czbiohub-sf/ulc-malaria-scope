@@ -15,6 +15,8 @@
 
 """
 
+import sys
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -75,12 +77,11 @@ def metadata_parser(descriptor, file):
 
 
 if __name__ == "__main__":
-    # Select dataset (feel free to redefine this dictionary with your files of interest)
-    data = {
-        "master": "2022-12-21-171220perimage__metadata-master.csv",
-        "zarr": "2022-12-21-170215perimage__metadata-zarr.csv",
-    }
-    selection = "zarr"
+    if len(sys.argv) != 2:
+        print(f"usage: {sys.argv[0]} <path to per-image metadata csv>")
+        sys.exit(1)
+
+    metadata_file = sys.argv[1]
 
     # Plot data
-    metadata_parser(selection, data[selection])
+    metadata_parser(selection, metadata_file)
