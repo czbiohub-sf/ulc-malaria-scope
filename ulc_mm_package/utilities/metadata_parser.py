@@ -84,7 +84,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     metadata_file = sys.argv[1]
-    name = sys.argv.get(2, metadata_file)
+
+    if len(sys.argv) == 3:
+        name = sys.argv[2]
+    else:
+        name = metadata_file
 
     # Plot data
     metadata_parser(name, metadata_file)
