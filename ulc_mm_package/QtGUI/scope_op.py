@@ -123,7 +123,12 @@ class ScopeOp(QObject, Machine):
 
         if SIMULATION:
             # Fastflow state is defined but skipped in simulation mode, see _start_fastflow
-            skipped_states = ["autofocus"]
+            skipped_states = [
+                "autofocus",
+                "autobrightness_precells",
+                "autobrightness_postcells",
+                "pressure_check",
+            ]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
