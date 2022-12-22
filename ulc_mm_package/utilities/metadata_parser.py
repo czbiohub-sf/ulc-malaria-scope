@@ -77,11 +77,12 @@ def metadata_parser(descriptor, file):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f"usage: {sys.argv[0]} <path to per-image metadata csv>")
+    if len(sys.argv) not in [2,3]:
+        print(f"usage: {sys.argv[0]} <path to per-image metadata csv> [optional name for plot]")
         sys.exit(1)
 
     metadata_file = sys.argv[1]
+    name = sys.argv.get(2, metadata_file)
 
     # Plot data
-    metadata_parser(selection, metadata_file)
+    metadata_parser(name, metadata_file)
