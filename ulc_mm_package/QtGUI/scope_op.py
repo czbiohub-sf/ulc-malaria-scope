@@ -594,6 +594,7 @@ class ScopeOp(QObject, Machine):
                         '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
                     ),
                 )
+                return
 
             # Update infopanel
             if focus_err != None:
