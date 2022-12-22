@@ -13,7 +13,7 @@ class STATUS(enum.Enum):
 
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
-SITE_LIST = ["Tororo, Uganda", "Biohub SF", "Derisi Lab"]
+SITE_LIST = ["Tororo, Uganda", "Biohub SF", "DeRisi Lab"]
 
 # ================ FPS constants ================ #
 ACQUISITION_PERIOD = 1000.0 / 30.0
