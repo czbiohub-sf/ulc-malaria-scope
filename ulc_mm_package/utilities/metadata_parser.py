@@ -21,8 +21,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from os import path
-
 
 def metadata_parser(descriptor, file):
     # Get data
@@ -51,7 +49,7 @@ def metadata_parser(descriptor, file):
     # Plot size results
     size_ax = time_ax.twinx()
     size_ax.scatter(
-        range(0, len(qsizes)), qsizes, label="Queue size", color="green", s=2
+        range(len(qsizes)), qsizes, label="Queue size", color="green", s=2
     )
 
     # Format plots
@@ -60,7 +58,6 @@ def metadata_parser(descriptor, file):
     plt.title(f"Timing and queue size data ({descriptor})")
 
     # Save/print results
-    fig.savefig(path.join("results", f"plots-{descriptor}.png"))
     print(f"Stats for {descriptor}")
     print(f"Queue size: mean={np.mean(qsizes):.2f}, variance={np.var(qsizes):.2f}")
     if not looptimes.empty:
