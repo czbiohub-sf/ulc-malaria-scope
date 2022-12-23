@@ -136,11 +136,9 @@ PER_IMAGE_METADATA_KEYS = [
 PER_IMAGE_TIMING_KEYS = [
     "update_img_count",
     "count_parasitemia",
-    "YOGO.filter_res",
-    "update_cellcounts",
+    "yogo_result_mgmt"
     "pssaf",
     "flowrate_dt",
-    "cell_density",
     "ui_flowrate_focus",
     "img_metadata",
     "datastorage.writeData",
