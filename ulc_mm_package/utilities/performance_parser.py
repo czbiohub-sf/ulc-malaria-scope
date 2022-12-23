@@ -26,10 +26,7 @@ def get_stats(name, data, save=None):
 
     print(f"| {name} | {mean:.3f} | {stddev:.3f} | {median:.3f} |")
 
-    if name in ["zarr _work_queue"]:
-        xs = [i * 10 for i in range(len(data))]
-    else:
-        xs = range(len(data))
+    xs = range(len(data))
 
     plt.scatter(xs, data, s=2)
 
@@ -56,7 +53,10 @@ if __name__ == "__main__":
     else:
         save = None
 
-    run_timings = {k: [] for k in PER_IMAGE_TIMING_KEYS}
+    run_timings = {
+        k: []
+        for k in PER_IMAGE_TIMING_KEYS + ["looptime", "runtime", "zarrwriter_qsize"]
+    }
 
     with open(filepath, "r") as f:
         r = DictReader(f)

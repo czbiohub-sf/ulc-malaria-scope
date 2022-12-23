@@ -139,7 +139,7 @@ PER_IMAGE_TIMING_KEYS = [
     "YOGO.filter_res",
     "update_cellcounts",
     "pssaf",
-    "flowrate",
+    "flowrate_dt",
     "cell_density",
     "ui_flowrate_focus",
     "img_metadata",

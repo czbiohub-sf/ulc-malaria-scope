@@ -607,7 +607,7 @@ class ScopeOp(QObject, Machine):
                     )
                     flowrate = None
             t1 = perf_counter()
-            self._update_metadata_if_verbose("flowrate", t1 - t0)
+            self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
             t0 = perf_counter()
             try:
