@@ -25,6 +25,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    YOGO_CLASS_LIST,
+    YOGO_CLASS_IDX_MAP,
+)
 from ulc_mm_package.scope_constants import MAX_FRAMES
 from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
 from ulc_mm_package.QtGUI.gui_constants import STATUS, ICON_PATH
@@ -73,10 +77,19 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(ClassCountResult)
     def update_cell_count(self, cell_count: ClassCountResult):
-        healthy_count_str = f"{cell_count.healthy if cell_count.healthy > 0 else '---'}"
-        ring_count_str = f"{cell_count.ring if cell_count.ring > 0 else '---'}"
-        schiz_count_str = f"{cell_count.schizont if cell_count.schizont > 0 else '---'}"
-        troph_count_str = f"{cell_count.troph if cell_count.troph > 0 else '---'}"
+        healthy_cell_count = cell_count[YOGO_CLASS_IDX_MAP["healthy"]]
+        ring_cell_count = cell_count[YOGO_CLASS_IDX_MAP["ring"]]
+        schiz_cell_count = cell_count[YOGO_CLASS_IDX_MAP["schizont"]]
+        troph_cell_count = cell_count[YOGO_CLASS_IDX_MAP["troph"]]
+
+        # 'x or y' syntax means 'x if x is "truthy" else y'
+        # x is "truthy" if bool(x) == True
+        # so in this case, if the cell count == 0, bool(0) == False,
+        # so we get string '---'
+        healthy_count_str = f"{healthy_cell_count or '---'}"
+        ring_count_str = f"{ring_cell_count or '---'}"
+        schiz_count_str = f"{schiz_cell_count or '---'}"
+        troph_count_str = f"{troph_cell_count or '---'}"
 
         self.healthy_count_val.setText(healthy_count_str)
         self.ring_count_val.setText(ring_count_str)
@@ -211,7 +224,7 @@ class LiveviewGUI(QMainWindow):
         self.terminal_txt.clear()
 
         self.update_img_count("---")
-        self.update_cell_count(ClassCountResult())
+        self.update_cell_count(np.zeros(len(YOGO_CLASS_LIST), dtype=int))
 
         self.update_focus("---")
         self.update_flowrate("---")
