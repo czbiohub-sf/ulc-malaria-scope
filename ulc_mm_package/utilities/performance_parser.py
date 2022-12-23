@@ -45,9 +45,8 @@ def get_stats(name, data, save=None):
     plt.clf()
 
 
-
 if __name__ == "__main__":
-    if len(sys.argv) not in [2,3]:
+    if len(sys.argv) not in [2, 3]:
         print(f"usage: {sys.argv[0]} <path to metadata csv> [save]")
         sys.exit(1)
 
@@ -56,7 +55,6 @@ if __name__ == "__main__":
         save = sys.argv[2]
     else:
         save = None
-
 
     run_timings = {k: [] for k in PER_IMAGE_TIMING_KEYS}
 
