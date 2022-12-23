@@ -29,12 +29,9 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
 )
+from ulc_mm_package.scope_constants import MAX_FRAMES
 from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
-from ulc_mm_package.QtGUI.gui_constants import (
-    STATUS,
-    ICON_PATH,
-    MAX_FRAMES,
-)
+from ulc_mm_package.QtGUI.gui_constants import STATUS, ICON_PATH
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 

@@ -52,6 +52,7 @@ class CameraOptions(Enum):
             if "avt" in VIDEO_PATH:
                 return ImageDims(height=772, width=1032)
             return ImageDims(height=600, width=800)
+        raise ValueError("this is impossible because this class is an enum")
 
         raise ValueError(
             f"CameraOptions somehow gained an enum type {self}. "
@@ -68,6 +69,10 @@ class CameraOptions(Enum):
 
 
 # ================ Camera constants ================ #
+MAX_FRAMES = 20000  # Rounded up from 10 minutes of data at 30 FPS
+if SIMULATION:
+    MAX_FRAMES = 2000
+
 AVT_VENDOR_ID = 0x1AB2
 AVT_PRODUCT_ID = 0x0001
 
