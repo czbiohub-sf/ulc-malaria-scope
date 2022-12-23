@@ -2,7 +2,7 @@
 FlowController
 """
 
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 import numpy as np
 
 from ulc_mm_package.image_processing.processing_constants import (
@@ -190,7 +190,7 @@ class FlowController:
         else:
             return (None, None)
 
-    def controlFlow(self, img: np.ndarray, timestamp: int) -> Union[None, float]:
+    def controlFlow(self, img: np.ndarray, timestamp: int) -> Optional[float]:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
 
         If the `self.target_flowrate` has not been set, the first full measurement is used as the target, and all subsequent measurements

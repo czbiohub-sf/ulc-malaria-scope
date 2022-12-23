@@ -4,6 +4,7 @@ import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.processing_modules import *
+from ulc_mm_package.hardware.multiprocess_scope_routine import MultiProcessScopeRoutine
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_modules import PressureLeak, PressureSensorBusy
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
@@ -149,13 +150,12 @@ def flowControlRoutine(
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
+    routine = MultiProcessScopeRoutine(flow_controller)
 
     while True:
         img, timestamp = yield flow_val
-        try:
-            flow_val = flow_controller.controlFlow(img, timestamp)
-        except CantReachTargetFlowrate:
-            raise
+        routine.put((img, timestamp))
+        flow_val = routine.get()
 
 
 def fastFlowRoutine(
