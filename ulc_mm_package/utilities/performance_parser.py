@@ -62,7 +62,7 @@ if __name__ == "__main__":
         r = DictReader(f)
         print("| name | mean | stddev | median |")
         for row in r:
-            for k in PER_IMAGE_TIMING_KEYS:
+            for k in run_timings:
                 if row[k] != "":
                     run_timings[k].append(float(row[k]))
 
