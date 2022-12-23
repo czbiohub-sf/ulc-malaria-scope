@@ -36,7 +36,7 @@ class MultiProcessScopeRoutine:
         self._args_queue.put(el, block=block, timeout=timeout)
 
     def get(self, block: bool = True, timeout: Optional[float] = None) -> G:
-        self._ret_queue.get(block=block, timeout=timeout)
+        return self._ret_queue.get(block=block, timeout=timeout)
 
     def start(self):
         self._proc.start()
