@@ -22,7 +22,10 @@ from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
-from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    AF_BATCH_SIZE,
+    YOGO_CLASS_LIST,
+)
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
@@ -154,7 +157,7 @@ class ScopeOp(QObject, Machine):
         self.fastflow_result = None
 
         self.count = 0
-        self.cell_counts = ClassCountResult()
+        self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.TH_time = None
         self.start_time = None
@@ -177,14 +180,6 @@ class ScopeOp(QObject, Machine):
 
         self.logger.info(f"Changing state to {self.state}.")
         self.update_state.emit(state_name)
-
-    def _update_cell_counts(self, recent_cell_counts: ClassCountResult) -> None:
-        new_counts = {
-            class_name: getattr(self.cell_counts, class_name)
-            + getattr(recent_cell_counts, class_name)
-            for class_name in self.cell_counts._fields
-        }
-        self.cell_counts = ClassCountResult(**new_counts)
 
     def setup(self):
         self.create_timers.emit()
@@ -530,13 +525,25 @@ class ScopeOp(QObject, Machine):
                 self.mscope, img, self.count
             )
             # we can use this for cell counts in the future, and also density in the now
-            filtered_yogo_predictions = [
-                YOGO.filter_res(r.result) for r in prev_yogo_results
-            ]
+            for result in prev_yogo_results:
+                filtered_prediction = YOGO.filter_res(result.result)
 
-            for filtered_prediction in filtered_yogo_predictions:
-                class_count_obj = YOGO.class_instance_count(filtered_prediction)
-                self._update_cell_counts(class_count_obj)
+                class_counts = YOGO.class_instance_count(filtered_prediction)
+                self.cell_counts += class_counts
+
+                try:
+                    self.density_routine.send(filtered_prediction)
+                except LowDensity as e:
+                    self.logger.warning(f"Cell density is too low.")
+                    self.send_pause.emit(
+                        "Low cell density",
+                        (
+                            "Cell density is too low. "
+                            "Pausing operation so that more sample can be added without ending the experiment."
+                            '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
+                        ),
+                    )
+                    return
 
             self.update_cell_count.emit(self.cell_counts)
 
@@ -580,21 +587,6 @@ class ScopeOp(QObject, Machine):
                         f"Ignoring flowcontrol exception in simulation mode - {e}"
                     )
                     flowrate = None
-
-            try:
-                for filtered_pred in filtered_yogo_predictions:
-                    self.density_routine.send(filtered_pred)
-            except LowDensity as e:
-                self.logger.warning(f"Cell density is too low.")
-                self.send_pause.emit(
-                    "Low cell density",
-                    (
-                        "Cell density is too low. "
-                        "Pausing operation so that more sample can be added without ending the experiment."
-                        '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
-                    ),
-                )
-                return
 
             # Update infopanel
             if focus_err != None:
