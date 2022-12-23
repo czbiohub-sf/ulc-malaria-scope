@@ -23,12 +23,14 @@ class MultiProcessScopeRoutine:
         self.work_fcn: Callable[..., G] = work_fcn
         self._args_queue: mp.Queue[T] = mp.Queue()
         self._ret_queue: mp.Queue[G] = mp.Queue()
-        self._proc = mp.Process(target=self._work)
+        self._proc = mp.Process(target=self._work, daemon=True)
+        self.start()
 
     def _work(self):
-        in_obj = self._args_queue.get()
-        ret_val = self.work_fcn(*in_obj)
-        self._ret_queue.put(ret_val)
+        while True:
+            in_obj = self._args_queue.get()
+            ret_val = self.work_fcn(*in_obj)
+            self._ret_queue.put(ret_val)
 
     def put(self, el: T, block: bool = True, timeout: Optional[float] = None):
         self._args_queue.put(el, block=block, timeout=timeout)
