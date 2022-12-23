@@ -11,7 +11,6 @@
 
     Outputs:
         Prints mean and variance of each dataset, and plots all data.
-        The plot is displayed and saved under '/utilities/results/'.
 
 """
 

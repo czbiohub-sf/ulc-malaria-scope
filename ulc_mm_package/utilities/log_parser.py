@@ -1,37 +1,36 @@
 """
-	Utility for plotting zarr queue size and runtimes/looptimes
+    Utility for plotting zarr queue size and runtimes/looptimes
 
-	This script gets data from the following files:
+    This script gets data from the following files:
 
-		.txt file: 
-			Zarrwriter queue size
-			Expected format: 
-				"zw executor qsize <queue size>"
+        .txt file: 
+            Zarrwriter queue size
+            Expected format: 
+                "zw executor qsize <queue size>"
 
-		.log file
-			Runtime (time to run '_run_experiment') and looptimes (time between calls to '_run_experiment')
-			Expected formats:
-				<timestamp> - DEBUG - Runtime for run_experiment was <runtime> [ulc_mm_package.QtGUI.scope_op]
-				<timestamp> - DEBUG - Time between run_experiment calls was <looptime> [ulc_mm_package.QtGUI.scope_op]
-					OR
-				<timestamp> - DEBUG - Loop time was <looptime> [ulc_mm_package.QtGUI.scope_op]
+        .log file
+            Runtime (time to run '_run_experiment') and looptimes (time between calls to '_run_experiment')
+            Expected formats:
+                <timestamp> - DEBUG - Runtime for run_experiment was <runtime> [ulc_mm_package.QtGUI.scope_op]
+                <timestamp> - DEBUG - Time between run_experiment calls was <looptime> [ulc_mm_package.QtGUI.scope_op]
+                    OR
+                <timestamp> - DEBUG - Loop time was <looptime> [ulc_mm_package.QtGUI.scope_op]
 
-	Note that this format is now obsolete, and this script should only used for analyzing old datasets.
-	Timing and queue size is now saved to metadata, which can be parsed using 'metadata_parser.py' instead.
+    Note that this format is now obsolete, and this script should only used for analyzing old datasets.
+    Timing and queue size is now saved to metadata, which can be parsed using 'metadata_parser.py' instead.
 
 
-	Arguments:
-		descriptor - Description of dataset
-		qsizes_file - File containing queue size data. 
-		times_file - File contining timing data
+    Arguments:
+        descriptor - Description of dataset
+        qsizes_file - File containing queue size data, following the format for .txt file above
+        times_file - File contining timing data, following the format for .log file above
 
-		Both files should be saved under 'utilities/data' and follow the format for .txt and .log files above
-
-	Outputs:
-		Prints mean and variance of each dataset, and plots all data.
-        The plot is displayed and saved under '/utilities/results/'.
+    Outputs:
+        Prints mean and variance of each dataset, and plots all data.
 
 """
+
+import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,19 +39,15 @@ from os import path
 
 
 def log_parser(descriptor, qsizes_file, times_file):
-    # Get dataset location
-    qsizes_filepath = path.join("data", qsizes_file)
-    times_filepath = path.join("data", times_file)
-
     # Parse queue sizes
-    f = open(qsizes_filepath, "r")
+    f = open(qsizes_file, "r")
     for i in range(0, 3):
         f.readline()
     lines = [line.split() for line in f]
     qsizes = [float(line[3]) for line in lines if line[0] == "zw"]
 
     # Parse timing info
-    f = open(times_filepath, "r")
+    f = open(times_file, "r")
     lines = [line.split() for line in f]
     runtimes = [float(line[8]) * 1000 for line in lines if line[4] == "Runtime"]
     looptimes = [float(line[9]) * 1000 for line in lines if line[5] == "between"]
@@ -87,7 +82,6 @@ def log_parser(descriptor, qsizes_file, times_file):
     plt.title(f"Timing and queue size data ({descriptor})")
 
     # Save/print results
-    fig.savefig(path.join("results", f"plots-{descriptor}.png"))
     print(f"Stats for {descriptor}")
     print(f"Queue size: mean={np.mean(qsizes):.2f}, variance={np.var(qsizes):.2f}")
     if looptimes:
@@ -103,17 +97,35 @@ def log_parser(descriptor, qsizes_file, times_file):
 
 
 if __name__ == "__main__":
-    # Select dataset (feel free to redefine this dictionary with your files of interest)
-    pairs = {
-        "zarrwriter": [
-            "test-zarrwriter-tester.txt",
-            "2022-12-19-160314-zarrwriter-tester.log",
-        ],
-        "master": ["test-master.txt", "2022-12-19-163708-master.log"],
-        "pre-reboot": ["test-pre-reboot.txt", "2022-12-19-165922-pre-reboot.log"],
-        "post-reboot": ["test-post-reboot.txt", "2022-12-19-171235-post-reboot.log"],
-    }
-    selection = "master"
+
+    if len(sys.argv) not in [3, 4]:
+        print(
+            f"usage: {sys.argv[0]} <path to queue size .txt file>  <path to time .log file> [optional name for plot]"
+        )
+        sys.exit(1)
+
+    qsizes_file = sys.argv[1]
+    times_file = sys.argv[2]
+
+    if len(sys.argv) == 4:
+        name = sys.argv[3]
+    else:
+        name = qsizes_file
+
+    # # Plot data
+    # metadata_parser(name, metadata_file)
+
+    # # Select dataset (feel free to redefine this dictionary with your files of interest)
+    # pairs = {
+    #     "zarrwriter": [
+    #         "test-zarrwriter-tester.txt",
+    #         "2022-12-19-160314-zarrwriter-tester.log",
+    #     ],
+    #     "master": ["test-master.txt", "2022-12-19-163708-master.log"],
+    #     "pre-reboot": ["test-pre-reboot.txt", "2022-12-19-165922-pre-reboot.log"],
+    #     "post-reboot": ["test-post-reboot.txt", "2022-12-19-171235-post-reboot.log"],
+    # }
+    # selection = "master"
 
     # Run plotter
-    log_parser(selection, pairs[selection][0], pairs[selection][1])
+    log_parser(name, qsizes_file, times_file)

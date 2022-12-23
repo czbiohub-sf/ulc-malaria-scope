@@ -101,12 +101,6 @@ Pipfile.lock
 /models
 /jobs
 
-# Data parsing utility
-ulc_mm_package/utilities/data/*
-ulc_mm_package/utilities/results/*
-!ulc_mm_package/utilities/data/.gitkeep
-!ulc_mm_package/utilities/results/.gitkeep
-
 # Simulation mode media
 ulc_mm_package/QtGUI/sim_media/pi/data/*
 *.mp4
