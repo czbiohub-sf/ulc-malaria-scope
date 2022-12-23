@@ -18,7 +18,12 @@ from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
-from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS, SIMULATION, VERBOSE
+from ulc_mm_package.scope_constants import (
+    PER_IMAGE_METADATA_KEYS,
+    SIMULATION,
+    MAX_FRAMES,
+    VERBOSE,
+)
 from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
@@ -27,7 +32,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
-    MAX_FRAMES,
     STATUS,
     TH_PERIOD,
 )
@@ -674,11 +678,10 @@ class ScopeOp(QObject, Machine):
             self.img_metadata["runtime"] = perf_counter() - curr_time
 
             t1 = perf_counter()
-
             self._update_metadata_if_verbose("img_metadata", t1 - t0)
 
             t0 = perf_counter()
-            self.mscope.data_storage.writeData(img, self.img_metadata)
+            self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
             self.count += 1
             t1 = perf_counter()
             self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
