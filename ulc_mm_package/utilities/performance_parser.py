@@ -14,7 +14,8 @@ from ulc_mm_package.scope_constants import PER_IMAGE_TIMING_KEYS
 def get_stats(name, data, save=None):
     plt.figure(figsize=(16, 12), dpi=160)
 
-    data = [1000 * d for d in data]
+    if name != "zarrwriter_qsize":
+        data = [1000 * d for d in data]
 
     if len(data) == 0:
         print(f"data for '{name}' is empty")
