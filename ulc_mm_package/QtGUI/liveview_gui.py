@@ -25,12 +25,9 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
+from ulc_mm_package.scope_constants import MAX_FRAMES
 from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
-from ulc_mm_package.QtGUI.gui_constants import (
-    STATUS,
-    ICON_PATH,
-    MAX_FRAMES,
-)
+from ulc_mm_package.QtGUI.gui_constants import STATUS, ICON_PATH
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 

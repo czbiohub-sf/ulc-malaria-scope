@@ -23,11 +23,6 @@ LIVEVIEW_PERIOD = 1000
 # TH sensor update period
 TH_PERIOD = 5
 
-# ================ Experiment timeout ================ #
-MAX_FRAMES = 20000  # Rounded up from 10 minutes of data at 30 FPS
-if SIMULATION:
-    MAX_FRAMES = 2000
-
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"
 

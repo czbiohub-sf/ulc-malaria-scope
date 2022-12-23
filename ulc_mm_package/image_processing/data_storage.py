@@ -116,7 +116,7 @@ class DataStorage:
         )
         self.zw.createNewFile(filename)
 
-    def writeData(self, image: np.ndarray, metadata: Dict):
+    def writeData(self, image: np.ndarray, metadata: Dict, count: int):
         """Write a new image and its corresponding metadata.
 
         Parameters
@@ -131,7 +131,7 @@ class DataStorage:
 
         if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
             self.prev_write_time = perf_counter()
-            self.zw.threadedWriteSingleArray(image)
+            self.zw.threadedWriteSingleArray(image, count)
             self.md_writer.writerow(metadata)
 
     def writeSingleImage(self, image: np.ndarray, custom_image_name: str):
@@ -214,7 +214,7 @@ class DataStorage:
         A new subfolder is created in the same folder as the experiment and images are saved as .pngs.
         """
 
-        num_files = len(self.zw.group)
+        num_files = self.zw.array.nchunks_initialized
         try:
             indices = self._unif_subsequence_distribution(
                 max_val=num_files,
@@ -234,7 +234,7 @@ class DataStorage:
             return
 
         for idx in indices:
-            img = self.zw.group[idx][:]
+            img = self.zw.array[..., idx]
             filepath = path.join(sub_seq_path, f"{idx}.png")
             cv2.imwrite(filepath, img)
 
