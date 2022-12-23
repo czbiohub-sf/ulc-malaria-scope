@@ -55,8 +55,11 @@ class ZarrWriter:
             Will overwrite a file with the existing filename if it exists, otherwise will append.
         """
         try:
-            self.array = zarr.open(
-                f"{filename}.zarr",
+            self.store = zarr.ZipStore(
+                f"{filename}.zip",
+                mode="w" if overwrite else "x",
+            )
+            self.array = zarr.zeros(
                 shape=(
                     self.camera_selection.IMG_HEIGHT,
                     self.camera_selection.IMG_WIDTH,
@@ -67,8 +70,8 @@ class ZarrWriter:
                     self.camera_selection.IMG_WIDTH,
                     1,
                 ),
-                mode="w" if overwrite else "x",
                 compressor=None,
+                store=self.store,
                 dtype="u1",
             )
             self.writable = True
@@ -126,6 +129,7 @@ class ZarrWriter:
                 break
 
         self.futures = []
+        self.store.close()
 
     def threadedCloseFile(self):
         """Close the file in a separate thread.
