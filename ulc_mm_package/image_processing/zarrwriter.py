@@ -40,7 +40,7 @@ class ZarrWriter:
         self.writable = False
         self.futures: List[Future] = []
         self.logger = logging.getLogger(__name__)
-        self.executor = ThreadPoolExecutor(max_workers=16)
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
         self.camera_selection: CameraOptions = camera_selection
 
@@ -55,10 +55,11 @@ class ZarrWriter:
             Will overwrite a file with the existing filename if it exists, otherwise will append.
         """
         try:
-            filename = f"{filename}.zip"
-            self.array = zarr.open(
-                filename,
-                "w" if overwrite else "x",
+            self.store = zarr.ZipStore(
+                f"{filename}.zip",
+                mode="w" if overwrite else "x",
+            )
+            self.array = zarr.zeros(
                 shape=(
                     self.camera_selection.IMG_HEIGHT,
                     self.camera_selection.IMG_WIDTH,
@@ -70,6 +71,7 @@ class ZarrWriter:
                     1,
                 ),
                 compressor=None,
+                store=self.store,
                 dtype="u1",
             )
             self.writable = True
@@ -115,8 +117,8 @@ class ZarrWriter:
 
         exceptions = []
         for f in self.futures:
-            if f.exception is not None:
-                exceptions.append(f.exception)
+            if f.exception() is not None:
+                exceptions.append(f.exception())
 
         for i, exc in enumerate(exceptions):
             self.logger.error(f"exception in zarrwriter: {exc}")
@@ -127,6 +129,7 @@ class ZarrWriter:
                 break
 
         self.futures = []
+        self.store.close()
 
     def threadedCloseFile(self):
         """Close the file in a separate thread.

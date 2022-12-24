@@ -52,6 +52,9 @@ def autobrightness_wrappper(mscope: MalariaScope):
             break
         except BrightnessCriticallyLow:
             raise
+        except LEDNoPower:
+            print(f"LED is not working.")
+            raise
 
 
 def find_cells_wrapper(mscope: MalariaScope):
@@ -125,6 +128,10 @@ def fast_flow_wrapper(mscope: MalariaScope):
             print(
                 "Unable to achieve flowrate - syringe at max position but flowrate is below target."
             )
+            flow_val = -1
+            break
+        except LowConfidenceCorrelations:
+            print("Too many recent low confidence xcorr calculations.")
             flow_val = -1
             break
         except StopIteration as e:

@@ -214,7 +214,7 @@ class DataStorage:
         A new subfolder is created in the same folder as the experiment and images are saved as .pngs.
         """
 
-        num_files = len(self.zw.group)
+        num_files = self.zw.array.nchunks_initialized
         try:
             indices = self._unif_subsequence_distribution(
                 max_val=num_files,
@@ -234,7 +234,7 @@ class DataStorage:
             return
 
         for idx in indices:
-            img = self.zw.group[idx][:]
+            img = self.zw.array[..., idx]
             filepath = path.join(sub_seq_path, f"{idx}.png")
             cv2.imwrite(filepath, img)
 

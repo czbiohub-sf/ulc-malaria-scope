@@ -194,9 +194,44 @@ class PneumaticModule:
 
         Exceptions
         ----------
+        PressureSensorNotInstantiated:
+            Raised if a read is attempted but the sensor was not instantiated successfully.
+
         PressureSensorStaleValue:
             If more than 'STALE_PRESSURE_VAL_TIME_S' has passed since the last read, this exception is raised, indicating
             that there might be something wrong with the sensor. This constant is defined in hardware_constants.py.
+        """
+
+        try:
+            return self.getPressureImmediately()
+        except PressureSensorBusy:
+            if perf_counter() - self.prev_poll_time_s > STALE_PRESSURE_VAL_TIME_S:
+                raise PressureSensorStaleValue(
+                    f"{perf_counter() - self.prev_poll_time_s}s elapsed since last read (last value was: {self.prev_pressure} w/ status {self.prev_status.value})."
+                )
+            self.logger.info(f"Returning previous pressure value.")
+            return self.prev_pressure, self.prev_status
+
+    def getPressureImmediately(self) -> Tuple[float, PressureSensorRead]:
+        """Attempt to read the pressure sensor immediately, raises an exception if sensor busy.
+
+        This differs from `getPressure()` in that `getPressure()` will return the most recent
+        value from the within the past `STALE_PRESSURE_VAL_TIME_S` seconds if the sensor is busy.
+        This function will raise an exception immediately if the sensor is busy.
+
+        Returns
+        -------
+        Tuple[float, PressureSensorRead]:
+            float - pressure valuei.
+            PressureSensorRead - enum which shows whether a status bit was funky when reading the pressure.
+
+        Exceptions
+        ----------
+        PressureSensorNotInstantiated:
+            Raised if a read is attempted but the sensor was not instantiated successfully.
+
+        PressureSensorBusy:
+            Raised when a read is attempted but the sensor is busy and unable to return a value right away.
         """
 
         if self.mpr_enabled:
@@ -206,16 +241,36 @@ class PneumaticModule:
                 self.prev_poll_time_s = perf_counter()
                 return (pressure, status)
             except PressureSensorBusy as e:
-                self.logger.info(
-                    f"Attempted read but pressure sensor is busy: {e}. Returning previous pressure value."
-                )
-                if perf_counter() - self.prev_poll_time_s > STALE_PRESSURE_VAL_TIME_S:
-                    raise PressureSensorStaleValue(
-                        f"{perf_counter() - self.prev_poll_time_s}s elapsed since last read (last value was: {self.prev_pressure} w/ status {self.prev_status.value})."
-                    )
-                return self.prev_pressure, self.prev_status
+                self.logger.info(f"Attempted read but pressure sensor is busy: {e}.")
+                raise PressureSensorBusy()
         else:
             raise PressureSensorNotInstantiated(self.mpr_err_msg)
+
+    def getPressureMaxReadAttempts(
+        self, max_attempts: int = 10
+    ) -> Tuple[float, PressureSensorRead]:
+        """Attempt to read the sensor `max_attempt` times before raising an exception.
+
+        Parameters
+        ----------
+        max_attempts: int
+            Maximum number of times to read the sensor before raising an exception.
+
+        Exceptions
+        ----------
+        PressureSensorBusy:
+            Raised if a value is unable to be read after max_attempts
+        """
+
+        try:
+            if max_attempts <= 0:
+                raise PressureSensorBusy(
+                    f"Failed to get a pressure sensor read after: {max_attempts} attempts."
+                )
+            return self.getPressureImmediately()
+        except PressureSensorBusy:
+            max_attempts -= 1
+            sleep(0.05)
 
     def _direct_read(self, timeout_s: float = 1e6):
         # Attempt to read the sensor first

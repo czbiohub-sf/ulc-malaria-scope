@@ -21,9 +21,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 )
 
 
-ClassCountResult = namedtuple(
-    "ClassCountResult", YOGO_CLASS_LIST, defaults=[0 for _ in YOGO_CLASS_LIST]
-)
+ClassCountResult = np.ndarray
 
 
 class YOGO(NCSModel):
@@ -78,8 +76,10 @@ class YOGO(NCSModel):
         # this dict (raw_counts) will be missing a given class if that class isn't predicted at all
         # this may be confusing and a pain to handle, so just handle it on our side
         raw_counts = dict(zip(unique, counts))
-        class_counts = (raw_counts.get(i, 0) for i in range(num_classes))
-        return ClassCountResult(*class_counts)
+        class_counts = np.array(
+            [raw_counts.get(i, 0) for i in range(num_classes)], dtype=int
+        )
+        return class_counts
 
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)

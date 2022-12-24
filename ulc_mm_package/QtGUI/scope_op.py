@@ -8,7 +8,6 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 import numpy as np
 import logging
 
-from datetime import datetime
 from transitions import Machine
 from time import sleep
 
@@ -17,12 +16,20 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.hardware.scope_routines import *
 
-from ulc_mm_package.scope_constants import PER_IMAGE_METADATA_KEYS, MAX_FRAMES
+from ulc_mm_package.QtGUI.acquisition import Acquisition
+from ulc_mm_package.scope_constants import (
+    PER_IMAGE_METADATA_KEYS,
+    SIMULATION,
+    MAX_FRAMES,
+)
 from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
-from ulc_mm_package.hardware.hardware_constants import SIMULATION, DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
-from ulc_mm_package.neural_nets.neural_network_constants import AF_BATCH_SIZE
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    AF_BATCH_SIZE,
+    YOGO_CLASS_LIST,
+)
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
@@ -43,7 +50,7 @@ class ScopeOp(QObject, Machine):
 
     error = pyqtSignal(str, str, bool)
 
-    enable_pause = pyqtSignal()
+    send_pause = pyqtSignal(str, str)
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -57,18 +64,20 @@ class ScopeOp(QObject, Machine):
     update_cell_count = pyqtSignal(ClassCountResult)
     update_msg = pyqtSignal(str)
 
-    update_flowrate = pyqtSignal(int)
+    update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(int)
 
-    def __init__(self, img_signal):
+    def __init__(self):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
 
-        self._init_variables()
+        self.acquisition = Acquisition()
+        self.img_signal = self.acquisition.update_scopeop
+
         self.mscope = None
-        self.img_signal = img_signal
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
+        self._set_variables()
 
         states = [
             {
@@ -83,6 +92,10 @@ class ScopeOp(QObject, Machine):
             {
                 "name": "autobrightness_precells",
                 "on_enter": [self._send_state, self._start_autobrightness_precell],
+            },
+            {
+                "name": "pressure_check",
+                "on_enter": [self._send_state, self._check_pressure_seal],
             },
             {
                 "name": "cellfinder",
@@ -116,7 +129,12 @@ class ScopeOp(QObject, Machine):
 
         if SIMULATION:
             # Fastflow state is defined but skipped in simulation mode, see _start_fastflow
-            skipped_states = ["autofocus"]
+            skipped_states = [
+                "autofocus",
+                "autobrightness_precells",
+                "autobrightness_postcells",
+                "pressure_check",
+            ]
             states = [entry for entry in states if entry["name"] not in skipped_states]
 
         Machine.__init__(self, states=states, queued=True, initial="standby")
@@ -128,7 +146,7 @@ class ScopeOp(QObject, Machine):
             trigger="unpause", source="pause", dest="autobrightness_precells"
         )
 
-    def _init_variables(self):
+    def _set_variables(self):
         self.running = None
 
         self.autofocus_batch = []
@@ -142,7 +160,7 @@ class ScopeOp(QObject, Machine):
         self.fastflow_result = None
 
         self.count = 0
-        self.cell_counts = ClassCountResult()
+        self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.TH_time = None
         self.start_time = None
@@ -165,14 +183,6 @@ class ScopeOp(QObject, Machine):
 
         self.logger.info(f"Changing state to {self.state}.")
         self.update_state.emit(state_name)
-
-    def _update_cell_counts(self, recent_cell_counts: ClassCountResult) -> None:
-        new_counts = {
-            class_name: getattr(self.cell_counts, class_name)
-            + getattr(recent_cell_counts, class_name)
-            for class_name in self.cell_counts._fields
-        }
-        self.cell_counts = ClassCountResult(**new_counts)
 
     def setup(self):
         self.create_timers.emit()
@@ -204,7 +214,7 @@ class ScopeOp(QObject, Machine):
 
     def reset(self):
         # Reset variables
-        self._init_variables()
+        self._set_variables()
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
@@ -248,6 +258,27 @@ class ScopeOp(QObject, Machine):
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
+
+    def _check_pressure_seal(self):
+        # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
+        try:
+            pdiff = checkPressureDifference(self.mscope)
+            self.logger.info(f"Pressure difference ok: {pdiff} hPa.")
+            self.next_state()
+        except PressureSensorBusy:
+            self.logger.error(f"Unable to read value from the pressure sensor - {e}")
+            # TODO What to do in a case where the sensor is acting funky?
+            self.error.emit(
+                "Calibration failed",
+                "Failed to read pressure sensor to perform pressure seal check.",
+                False,
+            )
+        except PressureLeak as e:
+            self.logger.error(f"Improper seal / pressure leak detected - {e}")
+            # TODO provide instructions for dealing with pressure leak?
+            self.error.emit(
+                "Calibration failed", "Improper seal / pressure leak detected.", False
+            )
 
     def _start_cellfinder(self):
         self.cellfinder_routine = find_cells_routine(self.mscope)
@@ -294,7 +325,6 @@ class ScopeOp(QObject, Machine):
         self.density_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
-        self.enable_pause.emit()
 
         self.TH_time = perf_counter()
         self.start_time = perf_counter()
@@ -354,6 +384,9 @@ class ScopeOp(QObject, Machine):
                 "LED is too dim to run experiment.",
                 False,
             )
+        except LEDNoPower as e:
+            self.logger.error(f"LED initial functionality test did not pass - {e}")
+            self.error.emit("LED failure", "The off/on LED test failed.", False)
         else:
             if self.running:
                 self.img_signal.connect(self.run_autobrightness)
@@ -375,7 +408,6 @@ class ScopeOp(QObject, Machine):
             )
             self.next_state()
         except NoCellsFound:
-            self.cellfinder_result = -1
             self.logger.error("Cellfinder failed. No cells found.")
             self.error.emit("Calibration failed", "No cells found.", False)
         else:
@@ -407,11 +439,11 @@ class ScopeOp(QObject, Machine):
                 self.next_state()
             except InvalidMove:
                 self.logger.error(
-                    "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
                 )
                 self.error.emit(
                     "Calibration failed",
-                    "Unable to achieve desired focus within condenser's depth of field.",
+                    "Unable to achieve focus because the stage has reached its range of motion limit..",
                     False,
                 )
 
@@ -427,14 +459,14 @@ class ScopeOp(QObject, Machine):
             flowrate = self.fastflow_routine.send((img, timestamp))
 
             if flowrate != None:
-                self.update_flowrate.emit(int(flowrate))
+                self.update_flowrate.emit(flowrate)
         except CantReachTargetFlowrate:
             if SIMULATION:
                 self.fastflow_result = self.target_flowrate
                 self.logger.info(
-                    f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}."
+                    f"Fastflow successful. Flowrate (simulated) = {self.fastflow_result}."
                 )
-                self.update_flowrate.emit(int(self.fastflow_result))
+                self.update_flowrate.emit(self.fastflow_result)
                 self.next_state()
             else:
                 self.fastflow_result = -1
@@ -444,11 +476,27 @@ class ScopeOp(QObject, Machine):
                     "Unable to achieve desired flowrate with syringe at max position.",
                     False,
                 )
+        except LowConfidenceCorrelations:
+            if SIMULATION:
+                self.fastflow_result = self.target_flowrate
+                self.logger.info(
+                    f"Fastflow successful. Flowrate (simulated) = {self.fastflow_result}."
+                )
+                self.update_flowrate.emit(self.fastflow_result)
+                self.next_state()
+            else:
+                self.fastflow_result = -1
+                self.logger.error(
+                    "Fastflow failed. Too many recent low confidence xcorr calculations."
+                )
+                self.error.emit(
+                    "Calibration failed",
+                    "Too many recent low confidence xcorr calculations",
+                    False,
+                )
         except StopIteration as e:
             self.fastflow_result = e.value
-            self.logger.info(
-                f"Fastflow successful. Flowrate (simulated) = {int(self.fastflow_result)}."
-            )
+            self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
             self.update_flowrate.emit(self.fastflow_result)
             self.next_state()
         else:
@@ -464,7 +512,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_experiment)
 
         curr_time = perf_counter()
-        self.logger.debug(f"Loop time was {curr_time-self.last_time}")
+        self.img_metadata["looptime"] = curr_time - self.last_time
         self.last_time = curr_time
 
         if self.count >= MAX_FRAMES:
@@ -480,13 +528,25 @@ class ScopeOp(QObject, Machine):
                 self.mscope, img, self.count
             )
             # we can use this for cell counts in the future, and also density in the now
-            filtered_yogo_predictions = [
-                YOGO.filter_res(r.result) for r in prev_yogo_results
-            ]
+            for result in prev_yogo_results:
+                filtered_prediction = YOGO.filter_res(result.result)
 
-            for filtered_prediction in filtered_yogo_predictions:
-                class_count_obj = YOGO.class_instance_count(filtered_prediction)
-                self._update_cell_counts(class_count_obj)
+                class_counts = YOGO.class_instance_count(filtered_prediction)
+                self.cell_counts += class_counts
+
+                try:
+                    self.density_routine.send(filtered_prediction)
+                except LowDensity as e:
+                    self.logger.warning(f"Cell density is too low.")
+                    self.send_pause.emit(
+                        "Low cell density",
+                        (
+                            "Cell density is too low. "
+                            "Pausing operation so that more sample can be added without ending the experiment."
+                            '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
+                        ),
+                    )
+                    return
 
             self.update_cell_count.emit(self.cell_counts)
 
@@ -505,7 +565,7 @@ class ScopeOp(QObject, Machine):
                     return
                 else:
                     self.logger.warning(
-                        f"Ignoring periodic SSAF exception in simulation mode. {e}"
+                        f"Ignoring periodic SSAF exception in simulation mode - {e}"
                     )
                     focus_err = None
 
@@ -527,24 +587,16 @@ class ScopeOp(QObject, Machine):
                     return
                 else:
                     self.logger.warning(
-                        f"Ignoring flowcontrol exception in simulation mode. {e}"
+                        f"Ignoring flowcontrol exception in simulation mode - {e}"
                     )
                     flowrate = None
-
-            try:
-                for filtered_pred in filtered_yogo_predictions:
-                    self.density_routine.send(filtered_pred)
-            except LowDensity as e:
-                # TODO: transition to state "pause" and print some error messages to user
-                self.logger.error(str(e))
-                raise e
 
             # Update infopanel
             if focus_err != None:
                 # TODO change this to non int?
                 self.update_focus.emit(int(focus_err))
             if flowrate != None:
-                self.update_flowrate.emit(int(flowrate))
+                self.update_flowrate.emit(flowrate)
 
             # Update remaining metadata
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
@@ -556,7 +608,7 @@ class ScopeOp(QObject, Machine):
                 ) = (pressure, status)
             except PressureSensorStaleValue as e:
                 ## TODO???
-                self.logger.info(f"Stale pressure sensor value: {e}")
+                self.logger.info(f"Stale pressure sensor value - {e}")
 
             self.img_metadata[
                 "syringe_pos"
@@ -580,6 +632,11 @@ class ScopeOp(QObject, Machine):
 
             self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
             self.count += 1
+
+            qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
+            self.img_metadata["zarrwriter_qsize"] = qsize
+
+            self.img_metadata["runtime"] = perf_counter() - curr_time
 
             if self.running:
                 self.img_signal.connect(self.run_experiment)
