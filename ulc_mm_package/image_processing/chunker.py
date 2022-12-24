@@ -10,6 +10,7 @@ class ChunkSelector:
         idx ranges to write to zarr array
         idx verification (we want to write an entire chunk)
     """
+
     def __init__(self, shape: Tuple[int, int, int], num_chunks: int):
         if len(shape) != 3:
             raise ValueError(
