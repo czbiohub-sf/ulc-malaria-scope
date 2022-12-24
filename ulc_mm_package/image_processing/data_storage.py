@@ -10,11 +10,14 @@ import cv2
 import numpy as np
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.image_processing.chunker import Chunk
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
+from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.image_processing.processing_constants import (
     MIN_GB_REQUIRED,
     NUM_SUBSEQUENCES,
     SUBSEQUENCE_LENGTH,
+    ZW_CHUNK_SIZE,
 )
 
 
@@ -25,7 +28,12 @@ class DataStorageError(Exception):
 class DataStorage:
     def __init__(self, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
-        self.zw = ZarrWriter()
+        self.zw = ZarrWriter(chunk_size = ZW_CHUNK_SIZE)
+        self.zw_chunker = Chunk(
+            (CAMERA_SELECTION.IMG_HEIGHT, CAMERA_SELECTION.IMG_WIDTH),
+            ZW_CHUNK_SIZE
+        )
+        self.write_idx = 0
         self.md_writer = None
         self.metadata_file = None
         self.main_dir = None
@@ -131,7 +139,10 @@ class DataStorage:
 
         if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
             self.prev_write_time = perf_counter()
-            self.zw.threadedWriteSingleArray(image, count)
+            maybe_chunk = self.zw_chunker.add_img(image)
+            if maybe_chunk is not None:
+                self.zw.threadedWriteSingleArray(maybe_chunk, self.write_idx)
+                self.write_idx = count + 1
             self.md_writer.writerow(metadata)
 
     def writeSingleImage(self, image: np.ndarray, custom_image_name: str):

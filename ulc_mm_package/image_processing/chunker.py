@@ -4,6 +4,22 @@ import numpy as np
 from typing import List, Tuple, Optional
 
 
+class Chunk:
+    def __init__(self, shape: Tuple[int,int], chunk_size: int):
+        self.idx = 0
+        self.shape = shape
+        self.chunk_size = chunk_size
+        self.curr_chunk = np.empty((*shape, chunk_size))
+
+    def add_img(self, img: np.ndarray) -> Optional[np.ndarray]:
+        self.curr_chunk[...,self.idx] = img
+        self.idx += 1
+        if self.idx == self.chunk_size:
+            self.idx = 0
+            self.curr_chunk = np.empty((*self.shape, self.chunk_size))
+            return self.curr_chunk.copy()
+
+
 class ChunkSelector:
     """
     TODO:
