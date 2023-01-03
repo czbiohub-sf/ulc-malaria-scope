@@ -36,7 +36,9 @@ class WriteInProgress(Exception):
 
 
 class ZarrWriter:
-    def __init__(self, camera_selection: CameraOptions = CAMERA_SELECTION, chunk_size: int = 1):
+    def __init__(
+        self, camera_selection: CameraOptions = CAMERA_SELECTION, chunk_size: int = 1
+    ):
         self.writable = False
         self.futures: List[Future] = []
         self.chunk_size = chunk_size
@@ -99,7 +101,7 @@ class ZarrWriter:
         if pos % self.chunk_size != 0:
             print(pos, self.chunk_size)
         try:
-            self.array[:, :, pos:pos+self.chunk_size] = data
+            self.array[:, :, pos : pos + self.chunk_size] = data
         except Exception as e:
             self.logger.error(
                 f"zarrwriter.py : writeSingleArray : Exception encountered - {e}"

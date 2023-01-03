@@ -28,10 +28,9 @@ class DataStorageError(Exception):
 class DataStorage:
     def __init__(self, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
-        self.zw = ZarrWriter(chunk_size = ZW_CHUNK_SIZE)
+        self.zw = ZarrWriter(chunk_size=ZW_CHUNK_SIZE)
         self.zw_chunker = Chunk(
-            (CAMERA_SELECTION.IMG_HEIGHT, CAMERA_SELECTION.IMG_WIDTH),
-            ZW_CHUNK_SIZE
+            (CAMERA_SELECTION.IMG_HEIGHT, CAMERA_SELECTION.IMG_WIDTH), ZW_CHUNK_SIZE
         )
         self.write_idx = 0
         self.md_writer = None
