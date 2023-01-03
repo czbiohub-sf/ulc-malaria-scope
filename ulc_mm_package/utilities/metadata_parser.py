@@ -1,6 +1,8 @@
+#! /usr/bin/env python3
+
 """
     Utility for plotting zarr queue size and runtimes/looptimes.
-    This script gets data from Oracle's metadata file. 
+    This script gets data from Oracle's metadata file.
 
     In older datasets, queue size data is saved in .txt files and time data is saved in .log files.
     To analyze these datasets, use 'log_parser.py' instead.
@@ -20,6 +22,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from pathlib import Path
+
 
 def metadata_parser(descriptor, file):
     # Get data
@@ -34,8 +38,8 @@ def metadata_parser(descriptor, file):
     time_ax.set_xlabel("Frame #")
     time_ax.set_ylabel("Time (ms)")
 
-    time_ax.scatter(range(0, len(runtimes)), runtimes, label="Runtimes", s=2)
-    time_ax.scatter(range(0, len(looptimes)), looptimes, label="Looptimes", s=2)
+    time_ax.scatter(range(len(runtimes)), runtimes, label="Runtimes", s=2)
+    time_ax.scatter(range(len(looptimes)), looptimes, label="Looptimes", s=2)
 
     # Delineate expected looptimes
     time_ax.plot(
@@ -81,7 +85,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 3:
         name = sys.argv[2]
     else:
-        name = metadata_file
+        name = Path(metadata_file).name
 
     # Plot data
     metadata_parser(name, metadata_file)

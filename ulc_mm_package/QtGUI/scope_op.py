@@ -10,6 +10,7 @@ import logging
 
 from transitions import Machine
 from time import sleep
+from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
@@ -21,6 +22,7 @@ from ulc_mm_package.scope_constants import (
     PER_IMAGE_METADATA_KEYS,
     SIMULATION,
     MAX_FRAMES,
+    VERBOSE,
 )
 from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -503,6 +505,10 @@ class ScopeOp(QObject, Machine):
             if self.running:
                 self.img_signal.connect(self.run_fastflow)
 
+    def _update_metadata_if_verbose(self, key: str, val: Any):
+        if VERBOSE:
+            self.img_metadata[key] = val
+
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp):
         if not self.running:
@@ -522,12 +528,21 @@ class ScopeOp(QObject, Machine):
             self.img_metadata["timestamp"] = timestamp
             self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
 
+            t0 = perf_counter()
             self.update_img_count.emit(self.count)
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
+            t0 = perf_counter()
             prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(
                 self.mscope, img, self.count
             )
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
+
+            t0 = perf_counter()
             # we can use this for cell counts in the future, and also density in the now
+
             for result in prev_yogo_results:
                 filtered_prediction = YOGO.filter_res(result.result)
 
@@ -549,7 +564,10 @@ class ScopeOp(QObject, Machine):
                     return
 
             self.update_cell_count.emit(self.cell_counts)
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
+            t0 = perf_counter()
             try:
                 focus_err = self.PSSAF_routine.send(img)
             except MotorControllerError as e:
@@ -571,7 +589,10 @@ class ScopeOp(QObject, Machine):
 
                     self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
                     self.PSSAF_routine.send(None)
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("pssaf", t1 - t0)
 
+            t0 = perf_counter()
             try:
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
@@ -590,14 +611,21 @@ class ScopeOp(QObject, Machine):
                         f"Ignoring flowcontrol exception in simulation mode - {e}"
                     )
                     flowrate = None
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
             # Update infopanel
             if focus_err != None:
                 # TODO change this to non int?
                 self.update_focus.emit(int(focus_err))
+
             if flowrate != None:
                 self.update_flowrate.emit(flowrate)
 
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("ui_flowrate_focus", t1 - t0)
+
+            t0 = perf_counter()
             # Update remaining metadata
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
             try:
@@ -630,13 +658,19 @@ class ScopeOp(QObject, Machine):
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
 
-            self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
-            self.count += 1
-
             qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
             self.img_metadata["zarrwriter_qsize"] = qsize
 
             self.img_metadata["runtime"] = perf_counter() - curr_time
+
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("img_metadata", t1 - t0)
+
+            t0 = perf_counter()
+            self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
+            self.count += 1
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
 
             if self.running:
                 self.img_signal.connect(self.run_experiment)

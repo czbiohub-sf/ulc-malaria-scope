@@ -9,6 +9,9 @@ from collections import namedtuple
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
 SIMULATION = MS_SIMULATE_FLAG > 0
+
+VERBOSE = int(os.environ.get("MS_VERBOSE", 0))
+
 print(f"Simulation mode: {SIMULATION}")
 
 VIDEO_REC = "https://drive.google.com/drive/folders/1YL8i5VXeppfIsPQrcgGYKGQF7chupr56"
@@ -130,10 +133,22 @@ PER_IMAGE_METADATA_KEYS = [
     "zarrwriter_qsize",
 ]
 
+PER_IMAGE_TIMING_KEYS = [
+    "update_img_count",
+    "count_parasitemia",
+    "yogo_result_mgmt" "pssaf",
+    "flowrate_dt",
+    "ui_flowrate_focus",
+    "img_metadata",
+    "datastorage.writeData",
+]
+
+if VERBOSE:
+    PER_IMAGE_METADATA_KEYS.extend(PER_IMAGE_TIMING_KEYS)
+
 # ================ Environment variables ================ #
 NGROK_AUTH_TOKEN_ENV_VAR = "NGROK_AUTH_TOKEN"
 EMAIL_PW_TOKEN = "GMAIL_TOKEN"
-VERBOSE = int(os.environ.get("MS_VERBOSE", 0))
 
 # ================ SSD directory constants ================ #
 SSD_NAME = "SamsungSSD"
