@@ -52,6 +52,9 @@ class SimCamera:
             yield cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), perf_counter()
             sleep(1 / self.fps)
 
+    def setFrameRate(self, framerate: int = 30):
+        self.framerate = framerate
+
     def snapImage(self):
         return self.frames[self.index]
 

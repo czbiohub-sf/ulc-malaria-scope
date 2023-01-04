@@ -185,6 +185,21 @@ class AVTCamera:
     def getBinning(self):
         return self.camera.BinningHorizontal.get()
 
+    def setFrameRate(self, framerate: int = 30.0) -> None:
+        """Set the camera's hardware framerate limit.
+
+        Looking through the available AVT Vimba API, I didn't find anything I could call to get a camera's
+        min/max framerate - which is why I don't have any checks here currently to validate that the passed in
+        value is within the correct range.
+
+        Parameters
+        ----------
+        framerate: int
+            Value to which the camera's hardware framerate should be set.
+        """
+        self.camera.AcquisitionFrameRateEnable.set(True)
+        self.camera.AcquisitionFrameRate.set(framerate)
+
     def setDeviceLinkThroughputLimit(self, bytes_per_second: int):
         self.camera.DeviceLinkThroughputLimit.set(bytes_per_second)
 

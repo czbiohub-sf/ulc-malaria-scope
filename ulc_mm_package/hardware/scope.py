@@ -118,6 +118,7 @@ class MalariaScope:
                 self.camera_enabled = True
             elif CAMERA_SELECTION == CameraOptions.AVT:
                 self.camera = AVTCamera()
+                self.camera.setFrameRate(30)
                 self.camera_enabled = True
             elif SIMULATION:
                 # just choose AVT, the import will be overridden w/ the simulated class
