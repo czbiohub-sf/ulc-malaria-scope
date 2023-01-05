@@ -93,7 +93,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness_precells",
-                "on_enter": [self._send_state, self._start_autobrightness_precell],
+                "on_enter": [self._send_state, self._start_autobrightness_precells],
             },
             {
                 "name": "pressure_check",
@@ -105,7 +105,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness_postcells",
-                "on_enter": [self._send_state, self._start_autobrightness_postcell],
+                "on_enter": [self._send_state, self._start_autobrightness_postcells],
             },
             {
                 "name": "autofocus",
@@ -133,8 +133,6 @@ class ScopeOp(QObject, Machine):
             # Fastflow state is defined but skipped in simulation mode, see _start_fastflow
             skipped_states = [
                 "autofocus",
-                "autobrightness_precells",
-                "autobrightness_postcells",
                 "pressure_check",
             ]
             states = [entry for entry in states if entry["name"] not in skipped_states]
@@ -254,7 +252,7 @@ class ScopeOp(QObject, Machine):
         self.mscope.led.turnOn()
         self.running = True
 
-    def _start_autobrightness_precell(self):
+    def _start_autobrightness_precells(self):
 
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
@@ -288,7 +286,7 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _start_autobrightness_postcell(self):
+    def _start_autobrightness_postcells(self):
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
@@ -387,8 +385,11 @@ class ScopeOp(QObject, Machine):
                 False,
             )
         except LEDNoPower as e:
-            self.logger.error(f"LED initial functionality test did not pass - {e}")
-            self.error.emit("LED failure", "The off/on LED test failed.", False)
+            if not SIMULATION:
+                self.logger.error(f"LED initial functionality test did not pass - {e}")
+                self.error.emit("LED failure", "The off/on LED test failed.", False)
+            else:
+                self.next_state()
         else:
             if self.running:
                 self.img_signal.connect(self.run_autobrightness)
