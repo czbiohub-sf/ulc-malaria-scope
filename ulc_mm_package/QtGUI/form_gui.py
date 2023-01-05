@@ -74,7 +74,7 @@ class FormGUI(QDialog):
         self.site_val.addItems(SITE_LIST)
 
         # Set default flowrate
-        self.flowrate_val.setCurrentIndex(self.items.keys().index('Medium'))
+        self.flowrate_val.setCurrentIndex(1)
 
         # Disable buttons at startup
         self.exit_btn.setEnabled(False)
