@@ -74,7 +74,7 @@ class FormGUI(QDialog):
         self.site_val.addItems(SITE_LIST)
 
         # Set default flowrate
-        self.flowrate_val.SelectedIndex = self.flowrate_val.FindString("Medium");
+        self.flowrate_val.setCurrentIndex(self.items.keys().index('Medium'))
 
         # Disable buttons at startup
         self.exit_btn.setEnabled(False)
