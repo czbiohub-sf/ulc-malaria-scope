@@ -402,7 +402,6 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_cellfinder)
 
         try:
-            raise NoCellsFound("UHOH")
             self.cellfinder_routine.send(img)
         except StopIteration as e:
             self.cellfinder_result = e.value
@@ -525,12 +524,12 @@ class ScopeOp(QObject, Machine):
         if self.count >= MAX_FRAMES:
             self.to_intermission()
         # NOTE : Mid experiment pause is intended to compensate for commenting out YOGO/density check
-        if self.count >= MAX_FRAMES / 2:
+        if self.count > MAX_FRAMES / 2:
             self.send_pause.emit(
                 "Experiment halfway point reached",
                 (
                     "Midway through the experiment, cell density tends to decrease. "
-                    "Pausing operation so that more sample can be added without ending the experiment."
+                    "Pausing operation so that more sample can be added for this experiment."
                     '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
                 ),
             )
