@@ -402,6 +402,7 @@ class ScopeOp(QObject, Machine):
         self.img_signal.disconnect(self.run_cellfinder)
 
         try:
+            raise NoCellsFound("UHOH")
             self.cellfinder_routine.send(img)
         except StopIteration as e:
             self.cellfinder_result = e.value
@@ -523,6 +524,17 @@ class ScopeOp(QObject, Machine):
 
         if self.count >= MAX_FRAMES:
             self.to_intermission()
+        # NOTE : Mid experiment pause is intended to compensate for commenting out YOGO/density check
+        if self.count >= MAX_FRAMES / 2:
+            self.send_pause.emit(
+                "Experiment halfway point reached",
+                (
+                    "Midway through the experiment, cell density tends to decrease. "
+                    "Pausing operation so that more sample can be added without ending the experiment."
+                    '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
+                ),
+            )
+            return
         else:
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = timestamp
@@ -533,39 +545,40 @@ class ScopeOp(QObject, Machine):
             t1 = perf_counter()
             self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
-            t0 = perf_counter()
-            prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(
-                self.mscope, img, self.count
-            )
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
+            # NOTE : YOGO is commented out to prevent memory buildup
+            # t0 = perf_counter()
+            # prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(
+            #     self.mscope, img, self.count
+            # )
+            # t1 = perf_counter()
+            # self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
 
-            t0 = perf_counter()
+            # t0 = perf_counter()
             # we can use this for cell counts in the future, and also density in the now
 
-            for result in prev_yogo_results:
-                filtered_prediction = YOGO.filter_res(result.result)
+            # for result in prev_yogo_results:
+            #     filtered_prediction = YOGO.filter_res(result.result)
 
-                class_counts = YOGO.class_instance_count(filtered_prediction)
-                self.cell_counts += class_counts
+            #     class_counts = YOGO.class_instance_count(filtered_prediction)
+            #     self.cell_counts += class_counts
 
-                try:
-                    self.density_routine.send(filtered_prediction)
-                except LowDensity as e:
-                    self.logger.warning(f"Cell density is too low.")
-                    self.send_pause.emit(
-                        "Low cell density",
-                        (
-                            "Cell density is too low. "
-                            "Pausing operation so that more sample can be added without ending the experiment."
-                            '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
-                        ),
-                    )
-                    return
+            #     try:
+            #         self.density_routine.send(filtered_prediction)
+            #     except LowDensity as e:
+            #         self.logger.warning(f"Cell density is too low.")
+            #         self.send_pause.emit(
+            #             "Low cell density",
+            #             (
+            #                 "Cell density is too low. "
+            #                 "Pausing operation so that more sample can be added without ending the experiment."
+            #                 '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
+            #             ),
+            #         )
+            #         return
 
-            self.update_cell_count.emit(self.cell_counts)
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
+            # self.update_cell_count.emit(self.cell_counts)
+            # t1 = perf_counter()
+            # self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
             t0 = perf_counter()
             try:
