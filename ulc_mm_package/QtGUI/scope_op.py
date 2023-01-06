@@ -36,6 +36,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
     STATUS,
+    TIMEOUT_PERIOD,
     TH_PERIOD,
 )
 
@@ -351,7 +352,7 @@ class ScopeOp(QObject, Machine):
 
         if self.start_time != None:
             self.logger.info(
-                f"Net FPS is {self.count/(perf_counter()-self.start_time)}"
+                f"Net FPS is {self.count/(self._get_experiment_runtime())}"
             )
 
         self.logger.info("Resetting pneumatic module for rerun.")
@@ -532,11 +533,11 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.disconnect(self.run_experiment)
 
-        curr_time = perf_counter()
-        self.img_metadata["looptime"] = curr_time - self.last_time
-        self.last_time = curr_time
+        current_time = perf_counter()
+        self.img_metadata["looptime"] = current_time - self.last_time
+        self.last_time = current_time
 
-        if self.count >= MAX_FRAMES:
+        if (self.count >= MAX_FRAMES) or (current_time-self.start_time > TIMEOUT_PERIOD):
             self.to_intermission()
         else:
             # Record timestamp before running routines
@@ -664,7 +665,6 @@ class ScopeOp(QObject, Machine):
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
 
-            current_time = perf_counter()
             if current_time - self.TH_time > TH_PERIOD:
                 self.TH_time = current_time
 
@@ -681,7 +681,7 @@ class ScopeOp(QObject, Machine):
             qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
             self.img_metadata["zarrwriter_qsize"] = qsize
 
-            self.img_metadata["runtime"] = perf_counter() - curr_time
+            self.img_metadata["runtime"] = perf_counter() - current_time
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("img_metadata", t1 - t0)

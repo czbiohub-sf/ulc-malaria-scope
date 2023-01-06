@@ -23,6 +23,9 @@ LIVEVIEW_PERIOD = 1000
 # TH sensor update period
 TH_PERIOD = 5
 
+# ================ Experiment timeout period ================ #
+TIMEOUT_PERIOD = 60*10 # 10 minutes
+
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"
 
