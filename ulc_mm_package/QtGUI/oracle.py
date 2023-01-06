@@ -214,6 +214,7 @@ class Oracle(Machine):
 
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
+        self.acquisition.update_infopanel.connect(self.scopeop.update_infopanel)
 
     def _init_tcp(self):
         try:
