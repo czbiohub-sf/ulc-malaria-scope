@@ -136,7 +136,8 @@ PER_IMAGE_METADATA_KEYS = [
 PER_IMAGE_TIMING_KEYS = [
     "update_img_count",
     "count_parasitemia",
-    "yogo_result_mgmt" "pssaf",
+    "yogo_result_mgmt",
+    "pssaf",
     "flowrate_dt",
     "ui_flowrate_focus",
     "img_metadata",
