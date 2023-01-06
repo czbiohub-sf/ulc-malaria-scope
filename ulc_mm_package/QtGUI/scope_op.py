@@ -183,7 +183,7 @@ class ScopeOp(QObject, Machine):
 
         self.logger.info(f"Changing state to {self.state}.")
         self.update_state.emit(state_name)
-    
+
     def update_infopanel(self):
         if self.state == "experiment":
             self.update_cell_count.emit(self.cell_counts)
