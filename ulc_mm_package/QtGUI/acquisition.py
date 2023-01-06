@@ -17,6 +17,7 @@ from ulc_mm_package.QtGUI.gui_constants import ACQUISITION_PERIOD
 
 class Acquisition(QObject):
     update_liveview = pyqtSignal(np.ndarray)
+    update_infopanel = pyqtSignal()
     update_scopeop = pyqtSignal(np.ndarray, float)
 
     def __init__(self):
@@ -86,3 +87,4 @@ class Acquisition(QObject):
 
     def send_img(self):
         self.update_liveview.emit(self.img)
+        self.update_infopanel.emit()

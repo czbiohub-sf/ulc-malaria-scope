@@ -183,6 +183,10 @@ class ScopeOp(QObject, Machine):
 
         self.logger.info(f"Changing state to {self.state}.")
         self.update_state.emit(state_name)
+    
+    def update_infopanel(self):
+        if self.state == "experiment":
+            self.update_cell_count.emit(self.cell_counts)
 
     def setup(self):
         self.create_timers.emit()
@@ -564,7 +568,6 @@ class ScopeOp(QObject, Machine):
                     )
                     return
 
-            self.update_cell_count.emit(self.cell_counts)
             t1 = perf_counter()
             self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
