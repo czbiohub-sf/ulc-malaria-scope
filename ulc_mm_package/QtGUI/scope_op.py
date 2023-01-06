@@ -326,6 +326,11 @@ class ScopeOp(QObject, Machine):
         self.density_routine = cell_density_routine()
         self.density_routine.send(None)
 
+        self.count_parasitemia_routine = count_parasitemia_periodic_wrapper(
+            self.mscope, None, 0
+        )
+        self.count_parasitemia_routine.send(None)
+
         self.set_period.emit(LIVEVIEW_PERIOD)
 
         self.TH_time = perf_counter()
@@ -534,9 +539,10 @@ class ScopeOp(QObject, Machine):
             self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
             t0 = perf_counter()
-            prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(
-                self.mscope, img, self.count
-            )
+            prev_yogo_results: List[
+                AsyncInferenceResult
+            ] = self.count_parasitemia_routine.send(img, self.count)
+
             t1 = perf_counter()
             self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
 

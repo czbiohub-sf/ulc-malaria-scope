@@ -123,6 +123,22 @@ def count_parasitemia(
     return results
 
 
+def count_parasitemia_periodic_wrapper(
+    mscope: MalariaScope, img: np.ndarray, counts: Optional[Sequence[int]] = None
+) -> Generator[List[Tuple[int, Tuple[float, ...]]], None, None]:
+    prev_time = 0
+
+    while True:
+        if perf_counter() - prev_time > nn_constants.YOGO_PERIOD_S:
+            img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
+            mscope.cell_diagnosis_model(img, counts)
+            prev_time = perf_counter()
+        (
+            _,
+            _,
+        ) = yield []
+
+
 def flowControlRoutine(
     mscope: MalariaScope, target_flowrate: float, img: np.ndarray
 ) -> Generator[float, np.ndarray, None]:

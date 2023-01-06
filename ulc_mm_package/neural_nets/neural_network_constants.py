@@ -12,3 +12,5 @@ from typing import Tuple, Dict
 
 YOGO_CLASS_LIST: Tuple[str, ...] = ("healthy", "ring", "schizont", "troph")
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
+
+YOGO_PERIOD_S = 0.1
