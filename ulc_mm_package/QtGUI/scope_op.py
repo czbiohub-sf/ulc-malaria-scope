@@ -612,6 +612,12 @@ class ScopeOp(QObject, Machine):
                         f"Ignoring flowcontrol exception in simulation mode - {e}"
                     )
                     flowrate = None
+
+                    self.flowcontrol_routine = flowControlRoutine(
+                        self.mscope, self.target_flowrate, None
+                    )
+                    self.flowcontrol_routine.send(None)
+
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
