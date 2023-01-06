@@ -5,7 +5,7 @@ Displays camera preview and conveys info to user during runs."""
 import sys
 import numpy as np
 
-from time import perf_counter
+from time import perf_counter, strftime, gmtime
 from qimage2ndarray import gray2qimage
 from matplotlib.streamplot import streamplot
 
@@ -57,6 +57,10 @@ class LiveviewGUI(QMainWindow):
 
     def update_tcp(self, tcp_addr):
         self.tcp_lbl.setText(f"SSH address: {tcp_addr}")
+
+    @pyqtSlot(float)
+    def update_runtime(self, runtime):
+        print(strftime('%M:%S', gmtime(runtime)))
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img: np.ndarray):

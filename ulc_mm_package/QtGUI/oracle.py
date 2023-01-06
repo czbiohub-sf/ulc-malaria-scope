@@ -204,9 +204,10 @@ class Oracle(Machine):
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
         self.scopeop.stop_timers.connect(self.acquisition.stop_timers)
 
-        self.scopeop.update_state.connect(self.liveview_window.update_state)
+        self.scopeop.update_runtime.connect(self.liveview_window.update_runtime)
         self.scopeop.update_img_count.connect(self.liveview_window.update_img_count)
         self.scopeop.update_cell_count.connect(self.liveview_window.update_cell_count)
+        self.scopeop.update_state.connect(self.liveview_window.update_state)
         self.scopeop.update_msg.connect(self.liveview_window.update_msg)
 
         self.scopeop.update_flowrate.connect(self.liveview_window.update_flowrate)

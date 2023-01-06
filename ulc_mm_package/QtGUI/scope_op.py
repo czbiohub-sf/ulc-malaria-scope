@@ -61,9 +61,10 @@ class ScopeOp(QObject, Machine):
     set_period = pyqtSignal(float)
     freeze_liveview = pyqtSignal(bool)
 
-    update_state = pyqtSignal(str)
+    update_runtime = pyqtSignal(float)
     update_img_count = pyqtSignal(int)
     update_cell_count = pyqtSignal(ClassCountResult)
+    update_state = pyqtSignal(str)
     update_msg = pyqtSignal(str)
 
     update_flowrate = pyqtSignal(float)
@@ -185,11 +186,13 @@ class ScopeOp(QObject, Machine):
         self.logger.info(f"Changing state to {self.state}.")
         self.update_state.emit(state_name)
 
+    def _get_experiment_runtime(self) -> float:
+        return self.accumulated_time + perf_counter() - self.start_time
+
     def update_infopanel(self):
         if self.state == "experiment":
             self.update_cell_count.emit(self.cell_counts)
-            time = self.accumulated_time + perf_counter() - self.start_time
-            print(time)
+            self.update_runtime.emit(self._get_experiment_runtime())
 
     def setup(self):
         self.create_timers.emit()
@@ -242,7 +245,7 @@ class ScopeOp(QObject, Machine):
     def _start_pause(self):
         self.running = False
 
-        self.accumulated_time += perf_counter - self.start_time
+        self.accumulated_time += perf_counter() - self.start_time
         self.start_time = None
 
         try:
