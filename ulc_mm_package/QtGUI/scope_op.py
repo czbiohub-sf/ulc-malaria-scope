@@ -175,7 +175,7 @@ class ScopeOp(QObject, Machine):
         self.freeze_liveview.emit(False)
 
     def _send_state(self):
-        # TODO perhaps delete this to print more useful statements. See future "logging" branch
+        # TODO perhaps delete this to print more useful statements
         state_name = self.state.split("_")[0]
 
         if self.state != "standby":
