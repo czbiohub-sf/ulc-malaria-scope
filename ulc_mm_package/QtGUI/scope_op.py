@@ -164,6 +164,7 @@ class ScopeOp(QObject, Machine):
 
         self.TH_time = None
         self.start_time = None
+        self.accumulated_time = 0
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -187,6 +188,8 @@ class ScopeOp(QObject, Machine):
     def update_infopanel(self):
         if self.state == "experiment":
             self.update_cell_count.emit(self.cell_counts)
+            time = self.accumulated_time + perf_counter() - self.start_time
+            print(time)
 
     def setup(self):
         self.create_timers.emit()
@@ -239,6 +242,9 @@ class ScopeOp(QObject, Machine):
     def _start_pause(self):
         self.running = False
 
+        self.accumulated_time += perf_counter - self.start_time
+        self.start_time = None
+
         try:
             self.img_signal.disconnect()
         except TypeError:
@@ -254,6 +260,7 @@ class ScopeOp(QObject, Machine):
 
     def _end_pause(self):
         self.mscope.led.turnOn()
+        self.start_time = perf_counter()
         self.running = True
 
     def _start_autobrightness_precells(self):
