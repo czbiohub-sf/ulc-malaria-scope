@@ -24,7 +24,8 @@ LIVEVIEW_PERIOD = 1000
 TH_PERIOD = 5
 
 # ================ Experiment timeout period ================ #
-TIMEOUT_PERIOD = 60*10 # 10 minutes
+TIMEOUT_M_PERIOD = 10 # minutes
+TIMEOUT_S_PERIOD = TIMEOUT_M_PERIOD * 60 # seconds
 
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"

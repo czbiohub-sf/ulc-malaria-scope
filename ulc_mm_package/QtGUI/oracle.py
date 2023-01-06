@@ -255,7 +255,7 @@ class Oracle(Machine):
             self.ext_dir = samsung_ext_dir + "/"
         else:
             print(
-                f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for any folders in this directory."
+                f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for other folders in this directory."
             )
             try:
                 self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
@@ -356,7 +356,7 @@ class Oracle(Machine):
             buttons=Buttons.CANCEL,
         )
         if message_result == QMessageBox.Ok:
-            self.scopeop.to_intermission()
+            self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
     def error_handler(self, title, text, instant_abort):
         self.display_message(
@@ -368,7 +368,7 @@ class Oracle(Machine):
         )
 
         if not instant_abort:
-            self.scopeop.to_intermission()
+            self.scopeop.to_intermission("Ending experiment due to error.")
 
     def display_message(
         self,
@@ -407,7 +407,7 @@ class Oracle(Machine):
 
         return message_result
 
-    def _start_setup(self):
+    def _start_setup(self, *args):
         self.display_message(
             QMessageBox.Icon.Information,
             "Initializing hardware",
@@ -424,10 +424,10 @@ class Oracle(Machine):
 
         self.form_window.show()
 
-    def _end_setup(self):
+    def _end_setup(self, *args):
         self.form_window.unfreeze_buttons()
 
-    def _start_form(self):
+    def _start_form(self, *args):
         self.form_window.show()
 
     def save_form(self):
@@ -463,10 +463,10 @@ class Oracle(Machine):
 
         self.next_state()
 
-    def _end_form(self):
+    def _end_form(self, *args):
         self.form_window.close()
 
-    def _start_liveview(self):
+    def _start_liveview(self, *args):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
@@ -478,17 +478,17 @@ class Oracle(Machine):
         self.liveview_window.show()
         self.scopeop.start()
 
-    def _end_liveview(self):
+    def _end_liveview(self, *args):
         self.liveview_window.close()
 
         self.logger.info("Opening survey.")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
-    def _start_intermission(self):
+    def _start_intermission(self, msg):
         self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
+            f'{msg} Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )

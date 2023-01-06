@@ -36,7 +36,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
     STATUS,
-    TIMEOUT_PERIOD,
+    TIMEOUT_M_PERIOD,
+    TIMEOUT_S_PERIOD,
     TH_PERIOD,
 )
 
@@ -46,7 +47,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
 
 class ScopeOp(QObject, Machine):
     setup_done = pyqtSignal()
-    experiment_done = pyqtSignal()
+    experiment_done = pyqtSignal(str)
     reset_done = pyqtSignal()
 
     yield_mscope = pyqtSignal(MalariaScope)
@@ -177,7 +178,7 @@ class ScopeOp(QObject, Machine):
     def _unfreeze_liveview(self):
         self.freeze_liveview.emit(False)
 
-    def _send_state(self):
+    def _send_state(self, *args):
         # TODO perhaps delete this to print more useful statements
         state_name = self.state.split("_")[0]
 
@@ -243,7 +244,7 @@ class ScopeOp(QObject, Machine):
 
         self.stop_timers.emit()
 
-    def _start_pause(self):
+    def _start_pause(self, *args):
         self.running = False
 
         self.accumulated_time += perf_counter() - self.start_time
@@ -262,19 +263,19 @@ class ScopeOp(QObject, Machine):
         )
         self.mscope.led.turnOff()
 
-    def _end_pause(self):
+    def _end_pause(self, *args):
         self.mscope.led.turnOn()
         self.start_time = perf_counter()
         self.running = True
 
-    def _start_autobrightness_precells(self):
+    def _start_autobrightness_precells(self, *args):
 
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
 
-    def _check_pressure_seal(self):
+    def _check_pressure_seal(self, *args):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
         try:
             pdiff = checkPressureDifference(self.mscope)
@@ -295,13 +296,13 @@ class ScopeOp(QObject, Machine):
                 "Calibration failed", "Improper seal / pressure leak detected.", False
             )
 
-    def _start_cellfinder(self):
+    def _start_cellfinder(self, *args):
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _start_autobrightness_postcells(self):
+    def _start_autobrightness_postcells(self, *args):
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
@@ -310,10 +311,10 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_autobrightness)
 
-    def _start_autofocus(self):
+    def _start_autofocus(self, *args):
         self.img_signal.connect(self.run_autofocus)
 
-    def _start_fastflow(self):
+    def _start_fastflow(self, *args):
         if SIMULATION:
             self.logger.info(f"Skipping {self.state} state in simulation mode.")
             sleep(1)
@@ -327,7 +328,7 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_fastflow)
 
-    def _start_experiment(self):
+    def _start_experiment(self, *args):
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
@@ -347,7 +348,7 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_experiment)
 
-    def _end_experiment(self):
+    def _end_experiment(self, *args):
         self.shutoff()
 
         if self.start_time != None:
@@ -365,8 +366,8 @@ class ScopeOp(QObject, Machine):
         while not closing_file_future.done():
             sleep(1)
 
-    def _start_intermission(self):
-        self.experiment_done.emit()
+    def _start_intermission(self, msg):
+        self.experiment_done.emit(msg)
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
@@ -537,8 +538,10 @@ class ScopeOp(QObject, Machine):
         self.img_metadata["looptime"] = current_time - self.last_time
         self.last_time = current_time
 
-        if (self.count >= MAX_FRAMES) or (current_time-self.start_time > TIMEOUT_PERIOD):
-            self.to_intermission()
+        if self.count >= MAX_FRAMES:
+            self.to_intermission("Ending experiment since data collection is complete.")
+        elif current_time-self.start_time > TIMEOUT_S_PERIOD:
+            self.to_intermission(f"Ending experiment since {TIMEOUT_M_PERIOD} minute timeout was reached.")
         else:
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = timestamp
