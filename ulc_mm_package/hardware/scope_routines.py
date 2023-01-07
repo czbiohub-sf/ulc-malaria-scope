@@ -127,7 +127,7 @@ def count_parasitemia_periodic_wrapper(
     mscope: MalariaScope,
 ) -> Generator[
     List[Tuple[int, Tuple[float, ...]]],
-    Tuple[np.ndarray, Optional[Sequence[int]]],
+    Tuple[np.ndarray, Optional[int]],
     None,
 ]:
     prev_time = 0
