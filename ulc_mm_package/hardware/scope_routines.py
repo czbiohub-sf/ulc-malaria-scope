@@ -137,10 +137,11 @@ def count_parasitemia_periodic_wrapper(
             img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
             mscope.cell_diagnosis_model(img, counts)
             prev_time = perf_counter()
-        (
-            _,
-            _,
-        ) = yield []
+        else:
+            (
+                _,
+                _,
+            ) = yield []
 
 
 def flowControlRoutine(
