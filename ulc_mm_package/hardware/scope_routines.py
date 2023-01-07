@@ -9,6 +9,7 @@ from ulc_mm_package.hardware.hardware_modules import PressureLeak, PressureSenso
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
 
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
+from ulc_mm_package.neural_nets.neural_network_modules import AsyncInferenceResult
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
 
@@ -126,7 +127,7 @@ def count_parasitemia(
 def count_parasitemia_periodic_wrapper(
     mscope: MalariaScope,
 ) -> Generator[
-    List[Tuple[int, Tuple[float, ...]]],
+    Optional[List[AsyncInferenceResult]],
     Tuple[np.ndarray, Optional[int]],
     None,
 ]:
