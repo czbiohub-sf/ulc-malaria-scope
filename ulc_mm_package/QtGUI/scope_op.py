@@ -540,8 +540,10 @@ class ScopeOp(QObject, Machine):
 
         if self.count >= MAX_FRAMES:
             self.to_intermission("Ending experiment since data collection is complete.")
-        elif current_time-self.start_time > TIMEOUT_S_PERIOD:
-            self.to_intermission(f"Ending experiment since {TIMEOUT_M_PERIOD} minute timeout was reached.")
+        elif current_time - self.start_time > TIMEOUT_S_PERIOD:
+            self.to_intermission(
+                f"Ending experiment since {TIMEOUT_M_PERIOD} minute timeout was reached."
+            )
         else:
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = timestamp

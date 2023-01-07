@@ -60,7 +60,7 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(float)
     def update_runtime(self, runtime):
-        self.runtime_val.setText(strftime('%M:%S', gmtime(runtime)))
+        self.runtime_val.setText(strftime("%M:%S", gmtime(runtime)))
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img: np.ndarray):
