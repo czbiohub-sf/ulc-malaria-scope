@@ -5,7 +5,7 @@ Displays camera preview and conveys info to user during runs."""
 import sys
 import numpy as np
 
-from time import perf_counter
+from time import perf_counter, strftime, gmtime
 from qimage2ndarray import gray2qimage
 from matplotlib.streamplot import streamplot
 
@@ -57,6 +57,10 @@ class LiveviewGUI(QMainWindow):
 
     def update_tcp(self, tcp_addr):
         self.tcp_lbl.setText(f"SSH address: {tcp_addr}")
+
+    @pyqtSlot(float)
+    def update_runtime(self, runtime):
+        self.runtime_val.setText(strftime("%M:%S", gmtime(runtime)))
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img: np.ndarray):
@@ -150,6 +154,8 @@ class LiveviewGUI(QMainWindow):
         self.state_lbl = QLabel("-")
         self.pause_btn = QPushButton("Pause")
         self.exit_btn = QPushButton("Exit")
+        self.runtime_lbl = QLabel("Experiment runtime:")
+        self.runtime_val = QLabel("-")
         self.img_count_lbl = QLabel("Fields of view:")
         self.img_count_val = QLabel("-")
         self.terminal_txt = QPlainTextEdit(self.terminal_msg)
@@ -196,20 +202,22 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.state_lbl, 0, 1, 1, 2)
         self.infopanel_layout.addWidget(self.pause_btn, 1, 1)
         self.infopanel_layout.addWidget(self.exit_btn, 1, 2)
-        self.infopanel_layout.addWidget(self.img_count_lbl, 2, 1)
-        self.infopanel_layout.addWidget(self.img_count_val, 2, 2)
+        self.infopanel_layout.addWidget(self.runtime_lbl, 2, 1)
+        self.infopanel_layout.addWidget(self.runtime_val, 2, 2)
+        self.infopanel_layout.addWidget(self.img_count_lbl, 3, 1)
+        self.infopanel_layout.addWidget(self.img_count_val, 3, 2)
         self.infopanel_layout.addWidget(self.terminal_txt, 14, 1, 1, 2)
         self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
-        self.infopanel_layout.addWidget(self.cell_count_title, 3, 1, 1, 2)
-        self.infopanel_layout.addWidget(self.healthy_count_lbl, 4, 1)
-        self.infopanel_layout.addWidget(self.ring_count_lbl, 5, 1)
-        self.infopanel_layout.addWidget(self.schizont_count_lbl, 6, 1)
-        self.infopanel_layout.addWidget(self.troph_count_lbl, 7, 1)
-        self.infopanel_layout.addWidget(self.healthy_count_val, 4, 2)
-        self.infopanel_layout.addWidget(self.ring_count_val, 5, 2)
-        self.infopanel_layout.addWidget(self.schizont_count_val, 6, 2)
-        self.infopanel_layout.addWidget(self.troph_count_val, 7, 2)
+        self.infopanel_layout.addWidget(self.cell_count_title, 4, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.ring_count_lbl, 6, 1)
+        self.infopanel_layout.addWidget(self.ring_count_val, 6, 2)
+        self.infopanel_layout.addWidget(self.healthy_count_lbl, 5, 1)
+        self.infopanel_layout.addWidget(self.healthy_count_val, 5, 2)
+        self.infopanel_layout.addWidget(self.schizont_count_lbl, 7, 1)
+        self.infopanel_layout.addWidget(self.schizont_count_val, 7, 2)
+        self.infopanel_layout.addWidget(self.troph_count_lbl, 8, 1)
+        self.infopanel_layout.addWidget(self.troph_count_val, 8, 2)
 
         self.infopanel_layout.addWidget(self.focus_title, 10, 1, 1, 2)
         self.infopanel_layout.addWidget(self.focus_lbl, 11, 2)
@@ -223,11 +231,14 @@ class LiveviewGUI(QMainWindow):
         self.terminal_msg = ""
         self.terminal_txt.clear()
 
+        self.update_runtime(0)
         self.update_img_count("---")
         self.update_cell_count(np.zeros(len(YOGO_CLASS_LIST), dtype=int))
 
         self.update_focus("---")
         self.update_flowrate("---")
+
+        self.update_tcp("Sample address here")
 
         # Setup status colors
         self._set_color(self.state_lbl, STATUS.IN_PROGRESS)

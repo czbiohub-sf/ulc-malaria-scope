@@ -36,6 +36,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
     STATUS,
+    TIMEOUT_M_PERIOD,
+    TIMEOUT_S_PERIOD,
     TH_PERIOD,
 )
 
@@ -45,7 +47,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
 
 class ScopeOp(QObject, Machine):
     setup_done = pyqtSignal()
-    experiment_done = pyqtSignal()
+    experiment_done = pyqtSignal(str)
     reset_done = pyqtSignal()
 
     yield_mscope = pyqtSignal(MalariaScope)
@@ -61,9 +63,10 @@ class ScopeOp(QObject, Machine):
     set_period = pyqtSignal(float)
     freeze_liveview = pyqtSignal(bool)
 
-    update_state = pyqtSignal(str)
+    update_runtime = pyqtSignal(float)
     update_img_count = pyqtSignal(int)
     update_cell_count = pyqtSignal(ClassCountResult)
+    update_state = pyqtSignal(str)
     update_msg = pyqtSignal(str)
 
     update_flowrate = pyqtSignal(float)
@@ -164,6 +167,7 @@ class ScopeOp(QObject, Machine):
 
         self.TH_time = None
         self.start_time = None
+        self.accumulated_time = 0
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -174,8 +178,8 @@ class ScopeOp(QObject, Machine):
     def _unfreeze_liveview(self):
         self.freeze_liveview.emit(False)
 
-    def _send_state(self):
-        # TODO perhaps delete this to print more useful statements. See future "logging" branch
+    def _send_state(self, *args):
+        # TODO perhaps delete this to print more useful statements
         state_name = self.state.split("_")[0]
 
         if self.state != "standby":
@@ -184,9 +188,13 @@ class ScopeOp(QObject, Machine):
         self.logger.info(f"Changing state to {self.state}.")
         self.update_state.emit(state_name)
 
+    def _get_experiment_runtime(self) -> float:
+        return self.accumulated_time + perf_counter() - self.start_time
+
     def update_infopanel(self):
         if self.state == "experiment":
             self.update_cell_count.emit(self.cell_counts)
+            self.update_runtime.emit(self._get_experiment_runtime())
 
     def setup(self):
         self.create_timers.emit()
@@ -236,8 +244,11 @@ class ScopeOp(QObject, Machine):
 
         self.stop_timers.emit()
 
-    def _start_pause(self):
+    def _start_pause(self, *args):
         self.running = False
+
+        self.accumulated_time += perf_counter() - self.start_time
+        self.start_time = None
 
         try:
             self.img_signal.disconnect()
@@ -252,18 +263,19 @@ class ScopeOp(QObject, Machine):
         )
         self.mscope.led.turnOff()
 
-    def _end_pause(self):
+    def _end_pause(self, *args):
         self.mscope.led.turnOn()
+        self.start_time = perf_counter()
         self.running = True
 
-    def _start_autobrightness_precells(self):
+    def _start_autobrightness_precells(self, *args):
 
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
 
-    def _check_pressure_seal(self):
+    def _check_pressure_seal(self, *args):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
         try:
             pdiff = checkPressureDifference(self.mscope)
@@ -284,13 +296,13 @@ class ScopeOp(QObject, Machine):
                 "Calibration failed", "Improper seal / pressure leak detected.", False
             )
 
-    def _start_cellfinder(self):
+    def _start_cellfinder(self, *args):
         self.cellfinder_routine = find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _start_autobrightness_postcells(self):
+    def _start_autobrightness_postcells(self, *args):
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
@@ -299,10 +311,10 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_autobrightness)
 
-    def _start_autofocus(self):
+    def _start_autofocus(self, *args):
         self.img_signal.connect(self.run_autofocus)
 
-    def _start_fastflow(self):
+    def _start_fastflow(self, *args):
         if SIMULATION:
             self.logger.info(f"Skipping {self.state} state in simulation mode.")
             sleep(1)
@@ -316,7 +328,7 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_fastflow)
 
-    def _start_experiment(self):
+    def _start_experiment(self, *args):
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
@@ -336,12 +348,12 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.connect(self.run_experiment)
 
-    def _end_experiment(self):
+    def _end_experiment(self, *args):
         self.shutoff()
 
         if self.start_time != None:
             self.logger.info(
-                f"Net FPS is {self.count/(perf_counter()-self.start_time)}"
+                f"Net FPS is {self.count/(self._get_experiment_runtime())}"
             )
 
         self.logger.info("Resetting pneumatic module for rerun.")
@@ -354,8 +366,8 @@ class ScopeOp(QObject, Machine):
         while not closing_file_future.done():
             sleep(1)
 
-    def _start_intermission(self):
-        self.experiment_done.emit()
+    def _start_intermission(self, msg):
+        self.experiment_done.emit(msg)
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
@@ -522,12 +534,16 @@ class ScopeOp(QObject, Machine):
 
         self.img_signal.disconnect(self.run_experiment)
 
-        curr_time = perf_counter()
-        self.img_metadata["looptime"] = curr_time - self.last_time
-        self.last_time = curr_time
+        current_time = perf_counter()
+        self.img_metadata["looptime"] = current_time - self.last_time
+        self.last_time = current_time
 
         if self.count >= MAX_FRAMES:
-            self.to_intermission()
+            self.to_intermission("Ending experiment since data collection is complete.")
+        elif current_time - self.start_time > TIMEOUT_S_PERIOD:
+            self.to_intermission(
+                f"Ending experiment since {TIMEOUT_M_PERIOD} minute timeout was reached."
+            )
         else:
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = timestamp
@@ -654,7 +670,6 @@ class ScopeOp(QObject, Machine):
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
 
-            current_time = perf_counter()
             if current_time - self.TH_time > TH_PERIOD:
                 self.TH_time = current_time
 
@@ -671,7 +686,7 @@ class ScopeOp(QObject, Machine):
             qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
             self.img_metadata["zarrwriter_qsize"] = qsize
 
-            self.img_metadata["runtime"] = perf_counter() - curr_time
+            self.img_metadata["runtime"] = perf_counter() - current_time
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("img_metadata", t1 - t0)
