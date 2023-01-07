@@ -124,8 +124,12 @@ def count_parasitemia(
 
 
 def count_parasitemia_periodic_wrapper(
-    mscope: MalariaScope, img: np.ndarray, counts: Optional[Sequence[int]] = None
-) -> Generator[List[Tuple[int, Tuple[float, ...]]], None, None]:
+    mscope: MalariaScope,
+) -> Generator[
+    List[Tuple[int, Tuple[float, ...]]],
+    Tuple[np.ndarray, Optional[Sequence[int]]],
+    None,
+]:
     prev_time = 0
 
     while True:

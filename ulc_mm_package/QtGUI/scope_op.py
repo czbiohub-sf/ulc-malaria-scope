@@ -326,9 +326,7 @@ class ScopeOp(QObject, Machine):
         self.density_routine = cell_density_routine()
         self.density_routine.send(None)
 
-        self.count_parasitemia_routine = count_parasitemia_periodic_wrapper(
-            self.mscope, None, 0
-        )
+        self.count_parasitemia_routine = count_parasitemia_periodic_wrapper(self.mscope)
         self.count_parasitemia_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
