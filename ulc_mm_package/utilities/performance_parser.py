@@ -64,8 +64,14 @@ if __name__ == "__main__":
         print("| name | mean | stddev | median |")
         for row in r:
             for k in run_timings:
-                if row[k] != "":
-                    run_timings[k].append(float(row[k]))
+                try:
+                    if row[k] != "":
+                        run_timings[k].append(float(row[k]))
+                except KeyError as e:
+                    raise KeyError(
+                        "couldn't find timing keys - most likely, "
+                        "this experiment was not run with MS_VERBOSE=1"
+                    ) from e
 
         for k, data in run_timings.items():
             get_stats(k, data, save=save)
