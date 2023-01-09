@@ -539,7 +539,7 @@ class ScopeOp(QObject, Machine):
             t0 = perf_counter()
             prev_yogo_results: List[
                 AsyncInferenceResult
-            ] = self.count_parasitemia_routine.send(img, self.count)
+            ] = self.count_parasitemia_routine.send((img, self.count))
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
