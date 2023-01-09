@@ -8,7 +8,7 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 import numpy as np
 import logging
 
-from transitions import Machine
+from transitions import Machine, State
 from time import sleep
 from typing import Any
 
@@ -45,7 +45,20 @@ from ulc_mm_package.QtGUI.gui_constants import (
 # TODO remove -1 flag from TH sensor?
 
 
-class ScopeOp(QObject, Machine):
+class NamedState(State):
+    def __init__(self, *args, **kwargs):
+        if "display_name" in kwargs:
+            self.display_name = kwargs.pop("display_name")
+        elif "name" in kwargs:
+            self.display_name = kwargs["name"]
+        super().__init__(*args, **kwargs)
+
+
+class NamedMachine(Machine):
+    state_cls = NamedState
+
+
+class ScopeOp(QObject, NamedMachine):
     setup_done = pyqtSignal()
     experiment_done = pyqtSignal(str)
     reset_done = pyqtSignal()
@@ -96,10 +109,12 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness_precells",
+                "display_name": "autobrightness (pre-cells)",
                 "on_enter": [self._send_state, self._start_autobrightness_precells],
             },
             {
                 "name": "pressure_check",
+                "display_name": "pressure check",
                 "on_enter": [self._send_state, self._check_pressure_seal],
             },
             {
@@ -108,6 +123,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "autobrightness_postcells",
+                "display_name": "autobrightness (post-cells)",
                 "on_enter": [self._send_state, self._start_autobrightness_postcells],
             },
             {
@@ -116,6 +132,7 @@ class ScopeOp(QObject, Machine):
             },
             {
                 "name": "fastflow",
+                "display_name": "flow control",
                 "on_enter": [self._send_state, self._start_fastflow],
             },
             {
@@ -180,7 +197,8 @@ class ScopeOp(QObject, Machine):
 
     def _send_state(self, *args):
         # TODO perhaps delete this to print more useful statements
-        state_name = self.state.split("_")[0]
+
+        state_name = self.get_state(self.state).display_name
 
         if self.state != "standby":
             self.update_msg.emit(f"{state_name.capitalize()} in progress...")
@@ -303,6 +321,9 @@ class ScopeOp(QObject, Machine):
         self.img_signal.connect(self.run_cellfinder)
 
     def _start_autobrightness_postcells(self, *args):
+        self.update_msg.emit(
+            f"Moving motor to focus position at {self.cellfinder_result} steps."
+        )
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
