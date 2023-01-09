@@ -457,14 +457,21 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             perf_counter() - prev_time
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
-            inference_results = yield prev_measurements[(idx - 1) % 10]
+            inference_results = yield prev_measurements[
+                (idx - 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
+            ]
 
             batch_dim, pred_dim, num_predictions = inference_results.shape
             prev_measurements[idx] = num_predictions
 
-            idx = (idx + 1) % len(prev_measurements)
+            idx = (idx + 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
 
-            if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):
+            num_low_density = (
+                prev_measurements < processing_constants.MIN_CELL_COUNT
+            ).sum()
+            density_threshold = 0.9 * processing_constants.CELL_DENSITY_HISTORY_LEN
+
+            if num_low_density > density_threshold:
                 raise LowDensity(
                     f"mean density over last {processing_constants.CELL_DENSITY_HISTORY_LEN} "
                     f"is {np.mean(prev_measurements)} cells - should be over {processing_constants.MIN_CELL_COUNT}"
@@ -473,4 +480,4 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             prev_time = perf_counter()
         else:
             # if we haven't waited period yet, yield immediately
-            yield
+            yield None
