@@ -14,7 +14,7 @@ from ulc_mm_package.scope_constants import PER_IMAGE_TIMING_KEYS
 def get_stats(name, data, save=None):
     plt.figure(figsize=(12, 8), dpi=160)
 
-    if 'qsize' not in name:
+    if "qsize" not in name:
         data = [1000 * d for d in data]
 
     if len(data) == 0:
