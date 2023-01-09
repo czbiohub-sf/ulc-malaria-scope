@@ -321,7 +321,9 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.connect(self.run_cellfinder)
 
     def _start_autobrightness_postcells(self, *args):
-        self.update_msg.emit(f"Moving motor to focus position at {self.cellfinder_result} steps.")
+        self.update_msg.emit(
+            f"Moving motor to focus position at {self.cellfinder_result} steps."
+        )
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
