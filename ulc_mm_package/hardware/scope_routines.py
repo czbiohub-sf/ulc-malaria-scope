@@ -447,7 +447,9 @@ def find_cells_routine(
 
 def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
     prev_time = perf_counter()
-    prev_measurements = np.asarray([100] * processing_constants.CELL_DENSITY_HISTORY_LEN)
+    prev_measurements = np.asarray(
+        [100] * processing_constants.CELL_DENSITY_HISTORY_LEN
+    )
     idx = 0
 
     while True:
@@ -455,7 +457,9 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             perf_counter() - prev_time
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
-            inference_results = yield prev_measurements[(idx - 1) % processing_constants.CELL_DENSITY_HISTORY_LEN]
+            inference_results = yield prev_measurements[
+                (idx - 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
+            ]
 
             batch_dim, pred_dim, num_predictions = inference_results.shape
             prev_measurements[idx] = num_predictions
