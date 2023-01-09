@@ -468,7 +468,8 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             num_low_density = (
                 prev_measurements < processing_constants.MIN_CELL_COUNT
             ).sum()
-            density_threshold = 0.95 * processing_constants.MIN_CELL_COUNT
+
+            density_threshold = 0.95 * processing_constants.CELL_DENSITY_HISTORY_LEN
 
             if num_low_density > density_threshold:
                 raise LowDensity(
