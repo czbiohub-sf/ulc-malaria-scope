@@ -446,10 +446,10 @@ def find_cells_routine(
 
 
 def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
-    N = 100
-
     prev_time = perf_counter()
-    prev_measurements = np.asarray([N] * processing_constants.CELL_DENSITY_HISTORY_LEN)
+    prev_measurements = np.asarray(
+        [100] * processing_constants.CELL_DENSITY_HISTORY_LEN
+    )
     idx = 0
 
     while True:
@@ -457,17 +457,18 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             perf_counter() - prev_time
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
-            inference_results = yield prev_measurements[(idx - 1) % N]
+            inference_results = yield prev_measurements[idx]
 
             batch_dim, pred_dim, num_predictions = inference_results.shape
             prev_measurements[idx] = num_predictions
 
-            idx = (idx + 1) % N
+            idx = (idx + 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
 
+            # number of elements of prev_measurements that is less than MIN_CELL_COUNT
             num_low_density = (
                 prev_measurements < processing_constants.MIN_CELL_COUNT
             ).sum()
-            density_threshold = 0.9 * N
+            density_threshold = 0.95 * processing_constants.MIN_CELL_COUNT
 
             if num_low_density > density_threshold:
                 raise LowDensity(
