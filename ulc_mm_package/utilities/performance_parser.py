@@ -12,9 +12,9 @@ from ulc_mm_package.scope_constants import PER_IMAGE_TIMING_KEYS
 
 
 def get_stats(name, data, save=None):
-    plt.figure(figsize=(16, 12), dpi=160)
+    plt.figure(figsize=(12, 8), dpi=160)
 
-    if name != "zarrwriter_qsize":
+    if "qsize" not in name:
         data = [1000 * d for d in data]
 
     if len(data) == 0:
@@ -64,8 +64,14 @@ if __name__ == "__main__":
         print("| name | mean | stddev | median |")
         for row in r:
             for k in run_timings:
-                if row[k] != "":
-                    run_timings[k].append(float(row[k]))
+                try:
+                    if row[k] != "":
+                        run_timings[k].append(float(row[k]))
+                except KeyError as e:
+                    raise KeyError(
+                        "couldn't find timing keys - most likely, "
+                        "this experiment was not run with MS_VERBOSE=1"
+                    ) from e
 
         for k, data in run_timings.items():
             get_stats(k, data, save=save)
