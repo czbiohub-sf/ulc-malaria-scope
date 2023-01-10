@@ -238,8 +238,6 @@ class LiveviewGUI(QMainWindow):
         self.update_focus("---")
         self.update_flowrate("---")
 
-        self.update_tcp("Sample address here")
-
         # Setup status colors
         self._set_color(self.state_lbl, STATUS.IN_PROGRESS)
 
@@ -355,6 +353,7 @@ if __name__ == "__main__":
     gui.set_infopanel_vals()
 
     gui.update_msg("Sample message here")
+    gui.update_tcp("Sample address here")
 
     gui.show()
     sys.exit(app.exec_())
