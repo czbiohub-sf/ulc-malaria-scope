@@ -352,7 +352,7 @@ if __name__ == "__main__":
 
     gui.set_infopanel_vals()
 
-    gui.update_msg("Sample message here")        
+    gui.update_msg("Sample message here")
     gui.update_tcp("Sample address here")
 
     gui.show()
