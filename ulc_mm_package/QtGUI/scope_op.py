@@ -340,11 +340,11 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self, *args):
-        # if SIMULATION:
-        #     self.logger.info(f"Skipping {self.state} state in simulation mode.")
-        #     sleep(1)
-        #     self.next_state()
-        #     return
+        if SIMULATION:
+            self.logger.info(f"Skipping {self.state} state in simulation mode.")
+            sleep(1)
+            self.next_state()
+            return
 
         self.fastflow_routine = fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
@@ -638,26 +638,15 @@ class ScopeOp(QObject, NamedMachine):
             try:
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
-                if not SIMULATION:
-                    self.logger.error(
-                        "Flow control failed. Syringe already at max position."
-                    )
-                    self.error.emit(
-                        "Flow control failed",
-                        "Unable to achieve desired flowrate with syringe at max position.",
-                        ERROR_BEHAVIORS.DEFAULT.value,
-                    )
-                    return
-                else:
-                    self.logger.warning(
-                        f"Ignoring flowcontrol exception in simulation mode - {e}"
-                    )
-                    flowrate = None
+                self.logger.warning(
+                    f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
+                )
+                flowrate = None
 
-                    self.flowcontrol_routine = flowControlRoutine(
-                        self.mscope, self.target_flowrate, None
-                    )
-                    self.flowcontrol_routine.send(None)
+                self.flowcontrol_routine = flowControlRoutine(
+                    self.mscope, self.target_flowrate, None
+                )
+                self.flowcontrol_routine.send(None)
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)

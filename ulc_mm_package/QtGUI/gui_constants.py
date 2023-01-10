@@ -7,9 +7,9 @@ from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 class STATUS(enum.Enum):
     DEFAULT = "whitesmoke"
     STANDBY = "lightgray"
-    IN_PROGRESS = "gold"
+    IN_PROGRESS = "yellow"
     GOOD = "lightgreen"
-    BAD = "tomato"
+    BAD = "lightsalmon"
 
 # ================ Oracle error options ================ #
 class ERROR_BEHAVIORS(enum.Enum):
