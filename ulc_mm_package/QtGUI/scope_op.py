@@ -66,7 +66,7 @@ class ScopeOp(QObject, NamedMachine):
 
     yield_mscope = pyqtSignal(MalariaScope)
 
-    error = pyqtSignal(str, str, bool)
+    error = pyqtSignal(str, str, int)
 
     send_pause = pyqtSignal(str, str)
 
@@ -235,7 +235,7 @@ class ScopeOp(QObject, NamedMachine):
                 "The following component(s) could not be instantiated: {}.".format(
                     (", ".join(failed_components)).capitalize()
                 ),
-                behavior=ERROR_BEHAVIORS.INSTANT_ABORT,
+                ERROR_BEHAVIORS.INSTANT_ABORT.value,
             )
 
     def start(self):
@@ -307,12 +307,15 @@ class ScopeOp(QObject, NamedMachine):
             self.error.emit(
                 "Calibration failed",
                 "Failed to read pressure sensor to perform pressure seal check.",
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
         except PressureLeak as e:
             self.logger.error(f"Improper seal / pressure leak detected - {e}")
             # TODO provide instructions for dealing with pressure leak?
             self.error.emit(
-                "Calibration failed", "Improper seal / pressure leak detected."
+                "Calibration failed",
+                "Improper seal / pressure leak detected.",
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
 
     def _start_cellfinder(self, *args):
@@ -420,11 +423,16 @@ class ScopeOp(QObject, NamedMachine):
             self.error.emit(
                 "Autobrightness failed",
                 "LED is too dim to run experiment.",
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
         except LEDNoPower as e:
             if not SIMULATION:
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
-                self.error.emit("LED failure", "The off/on LED test failed.")
+                self.error.emit(
+                    "LED failure",
+                    "The off/on LED test failed.",
+                    ERROR_BEHAVIORS.DEFAULT.value,
+                )
             else:
                 self.next_state()
         else:
@@ -449,7 +457,11 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
         except NoCellsFound:
             self.logger.error("Cellfinder failed. No cells found.")
-            self.error.emit("Calibration failed", "No cells found.")
+            self.error.emit(
+                "Calibration failed",
+                "No cells found.",
+                ERROR_BEHAVIORS.DEFAULT.value,
+            )
         else:
             if self.running:
                 self.img_signal.connect(self.run_cellfinder)
@@ -484,6 +496,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve focus because the stage has reached its range of motion limit..",
+                    ERROR_BEHAVIORS.DEFAULT.value,
                 )
 
     @pyqtSlot(np.ndarray, float)
@@ -513,6 +526,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired flowrate with syringe at max position.",
+                    ERROR_BEHAVIORS.DEFAULT.value,
                 )
         except LowConfidenceCorrelations:
             if SIMULATION:
@@ -621,6 +635,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
+                        ERROR_BEHAVIORS.DEFAULT.value,
                     )
                     return
                 else:
@@ -645,6 +660,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.error.emit(
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
+                        ERROR_BEHAVIORS.DEFAULT.value,
                     )
                     return
                 else:

@@ -359,9 +359,9 @@ class Oracle(Machine):
         if message_result == QMessageBox.Ok:
             self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
-    def error_handler(self, title, text, behavior=ERROR_BEHAVIORS.DEFAULT):
+    def error_handler(self, title, text, behavior):
 
-        if behavior == ERROR_BEHAVIORS.DEFAULT:
+        if behavior == ERROR_BEHAVIORS.DEFAULT.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
@@ -371,7 +371,7 @@ class Oracle(Machine):
             )
             self.scopeop.to_intermission("Ending experiment due to error.")
 
-        elif behavior == ERROR_BEHAVIORS.INSTANT_ABORT:
+        elif behavior == ERROR_BEHAVIORS.INSTANT_ABORT.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
@@ -380,7 +380,7 @@ class Oracle(Machine):
                 instant_abort=True,
             )
 
-        elif behavior == ERROR_BEHAVIORS.YN:
+        elif behavior == ERROR_BEHAVIORS.YN.value:
             message_result = self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
