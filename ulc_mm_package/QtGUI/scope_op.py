@@ -35,10 +35,11 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
-    STATUS,
     TIMEOUT_M_PERIOD,
     TIMEOUT_S_PERIOD,
     TH_PERIOD,
+    STATUS,
+    ERROR_BEHAVIORS,
 )
 
 # TODO populate info?
@@ -234,7 +235,7 @@ class ScopeOp(QObject, NamedMachine):
                 "The following component(s) could not be instantiated: {}.".format(
                     (", ".join(failed_components)).capitalize()
                 ),
-                instant_abort=True,
+                behavior=ERROR_BEHAVIORS.INSTANT_ABORT,
             )
 
     def start(self):
