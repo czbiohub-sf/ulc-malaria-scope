@@ -54,6 +54,24 @@ class LowConfidenceCorrelations(FlowControlError):
         super().__init__(f"{msg}")
 
 
+def getFlowError(target_flowrate, curr_flowrate):
+    """Returns the flowrate error, i.e the difference between the target and current flowrate.
+
+    Returns
+    -------
+    float:
+        Positive (+) number if the current flowrate is _below_ the target.
+        Negative (-) number if the current flowrate is _above_ the target.
+        0 if the current flowrate is within +/- % tolerance of the target (as defined by TOL_PERC).
+    """
+
+    diff = target_flowrate - curr_flowrate
+
+    if abs(diff) / target_flowrate < TOL_PERC:
+        return 0
+    else:
+        return diff
+
 class FlowController:
     def __init__(
         self,
@@ -181,7 +199,7 @@ class FlowController:
         if self.fre.isFull():
             _, dy, _, _ = self.fre.getStatsAndReset()
             self.curr_flowrate = dy
-            flow_error = self._getFlowError()
+            flow_error = getFlowError(self.target_flowrate, self.curr_flowrate)
             try:
                 self._adjustSyringe(flow_error)
                 return (dy, flow_error)
@@ -239,7 +257,7 @@ class FlowController:
             )
 
             # Adjust pressure using the pneumatic module based on the flow rate error
-            flow_error = self._getFlowError()
+            flow_error = getFlowError(self.target_flowrate, self.curr_flowrate)
             try:
                 self._adjustSyringe(flow_error)
                 print(
@@ -250,24 +268,6 @@ class FlowController:
                 raise
         else:
             return None
-
-    def _getFlowError(self):
-        """Returns the flowrate error, i.e the difference between the target and current flowrate.
-
-        Returns
-        -------
-        float:
-            Positive (+) number if the current flowrate is _below_ the target.
-            Negative (-) number if the current flowrate is _above_ the target.
-            0 if the current flowrate is within +/- % tolerance of the target (as defined by TOL_PERC).
-        """
-
-        diff = self.target_flowrate - self.curr_flowrate
-
-        if abs(diff) / self.target_flowrate < TOL_PERC:
-            return 0
-        else:
-            return diff
 
     def _adjustSyringe(self, flow_error: float):
         """Adjusts the syringe based on the flow error.

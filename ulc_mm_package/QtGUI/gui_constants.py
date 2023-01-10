@@ -5,10 +5,11 @@ from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 # ================ Status colors ================ #
 class STATUS(enum.Enum):
+    DEFAULT = "whitesmoke"
     STANDBY = "lightgray"
-    IN_PROGRESS = "yellow"
+    IN_PROGRESS = "gold"
     GOOD = "lightgreen"
-    BAD = "red"
+    BAD = "tomato"
 
 # ================ Oracle error options ================ #
 class ERROR_BEHAVIORS(enum.Enum):
