@@ -508,14 +508,12 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            raise CantReachTargetFlowrate("UHOH")
-            print("raised exception")
             flowrate = self.fastflow_routine.send((img, timestamp))
 
             if flowrate != None:
                 self.update_flowrate.emit(flowrate)
-        except CantReachTargetFlowrate:
-            self.fastflow_result = -1
+        except CantReachTargetFlowrate as e:
+            self.fastflow_result = e.flowrate
             self.logger.error("Fastflow failed. Syringe already at max position.")
             self.error.emit(
                 "Calibration issue",

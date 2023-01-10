@@ -21,8 +21,8 @@ class FlowControlError(Exception):
 
 class CantReachTargetFlowrate(FlowControlError):
     """Raised when the target flowrate cannot be reached"""
-
-    pass
+    def __init__(self, flowrate):
+        self.flowrate = flowrate
 
 
 class LowConfidenceCorrelations(FlowControlError):
@@ -290,13 +290,13 @@ class FlowController:
                 # Increase pressure, move syringe down
                 self.pneumatic_module.decreaseDutyCycle()
             except SyringeEndOfTravel:
-                raise CantReachTargetFlowrate()
+                raise CantReachTargetFlowrate(self.curr_flowrate)
         elif flow_error < 0:
             try:
                 # Decrease pressure, move syringe up
                 self.pneumatic_module.increaseDutyCycle()
             except SyringeEndOfTravel:
-                raise CantReachTargetFlowrate()
+                raise CantReachTargetFlowrate(self.curr_flowrate)
 
     def _ewma(self, data):
         """Adapted from @Divakar on StackOverflow
