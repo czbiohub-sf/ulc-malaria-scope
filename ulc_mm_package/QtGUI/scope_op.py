@@ -282,6 +282,7 @@ class ScopeOp(QObject, NamedMachine):
         self.mscope.led.turnOff()
 
     def _end_pause(self, *args):
+        self.set_period.emit(ACQUISITION_PERIOD)
         self.mscope.led.turnOn()
         self.start_time = perf_counter()
         self.running = True
