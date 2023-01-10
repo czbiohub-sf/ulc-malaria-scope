@@ -9,7 +9,13 @@ import traceback
 import numpy as np
 
 from time import perf_counter, sleep
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import (
+    QObject,
+    QTimer,
+    pyqtSignal,
+    pyqtSlot,
+    Qt,
+)
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.QtGUI.gui_constants import ACQUISITION_PERIOD
@@ -34,9 +40,11 @@ class Acquisition(QObject):
     @pyqtSlot()
     def create_timers(self):
         self.acquisition_timer = QTimer()
+        self.acquisition_timer.setTimerType(Qt.PreciseTimer)
         self.acquisition_timer.timeout.connect(self.get_img)
 
         self.liveview_timer = QTimer()
+        self.liveview_timer.setTimerType(Qt.PreciseTimer)
         self.liveview_timer.timeout.connect(self.send_img)
 
         self.logger.info("Created acquisition and liveview timers.")
