@@ -11,11 +11,13 @@ class STATUS(enum.Enum):
     GOOD = "lightgreen"
     BAD = "lightsalmon"
 
+
 # ================ Oracle error options ================ #
 class ERROR_BEHAVIORS(enum.Enum):
     DEFAULT = 0
     INSTANT_ABORT = 1
     YN = 2
+
 
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]

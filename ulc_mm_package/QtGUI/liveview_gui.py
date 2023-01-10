@@ -56,7 +56,7 @@ class LiveviewGUI(QMainWindow):
         self.notes_val.setPlainText(f"{metadata['notes']}")
 
         # Update target flowrate in infopanel
-        self.target_flowrate = metadata['target_flowrate'][1]
+        self.target_flowrate = metadata["target_flowrate"][1]
         self.flowrate_lbl.setText(f"Target = {self.target_flowrate}")
 
     def update_tcp(self, tcp_addr):
@@ -127,7 +127,6 @@ class LiveviewGUI(QMainWindow):
                 self._set_color(self.flowrate_val, STATUS.BAD)
         else:
             self._set_color(self.flowrate_val, STATUS.DEFAULT)
-
 
     def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")

@@ -383,7 +383,8 @@ class Oracle(Machine):
             message_result = self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
+                text
+                + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
                 buttons=BUTTONS.YN,
                 instant_abort=False,
             )

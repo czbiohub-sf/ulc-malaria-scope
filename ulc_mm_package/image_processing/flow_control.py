@@ -21,6 +21,7 @@ class FlowControlError(Exception):
 
 class CantReachTargetFlowrate(FlowControlError):
     """Raised when the target flowrate cannot be reached"""
+
     def __init__(self, flowrate):
         self.flowrate = flowrate
 
@@ -71,6 +72,7 @@ def getFlowError(target_flowrate, curr_flowrate):
         return 0
     else:
         return diff
+
 
 class FlowController:
     def __init__(
