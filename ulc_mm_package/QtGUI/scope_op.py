@@ -234,7 +234,7 @@ class ScopeOp(QObject, NamedMachine):
                 "The following component(s) could not be instantiated: {}.".format(
                     (", ".join(failed_components)).capitalize()
                 ),
-                True,
+                instant_abort=True,
             )
 
     def start(self):
@@ -306,13 +306,12 @@ class ScopeOp(QObject, NamedMachine):
             self.error.emit(
                 "Calibration failed",
                 "Failed to read pressure sensor to perform pressure seal check.",
-                False,
             )
         except PressureLeak as e:
             self.logger.error(f"Improper seal / pressure leak detected - {e}")
             # TODO provide instructions for dealing with pressure leak?
             self.error.emit(
-                "Calibration failed", "Improper seal / pressure leak detected.", False
+                "Calibration failed", "Improper seal / pressure leak detected."
             )
 
     def _start_cellfinder(self, *args):
@@ -420,12 +419,11 @@ class ScopeOp(QObject, NamedMachine):
             self.error.emit(
                 "Autobrightness failed",
                 "LED is too dim to run experiment.",
-                False,
             )
         except LEDNoPower as e:
             if not SIMULATION:
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
-                self.error.emit("LED failure", "The off/on LED test failed.", False)
+                self.error.emit("LED failure", "The off/on LED test failed.")
             else:
                 self.next_state()
         else:
@@ -450,7 +448,7 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
         except NoCellsFound:
             self.logger.error("Cellfinder failed. No cells found.")
-            self.error.emit("Calibration failed", "No cells found.", False)
+            self.error.emit("Calibration failed", "No cells found.")
         else:
             if self.running:
                 self.img_signal.connect(self.run_cellfinder)
@@ -485,7 +483,6 @@ class ScopeOp(QObject, NamedMachine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve focus because the stage has reached its range of motion limit..",
-                    False,
                 )
 
     @pyqtSlot(np.ndarray, float)
@@ -515,7 +512,6 @@ class ScopeOp(QObject, NamedMachine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve desired flowrate with syringe at max position.",
-                    False,
                 )
         except LowConfidenceCorrelations:
             if SIMULATION:
@@ -533,7 +529,6 @@ class ScopeOp(QObject, NamedMachine):
                 self.error.emit(
                     "Calibration failed",
                     "Too many recent low confidence xcorr calculations",
-                    False,
                 )
         except StopIteration as e:
             self.fastflow_result = e.value
@@ -625,7 +620,6 @@ class ScopeOp(QObject, NamedMachine):
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
-                        False,
                     )
                     return
                 else:
@@ -650,7 +644,6 @@ class ScopeOp(QObject, NamedMachine):
                     self.error.emit(
                         "Flow control failed",
                         "Unable to achieve desired flowrate with syringe at max position.",
-                        False,
                     )
                     return
                 else:

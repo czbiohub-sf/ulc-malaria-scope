@@ -358,7 +358,7 @@ class Oracle(Machine):
         if message_result == QMessageBox.Ok:
             self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
-    def error_handler(self, title, text, instant_abort):
+    def error_handler(self, title, text, instant_abort=False):
         self.display_message(
             QMessageBox.Icon.Critical,
             title,
