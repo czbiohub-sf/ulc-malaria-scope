@@ -340,11 +340,11 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self, *args):
-        if SIMULATION:
-            self.logger.info(f"Skipping {self.state} state in simulation mode.")
-            sleep(1)
-            self.next_state()
-            return
+        # if SIMULATION:
+        #     self.logger.info(f"Skipping {self.state} state in simulation mode.")
+        #     sleep(1)
+        #     self.next_state()
+        #     return
 
         self.fastflow_routine = fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
@@ -508,43 +508,30 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
+            raise CantReachTargetFlowrate("UHOH")
+            print("raised exception")
             flowrate = self.fastflow_routine.send((img, timestamp))
 
             if flowrate != None:
                 self.update_flowrate.emit(flowrate)
         except CantReachTargetFlowrate:
-            if SIMULATION:
-                self.fastflow_result = self.target_flowrate
-                self.logger.info(
-                    f"Fastflow successful. Flowrate (simulated) = {self.fastflow_result}."
-                )
-                self.update_flowrate.emit(self.fastflow_result)
-                self.next_state()
-            else:
-                self.fastflow_result = -1
-                self.logger.error("Fastflow failed. Syringe already at max position.")
-                self.error.emit(
-                    "Calibration failed",
-                    "Unable to achieve desired flowrate with syringe at max position.",
-                    ERROR_BEHAVIORS.DEFAULT.value,
-                )
+            self.fastflow_result = -1
+            self.logger.error("Fastflow failed. Syringe already at max position.")
+            self.error.emit(
+                "Calibration issue",
+                "Unable to achieve target flowrate with syringe at max position. Continue running anyways?",
+                ERROR_BEHAVIORS.YN.value,
+            )
+            self.update_flowrate.emit(self.fastflow_result)
         except LowConfidenceCorrelations:
-            if SIMULATION:
-                self.fastflow_result = self.target_flowrate
-                self.logger.info(
-                    f"Fastflow successful. Flowrate (simulated) = {self.fastflow_result}."
-                )
-                self.update_flowrate.emit(self.fastflow_result)
-                self.next_state()
-            else:
-                self.fastflow_result = -1
-                self.logger.error(
-                    "Fastflow failed. Too many recent low confidence xcorr calculations."
-                )
-                self.error.emit(
-                    "Calibration failed",
-                    "Too many recent low confidence xcorr calculations",
-                )
+            self.fastflow_result = -1
+            self.logger.error(
+                "Fastflow failed. Too many recent low confidence xcorr calculations."
+            )
+            self.error.emit(
+                "Calibration failed",
+                "Too many recent low confidence xcorr calculations",
+            )
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")

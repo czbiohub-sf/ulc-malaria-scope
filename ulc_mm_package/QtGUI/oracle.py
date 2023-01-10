@@ -360,7 +360,6 @@ class Oracle(Machine):
             self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
     def error_handler(self, title, text, behavior):
-
         if behavior == ERROR_BEHAVIORS.DEFAULT.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
@@ -384,12 +383,14 @@ class Oracle(Machine):
             message_result = self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + _ERROR_MSG,
+                text + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
                 buttons=BUTTONS.YN,
                 instant_abort=False,
             )
             if message_result == QMessageBox.No:
                 self.scopeop.to_intermission("Ending experiment due to error.")
+            else:
+                self.scopeop.next_state()
 
     def display_message(
         self,
