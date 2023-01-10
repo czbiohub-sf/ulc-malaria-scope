@@ -25,6 +25,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
+from ulc_mm_package.image_processing.flow_control import getFlowError
+
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
@@ -39,6 +41,7 @@ class LiveviewGUI(QMainWindow):
     def __init__(self):
         self.metadata = None
         self.terminal_msg = ""
+        self.target_flowrate = None
 
         super().__init__()
         self._load_main_ui()
@@ -53,7 +56,8 @@ class LiveviewGUI(QMainWindow):
         self.notes_val.setPlainText(f"{metadata['notes']}")
 
         # Update target flowrate in infopanel
-        self.flowrate_lbl.setText(f"Target = {metadata['target_flowrate'][1]}")
+        self.target_flowrate = metadata["target_flowrate"][1]
+        self.flowrate_lbl.setText(f"Target = {self.target_flowrate}")
 
     def update_tcp(self, tcp_addr):
         self.tcp_lbl.setText(f"SSH address: {tcp_addr}")
@@ -114,6 +118,15 @@ class LiveviewGUI(QMainWindow):
         self.flowrate_val.setText(
             f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}"
         )
+
+        # Set color based on status
+        if (self.target_flowrate != None) and isinstance(val, (float, int)):
+            if getFlowError(self.target_flowrate, val) == 0:
+                self._set_color(self.flowrate_val, STATUS.GOOD)
+            else:
+                self._set_color(self.flowrate_val, STATUS.BAD)
+        else:
+            self._set_color(self.flowrate_val, STATUS.DEFAULT)
 
     def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
@@ -245,9 +258,8 @@ class LiveviewGUI(QMainWindow):
         self._set_color(self.focus_title, STATUS.STANDBY)
         self._set_color(self.flowrate_title, STATUS.STANDBY)
 
-        # TODO decide if routine statuses need colors
-        # self._set_color(self.focus_val, STATUS.STANDBY)
-        # self._set_color(self.flowrate_val, STATUS.STANDBY)
+        self._set_color(self.focus_val, STATUS.DEFAULT)
+        self._set_color(self.flowrate_val, STATUS.DEFAULT)
 
     def _load_liveview_ui(self):
         # Set up liveview layout + widget

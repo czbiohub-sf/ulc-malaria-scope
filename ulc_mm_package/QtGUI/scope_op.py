@@ -35,10 +35,11 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
-    STATUS,
     TIMEOUT_M_PERIOD,
     TIMEOUT_S_PERIOD,
     TH_PERIOD,
+    STATUS,
+    ERROR_BEHAVIORS,
 )
 
 # TODO populate info?
@@ -65,7 +66,7 @@ class ScopeOp(QObject, NamedMachine):
 
     yield_mscope = pyqtSignal(MalariaScope)
 
-    error = pyqtSignal(str, str, bool)
+    error = pyqtSignal(str, str, int)
 
     send_pause = pyqtSignal(str, str)
 
@@ -234,7 +235,7 @@ class ScopeOp(QObject, NamedMachine):
                 "The following component(s) could not be instantiated: {}.".format(
                     (", ".join(failed_components)).capitalize()
                 ),
-                True,
+                ERROR_BEHAVIORS.INSTANT_ABORT.value,
             )
 
     def start(self):
@@ -306,13 +307,15 @@ class ScopeOp(QObject, NamedMachine):
             self.error.emit(
                 "Calibration failed",
                 "Failed to read pressure sensor to perform pressure seal check.",
-                False,
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
         except PressureLeak as e:
             self.logger.error(f"Improper seal / pressure leak detected - {e}")
             # TODO provide instructions for dealing with pressure leak?
             self.error.emit(
-                "Calibration failed", "Improper seal / pressure leak detected.", False
+                "Calibration failed",
+                "Improper seal / pressure leak detected.",
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
 
     def _start_cellfinder(self, *args):
@@ -420,12 +423,16 @@ class ScopeOp(QObject, NamedMachine):
             self.error.emit(
                 "Autobrightness failed",
                 "LED is too dim to run experiment.",
-                False,
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
         except LEDNoPower as e:
             if not SIMULATION:
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
-                self.error.emit("LED failure", "The off/on LED test failed.", False)
+                self.error.emit(
+                    "LED failure",
+                    "The off/on LED test failed.",
+                    ERROR_BEHAVIORS.DEFAULT.value,
+                )
             else:
                 self.next_state()
         else:
@@ -450,7 +457,11 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
         except NoCellsFound:
             self.logger.error("Cellfinder failed. No cells found.")
-            self.error.emit("Calibration failed", "No cells found.", False)
+            self.error.emit(
+                "Calibration failed",
+                "No cells found.",
+                ERROR_BEHAVIORS.DEFAULT.value,
+            )
         else:
             if self.running:
                 self.img_signal.connect(self.run_cellfinder)
@@ -485,7 +496,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.error.emit(
                     "Calibration failed",
                     "Unable to achieve focus because the stage has reached its range of motion limit..",
-                    False,
+                    ERROR_BEHAVIORS.DEFAULT.value,
                 )
 
     @pyqtSlot(np.ndarray, float)
@@ -501,40 +512,24 @@ class ScopeOp(QObject, NamedMachine):
 
             if flowrate != None:
                 self.update_flowrate.emit(flowrate)
-        except CantReachTargetFlowrate:
-            if SIMULATION:
-                self.fastflow_result = self.target_flowrate
-                self.logger.info(
-                    f"Fastflow successful. Flowrate (simulated) = {self.fastflow_result}."
-                )
-                self.update_flowrate.emit(self.fastflow_result)
-                self.next_state()
-            else:
-                self.fastflow_result = -1
-                self.logger.error("Fastflow failed. Syringe already at max position.")
-                self.error.emit(
-                    "Calibration failed",
-                    "Unable to achieve desired flowrate with syringe at max position.",
-                    False,
-                )
+        except CantReachTargetFlowrate as e:
+            self.fastflow_result = e.flowrate
+            self.logger.error("Fastflow failed. Syringe already at max position.")
+            self.error.emit(
+                "Calibration issue",
+                "Unable to achieve target flowrate with syringe at max position. Continue running anyways?",
+                ERROR_BEHAVIORS.YN.value,
+            )
+            self.update_flowrate.emit(self.fastflow_result)
         except LowConfidenceCorrelations:
-            if SIMULATION:
-                self.fastflow_result = self.target_flowrate
-                self.logger.info(
-                    f"Fastflow successful. Flowrate (simulated) = {self.fastflow_result}."
-                )
-                self.update_flowrate.emit(self.fastflow_result)
-                self.next_state()
-            else:
-                self.fastflow_result = -1
-                self.logger.error(
-                    "Fastflow failed. Too many recent low confidence xcorr calculations."
-                )
-                self.error.emit(
-                    "Calibration failed",
-                    "Too many recent low confidence xcorr calculations",
-                    False,
-                )
+            self.fastflow_result = -1
+            self.logger.error(
+                "Fastflow failed. Too many recent low confidence xcorr calculations."
+            )
+            self.error.emit(
+                "Calibration failed",
+                "Too many recent low confidence xcorr calculations",
+            )
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
@@ -625,7 +620,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
-                        False,
+                        ERROR_BEHAVIORS.DEFAULT.value,
                     )
                     return
                 else:
@@ -643,26 +638,15 @@ class ScopeOp(QObject, NamedMachine):
             try:
                 flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
-                if not SIMULATION:
-                    self.logger.error(
-                        "Flow control failed. Syringe already at max position."
-                    )
-                    self.error.emit(
-                        "Flow control failed",
-                        "Unable to achieve desired flowrate with syringe at max position.",
-                        False,
-                    )
-                    return
-                else:
-                    self.logger.warning(
-                        f"Ignoring flowcontrol exception in simulation mode - {e}"
-                    )
-                    flowrate = None
+                self.logger.warning(
+                    f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
+                )
+                flowrate = None
 
-                    self.flowcontrol_routine = flowControlRoutine(
-                        self.mscope, self.target_flowrate, None
-                    )
-                    self.flowcontrol_routine.send(None)
+                self.flowcontrol_routine = flowControlRoutine(
+                    self.mscope, self.target_flowrate, None
+                )
+                self.flowcontrol_routine.send(None)
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
