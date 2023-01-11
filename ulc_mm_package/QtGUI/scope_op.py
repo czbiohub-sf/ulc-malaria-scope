@@ -31,7 +31,7 @@ from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AF_BATCH_SIZE,
     YOGO_CLASS_LIST,
-    YOGO_PERIOD_S
+    YOGO_PERIOD_S,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
