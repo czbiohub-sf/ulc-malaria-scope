@@ -552,6 +552,7 @@ class ScopeOp(QObject, Machine):
                 filtered_prediction = YOGO.filter_res(result.result)
 
                 class_counts = YOGO.class_instance_count(filtered_prediction)
+                # very rough interpolation: ~30 FPS * period between YOGO calls * counts
                 class_counts = class_counts * YOGO_PERIOD_S * 30
                 self.cell_counts += class_counts
 
