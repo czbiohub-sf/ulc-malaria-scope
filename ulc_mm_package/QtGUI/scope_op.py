@@ -31,6 +31,7 @@ from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AF_BATCH_SIZE,
     YOGO_CLASS_LIST,
+    YOGO_PERIOD_S
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
@@ -551,6 +552,7 @@ class ScopeOp(QObject, Machine):
                 filtered_prediction = YOGO.filter_res(result.result)
 
                 class_counts = YOGO.class_instance_count(filtered_prediction)
+                class_counts = class_counts * YOGO_PERIOD_S * 30
                 self.cell_counts += class_counts
 
                 try:
