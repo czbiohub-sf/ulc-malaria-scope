@@ -31,6 +31,8 @@ from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AF_BATCH_SIZE,
     YOGO_CLASS_LIST,
+    YOGO_PERIOD_S,
+    YOGO_CLASS_IDX_MAP,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
@@ -365,6 +367,9 @@ class ScopeOp(QObject, NamedMachine):
         self.density_routine = cell_density_routine()
         self.density_routine.send(None)
 
+        self.count_parasitemia_routine = count_parasitemia_periodic_wrapper(self.mscope)
+        self.count_parasitemia_routine.send(None)
+
         self.set_period.emit(LIVEVIEW_PERIOD)
 
         self.TH_time = perf_counter()
@@ -572,9 +577,10 @@ class ScopeOp(QObject, NamedMachine):
             self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
             t0 = perf_counter()
-            prev_yogo_results: List[AsyncInferenceResult] = count_parasitemia(
-                self.mscope, img, self.count
-            )
+            prev_yogo_results: List[
+                AsyncInferenceResult
+            ] = self.count_parasitemia_routine.send((img, self.count))
+
             t1 = perf_counter()
             self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
 
@@ -585,6 +591,10 @@ class ScopeOp(QObject, NamedMachine):
                 filtered_prediction = YOGO.filter_res(result.result)
 
                 class_counts = YOGO.class_instance_count(filtered_prediction)
+                # very rough interpolation: ~30 FPS * period between YOGO calls * counts
+                class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
+                    class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_S * 30
+                )
                 self.cell_counts += class_counts
 
                 self._update_metadata_if_verbose(
