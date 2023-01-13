@@ -277,6 +277,7 @@ class Oracle(Machine):
 
         if not SIMULATION and not DataStorage.is_there_sufficient_storage(self.ext_dir):
             self.ssd_full_msg_and_exit()
+            sys.exit(1)
 
     def ssd_full_msg_and_exit(self):
         print(
@@ -290,7 +291,6 @@ class Oracle(Machine):
             buttons=BUTTONS.OK,
             instant_abort=False,
         )
-        sys.exit(1)
 
     def pause_receiver(self, title, message):
         self.scopeop.to_pause()
@@ -533,6 +533,7 @@ class Oracle(Machine):
                 self.ext_dir
             ):
                 self.ssd_full_msg_and_exit()
+                self.shutoff()
             self.scopeop.rerun()
 
     def shutoff(self):
