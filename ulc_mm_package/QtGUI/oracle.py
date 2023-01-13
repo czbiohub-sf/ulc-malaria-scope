@@ -529,7 +529,9 @@ class Oracle(Machine):
             self.shutoff()
         elif message_result == QMessageBox.Yes:
             self.logger.info("Starting new experiment.")
-            if not SIMULATION and not DataStorage.is_there_sufficient_storage():
+            if not SIMULATION and not DataStorage.is_there_sufficient_storage(
+                self.ext_dir
+            ):
                 self.ssd_full_msg_and_exit()
             self.scopeop.rerun()
 
