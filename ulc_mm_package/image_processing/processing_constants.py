@@ -1,4 +1,5 @@
 import enum
+from ulc_mm_package.scope_constants import SIMULATION
 
 # ================ Flowrate options ================ #
 class FLOWRATE(enum.Enum):
@@ -32,7 +33,10 @@ MS_PER_FRAME = 33
 TARGET_FLOWRATE = 1000 / (DESIRED_FRAMES_PER_CELL * MS_PER_FRAME)
 
 # ================ Data storage constants ================ #
-MIN_GB_REQUIRED = 50
+if SIMULATION:
+    MIN_GB_REQUIRED = 0.1  # 100 MB
+else:
+    MIN_GB_REQUIRED = 50
 NUM_SUBSEQUENCES = 10
 SUBSEQUENCE_LENGTH = 10
 

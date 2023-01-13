@@ -275,7 +275,7 @@ class Oracle(Machine):
                 sys.exit(1)
         print(f"Saving data to {self.ext_dir}")
 
-        if not SIMULATION and not DataStorage.is_there_sufficient_storage(self.ext_dir):
+        if not DataStorage.is_there_sufficient_storage(self.ext_dir):
             self.ssd_full_msg_and_exit()
             sys.exit(1)
 
@@ -529,9 +529,7 @@ class Oracle(Machine):
             self.shutoff()
         elif message_result == QMessageBox.Yes:
             self.logger.info("Starting new experiment.")
-            if not SIMULATION and not DataStorage.is_there_sufficient_storage(
-                self.ext_dir
-            ):
+            if not DataStorage.is_there_sufficient_storage(self.ext_dir):
                 self.ssd_full_msg_and_exit()
                 self.shutoff()
             self.scopeop.rerun()
