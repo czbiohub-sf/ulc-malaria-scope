@@ -479,19 +479,19 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             perf_counter() - prev_time
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
-            inference_results = yield prev_measurements[
-                (idx - 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
-            ]
+            inference_results = yield prev_measurements[idx]
 
             batch_dim, pred_dim, num_predictions = inference_results.shape
             prev_measurements[idx] = num_predictions
 
             idx = (idx + 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
 
+            # number of elements of prev_measurements that is less than MIN_CELL_COUNT
             num_low_density = (
                 prev_measurements < processing_constants.MIN_CELL_COUNT
             ).sum()
-            density_threshold = 0.9 * processing_constants.CELL_DENSITY_HISTORY_LEN
+
+            density_threshold = 0.95 * processing_constants.CELL_DENSITY_HISTORY_LEN
 
             if num_low_density > density_threshold:
                 raise LowDensity(
