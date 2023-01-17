@@ -280,7 +280,7 @@ class Oracle(Machine):
             sys.exit(1)
 
     def ssd_full_msg_and_exit(self):
-        print(
+        self.logger.warning(
             f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
         )
         self.display_message(
@@ -532,7 +532,8 @@ class Oracle(Machine):
             if not DataStorage.is_there_sufficient_storage(self.ext_dir):
                 self.ssd_full_msg_and_exit()
                 self.shutoff()
-            self.scopeop.rerun()
+            else:
+                self.scopeop.rerun()
 
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")
