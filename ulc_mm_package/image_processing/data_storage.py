@@ -15,8 +15,9 @@ from ulc_mm_package.image_processing.processing_constants import (
     MIN_GB_REQUIRED,
     NUM_SUBSEQUENCES,
     SUBSEQUENCE_LENGTH,
-    MAX_FRAMES,
 )
+
+from ulc_mm_package.scope_constants import MAX_FRAMES
 
 
 class DataStorageError(Exception):

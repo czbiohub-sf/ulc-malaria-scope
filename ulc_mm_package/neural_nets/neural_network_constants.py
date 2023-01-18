@@ -1,6 +1,6 @@
 import pathlib
 
-curr_dir = pathlib.Path(".")
+curr_dir = pathlib.Path(".").resolve()  # Get full path
 
 # ================ Autofocus constants ================ #
 AF_PERIOD_S = 10
