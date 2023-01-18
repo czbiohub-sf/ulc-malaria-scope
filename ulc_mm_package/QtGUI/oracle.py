@@ -181,10 +181,12 @@ class Oracle(Machine):
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
         self.form_window.exit_btn.clicked.connect(self.form_exit_handler)
+        self.form_window.close_event.connect(self.form_exit_handler)
 
         # Connect liveview buttons
         self.liveview_window.pause_btn.clicked.connect(self.pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
+        self.liveview_window.close_event.connect(self.liveview_exit_handler)
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.next_state)
