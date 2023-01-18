@@ -48,7 +48,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ERROR_BEHAVIORS,
 )
 
-from ulc_mm_package.utilities.email_utils import send_ngrok_email
+from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -275,19 +275,22 @@ class Oracle(Machine):
                 sys.exit(1)
         print(f"Saving data to {self.ext_dir}")
 
-        if not SIMULATION and not DataStorage.is_there_sufficient_storage(self.ext_dir):
-            print(
-                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
-            )
-            self.display_message(
-                QMessageBox.Icon.Critical,
-                "SSD is full",
-                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
-                + _ERROR_MSG,
-                buttons=BUTTONS.OK,
-                instant_abort=False,
-            )
+        if not DataStorage.is_there_sufficient_storage(self.ext_dir):
+            self.ssd_full_msg_and_exit()
             sys.exit(1)
+
+    def ssd_full_msg_and_exit(self):
+        self.logger.warning(
+            f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+        )
+        self.display_message(
+            QMessageBox.Icon.Critical,
+            "SSD is full",
+            f"The SSD is full. Data cannot be saved if the SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            + _ERROR_MSG,
+            buttons=BUTTONS.OK,
+            instant_abort=False,
+        )
 
     def pause_receiver(self, title, message):
         self.scopeop.to_pause()
@@ -526,7 +529,11 @@ class Oracle(Machine):
             self.shutoff()
         elif message_result == QMessageBox.Yes:
             self.logger.info("Starting new experiment.")
-            self.scopeop.rerun()
+            if not DataStorage.is_there_sufficient_storage(self.ext_dir):
+                self.ssd_full_msg_and_exit()
+                self.shutoff()
+            else:
+                self.scopeop.rerun()
 
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")
