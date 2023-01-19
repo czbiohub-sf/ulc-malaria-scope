@@ -32,7 +32,7 @@ LIVEVIEW_PERIOD = 1000
 TH_PERIOD = 5
 
 # ================ Experiment timeout period ================ #
-TIMEOUT_M_PERIOD = 10  # minutes
+TIMEOUT_M_PERIOD = 20  # minutes
 TIMEOUT_S_PERIOD = TIMEOUT_M_PERIOD * 60  # seconds
 
 # ================ Media/links ================ #
