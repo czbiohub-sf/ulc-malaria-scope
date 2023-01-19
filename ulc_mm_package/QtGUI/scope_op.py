@@ -355,7 +355,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_signal.connect(self.run_fastflow)
 
-    def _start_experiment(self):
+    def _start_experiment(self, *args):
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope)
         self.PSSAF_routine.send(None)
 
