@@ -36,7 +36,6 @@ from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
 class LiveviewGUI(QMainWindow):
-
     def __init__(self):
         self.metadata = None
         self.terminal_msg = ""

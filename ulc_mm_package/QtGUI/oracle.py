@@ -83,7 +83,7 @@ class NoCloseMessageBox(QMessageBox):
 
         # Disable [x] button
         self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)        
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
 
 
 class Oracle(Machine):
