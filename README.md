@@ -42,13 +42,16 @@ You will also need to have a video saved locally, which will replace the camera 
 
 You can do the required development on the Pi through SSH. You have two options.
 
-1. Rendering "offscreen": This can be done by setting the environment variable `QT_QPA_PLATFORM=offscreen`.
+##### Rendering "offscreen"
+This can be done by setting the environment variable `QT_QPA_PLATFORM=offscreen`.
 
-2. X11 forwarding:
+##### X11 forwarding
 
 On Mac, you have to setup [XQuartz](https://www.xquartz.org/). To use X11 forwarding in XQuartz, `ssh` into your pi with the `-Y` option (safe X11 forwarding). You should then be able to run any command with a GUI, and one should pop up on screen.
 
-On Windows, use PuTTY to start an SSH session. Under the settings for `Connection/SSH/X11` make sure "Enable X11 forwarding" is checked and under the settings for `Connection` set "Seconds between keepalives" to 0.
+On Windows, you have to install [XMing](https://sourceforge.net/projects/xming/). Start the X Server and open an SSH session using PuTTY. In PuTTY, make sure you have the following settings configured:
+* Under `Connection/SSH/X11` make sure "Enable X11 forwarding" is checked 
+* Under `Connection` set "Seconds between keepalives" to 0.
 
 #### Remote SSH using `ngrok`
 1. Set up `ngrok` on a new device by:
