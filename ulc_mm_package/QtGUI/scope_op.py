@@ -187,7 +187,7 @@ class ScopeOp(QObject, NamedMachine):
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.TH_time = None
-        self.start_time = None
+        self.start_time = 0
         self.accumulated_time = 0
 
         self.update_img_count.emit(0)
@@ -223,6 +223,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope = MalariaScope()
         self.yield_mscope.emit(self.mscope)
+        self.mscope.set_gpio_callback(self.lid_open_pause_handler)
         component_status = self.mscope.getComponentStatus()
 
         if all([status == True for status in component_status.values()]):
@@ -275,7 +276,7 @@ class ScopeOp(QObject, NamedMachine):
         self.running = False
 
         self.accumulated_time += perf_counter() - self.start_time
-        self.start_time = None
+        self.start_time = 0
 
         try:
             self.img_signal.disconnect()
