@@ -2,43 +2,35 @@
 
 Welcome to the ULC Malaria Scope! We are developing a barebones optical microscope with embedded computing hardware capable of diagnosing malaria in fresh, whole blood with no fixation, staining, or preparation steps. No highly trained technicians will be required to perform time-consuming sample preparation or manual scoring of parasites under the microscope. The target BOM cost is $250.
 
-## Introduction
+## Operation
 
-## Optics
+To start the software, navigate to ulc_mm_package/QtGUI and run `python3 oracle.py`.
 
-## Realtime malaria detection
+To debug using developer mode, navigate to ulc_mm_package/QtGUI and run `python3 dev_run.py`. This opens a GUI with manual hardware control for debugging purposes.
 
-## Hardware
 
-## Flow cell
+## Instrument specifications
 
-### Flexure-based autofocus
+### Optics
 
-## Software operation
+### Realtime malaria detection
 
-### Development
+### Hardware
 
-Before commiting, make sure to run
+### Flow cell
 
-`black .`
+#### Flexure-based autofocus
 
-in the root of this project. This will autoformat your files for you.
+
+## Software development
+
+Before commiting, make sure to run `black .` in the root of this project. This will autoformat your files for you.
 
 ### Installing dependencies
 
 In the root folder, run `pip install -e .` to install all pip dependencies.
 
 To develop, run `pip install -e .[dev]`
-
-### Running the GUI
-
-Navigate to ulc_mm_package/QtGUI and run `python3 oracle.py`.
-
-Note: The original GUI lived in `liveviewer.py`, which is now obsolete. Use the above command instead.
-
-### Debugging using developer mode
-
-Navigate to ulc_mm_package/QtGUI and run `python3 dev_run.py`. This opens a GUI with manual hardware control for debugging purposes.
 
 ### Using simulation mode
 
@@ -50,9 +42,13 @@ You will also need to have a video saved locally, which will replace the camera 
 
 You can do the required development on the Pi through SSH. You have two options.
 
-The first is rendering "offscreen". This can be done by setting the environment variable `QT_QPA_PLATFORM=offscreen`.
+1. Rendering "offscreen": This can be done by setting the environment variable `QT_QPA_PLATFORM=offscreen`.
 
-The next thing is X11 forwarding. On Mac, you have to setup [XQuartz](https://www.xquartz.org/), and you will probably have to do something different on different platforms. To use X11 forwarding, `ssh` into your pi with the `-Y` option (safe X11 forwarding). You should then be able to run any command with a GUI, and one should pop up on screen.
+2. X11 forwarding:
+
+On Mac, you have to setup [XQuartz](https://www.xquartz.org/). To use X11 forwarding in XQuartz, `ssh` into your pi with the `-Y` option (safe X11 forwarding). You should then be able to run any command with a GUI, and one should pop up on screen.
+
+On Windows, use PuTTY to start an SSH session. Under the settings for `Connection/SSH/X11` make sure "Enable X11 forwarding" is checked and under the settings for `Connection` set "Seconds between keepalives" to 0.
 
 #### Remote SSH using `ngrok`
 1. Set up `ngrok` on a new device by:
