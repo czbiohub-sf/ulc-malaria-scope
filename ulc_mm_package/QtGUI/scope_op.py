@@ -533,7 +533,8 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.error.emit(
                 "Calibration failed",
-                "Too many recent low confidence xcorr calculations",
+                "Too many recent low confidence xcorr calculations.",
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
         except StopIteration as e:
             self.fastflow_result = e.value
