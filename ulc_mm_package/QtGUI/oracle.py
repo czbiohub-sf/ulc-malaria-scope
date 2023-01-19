@@ -77,6 +77,15 @@ class ShutoffApplication(QApplication):
         self.shutoff.connect(func)
 
 
+class NoCloseMessageBox(QMessageBox):
+    def __init__(self):
+        super().__init__()
+
+        # Disable [x] button
+        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)        
+
+
 class Oracle(Machine):
     def __init__(self):
         self.shutoff_done = False
@@ -181,12 +190,10 @@ class Oracle(Machine):
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
         self.form_window.exit_btn.clicked.connect(self.form_exit_handler)
-        self.form_window.close_event.connect(self.form_exit_handler)
 
         # Connect liveview buttons
         self.liveview_window.pause_btn.clicked.connect(self.pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
-        self.liveview_window.close_event.connect(self.liveview_exit_handler)
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.next_state)
@@ -349,6 +356,8 @@ class Oracle(Machine):
         )
         if message_result == QMessageBox.Ok:
             self.shutoff()
+        else:
+            print("HI")
 
     def liveview_exit_handler(self):
         message_result = self.display_message(
@@ -383,7 +392,7 @@ class Oracle(Machine):
     ):
         self.message_window.close()
 
-        self.message_window = QMessageBox()
+        self.message_window = NoCloseMessageBox()
         self.message_window.setWindowIcon(QIcon(ICON_PATH))
         self.message_window.setIcon(icon)
         self.message_window.setWindowTitle(f"{title}")

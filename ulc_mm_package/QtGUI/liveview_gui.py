@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QScrollBar,
 )
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSlot, Qt
 from PyQt5.QtGui import QPixmap, QIcon
 
 from ulc_mm_package.neural_nets.neural_network_constants import (
@@ -36,7 +36,6 @@ from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
 class LiveviewGUI(QMainWindow):
-    close_event = pyqtSignal()
 
     def __init__(self):
         self.metadata = None
@@ -44,9 +43,6 @@ class LiveviewGUI(QMainWindow):
 
         super().__init__()
         self._load_main_ui()
-
-    def closeEvent(self, event):
-        self.close_event.emit()
 
     def update_experiment(self, metadata: dict):
         # TODO standardize dict input
@@ -148,6 +144,10 @@ class LiveviewGUI(QMainWindow):
         # Populate window
         self.main_layout.addWidget(self.tab_widget, 0, 0)
         self.main_layout.addWidget(self.infopanel_widget, 0, 1)
+
+        # Disable [x] button
+        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
 
     def _load_infopanel_ui(self):
         # Set up infopanel layout + widget
