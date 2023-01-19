@@ -310,7 +310,7 @@ class Oracle(Machine):
         self.display_message(
             icon=QMessageBox.Icon.Warning,
             title="Lid opened, run paused",
-            message=(
+            text=(
                 "The lid was opened during a run. The experiment has been paused. "
                 "Close the lid and then press okay to resume the run. "
             ),
