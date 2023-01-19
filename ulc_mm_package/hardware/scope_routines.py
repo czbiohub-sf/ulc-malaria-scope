@@ -1,11 +1,15 @@
-from typing import List, Tuple, Optional, Sequence, Generator
-from time import perf_counter
+from typing import List, Tuple, Optional, Sequence, Generator, Union
+from time import perf_counter, sleep
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
+from ulc_mm_package.hardware.hardware_modules import PressureLeak, PressureSensorBusy
+from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
+
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
+from ulc_mm_package.neural_nets.neural_network_modules import AsyncInferenceResult
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
 
@@ -134,6 +138,27 @@ def count_parasitemia(
     return results
 
 
+def count_parasitemia_periodic_wrapper(
+    mscope: MalariaScope,
+) -> Generator[
+    Optional[List[AsyncInferenceResult]],
+    Tuple[np.ndarray, Optional[int]],
+    None,
+]:
+    prev_time = 0
+
+    while True:
+        if perf_counter() - prev_time > nn_constants.YOGO_PERIOD_S:
+            img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
+            mscope.cell_diagnosis_model(img, counts)
+            prev_time = perf_counter()
+        else:
+            (
+                _,
+                _,
+            ) = yield []
+
+
 def flowControlRoutine(
     mscope: MalariaScope, target_flowrate: float, img: np.ndarray
 ) -> Generator[float, np.ndarray, None]:
@@ -209,6 +234,10 @@ def fastFlowRoutine(
     CantReachTargetFlowrate:
         Raised when the syringe is already at its maximally extended position but the flowrate
         is still outside the tolerance band.
+
+    LowConfidenceCorrelations:
+        Raised if the number of recent xcorrs which have 'failed' (had a low correlation value) exceeds
+        2 * the measurement window size.
     """
 
     flow_val = 0
@@ -222,6 +251,8 @@ def fastFlowRoutine(
         try:
             flow_val, flow_error = flow_controller.fastFlowAdjustment(img, timestamp)
         except CantReachTargetFlowrate:
+            raise
+        except LowConfidenceCorrelations:
             raise
 
         if flow_error == 0:
@@ -252,12 +283,16 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
                 val = e.value
 
     BrightnessCriticallyLow:
-        The targeg was not achieved and the brightness is too low to continue
+        The target was not achieved and the brightness is too low to continue
         with the run. The mean pixel brightness value can be accessed by:
             try:
                 ...
             exception BrightTargetNotAchieved as e:
                 val = e.value
+
+    LEDNoPower:
+        The initial check for LED functionality (comparing an image taken with the LED off vs. LED at full power)
+        failed. This means that the LED is likely not working (perhaps a cable is loose or the LED is dead).
 
     Usage
     -----
@@ -276,25 +311,86 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
         cam.stopAcquisition()
         print(mean_brightness_val)
     """
-
     autobrightness = Autobrightness(mscope.led)
     brightness_achieved = False
 
+    # First set the LED off and acquire an image
+    mscope.led.turnOff()
+    sleep(0.25)
+    img_off = yield
+
+    # Turn the led on to max and acquire an image
+    mscope.led.turnOn()
+    mscope.led.setDutyCycle(1)
+    sleep(0.25)
+    img_on = yield
+    checkLedWorking(img_off, img_on, n_devs=3)
+
+    # Turn the led back to 0
+    sleep(0.25)
+    mscope.led.setDutyCycle(0)
+
+    # Run autobrightness
     while not brightness_achieved:
-        img = yield img
+        img = yield
         try:
             brightness_achieved = autobrightness.runAutobrightness(img)
         except BrightnessTargetNotAchieved as e:
-            # TODO switch to logging
-            print(f"Autobrightness routine exception : {e}")
             raise
         except BrightnessCriticallyLow as e:
-            # TODO switch to logging
-            print(f"Autobrightness routine exception : {e}")
             raise
 
     # Get the mean image brightness to store in the experiment metadata
     return autobrightness.prev_mean_img_brightness
+
+
+def checkPressureDifference(mscope: MalariaScope) -> float:
+    """Check the pressure differential. Raises an exception if difference is insufficent
+    or if the pressure sensor cannot be read.
+
+    Returns
+    -------
+    float:
+        Pressure difference value
+
+    Exceptions
+    ----------
+    PressureSensorBusy:
+        Raised if a valid value cannot be read from the sensor after the specified number of max_attempts
+    PressureLeak:
+        Raised if the pressure difference between the fully extended and retracted syringe is insufficient.
+    """
+
+    # Record pre-pull pressure
+    try:
+        initial_pressure, _ = mscope.pneumatic_module.getPressureMaxReadAttempts(
+            max_attempts=10
+        )
+    except PressureSensorBusy:
+        raise
+
+    # Move syringe to its maximally extended (lowest) position
+    mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
+
+    # Record pressure at the bottom of the syringe range
+    try:
+        final_pressure, _ = mscope.pneumatic_module.getPressureMaxReadAttempts(
+            max_attempts=10
+        )
+    except PressureSensorBusy:
+        raise
+
+    # Check if there is a pressure leak
+    pressure_diff = initial_pressure - final_pressure
+    if pressure_diff < MIN_PRESSURE_DIFF:
+        raise PressureLeak(
+            f"Pressure leak detected, could only generate {pressure_diff} hPa pressure differential."
+        )
+    else:
+        # Return syringe to its initial position
+        mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
+
+        return pressure_diff
 
 
 def find_cells_routine(
@@ -339,9 +435,8 @@ def find_cells_routine(
         Raised if no cells found after max_attempts iterations
     """
 
-    max_attempts = (
-        3  # Maximum number of times to run check for cells routine before aborting
-    )
+    # Maximum number of times to run check for cells routine before aborting
+    max_attempts = 3
     cell_finder = CellFinder()
     img = yield
 
@@ -366,6 +461,7 @@ def find_cells_routine(
         # Pull the syringe maximally for `pull_time` seconds
         start = perf_counter()
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
+
         while perf_counter() - start < pull_time:
             img = yield
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
@@ -397,14 +493,21 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             perf_counter() - prev_time
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
-            inference_results = yield prev_measurements[(idx - 1) % 10]
+            inference_results = yield prev_measurements[idx]
 
             batch_dim, pred_dim, num_predictions = inference_results.shape
             prev_measurements[idx] = num_predictions
 
-            idx = (idx + 1) % len(prev_measurements)
+            idx = (idx + 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
 
-            if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):
+            # number of elements of prev_measurements that is less than MIN_CELL_COUNT
+            num_low_density = (
+                prev_measurements < processing_constants.MIN_CELL_COUNT
+            ).sum()
+
+            density_threshold = 0.95 * processing_constants.CELL_DENSITY_HISTORY_LEN
+
+            if num_low_density > density_threshold:
                 raise LowDensity(
                     f"mean density over last {processing_constants.CELL_DENSITY_HISTORY_LEN} "
                     f"is {np.mean(prev_measurements)} cells - should be over {processing_constants.MIN_CELL_COUNT}"
@@ -413,4 +516,4 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             prev_time = perf_counter()
         else:
             # if we haven't waited period yet, yield immediately
-            yield
+            yield None

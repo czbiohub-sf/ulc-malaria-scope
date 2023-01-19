@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QPlainTextEdit,
     QComboBox,
+    QDesktopWidget,
 )
 from PyQt5.QtGui import QIcon
 
@@ -62,7 +63,7 @@ class FormGUI(QDialog):
         self.notes_val = QPlainTextEdit()
 
         # Buttons
-        self.exit_btn = QPushButton("Cancel")
+        self.exit_btn = QPushButton("Exit")
         self.start_btn = QPushButton("Start")
 
         # Dropdown menus
@@ -71,6 +72,9 @@ class FormGUI(QDialog):
 
         self.flowrate_val.addItems(FLOWRATE_LIST)
         self.site_val.addItems(SITE_LIST)
+
+        # Set default flowrate to "Medium"
+        self.flowrate_val.setCurrentIndex(1)
 
         # Disable buttons at startup
         self.exit_btn.setEnabled(False)
@@ -112,6 +116,12 @@ class FormGUI(QDialog):
         self.operator_val.setFocus()
         self.start_btn.setDefault(True)
 
+        # Move window to middle of screen
+        window_geometry = self.frameGeometry()
+        centerpoint = QDesktopWidget().availableGeometry().center()
+        window_geometry.moveCenter(centerpoint)
+        self.move(window_geometry.topLeft())
+
     def unfreeze_buttons(self):
         self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
 
@@ -148,6 +158,13 @@ class FormGUI(QDialog):
             raise KeyError("Detected invalid experiment metadata key(s)")
 
         return form_metadata
+
+    def reset_parameters(self) -> None:
+        """Clear specific inputs which are expected to be unique for the next run."""
+
+        self.participant_val.setText("")
+        self.flowcell_val.setText("")
+        self.notes_val.setPlainText("")
 
 
 if __name__ == "__main__":

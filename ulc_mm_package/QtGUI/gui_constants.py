@@ -5,15 +5,23 @@ from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 # ================ Status colors ================ #
 class STATUS(enum.Enum):
+    DEFAULT = "whitesmoke"
     STANDBY = "lightgray"
     IN_PROGRESS = "yellow"
     GOOD = "lightgreen"
-    BAD = "red"
+    BAD = "lightsalmon"
+
+
+# ================ Oracle error options ================ #
+class ERROR_BEHAVIORS(enum.Enum):
+    DEFAULT = 0
+    INSTANT_ABORT = 1
+    YN = 2
 
 
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
-SITE_LIST = ["Tororo, Uganda"]
+SITE_LIST = ["Tororo, Uganda", "Biohub SF", "DeRisi Lab"]
 
 # ================ FPS constants ================ #
 ACQUISITION_PERIOD = 1000.0 / 30.0
@@ -23,10 +31,9 @@ LIVEVIEW_PERIOD = 1000
 # TH sensor update period
 TH_PERIOD = 5
 
-# ================ Experiment timeout ================ #
-MAX_FRAMES = 20000  # Rounded up from 10 minutes of data at 30 FPS
-if SIMULATION:
-    MAX_FRAMES = 2000
+# ================ Experiment timeout period ================ #
+TIMEOUT_M_PERIOD = 20  # minutes
+TIMEOUT_S_PERIOD = TIMEOUT_M_PERIOD * 60  # seconds
 
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"

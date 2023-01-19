@@ -193,14 +193,13 @@ class NCSModel:
         """
         input_tensor = self._format_image_to_tensor(input_img)
 
+        f = self._executor.submit(
+            self.asyn_infer_queue.start_async,
+            inputs={0: input_tensor},
+            userdata=id,
+        )
         with lock_timeout(self.futures_lock):
-            self._futures.append(
-                self._executor.submit(
-                    self.asyn_infer_queue.start_async,
-                    inputs={0: input_tensor},
-                    userdata=id,
-                )
-            )
+            self._futures.append(f)
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01, wait_for_results: bool = False
@@ -220,10 +219,9 @@ class NCSModel:
                 if not f.done():
                     futures.append(f)
                 else:
-                    exc = f.exception()
-                    if exc is not None:
-                        # exceptions here are not-expected and critical so raise them
-                        raise exc
+                    # this will return a result, or will raise an exception
+                    # if the future encountered one
+                    f.result()
 
             self._futures = futures
 
@@ -233,19 +231,19 @@ class NCSModel:
         with lock_timeout(self.asyn_result_lock, timeout=timeout):
             res = copy(self._asyn_results)
             self._asyn_results = []
-            return res
+
+        return res
 
     def wait_all(self):
         """wait for all pending InferRequests to resolve"""
         self.asyn_infer_queue.wait_all()
 
     def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
+        r = AsyncInferenceResult(
+            id=userdata, result=infer_request.output_tensors[0].data[:]
+        )
         with lock_timeout(self.asyn_result_lock):
-            self._asyn_results.append(
-                AsyncInferenceResult(
-                    id=userdata, result=infer_request.output_tensors[0].data[:]
-                )
-            )
+            self._asyn_results.append(r)
 
     def _cb(
         self, result_list: List, infer_request: InferRequest, userdata: Any
