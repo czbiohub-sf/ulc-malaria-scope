@@ -58,6 +58,7 @@ class FlowRateEstimator:
         self._calc_idx = 0
         self.scale_factor = scale_factor
         self.coeff_of_var_thresh = coeff_of_var_thresh
+        self.failed_corr_counter = 0
 
     def _getAverage(self) -> Tuple[float, float]:
         """Return the mean of the dx and dy displacement arrays"""
@@ -81,11 +82,18 @@ class FlowRateEstimator:
         (float, float, float, float, float, float):
             A tuple of mean (x, y) and SD (x, y)
         """
-        self._calc_idx = 0
+
+        self.reset()
         mx, my = self._getAverage()
         sd_x, sd_y = self._getStandardDeviation()
 
         return (mx, my, sd_x, sd_y)
+
+    def reset(self) -> None:
+        """Reset idx and failed correlations counter."""
+
+        self._calc_idx = 0
+        self.failed_corr_counter = 0
 
     def _addImage(self, img_arr: np.ndarray, timestamp: int):
         """Internal function - add image to the storage with the given timestamp.
@@ -103,6 +111,7 @@ class FlowRateEstimator:
 
     def _calculatePairDisplacement(self):
         if self._frame_counter == 0 and not self.isFull():
+
             dx, dy, confidence = getFlowrateWithCrossCorrelation(
                 self.frame_storage[:, :, 0],
                 self.frame_storage[:, :, 1],
@@ -126,6 +135,7 @@ class FlowRateEstimator:
         """
 
         if confidence <= CORRELATION_THRESH:
+            self.failed_corr_counter += 1
             return False
 
         return True

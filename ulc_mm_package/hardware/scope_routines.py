@@ -9,6 +9,7 @@ from ulc_mm_package.hardware.hardware_modules import PressureLeak, PressureSenso
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
 
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
+from ulc_mm_package.neural_nets.neural_network_modules import AsyncInferenceResult
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
 
@@ -52,7 +53,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) 
 
     try:
         dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-        mscope.motor.move_rel(dir=dir, steps=abs(steps_from_focus))
+        mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
     except MotorControllerError as e:
         raise e
 
@@ -121,6 +122,27 @@ def count_parasitemia(
     results = mscope.cell_diagnosis_model.get_asyn_results()
     mscope.cell_diagnosis_model(img, counts)
     return results
+
+
+def count_parasitemia_periodic_wrapper(
+    mscope: MalariaScope,
+) -> Generator[
+    Optional[List[AsyncInferenceResult]],
+    Tuple[np.ndarray, Optional[int]],
+    None,
+]:
+    prev_time = 0
+
+    while True:
+        if perf_counter() - prev_time > nn_constants.YOGO_PERIOD_S:
+            img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
+            mscope.cell_diagnosis_model(img, counts)
+            prev_time = perf_counter()
+        else:
+            (
+                _,
+                _,
+            ) = yield []
 
 
 def flowControlRoutine(
@@ -198,6 +220,10 @@ def fastFlowRoutine(
     CantReachTargetFlowrate:
         Raised when the syringe is already at its maximally extended position but the flowrate
         is still outside the tolerance band.
+
+    LowConfidenceCorrelations:
+        Raised if the number of recent xcorrs which have 'failed' (had a low correlation value) exceeds
+        2 * the measurement window size.
     """
 
     flow_val = 0
@@ -211,6 +237,8 @@ def fastFlowRoutine(
         try:
             flow_val, flow_error = flow_controller.fastFlowAdjustment(img, timestamp)
         except CantReachTargetFlowrate:
+            raise
+        except LowConfidenceCorrelations:
             raise
 
         if flow_error == 0:
@@ -451,14 +479,21 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             perf_counter() - prev_time
             >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
         ):
-            inference_results = yield prev_measurements[(idx - 1) % 10]
+            inference_results = yield prev_measurements[idx]
 
             batch_dim, pred_dim, num_predictions = inference_results.shape
             prev_measurements[idx] = num_predictions
 
-            idx = (idx + 1) % len(prev_measurements)
+            idx = (idx + 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
 
-            if np.all(prev_measurements < processing_constants.MIN_CELL_COUNT):
+            # number of elements of prev_measurements that is less than MIN_CELL_COUNT
+            num_low_density = (
+                prev_measurements < processing_constants.MIN_CELL_COUNT
+            ).sum()
+
+            density_threshold = 0.95 * processing_constants.CELL_DENSITY_HISTORY_LEN
+
+            if num_low_density > density_threshold:
                 raise LowDensity(
                     f"mean density over last {processing_constants.CELL_DENSITY_HISTORY_LEN} "
                     f"is {np.mean(prev_measurements)} cells - should be over {processing_constants.MIN_CELL_COUNT}"
@@ -467,4 +502,4 @@ def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
             prev_time = perf_counter()
         else:
             # if we haven't waited period yet, yield immediately
-            yield
+            yield None

@@ -84,6 +84,7 @@ class AcquisitionThread(QThread):
         in this function to make the __init__ more readable."""
 
         # Flags and counters
+        self.im_counter = 0
         self.update_liveview = 1
         self.update_counter = 0
         self.num_loops = 50
@@ -182,7 +183,7 @@ class AcquisitionThread(QThread):
             pressure_sensor_status = -1
 
         return {
-            "im_counter": self.data_storage.zw.arr_counter,
+            "im_counter": self.im_counter,
             "measurement_type": "placeholder",
             "sample_type": "placeholder",
             "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
@@ -207,8 +208,9 @@ class AcquisitionThread(QThread):
             self.single_save = False
 
         if self.continuous_save:
-            self.data_storage.writeData(image, self.getMetadata())
+            self.data_storage.writeData(image, self.getMetadata(), self.im_counter)
             self.measurementTime.emit(int(perf_counter() - self.start_time))
+            self.im_counter += 1
 
     def updateGUIElements(self):
         self.update_counter += 1
@@ -262,6 +264,7 @@ class AcquisitionThread(QThread):
             if self.main_dir == None:
                 self.main_dir = self.data_storage.main_dir
 
+            self.im_counter = 0
             self.start_time = perf_counter()
 
     def changeBinningMode(self):
@@ -365,6 +368,12 @@ class AcquisitionThread(QThread):
                 self.stopActiveFlowControl()
                 print(
                     f"Unable to reach target flowrate: {self.target_flowrate}. Disabling active flow control."
+                )
+                self.pressureLeakDetected.emit(1)
+            except LowConfidenceCorrelations:
+                self.stopActiveFlowControl()
+                print(
+                    f"A number of recent xcorr calculations have failed. Disabling active flow control."
                 )
                 self.pressureLeakDetected.emit(1)
 
@@ -662,7 +671,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             )
             end_time = perf_counter()
             start_time = self.acquisitionThread.start_time
-            num_images = self.acquisitionThread.data_storage.zw.arr_counter
+            num_images = self.acquisitionThread.im_counter
             print(
                 f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
             )

@@ -73,6 +73,9 @@ class FormGUI(QDialog):
         self.flowrate_val.addItems(FLOWRATE_LIST)
         self.site_val.addItems(SITE_LIST)
 
+        # Set default flowrate to "Medium"
+        self.flowrate_val.setCurrentIndex(1)
+
         # Disable buttons at startup
         self.exit_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
@@ -155,6 +158,13 @@ class FormGUI(QDialog):
             raise KeyError("Detected invalid experiment metadata key(s)")
 
         return form_metadata
+
+    def reset_parameters(self) -> None:
+        """Clear specific inputs which are expected to be unique for the next run."""
+
+        self.participant_val.setText("")
+        self.flowcell_val.setText("")
+        self.notes_val.setPlainText("")
 
 
 if __name__ == "__main__":

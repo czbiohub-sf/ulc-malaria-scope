@@ -45,9 +45,10 @@ from ulc_mm_package.image_processing.processing_constants import (
 from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     FLOWCELL_QC_FORM_LINK,
+    ERROR_BEHAVIORS,
 )
 
-from ulc_mm_package.utilities.email_utils import send_ngrok_email
+from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -64,7 +65,7 @@ _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
 _IMAGE_RELOAD_PATH = "gui_images/remove_infographic.png"
 
 
-class Buttons(enum.Enum):
+class BUTTONS(enum.Enum):
     OK = QMessageBox.Ok
     CANCEL = QMessageBox.Cancel | QMessageBox.Ok
     YN = QMessageBox.No | QMessageBox.Yes
@@ -205,9 +206,10 @@ class Oracle(Machine):
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
         self.scopeop.stop_timers.connect(self.acquisition.stop_timers)
 
-        self.scopeop.update_state.connect(self.liveview_window.update_state)
+        self.scopeop.update_runtime.connect(self.liveview_window.update_runtime)
         self.scopeop.update_img_count.connect(self.liveview_window.update_img_count)
         self.scopeop.update_cell_count.connect(self.liveview_window.update_cell_count)
+        self.scopeop.update_state.connect(self.liveview_window.update_state)
         self.scopeop.update_msg.connect(self.liveview_window.update_msg)
 
         self.scopeop.update_flowrate.connect(self.liveview_window.update_flowrate)
@@ -215,6 +217,7 @@ class Oracle(Machine):
 
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
+        self.acquisition.update_infopanel.connect(self.scopeop.update_infopanel)
 
     def _init_tcp(self):
         try:
@@ -231,7 +234,7 @@ class Oracle(Machine):
                     "The SSH tunnel is only recreated when the scope is rebooted."
                     '\n\nClick "OK" to continue running without SSH.'
                 ),
-                buttons=Buttons.OK,
+                buttons=BUTTONS.OK,
             )
             self.logger.warning(f"SSH address could not be found - {e}")
             self.liveview_window.update_tcp("unavailable")
@@ -244,7 +247,7 @@ class Oracle(Machine):
                     "If SSH is needed, please use the address printed in the liveviewer or terminal. "
                     '\n\nClick "OK" to continue running.'
                 ),
-                buttons=Buttons.OK,
+                buttons=BUTTONS.OK,
             )
             self.logger.warning(f"SSH address could not be emailed - {e}")
 
@@ -254,7 +257,7 @@ class Oracle(Machine):
             self.ext_dir = samsung_ext_dir + "/"
         else:
             print(
-                f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for any folders in this directory."
+                f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for other folders in this directory."
             )
             try:
                 self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
@@ -267,25 +270,39 @@ class Oracle(Machine):
                     "SSD not found",
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
                     + _ERROR_MSG,
-                    buttons=Buttons.OK,
+                    buttons=BUTTONS.OK,
                     instant_abort=False,
                 )
                 sys.exit(1)
         print(f"Saving data to {self.ext_dir}")
 
-        if not SIMULATION and not DataStorage.is_there_sufficient_storage(self.ext_dir):
-            print(
-                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
-            )
-            self.display_message(
-                QMessageBox.Icon.Critical,
-                "SSD is full",
-                f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
-                + _ERROR_MSG,
-                buttons=Buttons.OK,
-                instant_abort=False,
-            )
+        if not DataStorage.is_there_sufficient_storage(self.ext_dir):
+            self.ssd_full_msg_and_exit()
             sys.exit(1)
+
+    def ssd_full_msg_and_exit(self):
+        self.logger.warning(
+            f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+        )
+        self.display_message(
+            QMessageBox.Icon.Critical,
+            "SSD is full",
+            f"The SSD is full. Data cannot be saved if the SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            + _ERROR_MSG,
+            buttons=BUTTONS.OK,
+            instant_abort=False,
+        )
+
+    def pause_receiver(self, title, message):
+        self.scopeop.to_pause()
+
+        self.pause_handler(
+            icon=QMessageBox.Icon.Warning,
+            title=title,
+            message=message,
+            buttons=BUTTONS.OK,
+            pause_done=True,
+        )
 
     def lid_open_pause_handler(self):
         self.scopeop.to_pause()
@@ -296,23 +313,11 @@ class Oracle(Machine):
             message=(
                 "The lid was opened during a run. The experiment has been paused. "
                 "Close the lid and then press okay to resume the run. "
-                "I _cannot_ believe you've done this."
             ),
-            buttons=Buttons.OK,
+            buttons=BUTTONS.OK,
         )
 
         self.scopeop.unpause()
-
-    def pause_receiver(self, title, message):
-        self.scopeop.to_pause()
-
-        self.pause_handler(
-            icon=QMessageBox.Icon.Warning,
-            title=title,
-            message=message,
-            buttons=Buttons.OK,
-            pause_done=True,
-        )
 
     def pause_handler(
         self,
@@ -324,7 +329,7 @@ class Oracle(Machine):
             "After pausing, the scope will restart the calibration steps."
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
-        buttons=Buttons.CANCEL,
+        buttons=BUTTONS.CANCEL,
         pause_done=False,
     ):
         message_result = self.display_message(
@@ -348,7 +353,7 @@ class Oracle(Machine):
                 "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
                 '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
             ),
-            buttons=Buttons.OK,
+            buttons=BUTTONS.OK,
             image=_IMAGE_RELOAD_PATH,
         )
         self.scopeop.unpause()
@@ -358,7 +363,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "End experiment?",
             'Click "OK" to end the experiment and shutoff the scope.',
-            buttons=Buttons.CANCEL,
+            buttons=BUTTONS.CANCEL,
         )
         if message_result == QMessageBox.Ok:
             self.shutoff()
@@ -368,22 +373,44 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "End run?",
             'Click "OK" to end this run.',
-            buttons=Buttons.CANCEL,
+            buttons=BUTTONS.CANCEL,
         )
         if message_result == QMessageBox.Ok:
-            self.scopeop.to_intermission()
+            self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
-    def error_handler(self, title, text, instant_abort):
-        self.display_message(
-            QMessageBox.Icon.Critical,
-            title,
-            text + _ERROR_MSG,
-            buttons=Buttons.OK,
-            instant_abort=instant_abort,
-        )
+    def error_handler(self, title, text, behavior):
+        if behavior == ERROR_BEHAVIORS.DEFAULT.value:
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                title,
+                text + _ERROR_MSG,
+                buttons=BUTTONS.OK,
+                instant_abort=False,
+            )
+            self.scopeop.to_intermission("Ending experiment due to error.")
 
-        if not instant_abort:
-            self.scopeop.to_intermission()
+        elif behavior == ERROR_BEHAVIORS.INSTANT_ABORT.value:
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                title,
+                text + _ERROR_MSG,
+                buttons=BUTTONS.OK,
+                instant_abort=True,
+            )
+
+        elif behavior == ERROR_BEHAVIORS.YN.value:
+            message_result = self.display_message(
+                QMessageBox.Icon.Critical,
+                title,
+                text
+                + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
+                buttons=BUTTONS.YN,
+                instant_abort=False,
+            )
+            if message_result == QMessageBox.No:
+                self.scopeop.to_intermission("Ending experiment due to error.")
+            else:
+                self.scopeop.next_state()
 
     def display_message(
         self,
@@ -422,7 +449,7 @@ class Oracle(Machine):
 
         return message_result
 
-    def _start_setup(self):
+    def _start_setup(self, *args):
         self.display_message(
             QMessageBox.Icon.Information,
             "Initializing hardware",
@@ -430,7 +457,7 @@ class Oracle(Machine):
                 "Remove the CAP module if it is currently on."
                 '\n\nClick "OK" once it is removed.'
             ),
-            buttons=Buttons.OK,
+            buttons=BUTTONS.OK,
             image=_IMAGE_REMOVE_PATH,
         )
 
@@ -439,14 +466,15 @@ class Oracle(Machine):
 
         self.form_window.show()
 
-    def _end_setup(self):
+    def _end_setup(self, *args):
         self.form_window.unfreeze_buttons()
 
-    def _start_form(self):
+    def _start_form(self, *args):
         self.form_window.show()
 
     def save_form(self):
         self.form_metadata = self.form_window.get_form_input()
+        self.form_window.reset_parameters()
         self.liveview_window.update_experiment(self.form_metadata)
 
         for key in self.form_metadata:
@@ -477,33 +505,33 @@ class Oracle(Machine):
 
         self.next_state()
 
-    def _end_form(self):
+    def _end_form(self, *args):
         self.form_window.close()
 
-    def _start_liveview(self):
+    def _start_liveview(self, *args):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
-            'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed',
-            buttons=Buttons.OK,
+            'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
+            buttons=BUTTONS.OK,
             image=_IMAGE_INSERT_PATH,
         )
 
         self.liveview_window.show()
         self.scopeop.start()
 
-    def _end_liveview(self):
+    def _end_liveview(self, *args):
         self.liveview_window.close()
 
         self.logger.info("Opening survey.")
         webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
-    def _start_intermission(self):
+    def _start_intermission(self, msg):
         self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
-            'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
-            buttons=Buttons.OK,
+            f'{msg} Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
+            buttons=BUTTONS.OK,
             image=_IMAGE_REMOVE_PATH,
         )
 
@@ -511,13 +539,17 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Run another experiment?",
             'Click "Yes" to start a new run or "No" to shutoff scope.',
-            buttons=Buttons.YN,
+            buttons=BUTTONS.YN,
         )
         if message_result == QMessageBox.No:
             self.shutoff()
         elif message_result == QMessageBox.Yes:
             self.logger.info("Starting new experiment.")
-            self.scopeop.rerun()
+            if not DataStorage.is_there_sufficient_storage(self.ext_dir):
+                self.ssd_full_msg_and_exit()
+                self.shutoff()
+            else:
+                self.scopeop.rerun()
 
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")
