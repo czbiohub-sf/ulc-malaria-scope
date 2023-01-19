@@ -70,7 +70,7 @@ class ScopeOp(QObject, NamedMachine):
 
     error = pyqtSignal(str, str, int)
 
-    send_pause = pyqtSignal(str, str)
+    reload_pause = pyqtSignal(str, str)
     lid_open_pause = pyqtSignal()
 
     create_timers = pyqtSignal()
@@ -612,7 +612,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.density_routine.send(filtered_prediction)
                 except LowDensity as e:
                     self.logger.warning(f"Cell density is too low.")
-                    self.send_pause.emit(
+                    self.reload_pause.emit(
                         "Low cell density",
                         (
                             "Cell density is too low. "

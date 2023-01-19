@@ -184,7 +184,7 @@ class Oracle(Machine):
         self.form_window.exit_btn.clicked.connect(self.form_exit_handler)
 
         # Connect liveview buttons
-        self.liveview_window.pause_btn.clicked.connect(self.pause_handler)
+        self.liveview_window.pause_btn.clicked.connect(self.general_pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
 
         # Connect scopeop signals and slots
@@ -199,7 +199,7 @@ class Oracle(Machine):
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
         self.scopeop.set_period.connect(self.acquisition.set_period)
 
-        self.scopeop.send_pause.connect(self.pause_receiver)
+        self.scopeop.reload_pause.connect(self.reload_pause_handler)
         self.scopeop.lid_open_pause.connect(self.lid_open_pause_handler)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
@@ -293,10 +293,10 @@ class Oracle(Machine):
             instant_abort=False,
         )
 
-    def pause_receiver(self, title, message):
+    def reload_pause_handler(self, title, message):
         self.scopeop.to_pause()
 
-        self.pause_handler(
+        self.general_pause_handler(
             icon=QMessageBox.Icon.Warning,
             title=title,
             message=message,
@@ -319,7 +319,7 @@ class Oracle(Machine):
 
         self.scopeop.unpause()
 
-    def pause_handler(
+    def general_pause_handler(
         self,
         icon=QMessageBox.Icon.Information,
         title="Pause run?",
