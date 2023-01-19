@@ -31,7 +31,7 @@ def get_stats(name, data, save=None):
 
     plt.scatter(xs, data, s=2)
 
-    plt.title(f"{name} {mean=:.3f} {stddev=:.3f} {median=:.3f}")
+    plt.title(f"{name} mean={mean:.3f} stddev={stddev:.3f} median={median:.3f}")
     plt.xlabel("frame")
     plt.ylabel("time (ms)")
 
