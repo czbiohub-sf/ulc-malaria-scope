@@ -1,4 +1,5 @@
 import enum
+from ulc_mm_package.scope_constants import SIMULATION
 
 # ================ Flowrate options ================ #
 class FLOWRATE(enum.Enum):
@@ -32,7 +33,10 @@ MS_PER_FRAME = 33
 TARGET_FLOWRATE = 1000 / (DESIRED_FRAMES_PER_CELL * MS_PER_FRAME)
 
 # ================ Data storage constants ================ #
-MIN_GB_REQUIRED = 50
+if SIMULATION:
+    MIN_GB_REQUIRED = 0.1  # 100 MB
+else:
+    MIN_GB_REQUIRED = 50
 NUM_SUBSEQUENCES = 10
 SUBSEQUENCE_LENGTH = 10
 
@@ -45,6 +49,6 @@ RBC_THUMBNAIL_PATH = (
 CELLS_FOUND_THRESHOLD = 9000  # It's got to be... OVER 9000!!!!!!
 CROSS_CORR_CELL_DENSITY_THRESHOLD = 6500
 
-MIN_CELL_COUNT = 10
+MIN_CELL_COUNT = 20
 CELL_DENSITY_CHECK_PERIOD_S = 0.5  # How often to check cell density
 CELL_DENSITY_HISTORY_LEN = 50  # Number of continuuous cell density measurements that need to be < MIN_CELL_COUNT before an exception is raised

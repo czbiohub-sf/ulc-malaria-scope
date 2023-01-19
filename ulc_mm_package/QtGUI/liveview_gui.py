@@ -5,7 +5,7 @@ Displays camera preview and conveys info to user during runs."""
 import sys
 import numpy as np
 
-from time import perf_counter
+from time import perf_counter, strftime, gmtime
 from qimage2ndarray import gray2qimage
 from matplotlib.streamplot import streamplot
 
@@ -25,12 +25,15 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
 
-from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
-from ulc_mm_package.QtGUI.gui_constants import (
-    STATUS,
-    ICON_PATH,
-    MAX_FRAMES,
+from ulc_mm_package.image_processing.flow_control import getFlowError
+
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    YOGO_CLASS_LIST,
+    YOGO_CLASS_IDX_MAP,
 )
+from ulc_mm_package.scope_constants import MAX_FRAMES
+from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
+from ulc_mm_package.QtGUI.gui_constants import STATUS, ICON_PATH
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
@@ -38,6 +41,7 @@ class LiveviewGUI(QMainWindow):
     def __init__(self):
         self.metadata = None
         self.terminal_msg = ""
+        self.target_flowrate = None
 
         super().__init__()
         self._load_main_ui()
@@ -52,10 +56,15 @@ class LiveviewGUI(QMainWindow):
         self.notes_val.setPlainText(f"{metadata['notes']}")
 
         # Update target flowrate in infopanel
-        self.flowrate_lbl.setText(f"Target = {metadata['target_flowrate'][1]}")
+        self.target_flowrate = metadata["target_flowrate"][1]
+        self.flowrate_lbl.setText(f"Target = {self.target_flowrate}")
 
     def update_tcp(self, tcp_addr):
         self.tcp_lbl.setText(f"SSH address: {tcp_addr}")
+
+    @pyqtSlot(float)
+    def update_runtime(self, runtime):
+        self.runtime_val.setText(strftime("%M:%S", gmtime(runtime)))
 
     @pyqtSlot(np.ndarray)
     def update_img(self, img: np.ndarray):
@@ -76,10 +85,19 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(ClassCountResult)
     def update_cell_count(self, cell_count: ClassCountResult):
-        healthy_count_str = f"{cell_count.healthy if cell_count.healthy > 0 else '---'}"
-        ring_count_str = f"{cell_count.ring if cell_count.ring > 0 else '---'}"
-        schiz_count_str = f"{cell_count.schizont if cell_count.schizont > 0 else '---'}"
-        troph_count_str = f"{cell_count.troph if cell_count.troph > 0 else '---'}"
+        healthy_cell_count = cell_count[YOGO_CLASS_IDX_MAP["healthy"]]
+        ring_cell_count = cell_count[YOGO_CLASS_IDX_MAP["ring"]]
+        schiz_cell_count = cell_count[YOGO_CLASS_IDX_MAP["schizont"]]
+        troph_cell_count = cell_count[YOGO_CLASS_IDX_MAP["troph"]]
+
+        # 'x or y' syntax means 'x if x is "truthy" else y'
+        # x is "truthy" if bool(x) == True
+        # so in this case, if the cell count == 0, bool(0) == False,
+        # so we get string '---'
+        healthy_count_str = f"{healthy_cell_count or '---'}"
+        ring_count_str = f"{ring_cell_count or '---'}"
+        schiz_count_str = f"{schiz_cell_count or '---'}"
+        troph_count_str = f"{troph_cell_count or '---'}"
 
         self.healthy_count_val.setText(healthy_count_str)
         self.ring_count_val.setText(ring_count_str)
@@ -100,6 +118,15 @@ class LiveviewGUI(QMainWindow):
         self.flowrate_val.setText(
             f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}"
         )
+
+        # Set color based on status
+        if (self.target_flowrate != None) and isinstance(val, (float, int)):
+            if getFlowError(self.target_flowrate, val) == 0:
+                self._set_color(self.flowrate_val, STATUS.GOOD)
+            else:
+                self._set_color(self.flowrate_val, STATUS.BAD)
+        else:
+            self._set_color(self.flowrate_val, STATUS.DEFAULT)
 
     def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
@@ -140,6 +167,8 @@ class LiveviewGUI(QMainWindow):
         self.state_lbl = QLabel("-")
         self.pause_btn = QPushButton("Pause")
         self.exit_btn = QPushButton("Exit")
+        self.runtime_lbl = QLabel("Experiment runtime:")
+        self.runtime_val = QLabel("-")
         self.img_count_lbl = QLabel("Fields of view:")
         self.img_count_val = QLabel("-")
         self.terminal_txt = QPlainTextEdit(self.terminal_msg)
@@ -186,20 +215,22 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.state_lbl, 0, 1, 1, 2)
         self.infopanel_layout.addWidget(self.pause_btn, 1, 1)
         self.infopanel_layout.addWidget(self.exit_btn, 1, 2)
-        self.infopanel_layout.addWidget(self.img_count_lbl, 2, 1)
-        self.infopanel_layout.addWidget(self.img_count_val, 2, 2)
+        self.infopanel_layout.addWidget(self.runtime_lbl, 2, 1)
+        self.infopanel_layout.addWidget(self.runtime_val, 2, 2)
+        self.infopanel_layout.addWidget(self.img_count_lbl, 3, 1)
+        self.infopanel_layout.addWidget(self.img_count_val, 3, 2)
         self.infopanel_layout.addWidget(self.terminal_txt, 14, 1, 1, 2)
         self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
-        self.infopanel_layout.addWidget(self.cell_count_title, 3, 1, 1, 2)
-        self.infopanel_layout.addWidget(self.healthy_count_lbl, 4, 1)
-        self.infopanel_layout.addWidget(self.ring_count_lbl, 5, 1)
-        self.infopanel_layout.addWidget(self.schizont_count_lbl, 6, 1)
-        self.infopanel_layout.addWidget(self.troph_count_lbl, 7, 1)
-        self.infopanel_layout.addWidget(self.healthy_count_val, 4, 2)
-        self.infopanel_layout.addWidget(self.ring_count_val, 5, 2)
-        self.infopanel_layout.addWidget(self.schizont_count_val, 6, 2)
-        self.infopanel_layout.addWidget(self.troph_count_val, 7, 2)
+        self.infopanel_layout.addWidget(self.cell_count_title, 4, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.ring_count_lbl, 6, 1)
+        self.infopanel_layout.addWidget(self.ring_count_val, 6, 2)
+        self.infopanel_layout.addWidget(self.healthy_count_lbl, 5, 1)
+        self.infopanel_layout.addWidget(self.healthy_count_val, 5, 2)
+        self.infopanel_layout.addWidget(self.schizont_count_lbl, 7, 1)
+        self.infopanel_layout.addWidget(self.schizont_count_val, 7, 2)
+        self.infopanel_layout.addWidget(self.troph_count_lbl, 8, 1)
+        self.infopanel_layout.addWidget(self.troph_count_val, 8, 2)
 
         self.infopanel_layout.addWidget(self.focus_title, 10, 1, 1, 2)
         self.infopanel_layout.addWidget(self.focus_lbl, 11, 2)
@@ -213,8 +244,9 @@ class LiveviewGUI(QMainWindow):
         self.terminal_msg = ""
         self.terminal_txt.clear()
 
+        self.update_runtime(0)
         self.update_img_count("---")
-        self.update_cell_count(ClassCountResult())
+        self.update_cell_count(np.zeros(len(YOGO_CLASS_LIST), dtype=int))
 
         self.update_focus("---")
         self.update_flowrate("---")
@@ -226,9 +258,8 @@ class LiveviewGUI(QMainWindow):
         self._set_color(self.focus_title, STATUS.STANDBY)
         self._set_color(self.flowrate_title, STATUS.STANDBY)
 
-        # TODO decide if routine statuses need colors
-        # self._set_color(self.focus_val, STATUS.STANDBY)
-        # self._set_color(self.flowrate_val, STATUS.STANDBY)
+        self._set_color(self.focus_val, STATUS.DEFAULT)
+        self._set_color(self.flowrate_val, STATUS.DEFAULT)
 
     def _load_liveview_ui(self):
         # Set up liveview layout + widget
@@ -334,6 +365,7 @@ if __name__ == "__main__":
     gui.set_infopanel_vals()
 
     gui.update_msg("Sample message here")
+    gui.update_tcp("Sample address here")
 
     gui.show()
     sys.exit(app.exec_())

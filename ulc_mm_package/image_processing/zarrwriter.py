@@ -1,4 +1,4 @@
-f""" Simple Zarr storage format wrapper
+""" Simple Zarr storage format wrapper
 
 -- Important Links --
 Library Documentation:
@@ -6,25 +6,21 @@ Library Documentation:
 
 """
 
+import time
+import zarr
+import logging
+import threading
 import functools
 import threading
-from time import perf_counter
-import logging
-from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
-
-import zarr
-import threading
+import numpy as np
 
 from time import perf_counter
-from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
+from typing import List, Tuple, Optional
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, Future, wait
 
-from ulc_mm_package.utilities.lock_utils import lock_no_block
-
-
-WRITE_LOCK = threading.Lock()
+from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION, MAX_FRAMES
 
 
-# ==================== Custom errors ===============================
 class AttemptingWriteWithoutFile(Exception):
     def __str__(self):
         return """
@@ -39,20 +35,16 @@ class WriteInProgress(Exception):
         return "Write in progress."
 
 
-# ==================== Main class ===============================
 class ZarrWriter:
-    def __init__(self):
-        self.store = None
-        self.group = None
-        self.arr_counter = 0
-        self.compressor = None
+    def __init__(self, camera_selection: CameraOptions = CAMERA_SELECTION):
         self.writable = False
-        self.prev_write_time = 0
-        self.futures = []
-        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.futures: List[Future] = []
         self.logger = logging.getLogger(__name__)
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
-    def createNewFile(self, filename: str, overwrite: bool = False):
+        self.camera_selection: CameraOptions = camera_selection
+
+    def createNewFile(self, filename: str, overwrite: bool = True):
         """Create a new zarr file.
 
         Parameters
@@ -62,15 +54,26 @@ class ZarrWriter:
         overwrite : bool
             Will overwrite a file with the existing filename if it exists, otherwise will append.
         """
-
         try:
-            filename = f"{filename}.zip"
-            if overwrite:
-                self.store = zarr.ZipStore(filename, mode="x")
-            else:
-                self.store = zarr.ZipStore(filename, mode="w")
-            self.group = zarr.group(store=self.store)
-            self.arr_counter = 0
+            self.store = zarr.ZipStore(
+                f"{filename}.zip",
+                mode="w" if overwrite else "x",
+            )
+            self.array = zarr.zeros(
+                shape=(
+                    self.camera_selection.IMG_HEIGHT,
+                    self.camera_selection.IMG_WIDTH,
+                    MAX_FRAMES,
+                ),
+                chunks=(
+                    self.camera_selection.IMG_HEIGHT,
+                    self.camera_selection.IMG_WIDTH,
+                    1,
+                ),
+                compressor=None,
+                store=self.store,
+                dtype="u1",
+            )
             self.writable = True
         except AttributeError as e:
             self.logger.error(
@@ -78,49 +81,58 @@ class ZarrWriter:
             )
             raise IOError(f"Error creating {filename}.zip")
 
-    @lock_no_block(WRITE_LOCK, WriteInProgress)
-    def writeSingleArray(self, data) -> int:
+    def writeSingleArray(self, data, pos: int) -> None:
         """Write a single array and optional metadata to the Zarr store.
 
         Parameters
         ----------
-        data : np.ndarray
-        metadata : dict
-            A dictionary of keys to values to be associated with the given data.
+        data : np.ndarray - the image to write
+        pos: int - the index of the zarr array to write to
 
-        Returns
-        -------
-        int:
-            arr_count (id)
+        Since each `pos` is a different chunk, it is threadsafe - see
+        https://zarr.readthedocs.io/en/stable/tutorial.html#parallel-computing-and-synchronization
         """
+        if not self.writable:
+            return
 
         try:
-            self.prev_write_time = perf_counter()
-            self.group.array(
-                f"{self.arr_counter}", data=data, compressor=self.compressor
-            )
-            self.arr_counter += 1
-            return self.arr_counter
+            self.array[:, :, pos] = data
         except Exception as e:
             self.logger.error(
                 f"zarrwriter.py : writeSingleArray : Exception encountered - {e}"
             )
             raise AttemptingWriteWithoutFile()
 
-    def threadedWriteSingleArray(self, *args, **kwargs):
-        self.futures.append(self.executor.submit(self.writeSingleArray, *args))
+    def threadedWriteSingleArray(self, data, pos: int):
+        f = self.executor.submit(self.writeSingleArray, data, pos)
+        self.futures.append(f)
 
-    @lock_no_block(WRITE_LOCK, WriteInProgress)
+    def wait_all(self):
+        wait(self.futures, return_when=ALL_COMPLETED)
+
     def closeFile(self):
         """Close the Zarr store."""
         self.writable = False
-        wait(self.futures, return_when=ALL_COMPLETED)
-        self.store.close()
-        self.store = None
+        self.wait_all()
+
+        exceptions = []
+        for f in self.futures:
+            if f.exception() is not None:
+                exceptions.append(f.exception())
+
+        for i, exc in enumerate(exceptions):
+            self.logger.error(f"exception in zarrwriter: {exc}")
+            if i > 10:
+                self.logger.error(
+                    f"{len(exceptions) - i} exceptions left; {len(exceptions)} total"
+                )
+                break
+
         self.futures = []
+        self.store.close()
 
     def threadedCloseFile(self):
-        """Close the file in a separate thread (and locks the ability to write to the file).
+        """Close the file in a separate thread.
 
         This threaded close was written with UI.py in mind, so that the file can be closed while
         keeping the rest of the GUI responsive.
@@ -130,8 +142,3 @@ class ZarrWriter:
         future: An object that can be polled to check if closing the file has completed
         """
         return self.executor.submit(self.closeFile)
-
-    def __del__(self):
-        # If the user did not manually close the storage, close it
-        if self.store != None:
-            self.store.close()
