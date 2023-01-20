@@ -130,6 +130,9 @@ class Oracle(Machine):
 
         self.liveview_window.set_infopanel_vals()
 
+        # Lid handler
+        self.lid_handler_enabled = False
+
     def _init_threads(self):
         # Instantiate scope operator and thread
         self.scopeop = ScopeOp()
@@ -305,19 +308,20 @@ class Oracle(Machine):
         )
 
     def lid_open_pause_handler(self):
-        self.scopeop.to_pause()
+        if self.lid_handler_enabled:
+            self.scopeop.to_pause()
 
-        self.display_message(
-            icon=QMessageBox.Icon.Warning,
-            title="Lid opened, run paused",
-            text=(
-                "The lid was opened during a run. The experiment has been paused. "
-                "Close the lid and then press okay to resume the run. "
-            ),
-            buttons=BUTTONS.OK,
-        )
+            self.display_message(
+                icon=QMessageBox.Icon.Warning,
+                title="Lid opened, run paused",
+                text=(
+                    "The lid was opened during a run. The experiment has been paused. "
+                    "Close the lid and then press okay to resume the run. "
+                ),
+                buttons=BUTTONS.OK,
+            )
 
-        self.scopeop.unpause()
+            self.scopeop.unpause()
 
     def general_pause_handler(
         self,
@@ -450,6 +454,7 @@ class Oracle(Machine):
         return message_result
 
     def _start_setup(self, *args):
+        self.lid_handler_enabled = False
         while self.scopeop.lid_opened:
             self.display_message(
                 QMessageBox.Icon.Information,
@@ -469,6 +474,7 @@ class Oracle(Machine):
 
     def _end_setup(self, *args):
         self.form_window.unfreeze_buttons()
+        self.lid_handler_enabled = True
 
     def _start_form(self, *args):
         self.form_window.show()
