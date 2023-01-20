@@ -320,18 +320,7 @@ class Oracle(Machine):
     def lid_open_pause_handler(self):
         if self.lid_handler_enabled and self.scopeop.state != "pause":
             self.scopeop.to_pause()
-
-            while self.scopeop.lid_opened:
-                self.display_message(
-                    icon=QMessageBox.Icon.Warning,
-                    title="Lid opened, run paused",
-                    text=(
-                        "The lid was opened during a run. The experiment has been paused. "
-                        "Close the lid and then press okay to resume the run. "
-                    ),
-                    buttons=Buttons.OK,
-                )
-
+            self.close_lid_display_message()
             self.scopeop.unpause()
 
     def general_pause_handler(
@@ -357,28 +346,20 @@ class Oracle(Machine):
         elif not pause_done:
             self.scopeop.to_pause()
 
-        while not self.scopeop.lid_opened:
-            self.display_message(
-                QMessageBox.Icon.Information,
-                "Paused run - open lid",
-                ("Please open the lid. Press ok once the lid has been opened."),
-                buttons=Buttons.OK,
-                image=_IMAGE_RELOAD_PATH,
-            )
         sleep(2)
-        while self.scopeop.lid_opened:
-            self.display_message(
-                QMessageBox.Icon.Information,
-                "Paused run - reload sample",
-                (
-                    "The CAP module can now be removed."
-                    "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
-                    "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
-                    '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
-                ),
-                buttons=Buttons.OK,
-                image=_IMAGE_RELOAD_PATH,
-            )
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Paused run - reload sample",
+            (
+                "The CAP module can now be removed."
+                "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
+                "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
+                '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
+            ),
+            buttons=Buttons.OK,
+            image=_IMAGE_RELOAD_PATH,
+        )
+        self.close_lid_display_message()
         self.scopeop.unpause()
 
     def close_handler(self):
@@ -475,6 +456,16 @@ class Oracle(Machine):
         message_result = self.message_window.exec()
         return message_result
 
+    def close_lid_display_message(self):
+        while self.scopeop.lid_opened:
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Lid opened - pausing",
+                "The lid is open. Close the lid and press ok to resume.",
+                buttons=Buttons.OK,
+                image=_IMAGE_INSERT_PATH,
+            )
+
     def _start_setup(self, *args):
         self.lid_handler_enabled = False
         self.display_message(
@@ -537,14 +528,15 @@ class Oracle(Machine):
         self.lid_handler_enabled = True
 
     def _start_liveview(self, *args):
-        while self.scopeop.lid_opened:
-            self.display_message(
-                QMessageBox.Icon.Information,
-                "Starting run",
-                'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
-                buttons=Buttons.OK,
-                image=_IMAGE_INSERT_PATH,
-            )
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Starting run",
+            'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
+            buttons=Buttons.OK,
+            image=_IMAGE_INSERT_PATH,
+        )
+
+        self.close_lid_display_message()
 
         self.liveview_window.show()
         self.scopeop.start()

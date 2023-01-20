@@ -289,9 +289,8 @@ class ScopeOp(QObject, NamedMachine):
         self.running = False
 
         # Account for case when pause is entered during the initial setup
-        if self.start_time > 0:
-            self.accumulated_time += perf_counter() - self.start_time
-        self.start_time = 0
+        self.accumulated_time += perf_counter() - self.start_time
+        self.start_time = perf_counter()
 
         try:
             self.img_signal.disconnect()
