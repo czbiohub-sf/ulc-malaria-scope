@@ -175,7 +175,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def _set_variables(self):
         self.running = None
-        self.lid_opened = None
+        self.lid_opened = self.mscope.read_lim_sw()
 
         self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
