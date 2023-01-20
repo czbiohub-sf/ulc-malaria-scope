@@ -475,7 +475,6 @@ class Oracle(Machine):
 
     def _end_setup(self, *args):
         self.form_window.unfreeze_buttons()
-        self.lid_handler_enabled = True
 
     def _start_form(self, *args):
         self.form_window.show()
@@ -515,6 +514,7 @@ class Oracle(Machine):
 
     def _end_form(self, *args):
         self.form_window.close()
+        self.lid_handler_enabled = True
 
     def _start_liveview(self, *args):
         while self.scopeop.lid_opened:
