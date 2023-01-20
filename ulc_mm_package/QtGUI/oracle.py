@@ -203,7 +203,8 @@ class Oracle(Machine):
 
         self.scopeop.yield_mscope.connect(self.acquisition.get_mscope)
 
-        self.scopeop.error.connect(self.error_handler)
+        self.scopeop.precheck_error.connect(self.shutoff)
+        self.scopeop.default_error.connect(self.error_handler)
 
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
         self.scopeop.set_period.connect(self.acquisition.set_period)
@@ -279,7 +280,6 @@ class Oracle(Machine):
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
                     + _ERROR_MSG,
                     buttons=BUTTONS.OK,
-                    instant_abort=False,
                 )
                 sys.exit(1)
         print(f"Saving data to {self.ext_dir}")
@@ -298,7 +298,6 @@ class Oracle(Machine):
             f"The SSD is full. Data cannot be saved if the SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
             + _ERROR_MSG,
             buttons=BUTTONS.OK,
-            instant_abort=False,
         )
 
     def pause_receiver(self, title, message):
@@ -380,7 +379,6 @@ class Oracle(Machine):
                 title,
                 text + _ERROR_MSG,
                 buttons=BUTTONS.OK,
-                instant_abort=False,
             )
             self.scopeop.to_intermission("Ending experiment due to error.")
 
@@ -390,7 +388,6 @@ class Oracle(Machine):
                 title,
                 text + _ERROR_MSG,
                 buttons=BUTTONS.OK,
-                instant_abort=True,
             )
 
         elif behavior == ERROR_BEHAVIORS.YN.value:
@@ -400,7 +397,6 @@ class Oracle(Machine):
                 text
                 + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
                 buttons=BUTTONS.YN,
-                instant_abort=False,
             )
             if message_result == QMessageBox.No:
                 self.scopeop.to_intermission("Ending experiment due to error.")
@@ -414,7 +410,6 @@ class Oracle(Machine):
         text,
         buttons=None,
         image=None,
-        instant_abort=False,
     ):
         self.message_window.close()
 
@@ -438,10 +433,6 @@ class Oracle(Machine):
             layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)
 
         message_result = self.message_window.exec()
-
-        if instant_abort:
-            self.shutoff()
-
         return message_result
 
     def _start_setup(self, *args):
