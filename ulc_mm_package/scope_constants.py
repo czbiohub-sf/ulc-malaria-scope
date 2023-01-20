@@ -142,6 +142,7 @@ PER_IMAGE_TIMING_KEYS = [
     "ui_flowrate_focus",
     "img_metadata",
     "datastorage.writeData",
+    "yogo_qsize",
 ]
 
 if VERBOSE:

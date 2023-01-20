@@ -26,7 +26,7 @@ def get_timestamp(timestamp_str):
 
 
 def get_zarr_image_size(zarr_store):
-    return zarr_store[0].shape
+    return zarr_store[:, :, 0].shape
 
 
 def open_zarr(folder):
@@ -40,7 +40,7 @@ def open_zarr(folder):
 def get_csv_file(folder):
     """Returns the .csv file in the given folder"""
     file = [
-        os.path.join(folder, x) for x in sorted(os.listdir(folder)) if ".csv" in x[-4:]
+        os.path.join(folder, x) for x in sorted(os.listdir(folder)) if "perimage" in x
     ][0]
     return file
 
@@ -52,11 +52,11 @@ def get_elapsed_time_from_csv(csv_file):
     with open(csv_file) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            timestamps.append(get_timestamp(row["timestamp"]))
+            timestamps.append(float(row["timestamp"]))
 
     start = timestamps[0]
     end = timestamps[-1]
-    tdiff = (end - start).total_seconds()
+    tdiff = end - start
 
     return tdiff
 
@@ -72,8 +72,8 @@ def get_zarr_metadata(zarr_store):
 
 
 def zarr_image_generator(zarr_store):
-    for i in range(len(zarr_store)):
-        yield zarr_store[i][:]
+    for i in range(zarr_store.initialized):
+        yield zarr_store[:, :, i]
 
 
 def main(
@@ -165,14 +165,14 @@ def main(
             continue
         try:
             csv_path = get_csv_file(folder)
-            fps = len(zstore) / int(get_elapsed_time_from_csv(csv_path))
+            fps = zstore.initialized / int(get_elapsed_time_from_csv(csv_path))
             print(f"Video at average framerate of: {fps}")
         except Exception as e:
             print("Error parsing timestamps and setting fps. Defaulting to fps=30\n")
             print(e)
             fps = 30
 
-        width, height = get_zarr_image_size(zstore)
+        height, width = get_zarr_image_size(zstore)
         file_root = folder[folder.rfind("/") + 1 :]
         filename = file_root + "_vid.mp4"
         if bg_sub:
@@ -184,18 +184,18 @@ def main(
             f"{output_path}",
             fourcc=cv2.VideoWriter_fourcc(*"mp4v"),
             fps=fps,
-            frameSize=(height, width),
+            frameSize=(width, height),
             isColor=False,
         )
 
         # Initialize BG subtraction
         bg_sub_set = False
         if bg_sub:
-            if len(zstore) > 200:
-                h, w = zstore[0][:].shape
+            if zstore.initialized > 200:
+                h, w = get_zarr_image_size(zstore)
                 mbg = MedianBGSubtraction(h, w, 200)
                 for i in range(200):
-                    mbg.addImage(zstore[i][:])
+                    mbg.addImage(zstore[:, :, i])
                 bg = mbg.getMedian()
                 max_val = 215
                 bg_sub_set = True
@@ -205,7 +205,7 @@ def main(
                 )
 
         img_gen = zarr_image_generator(zstore)
-        for i, img in enumerate(tqdm(range(len(zstore)))):
+        for i, img in enumerate(tqdm(range(zstore.initialized))):
             img = next(img_gen)
             if bg_sub and bg_sub_set:
                 img = np.asarray(np.clip(img + (max_val - bg), 0, 255), dtype=np.uint8)

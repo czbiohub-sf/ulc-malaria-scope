@@ -17,6 +17,8 @@ from ulc_mm_package.image_processing.processing_constants import (
     SUBSEQUENCE_LENGTH,
 )
 
+from ulc_mm_package.scope_constants import MAX_FRAMES
+
 
 class DataStorageError(Exception):
     pass
@@ -36,6 +38,9 @@ class DataStorage:
         else:
             self.dt = 0
         self.prev_write_time = 0
+
+        # Calculate max number of digits, to zeropad subsample img filenames
+        self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
@@ -235,7 +240,7 @@ class DataStorage:
 
         for idx in indices:
             img = self.zw.array[..., idx]
-            filepath = path.join(sub_seq_path, f"{idx}.png")
+            filepath = path.join(sub_seq_path, f"{idx:0{self.digits}d}.png")
             cv2.imwrite(filepath, img)
 
     def _create_subseq_folder(self) -> str:

@@ -5,10 +5,18 @@ from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 # ================ Status colors ================ #
 class STATUS(enum.Enum):
+    DEFAULT = "whitesmoke"
     STANDBY = "lightgray"
     IN_PROGRESS = "yellow"
     GOOD = "lightgreen"
-    BAD = "red"
+    BAD = "lightsalmon"
+
+
+# ================ Oracle error options ================ #
+class ERROR_BEHAVIORS(enum.Enum):
+    DEFAULT = 0
+    INSTANT_ABORT = 1
+    YN = 2
 
 
 # ================ Dropdown menu options ================ #
@@ -24,7 +32,7 @@ LIVEVIEW_PERIOD = 1000
 TH_PERIOD = 5
 
 # ================ Experiment timeout period ================ #
-TIMEOUT_M_PERIOD = 10  # minutes
+TIMEOUT_M_PERIOD = 20  # minutes
 TIMEOUT_S_PERIOD = TIMEOUT_M_PERIOD * 60  # seconds
 
 # ================ Media/links ================ #
