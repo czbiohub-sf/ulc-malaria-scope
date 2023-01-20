@@ -358,10 +358,11 @@ class Oracle(Machine):
             "Improper exit",
             (
                 'Please close this window using the "Exit" button instead. '
-                'This ensures proper shutoff of the scope hardware. '
+                "This ensures proper shutoff of the scope hardware. "
             ),
             buttons=BUTTONS.OK,
         )
+
     def form_exit_handler(self):
         message_result = self.display_message(
             QMessageBox.Icon.Information,
@@ -392,7 +393,7 @@ class Oracle(Machine):
             )
             self.scopeop.to_intermission("Ending experiment due to error.")
 
-        elif behavior == ERROR_BEHAVIORS.INSTANT_ABORT.value:
+        elif behavior == ERROR_BEHAVIORS.PRECHECK.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,

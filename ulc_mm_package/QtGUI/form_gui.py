@@ -34,6 +34,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
 
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
+
     close_event = pyqtSignal()
 
     def __init__(self):
