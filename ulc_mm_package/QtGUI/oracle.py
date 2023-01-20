@@ -450,16 +450,17 @@ class Oracle(Machine):
         return message_result
 
     def _start_setup(self, *args):
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Initializing hardware",
-            (
-                "Remove the CAP module if it is currently on."
-                '\n\nClick "OK" once it is removed.'
-            ),
-            buttons=BUTTONS.OK,
-            image=_IMAGE_REMOVE_PATH,
-        )
+        while self.scopeop.lid_opened:
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Initializing hardware",
+                (
+                    "Remove the CAP module if it is currently on."
+                    '\n\nClick "OK" once it is removed.'
+                ),
+                buttons=BUTTONS.OK,
+                image=_IMAGE_REMOVE_PATH,
+            )
 
         self.scopeop_thread.start()
         self.acquisition_thread.start()
