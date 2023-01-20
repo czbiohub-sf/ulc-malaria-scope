@@ -417,9 +417,16 @@ class ScopeOp(QObject, NamedMachine):
             )
 
         self.logger.info("Resetting pneumatic module for rerun.")
-        self.mscope.pneumatic_module.setDutyCycle(
-            self.mscope.pneumatic_module.getMaxDutyCycle()
-        )
+        while self.mscope.pneumatic_module.is_locked():
+            sleep(0.1)
+        try:
+            self.mscope.pneumatic_module.setDutyCycle(
+                self.mscope.pneumatic_module.getMaxDutyCycle()
+            )
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
+
         self.mscope.led.turnOff()
 
         closing_file_future = self.mscope.data_storage.close()
