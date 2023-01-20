@@ -32,14 +32,16 @@ ctypeValueDefn = namedtuple("ctypeValueDefn", ["type_str", "init_value"])
 ctypeArrayDefn = namedtuple("ctypeArrayDefn", ["type_str", "shape"])
 
 ctypeDefn = Union[ctypeValueDefn, ctypeArrayDefn]
-ctype = Union[mp.RawValue, mp.RawArray]
+
+AVTImg = npt.NDArray[np.uint8]
+ctype = Union[ctypes.c_float, AVTImg]
 
 
 def type_to_ctype_equiv(val: Union[npt.NDArray, float], ctype_val: ctype):
-    if isinstance(val, type(ctype_val.value)):
+    if isinstance(val, float) and isinstance(ctype_val, ctypes.c_float):
         return True
-    elif isinstance(val, npt.NDArray):
-        have_equiv_types = isinstance(val[0, ...].item(), type(ctype_val[0]))
+    elif isinstance(val, npt.NDArray) and isinstance(ctype_val, npt.NDArray):
+        have_equiv_types = val.dtype == ctype_val.dtype
         have_same_shape = np.prod(val.shape) == len(ctype_val)
         return have_equiv_types and have_same_shape
     return False
@@ -112,8 +114,12 @@ class MultiProcFunc:
                     f"equivalent: set_val = {set_val}, target_val = {target}"
                 )
             if isinstance(set_val, npt.NDArray):
+                # for mypy
+                assert isinstance(target, npt.NDArray), "shouldn't happen!"
                 target[:] = set_val
             else:
+                # for mypy
+                assert isinstance(target, ctypes.c_float), "shouldn't happen!"
                 target.value = set_val
 
     @staticmethod
