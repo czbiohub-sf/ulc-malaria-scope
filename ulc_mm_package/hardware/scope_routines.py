@@ -172,12 +172,10 @@ def flowControlRoutine(
     h, w = img.shape
     flow_controller = FlowController(mscope.pneumatic_module, h, w)
     flow_controller.setTargetFlowrate(target_flowrate)
-    routine = MultiProcessScopeRoutine(flow_controller.controlFlow)
 
     while True:
         img, timestamp = yield flow_val
-        routine.put((img, timestamp))
-        flow_val = routine.get()
+        flow_val = flow_controller.controlFlow(img, timestamp)
 
 
 def fastFlowRoutine(
