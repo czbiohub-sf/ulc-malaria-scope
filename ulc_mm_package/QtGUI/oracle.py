@@ -191,10 +191,12 @@ class Oracle(Machine):
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
         self.form_window.exit_btn.clicked.connect(self.form_exit_handler)
+        self.form_window.close_event.connect(self.close_handler)
 
         # Connect liveview buttons
         self.liveview_window.pause_btn.clicked.connect(self.pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
+        self.liveview_window.close_event.connect(self.close_handler)
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.next_state)
@@ -350,6 +352,16 @@ class Oracle(Machine):
         )
         self.scopeop.unpause()
 
+    def close_handler(self):
+        self.display_message(
+            QMessageBox.Icon.Warning,
+            "Improper exit",
+            (
+                'Please close this window using the "Exit" button instead. '
+                'This ensures proper shutoff of the scope hardware. '
+            ),
+            buttons=BUTTONS.OK,
+        )
     def form_exit_handler(self):
         message_result = self.display_message(
             QMessageBox.Icon.Information,
@@ -359,7 +371,7 @@ class Oracle(Machine):
         )
         if message_result == QMessageBox.Ok:
             self.shutoff()
-            
+
     def liveview_exit_handler(self):
         message_result = self.display_message(
             QMessageBox.Icon.Information,

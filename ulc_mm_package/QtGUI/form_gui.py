@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (
     QDesktopWidget,
 )
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt
 
 from ulc_mm_package.scope_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
@@ -34,11 +34,19 @@ from ulc_mm_package.QtGUI.gui_constants import (
 
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
+    close_event = pyqtSignal()
 
     def __init__(self):
         super().__init__()
 
         self._load_ui()
+
+    def closeEvent(self, event):
+        if event.spontaneous():
+            self.close_event.emit()
+            event.ignore()
+        else:
+            event.accept()
 
     def _load_ui(self):
         self.setWindowTitle("Experiment form")
@@ -117,10 +125,6 @@ class FormGUI(QDialog):
         # Set the focus order
         self.operator_val.setFocus()
         self.start_btn.setDefault(True)
-
-        # Disable [x] button
-        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
 
         # Move window to middle of screen
         window_geometry = self.frameGeometry()
