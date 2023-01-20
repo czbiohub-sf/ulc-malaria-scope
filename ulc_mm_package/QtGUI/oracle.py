@@ -311,15 +311,16 @@ class Oracle(Machine):
         if self.lid_handler_enabled:
             self.scopeop.to_pause()
 
-            self.display_message(
-                icon=QMessageBox.Icon.Warning,
-                title="Lid opened, run paused",
-                text=(
-                    "The lid was opened during a run. The experiment has been paused. "
-                    "Close the lid and then press okay to resume the run. "
-                ),
-                buttons=BUTTONS.OK,
-            )
+            while self.scopeop.lid_opened:
+                self.display_message(
+                    icon=QMessageBox.Icon.Warning,
+                    title="Lid opened, run paused",
+                    text=(
+                        "The lid was opened during a run. The experiment has been paused. "
+                        "Close the lid and then press okay to resume the run. "
+                    ),
+                    buttons=BUTTONS.OK,
+                )
 
             self.scopeop.unpause()
 
@@ -348,18 +349,19 @@ class Oracle(Machine):
             self.scopeop.to_pause()
 
         sleep(2)
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Paused run",
-            (
-                "The CAP module can now be removed."
-                "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
-                "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
-                '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
-            ),
-            buttons=BUTTONS.OK,
-            image=_IMAGE_RELOAD_PATH,
-        )
+        while self.scopeop.lid_opened:
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Paused run",
+                (
+                    "The CAP module can now be removed."
+                    "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
+                    "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
+                    '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
+                ),
+                buttons=BUTTONS.OK,
+                image=_IMAGE_RELOAD_PATH,
+            )
         self.scopeop.unpause()
 
     def form_exit_handler(self):
@@ -455,17 +457,16 @@ class Oracle(Machine):
 
     def _start_setup(self, *args):
         self.lid_handler_enabled = False
-        while self.scopeop.lid_opened:
-            self.display_message(
-                QMessageBox.Icon.Information,
-                "Initializing hardware",
-                (
-                    "Remove the CAP module if it is currently on."
-                    '\n\nClick "OK" once it is removed.'
-                ),
-                buttons=BUTTONS.OK,
-                image=_IMAGE_REMOVE_PATH,
-            )
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Initializing hardware",
+            (
+                "Remove the CAP module if it is currently on."
+                '\n\nClick "OK" once it is removed.'
+            ),
+            buttons=BUTTONS.OK,
+            image=_IMAGE_REMOVE_PATH,
+        )
 
         self.scopeop_thread.start()
         self.acquisition_thread.start()
@@ -516,13 +517,14 @@ class Oracle(Machine):
         self.form_window.close()
 
     def _start_liveview(self, *args):
-        self.display_message(
-            QMessageBox.Icon.Information,
-            "Starting run",
-            'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
-            buttons=BUTTONS.OK,
-            image=_IMAGE_INSERT_PATH,
-        )
+        while self.scopeop.lid_opened:
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Starting run",
+                'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
+                buttons=BUTTONS.OK,
+                image=_IMAGE_INSERT_PATH,
+            )
 
         self.liveview_window.show()
         self.scopeop.start()
