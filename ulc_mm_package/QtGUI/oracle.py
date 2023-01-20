@@ -524,6 +524,7 @@ class Oracle(Machine):
         self.next_state()
 
     def _end_form(self, *args):
+        self.scopeop.lid_opened = self.scopeop.mscope.read_lim_sw()
         self.form_window.close()
 
     def _start_liveview(self, *args):
