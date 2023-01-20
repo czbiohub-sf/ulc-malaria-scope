@@ -525,7 +525,6 @@ class Oracle(Machine):
 
     def _end_form(self, *args):
         self.form_window.close()
-        self.lid_handler_enabled = True
 
     def _start_liveview(self, *args):
         self.display_message(
@@ -535,6 +534,7 @@ class Oracle(Machine):
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
+        self.lid_handler_enabled = True
 
         self.close_lid_display_message()
 
