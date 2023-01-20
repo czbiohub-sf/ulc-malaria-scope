@@ -536,7 +536,14 @@ class Oracle(Machine):
         )
         self.lid_handler_enabled = True
 
-        self.close_lid_display_message()
+        while self.scopeop.lid_opened:
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Starting run",
+                'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
+                buttons=Buttons.OK,
+                image=_IMAGE_INSERT_PATH,
+            )
 
         self.liveview_window.show()
         self.scopeop.start()
