@@ -359,9 +359,7 @@ class Oracle(Machine):
         )
         if message_result == QMessageBox.Ok:
             self.shutoff()
-        else:
-            print("HI")
-
+            
     def liveview_exit_handler(self):
         message_result = self.display_message(
             QMessageBox.Icon.Information,
