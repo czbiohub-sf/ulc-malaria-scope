@@ -463,7 +463,6 @@ class Oracle(Machine):
                 "Lid opened - pausing",
                 "The lid is open. Close the lid and press ok to resume.",
                 buttons=Buttons.OK,
-                image=_IMAGE_INSERT_PATH,
             )
 
     def _start_setup(self, *args):
