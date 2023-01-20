@@ -392,6 +392,7 @@ class Oracle(Machine):
             buttons=Buttons.CANCEL,
         )
         if message_result == QMessageBox.Ok:
+            self.lid_handler_enabled = False
             self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
     def error_handler(self, title, text, behavior):
