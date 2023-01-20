@@ -90,6 +90,10 @@ class FormGUI(QDialog):
         self.exit_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
 
+        # Disable [x] button at startup
+        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
+        self.setWindowFlag(Qt.WindowCloseButtonHint, False)
+
         # Disable text boxes at startup
         self.operator_val.setDisabled(True)
         self.participant_val.setDisabled(True)
@@ -140,6 +144,9 @@ class FormGUI(QDialog):
         # Enable buttons
         self.exit_btn.setEnabled(True)
         self.start_btn.setEnabled(True)
+
+        # Enable [x] button
+        self.setWindowFlag(Qt.WindowCloseButtonHint, True)
 
         # Enable text boxes
         self.operator_val.setDisabled(False)
