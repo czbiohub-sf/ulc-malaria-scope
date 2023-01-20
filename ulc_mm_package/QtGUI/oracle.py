@@ -65,7 +65,7 @@ _IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
 _IMAGE_RELOAD_PATH = "gui_images/remove_infographic.png"
 
 
-class BUTTONS(enum.Enum):
+class Buttons(enum.Enum):
     OK = QMessageBox.Ok
     CANCEL = QMessageBox.Cancel | QMessageBox.Ok
     YN = QMessageBox.No | QMessageBox.Yes
@@ -76,6 +76,15 @@ class ShutoffApplication(QApplication):
 
     def connect_signal(self, func):
         self.shutoff.connect(func)
+
+
+class NoCloseMessageBox(QMessageBox):
+    def __init__(self):
+        super().__init__()
+
+        # Disable [x] button
+        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
 
 
 class Oracle(Machine):
@@ -185,10 +194,12 @@ class Oracle(Machine):
         # Connect experiment form buttons
         self.form_window.start_btn.clicked.connect(self.save_form)
         self.form_window.exit_btn.clicked.connect(self.form_exit_handler)
+        self.form_window.close_event.connect(self.close_handler)
 
         # Connect liveview buttons
         self.liveview_window.pause_btn.clicked.connect(self.general_pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
+        self.liveview_window.close_event.connect(self.close_handler)
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.next_state)
@@ -197,7 +208,8 @@ class Oracle(Machine):
 
         self.scopeop.yield_mscope.connect(self.acquisition.get_mscope)
 
-        self.scopeop.error.connect(self.error_handler)
+        self.scopeop.precheck_error.connect(self.shutoff)
+        self.scopeop.default_error.connect(self.error_handler)
 
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
         self.scopeop.set_period.connect(self.acquisition.set_period)
@@ -237,7 +249,7 @@ class Oracle(Machine):
                     "The SSH tunnel is only recreated when the scope is rebooted."
                     '\n\nClick "OK" to continue running without SSH.'
                 ),
-                buttons=BUTTONS.OK,
+                buttons=Buttons.OK,
             )
             self.logger.warning(f"SSH address could not be found - {e}")
             self.liveview_window.update_tcp("unavailable")
@@ -250,7 +262,7 @@ class Oracle(Machine):
                     "If SSH is needed, please use the address printed in the liveviewer or terminal. "
                     '\n\nClick "OK" to continue running.'
                 ),
-                buttons=BUTTONS.OK,
+                buttons=Buttons.OK,
             )
             self.logger.warning(f"SSH address could not be emailed - {e}")
 
@@ -273,8 +285,7 @@ class Oracle(Machine):
                     "SSD not found",
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
                     + _ERROR_MSG,
-                    buttons=BUTTONS.OK,
-                    instant_abort=False,
+                    buttons=Buttons.OK,
                 )
                 sys.exit(1)
         print(f"Saving data to {self.ext_dir}")
@@ -292,8 +303,7 @@ class Oracle(Machine):
             "SSD is full",
             f"The SSD is full. Data cannot be saved if the SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
             + _ERROR_MSG,
-            buttons=BUTTONS.OK,
-            instant_abort=False,
+            buttons=Buttons.OK,
         )
 
     def reload_pause_handler(self, title, message):
@@ -303,7 +313,7 @@ class Oracle(Machine):
             icon=QMessageBox.Icon.Warning,
             title=title,
             message=message,
-            buttons=BUTTONS.OK,
+            buttons=Buttons.OK,
             pause_done=True,
         )
 
@@ -334,7 +344,7 @@ class Oracle(Machine):
             "After pausing, the scope will restart the calibration steps."
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
-        buttons=BUTTONS.CANCEL,
+        buttons=Buttons.CANCEL,
         pause_done=False,
     ):
         message_result = self.display_message(
@@ -364,12 +374,23 @@ class Oracle(Machine):
             )
         self.scopeop.unpause()
 
+    def close_handler(self):
+        self.display_message(
+            QMessageBox.Icon.Warning,
+            "Improper exit",
+            (
+                'Please close this window using the "Exit" button instead. '
+                "This ensures proper shutoff of the scope hardware. "
+            ),
+            buttons=Buttons.OK,
+        )
+
     def form_exit_handler(self):
         message_result = self.display_message(
             QMessageBox.Icon.Information,
             "End experiment?",
             'Click "OK" to end the experiment and shutoff the scope.',
-            buttons=BUTTONS.CANCEL,
+            buttons=Buttons.CANCEL,
         )
         if message_result == QMessageBox.Ok:
             self.shutoff()
@@ -379,7 +400,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "End run?",
             'Click "OK" to end this run.',
-            buttons=BUTTONS.CANCEL,
+            buttons=Buttons.CANCEL,
         )
         if message_result == QMessageBox.Ok:
             self.scopeop.to_intermission("Ending experiment due to user prompt.")
@@ -390,18 +411,16 @@ class Oracle(Machine):
                 QMessageBox.Icon.Critical,
                 title,
                 text + _ERROR_MSG,
-                buttons=BUTTONS.OK,
-                instant_abort=False,
+                buttons=Buttons.OK,
             )
             self.scopeop.to_intermission("Ending experiment due to error.")
 
-        elif behavior == ERROR_BEHAVIORS.INSTANT_ABORT.value:
+        elif behavior == ERROR_BEHAVIORS.PRECHECK.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
                 text + _ERROR_MSG,
-                buttons=BUTTONS.OK,
-                instant_abort=True,
+                buttons=Buttons.OK,
             )
 
         elif behavior == ERROR_BEHAVIORS.YN.value:
@@ -410,8 +429,7 @@ class Oracle(Machine):
                 title,
                 text
                 + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
-                buttons=BUTTONS.YN,
-                instant_abort=False,
+                buttons=Buttons.YN,
             )
             if message_result == QMessageBox.No:
                 self.scopeop.to_intermission("Ending experiment due to error.")
@@ -425,11 +443,10 @@ class Oracle(Machine):
         text,
         buttons=None,
         image=None,
-        instant_abort=False,
     ):
         self.message_window.close()
 
-        self.message_window = QMessageBox()
+        self.message_window = NoCloseMessageBox()
         self.message_window.setWindowIcon(QIcon(ICON_PATH))
         self.message_window.setIcon(icon)
         self.message_window.setWindowTitle(f"{title}")
@@ -449,10 +466,6 @@ class Oracle(Machine):
             layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)
 
         message_result = self.message_window.exec()
-
-        if instant_abort:
-            self.shutoff()
-
         return message_result
 
     def _start_setup(self, *args):
@@ -464,7 +477,7 @@ class Oracle(Machine):
                 "Remove the CAP module if it is currently on."
                 '\n\nClick "OK" once it is removed.'
             ),
-            buttons=BUTTONS.OK,
+            buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
 
@@ -540,7 +553,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Run complete",
             f'{msg} Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
-            buttons=BUTTONS.OK,
+            buttons=Buttons.OK,
             image=_IMAGE_REMOVE_PATH,
         )
 
@@ -548,7 +561,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Run another experiment?",
             'Click "Yes" to start a new run or "No" to shutoff scope.',
-            buttons=BUTTONS.YN,
+            buttons=Buttons.YN,
         )
         if message_result == QMessageBox.No:
             self.shutoff()

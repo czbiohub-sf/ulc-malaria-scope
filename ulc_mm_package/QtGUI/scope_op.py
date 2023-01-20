@@ -71,7 +71,8 @@ class ScopeOp(QObject, NamedMachine):
 
     yield_mscope = pyqtSignal(MalariaScope)
 
-    error = pyqtSignal(str, str, int)
+    precheck_error = pyqtSignal()
+    default_error = pyqtSignal(str, str, int)
 
     reload_pause = pyqtSignal(str, str)
     lid_open_pause = pyqtSignal()
@@ -242,13 +243,14 @@ class ScopeOp(QObject, NamedMachine):
                 for comp in component_status
                 if component_status.get(comp) == False
             ]
-            self.error.emit(
+            self.default_error.emit(
                 "Hardware pre-check failed",
                 "The following component(s) could not be instantiated: {}.".format(
                     (", ".join(failed_components)).capitalize()
                 ),
                 ERROR_BEHAVIORS.INSTANT_ABORT.value,
             )
+            self.precheck_error.emit()
 
     def lid_open_pause_handler(self, *args):
         self.lid_opened = True
@@ -333,7 +335,7 @@ class ScopeOp(QObject, NamedMachine):
         except PressureSensorBusy:
             self.logger.error(f"Unable to read value from the pressure sensor - {e}")
             # TODO What to do in a case where the sensor is acting funky?
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration failed",
                 "Failed to read pressure sensor to perform pressure seal check.",
                 ERROR_BEHAVIORS.DEFAULT.value,
@@ -341,7 +343,7 @@ class ScopeOp(QObject, NamedMachine):
         except PressureLeak as e:
             self.logger.error(f"Improper seal / pressure leak detected - {e}")
             # TODO provide instructions for dealing with pressure leak?
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration failed",
                 "Improper seal / pressure leak detected.",
                 ERROR_BEHAVIORS.DEFAULT.value,
@@ -452,7 +454,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.error(
                 f"Autobrightness failed. Mean pixel value = {e.value}.",
             )
-            self.error.emit(
+            self.default_error.emit(
                 "Autobrightness failed",
                 "LED is too dim to run experiment.",
                 ERROR_BEHAVIORS.DEFAULT.value,
@@ -460,7 +462,7 @@ class ScopeOp(QObject, NamedMachine):
         except LEDNoPower as e:
             if not SIMULATION:
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
-                self.error.emit(
+                self.default_error.emit(
                     "LED failure",
                     "The off/on LED test failed.",
                     ERROR_BEHAVIORS.DEFAULT.value,
@@ -489,7 +491,7 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
         except NoCellsFound:
             self.logger.error("Cellfinder failed. No cells found.")
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration failed",
                 "No cells found.",
                 ERROR_BEHAVIORS.DEFAULT.value,
@@ -525,7 +527,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.logger.error(
                     "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
                 )
-                self.error.emit(
+                self.default_error.emit(
                     "Calibration failed",
                     "Unable to achieve focus because the stage has reached its range of motion limit..",
                     ERROR_BEHAVIORS.DEFAULT.value,
@@ -547,7 +549,7 @@ class ScopeOp(QObject, NamedMachine):
         except CantReachTargetFlowrate as e:
             self.fastflow_result = e.flowrate
             self.logger.error("Fastflow failed. Syringe already at max position.")
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration issue",
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyways?",
                 ERROR_BEHAVIORS.YN.value,
@@ -558,9 +560,10 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.error(
                 "Fastflow failed. Too many recent low confidence xcorr calculations."
             )
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration failed",
-                "Too many recent low confidence xcorr calculations",
+                "Too many recent low confidence xcorr calculations.",
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
         except StopIteration as e:
             self.fastflow_result = e.value
@@ -654,7 +657,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.logger.error(
                         "Autofocus failed. Can't achieve focus within condenser's depth of field."
                     )
-                    self.error.emit(
+                    self.default_error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
                         ERROR_BEHAVIORS.DEFAULT.value,
