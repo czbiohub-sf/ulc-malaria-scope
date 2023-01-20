@@ -329,7 +329,7 @@ class Oracle(Machine):
                         "The lid was opened during a run. The experiment has been paused. "
                         "Close the lid and then press okay to resume the run. "
                     ),
-                    buttons=BUTTONS.OK,
+                    buttons=Buttons.OK,
                 )
 
             self.scopeop.unpause()
@@ -369,7 +369,7 @@ class Oracle(Machine):
                     "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
                     '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
                 ),
-                buttons=BUTTONS.OK,
+                buttons=Buttons.OK,
                 image=_IMAGE_RELOAD_PATH,
             )
         self.scopeop.unpause()
@@ -535,7 +535,7 @@ class Oracle(Machine):
                 QMessageBox.Icon.Information,
                 "Starting run",
                 'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
-                buttons=BUTTONS.OK,
+                buttons=Buttons.OK,
                 image=_IMAGE_INSERT_PATH,
             )
 
