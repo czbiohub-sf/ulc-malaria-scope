@@ -221,7 +221,7 @@ def getFlowrateWithCrossCorrelation(
     temp_x2_perc: float = 0.45,
     temp_y2_perc: float = 0.85,
     debug: bool = False,
-) -> Tuple[float, float]:
+) -> Tuple[float, float, float]:
 
     """Find the displacement of a subregion of an image with another, temporally adjacent, image.
 
