@@ -288,7 +288,9 @@ class ScopeOp(QObject, NamedMachine):
     def _start_pause(self, *args):
         self.running = False
 
-        self.accumulated_time += perf_counter() - self.start_time
+        # Account for case when pause is entered during the initial setup
+        if self.start_time > 0:
+            self.accumulated_time += perf_counter() - self.start_time
         self.start_time = 0
 
         try:

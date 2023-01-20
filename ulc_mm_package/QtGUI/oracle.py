@@ -318,7 +318,7 @@ class Oracle(Machine):
         )
 
     def lid_open_pause_handler(self):
-        if self.lid_handler_enabled:
+        if self.lid_handler_enabled and self.scopeop.state != "pause":
             self.scopeop.to_pause()
 
             while self.scopeop.lid_opened:
@@ -339,8 +339,7 @@ class Oracle(Machine):
         icon=QMessageBox.Icon.Information,
         title="Pause run?",
         message=(
-            "While paused, you can add more sample to the flow cell, "
-            "without losing the current brightness and focus calibration. "
+            "While paused, you can add more sample to the flow cell. "
             "After pausing, the scope will restart the calibration steps."
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
@@ -358,11 +357,19 @@ class Oracle(Machine):
         elif not pause_done:
             self.scopeop.to_pause()
 
+        while not self.scopeop.lid_opened:
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Paused run - open lid",
+                ("Please open the lid. Press ok once the lid has been opened."),
+                buttons=Buttons.OK,
+                image=_IMAGE_RELOAD_PATH,
+            )
         sleep(2)
         while self.scopeop.lid_opened:
             self.display_message(
                 QMessageBox.Icon.Information,
-                "Paused run",
+                "Paused run - reload sample",
                 (
                     "The CAP module can now be removed."
                     "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
