@@ -341,10 +341,11 @@ class Oracle(Machine):
             message,
             buttons=buttons,
         )
-        if message_result == QMessageBox.Cancel:
+        if message_result == QMessageBox.OK:
+            if not pause_done:
+                self.scopeop.to_pause()
+        else:
             return
-        elif not pause_done:
-            self.scopeop.to_pause()
 
         sleep(2)
         self.display_message(
@@ -461,7 +462,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Information,
                 "Lid opened - pausing",
-                "The lid is open. Close the lid and press ok to resume.",
+                'The lid is open. Close the lid and press "OK" to resume.',
                 buttons=Buttons.OK,
             )
 
@@ -533,7 +534,6 @@ class Oracle(Machine):
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
-        self.lid_handler_enabled = True
 
         while self.scopeop.lid_opened:
             self.display_message(
@@ -544,6 +544,7 @@ class Oracle(Machine):
                 image=_IMAGE_INSERT_PATH,
             )
 
+        self.lid_handler_enabled = True
         self.liveview_window.show()
         self.scopeop.start()
 
