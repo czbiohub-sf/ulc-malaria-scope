@@ -175,7 +175,6 @@ class ScopeOp(QObject, NamedMachine):
 
     def _set_variables(self):
         self.running = None
-        self.lid_opened = self.mscope.read_lim_sw()
 
         self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
@@ -227,6 +226,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope = MalariaScope()
         self.yield_mscope.emit(self.mscope)
+        self.lid_opened = self.mscope.read_lim_sw()
         self.mscope.set_gpio_callback(self.lid_open_pause_handler)
         self.mscope.set_gpio_callback(
             self.lid_closed_handler, edge=GPIOEdge.FALLING_EDGE
