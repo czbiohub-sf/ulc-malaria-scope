@@ -82,9 +82,16 @@ class NoCloseMessageBox(QMessageBox):
     def __init__(self):
         super().__init__()
 
-        # Disable [x] button
+        # Disable [x] button (this doesn't work on all raspian images!)
         self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
+
+    # In case the [x] button can't be disabled, this prevents the window from closing when it's clicked
+    def closeEvent(self, event):
+        if event.spontaneous():
+            event.ignore()
+        else:
+            event.accept()
 
 
 class Oracle(Machine):
@@ -95,7 +102,7 @@ class Oracle(Machine):
         self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
 
         # Instantiate message dialog
-        self.message_window = QMessageBox()
+        self.message_window = NoCloseMessageBox()
 
         # Setup SSD
         self._init_ssd()
