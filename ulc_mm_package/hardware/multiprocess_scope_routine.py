@@ -25,6 +25,8 @@ from typing import TypeVar, Callable, Optional, Union, List, Tuple
     In [35]: %timeit np_arr[:] = random_img
     2.15 ms ± 538 ns per loop (mean ± std. dev. of 7 runs, 100 loops each)
 
+- I don't really like how we are doing the handling of moving data here;
+  it needs to be refactored for clarity.
 """
 
 
@@ -39,17 +41,18 @@ ctype = Union[ctypes.c_float, AVTImg]
 
 def type_to_ctype_equiv(val: Union[npt.NDArray, float], ctype_val: ctype):
     if isinstance(val, float) and isinstance(ctype_val, ctypes.c_float):
+        # TODO generalize for ctypes other than c_float
         return True
-    elif isinstance(val, npt.NDArray) and isinstance(ctype_val, npt.NDArray):
+    elif isinstance(val, np.ndarray) and isinstance(ctype_val, np.ndarray):
         have_equiv_types = val.dtype == ctype_val.dtype
-        have_same_shape = np.prod(val.shape) == len(ctype_val)
+        have_same_shape = val.shape == ctype_val.shape
         return have_equiv_types and have_same_shape
     return False
 
 
 def get_ctype_image_defn(shape: Tuple[int, int]) -> ctypeArrayDefn:
     "helper function for our images"
-    return ctypeArrayDefn(type_str="b", shape=shape)
+    return ctypeArrayDefn(type_str="B", shape=shape)
 
 
 def get_ctype_float_defn(init_value: float = 0.0) -> ctypeValueDefn:
@@ -95,8 +98,9 @@ class MultiProcFunc:
         if isinstance(ctype_defn, ctypeValueDefn):
             return mp.RawValue(ctype_defn.type_str, ctype_defn.init_value)
         elif isinstance(ctype_defn, ctypeArrayDefn):
+            # i think that RawArray isn't being updated in the child process! fuck!
             return np.frombuffer(
-                mp.RawArray(ctype_defn.type_str, np.prod(ctype_defn.shape).astype(int)),
+                mp.RawArray(ctype_defn.type_str, int(np.prod(ctype_defn.shape))),
                 dtype=ctype_defn.type_str,
             ).reshape(ctype_defn.shape)
 
@@ -108,18 +112,19 @@ class MultiProcFunc:
             raise ValueError("len(set_values) != len(targets)")
 
         for set_val, target in zip(set_values, targets):
+            print(type(target), type(set_val))
             if not type_to_ctype_equiv(set_val, target):
                 raise ValueError(
                     f"set value and target ctype value are not "
                     f"equivalent: set_val = {set_val}, target_val = {target}"
                 )
-            if isinstance(set_val, npt.NDArray):
+            if isinstance(set_val, np.ndarray):
                 # for mypy
-                assert isinstance(target, npt.NDArray), "shouldn't happen!"
+                assert isinstance(target, np.ndarray)
                 target[:] = set_val
             else:
                 # for mypy
-                assert isinstance(target, ctypes.c_float), "shouldn't happen!"
+                assert isinstance(target, ctypes.c_float)
                 target.value = set_val
 
     @staticmethod
@@ -127,7 +132,7 @@ class MultiProcFunc:
         targets: List[ctype], copy: bool = True
     ) -> List[Union[npt.NDArray, float]]:
         def get_python_value(ctype_val: ctype) -> Union[npt.NDArray, float]:
-            if isinstance(ctype_val, npt.NDArray):
+            if isinstance(ctype_val, np.ndarray):
                 if copy:
                     return np.copy(ctype_val)
                 return ctype_val
@@ -141,11 +146,12 @@ class MultiProcFunc:
             self._new_data_ready.wait()
             self._new_data_ready.clear()
 
+            print('thisit', self._input_ctypes)
             with self._value_lock:
                 func_args = self._get_data_from_ctypes(self._input_ctypes, copy=False)
                 ret_vals = self.work_fcn(*func_args)
 
-                self._set_ctypes(ret_vals, self._output_ctypes)
+                self._set_ctypes([ret_vals], self._output_ctypes)
 
             self._ret_value_ready.set()
 
@@ -154,7 +160,7 @@ class MultiProcFunc:
     ) -> Tuple[Union[npt.NDArray, float], ...]:
         with self._value_lock:
             self._set_ctypes(args, self._input_ctypes)
-
+        print(self._input_ctypes)
         self._new_data_ready.set()
 
         self._ret_value_ready.wait()
