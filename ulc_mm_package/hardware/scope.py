@@ -249,3 +249,8 @@ class MalariaScope:
             )
         else:
             self.logger.info(f"We're simulating, no callback set.")
+
+    @staticmethod
+    def read_lim_sw(pin: int = LID_LIMIT_SWITCH2):
+        pi = pigpio.pi()
+        return pi.read(LID_LIMIT_SWITCH2)

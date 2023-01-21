@@ -146,6 +146,9 @@ class Oracle(Machine):
 
         self.liveview_window.set_infopanel_vals()
 
+        # Lid handler
+        self.lid_handler_enabled = False
+
     def _init_threads(self):
         # Instantiate scope operator and thread
         self.scopeop = ScopeOp()
@@ -201,7 +204,7 @@ class Oracle(Machine):
         self.form_window.close_event.connect(self.close_handler)
 
         # Connect liveview buttons
-        self.liveview_window.pause_btn.clicked.connect(self.pause_handler)
+        self.liveview_window.pause_btn.clicked.connect(self.general_pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
         self.liveview_window.close_event.connect(self.close_handler)
 
@@ -218,7 +221,8 @@ class Oracle(Machine):
         self.scopeop.freeze_liveview.connect(self.acquisition.freeze_liveview)
         self.scopeop.set_period.connect(self.acquisition.set_period)
 
-        self.scopeop.send_pause.connect(self.pause_receiver)
+        self.scopeop.reload_pause.connect(self.reload_pause_handler)
+        self.scopeop.lid_open_pause.connect(self.lid_open_pause_handler)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -309,10 +313,10 @@ class Oracle(Machine):
             buttons=Buttons.OK,
         )
 
-    def pause_receiver(self, title, message):
+    def reload_pause_handler(self, title, message):
         self.scopeop.to_pause()
 
-        self.pause_handler(
+        self.general_pause_handler(
             icon=QMessageBox.Icon.Warning,
             title=title,
             message=message,
@@ -320,13 +324,18 @@ class Oracle(Machine):
             pause_done=True,
         )
 
-    def pause_handler(
+    def lid_open_pause_handler(self):
+        if self.lid_handler_enabled and self.scopeop.state != "pause":
+            self.scopeop.to_pause()
+            self.close_lid_display_message()
+            self.scopeop.unpause()
+
+    def general_pause_handler(
         self,
         icon=QMessageBox.Icon.Information,
         title="Pause run?",
         message=(
-            "While paused, you can add more sample to the flow cell, "
-            "without losing the current brightness and focus calibration. "
+            "While paused, you can add more sample to the flow cell. "
             "After pausing, the scope will restart the calibration steps."
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
@@ -339,15 +348,16 @@ class Oracle(Machine):
             message,
             buttons=buttons,
         )
-        if message_result == QMessageBox.Cancel:
+        if message_result == QMessageBox.Ok:
+            if not pause_done:
+                self.scopeop.to_pause()
+        else:
             return
-        elif not pause_done:
-            self.scopeop.to_pause()
 
         sleep(2)
         self.display_message(
             QMessageBox.Icon.Information,
-            "Paused run",
+            "Paused run - reload sample",
             (
                 "The CAP module can now be removed."
                 "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
@@ -357,6 +367,7 @@ class Oracle(Machine):
             buttons=Buttons.OK,
             image=_IMAGE_RELOAD_PATH,
         )
+        self.close_lid_display_message()
         self.scopeop.unpause()
 
     def close_handler(self):
@@ -388,6 +399,7 @@ class Oracle(Machine):
             buttons=Buttons.CANCEL,
         )
         if message_result == QMessageBox.Ok:
+            self.lid_handler_enabled = False
             self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
     def error_handler(self, title, text, behavior):
@@ -453,7 +465,17 @@ class Oracle(Machine):
         message_result = self.message_window.exec()
         return message_result
 
+    def close_lid_display_message(self):
+        while self.scopeop.lid_opened:
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Lid opened - pausing",
+                'The lid is open. Close the lid and press "OK" to resume.',
+                buttons=Buttons.OK,
+            )
+
     def _start_setup(self, *args):
+        self.lid_handler_enabled = False
         self.display_message(
             QMessageBox.Icon.Information,
             "Initializing hardware",
@@ -510,6 +532,7 @@ class Oracle(Machine):
         self.next_state()
 
     def _end_form(self, *args):
+        self.scopeop.lid_opened = self.scopeop.mscope.read_lim_sw()
         self.form_window.close()
 
     def _start_liveview(self, *args):
@@ -521,6 +544,16 @@ class Oracle(Machine):
             image=_IMAGE_INSERT_PATH,
         )
 
+        while self.scopeop.lid_opened:
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Starting run",
+                'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
+                buttons=Buttons.OK,
+                image=_IMAGE_INSERT_PATH,
+            )
+
+        self.lid_handler_enabled = True
         self.liveview_window.show()
         self.scopeop.start()
 

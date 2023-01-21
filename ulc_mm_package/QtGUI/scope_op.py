@@ -14,7 +14,7 @@ from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
-from ulc_mm_package.hardware.scope import MalariaScope
+from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
@@ -24,7 +24,10 @@ from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     VERBOSE,
 )
-from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
+from ulc_mm_package.hardware.hardware_modules import (
+    PressureSensorStaleValue,
+    SyringeInMotion,
+)
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
@@ -71,7 +74,8 @@ class ScopeOp(QObject, NamedMachine):
     precheck_error = pyqtSignal()
     default_error = pyqtSignal(str, str, int)
 
-    send_pause = pyqtSignal(str, str)
+    reload_pause = pyqtSignal(str, str)
+    lid_open_pause = pyqtSignal()
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -172,6 +176,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def _set_variables(self):
         self.running = None
+        self.lid_opened = None
 
         self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
@@ -187,7 +192,7 @@ class ScopeOp(QObject, NamedMachine):
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.TH_time = None
-        self.start_time = None
+        self.start_time = 0
         self.accumulated_time = 0
 
         self.update_img_count.emit(0)
@@ -223,6 +228,11 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope = MalariaScope()
         self.yield_mscope.emit(self.mscope)
+        self.lid_opened = self.mscope.read_lim_sw()
+        self.mscope.set_gpio_callback(self.lid_open_pause_handler)
+        self.mscope.set_gpio_callback(
+            self.lid_closed_handler, edge=GPIOEdge.FALLING_EDGE
+        )
         component_status = self.mscope.getComponentStatus()
 
         if all([status == True for status in component_status.values()]):
@@ -241,6 +251,14 @@ class ScopeOp(QObject, NamedMachine):
                 ERROR_BEHAVIORS.INSTANT_ABORT.value,
             )
             self.precheck_error.emit()
+
+    def lid_open_pause_handler(self, *args):
+        self.lid_opened = True
+        if self.mscope.led._isOn:
+            self.lid_open_pause.emit()
+
+    def lid_closed_handler(self, *args):
+        self.lid_opened = False
 
     def start(self):
         self.running = True
@@ -270,6 +288,7 @@ class ScopeOp(QObject, NamedMachine):
     def _start_pause(self, *args):
         self.running = False
 
+        # Account for case when pause is entered during the initial setup
         if self.start_time != None:
             self.accumulated_time += perf_counter() - self.start_time
             self.start_time = None
@@ -282,9 +301,18 @@ class ScopeOp(QObject, NamedMachine):
             )
 
         self.logger.info("Resetting pneumatic module for pause.")
-        self.mscope.pneumatic_module.setDutyCycle(
-            self.mscope.pneumatic_module.getMaxDutyCycle()
-        )
+        # Account for the case where the syringe might still be in motion
+        # e.g during cell finding or if a flow control adjustment is being done.
+        while self.mscope.pneumatic_module.is_locked():
+            sleep(0.1)
+
+        try:
+            self.mscope.pneumatic_module.setDutyCycle(
+                self.mscope.pneumatic_module.getMaxDutyCycle()
+            )
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
         self.mscope.led.turnOff()
 
     def _end_pause(self, *args):
@@ -390,9 +418,16 @@ class ScopeOp(QObject, NamedMachine):
             )
 
         self.logger.info("Resetting pneumatic module for rerun.")
-        self.mscope.pneumatic_module.setDutyCycle(
-            self.mscope.pneumatic_module.getMaxDutyCycle()
-        )
+        while self.mscope.pneumatic_module.is_locked():
+            sleep(0.1)
+        try:
+            self.mscope.pneumatic_module.setDutyCycle(
+                self.mscope.pneumatic_module.getMaxDutyCycle()
+            )
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
+
         self.mscope.led.turnOff()
 
         closing_file_future = self.mscope.data_storage.close()
@@ -610,7 +645,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.density_routine.send(filtered_prediction)
                 except LowDensity as e:
                     self.logger.warning(f"Cell density is too low.")
-                    self.send_pause.emit(
+                    self.reload_pause.emit(
                         "Low cell density",
                         (
                             "Cell density is too low. "
