@@ -95,7 +95,7 @@ class Oracle(Machine):
         self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
 
         # Instantiate message dialog
-        self.message_window = QMessageBox()
+        self.message_window = NoCloseMessageBox()
 
         # Setup SSD
         self._init_ssd()
