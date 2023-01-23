@@ -33,6 +33,8 @@ TODOs
   variable type! Messy messy messy.
     - abstracted into 'shared mem' class that has same interface for both shared
       memory types, just for cleanliness
+- Rename "multiprocess_scope_routine.py" to a name that better reflects the true nature
+  of the use of this file
 """
 
 
@@ -72,22 +74,17 @@ class MultiProcFunc:
     def __init__(
         self,
         work_fcn: Callable,
-        work_fn_inputs: List[ctypeDefn],
-        work_fn_outputs: List[ctypeDefn],
+        work_fn_inputs: List[ctype],
+        work_fn_outputs: List[ctype],
     ):
         self.work_fcn: Callable = work_fcn
-
-        # Create the raw shared types for input/output of the function
-        self._input_ctypes: List[ctype] = [
-            self._defn_to_ctype(d) for d in work_fn_inputs
-        ]
-        self._output_ctypes: List[ctype] = [
-            self._defn_to_ctype(d) for d in work_fn_outputs
-        ]
 
         # raw array / value because the input Array and Value are changed together
         # this may not even be necessary depending on our impl
         self._value_lock = mp.Lock()
+
+        self._input_ctypes = work_fn_inputs
+        self._output_ctypes = work_fn_outputs
 
         # Flag used to know when we can either operate on the data or retrieve the result
         self._new_data_ready = mp.Event()
@@ -99,7 +96,24 @@ class MultiProcFunc:
             daemon=True,
         )
         self._proc.start()
-        self._proc.join()
+        print('initted')
+
+    @classmethod
+    def from_arg_definitions(
+        cls,
+        work_fcn: Callable,
+        work_fn_inputs: List[ctypeDefn],
+        work_fn_outputs: List[ctypeDefn],
+    ):
+        # Create the raw shared types for input/output of the function
+        input_vals: List[ctype] = cls._defns_to_ctypes(work_fn_inputs)
+        output_vals: List[ctype] = cls._defns_to_ctypes(work_fn_outputs)
+
+        return cls(work_fcn, input_vals, output_vals)
+
+    @staticmethod
+    def _defns_to_ctypes(ctype_defns: List[ctypeDefn]) -> List[ctype]:
+        return [MultiProcFunc._defn_to_ctype(d) for d in ctype_defns]
 
     @staticmethod
     def _defn_to_ctype(ctype_defn: ctypeDefn) -> ctype:
@@ -159,8 +173,9 @@ class MultiProcFunc:
             with self._value_lock:
                 func_args = self._get_data_from_ctypes(input_args, copy=False)
                 ret_vals = self.work_fcn(*func_args)
+                ret_vals = ret_vals if isinstance(ret_vals, tuple) else [ret_vals]
 
-                self._set_ctypes([ret_vals], outputs)
+                self._set_ctypes(ret_vals, outputs)
 
             self._ret_value_ready.set()
 
@@ -169,6 +184,14 @@ class MultiProcFunc:
     ) -> Tuple[Union[npt.NDArray, float], ...]:
         with self._value_lock:
             self._set_ctypes(args, self._input_ctypes)
+
+        return self._func_call()
+
+    def _func_call(self) -> Tuple[Union[npt.NDArray, float], ...]:
+        """
+        if self._input_ctypes has been set somewhere else,
+        we want to still be able to smoothly call the work func
+        """
         self._new_data_ready.set()
 
         self._ret_value_ready.wait()
