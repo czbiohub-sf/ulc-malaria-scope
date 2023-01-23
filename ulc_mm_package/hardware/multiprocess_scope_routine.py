@@ -96,7 +96,7 @@ class MultiProcFunc:
             daemon=True,
         )
         self._proc.start()
-        print('initted')
+        print("initted")
 
     @classmethod
     def from_arg_definitions(
