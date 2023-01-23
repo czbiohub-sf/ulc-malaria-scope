@@ -325,11 +325,10 @@ class Oracle(Machine):
         )
 
     def lid_open_pause_handler(self):
-        if not SIMULATION:
-            if self.lid_handler_enabled and self.scopeop.state != "pause":
-                self.scopeop.to_pause()
-                self.close_lid_display_message()
-                self.scopeop.unpause()
+        if self.lid_handler_enabled and self.scopeop.state != "pause":
+            self.scopeop.to_pause()
+            self.close_lid_display_message()
+            self.scopeop.unpause()
 
     def general_pause_handler(
         self,
