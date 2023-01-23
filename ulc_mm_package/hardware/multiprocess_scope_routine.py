@@ -87,7 +87,11 @@ class MultiProcFunc:
         self._new_data_ready = mp.Event()
         self._ret_value_ready = mp.Event()
 
-        self._proc = mp.Process(target=self._work, daemon=True)
+        self._proc = mp.Process(
+            target=self._work,
+            args=(self._input_ctypes, self._output_ctypes),
+            daemon=True,
+        )
         self._proc.start()
 
     @staticmethod
@@ -112,7 +116,6 @@ class MultiProcFunc:
             raise ValueError("len(set_values) != len(targets)")
 
         for set_val, target in zip(set_values, targets):
-            print(type(target), type(set_val))
             if not type_to_ctype_equiv(set_val, target):
                 raise ValueError(
                     f"set value and target ctype value are not "
@@ -141,17 +144,16 @@ class MultiProcFunc:
 
         return [get_python_value(c) for c in targets]
 
-    def _work(self):
+    def _work(self, input_args, outputs):
         while True:
             self._new_data_ready.wait()
             self._new_data_ready.clear()
 
-            print('thisit', self._input_ctypes)
             with self._value_lock:
-                func_args = self._get_data_from_ctypes(self._input_ctypes, copy=False)
+                func_args = self._get_data_from_ctypes(input_args, copy=False)
                 ret_vals = self.work_fcn(*func_args)
 
-                self._set_ctypes([ret_vals], self._output_ctypes)
+                self._set_ctypes([ret_vals], outputs)
 
             self._ret_value_ready.set()
 
@@ -160,7 +162,6 @@ class MultiProcFunc:
     ) -> Tuple[Union[npt.NDArray, float], ...]:
         with self._value_lock:
             self._set_ctypes(args, self._input_ctypes)
-        print(self._input_ctypes)
         self._new_data_ready.set()
 
         self._ret_value_ready.wait()
