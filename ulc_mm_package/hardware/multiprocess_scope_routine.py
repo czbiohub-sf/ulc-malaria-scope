@@ -99,6 +99,7 @@ class MultiProcFunc:
             daemon=True,
         )
         self._proc.start()
+        self._proc.join()
 
     @staticmethod
     def _defn_to_ctype(ctype_defn: ctypeDefn) -> ctype:
