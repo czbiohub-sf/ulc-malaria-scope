@@ -1,12 +1,3 @@
-"""
-We want to be able to multiprocess some routines, in order to lighten the load
-in the main process.
-
-Further, we want this to be seamless with our current integration of scope routines.
-That is, if you are writing code for QtGUI.scope_op, or writing a routine that takes
-an image, does some computation, and returns a result.
-"""
-
 import ctypes
 import numpy as np
 import numpy.typing as npt
@@ -17,16 +8,31 @@ from typing import TypeVar, Callable, Optional, Union, List, Tuple
 
 
 """
-- We want to pass images np.array(dtype=u8, shape=(772,1032)) and values back/fourth across processes
-- Using mp.Queue is slow due to the Pickleization + pipe through the kernel
-- Use mp.Value, mp.Array
-- copy time is u8 (772,1032):
+We want to be able to multiprocess some routines, in order to lighten the load
+in the main process.
 
+Further, we want this to be seamless with our current integration of scope routines.
+That is, if you are writing code for QtGUI.scope_op, or writing a routine that takes
+an image, does some computation, and returns a result.
+
+- We want to pass images (eg np.array(dtype=u8, shape=(772,1032))) and values
+  back/fourth across processes
+- Using mp.Queue is slow due to the Pickle-ization + pipe through the kernel
+- Use mp.Value, mp.Array (mem that is shared between processes!)
+- copy time on RPi4 for u8 (772,1032) is:
+
+    In [34]: random_img = np.random.randint(0,256,(772,1032))
     In [35]: %timeit np_arr[:] = random_img
     2.15 ms ± 538 ns per loop (mean ± std. dev. of 7 runs, 100 loops each)
 
-- I don't really like how we are doing the handling of moving data here;
-  it needs to be refactored for clarity.
+
+TODOs
+- I could make the shared memory type wrapper better. We define the arg types
+  with 'ctypeDefn', which gets mapped to shared mem with `_defn_to_ctype`. Then every
+  time we need to modify or read that memory, we have to do an if/else on the
+  variable type! Messy messy messy.
+    - abstracted into 'shared mem' class that has same interface for both shared
+      memory types, just for cleanliness
 """
 
 
