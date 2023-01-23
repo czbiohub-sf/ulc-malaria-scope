@@ -228,7 +228,10 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope = MalariaScope()
         self.yield_mscope.emit(self.mscope)
-        self.lid_opened = self.mscope.read_lim_sw()
+        if not SIMULATION:
+            self.lid_opened = self.mscope.read_lim_sw()
+        else:
+            self.lid_opened = False
         self.mscope.set_gpio_callback(self.lid_open_pause_handler)
         self.mscope.set_gpio_callback(
             self.lid_closed_handler, edge=GPIOEdge.FALLING_EDGE
