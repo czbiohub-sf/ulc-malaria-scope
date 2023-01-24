@@ -294,7 +294,6 @@ class MultiProcFunc:
             self._ret_value_ready.set()
 
     def call(self, args: List[_pytype]) -> Tuple[_pytype, ...]:
-
         self._set_ctypes(args, self._input_ctypes)
 
         return self._func_call()
