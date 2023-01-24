@@ -124,6 +124,7 @@ _ctype_codes = list(_typecode_to_type.keys())
 _pytype = Union[Real, npt.NDArray[np.uint8]]
 _ctype_type = Union[Type[_SimpleCData], str]
 
+
 class SharedctypeWrapper(abc.ABC):
     """
     Wraps shared memory (RawValue / RawArray) in a way
@@ -173,9 +174,7 @@ class SharedctypeWrapper(abc.ABC):
 
 
 class SharedctypeValue(SharedctypeWrapper):
-    def __init__(
-        self, type_: _ctype_type, init_value: Optional[Real]
-    ):
+    def __init__(self, type_: _ctype_type, init_value: Optional[Real]):
         self._memory: mp.sharedctypes.Synchronized[Real] = mp.Value(type_, init_value)
 
     @classmethod
@@ -294,9 +293,7 @@ class MultiProcFunc:
 
             self._ret_value_ready.set()
 
-    def call(
-        self, args: List[_pytype]
-    ) -> Tuple[_pytype, ...]:
+    def call(self, args: List[_pytype]) -> Tuple[_pytype, ...]:
 
         self._set_ctypes(args, self._input_ctypes)
 
