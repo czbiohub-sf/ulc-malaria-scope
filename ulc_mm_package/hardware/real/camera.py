@@ -245,8 +245,8 @@ class AVTCamera:
         while self.camera.is_streaming():
             self.camera.stop_streaming()
 
-        self.camera.BinningHorizontalMode.set(mode)
-        self.camera.BinningVerticalMode.set(mode)
+        self.camera.BinningHorizontalMode.set(mode.value)
+        self.camera.BinningVerticalMode.set(mode.value)
         self.camera.BinningHorizontal.set(bin_factor)
         self.camera.BinningVertical.set(bin_factor)
 
