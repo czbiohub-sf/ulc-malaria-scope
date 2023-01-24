@@ -58,28 +58,20 @@ class FlowRateEstimator:
         self.img_height, self.img_width = img_height, img_width
 
         # for multi-proc
-        (
-            self.frame_a,
-            self.frame_b,
-            self._dx,
-            self._dy,
-            self._max_val,
-        ) = msr.MultiProcFunc._defns_to_ctypes(
-            [
+        self.multiproc_interface = msr.MultiProcFunc.from_arg_definitions(
+            get_flowrate_with_cross_correlation,
+            work_fn_inputs=[
                 msr.get_ctype_image_defn((img_height, img_width)),
                 msr.get_ctype_image_defn((img_height, img_width)),
+            ],
+            work_fn_outputs=[
                 msr.get_ctype_float_defn(),
                 msr.get_ctype_float_defn(),
                 msr.get_ctype_float_defn(),
-            ]
+            ],
         )
 
-        self._work_inputs = [self.frame_a, self.frame_b]
-        self._work_outputs = [self._dx, self._dy, self._max_val]
-
-        self.multiproc_interface = msr.MultiProcFunc(
-            get_flowrate_with_cross_correlation, self._work_inputs, self._work_outputs
-        )
+        self.frame_a, self.frame_b = self.multiproc_interface._input_ctypes
 
         self._frame_counter = 0
         self._calc_idx = 0
@@ -131,11 +123,10 @@ class FlowRateEstimator:
         timestamp : int
             Timestamp of when the image was taken (units left to the user)
         """
-        with self.multiproc_interface._value_lock:
-            if self._frame_counter == 0:
-                self.frame_a[:] = img_arr
-            else:
-                self.frame_b[:] = img_arr
+        if self._frame_counter == 0:
+            self.frame_a.set(img_arr)
+        else:
+            self.frame_b.set(img_arr)
 
         self.timestamps[self._frame_counter] = timestamp
         self._frame_counter = (self._frame_counter + 1) % 2

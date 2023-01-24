@@ -125,6 +125,16 @@ _pytype = Union[Real, npt.NDArray[np.uint8]]
 _ctype_type = Union[Type[_SimpleCData], str]
 
 
+def get_ctype_image_defn(shape: Tuple[int, int]):
+    "helper for common ctype"
+    return ctypeArrayDefn("B", shape)
+
+
+def get_ctype_float_defn():
+    "helper for common ctype"
+    return ctypeValueDefn("d")
+
+
 class SharedctypeWrapper(abc.ABC):
     """
     Wraps shared memory (RawValue / RawArray) in a way
