@@ -703,7 +703,7 @@ class ScopeOp(QObject, NamedMachine):
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
-            t0 = time.perf_counter()
+            t0 = perf_counter()
             # Update infopanel
             if focus_err != None:
                 # TODO change this to non int?
