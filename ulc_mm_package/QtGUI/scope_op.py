@@ -48,7 +48,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
 )
 
 # TODO populate info?
-# TODO remove -1 flag from TH sensor?
 
 
 class NamedState(State):
