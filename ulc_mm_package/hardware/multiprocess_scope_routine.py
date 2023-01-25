@@ -85,6 +85,7 @@ TODOs
 - I am typing this *just* as values / arrays of Real numbers (i.e. work function arguments
   and return values are assumed to be real numbers). However, we can also support chars
   and limited strings (of fixed max length).
+- Docs!
 """
 
 
