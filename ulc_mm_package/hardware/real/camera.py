@@ -102,19 +102,16 @@ class AVTCamera:
 
     def __del__(self):
         """Cleanup - however best not to rely on __del__."""
-
         self.deactivateCamera()
 
     def _get_camera(self):
         """Returns the first listed AVT camera."""
-
         with Vimba.get_instance() as vimba:
             cams = vimba.get_all_cameras()
             return cams[0]
 
     def _camera_setup(self):
         """Default settings for use with the malaria scope."""
-
         self.minExposure_ms, self.maxExposure_ms = self.getExposureBoundsMilliseconds()
         self.setDeviceLinkThroughputLimit(DEVICELINK_THROUGHPUT)
         self.camera.ExposureAuto.set("Off")
@@ -218,7 +215,6 @@ class AVTCamera:
         queue.Empty:
             Raised if no frames are received within 0.5s while the camera is streaming
         """
-
         if not self.camera.is_streaming():
             self._flush_queue()
             self.startAcquisition()
@@ -241,7 +237,6 @@ class AVTCamera:
 
         bin_factor: int
         """
-
         while self.camera.is_streaming():
             self.camera.stop_streaming()
 
@@ -258,24 +253,23 @@ class AVTCamera:
 
     def getBinning(self):
         """Return the binning factor."""
-
         return self.camera.BinningHorizontal.get()
 
     def setDeviceLinkThroughputLimit(self, bytes_per_second: int):
         """Set the device link throughput (in bytes)."""
-
         self.camera.DeviceLinkThroughputLimit.set(bytes_per_second)
 
     def _getTemperature(self) -> float:
         """Get the device temperature."""
-
         try:
             return self.camera.DeviceTemperature.get()
-        except:
-            print("Could not get the device temperature using DeviceTemperature.")
-        raise
+        except Exception as e:
+            self.logger.error(
+                "Could not get the device temperature using DeviceTemperature: {e}"
+            )
+            raise e
 
-    def _setExposureTimeMilliseconds(self, value_ms: int):
+    def _setExposureTimeMilliseconds(self, value_ms: int) -> None:
         """Set the exposure time.
 
         Parameters
@@ -283,12 +277,11 @@ class AVTCamera:
         value_ms: int
             Desired exposure time in milliseconds.
         """
-
         try:
             self.camera.ExposureTime.set(value_ms * 1000)
-            return
-        except:
-            print(f"Could set exposure using ExposureTime.set().")
+        except Exception as e:
+            self.logger.error(f"Could not set exposure using ExposureTime.set().")
+            raise e
 
     def _getCurrentExposureMilliseconds(self) -> float:
         """Return the current exposure time in milliseconds.
@@ -297,14 +290,13 @@ class AVTCamera:
         -------
         float: exposure time in milliseconds
         """
-
         try:
-            exposureTime_ms = self.camera.ExposureTime.get() / 1000
-            return exposureTime_ms
-        except:
-            print(f"ExposureTime method failed.")
-        print(f"Could not get the current ExposureTime.")
-        return None
+            return self.camera.ExposureTime.get() / 1000
+        except Exception as e:
+            self.logger.error(
+                f"ExposureTime method failed - could not get the current ExposureTime: {e}"
+            )
+            raise e
 
     def getExposureBoundsMilliseconds(self) -> Tuple[float, float]:
         """Get the min/max exposure time bounds
@@ -320,8 +312,10 @@ class AVTCamera:
             maxExposure_ms = self.camera.ExposureAutoMax.get() / 1000
             return (minExposure_ms, maxExposure_ms)
         except Exception as e:
-            print(e)
-            print(f"Could not get exposure using ExposureAutoMin / ExposureAutoMax.")
+            self.logger.error(
+                f"Could not get exposure using ExposureAutoMin / ExposureAutoMax: {e}"
+            )
+            raise e
 
     @property
     def exposureTime_ms(self):
@@ -329,14 +323,17 @@ class AVTCamera:
 
     @exposureTime_ms.setter
     def exposureTime_ms(self, value_ms: int):
-        if (value_ms > self.minExposure_ms) and (value_ms < self.maxExposure_ms):
+        if self.minExposure_ms < value_ms < self.maxExposure_ms:
             try:
                 self._setExposureTimeMilliseconds(value_ms)
                 exposureFromCamera = self._getCurrentExposureMilliseconds()
                 self._exposureTime_ms = exposureFromCamera
-                print(f"Exposure time set to {exposureFromCamera} ms.")
-
-            except:
-                print(f"Failed to set exposure'")
+                self.logger.info(f"Exposure time set to {exposureFromCamera} ms.")
+            except Exception as e:
+                self.logger.warning(f"Failed to set exposure: {e}")
+                raise e
         else:
-            raise ValueError
+            raise ValueError(
+                f"value_ms out of range: must be in "
+                "[{self.minExposure_ms, self.maxExposure_ms}], but value_ms={value_ms}"
+            )
