@@ -738,8 +738,8 @@ class ScopeOp(QObject, NamedMachine):
                 self.TH_time = current_time
 
                 temperature, humidity = self.mscope.ht_sensor.get_temp_and_humidity()
-                self.img_metadata[ "humidity" ] = humidity
-                self.img_metadata[ "temperature" ] = temperature
+                self.img_metadata["humidity"] = humidity
+                self.img_metadata["temperature"] = temperature
             else:
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None

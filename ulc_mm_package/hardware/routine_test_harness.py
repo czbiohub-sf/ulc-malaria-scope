@@ -253,7 +253,10 @@ def main_acquisition_loop(mscope: MalariaScope):
             "syringe_pos"
         ] = mscope.pneumatic_module.getCurrentDutyCycle()
         fake_per_img_metadata["flowrate"] = flow_val
-        fake_per_img_metadata["temperature"], fake_per_img_metadata["humidity"] = mscope.ht_sensor.get_temp_and_humidity()
+        (
+            fake_per_img_metadata["temperature"],
+            fake_per_img_metadata["humidity"],
+        ) = mscope.ht_sensor.get_temp_and_humidity()
         mscope.data_storage.writeData(img, fake_per_img_metadata, i)
 
         # Timed stop condition

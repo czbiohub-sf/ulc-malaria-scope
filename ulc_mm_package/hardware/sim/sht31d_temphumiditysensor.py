@@ -10,6 +10,7 @@ Adafruit's PCF8523 Python library:
 
 class SHT3X:
     """Simulated temperature/humidity sensor returning dummy values"""
+
     def get_temp_and_humidity(self) -> Tuple[float, float]:
         temperature, humidity = self.sensor._read()
-        return 25.,1.
+        return 25.0, 1.0

@@ -34,7 +34,7 @@ class SHT3X:
             self.sensor = adafruit_sht31d.SHT31D(i2c)
             self.sensor.mode = adafruit_sht31d.MODE_SINGLE
             # Don't wait to try to smooth out the signal (w/ repeatability) [0]
-            self.sensor.clock_stretching=True
+            self.sensor.clock_stretching = True
             self.sensor.repeatability = adafruit_sht31d.REP_LOW
         except Exception:
             raise TemperatureSensorNotInstantiated()
