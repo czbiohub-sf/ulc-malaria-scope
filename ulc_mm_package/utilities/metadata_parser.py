@@ -55,7 +55,9 @@ def metadata_parser(descriptor, file):
 
     # Plot size results
     size_ax = time_ax.twinx()
-    size_ax.scatter(range(len(qsizes)), qsizes, label="Queue size", color="green", s=2)
+    size_ax.scatter(range(len(qsizes)), qsizes, label="Zarr queue", color="green", s=2)
+    size_ax.tick_params(colors="green")
+    size_ax.set_ylabel("Queue size", color="green")
 
     # Format plots
     time_ax.legend(loc=2)
