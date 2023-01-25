@@ -280,7 +280,7 @@ class AVTCamera:
         try:
             self.camera.ExposureTime.set(value_ms * 1000)
         except Exception as e:
-            self.logger.error(f"Could set exposure using ExposureTime.set().")
+            self.logger.error(f"Could not set exposure using ExposureTime.set().")
             raise e
 
     def _getCurrentExposureMilliseconds(self) -> float:
