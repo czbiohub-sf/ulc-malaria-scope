@@ -74,18 +74,9 @@ will wrap these ctypes in a manner that will
 TODOs
 -----
 
-- I could make the shared memory type wrapper better. We define the arg types
-  with 'ctypeDefn', which gets mapped to shared mem with `_defn_to_ctype`. Then every
-  time we need to modify or read that memory, we have to do an if/else on the
-  variable type! Messy messy messy.
-    - abstracted into 'shared mem' class that has same interface for both shared
-      memory types, just for cleanliness
-- Rename "multiprocess_scope_routine.py" to a name that better reflects the true nature
-  of the use of this file
 - I am typing this *just* as values / arrays of Real numbers (i.e. work function arguments
   and return values are assumed to be real numbers). However, we can also support chars
   and limited strings (of fixed max length).
-- Docs!
 """
 
 
@@ -138,18 +129,25 @@ def get_ctype_float_defn():
 
 class SharedctypeWrapper(abc.ABC):
     """
-    Wraps shared memory (RawValue / RawArray) in a way
-    that is easy to work with for the programmer.
+    Wraps shared memory (RawValue / RawArray / Value / Array)
+    in a way that is easy to work with for the programmer.
 
-    Typing for this class and it's subclasses make a lot
+    Typing for this class and its subclasses make a lot
     more sense after reading this:
 
         https://github.com/python/typeshed/issues/8799
 
+    A `SharedctypeWrapper` must implement `set` and `get`, which
+    set the shared memory to some value, and returns a python object
+    that represents the shared memory, respectively.
     """
 
     @classmethod
     def sharedctype_from_defn(cls, defn: ctypeDefn) -> SharedctypeWrapper:
+        """
+        This function can be used to turn a cytpeDefn to a
+        shared ctype (either a SharedctypeValue or SharedCtypeArray)
+        """
         if isinstance(defn, ctypeValueDefn):
             return SharedctypeValue.from_definition(defn)
         elif isinstance(defn, ctypeArrayDefn):
@@ -238,7 +236,47 @@ class SharedctypeArray(SharedctypeWrapper):
 
 
 class MultiProcFunc:
-    """multiprocess the execution of a function which takes an image and a timestamp"""
+    """ Multiprocess a given function with a framework to rapidly pass arguments
+    and return values between the processes.
+
+    As discussed at the top of the file, it can take quite a while for a mp.Queue
+    to pass a value between processes, due to the pickle-pipe-unpickle steps. This
+    uses shared memory between the processes to pass values back and forth.
+
+    Example Usage:
+
+    >>> def heavy_func(img, val):
+    ...     "some arbitrary heavy calc (e.g. a bunch of math)"
+    ...     s = 0
+    ...     for i in range(1, 5 + 1):
+    ...         s += (val / i) * ((img.T @ img) @ img.T).sum()
+    ...     return s
+
+    >>> # the input img
+    >>> img = np.random.randint(0, 256, (772, 1032), dtype=np.uint8)
+
+    >>> # now define the shape and datatypes for the image
+    >>> img_defn = get_ctype_image_defn((772, 1032))
+    >>> # define an input value
+    >>> value_defn_input = get_ctype_float_defn()
+    >>> # define an output value
+    >>> value_defn_output = get_ctype_float_defn()
+
+    >>> # Create the `MultiProcFunc` from the arg definitions
+    >>> # if you have already created shared memory using
+    >>> # 'SharedctypeWrapper.sharedctype_from_defn`, then you
+    >>> # can directly initialize the `MultiProcFunc`! This would
+    >>> # be useful if you update variables over time (e.g. see
+    >>> # image_processing/flowrate.py
+    >>> m = MultiProcFunc.from_arg_definitions(
+    ...     heavy_func, [img_defn, value_defn_input], [value_defn_output]
+    ... )
+
+    >>> # Put it to work!
+    >>> for i in range(10):
+    ...     # this call to work will be in the second process
+    ...     print("result: ", m.call([img, float(i)]))
+    """
 
     def __init__(
         self,
@@ -251,7 +289,8 @@ class MultiProcFunc:
         self._input_ctypes = work_fn_inputs
         self._output_ctypes = work_fn_outputs
 
-        # Flag used to know when we can either operate on the data or retrieve the result
+        # Flags used to know when we can either operate
+        # on the data or retrieve the result
         self._new_data_ready = mp.Event()
         self._ret_value_ready = mp.Event()
 
@@ -269,7 +308,9 @@ class MultiProcFunc:
         work_fn_inputs: List[ctypeDefn],
         work_fn_outputs: List[ctypeDefn],
     ) -> MultiProcFunc:
-        # Create the raw shared types for input/output of the function
+        """
+        Create a MultiProcFunc from the work_fcn and input definitions
+        """
         input_vals: List[SharedctypeWrapper] = [
             SharedctypeWrapper.sharedctype_from_defn(inp) for inp in work_fn_inputs
         ]
@@ -283,6 +324,9 @@ class MultiProcFunc:
     def _set_ctypes(
         set_values: List[_pytype], targets: List[SharedctypeWrapper]
     ) -> None:
+        """
+        Set the ctypes from the pythonic types
+        """
         if len(set_values) != len(targets):
             raise ValueError("len(set_values) != len(targets)")
 
@@ -292,6 +336,17 @@ class MultiProcFunc:
     def _work(
         self, input_args: List[SharedctypeWrapper], outputs: List[SharedctypeWrapper]
     ) -> None:
+        """
+        This is where the actual work happens (in another process, of course).
+
+        Here, we
+        1. wait for new data to be ready (i.e. new values are in the input ctypes)
+        2. clear the new data flag so it can be set again
+        3. get python values from the input ctypes
+        4. do the actual calculation (i.e. call self.work_fcn)
+        5. set the output cytpes to the return value from work function
+        6. flag the main process that there is a return  value to be read
+        """
         while True:
             self._new_data_ready.wait()
             self._new_data_ready.clear()
@@ -304,22 +359,36 @@ class MultiProcFunc:
 
             self._ret_value_ready.set()
 
-    def call(self, args: List[_pytype]) -> Tuple[_pytype, ...]:
+    def call(self, args: List[_pytype]) -> Union[_pytype, Tuple[_pytype, ...]]:
+        """
+        Call the _work function given args.
+
+        We've separated this function from _func_call so, if needed,
+        we can set input variables in advance and do the function call
+        sometime in the future when needed.
+        """
         self._set_ctypes(args, self._input_ctypes)
 
         return self._func_call()
 
-    def _func_call(self) -> Tuple[_pytype, ...]:
+    def _func_call(self) -> Union[_pytype, Tuple[_pytype, ...]]:
         """
-        if self._input_ctypes has been set somewhere else,
-        we want to still be able to smoothly call the work func
+        If self._input_ctypes has been set somewhere else,
+        we want to still be able to smoothly call the work func.
+
+        Here, we assume that self._input_ctypes has already been set.
+        Then, we
+        1. flag that there is new data ready
+        2. wait for the return value to be ready
+        3. return the python values from the ctype
         """
         self._new_data_ready.set()
 
         self._ret_value_ready.wait()
         self._ret_value_ready.clear()
 
-        return tuple(out.get() for out in self._output_ctypes)
+        out_vals = tuple(out.get() for out in self._output_ctypes)
 
-    def join(self) -> None:
-        self._proc.join()
+        if len(out_vals) == 1:
+            return out_vals[0]
+        return out_vals
