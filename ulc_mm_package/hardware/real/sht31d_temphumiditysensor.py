@@ -38,7 +38,11 @@ class SHT3X:
         sensor's cache in a FILO list of eight floats. This list is backfilled
         with with the sensor's maximum output of 130.0 when the sensor is read
         before the cache is full.
+
+        FILO == "First In Last Out"? so most recent readings are overwritten first?
         """
+        print(readings)
+        return readings[0]
 
     def get_temp_and_humidity(self) -> Tuple[float, float]:
         temperature, humidity = self.sensor._read()
