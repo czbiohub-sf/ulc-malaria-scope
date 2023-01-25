@@ -750,7 +750,7 @@ class ScopeOp(QObject, NamedMachine):
             self.img_metadata["zarrwriter_qsize"] = zarr_qsize
 
             ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
-            self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)  
+            self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)
 
             self.img_metadata["runtime"] = perf_counter() - current_time
 
