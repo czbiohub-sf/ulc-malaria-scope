@@ -36,6 +36,7 @@ class BinningMode(Enum):
 
 class BaslerCamera(Basler):
     """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""
+
     def __init__(self):
         try:
             super().__init__()
@@ -263,7 +264,9 @@ class AVTCamera:
         try:
             return self.camera.DeviceTemperature.get()
         except Exception as e:
-            self.logger.error("Could not get the device temperature using DeviceTemperature: {e}")
+            self.logger.error(
+                "Could not get the device temperature using DeviceTemperature: {e}"
+            )
             raise e
 
     def _setExposureTimeMilliseconds(self, value_ms: int) -> None:
@@ -290,7 +293,9 @@ class AVTCamera:
         try:
             return self.camera.ExposureTime.get() / 1000
         except Exception as e:
-            self.logger.error(f"ExposureTime method failed - could not get the current ExposureTime: {e}")
+            self.logger.error(
+                f"ExposureTime method failed - could not get the current ExposureTime: {e}"
+            )
             raise e
 
     def getExposureBoundsMilliseconds(self) -> Tuple[float, float]:
@@ -307,7 +312,9 @@ class AVTCamera:
             maxExposure_ms = self.camera.ExposureAutoMax.get() / 1000
             return (minExposure_ms, maxExposure_ms)
         except Exception as e:
-            self.logger.error(f"Could not get exposure using ExposureAutoMin / ExposureAutoMax: {e}")
+            self.logger.error(
+                f"Could not get exposure using ExposureAutoMin / ExposureAutoMax: {e}"
+            )
             raise e
 
     @property
