@@ -5,12 +5,17 @@ Datasheet:
     https://media.digikey.com/pdf/Data%20Sheets/Sensirion%20PDFs/HT_DS_SHT3x_DIS.pdf
 Adafruit's PCF8523 Python library:
     https://docs.circuitpython.org/projects/sht31d/en/latest/
+
+
+-- References in Code --
+
+[0] https://github.com/adafruit/Adafruit_CircuitPython_SHT31D/blob/84df36e6095ed632b9e1f5206e6149c9c335d365/adafruit_sht31d.py#L237-L240
 """
 
 import board
 import adafruit_sht31d
 
-from typing import Tuple, List
+from typing import Union, Tuple, List
 
 from ulc_mm_package.hardware.sht31d_temphumiditysensor import (
     TemperatureSensorNotInstantiated,
@@ -27,22 +32,12 @@ class SHT3X:
         i2c = board.I2C()
         try:
             self.sensor = adafruit_sht31d.SHT31D(i2c)
-            self.sensor.mode = adafruit_sht31d.MODE_PERIODIC
-            self.sensor.frequency = adafruit_sht31d.FREQUENCY_10
+            self.sensor.mode = adafruit_sht31d.MODE_SINGLE
+            # Don't wait to try to smooth out the signal (w/ repeatability) [0]
+            self.sensor.clock_stretching=True
+            self.sensor.repeatability = adafruit_sht31d.REP_LOW
         except Exception:
             raise TemperatureSensorNotInstantiated()
-
-    def _get_most_recent_reading(self, readings: List[float]) -> float:
-        """ From the `adafruit_sht31d` package source code:
-        'Periodic' mode returns the most recent readings available from the
-        sensor's cache in a FILO list of eight floats. This list is backfilled
-        with with the sensor's maximum output of 130.0 when the sensor is read
-        before the cache is full.
-
-        FILO == "First In Last Out"? so most recent readings are overwritten first?
-        """
-        print(readings)
-        return readings[0]
 
     def get_temp_and_humidity(self) -> Tuple[float, float]:
         temperature, humidity = self.sensor._read()

@@ -1,6 +1,6 @@
 """ SHT3x-DIS - Humidity and Temperature Sensor
 
--- Important Links -- 
+-- Important Links --
 Datasheet:
     https://media.digikey.com/pdf/Data%20Sheets/Sensirion%20PDFs/HT_DS_SHT3x_DIS.pdf
 Adafruit's PCF8523 Python library:
@@ -10,12 +10,6 @@ Adafruit's PCF8523 Python library:
 
 class SHT3X:
     """Simulated temperature/humidity sensor returning dummy values"""
-
-    def __init__(self):
-        pass
-
-    def getRelativeHumidity(self):
-        return 1.0
-
-    def getTemperature(self):
-        return 25
+    def get_temp_and_humidity(self) -> Tuple[float, float]:
+        temperature, humidity = self.sensor._read()
+        return 25.,1.

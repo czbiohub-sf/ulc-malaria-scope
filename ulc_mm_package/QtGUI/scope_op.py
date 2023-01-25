@@ -737,12 +737,9 @@ class ScopeOp(QObject, NamedMachine):
             if current_time - self.TH_time > TH_PERIOD:
                 self.TH_time = current_time
 
-                self.img_metadata[
-                    "humidity"
-                ] = self.mscope.ht_sensor.getRelativeHumidity()
-                self.img_metadata[
-                    "temperature"
-                ] = self.mscope.ht_sensor.getTemperature()
+                temperature, humidity = self.mscope.ht_sensor.get_temp_and_humidity()
+                self.img_metadata[ "humidity" ] = humidity
+                self.img_metadata[ "temperature" ] = temperature
             else:
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
