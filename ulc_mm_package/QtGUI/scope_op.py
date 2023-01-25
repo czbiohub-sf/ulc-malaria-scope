@@ -746,8 +746,11 @@ class ScopeOp(QObject, NamedMachine):
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
 
-            qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
-            self.img_metadata["zarrwriter_qsize"] = qsize
+            zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
+            self.img_metadata["zarrwriter_qsize"] = zarr_qsize
+
+            ssaf_qsize = self.mscope.data_storage.autofocus_model._temp_infer_queue.__len__()
+            self._update_metadata_if_verbose["ssaf_qsize"] = ssaf_qsize  
 
             self.img_metadata["runtime"] = perf_counter() - current_time
 
