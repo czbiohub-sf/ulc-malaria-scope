@@ -47,6 +47,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ERROR_BEHAVIORS,
 )
 
+import gc
+
 # TODO populate info?
 # TODO remove -1 flag from TH sensor?
 
@@ -609,6 +611,9 @@ class ScopeOp(QObject, NamedMachine):
                 f"Ending experiment since {TIMEOUT_M_PERIOD} minute timeout was reached."
             )
         else:
+            # EXPERIMENTAL
+            gc.disable()
+
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = timestamp
             self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
@@ -763,3 +768,6 @@ class ScopeOp(QObject, NamedMachine):
 
             if self.running:
                 self.img_signal.connect(self.run_experiment)
+
+            # EXPERIMENTAL
+            gc.enable()
