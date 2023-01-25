@@ -38,8 +38,8 @@ def metadata_parser(descriptor, file):
     time_ax.set_xlabel("Frame #")
     time_ax.set_ylabel("Time (ms)")
 
-    time_ax.scatter(range(len(runtimes)), runtimes, label="Runtimes", s=2)
-    time_ax.scatter(range(len(looptimes)), looptimes, label="Looptimes", s=2)
+    time_ax.scatter(range(len(looptimes)), looptimes, color="red", label="Looptimes", s=2)
+    time_ax.scatter(range(len(runtimes)), runtimes, color="orange", label="Runtimes", s=2)
 
     # Delineate expected looptimes
     time_ax.plot(
