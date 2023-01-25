@@ -198,10 +198,12 @@ class SharedctypeValue(SharedctypeWrapper):
         if not isinstance(v, Real):
             raise ValueError(f"set value for {self} is of incorrect type {type(v)}")
 
+        # TODO: timeout!
         with self._memory:
             self._memory.value = v
 
     def get(self) -> _pytype:
+        # TODO: timeout!
         with self._memory:
             return self._memory.value
 
@@ -228,11 +230,21 @@ class SharedctypeArray(SharedctypeWrapper):
         if not isinstance(v, np.ndarray):
             raise ValueError(f"set value for {self} is of incorrect type {type(v)}")
 
+        # TODO: timeout!
         with self._lock:
             self._np_wrapper[:] = v
 
     def get(self) -> _pytype:
         return self._np_wrapper
+
+
+
+class MultiProcFuncHalted(Exception):
+    ...
+
+
+class MultiProcFuncTerminated(Exception):
+    ...
 
 
 class MultiProcFunc:
@@ -278,6 +290,8 @@ class MultiProcFunc:
     ...     print("result: ", m.call([img, float(i)]))
     """
 
+    NEW_DATA_TIMEOUT = 1
+
     def __init__(
         self,
         work_fcn: Callable,
@@ -294,12 +308,69 @@ class MultiProcFunc:
         self._new_data_ready = mp.Event()
         self._ret_value_ready = mp.Event()
 
+        # halt and join the process if set
+        # to get the process to run, _halt_flag must be clear.
+        self._halt_flag = mp.Event()
+
+        self.start()
+
+    def start(self) -> None:
+        self._halt_flag.clear()
+
         self._proc = mp.Process(
             target=self._work,
             args=(self._input_ctypes, self._output_ctypes),
             daemon=True,
         )
         self._proc.start()
+
+    def stop(self, timeout: float = 3.) -> None:
+        """
+        Stop and join the main process. Timeout for
+        `max(timeout, NEW_DATA_TIMEOUT)` so we can
+        let the internal process join gracefully.
+
+        After timing out, the process will be terminated,
+        and this object will not be able to be used again
+        unless restarted or reinitialized.
+
+        From python Multiprocessing docs 3.7:
+
+            "Note that the method returns None if its
+             process terminates or if the method times
+             out. Check the process’s exitcode to
+             determine if it terminated."
+
+        The exit code doc:
+
+            "This will be None if the process has not
+            yet terminated. A negative value -N indicates
+            that the child was terminated by signal N."
+
+        Terminating a process is not without risk:
+
+            "Warning: If this method is used when the
+            associated process is using a pipe or queue
+            then the pipe or queue is liable to become
+            corrupted and may become unusable by other
+            process. Similarly, if the process has acquired
+            a lock or semaphore etc. then terminating it
+            is liable to cause other processes to deadlock."
+
+        Since this class should be the only class that is accessing
+        the process, we shouldn't have to worry about deadlocks.
+        However, we should probably re-instantiate the shared mem.
+        """
+        self._halt_flag.set()
+        self._proc.join(timeout=timeout)
+
+        if self._proc.exitcode is None:
+            # the 'join' timed out, we must terminate the process
+            self._proc.terminate()
+            raise MultiProcFuncTerminated(
+                "internal process had to be terminated; re-initialize the "
+                "MultiProcFunc to continue using it"
+            )
 
     @classmethod
     def from_arg_definitions(
@@ -347,17 +418,20 @@ class MultiProcFunc:
         5. set the output cytpes to the return value from work function
         6. flag the main process that there is a return  value to be read
         """
-        while True:
-            self._new_data_ready.wait()
-            self._new_data_ready.clear()
+        while not self._halt_flag.is_set():
+            # the check for new data - timeout to check if we are being halted
+            new_data_ready = self._new_data_ready.wait(timeout=self.NEW_DATA_TIMEOUT)
 
-            func_args = [inp.get() for inp in self._input_ctypes]
-            ret_vals = self.work_fcn(*func_args)
-            ret_vals = ret_vals if isinstance(ret_vals, tuple) else [ret_vals]
+            if new_data_ready:
+                self._new_data_ready.clear()
 
-            self._set_ctypes(ret_vals, outputs)
+                func_args = [inp.get() for inp in self._input_ctypes]
+                ret_vals = self.work_fcn(*func_args)
+                ret_vals = ret_vals if isinstance(ret_vals, tuple) else [ret_vals]
 
-            self._ret_value_ready.set()
+                self._set_ctypes(ret_vals, outputs)
+
+                self._ret_value_ready.set()
 
     def call(self, args: List[_pytype]) -> Union[_pytype, Tuple[_pytype, ...]]:
         """
@@ -382,6 +456,12 @@ class MultiProcFunc:
         2. wait for the return value to be ready
         3. return the python values from the ctype
         """
+        if self._halt_flag.is_set():
+            # we are trying to call on a halted MultiProcFunc instance!
+            raise MultiProcFuncHalted(
+                "MultiProcFunc has been halted! restart or reinitialize it"
+            )
+
         self._new_data_ready.set()
 
         self._ret_value_ready.wait()
