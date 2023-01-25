@@ -238,7 +238,6 @@ class SharedctypeArray(SharedctypeWrapper):
         return self._np_wrapper
 
 
-
 class MultiProcFuncHalted(Exception):
     ...
 
@@ -248,7 +247,7 @@ class MultiProcFuncTerminated(Exception):
 
 
 class MultiProcFunc:
-    """ Multiprocess a given function with a framework to rapidly pass arguments
+    """Multiprocess a given function with a framework to rapidly pass arguments
     and return values between the processes.
 
     As discussed at the top of the file, it can take quite a while for a mp.Queue
@@ -324,7 +323,7 @@ class MultiProcFunc:
         )
         self._proc.start()
 
-    def stop(self, timeout: float = 3.) -> None:
+    def stop(self, timeout: float = 3.0) -> None:
         """
         Stop and join the main process. Timeout for
         `max(timeout, NEW_DATA_TIMEOUT)` so we can
