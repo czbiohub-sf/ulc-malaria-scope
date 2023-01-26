@@ -12,10 +12,12 @@ Adafruit's PCF8523 Python library:
 [0] https://github.com/adafruit/Adafruit_CircuitPython_SHT31D/blob/84df36e6095ed632b9e1f5206e6149c9c335d365/adafruit_sht31d.py#L237-L240
 """
 
+import time
 import board
+import threading
 import adafruit_sht31d
 
-from typing import Union, Tuple, List
+from typing import Optional, Union, Tuple, List
 
 from ulc_mm_package.hardware.sht31d_temphumiditysensor import (
     TemperatureSensorNotInstantiated,
@@ -28,17 +30,43 @@ class SHT3X:
     This class only exists to allow for extensibility if the need arises.
     """
 
-    def __init__(self):
+    def __init__(self, poll_period: float = 1.0):
+        """
+        `poll_period` is the period of time between pressure sensor polls.
+        """
         i2c = board.I2C()
         try:
             self.sensor = adafruit_sht31d.SHT31D(i2c)
             self.sensor.mode = adafruit_sht31d.MODE_SINGLE
-            # Don't wait to try to smooth out the signal (w/ repeatability) [0]
-            self.sensor.clock_stretching = True
-            self.sensor.repeatability = adafruit_sht31d.REP_LOW
         except Exception:
             raise TemperatureSensorNotInstantiated()
 
+        self._halt = threading.Event()
+        self._period = poll_period
+        self._prev_call = 0.0
+        self._th_reading: Optional[Tuple[float, float]] = None
+
+    def start(self):
+        self._halt.clear()
+        self._thread = threading.Thread(target=self._work, daemon=True)
+        self._thread.start()
+
+    def stop(self):
+        self._halt.set()
+        self._thread.join()
+
+    def _work(self):
+        while time.perf_counter() - self._prev_call > self.period:
+            if self.halt.is_set():
+                return
+            self._th_reading = self.sensor._read()
+
     def get_temp_and_humidity(self) -> Tuple[float, float]:
-        temperature, humidity = self.sensor._read()
-        return temperature, humidity
+        if self._th_reading is None:
+            if self._halt.is_set():
+                raise RuntimeError(
+                    "temperature-humidity sensor has been halted - restart or reinstantiate it before polling it"
+                )
+            else:
+                raise RuntimeError("no temperature-humidity value has been retrieved")
+        return self._th_reading
