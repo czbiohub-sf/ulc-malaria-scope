@@ -48,6 +48,8 @@ class SHT3X:
         self._prev_call = 0.0
         self._th_reading: Optional[Tuple[float, float]] = None
 
+        self.start()
+
     def start(self):
         self._halt.clear()
         self._thread = threading.Thread(target=self._work, daemon=True)
