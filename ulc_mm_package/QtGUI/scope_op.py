@@ -321,7 +321,10 @@ class ScopeOp(QObject, NamedMachine):
     def _end_pause(self, *args):
         self.set_period.emit(ACQUISITION_PERIOD)
         self.mscope.led.turnOn()
-        self.start_time = perf_counter()
+
+        if self.start_time != None:
+            self.start_time = perf_counter()
+            
         self.running = True
 
     def _start_autobrightness_precells(self, *args):
