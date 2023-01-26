@@ -61,7 +61,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) 
     """
 
     ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
-    steps_from_focus = -int(np.mean(ssaf_steps_from_focus))
+    steps_from_focus = -round(np.mean(ssaf_steps_from_focus))
 
     adjust_focus(mscope, steps_from_focus)
 
