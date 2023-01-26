@@ -96,9 +96,7 @@ class SHT3X:
                     "restart or reinstantiate it before polling it"
                 )
             else:
-                raise RuntimeError(
-                    "no temperature-humidity value has been retrieved"
-                )
+                raise RuntimeError("no temperature-humidity value has been retrieved")
 
         return self._th_reading
 
