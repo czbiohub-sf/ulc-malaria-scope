@@ -14,6 +14,7 @@ Adafruit's PCF8523 Python library:
 
 import time
 import board
+import queue
 import threading
 import adafruit_sht31d
 
@@ -42,6 +43,7 @@ class SHT3X:
             raise TemperatureSensorNotInstantiated()
 
         self._halt = threading.Event()
+        self._exception_queue: queue.Queue[Exception] = queue.Queue(maxsize=1)
         self._period = poll_period
         self._prev_call = 0.0
         self._th_reading: Optional[Tuple[float, float]] = None
@@ -59,9 +61,17 @@ class SHT3X:
         while time.perf_counter() - self._prev_call > self.period:
             if self.halt.is_set():
                 return
-            self._th_reading = self.sensor._read()
+
+            try:
+                self._th_reading = self.sensor._read()
+            except Exception as e:
+                self._exception_queue.append(e)
 
     def get_temp_and_humidity(self) -> Tuple[float, float]:
+        if not self._exception_queue.empty():
+            exc = self._exception_queue.get()
+            raise exc
+
         if self._th_reading is None:
             if self._halt.is_set():
                 raise RuntimeError(
@@ -69,4 +79,5 @@ class SHT3X:
                 )
             else:
                 raise RuntimeError("no temperature-humidity value has been retrieved")
+
         return self._th_reading
