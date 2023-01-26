@@ -36,7 +36,7 @@ That is, if you are writing code for QtGUI.scope_op, or writing a routine that t
 an image, does some computation, and returns a result.
 
 - We want to pass images (eg np.array(dtype=u8, shape=(772,1032))) and values
-  back/fourth across processes
+  back/forth across processes
 - Using mp.Queue is slow due to the Pickle-ization + pipe through the kernel
 - Use mp.Value, mp.Array (mem that is shared between processes!)
 - copy time to mp.Array on RPi4 for u8 (772,1032) is:
@@ -51,7 +51,7 @@ What is "Shared Memory"?
 
 For Python's Multiprocessing, "Shared Memory" is fundamentally just a temporary file
 to which Python will allocate and write. Since this file is a part of the file system,
-it can be accessed (read/write) by other processes, provded they know the location of
+it can be accessed (read/write) by other processes, provided they know the location of
 the file. In practice, if you are on Linux, this file is allocated to `/dev/shm` [0][1]
 which is in ram to keep it quick!
 
@@ -181,7 +181,7 @@ class SharedctypeWrapper(abc.ABC):
     def _ctype_defn_to_str(self, type_: _ctype_type) -> str:
         """mypy was complaining a lot, so we have to switch on type(type_) instead
         of doing the more elegant `return _type_to_typecode.get(type_, type_)` which
-        has the same type garuntees"""
+        has the same type guarantee"""
         if isinstance(type_, str):
             if not type_ in _ctype_codes:
                 raise ValueError(f"invalid ctype code {type_}")
@@ -233,7 +233,7 @@ class SharedctypeValue(SharedctypeWrapper):
 
     def get(self, timeout: Optional[float] = 1.0) -> _pytype:
         """
-        Try to set the shared memory to v
+        Try to get the shared memory value
 
         If we can't acquire the lock in `timeout` seconds, raise SharedctypeLockTimeout.
         `timeout=None` means block indefinitely
