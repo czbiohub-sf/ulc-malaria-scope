@@ -75,9 +75,12 @@ class SHT3X:
                     self._exception_queue.put(e)
 
     def get_temp_and_humidity(self) -> Tuple[float, float]:
-        if not self._exception_queue.empty():
+        try:
             exc = self._exception_queue.get()
             raise exc
+        except queue.Empty:
+            # if the queue is empty, then there are no exceptions :)
+            pass
 
         if self._th_reading is None:
             if self._halt.is_set():
