@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QScrollBar,
 )
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, Qt
 from PyQt5.QtGui import QPixmap, QIcon
 
 from ulc_mm_package.image_processing.flow_control import getFlowError
@@ -38,6 +38,8 @@ from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
 class LiveviewGUI(QMainWindow):
+    close_event = pyqtSignal()
+
     def __init__(self):
         self.metadata = None
         self.terminal_msg = ""
@@ -45,6 +47,13 @@ class LiveviewGUI(QMainWindow):
 
         super().__init__()
         self._load_main_ui()
+
+    def closeEvent(self, event):
+        if event.spontaneous():
+            self.close_event.emit()
+            event.ignore()
+        else:
+            event.accept()
 
     def update_experiment(self, metadata: dict):
         # TODO standardize dict input

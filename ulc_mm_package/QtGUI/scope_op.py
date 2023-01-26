@@ -14,7 +14,7 @@ from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
-from ulc_mm_package.hardware.scope import MalariaScope
+from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
@@ -24,7 +24,10 @@ from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     VERBOSE,
 )
-from ulc_mm_package.hardware.hardware_modules import PressureSensorStaleValue
+from ulc_mm_package.hardware.hardware_modules import (
+    PressureSensorStaleValue,
+    SyringeInMotion,
+)
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
@@ -45,7 +48,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
 )
 
 # TODO populate info?
-# TODO remove -1 flag from TH sensor?
 
 
 class NamedState(State):
@@ -68,9 +70,11 @@ class ScopeOp(QObject, NamedMachine):
 
     yield_mscope = pyqtSignal(MalariaScope)
 
-    error = pyqtSignal(str, str, int)
+    precheck_error = pyqtSignal()
+    default_error = pyqtSignal(str, str, int)
 
-    send_pause = pyqtSignal(str, str)
+    reload_pause = pyqtSignal(str, str)
+    lid_open_pause = pyqtSignal()
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -171,6 +175,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def _set_variables(self):
         self.running = None
+        self.lid_opened = None
 
         self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
@@ -186,7 +191,7 @@ class ScopeOp(QObject, NamedMachine):
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.TH_time = None
-        self.start_time = None
+        self.start_time = 0
         self.accumulated_time = 0
 
         self.update_img_count.emit(0)
@@ -222,6 +227,14 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope = MalariaScope()
         self.yield_mscope.emit(self.mscope)
+        if not SIMULATION:
+            self.lid_opened = self.mscope.read_lim_sw()
+        else:
+            self.lid_opened = False
+        self.mscope.set_gpio_callback(self.lid_open_pause_handler)
+        self.mscope.set_gpio_callback(
+            self.lid_closed_handler, edge=GPIOEdge.FALLING_EDGE
+        )
         component_status = self.mscope.getComponentStatus()
 
         if all([status == True for status in component_status.values()]):
@@ -232,13 +245,22 @@ class ScopeOp(QObject, NamedMachine):
                 for comp in component_status
                 if component_status.get(comp) == False
             ]
-            self.error.emit(
+            self.default_error.emit(
                 "Hardware pre-check failed",
                 "The following component(s) could not be instantiated: {}.".format(
                     (", ".join(failed_components)).capitalize()
                 ),
                 ERROR_BEHAVIORS.INSTANT_ABORT.value,
             )
+            self.precheck_error.emit()
+
+    def lid_open_pause_handler(self, *args):
+        self.lid_opened = True
+        if self.mscope.led._isOn:
+            self.lid_open_pause.emit()
+
+    def lid_closed_handler(self, *args):
+        self.lid_opened = False
 
     def start(self):
         self.running = True
@@ -268,8 +290,10 @@ class ScopeOp(QObject, NamedMachine):
     def _start_pause(self, *args):
         self.running = False
 
-        self.accumulated_time += perf_counter() - self.start_time
-        self.start_time = None
+        # Account for case when pause is entered during the initial setup
+        if self.start_time != None:
+            self.accumulated_time += perf_counter() - self.start_time
+            self.start_time = None
 
         try:
             self.img_signal.disconnect()
@@ -279,9 +303,18 @@ class ScopeOp(QObject, NamedMachine):
             )
 
         self.logger.info("Resetting pneumatic module for pause.")
-        self.mscope.pneumatic_module.setDutyCycle(
-            self.mscope.pneumatic_module.getMaxDutyCycle()
-        )
+        # Account for the case where the syringe might still be in motion
+        # e.g during cell finding or if a flow control adjustment is being done.
+        while self.mscope.pneumatic_module.is_locked():
+            sleep(0.1)
+
+        try:
+            self.mscope.pneumatic_module.setDutyCycle(
+                self.mscope.pneumatic_module.getMaxDutyCycle()
+            )
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
         self.mscope.led.turnOff()
 
     def _end_pause(self, *args):
@@ -306,7 +339,7 @@ class ScopeOp(QObject, NamedMachine):
         except PressureSensorBusy:
             self.logger.error(f"Unable to read value from the pressure sensor - {e}")
             # TODO What to do in a case where the sensor is acting funky?
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration failed",
                 "Failed to read pressure sensor to perform pressure seal check.",
                 ERROR_BEHAVIORS.DEFAULT.value,
@@ -314,7 +347,7 @@ class ScopeOp(QObject, NamedMachine):
         except PressureLeak as e:
             self.logger.error(f"Improper seal / pressure leak detected - {e}")
             # TODO provide instructions for dealing with pressure leak?
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration failed",
                 "Improper seal / pressure leak detected.",
                 ERROR_BEHAVIORS.DEFAULT.value,
@@ -387,9 +420,16 @@ class ScopeOp(QObject, NamedMachine):
             )
 
         self.logger.info("Resetting pneumatic module for rerun.")
-        self.mscope.pneumatic_module.setDutyCycle(
-            self.mscope.pneumatic_module.getMaxDutyCycle()
-        )
+        while self.mscope.pneumatic_module.is_locked():
+            sleep(0.1)
+        try:
+            self.mscope.pneumatic_module.setDutyCycle(
+                self.mscope.pneumatic_module.getMaxDutyCycle()
+            )
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
+
         self.mscope.led.turnOff()
 
         closing_file_future = self.mscope.data_storage.close()
@@ -425,7 +465,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.error(
                 f"Autobrightness failed. Mean pixel value = {e.value}.",
             )
-            self.error.emit(
+            self.default_error.emit(
                 "Autobrightness failed",
                 "LED is too dim to run experiment.",
                 ERROR_BEHAVIORS.DEFAULT.value,
@@ -433,7 +473,7 @@ class ScopeOp(QObject, NamedMachine):
         except LEDNoPower as e:
             if not SIMULATION:
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
-                self.error.emit(
+                self.default_error.emit(
                     "LED failure",
                     "The off/on LED test failed.",
                     ERROR_BEHAVIORS.DEFAULT.value,
@@ -462,7 +502,7 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
         except NoCellsFound:
             self.logger.error("Cellfinder failed. No cells found.")
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration failed",
                 "No cells found.",
                 ERROR_BEHAVIORS.DEFAULT.value,
@@ -498,7 +538,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.logger.error(
                     "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
                 )
-                self.error.emit(
+                self.default_error.emit(
                     "Calibration failed",
                     "Unable to achieve focus because the stage has reached its range of motion limit..",
                     ERROR_BEHAVIORS.DEFAULT.value,
@@ -520,7 +560,7 @@ class ScopeOp(QObject, NamedMachine):
         except CantReachTargetFlowrate as e:
             self.fastflow_result = e.flowrate
             self.logger.error("Fastflow failed. Syringe already at max position.")
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration issue",
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyways?",
                 ERROR_BEHAVIORS.YN.value,
@@ -531,9 +571,10 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.error(
                 "Fastflow failed. Too many recent low confidence xcorr calculations."
             )
-            self.error.emit(
+            self.default_error.emit(
                 "Calibration failed",
-                "Too many recent low confidence xcorr calculations",
+                "Too many recent low confidence xcorr calculations.",
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
         except StopIteration as e:
             self.fastflow_result = e.value
@@ -606,7 +647,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.density_routine.send(filtered_prediction)
                 except LowDensity as e:
                     self.logger.warning(f"Cell density is too low.")
-                    self.send_pause.emit(
+                    self.reload_pause.emit(
                         "Low cell density",
                         (
                             "Cell density is too low. "
@@ -627,7 +668,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.logger.error(
                         "Autofocus failed. Can't achieve focus within condenser's depth of field."
                     )
-                    self.error.emit(
+                    self.default_error.emit(
                         "Autofocus failed",
                         "Unable to achieve desired focus within condenser's depth of field.",
                         ERROR_BEHAVIORS.DEFAULT.value,
@@ -661,6 +702,7 @@ class ScopeOp(QObject, NamedMachine):
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
+            t0 = perf_counter()
             # Update infopanel
             if focus_err != None:
                 # TODO change this to non int?
@@ -694,18 +736,30 @@ class ScopeOp(QObject, NamedMachine):
             if current_time - self.TH_time > TH_PERIOD:
                 self.TH_time = current_time
 
-                self.img_metadata[
-                    "humidity"
-                ] = self.mscope.ht_sensor.getRelativeHumidity()
-                self.img_metadata[
-                    "temperature"
-                ] = self.mscope.ht_sensor.getTemperature()
+                try:
+                    (
+                        temperature,
+                        humidity,
+                    ) = self.mscope.ht_sensor.get_temp_and_humidity()
+                    self.img_metadata["humidity"] = humidity
+                    self.img_metadata["temperature"] = temperature
+                except Exception as e:
+                    # some error has occurred, but the TH sensor isn't critical, so just warn
+                    # and move on
+                    self.logger.warning(
+                        f"exception occurred while retrieving temperature and humidity: {e}"
+                    )
+                    self.img_metadata["humidity"] = None
+                    self.img_metadata["temperature"] = None
             else:
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
 
-            qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
-            self.img_metadata["zarrwriter_qsize"] = qsize
+            zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
+            self.img_metadata["zarrwriter_qsize"] = zarr_qsize
+
+            ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
+            self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)
 
             self.img_metadata["runtime"] = perf_counter() - current_time
 

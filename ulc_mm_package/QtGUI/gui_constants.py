@@ -15,7 +15,7 @@ class STATUS(enum.Enum):
 # ================ Oracle error options ================ #
 class ERROR_BEHAVIORS(enum.Enum):
     DEFAULT = 0
-    INSTANT_ABORT = 1
+    PRECHECK = 1
     YN = 2
 
 

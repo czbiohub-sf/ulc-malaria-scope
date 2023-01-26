@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
     QDesktopWidget,
 )
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt
 
 from ulc_mm_package.scope_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
@@ -34,9 +35,19 @@ from ulc_mm_package.QtGUI.gui_constants import (
 class FormGUI(QDialog):
     """Form to input experiment parameters"""
 
+    close_event = pyqtSignal()
+
     def __init__(self):
         super().__init__()
+
         self._load_ui()
+
+    def closeEvent(self, event):
+        if event.spontaneous():
+            self.close_event.emit()
+            event.ignore()
+        else:
+            event.accept()
 
     def _load_ui(self):
         self.setWindowTitle("Experiment form")
@@ -79,6 +90,10 @@ class FormGUI(QDialog):
         # Disable buttons at startup
         self.exit_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
+
+        # Disable [x] button at startup
+        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
+        self.setWindowFlag(Qt.WindowCloseButtonHint, False)
 
         # Disable text boxes at startup
         self.operator_val.setDisabled(True)
@@ -130,6 +145,9 @@ class FormGUI(QDialog):
         # Enable buttons
         self.exit_btn.setEnabled(True)
         self.start_btn.setEnabled(True)
+
+        # Enable [x] button
+        self.setWindowFlag(Qt.WindowCloseButtonHint, True)
 
         # Enable text boxes
         self.operator_val.setDisabled(False)

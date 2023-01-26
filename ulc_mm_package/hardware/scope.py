@@ -74,6 +74,7 @@ class MalariaScope:
         self.logger.info("Shutting off scope hardware.")
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
+        self.ht_sensor.stop()
         if self.camera._isActivated:
             self.camera.deactivateCamera()
             self.logger.info("Deactivated camera.")
@@ -104,9 +105,6 @@ class MalariaScope:
         try:
             self.motor = DRV8825Nema(steptype="Half")
             self.motor.homeToLimitSwitches()
-            # print("Moving motor to the middle.")
-            # sleep(0.5)
-            # self.motor.move_abs(int(self.motor.max_pos // 2))
             self.motor_enabled = True
         except MotorControllerError as e:
             self.logger.error(f"DRV8825 initialization failed. {e}")
@@ -249,3 +247,8 @@ class MalariaScope:
             )
         else:
             self.logger.info(f"We're simulating, no callback set.")
+
+    @staticmethod
+    def read_lim_sw(pin: int = LID_LIMIT_SWITCH2):
+        pi = pigpio.pi()
+        return pi.read(LID_LIMIT_SWITCH2)

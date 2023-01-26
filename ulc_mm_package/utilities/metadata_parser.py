@@ -38,8 +38,12 @@ def metadata_parser(descriptor, file):
     time_ax.set_xlabel("Frame #")
     time_ax.set_ylabel("Time (ms)")
 
-    time_ax.scatter(range(len(runtimes)), runtimes, label="Runtimes", s=2)
-    time_ax.scatter(range(len(looptimes)), looptimes, label="Looptimes", s=2)
+    time_ax.scatter(
+        range(len(looptimes)), looptimes, color="red", label="Looptimes", s=2
+    )
+    time_ax.scatter(
+        range(len(runtimes)), runtimes, color="orange", label="Runtimes", s=2
+    )
 
     # Delineate expected looptimes
     time_ax.plot(
@@ -51,7 +55,9 @@ def metadata_parser(descriptor, file):
 
     # Plot size results
     size_ax = time_ax.twinx()
-    size_ax.scatter(range(len(qsizes)), qsizes, label="Queue size", color="green", s=2)
+    size_ax.scatter(range(len(qsizes)), qsizes, label="Zarr queue", color="green", s=2)
+    size_ax.tick_params(colors="green")
+    size_ax.set_ylabel("Queue size", color="green")
 
     # Format plots
     time_ax.legend(loc=2)

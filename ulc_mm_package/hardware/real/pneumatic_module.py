@@ -367,3 +367,7 @@ class PneumaticModule:
             return False
 
         return True
+
+    @staticmethod
+    def is_locked():
+        return SYRINGE_LOCK.locked()
