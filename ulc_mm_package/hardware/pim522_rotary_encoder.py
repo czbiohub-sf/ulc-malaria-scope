@@ -43,28 +43,3 @@ class PIM522RotaryEncoder:
 
     def setColor(self, r, g, b):
         ...
-
-
-if __name__ == "__main__":
-
-    def hi(dir: int):
-        print(f"Hi: {dir}")
-
-    def bye(dir: int):
-        print(f"Bye: {dir}")
-
-    enc = PIM522RotaryEncoder(callback_func=hi)
-    try:
-        from time import sleep
-
-        while True:
-            if enc.getCount() > 300:
-                enc.setColor(255, 0, 0)
-            elif enc.getCount() > 200:
-                enc.setColor(0, 255, 0)
-            elif enc.getCount() > 0:
-                enc.setColor(0, 0, 255)
-            sleep(1 / 30)
-    except KeyboardInterrupt:
-        enc.setColor(0, 0, 0)
-        quit()
