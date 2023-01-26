@@ -737,7 +737,10 @@ class ScopeOp(QObject, NamedMachine):
                 self.TH_time = current_time
 
                 try:
-                    temperature, humidity = self.mscope.ht_sensor.get_temp_and_humidity()
+                    (
+                        temperature,
+                        humidity,
+                    ) = self.mscope.ht_sensor.get_temp_and_humidity()
                     self.img_metadata["humidity"] = humidity
                     self.img_metadata["temperature"] = temperature
                 except Exception as e:
