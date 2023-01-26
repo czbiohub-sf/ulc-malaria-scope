@@ -5,11 +5,6 @@ Datasheet:
     https://media.digikey.com/pdf/Data%20Sheets/Sensirion%20PDFs/HT_DS_SHT3x_DIS.pdf
 Adafruit's PCF8523 Python library:
     https://docs.circuitpython.org/projects/sht31d/en/latest/
-
-
--- References in Code --
-
-[0] https://github.com/adafruit/Adafruit_CircuitPython_SHT31D/blob/84df36e6095ed632b9e1f5206e6149c9c335d365/adafruit_sht31d.py#L237-L240
 """
 
 import time
@@ -56,7 +51,7 @@ class SHT3X:
         self._thread.start()
 
         # give a little time to retrieve the first th value
-        time.sleep(2 * self._period)
+        time.sleep(self._period)
 
     def stop(self):
         self._halt.set()
