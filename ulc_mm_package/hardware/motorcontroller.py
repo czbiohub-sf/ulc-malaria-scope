@@ -40,12 +40,14 @@ class InvalidMove(MotorControllerError):
 
 # TODO I am not sure the "correct" way to type these wrapped classes?
 
+
 @hardware
 class DRV8825Nema:
     """Class to control a Nema bi-polar stepper motor for a DRV8825.
 
     Default pin values set to the pins laid out on the malaria scope PCB schematic, and GPIO microstepping selection disabled.
     """
+
     @property
     def homed(self):
         ...
