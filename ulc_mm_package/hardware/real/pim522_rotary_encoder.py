@@ -109,19 +109,3 @@ class PIM522RotaryEncoder:
         self.ioe.output(self.pin_red, r)
         self.ioe.output(self.pin_green, g)
         self.ioe.output(self.pin_blue, b)
-
-
-if __name__ == "__main__":
-
-    def test_callback(inc: int):
-        if inc == -1:
-            print("forward: What's cooking?")
-        elif inc == 1:
-            print("backward: Kitchen's empty.")
-
-    encoder = PIM522RotaryEncoder(test_callback)
-    encoder.setColor(12, 159, 217)
-
-    print(f"Running for indefinitely, feel free to move the encoder! Ctrl+C to exit.")
-    while True:
-        sleep(5)

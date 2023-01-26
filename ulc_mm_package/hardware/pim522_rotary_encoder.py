@@ -26,6 +26,23 @@ class PIM522RotaryEncoder:
             If the encoder is spun quickly however, this number may be larger.
         """
 
+    def close(self):
+        ...
+
+    def disableInterrupt(self):
+        ...
+
+    def enableInterrupt(self):
+        ...
+
+    def setInterruptCallback(self, callback_func: Callable):
+        ...
+
+    def getCount(self):
+        ...
+
+    def setColor(self, r, g, b):
+        ...
 
 if __name__ == "__main__":
 
