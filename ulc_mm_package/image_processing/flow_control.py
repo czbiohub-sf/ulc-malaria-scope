@@ -2,10 +2,11 @@
 FlowController
 """
 
-import numpy as np
-
 from time import perf_counter
 from typing import Tuple, Union, Optional
+
+import numpy as np
+
 from ulc_mm_package.image_processing.processing_constants import (
     NUM_IMAGE_PAIRS,
     WINDOW_SIZE,

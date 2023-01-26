@@ -174,10 +174,7 @@ def flowControlRoutine(
 
     while True:
         img, timestamp = yield flow_val
-        try:
-            flow_val = flow_controller.controlFlow(img, timestamp)
-        except CantReachTargetFlowrate:
-            raise
+        flow_val = flow_controller.controlFlow(img, timestamp)
 
 
 def fastFlowRoutine(

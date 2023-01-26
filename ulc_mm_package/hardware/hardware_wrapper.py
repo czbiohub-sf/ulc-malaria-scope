@@ -33,6 +33,9 @@ from ulc_mm_package.scope_constants import SIMULATION
 PKG_PATH = "ulc_mm_package.hardware."
 
 
+# TODO should the HardwareWrapper wrap abstract base classes that are inherited by sim and real?
+
+
 def hardware(cls):
     class HardwareWrapper(cls):
         def __new__(cls, *args, **kwargs):

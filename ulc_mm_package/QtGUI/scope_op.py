@@ -191,7 +191,7 @@ class ScopeOp(QObject, NamedMachine):
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.TH_time = None
-        self.start_time = 0
+        self.start_time = None
         self.accumulated_time = 0
 
         self.update_img_count.emit(0)
@@ -320,7 +320,7 @@ class ScopeOp(QObject, NamedMachine):
     def _end_pause(self, *args):
         self.set_period.emit(ACQUISITION_PERIOD)
         self.mscope.led.turnOn()
-        self.start_time = perf_counter()
+
         self.running = True
 
     def _start_autobrightness_precells(self, *args):

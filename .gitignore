@@ -113,6 +113,7 @@ simulation.py
 # Profiling data
 profiles
 functiontrace*
+perf_results
 
 # Sagas
 *_saga.txt
