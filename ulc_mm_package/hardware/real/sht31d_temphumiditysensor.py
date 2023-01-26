@@ -55,18 +55,26 @@ class SHT3X:
         self._thread = threading.Thread(target=self._work, daemon=True)
         self._thread.start()
 
+        # give a little time to retrieve the first th value
+        time.sleep(2 * self._period)
+
     def stop(self):
         self._halt.set()
         self._thread.join()
 
     def _work(self):
-        while time.perf_counter() - self._prev_call > self._period:
+        while True:
             if self._halt.is_set():
                 return
+
+            if time.perf_counter() - self._prev_call < self._period:
+                time.sleep(self._period / 8)
+                continue
 
             try:
                 self._th_reading = self.sensor._read()
             except Exception as e:
+                self._halt.set()
                 try:
                     self._exception_queue.put_nowait(e)
                 except queue.Full:
@@ -74,6 +82,8 @@ class SHT3X:
                     self._exception_queue.get_nowait()
                     self._exception_queue.put_nowait(e)
                     self._exception_queue.task_done()
+
+            self._prev_call = time.perf_counter()
 
     def get_temp_and_humidity(self) -> Tuple[float, float]:
         try:
@@ -87,9 +97,20 @@ class SHT3X:
         if self._th_reading is None:
             if self._halt.is_set():
                 raise RuntimeError(
-                    "temperature-humidity sensor has been halted - restart or reinstantiate it before polling it"
+                    "temperature-humidity sensor has been halted - "
+                    "restart or reinstantiate it before polling it"
                 )
             else:
-                raise RuntimeError("no temperature-humidity value has been retrieved")
+                raise RuntimeError(
+                    "no temperature-humidity value has been retrieved"
+                )
 
         return self._th_reading
+
+
+if __name__ == "__main__":
+    th = SHT3X()
+
+    while True:
+        print(th.get_temp_and_humidity())
+        time.sleep(0.5)
