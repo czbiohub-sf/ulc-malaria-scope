@@ -48,7 +48,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
 )
 
 # TODO populate info?
-# TODO remove -1 flag from TH sensor?
 
 
 class NamedState(State):
@@ -737,12 +736,21 @@ class ScopeOp(QObject, NamedMachine):
             if current_time - self.TH_time > TH_PERIOD:
                 self.TH_time = current_time
 
-                self.img_metadata[
-                    "humidity"
-                ] = self.mscope.ht_sensor.getRelativeHumidity()
-                self.img_metadata[
-                    "temperature"
-                ] = self.mscope.ht_sensor.getTemperature()
+                try:
+                    (
+                        temperature,
+                        humidity,
+                    ) = self.mscope.ht_sensor.get_temp_and_humidity()
+                    self.img_metadata["humidity"] = humidity
+                    self.img_metadata["temperature"] = temperature
+                except Exception as e:
+                    # some error has occurred, but the TH sensor isn't critical, so just warn
+                    # and move on
+                    self.logger.warning(
+                        f"exception occurred while retrieving temperature and humidity: {e}"
+                    )
+                    self.img_metadata["humidity"] = None
+                    self.img_metadata["temperature"] = None
             else:
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
