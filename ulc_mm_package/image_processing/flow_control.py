@@ -2,15 +2,15 @@
 FlowController
 """
 
-from typing import Tuple, Union
 import numpy as np
 
+from time import perf_counter
+from typing import Tuple, Union, Optional
 from ulc_mm_package.image_processing.processing_constants import (
     NUM_IMAGE_PAIRS,
     WINDOW_SIZE,
     TOL_PERC,
 )
-from time import perf_counter
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
 
@@ -107,8 +107,8 @@ class FlowController:
         self.fre = FlowRateEstimator(h, w, num_image_pairs=NUM_IMAGE_PAIRS)
 
         self._idx = 0
-        self.target_flowrate: float = None
-        self.curr_flowrate: float = None
+        self.target_flowrate: Optional[float] = None
+        self.curr_flowrate: Optional[float] = None
 
     def _addImage(self, img: np.ndarray, time: float):
         """Adds an image to the FlowRateEsimator and appends the flowrate to self.flowrates
@@ -142,7 +142,7 @@ class FlowController:
         self.target_flowrate = target_flowrate
 
     def fastFlowAdjustment(
-        self, img: np.ndarray, timestamp: int
+        self, img: np.ndarray, timestamp: float
     ) -> Union[Tuple[None, None], Tuple[float, float]]:
         """
         Adjust flow on a faster feedback cycle (i.e w/o the EWMA batching)
@@ -210,7 +210,7 @@ class FlowController:
         else:
             return (None, None)
 
-    def controlFlow(self, img: np.ndarray, timestamp: int) -> Union[None, float]:
+    def controlFlow(self, img: np.ndarray, timestamp: int) -> Optional[float]:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
 
         If the `self.target_flowrate` has not been set, the first full measurement is used as the target, and all subsequent measurements
