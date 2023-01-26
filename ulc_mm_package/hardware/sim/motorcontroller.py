@@ -83,8 +83,8 @@ class DRV8825Nema(RealDRV8825Nema):
         self.lim1 = lim1
         self.lim2 = lim2
         self.steptype = steptype
-        self.pos = -1e6
-        self.homed = False
+        self.pos = int(1e6)
+        self._homed = False
         self.stop_motor = False
 
         # Get step degree based on steptype
@@ -106,7 +106,7 @@ class DRV8825Nema(RealDRV8825Nema):
 
         # TODO Calculate the max position allowable based on stepping mode and actual travel distance on the scope
         self.max_pos = (
-            int(max_pos) if max_pos != None else int(450 * self.microstepping)
+            int(max_pos) if isinstance(max_pos, int) else int(450 * self.microstepping)
         )
 
         # Set up GPIO
@@ -114,6 +114,14 @@ class DRV8825Nema(RealDRV8825Nema):
         self._move_rel_steps(
             steps=int(ZERO_OFFSET_STEPS * self.microstepping), dir=Direction.CW
         )
+
+    @property
+    def homed(self):
+        return self._homed
+
+    @homed.setter()
+    def homed(self, v: bool):
+        self._homed = bool(v)
 
     def close(self):
         pass
@@ -183,7 +191,7 @@ class DRV8825Nema(RealDRV8825Nema):
         dir=Direction.CCW,
         steps: int = 200,
         stepdelay=0.005,
-        timeout_s: int = 1e6,
+        timeout_s: int = int(1e6),
         verbose=False,
         initdelay=0.05,
     ):
