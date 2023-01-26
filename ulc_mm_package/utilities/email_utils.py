@@ -104,7 +104,7 @@ def _get_pw() -> str:
     """
 
     pw = os.environ.get(EMAIL_PW_TOKEN)
-    if pw == None:
+    if pw is None:
         raise EmailError(
             f"{EMAIL_PW_TOKEN} environment variable not set.\n"
             "You can set the email token in the .bashrc file by:\n"
@@ -121,7 +121,7 @@ def _get_scope_name() -> str:
     return socket.gethostname()
 
 
-def _parse_date_str(datetime_str: str, fmt: str = DATE_FMT):
+def _parse_date_str(datetime_str: str, fmt: str = DATE_FMT) -> datetime:
     return datetime.strptime(datetime_str, fmt)
 
 
@@ -133,16 +133,16 @@ def _get_days_since_inception(reset: bool = False) -> int:
     else:
         start_date = os.environ.get("INCEPTION", datetime.now().strftime(DATE_FMT))
         curr_date = datetime.now().strftime(DATE_FMT)
-        start_date, curr_date = _parse_date_str(start_date), _parse_date_str(curr_date)
-        return (curr_date - start_date).days
+        start_datetime, curr_datetime = _parse_date_str(start_date), _parse_date_str(curr_date)
+        return (curr_datetime - start_datetime).days
 
 
 def _get_saga_line() -> str:
     import csv
 
-    file = [x for x in os.listdir(".") if "_saga.txt" in x]
-    file = file[0] if len(file) > 0 else None
-    if file == None:
+    file_list = [x for x in os.listdir(".") if "_saga.txt" in x]
+    file = file_list[0] if len(file_list) > 0 else None
+    if file is None:
         _get_days_since_inception(reset=True)
         saga_counter = int(os.environ.get("SAGA_COUNTER", "0"))
         os.environ["SAGA_COUNTER"] = "0"
