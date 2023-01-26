@@ -67,7 +67,12 @@ class SHT3X:
             try:
                 self._th_reading = self.sensor._read()
             except Exception as e:
-                self._exception_queue.append(e)
+                try:
+                    self._exception_queue.put(e)
+                except queue.Full:
+                    # put the most recent exception in
+                    self._exception_queue.get()
+                    self._exception_queue.put(e)
 
     def get_temp_and_humidity(self) -> Tuple[float, float]:
         if not self._exception_queue.empty():
