@@ -44,6 +44,7 @@ class PIM522RotaryEncoder:
     def setColor(self, r, g, b):
         ...
 
+
 if __name__ == "__main__":
 
     def hi(dir: int):
