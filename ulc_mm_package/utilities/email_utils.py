@@ -133,7 +133,9 @@ def _get_days_since_inception(reset: bool = False) -> int:
     else:
         start_date = os.environ.get("INCEPTION", datetime.now().strftime(DATE_FMT))
         curr_date = datetime.now().strftime(DATE_FMT)
-        start_datetime, curr_datetime = _parse_date_str(start_date), _parse_date_str(curr_date)
+        start_datetime, curr_datetime = _parse_date_str(start_date), _parse_date_str(
+            curr_date
+        )
         return (curr_datetime - start_datetime).days
 
 
