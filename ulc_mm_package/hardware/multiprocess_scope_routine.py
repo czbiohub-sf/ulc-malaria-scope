@@ -9,6 +9,7 @@ import multiprocessing as mp
 from numbers import Real
 from ctypes import _SimpleCData
 from collections import namedtuple
+from contextlib import contextmanager
 from multiprocessing import sharedctypes
 from typing import (
     cast,
@@ -71,13 +72,32 @@ will wrap these ctypes in a manner that will
 [2] https://github.com/python/cpython/blob/f02fa64bf2d03ef7a28650c164e17a5fb5d8543d/Lib/multiprocessing/sharedctypes.py#L44-L68
 
 
-TODOs
------
+Future additions
+----------------
 
 - I am typing this *just* as values / arrays of Real numbers (i.e. work function arguments
   and return values are assumed to be real numbers). However, we can also support chars
   and limited strings (of fixed max length).
 """
+
+
+@contextmanager
+def lock_timeout(lock, timeout: Optional[float] = None):
+    """lock context manager w/ timeout
+
+    timeout value of 'None' or negative numbers disables timeout
+    """
+    if timeout is None or timeout < 0:
+        timeout = -1
+
+    acquired = lock.acquire(timeout=timeout)
+    if not acquired:
+        raise SharedctypeLockTimeout("could not acquire lock to set value")
+
+    try:
+        yield
+    finally:
+        lock.release()
 
 
 class ctypeValueDefn(NamedTuple):
@@ -125,6 +145,10 @@ def get_ctype_image_defn(shape: Tuple[int, int]):
 def get_ctype_float_defn():
     "helper for common ctype"
     return ctypeValueDefn("d")
+
+
+class SharedctypeLockTimeout(Exception):
+    ...
 
 
 class SharedctypeWrapper(abc.ABC):
@@ -194,17 +218,27 @@ class SharedctypeValue(SharedctypeWrapper):
             )
         return cls(defn.type_str, defn.init_value)
 
-    def set(self, v: _pytype) -> None:
+    def set(self, v: _pytype, timeout: Optional[float] = 1.0) -> None:
+        """
+        Try to set the shared memory to v
+
+        If we can't acquire the lock in `timeout` seconds, raise SharedctypeLockTimeout.
+        `timeout=None` means block indefinitely
+        """
         if not isinstance(v, Real):
             raise ValueError(f"set value for {self} is of incorrect type {type(v)}")
 
-        # TODO: timeout!
-        with self._memory:
+        with lock_timeout(self._memory.get_lock(), timeout=timeout):
             self._memory.value = v
 
-    def get(self) -> _pytype:
-        # TODO: timeout!
-        with self._memory:
+    def get(self, timeout: Optional[float] = 1.0) -> _pytype:
+        """
+        Try to set the shared memory to v
+
+        If we can't acquire the lock in `timeout` seconds, raise SharedctypeLockTimeout.
+        `timeout=None` means block indefinitely
+        """
+        with lock_timeout(self._memory.get_lock(), timeout=timeout):
             return self._memory.value
 
 
@@ -226,16 +260,24 @@ class SharedctypeArray(SharedctypeWrapper):
             )
         return cls(defn.type_str, defn.shape)
 
-    def set(self, v: _pytype) -> None:
+    def set(self, v: _pytype, timeout: Optional[float] = 1.0) -> None:
+        """
+        Try to set the shared memory to v.
+
+        If we can't acquire the lock in `timeout` seconds, raise SharedctypeLockTimeout.
+        `timeout=None` means block indefinitely
+        """
         if not isinstance(v, np.ndarray):
             raise ValueError(f"set value for {self} is of incorrect type {type(v)}")
 
-        # TODO: timeout!
-        with self._lock:
+        with lock_timeout(self._lock, timeout=timeout):
             self._np_wrapper[:] = v
 
     def get(self) -> _pytype:
-        return self._np_wrapper
+        """
+        return a copy of the numpy array
+        """
+        return self._np_wrapper.copy()
 
 
 class MultiProcFuncHalted(Exception):
