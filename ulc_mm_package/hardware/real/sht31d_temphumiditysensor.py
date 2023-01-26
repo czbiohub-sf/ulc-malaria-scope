@@ -60,8 +60,8 @@ class SHT3X:
         self._thread.join()
 
     def _work(self):
-        while time.perf_counter() - self._prev_call > self.period:
-            if self.halt.is_set():
+        while time.perf_counter() - self._prev_call > self._period:
+            if self._halt.is_set():
                 return
 
             try:
