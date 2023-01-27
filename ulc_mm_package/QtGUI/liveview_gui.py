@@ -118,6 +118,9 @@ class LiveviewGUI(QMainWindow):
         self.terminal_msg = self.terminal_msg + f"{msg}\n"
         self.terminal_txt.setPlainText(self.terminal_msg)
 
+        # Scroll to latest message
+        self.terminal_scroll.setValue(self.terminal_scroll.maximum())
+
     @pyqtSlot(int)
     def update_focus(self, val):
         self.focus_val.setText(f"Actual = {val}")
@@ -214,8 +217,6 @@ class LiveviewGUI(QMainWindow):
 
         # Setup terminal box scrollbar
         self.terminal_txt.setVerticalScrollBar(self.terminal_scroll)
-        # TODO scrollbar setting doesn't work
-        self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
         # Setup column size
         self.pause_btn.setFixedWidth(150)
