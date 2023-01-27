@@ -15,8 +15,10 @@ import threading
 import numpy as np
 
 from time import perf_counter
-from typing import List, Tuple, Optional
+from typing import cast, List, Tuple, Optional
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, Future, wait
+
+import ulc_mm_package.hardware.multiprocess_scope_routine as msr
 
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION, MAX_FRAMES
 
@@ -43,6 +45,12 @@ class ZarrWriter:
         self.executor = ThreadPoolExecutor(max_workers=1)
 
         self.camera_selection: CameraOptions = camera_selection
+
+        self.writing_process = msr.MultiProcFunc.from_arg_definitions(
+            self._write_single_array,
+            [msr.get_ctype_image_defn((772, 1032)), msr.get_ctype_int_defn()],
+            [],
+        )
 
     def createNewFile(self, filename: str, overwrite: bool = True):
         """Create a new zarr file.
@@ -81,7 +89,12 @@ class ZarrWriter:
             )
             raise IOError(f"Error creating {filename}.zip")
 
-    def writeSingleArray(self, data, pos: int) -> None:
+    def write_single_array(self, data: np.ndarray, pos: int) -> None:
+        # need to be explicit about types here!
+        l: List[msr._pytype] = [data, cast(msr._pytype, pos)]
+        self.writing_process.call(l)
+
+    def _write_single_array(self, data, pos: int) -> None:
         """Write a single array and optional metadata to the Zarr store.
 
         Parameters
@@ -104,8 +117,8 @@ class ZarrWriter:
             # FIXME is this the only exception? we should make it a general "ZarrWriterMessedUp" error
             raise AttemptingWriteWithoutFile()
 
-    def threadedWriteSingleArray(self, data, pos: int):
-        f = self.executor.submit(self.writeSingleArray, data, pos)
+    def threaded_write_single_array(self, data, pos: int):
+        f = self.executor.submit(self.write_single_array, data, pos)
         self.futures.append(f)
 
     def wait_all(self):
@@ -132,7 +145,7 @@ class ZarrWriter:
         self.futures = []
         self.store.close()
 
-    def threadedCloseFile(self):
+    def threaded_close_file(self):
         """Close the file in a separate thread.
 
         This threaded close was written with UI.py in mind, so that the file can be closed while

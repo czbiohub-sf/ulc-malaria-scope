@@ -111,6 +111,21 @@ class ctypeArrayDefn(NamedTuple):
     shape: Tuple[int, int]
 
 
+def get_ctype_image_defn(shape: Tuple[int, int]):
+    "helper for common ctype"
+    return ctypeArrayDefn("B", shape)
+
+
+def get_ctype_float_defn():
+    "helper for common ctype"
+    return ctypeValueDefn("d")
+
+
+def get_ctype_int_defn():
+    "helper for common ctype"
+    return ctypeValueDefn("q")
+
+
 ctypeDefn = Union[ctypeValueDefn, ctypeArrayDefn]
 
 
@@ -136,16 +151,6 @@ _ctype_codes = list(_typecode_to_type.keys())
 
 _pytype = Union[Real, npt.NDArray[np.uint8]]
 _ctype_type = Union[Type[_SimpleCData], str]
-
-
-def get_ctype_image_defn(shape: Tuple[int, int]):
-    "helper for common ctype"
-    return ctypeArrayDefn("B", shape)
-
-
-def get_ctype_float_defn():
-    "helper for common ctype"
-    return ctypeValueDefn("d")
 
 
 class SharedctypeLockTimeout(Exception):
