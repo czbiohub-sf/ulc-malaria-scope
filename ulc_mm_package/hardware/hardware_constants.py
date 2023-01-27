@@ -1,6 +1,6 @@
 import os
 
-from ulc_mm_package.hardware.hardware_constants import ACQUISITION_FPS
+from ulc_mm_package.scope_constants import ACQUISITION_FPS
 
 
 # ================ Misc constants ================ #

@@ -1,6 +1,5 @@
 import enum
 
-from ulc_mm_package.scope_constants import SIMULATION
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 # ================ Status colors ================ #
@@ -25,13 +24,6 @@ BLANK_INFOPANEL_VAL = "---"
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = ["Tororo, Uganda", "Biohub SF", "DeRisi Lab"]
-
-# ================ FPS constants ================ #
-ACQUISITION_FPS = 30.0
-LIVEVIEW_FPS = 1.0
-
-ACQUISITION_PERIOD = 1000.0 / ACQUISITION_FPS # ms
-LIVEVIEW_PERIOD = 1000.0 / LIVEVIEW_FPS # ms
 
 # ================ Experiment timeout period ================ #
 TIMEOUT_PERIOD_M = 20  # minutes

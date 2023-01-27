@@ -40,13 +40,12 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_IDX_MAP,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
-    ACQUISITION_PERIOD,
-    LIVEVIEW_PERIOD,
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
     STATUS,
     ERROR_BEHAVIORS,
 )
+from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
 
 # TODO populate info?
 
