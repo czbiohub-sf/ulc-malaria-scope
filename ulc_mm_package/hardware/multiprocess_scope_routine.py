@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import queue
 import ctypes
 import numpy as np
 import numpy.typing as npt
@@ -353,6 +354,8 @@ class MultiProcFunc:
         # to get the process to run, _halt_flag must be clear.
         self._halt_flag = mp.Event()
 
+        self._exception_queue: mp.Queue[Exception] = mp.Queue(maxsize=1)
+
         self.start()
 
     def start(self) -> None:
@@ -461,18 +464,28 @@ class MultiProcFunc:
         """
         while not self._halt_flag.is_set():
             # the check for new data - timeout to check if we are being halted
-            new_data_ready = self._new_data_ready.wait(timeout=self.NEW_DATA_TIMEOUT)
+            try:
+                new_data_ready = self._new_data_ready.wait(timeout=self.NEW_DATA_TIMEOUT)
 
-            if new_data_ready:
-                self._new_data_ready.clear()
+                if new_data_ready:
+                    self._new_data_ready.clear()
 
-                func_args = [inp.get() for inp in self._input_ctypes]
-                ret_vals = self.work_fcn(*func_args)
-                ret_vals = ret_vals if isinstance(ret_vals, tuple) else [ret_vals]
+                    func_args = [inp.get() for inp in self._input_ctypes]
+                    ret_vals = self.work_fcn(*func_args)
+                    ret_vals = ret_vals if isinstance(ret_vals, tuple) else [ret_vals]
 
-                self._set_ctypes(ret_vals, outputs)
+                    self._set_ctypes(ret_vals, outputs)
 
-                self._ret_value_ready.set()
+                    self._ret_value_ready.set()
+            except Exception as e:
+                self._halt_flag.set()
+                try:
+                    self._exception_queue.put_nowait(e)
+                except queue.Full:
+                    # put the most recent exception in
+                    self._exception_queue.get_nowait()
+                    self._exception_queue.put_nowait(e)
+                    self._exception_queue.task_done()
 
     def call(self, args: List[_pytype]) -> Union[_pytype, Tuple[_pytype, ...]]:
         """
@@ -497,6 +510,14 @@ class MultiProcFunc:
         2. wait for the return value to be ready
         3. return the python values from the ctype
         """
+        try:
+            exc = self._exception_queue.get_nowait()
+            self._exception_queue.task_done()
+            raise exc
+        except queue.Empty:
+            # if the queue is empty, then there are no exceptions :)
+            pass
+
         if self._halt_flag.is_set():
             # we are trying to call on a halted MultiProcFunc instance!
             raise MultiProcFuncHalted(
