@@ -15,7 +15,7 @@ from ulc_mm_package.neural_nets.neural_network_modules import AsyncInferenceResu
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
 
-scope_routines_logger= logging.getLogger(__name__)
+scope_routines_logger = logging.getLogger(__name__)
 
 
 def focusRoutine(
