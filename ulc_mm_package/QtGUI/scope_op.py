@@ -42,9 +42,9 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 from ulc_mm_package.QtGUI.gui_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
-    TIMEOUT_M_PERIOD,
-    TIMEOUT_S_PERIOD,
-    TH_PERIOD,
+    TIMEOUT_PERIOD_M,
+    TIMEOUT_PERIOD_S,
+    TH_PERIOD_S,
     STATUS,
     ERROR_BEHAVIORS,
 )
@@ -605,9 +605,9 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.count >= MAX_FRAMES:
             self.to_intermission("Ending experiment since data collection is complete.")
-        elif current_time - self.start_time > TIMEOUT_S_PERIOD:
+        elif current_time - self.start_time > TIMEOUT_PERIOD_S:
             self.to_intermission(
-                f"Ending experiment since {TIMEOUT_M_PERIOD} minute timeout was reached."
+                f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
             )
         else:
             # Record timestamp before running routines
@@ -735,7 +735,7 @@ class ScopeOp(QObject, NamedMachine):
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
 
-            if current_time - self.TH_time > TH_PERIOD:
+            if current_time - self.TH_time > TH_PERIOD_S:
                 self.TH_time = current_time
 
                 try:

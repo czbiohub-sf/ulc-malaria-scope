@@ -27,16 +27,20 @@ FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = ["Tororo, Uganda", "Biohub SF", "DeRisi Lab"]
 
 # ================ FPS constants ================ #
-ACQUISITION_PERIOD = 1000.0 / 30.0
-LIVEVIEW_PERIOD = 1000
+ACQUISITION_FPS = 30.0
+LIVEVIEW_FPS = 1.0
+
+ACQUISITION_PERIOD = 1000.0 / ACQUISITION_FPS # ms
+LIVEVIEW_PERIOD = 1000.0 / LIVEVIEW_FPS # ms
 
 # ================ Hardware update period ================ #
 # TH sensor update period
-TH_PERIOD = 5
+TH_PERIOD_S = 5
+TH_PERIOD_NUM = 5 * ACQUISITION_FPS
 
 # ================ Experiment timeout period ================ #
-TIMEOUT_M_PERIOD = 20  # minutes
-TIMEOUT_S_PERIOD = TIMEOUT_M_PERIOD * 60  # seconds
+TIMEOUT_PERIOD_M = 20  # minutes
+TIMEOUT_PERIOD_S = TIMEOUT_PERIOD_M * 60  # seconds
 
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"
