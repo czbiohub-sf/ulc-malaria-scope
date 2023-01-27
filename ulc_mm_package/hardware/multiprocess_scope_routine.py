@@ -111,6 +111,16 @@ class ctypeArrayDefn(NamedTuple):
     shape: Tuple[int, int]
 
 
+def get_ctype_image_defn(shape: Tuple[int, int]):
+    "helper for common ctype"
+    return ctypeArrayDefn("B", shape)
+
+
+def get_ctype_float_defn():
+    "helper for common ctype"
+    return ctypeValueDefn("d")
+
+
 ctypeDefn = Union[ctypeValueDefn, ctypeArrayDefn]
 
 
@@ -136,16 +146,6 @@ _ctype_codes = list(_typecode_to_type.keys())
 
 _pytype = Union[Real, npt.NDArray[np.uint8]]
 _ctype_type = Union[Type[_SimpleCData], str]
-
-
-def get_ctype_image_defn(shape: Tuple[int, int]):
-    "helper for common ctype"
-    return ctypeArrayDefn("B", shape)
-
-
-def get_ctype_float_defn():
-    "helper for common ctype"
-    return ctypeValueDefn("d")
 
 
 class SharedctypeLockTimeout(Exception):
@@ -358,6 +358,25 @@ class MultiProcFunc:
 
         self.start()
 
+    @classmethod
+    def from_arg_definitions(
+        cls,
+        work_fcn: Callable,
+        work_fn_inputs: List[ctypeDefn],
+        work_fn_outputs: List[ctypeDefn],
+    ) -> MultiProcFunc:
+        """
+        Create a MultiProcFunc from the work_fcn and input definitions
+        """
+        input_vals: List[SharedctypeWrapper] = [
+            SharedctypeWrapper.sharedctype_from_defn(inp) for inp in work_fn_inputs
+        ]
+        output_vals: List[SharedctypeWrapper] = [
+            SharedctypeWrapper.sharedctype_from_defn(out) for out in work_fn_outputs
+        ]
+
+        return cls(work_fcn, input_vals, output_vals)
+
     def start(self) -> None:
         self._halt_flag.clear()
 
@@ -415,25 +434,6 @@ class MultiProcFunc:
                 "internal process had to be terminated; re-initialize the "
                 "MultiProcFunc to continue using it"
             )
-
-    @classmethod
-    def from_arg_definitions(
-        cls,
-        work_fcn: Callable,
-        work_fn_inputs: List[ctypeDefn],
-        work_fn_outputs: List[ctypeDefn],
-    ) -> MultiProcFunc:
-        """
-        Create a MultiProcFunc from the work_fcn and input definitions
-        """
-        input_vals: List[SharedctypeWrapper] = [
-            SharedctypeWrapper.sharedctype_from_defn(inp) for inp in work_fn_inputs
-        ]
-        output_vals: List[SharedctypeWrapper] = [
-            SharedctypeWrapper.sharedctype_from_defn(out) for out in work_fn_outputs
-        ]
-
-        return cls(work_fcn, input_vals, output_vals)
 
     @staticmethod
     def _set_ctypes(
