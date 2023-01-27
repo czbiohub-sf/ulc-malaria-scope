@@ -21,6 +21,7 @@ from typing import Dict, Optional, Callable
 import pigpio
 
 from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2
+# FIXME no stars!
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
