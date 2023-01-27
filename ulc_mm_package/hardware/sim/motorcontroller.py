@@ -119,7 +119,7 @@ class DRV8825Nema(RealDRV8825Nema):
     def homed(self):
         return self._homed
 
-    @homed.setter()
+    @homed.setter
     def homed(self, v: bool):
         self._homed = bool(v)
 
