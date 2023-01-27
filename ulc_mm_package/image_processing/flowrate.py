@@ -1,8 +1,8 @@
+import multiprocessing as mp
+from typing import cast, List, Tuple
+
 import cv2
 import numpy as np
-import multiprocessing as mp
-
-from typing import Tuple
 
 from ulc_mm_package.hardware import multiprocess_scope_routine as msr
 from ulc_mm_package.image_processing.processing_constants import CORRELATION_THRESH
@@ -54,7 +54,7 @@ class FlowRateEstimator:
 
         self.dx = [0] * num_image_pairs
         self.dy = [0] * num_image_pairs
-        self.timestamps = [0, 0]
+        self.timestamps: List[float] = [0.0, 0.0]
         self.img_height, self.img_width = img_height, img_width
 
         # for multi-proc
@@ -81,7 +81,7 @@ class FlowRateEstimator:
 
     def _getAverage(self) -> Tuple[float, float]:
         """Return the mean of the dx and dy displacement arrays"""
-        return (np.average(self.dx), np.average(self.dy))
+        return cast(Tuple[float, float], (np.average(self.dx), np.average(self.dy)))
 
     def _getStandardDeviation(self) -> Tuple[float, float]:
         """Return the standard deviation of the dx and dy displacement arrays"""
@@ -113,7 +113,7 @@ class FlowRateEstimator:
         self._calc_idx = 0
         self.failed_corr_counter = 0
 
-    def _addImage(self, img_arr: np.ndarray, timestamp: int):
+    def _addImage(self, img_arr: np.ndarray, timestamp: float):
         """Internal function - add image to the storage with the given timestamp.
 
         Parameters
@@ -166,7 +166,7 @@ class FlowRateEstimator:
         """
         return self._calc_idx >= len(self.dx)
 
-    def addImageAndCalculatePair(self, img: np.ndarray, timestamp: int):
+    def addImageAndCalculatePair(self, img: np.ndarray, timestamp: float):
         """A convenience function to add an image and perform a displacement calculation.
 
         `_calculatePairDisplacement` only runs if two images have been past since the last calculation.

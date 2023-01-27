@@ -5,6 +5,9 @@ See pneumatic module under hardware/real/ for more info
 """
 
 import enum
+from typing import Union, Tuple
+
+import numpy as np
 
 from ulc_mm_package.hardware.hardware_wrapper import hardware
 
@@ -66,3 +69,17 @@ class PneumaticModule:
     Interfaces with an Adafruit MPRLS pressure sensor to get the readings (valid for 0-25 bar). Uses a
     PWM-driven Servo motor (Pololu HD-1810MG) to adjust the position of the syringe (thereby adjusting the pressure).
     """
+
+    def fastFlowAdjustment(
+        self, img: np.ndarray, timestamp: float
+    ) -> Union[Tuple[None, None], Tuple[float, float]]:
+        ...
+
+    def getCurrentDutyCycle(self):
+        ...
+
+    def decreaseDutyCycle(self):
+        ...
+
+    def increaseDutyCycle(self):
+        ...
