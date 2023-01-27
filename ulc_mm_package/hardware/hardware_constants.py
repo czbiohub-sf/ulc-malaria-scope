@@ -85,4 +85,4 @@ DATETIME_FORMAT = "%Y-%m-%d-%H%M%S"
 # ================ TH sensor update period ================ #
 # TH sensor update period
 TH_PERIOD_S = 5
-TH_PERIOD_NUM = int(5 * ACQUISITION_FPS)
+TH_PERIOD_NUM = int(TH_PERIOD_S * ACQUISITION_FPS)
