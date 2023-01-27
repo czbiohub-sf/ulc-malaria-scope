@@ -30,7 +30,6 @@ class SimCamera:
             self.frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
             self.fps = self.video.get(cv2.CAP_PROP_FPS)
 
-
         except Exception as e:
             print(e)
             raise CameraError("Camera could not be instantiated.")
