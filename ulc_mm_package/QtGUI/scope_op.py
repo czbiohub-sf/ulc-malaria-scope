@@ -44,7 +44,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     LIVEVIEW_PERIOD,
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
-    TH_PERIOD_S,
+    TH_PERIOD_NUM,
     STATUS,
     ERROR_BEHAVIORS,
 )
@@ -735,9 +735,7 @@ class ScopeOp(QObject, NamedMachine):
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
 
-            if current_time - self.TH_time > TH_PERIOD_S:
-                self.TH_time = current_time
-
+            if self.count % TH_PERIOD_NUM == 0:
                 try:
                     (
                         temperature,
