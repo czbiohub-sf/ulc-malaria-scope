@@ -30,7 +30,7 @@ from ulc_mm_package.hardware.hardware_modules import (
     PressureSensorStaleValue,
     SyringeInMotion,
 )
-from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT, TH_PERIOD_NUM
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
@@ -44,7 +44,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
     LIVEVIEW_PERIOD,
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
-    TH_PERIOD_NUM,
     STATUS,
     ERROR_BEHAVIORS,
 )

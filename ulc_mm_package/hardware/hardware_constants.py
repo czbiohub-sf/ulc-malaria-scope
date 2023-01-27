@@ -1,5 +1,8 @@
 import os
 
+from ulc_mm_package.hardware.hardware_constants import ACQUISITION_FPS
+
+
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
@@ -78,3 +81,8 @@ CAM_FAN_2 = 24
 
 # ================ RTC constants ================ #
 DATETIME_FORMAT = "%Y-%m-%d-%H%M%S"
+
+# ================ TH sensor update period ================ #
+# TH sensor update period
+TH_PERIOD_S = 5
+TH_PERIOD_NUM = int(5 * ACQUISITION_FPS)

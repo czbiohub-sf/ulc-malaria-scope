@@ -33,11 +33,6 @@ LIVEVIEW_FPS = 1.0
 ACQUISITION_PERIOD = 1000.0 / ACQUISITION_FPS # ms
 LIVEVIEW_PERIOD = 1000.0 / LIVEVIEW_FPS # ms
 
-# ================ Hardware update period ================ #
-# TH sensor update period
-TH_PERIOD_S = 5
-TH_PERIOD_NUM = int(5 * ACQUISITION_FPS)
-
 # ================ Experiment timeout period ================ #
 TIMEOUT_PERIOD_M = 20  # minutes
 TIMEOUT_PERIOD_S = TIMEOUT_PERIOD_M * 60  # seconds
