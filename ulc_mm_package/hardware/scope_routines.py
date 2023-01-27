@@ -1,8 +1,8 @@
 import logging
-import numpy as np
-
 from time import perf_counter, sleep
 from typing import List, Tuple, Optional, Sequence, Generator, Union
+
+import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.image_processing.processing_modules import *
