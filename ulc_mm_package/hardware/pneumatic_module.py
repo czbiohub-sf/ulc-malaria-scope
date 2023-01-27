@@ -5,9 +5,9 @@ See pneumatic module under hardware/real/ for more info
 """
 
 import enum
-import numpy as np
-
 from typing import Union, Tuple
+
+import numpy as np
 
 from ulc_mm_package.hardware.hardware_wrapper import hardware
 
