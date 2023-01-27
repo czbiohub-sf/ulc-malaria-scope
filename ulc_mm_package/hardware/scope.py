@@ -190,7 +190,7 @@ class MalariaScope:
                 self.logger.error(f"Encoder I2C initialization failed. {e}")
         else:
             self.logger.error(
-                f"Motor initialization failed, so encoder will not initialize."
+                "Motor initialization failed, so encoder will not initialize."
             )
 
     def _init_humidity_temp_sensor(self):
@@ -246,7 +246,7 @@ class MalariaScope:
                 f"Set callback on pin: {interrupt_pin} w/ debounce time of {glitch_filer_us} us."
             )
         else:
-            self.logger.info(f"We're simulating, no callback set.")
+            self.logger.info("We're simulating, no callback set.")
 
     @staticmethod
     def read_lim_sw(pin: int = LID_LIMIT_SWITCH2):

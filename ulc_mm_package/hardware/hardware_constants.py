@@ -1,4 +1,3 @@
-import os
 
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3

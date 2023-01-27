@@ -60,7 +60,7 @@ class PneumaticModule:
         pi: pigpio.pi = None,
     ):
         self.logger = logging.getLogger(__name__)
-        self._pi = pi if pi != None else pigpio.pi()
+        self._pi = pi if pi is not None else pigpio.pi()
         self.servo_pin = servo_pin
         self.mprls_rst_pin = mprls_rst_pin
         self.mprls_pwr_pin = mprls_pwr_pin
@@ -209,7 +209,7 @@ class PneumaticModule:
                 raise PressureSensorStaleValue(
                     f"{perf_counter() - self.prev_poll_time_s}s elapsed since last read (last value was: {self.prev_pressure} w/ status {self.prev_status.value})."
                 )
-            self.logger.info(f"Returning previous pressure value.")
+            self.logger.info("Returning previous pressure value.")
             return self.prev_pressure, self.prev_status
 
     def getPressureImmediately(self) -> Tuple[float, PressureSensorRead]:

@@ -1,4 +1,3 @@
-import multiprocessing as mp
 from typing import cast, List, Tuple
 
 import cv2

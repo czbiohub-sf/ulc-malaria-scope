@@ -28,7 +28,6 @@ from ulc_mm_package.hardware.hardware_modules import (
     PressureSensorStaleValue,
     SyringeInMotion,
 )
-from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
@@ -43,7 +42,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_M_PERIOD,
     TIMEOUT_S_PERIOD,
     TH_PERIOD,
-    STATUS,
     ERROR_BEHAVIORS,
 )
 
@@ -237,13 +235,13 @@ class ScopeOp(QObject, NamedMachine):
         )
         component_status = self.mscope.getComponentStatus()
 
-        if all([status == True for status in component_status.values()]):
+        if all([status is True for status in component_status.values()]):
             self.setup_done.emit()
         else:
             failed_components = [
                 comp.name
                 for comp in component_status
-                if component_status.get(comp) == False
+                if component_status.get(comp) is False
             ]
             self.default_error.emit(
                 "Hardware pre-check failed",
@@ -291,7 +289,7 @@ class ScopeOp(QObject, NamedMachine):
         self.running = False
 
         # Account for case when pause is entered during the initial setup
-        if self.start_time != None:
+        if self.start_time is not None:
             self.accumulated_time += perf_counter() - self.start_time
             self.start_time = None
 
@@ -414,7 +412,7 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
-        if self.start_time != None:
+        if self.start_time is not None:
             self.logger.info(
                 f"Net FPS is {self.count/(self._get_experiment_runtime())}"
             )
@@ -555,7 +553,7 @@ class ScopeOp(QObject, NamedMachine):
         try:
             flowrate = self.fastflow_routine.send((img, timestamp))
 
-            if flowrate != None:
+            if flowrate is not None:
                 self.update_flowrate.emit(flowrate)
         except CantReachTargetFlowrate as e:
             self.fastflow_result = e.flowrate
@@ -645,8 +643,8 @@ class ScopeOp(QObject, NamedMachine):
 
                 try:
                     self.density_routine.send(filtered_prediction)
-                except LowDensity as e:
-                    self.logger.warning(f"Cell density is too low.")
+                except LowDensity:
+                    self.logger.warning("Cell density is too low.")
                     self.reload_pause.emit(
                         "Low cell density",
                         (
@@ -704,11 +702,11 @@ class ScopeOp(QObject, NamedMachine):
 
             t0 = perf_counter()
             # Update infopanel
-            if focus_err != None:
+            if focus_err is not None:
                 # TODO change this to non int?
                 self.update_focus.emit(int(focus_err))
 
-            if flowrate != None:
+            if flowrate is not None:
                 self.update_flowrate.emit(flowrate)
 
             t1 = perf_counter()

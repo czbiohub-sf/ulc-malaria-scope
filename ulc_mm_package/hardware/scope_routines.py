@@ -318,9 +318,9 @@ def autobrightnessRoutine(mscope: MalariaScope, img: np.ndarray = None) -> float
         img = yield
         try:
             brightness_achieved = autobrightness.runAutobrightness(img)
-        except BrightnessTargetNotAchieved as e:
+        except BrightnessTargetNotAchieved:
             raise
-        except BrightnessCriticallyLow as e:
+        except BrightnessCriticallyLow:
             raise
 
     # Get the mean image brightness to store in the experiment metadata

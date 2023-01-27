@@ -1,7 +1,6 @@
 import os
 import usb
 
-from typing import Tuple
 from enum import auto, Enum
 from collections import namedtuple
 
@@ -24,7 +23,7 @@ if SIMULATION:
         "../QtGUI/sim_media/sample.mp4",
     )
     VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
-    if VIDEO_PATH == None:
+    if VIDEO_PATH is None:
         raise RuntimeError(
             "Sample video for simulation mode could not be found. "
             f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"

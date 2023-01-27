@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 
-import sys
 import time
 import threading
 import numpy as np
@@ -8,7 +7,6 @@ import operator as op
 import numpy.typing as npt
 
 from copy import copy
-from contextlib import contextmanager
 from concurrent.futures import Future, ThreadPoolExecutor
 
 from functools import partial
@@ -20,7 +18,6 @@ from typing import (
     Optional,
     Union,
     TypeVar,
-    cast,
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout

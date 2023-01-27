@@ -2,7 +2,6 @@
 FlowController
 """
 
-from time import perf_counter
 from typing import Tuple, Union, Optional
 
 import numpy as np

@@ -8,7 +8,6 @@ import logging
 import traceback
 import numpy as np
 
-from time import perf_counter, sleep
 from PyQt5.QtCore import (
     QObject,
     QTimer,

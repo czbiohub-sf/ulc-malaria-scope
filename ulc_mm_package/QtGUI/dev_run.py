@@ -7,7 +7,7 @@ from ulc_mm_package.scope_constants import (
     VIDEO_REC,
     SIMULATION,
 )
-from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
+from ulc_mm_package.hardware.scope import MalariaScope, Components
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import (
     fastFlowRoutine,
@@ -222,7 +222,7 @@ class AcquisitionThread(QThread):
 
         if self.update_counter % self.num_loops == 0:
             self.update_counter = 0
-            if self.pneumatic_module != None:
+            if self.pneumatic_module is not None:
                 try:
                     # TODO: do something with the status
                     (
@@ -239,7 +239,7 @@ class AcquisitionThread(QThread):
             # Update temperatures
             self.temperatures.emit(1)
 
-        if self.finish_saving_future != None:
+        if self.finish_saving_future is not None:
             if self.finish_saving_future.done():
                 self.doneSaving.emit(1)
                 self.finish_saving_future = None
@@ -248,7 +248,7 @@ class AcquisitionThread(QThread):
         self.camera.exposureTime_ms = exposure
 
     def takeImage(self):
-        if self.main_dir == None:
+        if self.main_dir is None:
             self.main_dir = self.external_dir + datetime.now().strftime(DATETIME_FORMAT)
             mkdir(self.main_dir)
             self.data_storage.main_dir = self.main_dir
@@ -261,7 +261,7 @@ class AcquisitionThread(QThread):
                 experiment_initialization_metdata={},
                 per_image_metadata_keys=self.getMetadata().keys(),
             )
-            if self.main_dir == None:
+            if self.main_dir is None:
                 self.main_dir = self.data_storage.main_dir
 
             self.im_counter = 0
@@ -353,7 +353,7 @@ class AcquisitionThread(QThread):
         if self.fast_flow_enabled:
             try:
                 flow_val = self.fastFlowRoutine.send((img, timestamp))
-                if flow_val != None:
+                if flow_val is not None:
                     self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
@@ -373,7 +373,7 @@ class AcquisitionThread(QThread):
             except LowConfidenceCorrelations:
                 self.stopActiveFlowControl()
                 print(
-                    f"A number of recent xcorr calculations have failed. Disabling active flow control."
+                    "A number of recent xcorr calculations have failed. Disabling active flow control."
                 )
                 self.pressureLeakDetected.emit(1)
 
@@ -381,7 +381,7 @@ class AcquisitionThread(QThread):
             try:
                 flow_val = self.flowControl.send((img, timestamp))
                 self.syringePosChanged.emit(1)
-                if flow_val != None:
+                if flow_val is not None:
                     self.flowValChanged.emit(flow_val)
             except CantReachTargetFlowrate:
                 self.stopActiveFlowControl()
@@ -470,7 +470,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread = AcquisitionThread(self.external_dir, mscope)
         self.recording = False
         if not hardware_status[Components.CAMERA]:
-            print(f"Error initializing camera. Disabling camera GUI elements.")
+            print("Error initializing camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
             self.txtBoxExposure.setEnabled(False)
@@ -483,7 +483,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.setDutyCycle(0)
             self.vsLED.setValue(0)
             self.lblLED.setText(f"{int(self.vsLED.value())}%")
-            self.btnLEDToggle.setText(f"Turn off")
+            self.btnLEDToggle.setText("Turn off")
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
             self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
             self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
@@ -739,7 +739,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(float)
     def updateFlowVal(self, flow_val):
-        if flow_val != None:
+        if flow_val is not None:
             self.lblFlowrate.setText(f"Flowrate: {flow_val:.2f}")
 
     @pyqtSlot(float)
@@ -778,12 +778,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsLED.blockSignals(False)
         self.vsLED.setEnabled(True)
         self.led.setDutyCycle(int(self.vsLED.value()) / 100)
-        self.btnLEDToggle.setText(f"Turn off")
+        self.btnLEDToggle.setText("Turn off")
 
     def _disableLEDGUIElements(self):
         self.vsLED.blockSignals(True)
         self.vsLED.setEnabled(False)
-        self.btnLEDToggle.setText(f"Turn on")
+        self.btnLEDToggle.setText("Turn on")
 
     def btnLEDToggleHandler(self):
         if self.led._isOn:
@@ -801,7 +801,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsLED.blockSignals(True)
         self.vsLED.setEnabled(False)
         self.acquisitionThread.autobrightness_on = True
-        self.btnLEDToggle.setText(f"Turn off")
+        self.btnLEDToggle.setText("Turn off")
 
     @pyqtSlot(int)
     def autobrightnessDone(self, val):
@@ -890,7 +890,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         try:
             self.motor.threaded_move_abs(pos)
         except MotorInMotion:
-            print(f"Motor already in motion.")
+            print("Motor already in motion.")
 
         self.txtBoxFocus.setText(f"{self.motor.pos}")
         self.acquisitionThread.updateMotorPos = True
@@ -1079,7 +1079,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         _ = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,
             "Leak - Active pressure controlled stopped",
-            f"The target flowrate can not be attained, stopping active flow control.",
+            "The target flowrate can not be attained, stopping active flow control.",
             cancel=False,
         )
 
@@ -1113,7 +1113,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.close()
 
             # Turn off camera
-            if self.acquisitionThread != None:
+            if self.acquisitionThread is not None:
                 self.acquisitionThread.camera_activated = False
                 self.acquisitionThread.camera.stopAcquisition()
                 self.acquisitionThread.camera.deactivateCamera()
