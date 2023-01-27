@@ -19,6 +19,9 @@ class ERROR_BEHAVIORS(enum.Enum):
     YN = 2
 
 
+# ================ Infopanel values ================ #
+BLANK_INFOPANEL_VAL = "---"
+
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = ["Tororo, Uganda", "Biohub SF", "DeRisi Lab"]
