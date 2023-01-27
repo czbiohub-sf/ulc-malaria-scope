@@ -9,6 +9,7 @@ from ulc_mm_package.scope_constants import (
     SIMULATION,
 )
 from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
+
 # FIXME no stars!
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import (
@@ -16,6 +17,7 @@ from ulc_mm_package.hardware.scope_routines import (
     flowControlRoutine,
     autobrightnessRoutine,
 )
+
 # FIXME no stars!
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
