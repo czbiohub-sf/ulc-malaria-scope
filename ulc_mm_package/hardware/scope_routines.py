@@ -5,6 +5,8 @@ from typing import List, Tuple, Optional, Sequence, Generator, Union
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
+
+# FIXME no stars!
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_modules import PressureLeak, PressureSensorBusy
