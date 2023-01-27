@@ -8,6 +8,8 @@ from ulc_mm_package.scope_constants import (
     SSD_DIR,
 )
 from ulc_mm_package.hardware.scope import MalariaScope
+
+# FIXME no stars!
 from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT

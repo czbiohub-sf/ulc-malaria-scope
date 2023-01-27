@@ -6,6 +6,7 @@ from time import sleep
 from typing import cast
 from datetime import datetime
 
+# FIXME no stars!
 from ulc_mm_package.image_processing.focus_metrics import *
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
