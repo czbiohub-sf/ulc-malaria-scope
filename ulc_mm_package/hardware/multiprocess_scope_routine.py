@@ -465,7 +465,9 @@ class MultiProcFunc:
         while not self._halt_flag.is_set():
             # the check for new data - timeout to check if we are being halted
             try:
-                new_data_ready = self._new_data_ready.wait(timeout=self.NEW_DATA_TIMEOUT)
+                new_data_ready = self._new_data_ready.wait(
+                    timeout=self.NEW_DATA_TIMEOUT
+                )
 
                 if new_data_ready:
                     self._new_data_ready.clear()
