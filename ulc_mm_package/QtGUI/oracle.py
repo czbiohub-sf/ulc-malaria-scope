@@ -46,6 +46,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     FLOWCELL_QC_FORM_LINK,
     ERROR_BEHAVIORS,
+    BLANK_INFOPANEL_VAL,
 )
 
 from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
@@ -327,8 +328,7 @@ class Oracle(Machine):
     def lid_open_pause_handler(self):
         if self.lid_handler_enabled and self.scopeop.state != "pause":
             self.scopeop.to_pause()
-            self.close_lid_display_message()
-            self.scopeop.unpause()
+            self.unpause()
 
     def general_pause_handler(
         self,
@@ -368,6 +368,12 @@ class Oracle(Machine):
             image=_IMAGE_RELOAD_PATH,
         )
         self.close_lid_display_message()
+        self.unpause()
+
+    def unpause(self):
+        self.close_lid_display_message()
+        self.liveview_window.update_flowrate(BLANK_INFOPANEL_VAL)
+        self.liveview_window.update_focus(BLANK_INFOPANEL_VAL)
         self.scopeop.unpause()
 
     def close_handler(self):
