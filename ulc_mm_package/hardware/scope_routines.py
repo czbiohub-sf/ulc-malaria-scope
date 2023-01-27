@@ -1,5 +1,7 @@
-from typing import List, Tuple, Optional, Sequence, Generator, Union
+import logging
 from time import perf_counter, sleep
+from typing import List, Tuple, Optional, Sequence, Generator, Union
+
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
@@ -11,6 +13,9 @@ from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 from ulc_mm_package.neural_nets.neural_network_modules import AsyncInferenceResult
 import ulc_mm_package.image_processing.processing_constants as processing_constants
+
+
+scope_routines_logger = logging.getLogger(__name__)
 
 
 def focusRoutine(
@@ -45,7 +50,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) 
     """
 
     ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
-    steps_from_focus = -int(np.mean(ssaf_steps_from_focus))
+    steps_from_focus = -round(np.mean(ssaf_steps_from_focus))
 
     # Change to async batch inference? Check w/ Axel
     # mscope.autofocus_model.asyn(img_arr)
@@ -461,7 +466,7 @@ def find_cells_routine(
             return cells_present_motor_pos
         except NoCellsFound:
             max_attempts -= 1
-            print("MAX ATTEMPTS LEFT {}".format(max_attempts))
+            scope_routines_logger.warning("MAX ATTEMPTS LEFT {}".format(max_attempts))
 
 
 def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
