@@ -52,7 +52,7 @@ class ZarrWriter:
             [],
         )
 
-    def createNewFile(self, filename: str, overwrite: bool = True):
+    def create_new_file(self, filename: str, overwrite: bool = True):
         """Create a new zarr file.
 
         Parameters
@@ -124,7 +124,7 @@ class ZarrWriter:
     def wait_all(self):
         wait(self.futures, return_when=ALL_COMPLETED)
 
-    def closeFile(self):
+    def close_file(self):
         """Close the Zarr store."""
         self.writable = False
         self.wait_all()
@@ -155,4 +155,4 @@ class ZarrWriter:
         -------
         future: An object that can be polled to check if closing the file has completed
         """
-        return self.executor.submit(self.closeFile)
+        return self.executor.submit(self.close_file)

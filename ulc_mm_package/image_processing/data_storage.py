@@ -119,7 +119,7 @@ class DataStorage:
             path.join(self.main_dir, self.experiment_folder, time_str)
             + f"_{custom_experiment_name}"
         )
-        self.zw.createNewFile(filename)
+        self.zw.create_new_file(filename)
 
     def writeData(self, image: np.ndarray, metadata: Dict, count: int):
         """Write a new image and its corresponding metadata.
@@ -136,7 +136,7 @@ class DataStorage:
 
         if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
             self.prev_write_time = perf_counter()
-            self.zw.threadedWriteSingleArray(image, count)
+            self.zw.threaded_write_single_array(image, count)
             self.md_writer.writerow(metadata)
 
     def writeSingleImage(self, image: np.ndarray, custom_image_name: str):
@@ -172,7 +172,7 @@ class DataStorage:
 
         if self.zw.writable:
             self.zw.writable = False
-            future = self.zw.threadedCloseFile()
+            future = self.zw.threaded_close_file()
 
         if self.metadata_file != None:
             self.metadata_file.close()
