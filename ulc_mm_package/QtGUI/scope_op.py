@@ -36,7 +36,7 @@ from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AF_BATCH_SIZE,
     YOGO_CLASS_LIST,
-    YOGO_PERIOD_S,
+    YOGO_PERIOD_NUM,
     YOGO_CLASS_IDX_MAP,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
@@ -635,7 +635,7 @@ class ScopeOp(QObject, NamedMachine):
                 class_counts = YOGO.class_instance_count(filtered_prediction)
                 # very rough interpolation: ~30 FPS * period between YOGO calls * counts
                 class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
-                    class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_S * 30
+                    class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
                 )
                 self.cell_counts += class_counts
 

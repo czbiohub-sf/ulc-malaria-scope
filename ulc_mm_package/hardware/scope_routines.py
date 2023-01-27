@@ -134,10 +134,12 @@ def count_parasitemia_periodic_wrapper(
     Tuple[np.ndarray, Optional[int]],
     None,
 ]:
-    prev_time = 0
+    counter = 0
 
     while True:
-        if perf_counter() - prev_time > nn_constants.YOGO_PERIOD_S:
+        counter += 1
+        if counter >= nn_constants.YOGO_PERIOD_NUM:
+            counter = 0
             img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
             mscope.cell_diagnosis_model(img, counts)
             prev_time = perf_counter()
