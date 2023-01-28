@@ -184,7 +184,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.autobrightness_result = None
         self.cellfinder_result = None
-        self.autofocus_result = None
+        self.autofocus_result = [None, None]
         self.fastflow_result = None
 
         self.count = 0
@@ -526,13 +526,21 @@ class ScopeOp(QObject, NamedMachine):
                 self.img_signal.connect(self.run_autofocus)
         else:
             try:
-                self.autofocus_result = singleShotAutofocus(
-                    self.mscope, self.autofocus_batch
-                )
+                if self.autofocus_result[0] == None:
+                    self.autofocus_result[0] = singleShotAutofocus(
+                        self.mscope, self.autofocus_batch
+                    )
+                    self.logger.info(
+                        f"First autofocus batch complete. Calculated focus error = {self.autofocus_result} steps."
+                    )
+                else:
+                    self.autofocus_result[1] = singleShotAutofocus(
+                        self.mscope, self.autofocus_batch
+                    )
+                    self.logger.info(
+                        f"Second autofocus batch complete. Calculated focus error = {self.autofocus_result} steps."
+                    )
                 self.autofocus_batch = []
-                self.logger.info(
-                    f"Autofocus complete. Calculated focus error = {self.autofocus_result} steps."
-                )
                 self.next_state()
             except InvalidMove:
                 self.logger.error(
