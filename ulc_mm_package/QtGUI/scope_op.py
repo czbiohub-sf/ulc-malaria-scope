@@ -117,7 +117,7 @@ class ScopeOp(QObject, NamedMachine):
             {
                 "name": "autobrightness_precells",
                 "display_name": "autobrightness (pre-cells)",
-                "on_enter": [self._send_state, self._start_autobrightness_precells],
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "pressure_check",
@@ -127,11 +127,12 @@ class ScopeOp(QObject, NamedMachine):
             {
                 "name": "cellfinder",
                 "on_enter": [self._send_state, self._start_cellfinder],
+                "on_exit": [self._end_cellfinder],
             },
             {
                 "name": "autobrightness_postcells",
                 "display_name": "autobrightness (post-cells)",
-                "on_enter": [self._send_state, self._start_autobrightness_postcells],
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "autofocus",
@@ -323,8 +324,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.running = True
 
-    def _start_autobrightness_precells(self, *args):
-
+    def _start_autobrightness(self, *args):
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
@@ -359,17 +359,13 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _start_autobrightness_postcells(self, *args):
+    def _end_cellfinder(self, *args):
         self.update_msg.emit(
             f"Moving motor to focus position at {self.cellfinder_result} steps."
         )
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
-        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
-        self.autobrightness_routine.send(None)
-
-        self.img_signal.connect(self.run_autobrightness)
 
     def _start_autofocus(self, *args):
         self.img_signal.connect(self.run_autofocus)
