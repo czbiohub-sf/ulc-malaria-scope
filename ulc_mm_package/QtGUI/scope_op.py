@@ -185,7 +185,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.autobrightness_result = None
         self.cellfinder_result = None
-        self.autofocus_result = [None, None]
+        self.autofocus_results = [None, None]
         self.fastflow_result = None
 
         self.count = 0
@@ -522,22 +522,23 @@ class ScopeOp(QObject, NamedMachine):
                 self.img_signal.connect(self.run_autofocus)
         else:
             try:
-                if self.autofocus_result[0] == None:
-                    self.autofocus_result[0] = singleShotAutofocus(
+                if self.autofocus_results[0] == None:
+                    self.autofocus_results[0] = singleShotAutofocus(
                         self.mscope, self.autofocus_batch
                     )
                     self.logger.info(
-                        f"First autofocus batch complete. Calculated focus error = {self.autofocus_result} steps."
+                        f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
                     )
+                    self.autofocus_batch = []
                 else:
-                    self.autofocus_result[1] = singleShotAutofocus(
+                    self.autofocus_results[1] = singleShotAutofocus(
                         self.mscope, self.autofocus_batch
                     )
                     self.logger.info(
-                        f"Second autofocus batch complete. Calculated focus error = {self.autofocus_result} steps."
+                        f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
                     )
-                self.autofocus_batch = []
-                self.next_state()
+                    self.autofocus_batch = []
+                    self.next_state()
             except InvalidMove:
                 self.logger.error(
                     "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
