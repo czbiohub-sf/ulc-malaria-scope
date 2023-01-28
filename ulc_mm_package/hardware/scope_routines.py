@@ -60,7 +60,7 @@ def singleShotAutofocus(mscope: MalariaScope, img_arr: List[np.ndarray]) -> int:
 
     try:
         dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-        mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
+        mscope.motor.move_rel(dir=dir, steps=abs(steps_from_focus))
     except MotorControllerError as e:
         raise e
 
