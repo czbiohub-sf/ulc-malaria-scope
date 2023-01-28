@@ -526,10 +526,13 @@ class ScopeOp(QObject, NamedMachine):
                     self.autofocus_results[0] = singleShotAutofocus(
                         self.mscope, self.autofocus_batch
                     )
-                    self.logger.info(
+                    self.logger.info( 
                         f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
                     )
                     self.autofocus_batch = []
+                    
+                    if self.running:
+                        self.img_signal.connect(self.run_autofocus)
                 else:
                     self.autofocus_results[1] = singleShotAutofocus(
                         self.mscope, self.autofocus_batch
