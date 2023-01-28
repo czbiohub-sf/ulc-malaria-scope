@@ -119,6 +119,7 @@ def periodicAutofocusWrapper(
             counter = 0
             steps_from_focus = ssaf_routine.send(img)
 
+
 def count_parasitemia(
     mscope: MalariaScope, img: np.ndarray, counts: Optional[Sequence[int]] = None
 ) -> List[Tuple[int, Tuple[float, ...]]]:
