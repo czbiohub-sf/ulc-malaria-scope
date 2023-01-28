@@ -34,7 +34,7 @@ def focusRoutine(
     mscope.motor.move_abs(best_focus_pos)
 
 
-def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) -> int:
+def singleShotAutofocus(mscope: MalariaScope, img_arr: List[np.ndarray]) -> int:
     """Single shot autofocus routine.
 
     Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
@@ -70,7 +70,7 @@ def singleShotAutofocusRoutine(mscope: MalariaScope, img_arr: List[np.ndarray]) 
 def continuousSSAFRoutine(
     mscope: MalariaScope, img: np.ndarray
 ) -> Generator[Union[None, int], np.ndarray, None]:
-    """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
+    """A wrapper around singleShotAutofocus which continually accepts images and makes motor position adjustments."""
 
     img_arr = []
     steps_from_focus = None
@@ -81,7 +81,7 @@ def continuousSSAFRoutine(
         img_arr.append(img)
 
         if len(img_arr) == nn_constants.AF_BATCH_SIZE:
-            steps_from_focus = singleShotAutofocusRoutine(mscope, img_arr)
+            steps_from_focus = singleShotAutofocus(mscope, img_arr)
             img_arr = []
 
 

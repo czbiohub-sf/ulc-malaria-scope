@@ -526,7 +526,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.img_signal.connect(self.run_autofocus)
         else:
             try:
-                self.autofocus_result = singleShotAutofocusRoutine(
+                self.autofocus_result = singleShotAutofocus(
                     self.mscope, self.autofocus_batch
                 )
                 self.autofocus_batch = []
