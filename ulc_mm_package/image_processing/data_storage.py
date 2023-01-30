@@ -32,7 +32,7 @@ class DataStorage:
         self.metadata_file = None
         self.main_dir = None
         self.md_keys = None
-        if default_fps != None:
+        if default_fps is not None:
             self.fps = default_fps
             self.dt = 1 / self.fps
         else:
@@ -133,7 +133,7 @@ class DataStorage:
             Dictionary of the per-image metadata to save. Must match the keys that were used to
             initialize the metadata file in `createNewExperiment(...)`
         """
-
+        print('zw writable?', self.zw.writable)
         if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
             self.prev_write_time = perf_counter()
             self.zw.threaded_write_single_array(image, count)

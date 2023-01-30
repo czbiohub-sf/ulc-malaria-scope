@@ -89,10 +89,18 @@ class ZarrWriter:
             )
             raise IOError(f"Error creating {filename}.zip")
 
+    def threaded_write_single_array(self, data, pos: int):
+        print('threaded_write_single_array')
+        f = self.executor.submit(self.write_single_array, data, pos)
+        self.futures.append(f)
+        print('threaded_write_single_array end')
+
     def write_single_array(self, data: np.ndarray, pos: int) -> None:
         # need to be explicit about types here!
         l: List[msr._pytype] = [data, cast(msr._pytype, pos)]
+        print('write_single_array')
         self.writing_process.call(l)
+        print('write_single_array end')
 
     def _write_single_array(self, data, pos: int) -> None:
         """Write a single array and optional metadata to the Zarr store.
@@ -105,6 +113,7 @@ class ZarrWriter:
         Since each `pos` is a different chunk, it is threadsafe - see
         https://zarr.readthedocs.io/en/stable/tutorial.html#parallel-computing-and-synchronization
         """
+        print(f"in _write_single_array {pos}")
         if not self.writable:
             return
 
@@ -116,10 +125,6 @@ class ZarrWriter:
             )
             # FIXME is this the only exception? we should make it a general "ZarrWriterMessedUp" error
             raise AttemptingWriteWithoutFile()
-
-    def threaded_write_single_array(self, data, pos: int):
-        f = self.executor.submit(self.write_single_array, data, pos)
-        self.futures.append(f)
 
     def wait_all(self):
         wait(self.futures, return_when=ALL_COMPLETED)
