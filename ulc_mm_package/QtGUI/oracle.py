@@ -11,6 +11,7 @@ import webbrowser
 import enum
 import logging
 import numpy as np
+import multiprocessing
 
 from os import listdir
 from transitions import Machine

@@ -371,6 +371,7 @@ class MultiProcFunc:
             args=(self._input_ctypes, self._output_ctypes),
             daemon=True,
         )
+        print(self._input_ctypes)
         self._proc.start()
 
     def stop(self, timeout: float = 3.0) -> None:
@@ -491,8 +492,8 @@ class MultiProcFunc:
                 except queue.Full:
                     # put the most recent exception in
                     self._exception_queue.get_nowait()
-                    self._exception_queue.put_nowait(e)
                     self._exception_queue.task_done()
+                    self._exception_queue.put_nowait(e)
 
     def call(self, args: List[_pytype]) -> Union[_pytype, Tuple[_pytype, ...]]:
         """
@@ -533,8 +534,10 @@ class MultiProcFunc:
 
         self._new_data_ready.set()
 
+        print('waiting for ret')
         self._ret_value_ready.wait()
         self._ret_value_ready.clear()
+        print('ret recv"d')
 
         out_vals = tuple(out.get() for out in self._output_ctypes)
 
