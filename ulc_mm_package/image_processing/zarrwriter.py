@@ -46,12 +46,6 @@ class ZarrWriter:
 
         self.camera_selection: CameraOptions = camera_selection
 
-        self.writing_process = msr.MultiProcFunc.from_arg_definitions(
-            self._write_single_array,
-            [msr.get_ctype_image_defn((772, 1032)), msr.get_ctype_int_defn()],
-            [],
-        )
-
     def create_new_file(self, filename: str, overwrite: bool = True):
         """Create a new zarr file.
 
@@ -84,6 +78,13 @@ class ZarrWriter:
                 dtype="u1",
             )
             self.writable = True
+
+            self.writing_process = msr.MultiProcFunc.from_arg_definitions(
+                self._write_single_array,
+                [msr.get_ctype_image_defn((772, 1032)), msr.get_ctype_int_defn()],
+                [],
+            )
+
             print(f'now wriitable')
         except AttributeError as e:
             self.logger.error(

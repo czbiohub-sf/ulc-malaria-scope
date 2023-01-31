@@ -133,7 +133,6 @@ class DataStorage:
             Dictionary of the per-image metadata to save. Must match the keys that were used to
             initialize the metadata file in `createNewExperiment(...)`
         """
-        print('zw writable?', self.zw.writable)
         if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
             self.prev_write_time = perf_counter()
             self.zw.threaded_write_single_array(image, count)

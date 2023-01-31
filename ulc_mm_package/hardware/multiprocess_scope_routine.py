@@ -479,7 +479,9 @@ class MultiProcFunc:
                     self._new_data_ready.clear()
 
                     func_args = [inp.get() for inp in self._input_ctypes]
+                    print('calling work_fcn...')
                     ret_vals = self.work_fcn(*func_args)
+                    print('called work_fcn')
                     ret_vals = ret_vals if isinstance(ret_vals, tuple) else [ret_vals]
 
                     self._set_ctypes(ret_vals, outputs)
