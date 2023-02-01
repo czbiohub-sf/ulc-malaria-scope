@@ -484,7 +484,8 @@ class MultiProcFunc:
                     print('called work_fcn')
                     ret_vals = ret_vals if isinstance(ret_vals, tuple) else [ret_vals]
 
-                    self._set_ctypes(ret_vals, outputs)
+                    if len(outputs) > 0:
+                        self._set_ctypes(ret_vals, outputs)
 
                     self._ret_value_ready.set()
             except Exception as e:
