@@ -12,11 +12,14 @@ import enum
 import logging
 import numpy as np
 
-from os import listdir
+from os import (
+    listdir,
+    mkdir,
+    path,
+)
 from transitions import Machine
 from time import perf_counter, sleep
 from logging.config import fileConfig
-from os import path, mkdir
 from datetime import datetime
 
 from PyQt5.QtWidgets import (
