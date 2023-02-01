@@ -56,7 +56,6 @@ class ZarrWriter:
         overwrite : bool
             Will overwrite a file with the existing filename if it exists, otherwise will append.
         """
-        print("creating new file")
         try:
             self.store = zarr.ZipStore(
                 f"{filename}.zip",
@@ -85,7 +84,6 @@ class ZarrWriter:
                 [],
             )
 
-            print(f'now wriitable')
         except AttributeError as e:
             self.logger.error(
                 f"zarrwriter.py : createNewFile : Exception encountered - {e}"
@@ -94,17 +92,13 @@ class ZarrWriter:
 
     def threaded_write_single_array(self, data, pos: int):
         for g in self.futures: g.result()
-        print('threaded_write_single_array')
         f = self.executor.submit(self.write_single_array, data, pos)
         self.futures.append(f)
-        print('threaded_write_single_array end')
 
     def write_single_array(self, data: np.ndarray, pos: int) -> None:
         # need to be explicit about types here!
         l: List[msr._pytype] = [data, cast(msr._pytype, pos)]
-        print('write_single_array')
         self.writing_process.call(l)
-        print('write_single_array end')
 
     def _write_single_array(self, data, pos: int) -> None:
         """Write a single array and optional metadata to the Zarr store.
@@ -117,12 +111,9 @@ class ZarrWriter:
         Since each `pos` is a different chunk, it is threadsafe - see
         https://zarr.readthedocs.io/en/stable/tutorial.html#parallel-computing-and-synchronization
         """
-        print(f"in _write_single_array {pos} writable = {self.writable}")
         if not self.writable:
-            print('not writable so _write_single_array is leaving')
             return
 
-        print(f'writing to arr {pos}')
 
         try:
             self.array[:, :, pos] = data
@@ -132,8 +123,6 @@ class ZarrWriter:
             )
             # FIXME is this the only exception? we should make it a general "ZarrWriterMessedUp" error
             raise AttemptingWriteWithoutFile()
-
-        print(f'done {pos}')
 
     def wait_all(self):
         wait(self.futures, return_when=ALL_COMPLETED)

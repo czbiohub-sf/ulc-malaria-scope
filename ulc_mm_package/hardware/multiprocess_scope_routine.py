@@ -371,7 +371,6 @@ class MultiProcFunc:
             args=(self._input_ctypes, self._output_ctypes),
             daemon=True,
         )
-        print(self._input_ctypes)
         self._proc.start()
 
     def stop(self, timeout: float = 3.0) -> None:
@@ -479,9 +478,7 @@ class MultiProcFunc:
                     self._new_data_ready.clear()
 
                     func_args = [inp.get() for inp in self._input_ctypes]
-                    print('calling work_fcn...')
                     ret_vals = self.work_fcn(*func_args)
-                    print('called work_fcn')
                     ret_vals = ret_vals if isinstance(ret_vals, tuple) else [ret_vals]
 
                     if len(outputs) > 0:
@@ -537,10 +534,8 @@ class MultiProcFunc:
 
         self._new_data_ready.set()
 
-        print('waiting for ret')
         self._ret_value_ready.wait()
         self._ret_value_ready.clear()
-        print('ret recv"d')
 
         out_vals = tuple(out.get() for out in self._output_ctypes)
 
