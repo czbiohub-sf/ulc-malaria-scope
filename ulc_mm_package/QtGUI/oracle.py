@@ -10,6 +10,7 @@ import socket
 import webbrowser
 import enum
 import logging
+import subprocess
 import numpy as np
 
 from os import listdir
@@ -531,6 +532,14 @@ class Oracle(Machine):
             self.experiment_metadata,
             PER_IMAGE_METADATA_KEYS,
         )
+
+        self.experiment_metadata[
+            "git_branch"
+        ] = subprocess.check_output(['git', 'symbolic-ref', '--short', 'HEAD']).decode('ascii').strip()
+        self.experiment_metadata[
+            "git_commit"
+        ] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+
 
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
