@@ -116,8 +116,10 @@ def periodicAutofocusWrapper(
         img = yield steps_from_focus
         counter += 1
         if counter >= nn_constants.AF_PERIOD_NUM:
-            counter = 0
             steps_from_focus = ssaf_routine.send(img)
+
+            if counter >= nn_constants.AF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
+                counter = 0
 
 
 def count_parasitemia(
