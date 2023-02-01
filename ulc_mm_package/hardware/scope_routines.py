@@ -91,7 +91,7 @@ def periodicAutofocusWrapper(
     """A periodic wrapper around the `continuousSSAFRoutine`.
 
     This function adds a simple time wrapper around `continuousSSAFRoutine`
-    such that inferences (in batches) and motor adjustments are done every `AF_PERIOD_S`seconds.
+    such that inferences and motor adjustments are done every `AF_PERIOD_NUM' frames.
 
     When not making an adjustment, this Generator yields None. After an adjustment has been completed, the next
     `.send(img)` will yield a float value.
@@ -104,23 +104,22 @@ def periodicAutofocusWrapper(
         In between periods, images are not being sent to SSAF.
     int:
         Number of motor steps taken, returned after a full batch of images have been sent once
-        AF_PERIOD_S has elapsed since the last adjustment.
+        AF_PERIOD_NUM frames have elapsed since the last adjustment.
     """
 
     counter = 0
     steps_from_focus = None
-    prev_adjustment_time = perf_counter()
     ssaf_routine = continuousSSAFRoutine(mscope, None)
     ssaf_routine.send(None)
 
     while True:
         img = yield steps_from_focus
-        if perf_counter() - prev_adjustment_time > nn_constants.AF_PERIOD_S:
+        counter += 1
+        if counter >= nn_constants.AF_PERIOD_NUM:
             steps_from_focus = ssaf_routine.send(img)
-            counter += 1
-            if counter >= nn_constants.AF_BATCH_SIZE:
+
+            if counter >= nn_constants.AF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
                 counter = 0
-                prev_adjustment_time = perf_counter()
 
 
 def count_parasitemia(
@@ -138,10 +137,12 @@ def count_parasitemia_periodic_wrapper(
     Tuple[np.ndarray, Optional[int]],
     None,
 ]:
-    prev_time = 0
+    counter = 0
 
     while True:
-        if perf_counter() - prev_time > nn_constants.YOGO_PERIOD_S:
+        counter += 1
+        if counter >= nn_constants.YOGO_PERIOD_NUM:
+            counter = 0
             img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
             mscope.cell_diagnosis_model(img, counts)
             prev_time = perf_counter()

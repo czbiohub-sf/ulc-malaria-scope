@@ -71,6 +71,13 @@ class CameraOptions(Enum):
         return self.img_dims().height
 
 
+# ================ FPS constants ================ #
+ACQUISITION_FPS = 30.0
+LIVEVIEW_FPS = 1.0
+
+ACQUISITION_PERIOD = 1000.0 / ACQUISITION_FPS  # ms
+LIVEVIEW_PERIOD = 1000.0 / LIVEVIEW_FPS  # ms
+
 # ================ Camera constants ================ #
 MAX_FRAMES = 20000  # Rounded up from 10 minutes of data at 30 FPS
 if SIMULATION:
