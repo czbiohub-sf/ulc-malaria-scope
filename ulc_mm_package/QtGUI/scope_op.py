@@ -757,8 +757,8 @@ class ScopeOp(QObject, NamedMachine):
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
 
-            zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
-            self.img_metadata["zarrwriter_qsize"] = zarr_qsize
+            # zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
+            self.img_metadata["zarrwriter_qsize"] = 0
 
             ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
             self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)

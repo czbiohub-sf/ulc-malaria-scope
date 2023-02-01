@@ -40,9 +40,7 @@ class WriteInProgress(Exception):
 class ZarrWriter:
     def __init__(self, camera_selection: CameraOptions = CAMERA_SELECTION):
         self.writable = False
-        self.futures: List[Future] = []
         self.logger = logging.getLogger(__name__)
-        self.executor = ThreadPoolExecutor(max_workers=1)
 
         self.camera_selection: CameraOptions = camera_selection
 
@@ -93,18 +91,15 @@ class ZarrWriter:
             raise IOError(f"Error creating {filename}.zip")
 
     def threaded_write_single_array(self, data, pos: int):
-        for g in self.futures: g.result()
-        print('threaded_write_single_array')
-        f = self.executor.submit(self.write_single_array, data, pos)
-        self.futures.append(f)
-        print('threaded_write_single_array end')
+        if not self.writable:
+            print('not writable so _write_single_array is leaving')
+            return
+        self.write_single_array( data, pos)
 
     def write_single_array(self, data: np.ndarray, pos: int) -> None:
         # need to be explicit about types here!
         l: List[msr._pytype] = [data, cast(msr._pytype, pos)]
-        print('write_single_array')
         self.writing_process.call(l)
-        print('write_single_array end')
 
     def _write_single_array(self, data, pos: int) -> None:
         """Write a single array and optional metadata to the Zarr store.
@@ -118,9 +113,6 @@ class ZarrWriter:
         https://zarr.readthedocs.io/en/stable/tutorial.html#parallel-computing-and-synchronization
         """
         print(f"in _write_single_array {pos} writable = {self.writable}")
-        if not self.writable:
-            print('not writable so _write_single_array is leaving')
-            return
 
         print(f'writing to arr {pos}')
 
@@ -135,28 +127,11 @@ class ZarrWriter:
 
         print(f'done {pos}')
 
-    def wait_all(self):
-        wait(self.futures, return_when=ALL_COMPLETED)
-
     def close_file(self):
         """Close the Zarr store."""
         self.writable = False
-        self.wait_all()
+        self.writing_process.stop(timeout=1.)
 
-        exceptions = []
-        for f in self.futures:
-            if f.exception() is not None:
-                exceptions.append(f.exception())
-
-        for i, exc in enumerate(exceptions):
-            self.logger.error(f"exception in zarrwriter: {exc}")
-            if i > 10:
-                self.logger.error(
-                    f"{len(exceptions) - i} exceptions left; {len(exceptions)} total"
-                )
-                break
-
-        self.futures = []
         self.store.close()
 
     def threaded_close_file(self):
@@ -169,4 +144,4 @@ class ZarrWriter:
         -------
         future: An object that can be polled to check if closing the file has completed
         """
-        return self.executor.submit(self.close_file)
+        self.close_file()

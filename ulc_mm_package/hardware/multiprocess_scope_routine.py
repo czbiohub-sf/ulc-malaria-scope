@@ -484,17 +484,24 @@ class MultiProcFunc:
                     print('called work_fcn')
                     ret_vals = ret_vals if isinstance(ret_vals, tuple) else [ret_vals]
 
-                    self._set_ctypes(ret_vals, outputs)
+                    if len(outputs) > 0:
+                        self._set_ctypes(ret_vals, outputs)
 
+                    self._ret_value_ready.set()
+                else:
+                    print("new data wasn't ready")
+                    # TODO is this needed?
                     self._ret_value_ready.set()
             except Exception as e:
                 self._halt_flag.set()
+                # so we can progress and not deadlock
+                self._ret_value_ready.set()
                 try:
                     self._exception_queue.put_nowait(e)
                 except queue.Full:
                     # put the most recent exception in
                     self._exception_queue.get_nowait()
-                    self._exception_queue.task_done()
+                    # self._exception_queue.task_done()
                     self._exception_queue.put_nowait(e)
 
     def call(self, args: List[_pytype]) -> Union[_pytype, Tuple[_pytype, ...]]:
@@ -522,7 +529,7 @@ class MultiProcFunc:
         """
         try:
             exc = self._exception_queue.get_nowait()
-            self._exception_queue.task_done()
+            # self._exception_queue.task_done()
             raise exc
         except queue.Empty:
             # if the queue is empty, then there are no exceptions :)
