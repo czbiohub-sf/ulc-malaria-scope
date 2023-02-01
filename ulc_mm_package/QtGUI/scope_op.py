@@ -31,24 +31,22 @@ from ulc_mm_package.hardware.hardware_modules import (
     PressureSensorStaleValue,
     SyringeInMotion,
 )
-from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT, TH_PERIOD_NUM
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AF_BATCH_SIZE,
     YOGO_CLASS_LIST,
-    YOGO_PERIOD_S,
+    YOGO_PERIOD_NUM,
     YOGO_CLASS_IDX_MAP,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
-    ACQUISITION_PERIOD,
-    LIVEVIEW_PERIOD,
-    TIMEOUT_M_PERIOD,
-    TIMEOUT_S_PERIOD,
-    TH_PERIOD,
+    TIMEOUT_PERIOD_M,
+    TIMEOUT_PERIOD_S,
     STATUS,
     ERROR_BEHAVIORS,
 )
+from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
 
 # TODO populate info?
 
@@ -606,9 +604,9 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.count >= MAX_FRAMES:
             self.to_intermission("Ending experiment since data collection is complete.")
-        elif current_time - self.start_time > TIMEOUT_S_PERIOD:
+        elif current_time - self.start_time > TIMEOUT_PERIOD_S:
             self.to_intermission(
-                f"Ending experiment since {TIMEOUT_M_PERIOD} minute timeout was reached."
+                f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
             )
         else:
             # Record timestamp before running routines
@@ -639,7 +637,7 @@ class ScopeOp(QObject, NamedMachine):
                 class_counts = YOGO.class_instance_count(filtered_prediction)
                 # very rough interpolation: ~30 FPS * period between YOGO calls * counts
                 class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
-                    class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_S * 30
+                    class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
                 )
                 self.cell_counts += class_counts
 
@@ -738,9 +736,7 @@ class ScopeOp(QObject, NamedMachine):
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["focus_error"] = focus_err
 
-            if current_time - self.TH_time > TH_PERIOD:
-                self.TH_time = current_time
-
+            if self.count % TH_PERIOD_NUM == 0:
                 try:
                     (
                         temperature,

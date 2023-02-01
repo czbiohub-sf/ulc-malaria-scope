@@ -1,5 +1,8 @@
 import os
 
+from ulc_mm_package.scope_constants import ACQUISITION_FPS
+
+
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
@@ -7,6 +10,8 @@ BOARD_STATUS_INDICATOR = 4
 # ================ Camera constants ================ #
 DEFAULT_EXPOSURE_MS = 0.5
 DEVICELINK_THROUGHPUT = 200000000
+
+CAMERA_FPS = 53
 
 # ================ Motor controller constants ================ #
 FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
@@ -76,3 +81,8 @@ CAM_FAN_2 = 24
 
 # ================ RTC constants ================ #
 DATETIME_FORMAT = "%Y-%m-%d-%H%M%S"
+
+# ================ TH sensor update period ================ #
+# TH sensor update period
+TH_PERIOD_S = 5
+TH_PERIOD_NUM = int(TH_PERIOD_S * ACQUISITION_FPS)
