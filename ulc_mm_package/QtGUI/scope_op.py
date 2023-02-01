@@ -5,12 +5,13 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
 
-import numpy as np
+import cv2
 import logging
+import numpy as np
 
-from transitions import Machine, State
 from time import sleep
 from typing import Any
+from transitions import Machine, State
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
