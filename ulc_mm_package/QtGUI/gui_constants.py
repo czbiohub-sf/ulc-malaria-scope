@@ -2,6 +2,7 @@ import enum
 
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
+
 # ================ Status colors ================ #
 class STATUS(enum.Enum):
     DEFAULT = "whitesmoke"

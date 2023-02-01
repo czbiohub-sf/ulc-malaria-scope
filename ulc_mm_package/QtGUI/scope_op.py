@@ -324,7 +324,6 @@ class ScopeOp(QObject, NamedMachine):
         self.running = True
 
     def _start_autobrightness_precells(self, *args):
-
         self.autobrightness_routine = autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
