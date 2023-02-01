@@ -91,7 +91,8 @@ class ZarrWriter:
             raise IOError(f"Error creating {filename}.zip")
 
     def threaded_write_single_array(self, data, pos: int):
-        for g in self.futures: g.result()
+        for g in self.futures:
+            g.result()
         f = self.executor.submit(self.write_single_array, data, pos)
         self.futures.append(f)
 
@@ -113,7 +114,6 @@ class ZarrWriter:
         """
         if not self.writable:
             return
-
 
         try:
             self.array[:, :, pos] = data
