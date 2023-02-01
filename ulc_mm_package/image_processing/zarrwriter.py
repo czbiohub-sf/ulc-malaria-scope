@@ -83,7 +83,7 @@ class ZarrWriter:
                 [],
             )
 
-            print(f'now wriitable')
+            print(f"now wriitable")
         except AttributeError as e:
             self.logger.error(
                 f"zarrwriter.py : createNewFile : Exception encountered - {e}"
@@ -92,9 +92,9 @@ class ZarrWriter:
 
     def threaded_write_single_array(self, data, pos: int):
         if not self.writable:
-            print('not writable so _write_single_array is leaving')
+            print("not writable so _write_single_array is leaving")
             return
-        self.write_single_array( data, pos)
+        self.write_single_array(data, pos)
 
     def write_single_array(self, data: np.ndarray, pos: int) -> None:
         # need to be explicit about types here!
@@ -114,7 +114,7 @@ class ZarrWriter:
         """
         print(f"in _write_single_array {pos} writable = {self.writable}")
 
-        print(f'writing to arr {pos}')
+        print(f"writing to arr {pos}")
 
         try:
             self.array[:, :, pos] = data
@@ -125,12 +125,12 @@ class ZarrWriter:
             # FIXME is this the only exception? we should make it a general "ZarrWriterMessedUp" error
             raise AttemptingWriteWithoutFile()
 
-        print(f'done {pos}')
+        print(f"done {pos}")
 
     def close_file(self):
         """Close the Zarr store."""
         self.writable = False
-        self.writing_process.stop(timeout=1.)
+        self.writing_process.stop(timeout=1.0)
 
         self.store.close()
 
