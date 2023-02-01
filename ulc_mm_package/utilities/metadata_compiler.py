@@ -16,8 +16,8 @@ def metadata_compiler(display_keys = [DIR_KEY, 'notes', 'git_branch', 'git_commi
     valid_keys = EXPERIMENT_METADATA_KEYS + [DIR_KEY]
     print(valid_keys)
     for key in display_keys:
-        if not key in valid_keys:
-            raise ValueError(f"Invalid metadata key: {key}")
+        if key not in valid_keys:
+            raise ValueError("Invalid metadata key '" + key + "' requested")
 
 	# Get parent directory
     ssd_dir = path.join(SSD_DIR, SSD_NAME)
@@ -63,7 +63,7 @@ def metadata_compiler(display_keys = [DIR_KEY, 'notes', 'git_branch', 'git_commi
             df_list.append(run_df)
 
     df_compilation = pd.concat(df_list, ignore_index=True)
-    print(df_compilation['directory'].to_string())
+    print(df_compilation[display_keys].to_string())
 
 
                 
@@ -73,7 +73,7 @@ def metadata_compiler(display_keys = [DIR_KEY, 'notes', 'git_branch', 'git_commi
     
 
 if __name__ == "__main__":
-    'directory'
-    metadata_compiler(display_keys=EXPERIMENT_METADATA_KEYS)
+    # metadata_compiler(display_keys=EXPERIMENT_METADATA_KEYS)
+    metadata_compiler()
 
     # TODO add optional arguments
