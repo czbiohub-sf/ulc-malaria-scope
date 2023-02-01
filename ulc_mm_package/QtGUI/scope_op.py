@@ -619,10 +619,12 @@ class ScopeOp(QObject, NamedMachine):
             t1 = perf_counter()
             self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
+            resized_image = cv2.resize(img, (300,400))
+
             t0 = perf_counter()
             prev_yogo_results: List[
                 AsyncInferenceResult
-            ] = self.count_parasitemia_routine.send((img, self.count))
+            ] = self.count_parasitemia_routine.send((resized_image, self.count))
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
@@ -664,7 +666,7 @@ class ScopeOp(QObject, NamedMachine):
 
             t0 = perf_counter()
             try:
-                focus_err = self.PSSAF_routine.send(img)
+                focus_err = self.PSSAF_routine.send(resized_image)
             except MotorControllerError as e:
                 if not SIMULATION:
                     self.logger.error(

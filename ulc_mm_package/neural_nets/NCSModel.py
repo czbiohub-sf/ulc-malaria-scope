@@ -116,11 +116,11 @@ class NCSModel:
             .tensor() \
             .set_element_type(Type.u8) \
             .set_layout(Layout("NHWC")) \
-            .set_spatial_static_shape(
-                camera_selection.IMG_HEIGHT, camera_selection.IMG_WIDTH
-            )
+            # .set_spatial_static_shape(
+            #     camera_selection.IMG_HEIGHT, camera_selection.IMG_WIDTH
+            # )
         # fmt: on
-        ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)
+        # ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)
         ppp.input().model().set_layout(Layout("NCHW"))
         ppp.output().tensor().set_element_type(Type.f32)
         model = ppp.build()
