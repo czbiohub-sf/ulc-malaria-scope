@@ -521,7 +521,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_autofocus)
 
         if len(self.autofocus_batch) < AF_BATCH_SIZE:
-            resized_image = cv2.resize(img, (400,300), interpolation=cv2.INTER_CUBIC)
+            resized_image = cv2.resize(img, (400, 300), interpolation=cv2.INTER_CUBIC)
             self.autofocus_batch.append(resized_image)
 
             if self.running:
@@ -619,7 +619,7 @@ class ScopeOp(QObject, NamedMachine):
             t1 = perf_counter()
             self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
-            resized_image = cv2.resize(img, (400,300), interpolation=cv2.INTER_CUBIC)
+            resized_image = cv2.resize(img, (400, 300), interpolation=cv2.INTER_CUBIC)
 
             t0 = perf_counter()
             prev_yogo_results: List[
