@@ -133,7 +133,6 @@ class FlowRateEstimator:
 
     def _calculatePairDisplacement(self):
         if self._frame_counter == 0 and not self.isFull():
-
             dx, dy, confidence = self.multiproc_interface._func_call()
 
             time_diff = self.timestamps[1] - self.timestamps[0]
@@ -241,7 +240,6 @@ def get_flowrate_with_cross_correlation(
     temp_y2_perc: float = 0.85,
     debug: bool = False,
 ) -> Tuple[float, float, float]:
-
     """Find the displacement of a subregion of an image with another, temporally adjacent, image.
 
     Parameters

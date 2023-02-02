@@ -97,7 +97,6 @@ def log_parser(descriptor, qsizes_file, times_file):
 
 
 if __name__ == "__main__":
-
     if len(sys.argv) not in [3, 4]:
         print(
             f"usage: {sys.argv[0]} <path to queue size .txt file>  <path to time .log file> [optional name for plot]"

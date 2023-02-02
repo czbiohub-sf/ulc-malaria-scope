@@ -14,7 +14,6 @@ DEFAULT_KEYS = [DIR_KEY, "notes", "git_branch"]
 
 
 def metadata_compiler(display_keys=DEFAULT_KEYS):
-
     # Check that requested keys are valid
     valid_keys = EXPERIMENT_METADATA_KEYS + [DIR_KEY]
     for key in display_keys:
@@ -73,7 +72,6 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         prog="Metadata compiler",
         description=f"By default, only the columns {DEFAULT_KEYS} are displayed. Additional columns can be viewed using the flags below.",
