@@ -10,9 +10,10 @@ from ulc_mm_package.scope_constants import (
 )
 
 DIR_KEY = "directory"
-DEFAULT_KEYS = [DIR_KEY, 'notes', 'git_branch']
+DEFAULT_KEYS = [DIR_KEY, "notes", "git_branch"]
 
-def metadata_compiler(display_keys = DEFAULT_KEYS):
+
+def metadata_compiler(display_keys=DEFAULT_KEYS):
 
     # Check that requested keys are valid
     valid_keys = EXPERIMENT_METADATA_KEYS + [DIR_KEY]
@@ -23,7 +24,7 @@ def metadata_compiler(display_keys = DEFAULT_KEYS):
                 f"Valid columns are {valid_keys}"
             )
 
-	# Get parent directory
+    # Get parent directory
     ssd_dir = path.join(SSD_DIR, SSD_NAME)
     if path.exists(ssd_dir):
         parent_dir = ssd_dir + "/"
@@ -34,9 +35,7 @@ def metadata_compiler(display_keys = DEFAULT_KEYS):
         try:
             parent_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
         except (FileNotFoundError, IndexError) as e:
-            print(
-                f"Could not find any folders within {SSD_DIR}."
-            )
+            print(f"Could not find any folders within {SSD_DIR}.")
             return
     print(f"Getting data from {parent_dir}")
 
@@ -44,7 +43,9 @@ def metadata_compiler(display_keys = DEFAULT_KEYS):
     child_dirs = listdir(parent_dir)
     filtered_child_dirs = re.findall("\d{4}-\d{2}-\d{2}-\d{6}", " ".join(child_dirs))
 
-    exp_dirs = [child_dir for child_dir in child_dirs if child_dir in filtered_child_dirs]
+    exp_dirs = [
+        child_dir for child_dir in child_dirs if child_dir in filtered_child_dirs
+    ]
 
     # Track dataframes from all run metadata file
     df_list = []
@@ -52,7 +53,7 @@ def metadata_compiler(display_keys = DEFAULT_KEYS):
     # Get all run directories
     for exp_dir in exp_dirs:
         run_dirs = listdir(path.join(parent_dir, exp_dir))
-        
+
         # Get run metadata file
         for run_dir in run_dirs:
             run_files = listdir(path.join(parent_dir, exp_dir, run_dir))
@@ -67,29 +68,30 @@ def metadata_compiler(display_keys = DEFAULT_KEYS):
             df_list.append(run_df)
 
     df_compilation = pd.concat(df_list, ignore_index=True)
-    df_sorted = df_compilation.sort_values(by='directory')
+    df_sorted = df_compilation.sort_values(by="directory")
     print(df_sorted[display_keys].to_string())
-    
+
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        prog = "Metadata compiler",
-        description = f"By default, only the columns {DEFAULT_KEYS} are displayed. Additional columns can be viewed using the flags below."
+        prog="Metadata compiler",
+        description=f"By default, only the columns {DEFAULT_KEYS} are displayed. Additional columns can be viewed using the flags below.",
     )
 
     parser.add_argument(
-        '-v', 
-        '--verbose', 
-        help='display all experiment metadata columns',
-        action='store_true'
+        "-v",
+        "--verbose",
+        help="display all experiment metadata columns",
+        action="store_true",
     )
     parser.add_argument(
-        '-i',
-        '--include', 
-        dest='key', 
-        help=f'include the specified column in the displayed metadata, any of {EXPERIMENT_METADATA_KEYS} can be specified',
-        action='store')
+        "-i",
+        "--include",
+        dest="key",
+        help=f"include the specified column in the displayed metadata, any of {EXPERIMENT_METADATA_KEYS} can be specified",
+        action="store",
+    )
     args = parser.parse_args()
 
     if args.verbose:
