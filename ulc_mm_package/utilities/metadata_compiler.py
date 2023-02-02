@@ -10,7 +10,7 @@ from ulc_mm_package.scope_constants import (
 )
 
 DIR_KEY = "directory"
-DEFAULT_KEYS = [DIR_KEY, 'notes', 'git_branch', 'git_commit']
+DEFAULT_KEYS = [DIR_KEY, 'notes', 'git_branch']
 
 def metadata_compiler(display_keys = DEFAULT_KEYS):
 
@@ -67,7 +67,8 @@ def metadata_compiler(display_keys = DEFAULT_KEYS):
             df_list.append(run_df)
 
     df_compilation = pd.concat(df_list, ignore_index=True)
-    print(df_compilation[display_keys].to_string())
+    df_sorted = df_compilation.sort_values(by='directory')
+    print(df_sorted[display_keys].to_string())
     
 
 if __name__ == "__main__":
