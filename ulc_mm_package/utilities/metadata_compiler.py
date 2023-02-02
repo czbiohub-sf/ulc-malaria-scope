@@ -13,7 +13,9 @@ from ulc_mm_package.scope_constants import (
 )
 
 DIR_KEY = "directory"
+FILE_KEY = 'filename'
 DEFAULT_KEYS = [DIR_KEY, "notes", "git_branch"]
+VALID_KEYS = EXPERIMENT_METADATA_KEYS + [DIR_KEY, FILE_KEY]
 
 MAX_COLWIDTH = 50
 TXT_FILE = "metadata_compilation.txt"
@@ -21,12 +23,11 @@ TXT_FILE = "metadata_compilation.txt"
 def metadata_compiler(display_keys=DEFAULT_KEYS):
 
     # Check that requested keys are valid
-    valid_keys = EXPERIMENT_METADATA_KEYS + [DIR_KEY]
     for key in display_keys:
-        if key not in valid_keys:
+        if key not in VALID_KEYS:
             raise ValueError(
                 "Invalid metadata column '" + key + "' requested. "
-                f"Valid columns are {valid_keys}"
+                f"Valid columns are {VALID_KEYS}"
             )
 
     # Get parent directory
@@ -73,6 +74,7 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
 
                 # Add file location to dataframe
                 single_df[DIR_KEY] = path.join(exp_dir, run_dir)
+                single_df[FILE_KEY] = filename
 
                 df_list.append(single_df)
             except pd.errors.EmptyDataError:
@@ -113,14 +115,13 @@ if __name__ == "__main__":
         "-i",
         "--include",
         dest="key",
-        help=f"include the specified column in the displayed metadata, any of {EXPERIMENT_METADATA_KEYS} can be specified",
+        help=f"include the specified column in the displayed metadata, any of {VALID_KEYS} can be specified",
         action="store",
     )
     args = parser.parse_args()
 
     if args.verbose:
-        all_keys = [DIR_KEY] + EXPERIMENT_METADATA_KEYS
-        metadata_compiler(display_keys=all_keys)
+        metadata_compiler(display_keys=VALID_KEYS)
     elif args.key != None:
         custom_keys = DEFAULT_KEYS + [args.key]
         metadata_compiler(display_keys=custom_keys)
