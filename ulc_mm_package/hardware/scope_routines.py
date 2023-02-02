@@ -83,7 +83,7 @@ class Routines():
             img_arr.append(img)
 
             if len(img_arr) == nn_constants.AF_BATCH_SIZE:
-                steps_from_focus = singleShotAutofocusRoutine(mscope, img_arr)
+                steps_from_focus = self.singleShotAutofocusRoutine(mscope, img_arr)
                 img_arr = []
 
 
@@ -111,7 +111,7 @@ class Routines():
 
         counter = 0
         steps_from_focus = None
-        ssaf_routine = continuousSSAFRoutine(mscope, None)
+        ssaf_routine = self.continuousSSAFRoutine(mscope, None)
         ssaf_routine.send(None)
 
         while True:
@@ -476,8 +476,7 @@ class Routines():
                 self.logger.warning("MAX ATTEMPTS LEFT {}".format(max_attempts))
 
 
-    def cell_density_routine() -> Generator[Optional[int], np.ndarray, None]:
-        self,
+    def cell_density_routine(self) -> Generator[Optional[int], np.ndarray, None]:
         prev_time = perf_counter()
         prev_measurements = np.asarray(
             [100] * processing_constants.CELL_DENSITY_HISTORY_LEN

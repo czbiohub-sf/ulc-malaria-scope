@@ -17,7 +17,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 
 # FIXME no stars!
-from ulc_mm_package.hardware.scope_routines import Routines
+from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.scope_constants import (
@@ -527,7 +527,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.img_signal.connect(self.run_autofocus)
         else:
             try:
-                self.autofocus_result = singleShotAutofocusRoutine(
+                self.autofocus_result = self.routines.singleShotAutofocusRoutine(
                     self.mscope, self.autofocus_batch
                 )
                 self.autofocus_batch = []
