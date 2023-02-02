@@ -112,6 +112,7 @@ class DRV8825Nema:
     def is_locked():
         return False
 
+
 # TODO Move this and other hardware testing code into a single unified script/folder
 if __name__ == "__main__":
     print("Instantiating motor...")

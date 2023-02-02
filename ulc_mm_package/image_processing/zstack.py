@@ -13,7 +13,6 @@ from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
 
 def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=None):
-
     if save_loc != None:
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")

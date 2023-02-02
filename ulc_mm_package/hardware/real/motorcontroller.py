@@ -232,7 +232,6 @@ class DRV8825Nema:
         self.stop_motor = True
 
     def _move_rel_steps(self, steps: int, dir=Direction.CCW, stepdelay=0.005):
-
         # set direction
         self._pi.write(self.direction_pin, dir.value)
 

@@ -368,9 +368,10 @@ class ScopeOp(QObject, NamedMachine):
         self.update_msg.emit(
             f"Moving motor to focus position at {self.cellfinder_result} steps."
         )
-        self.logger.info(f"Moving motor to focus position at {self.cellfinder_result} steps.")
+        self.logger.info(
+            f"Moving motor to focus position at {self.cellfinder_result} steps."
+        )
         self.mscope.motor.move_abs(self.cellfinder_result)
-
 
     def _start_autofocus(self, *args):
         self.img_signal.connect(self.run_autofocus)
@@ -530,7 +531,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.autofocus_results[0] = singleShotAutofocus(
                         self.mscope, self.autofocus_batch
                     )
-                    self.logger.info( 
+                    self.logger.info(
                         f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
                     )
                     self.autofocus_batch = []
