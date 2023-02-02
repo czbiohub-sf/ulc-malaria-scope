@@ -110,7 +110,7 @@ class DRV8825Nema:
 
     @staticmethod
     def is_locked():
-        return False
+        ...
 
 
 # TODO Move this and other hardware testing code into a single unified script/folder
