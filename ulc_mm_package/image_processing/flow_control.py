@@ -149,7 +149,10 @@ class FlowController:
         dx, dy, xcorr_coeff = self.fre.add_image_and_calculate_pair(img, time)
 
         if self.fre.is_primed():
-            self.update_flowrate(dy)
+            if self.flowrate is None:
+                self.flowrate = dy
+            else:
+                self.update_flowrate(dy)
             self.counter += 1
 
             if xcorr_coeff < CORRELATION_THRESH:

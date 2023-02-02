@@ -127,7 +127,9 @@ class FlowRateEstimator:
         dx, dy, confidence = self.multiproc_interface._func_call()
         return dx, dy, confidence
 
-    def add_image_and_calculate_pair(self, img: np.ndarray, timestamp: float):
+    def add_image_and_calculate_pair(
+        self, img: np.ndarray, timestamp: float
+    ) -> Tuple[float, float, float]:
         """A convenience function to add an image and perform a displacement calculation.
 
         Note: The very first measurement returned (after sending only a single image) should be ignored,
