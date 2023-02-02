@@ -17,13 +17,16 @@ from ulc_mm_package.neural_nets.neural_network_modules import AsyncInferenceResu
 import ulc_mm_package.image_processing.processing_constants as processing_constants
 
 
-class Routines():
-
+class Routines:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
     def focusRoutine(
-        self, mscope: MalariaScope, lower_bound: int, upper_bound: int, img: np.ndarray = None
+        self,
+        mscope: MalariaScope,
+        lower_bound: int,
+        upper_bound: int,
+        img: np.ndarray = None,
     ):
         mscope.motor.move_abs(lower_bound)
         focus_metrics = []
@@ -35,8 +38,9 @@ class Routines():
         best_focus_pos = lower_bound + np.argmax(focus_metrics)
         mscope.motor.move_abs(best_focus_pos)
 
-
-    def singleShotAutofocusRoutine(self, mscope: MalariaScope, img_arr: List[np.ndarray]) -> int:
+    def singleShotAutofocusRoutine(
+        self, mscope: MalariaScope, img_arr: List[np.ndarray]
+    ) -> int:
         """Single shot autofocus routine.
 
         Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
@@ -68,7 +72,6 @@ class Routines():
 
         return steps_from_focus
 
-
     def continuousSSAFRoutine(
         self, mscope: MalariaScope, img: np.ndarray
     ) -> Generator[Union[None, int], np.ndarray, None]:
@@ -85,7 +88,6 @@ class Routines():
             if len(img_arr) == nn_constants.AF_BATCH_SIZE:
                 steps_from_focus = self.singleShotAutofocusRoutine(mscope, img_arr)
                 img_arr = []
-
 
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope, img: np.ndarray
@@ -123,17 +125,19 @@ class Routines():
                 if counter >= nn_constants.AF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
                     counter = 0
 
-
     def count_parasitemia(
-        self, mscope: MalariaScope, img: np.ndarray, counts: Optional[Sequence[int]] = None
+        self,
+        mscope: MalariaScope,
+        img: np.ndarray,
+        counts: Optional[Sequence[int]] = None,
     ) -> List[Tuple[int, Tuple[float, ...]]]:
         results = mscope.cell_diagnosis_model.get_asyn_results()
         mscope.cell_diagnosis_model(img, counts)
         return results
 
-
     def count_parasitemia_periodic_wrapper(
-        self, mscope: MalariaScope,
+        self,
+        mscope: MalariaScope,
     ) -> Generator[
         Optional[List[AsyncInferenceResult]],
         Tuple[np.ndarray, Optional[int]],
@@ -153,7 +157,6 @@ class Routines():
                     _,
                     _,
                 ) = yield []
-
 
     def flowControlRoutine(
         self, mscope: MalariaScope, target_flowrate: float, img: np.ndarray
@@ -185,7 +188,6 @@ class Routines():
         while True:
             img, timestamp = yield flow_val
             flow_val = flow_controller.controlFlow(img, timestamp)
-
 
     def fastFlowRoutine(
         self,
@@ -243,7 +245,9 @@ class Routines():
         while True:
             img, timestamp = yield flow_val
             try:
-                flow_val, flow_error = flow_controller.fastFlowAdjustment(img, timestamp)
+                flow_val, flow_error = flow_controller.fastFlowAdjustment(
+                    img, timestamp
+                )
             except CantReachTargetFlowrate:
                 raise
             except LowConfidenceCorrelations:
@@ -252,8 +256,9 @@ class Routines():
             if flow_error == 0:
                 return flow_val
 
-
-    def autobrightnessRoutine(self, mscope: MalariaScope, img: np.ndarray = None) -> float:
+    def autobrightnessRoutine(
+        self, mscope: MalariaScope, img: np.ndarray = None
+    ) -> float:
         """Autobrightness routine to set led power.
 
         Parameters
@@ -337,7 +342,6 @@ class Routines():
         # Get the mean image brightness to store in the experiment metadata
         return autobrightness.prev_mean_img_brightness
 
-
     def checkPressureDifference(self, mscope: MalariaScope) -> float:
         """Check the pressure differential. Raises an exception if difference is insufficent
         or if the pressure sensor cannot be read.
@@ -382,10 +386,11 @@ class Routines():
             )
         else:
             # Return syringe to its initial position
-            mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
+            mscope.pneumatic_module.setDutyCycle(
+                mscope.pneumatic_module.getMaxDutyCycle()
+            )
 
             return pressure_diff
-
 
     def find_cells_routine(
         self,
@@ -455,11 +460,15 @@ class Routines():
 
             # Pull the syringe maximally for `pull_time` seconds
             start = perf_counter()
-            mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
+            mscope.pneumatic_module.setDutyCycle(
+                mscope.pneumatic_module.getMinDutyCycle()
+            )
 
             while perf_counter() - start < pull_time:
                 img = yield
-            mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
+            mscope.pneumatic_module.setDutyCycle(
+                mscope.pneumatic_module.getMaxDutyCycle()
+            )
 
             # Perform a full focal stack and get the cross-correlation value for each image
             for pos in range(0, mscope.motor.max_pos, steps_per_image):
@@ -474,7 +483,6 @@ class Routines():
             except NoCellsFound:
                 max_attempts -= 1
                 self.logger.warning("MAX ATTEMPTS LEFT {}".format(max_attempts))
-
 
     def cell_density_routine(self) -> Generator[Optional[int], np.ndarray, None]:
         prev_time = perf_counter()

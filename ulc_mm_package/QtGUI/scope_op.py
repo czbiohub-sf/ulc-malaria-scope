@@ -401,7 +401,9 @@ class ScopeOp(QObject, NamedMachine):
         self.density_routine = self.routines.cell_density_routine()
         self.density_routine.send(None)
 
-        self.count_parasitemia_routine = self.routines.count_parasitemia_periodic_wrapper(self.mscope)
+        self.count_parasitemia_routine = (
+            self.routines.count_parasitemia_periodic_wrapper(self.mscope)
+        )
         self.count_parasitemia_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
@@ -681,7 +683,9 @@ class ScopeOp(QObject, NamedMachine):
                     )
                     focus_err = None
 
-                    self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
+                    self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
+                        self.mscope, None
+                    )
                     self.PSSAF_routine.send(None)
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
