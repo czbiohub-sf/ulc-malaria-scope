@@ -697,6 +697,15 @@ class ScopeOp(QObject, NamedMachine):
                     self.mscope, self.target_flowrate
                 )
                 self.flowcontrol_routine.send(None)
+            except LowConfidenceCorrelations:
+                self.logger.error(
+                    f"Flow control - too many measurements have yielded low poor xcorr calculations, something is amiss."
+                )
+                self.default_error.emit(
+                    "Calibration failed",
+                    "Too many recent low confidence xcorr calculations.",
+                    ERROR_BEHAVIORS.DEFAULT.value,
+                )
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
