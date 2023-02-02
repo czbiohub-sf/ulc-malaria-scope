@@ -42,7 +42,6 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
     # Get all experiment directories
     child_dirs = listdir(parent_dir)
     filtered_child_dirs = re.findall("\d{4}-\d{2}-\d{2}-\d{6}", " ".join(child_dirs))
-
     exp_dirs = [
         child_dir for child_dir in child_dirs if child_dir in filtered_child_dirs
     ]
@@ -52,7 +51,11 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
 
     # Get all run directories
     for exp_dir in exp_dirs:
-        run_dirs = listdir(path.join(parent_dir, exp_dir))
+        grandchild_dirs = listdir(path.join(parent_dir, exp_dir))
+        filtered_grandchild_dirs = re.findall("\d{4}-\d{2}-\d{2}-\d{6}_", " ".join(grandchild_dirs))
+        run_dirs = [
+            grandchild_dir for grandchild_dir in grandchild_dirs if grandchild_dir in filtered_grandchild_dirs
+        ]
 
         # Get run metadata file
         for run_dir in run_dirs:
