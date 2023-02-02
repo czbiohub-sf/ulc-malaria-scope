@@ -561,7 +561,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.error("Fastflow failed. Syringe already at max position.")
             self.default_error.emit(
                 "Calibration issue",
-                "Unable to achieve target flowrate with syringe at max position. Continue running anyways?",
+                "Unable to achieve target flowrate with syringe at max position. Continue running anyway (without flowrate stabilization)?",
                 ERROR_BEHAVIORS.YN.value,
             )
             self.update_flowrate.emit(self.fastflow_result)

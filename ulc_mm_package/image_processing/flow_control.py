@@ -221,6 +221,8 @@ class FlowController:
         CantReachTargetFlowrate:
             Raised if the target flowrate hasn't been reached and the syringe
             can't move any further in the necessary direction, this exception is raised
+        LowConfidenceCorrelations:
+            Raised if the number of low confidence correlations exceeds some percentage threshold of all flowrate measurements.
         """
 
         if self.target_flowrate is None:
@@ -233,19 +235,13 @@ class FlowController:
         # Adjust pressure using the pneumatic module based on the flow rate error
         if self.flowrate is not None:
             flow_error = get_flow_error(self.target_flowrate, self.flowrate)
-            try:
-                if (
-                    self.counter
-                    >= self.prev_adjustment_stamp + self.feedback_delay_frames
-                ):
-                    self.prev_adjustment_stamp = self.counter
-                    self._adjustSyringe(flow_error)
-                    self.logger.debug(
-                        f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
-                    )
-                return self.flowrate, flow_error
-            except CantReachTargetFlowrate:
-                raise
+            if self.counter >= self.prev_adjustment_stamp + self.feedback_delay_frames:
+                self.prev_adjustment_stamp = self.counter
+                self._adjustSyringe(flow_error)
+                self.logger.debug(
+                    f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
+                )
+            return self.flowrate, flow_error
         else:
             return (None, None)
 

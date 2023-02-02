@@ -29,7 +29,7 @@ FAILED_CORR_PERC_TOLERANCE = 0.5
 MIN_NUM_XCORR_FACTOR = 3
 
 # ================ Flow rate constants ================ #
-CORRELATION_THRESH = 0.5
+CORRELATION_THRESH = 0.3
 
 # You'd work backwards here...how many images do you want of the same cells?
 # Let's say 2 frames/fov of cells. At 33ms/frame, we want each cell to pass
