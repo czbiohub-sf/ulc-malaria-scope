@@ -11,6 +11,7 @@ from ulc_mm_package.image_processing.processing_constants import (
     FLOW_CONTROL_EWMA_ALPHA,
     TOL_PERC,
     FAILED_CORR_PERC_TOLERANCE,
+    MIN_NUM_XCORR_FACTOR,
 )
 from ulc_mm_package.image_processing.flowrate import (
     FlowRateEstimator,
@@ -114,6 +115,7 @@ class FlowController:
         self.prev_adjustment_stamp: int = 0
         self.failed_corr_counter: int = 0
         self.alpha: float = FLOW_CONTROL_EWMA_ALPHA
+        self.feedback_delay_frames = get_adjustment_period_ewma(self.alpha)
         self.fre: FlowRateEstimator = FlowRateEstimator(h, w)
 
         self.first_image: bool = True
@@ -131,6 +133,7 @@ class FlowController:
     def set_alpha(self, alpha: float) -> None:
         """Set the alpha value for EWMA filtering"""
         self.alpha = alpha
+        self.feedback_delay_frames = get_adjustment_period_ewma(self.alpha)
 
     def _add_image_and_update_flowrate(self, img: np.ndarray, time: float) -> None:
         """Adds an image to the FlowRateEsimator and updates the flowrate measurement.
@@ -160,6 +163,8 @@ class FlowController:
                 if (
                     self.failed_corr_counter / (self.counter)
                     > FAILED_CORR_PERC_TOLERANCE
+                    and self.failed_corr_counter
+                    > MIN_NUM_XCORR_FACTOR * self.feedback_delay_frames
                 ):
                     raise LowConfidenceCorrelations(
                         self.failed_corr_counter,
@@ -231,12 +236,11 @@ class FlowController:
             try:
                 if (
                     self.counter
-                    >= self.prev_adjustment_stamp
-                    + get_adjustment_period_ewma(self.alpha)
+                    >= self.prev_adjustment_stamp + self.feedback_delay_frames
                 ):
                     self.prev_adjustment_stamp = self.counter
                     self._adjustSyringe(flow_error)
-                    self.logger.info(
+                    self.logger.debug(
                         f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
                     )
                 return self.flowrate, flow_error

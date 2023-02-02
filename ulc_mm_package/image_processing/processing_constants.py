@@ -23,6 +23,11 @@ FLOW_CONTROL_EWMA_ALPHA = 0.05
 TOL_PERC = 0.1
 FAILED_CORR_PERC_TOLERANCE = 0.5
 
+# Factor by which to multiply the ewma feebdack adjustment delay (in frames).
+# In other words, this factor, multipled by 2x the EWMA half life, sets the minimum number of failed
+# cross correlation measurements that must happen before a LowConfidenceCorrelations exception is raised
+MIN_NUM_XCORR_FACTOR = 3
+
 # ================ Flow rate constants ================ #
 CORRELATION_THRESH = 0.5
 
