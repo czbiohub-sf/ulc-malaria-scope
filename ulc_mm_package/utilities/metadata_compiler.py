@@ -68,7 +68,7 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
             df_list.append(run_df)
 
     df_compilation = pd.concat(df_list, ignore_index=True)
-    df_sorted = df_compilation.sort_values(by="directory")
+    df_sorted = df_compilation.sort_values(by="directory", ignore_index=True)
     print(df_sorted[display_keys].to_string())
 
 
