@@ -1,4 +1,5 @@
 import re
+import argparse
 import pandas as pd
 
 from os import path, listdir
@@ -9,15 +10,18 @@ from ulc_mm_package.scope_constants import (
 )
 
 DIR_KEY = "directory"
+DEFAULT_KEYS = [DIR_KEY, 'notes', 'git_branch', 'git_commit']
 
-def metadata_compiler(display_keys = [DIR_KEY, 'notes', 'git_branch', 'git_commit']):
+def metadata_compiler(display_keys = DEFAULT_KEYS):
 
     # Check that requested keys are valid
     valid_keys = EXPERIMENT_METADATA_KEYS + [DIR_KEY]
-    print(valid_keys)
     for key in display_keys:
         if key not in valid_keys:
-            raise ValueError("Invalid metadata key '" + key + "' requested")
+            raise ValueError(
+                "Invalid metadata column '" + key + "' requested. "
+                f"Valid columns are {valid_keys}"
+            )
 
 	# Get parent directory
     ssd_dir = path.join(SSD_DIR, SSD_NAME)
@@ -64,16 +68,33 @@ def metadata_compiler(display_keys = [DIR_KEY, 'notes', 'git_branch', 'git_commi
 
     df_compilation = pd.concat(df_list, ignore_index=True)
     print(df_compilation[display_keys].to_string())
-
-
-                
-
-    # Get metadata from all runs
-
     
 
 if __name__ == "__main__":
-    # metadata_compiler(display_keys=EXPERIMENT_METADATA_KEYS)
-    metadata_compiler()
 
-    # TODO add optional arguments
+    parser = argparse.ArgumentParser(
+        prog = "Metadata compiler",
+        description = f"By default, only the columns {DEFAULT_KEYS} are displayed. Additional columns can be viewed using the flags below."
+    )
+
+    parser.add_argument(
+        '-v', 
+        '--verbose', 
+        help='display all experiment metadata columns',
+        action='store_true'
+    )
+    parser.add_argument(
+        '-i',
+        '--include', 
+        dest='key', 
+        help=f'include the specified column in the displayed metadata, any of {EXPERIMENT_METADATA_KEYS} can be specified',
+        action='store')
+    args = parser.parse_args()
+
+    if args.verbose:
+        metadata_compiler(display_keys=EXPERIMENT_METADATA_KEYS)
+    elif args.key != None:
+        custom_keys = DEFAULT_KEYS + [args.key]
+        metadata_compiler(display_keys=custom_keys)
+    else:
+        metadata_compiler()
