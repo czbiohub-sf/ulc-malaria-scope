@@ -13,15 +13,15 @@ from ulc_mm_package.scope_constants import (
 )
 
 DIR_KEY = "directory"
-FILE_KEY = 'filename'
+FILE_KEY = "filename"
 DEFAULT_KEYS = [DIR_KEY, "notes", "git_branch"]
 VALID_KEYS = EXPERIMENT_METADATA_KEYS + [DIR_KEY, FILE_KEY]
 
 MAX_COLWIDTH = 50
 TXT_FILE = "metadata_compilation.txt"
 
-def metadata_compiler(display_keys=DEFAULT_KEYS):
 
+def metadata_compiler(display_keys=DEFAULT_KEYS):
     # Check that requested keys are valid
     for key in display_keys:
         if key not in VALID_KEYS:
@@ -58,9 +58,13 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
     # Get all run directories
     for exp_dir in exp_dirs:
         grandchild_dirs = listdir(path.join(parent_dir, exp_dir))
-        filtered_grandchild_dirs = re.findall("\d{4}-\d{2}-\d{2}-\d{6}_", " ".join(grandchild_dirs))
+        filtered_grandchild_dirs = re.findall(
+            "\d{4}-\d{2}-\d{2}-\d{6}_", " ".join(grandchild_dirs)
+        )
         run_dirs = [
-            grandchild_dir for grandchild_dir in grandchild_dirs if grandchild_dir in filtered_grandchild_dirs
+            grandchild_dir
+            for grandchild_dir in grandchild_dirs
+            if grandchild_dir in filtered_grandchild_dirs
         ]
 
         # Get run metadata file
@@ -70,7 +74,9 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
 
             try:
                 # Get data from run metadata file
-                single_df = pd.read_csv(path.join(parent_dir, exp_dir, run_dir, filename))
+                single_df = pd.read_csv(
+                    path.join(parent_dir, exp_dir, run_dir, filename)
+                )
 
                 # Add file location to dataframe
                 single_df[DIR_KEY] = path.join(exp_dir, run_dir)
@@ -80,21 +86,20 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
             except pd.errors.EmptyDataError:
                 print(f"Empty file: {path.join(exp_dir, run_dir, filename)}")
 
-
-
     master_df = pd.concat(df_list, ignore_index=True)
     master_df = master_df.sort_values(by="directory", ignore_index=True)
     master_df = master_df.fillna("-")
 
     # Truncate notes columns for readability
     truncated_master_df = master_df.copy()
-    truncated_master_df['notes'] = [
-        note[:MAX_COLWIDTH-3] + "..." if len(note) > MAX_COLWIDTH - 3 else note for note in master_df['notes']
+    truncated_master_df["notes"] = [
+        note[: MAX_COLWIDTH - 3] + "..." if len(note) > MAX_COLWIDTH - 3 else note
+        for note in master_df["notes"]
     ]
 
     print("\n" + truncated_master_df[display_keys].to_string())
 
-    with open(TXT_FILE, 'w') as writer:
+    with open(TXT_FILE, "w") as writer:
         writer.write(master_df[display_keys].to_string())
     print(f"\nWrote untruncated metadata compilation to {TXT_FILE}")
 
