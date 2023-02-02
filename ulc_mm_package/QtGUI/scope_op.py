@@ -383,8 +383,8 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
             return
 
-        self.fastflow_routine = fastFlowRoutine(
-            self.mscope, None, target_flowrate=self.target_flowrate
+        self.fastflow_routine = flow_control_routine(
+            self.mscope, target_flowrate=self.target_flowrate, ramp=True
         )
         self.fastflow_routine.send(None)
 
@@ -394,8 +394,8 @@ class ScopeOp(QObject, NamedMachine):
         self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
-        self.flowcontrol_routine = flowControlRoutine(
-            self.mscope, self.target_flowrate, None
+        self.flowcontrol_routine = flow_control_routine(
+            self.mscope, self.target_flowrate
         )
         self.flowcontrol_routine.send(None)
 
@@ -696,8 +696,8 @@ class ScopeOp(QObject, NamedMachine):
                 )
                 flowrate = None
 
-                self.flowcontrol_routine = flowControlRoutine(
-                    self.mscope, self.target_flowrate, None
+                self.flowcontrol_routine = flow_control_routine(
+                    self.mscope, self.target_flowrate
                 )
                 self.flowcontrol_routine.send(None)
 

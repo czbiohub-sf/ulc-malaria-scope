@@ -13,8 +13,7 @@ from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
 # FIXME no stars!
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import (
-    fastFlowRoutine,
-    flowControlRoutine,
+    flow_control_routine,
     autobrightnessRoutine,
 )
 
@@ -340,8 +339,10 @@ class AcquisitionThread(QThread):
     def _set_target_flowrate(self, val):
         self.target_flowrate = val
 
-    def initializeActiveFlowControl(self, img: np.ndarray):
-        self.fastFlowRoutine = fastFlowRoutine(self.mscope, img, self.target_flowrate)
+    def initializeActiveFlowControl(self):
+        self.fastFlowRoutine = flow_control_routine(
+            self.mscope, self.target_flowrate, ramp=True
+        )
         self.fastFlowRoutine.send(None)
         self.initializeFlowControl = False
         self.fast_flow_enabled = True
@@ -353,7 +354,7 @@ class AcquisitionThread(QThread):
 
     def activeFlowControl(self, img: np.ndarray, timestamp: int):
         if self.initializeFlowControl:
-            self.initializeActiveFlowControl(img)
+            self.initializeActiveFlowControl()
 
         if self.fast_flow_enabled:
             try:
@@ -362,8 +363,8 @@ class AcquisitionThread(QThread):
                     self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
-                self.flowControl = flowControlRoutine(
-                    self.mscope, self.target_flowrate, img
+                self.flowControl = flow_control_routine(
+                    self.mscope, self.target_flowrate
                 )
                 self.flowControl.send(None)
                 self.fast_flow_enabled = False

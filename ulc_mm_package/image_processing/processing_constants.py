@@ -18,9 +18,9 @@ MIN_ACCEPTABLE_MEAN_BRIGHTNESS = 200
 INSIDE_BBOX_FLAG = 0
 
 # ================ Flow control constants ================ #
-NUM_IMAGE_PAIRS = 12  # Number of image pair xcorr calculations to average to make a single measurement
-WINDOW_SIZE = 12  # EWMA window size
+FLOW_CONTROL_EWMA_ALPHA = 0.05
 TOL_PERC = 0.1
+FAILED_CORR_PERC_TOLERANCE = 0.5
 
 # ================ Flow rate constants ================ #
 CORRELATION_THRESH = 0.5

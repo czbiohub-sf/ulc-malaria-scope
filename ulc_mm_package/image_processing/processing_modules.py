@@ -1,3 +1,8 @@
+from ulc_mm_package.image_processing.ewma_filtering_utils import (
+    ewma_update_step,
+    get_halflife_from_smoothing_factor,
+    get_adjustment_period_ewma,
+)
 from ulc_mm_package.image_processing.autobrightness import (
     Autobrightness,
     BrightnessTargetNotAchieved,
@@ -9,6 +14,7 @@ from ulc_mm_package.image_processing.flow_control import (
     FlowController,
     CantReachTargetFlowrate,
     LowConfidenceCorrelations,
+    FLOW_CONTROL_EWMA_ALPHA,
 )
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.zstack import (
