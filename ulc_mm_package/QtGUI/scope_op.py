@@ -17,7 +17,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 
 # FIXME no stars!
-from ulc_mm_package.hardware.scope_routines import *
+from ulc_mm_package.hardware.scope_routines import Routines
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.scope_constants import (
@@ -99,6 +99,8 @@ class ScopeOp(QObject, NamedMachine):
 
         self.acquisition = Acquisition()
         self.img_signal = self.acquisition.update_scopeop
+
+        self.routines = Routines()
 
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
@@ -324,7 +326,7 @@ class ScopeOp(QObject, NamedMachine):
         self.running = True
 
     def _start_autobrightness_precells(self, *args):
-        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
+        self.autobrightness_routine = self.routines.autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
@@ -353,7 +355,7 @@ class ScopeOp(QObject, NamedMachine):
             )
 
     def _start_cellfinder(self, *args):
-        self.cellfinder_routine = find_cells_routine(self.mscope)
+        self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
@@ -365,7 +367,7 @@ class ScopeOp(QObject, NamedMachine):
         self.logger.info(f"Moving motor to {self.cellfinder_result}.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
-        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
+        self.autobrightness_routine = self.routines.autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
@@ -380,7 +382,7 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
             return
 
-        self.fastflow_routine = fastFlowRoutine(
+        self.fastflow_routine = self.routines.fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
         )
         self.fastflow_routine.send(None)
@@ -388,18 +390,18 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self, *args):
-        self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
+        self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
-        self.flowcontrol_routine = flowControlRoutine(
+        self.flowcontrol_routine = self.routines.flowControlRoutine(
             self.mscope, self.target_flowrate, None
         )
         self.flowcontrol_routine.send(None)
 
-        self.density_routine = cell_density_routine()
+        self.density_routine = self.routines.cell_density_routine()
         self.density_routine.send(None)
 
-        self.count_parasitemia_routine = count_parasitemia_periodic_wrapper(self.mscope)
+        self.count_parasitemia_routine = self.routines.count_parasitemia_periodic_wrapper(self.mscope)
         self.count_parasitemia_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
@@ -679,7 +681,7 @@ class ScopeOp(QObject, NamedMachine):
                     )
                     focus_err = None
 
-                    self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
+                    self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
                     self.PSSAF_routine.send(None)
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
@@ -693,7 +695,7 @@ class ScopeOp(QObject, NamedMachine):
                 )
                 flowrate = None
 
-                self.flowcontrol_routine = flowControlRoutine(
+                self.flowcontrol_routine = self.routines.flowControlRoutine(
                     self.mscope, self.target_flowrate, None
                 )
                 self.flowcontrol_routine.send(None)
