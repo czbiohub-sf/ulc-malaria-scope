@@ -1084,7 +1084,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.enablePressureUIElements()
         _ = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,
-            "Leak - Active pressure controlled stopped",
+            "Leak - Active pressure control stopped",
             f"The target flowrate can not be attained, stopping active flow control.",
             cancel=False,
         )
