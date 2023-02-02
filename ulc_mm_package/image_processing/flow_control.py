@@ -236,9 +236,11 @@ class FlowController:
                     self.logger.info(
                         f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
                     )
-                    return self.flowrate, flow_error
+                return self.flowrate, flow_error
             except CantReachTargetFlowrate:
                 raise
+        else:
+            return (None, None)
 
     def _adjustSyringe(self, flow_error: float):
         """Adjusts the syringe based on the flow error.
