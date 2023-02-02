@@ -108,6 +108,9 @@ class DRV8825Nema:
     def threaded_move_abs(self, *args, **kwargs):
         ...
 
+    @staticmethod
+    def is_locked():
+        return False
 
 # TODO Move this and other hardware testing code into a single unified script/folder
 if __name__ == "__main__":

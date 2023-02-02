@@ -534,7 +534,14 @@ class ScopeOp(QObject, NamedMachine):
                         f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
                     )
                     self.autofocus_batch = []
-                    
+
+                    # Wait for motor to stop moving
+                    while self.mscope.motor.is_locked():
+                        sleep(0.1)
+
+                    # Extra delay, to prevent any jitter from motor motion
+                    sleep(0.5)
+
                     if self.running:
                         self.img_signal.connect(self.run_autofocus)
                 else:
