@@ -12,7 +12,7 @@ from ulc_mm_package.scope_constants import (
 DIR_KEY = "directory"
 FILE_KEY = "filename"
 DEFAULT_KEYS = [DIR_KEY, "notes", "git_branch"]
-VALID_KEYS = EXPERIMENT_METADATA_KEYS + [DIR_KEY, FILE_KEY]
+VALID_KEYS = [DIR_KEY, FILE_KEY] + EXPERIMENT_METADATA_KEYS
 
 MAX_COLWIDTH = 50
 TXT_FILE = "metadata_compilation.txt"
