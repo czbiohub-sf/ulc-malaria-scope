@@ -62,13 +62,16 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
             run_files = listdir(path.join(parent_dir, exp_dir, run_dir))
             filename = [run_file for run_file in run_files if "exp" in run_file][0]
 
-            # Get data from run metadata file
-            run_df = pd.read_csv(path.join(parent_dir, exp_dir, run_dir, filename))
+            try:
+                # Get data from run metadata file
+                run_df = pd.read_csv(path.join(parent_dir, exp_dir, run_dir, filename))
 
-            # Add file location to dataframe
-            run_df[DIR_KEY] = path.join(exp_dir, run_dir)
+                # Add file location to dataframe
+                run_df[DIR_KEY] = path.join(exp_dir, run_dir)
 
-            df_list.append(run_df)
+                df_list.append(run_df)
+            except pd.errors.EmptyDataError:
+                print(f"Empty file: {path.join(exp_dir, run_dir, filename)}")
 
     df_compilation = pd.concat(df_list, ignore_index=True)
     df_compilation = df_compilation.sort_values(by="directory", ignore_index=True)
