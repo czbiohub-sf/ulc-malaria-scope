@@ -1111,7 +1111,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         )
 
         if retval == QtWidgets.QMessageBox.Ok:
-
             # Move syringe back and de-energize
             self.pneumatic_module.close()
 

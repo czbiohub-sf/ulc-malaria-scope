@@ -39,7 +39,6 @@ PKG_PATH = "ulc_mm_package.hardware."
 def hardware(cls):
     class HardwareWrapper(cls):
         def __new__(cls, *args, **kwargs):
-
             parent = inspect.getmro(cls)[1]
 
             mod_name = parent.__module__.split(".")[-1]

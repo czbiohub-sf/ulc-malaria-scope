@@ -14,7 +14,6 @@ def time_file_open(img_path):
 
 
 def main():
-
     dirs = [x for x in sorted(os.listdir(EXTERNAL_DIR)) if os.path.isdir(x)]
     dir = EXTERNAL_DIR
     while True:

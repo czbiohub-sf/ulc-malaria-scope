@@ -10,13 +10,17 @@ import socket
 import webbrowser
 import enum
 import logging
+import subprocess
 import numpy as np
 
-from os import listdir
+from os import (
+    listdir,
+    mkdir,
+    path,
+)
 from transitions import Machine
 from time import perf_counter, sleep
 from logging.config import fileConfig
-from os import path, mkdir
 from datetime import datetime
 
 from PyQt5.QtWidgets import (
@@ -523,6 +527,17 @@ class Oracle(Machine):
             "exposure"
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
+
+        self.experiment_metadata["git_branch"] = (
+            subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"])
+            .decode("ascii")
+            .strip()
+        )
+        self.experiment_metadata["git_commit"] = (
+            subprocess.check_output(["git", "rev-parse", "HEAD"])
+            .decode("ascii")
+            .strip()
+        )
 
         self.scopeop.mscope.data_storage.createNewExperiment(
             self.ext_dir,
