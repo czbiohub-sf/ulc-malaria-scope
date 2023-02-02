@@ -1,5 +1,6 @@
 import re
 import argparse
+import numpy as np
 import pandas as pd
 
 from os import path, listdir
@@ -67,8 +68,9 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
             df_list.append(run_df)
 
     df_compilation = pd.concat(df_list, ignore_index=True)
-    df_sorted = df_compilation.sort_values(by="directory", ignore_index=True)
-    print(df_sorted[display_keys].to_string())
+    df_compilation = df_compilation.sort_values(by="directory", ignore_index=True)
+    df_compilation = df_compilation.fillna("-")
+    print(df_compilation[display_keys].to_string())
 
 
 if __name__ == "__main__":
@@ -93,7 +95,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.verbose:
-        metadata_compiler(display_keys=EXPERIMENT_METADATA_KEYS)
+        all_keys = [DIR_KEY] + EXPERIMENT_METADATA_KEYS
+        metadata_compiler(display_keys=all_keys)
     elif args.key != None:
         custom_keys = DEFAULT_KEYS + [args.key]
         metadata_compiler(display_keys=custom_keys)
