@@ -3,6 +3,8 @@ import argparse
 import numpy as np
 import pandas as pd
 
+from IPython.display import display
+from tabulate import tabulate
 from os import path, listdir
 from ulc_mm_package.scope_constants import (
     SSD_DIR,
@@ -13,8 +15,11 @@ from ulc_mm_package.scope_constants import (
 DIR_KEY = "directory"
 DEFAULT_KEYS = [DIR_KEY, "notes", "git_branch"]
 
+MAX_COLWIDTH = 50
+TXT_FILE = "metadata_compilation.txt"
 
 def metadata_compiler(display_keys=DEFAULT_KEYS):
+
     # Check that requested keys are valid
     valid_keys = EXPERIMENT_METADATA_KEYS + [DIR_KEY]
     for key in display_keys:
@@ -64,19 +69,32 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
 
             try:
                 # Get data from run metadata file
-                run_df = pd.read_csv(path.join(parent_dir, exp_dir, run_dir, filename))
+                single_df = pd.read_csv(path.join(parent_dir, exp_dir, run_dir, filename))
 
                 # Add file location to dataframe
-                run_df[DIR_KEY] = path.join(exp_dir, run_dir)
+                single_df[DIR_KEY] = path.join(exp_dir, run_dir)
 
-                df_list.append(run_df)
+                df_list.append(single_df)
             except pd.errors.EmptyDataError:
                 print(f"Empty file: {path.join(exp_dir, run_dir, filename)}")
 
-    df_compilation = pd.concat(df_list, ignore_index=True)
-    df_compilation = df_compilation.sort_values(by="directory", ignore_index=True)
-    df_compilation = df_compilation.fillna("-")
-    print(df_compilation[display_keys].to_string())
+
+
+    master_df = pd.concat(df_list, ignore_index=True)
+    master_df = master_df.sort_values(by="directory", ignore_index=True)
+    master_df = master_df.fillna("-")
+
+    # Truncate notes columns for readability
+    truncated_master_df = master_df.copy()
+    truncated_master_df['notes'] = [
+        note[:MAX_COLWIDTH-3] + "..." if len(note) > MAX_COLWIDTH - 3 else note for note in master_df['notes']
+    ]
+
+    print("\n" + truncated_master_df[display_keys].to_string())
+
+    with open(TXT_FILE, 'w') as writer:
+        writer.write(master_df[display_keys].to_string())
+    print(f"\nWrote untruncated metadata compilation to {TXT_FILE}")
 
 
 if __name__ == "__main__":
