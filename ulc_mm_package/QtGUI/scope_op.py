@@ -365,13 +365,14 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.connect(self.run_cellfinder)
 
     def _end_cellfinder(self, *args):
-        self.update_msg.emit(
-            f"Moving motor to focus position at {self.cellfinder_result} steps."
-        )
-        self.logger.info(
-            f"Moving motor to focus position at {self.cellfinder_result} steps."
-        )
-        self.mscope.motor.move_abs(self.cellfinder_result)
+        if self.cellfinder_result != None:
+            self.update_msg.emit(
+                f"Moving motor to focus position at {self.cellfinder_result} steps."
+            )
+            self.logger.info(
+                f"Moving motor to focus position at {self.cellfinder_result} steps."
+            )
+            self.mscope.motor.move_abs(self.cellfinder_result)
 
     def _start_autofocus(self, *args):
         self.img_signal.connect(self.run_autofocus)
