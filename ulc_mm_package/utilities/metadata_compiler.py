@@ -1,5 +1,6 @@
 import re
 import argparse
+import numpy as np
 import pandas as pd
 
 from os import path, listdir
@@ -41,7 +42,6 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
     # Get all experiment directories
     child_dirs = listdir(parent_dir)
     filtered_child_dirs = re.findall("\d{4}-\d{2}-\d{2}-\d{6}", " ".join(child_dirs))
-
     exp_dirs = [
         child_dir for child_dir in child_dirs if child_dir in filtered_child_dirs
     ]
@@ -51,7 +51,11 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
 
     # Get all run directories
     for exp_dir in exp_dirs:
-        run_dirs = listdir(path.join(parent_dir, exp_dir))
+        grandchild_dirs = listdir(path.join(parent_dir, exp_dir))
+        filtered_grandchild_dirs = re.findall("\d{4}-\d{2}-\d{2}-\d{6}_", " ".join(grandchild_dirs))
+        run_dirs = [
+            grandchild_dir for grandchild_dir in grandchild_dirs if grandchild_dir in filtered_grandchild_dirs
+        ]
 
         # Get run metadata file
         for run_dir in run_dirs:
@@ -67,8 +71,9 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
             df_list.append(run_df)
 
     df_compilation = pd.concat(df_list, ignore_index=True)
-    df_sorted = df_compilation.sort_values(by="directory", ignore_index=True)
-    print(df_sorted[display_keys].to_string())
+    df_compilation = df_compilation.sort_values(by="directory", ignore_index=True)
+    df_compilation = df_compilation.fillna("-")
+    print(df_compilation[display_keys].to_string())
 
 
 if __name__ == "__main__":
@@ -93,7 +98,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.verbose:
-        metadata_compiler(display_keys=EXPERIMENT_METADATA_KEYS)
+        all_keys = [DIR_KEY] + EXPERIMENT_METADATA_KEYS
+        metadata_compiler(display_keys=all_keys)
     elif args.key != None:
         custom_keys = DEFAULT_KEYS + [args.key]
         metadata_compiler(display_keys=custom_keys)
