@@ -122,6 +122,8 @@ EXPERIMENT_METADATA_KEYS = [
     "camera",
     "exposure",
     "target_brightness",
+    "git_branch",
+    "git_commit",
 ]
 
 PER_IMAGE_METADATA_KEYS = [
