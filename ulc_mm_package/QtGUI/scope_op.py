@@ -102,7 +102,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
-        self._set_variables()
+        self._set_exp_variables()
 
         states = [
             {
@@ -174,29 +174,32 @@ class ScopeOp(QObject, NamedMachine):
             trigger="unpause", source="pause", dest="autobrightness_precells"
         )
 
-    def _set_variables(self):
+    def _set_exp_variables(self):
         self.running = None
         self.lid_opened = None
 
-        self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.target_flowrate = None
+
+        self.count = 0
+        self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
+
+        self.start_time = None
+        self.accumulated_time = 0
+
+        self._set_routine_variables()
+
+        self.update_img_count.emit(0)
+        self.update_msg.emit("Starting new experiment")
+
+    def _set_routine_variables(self):
+        self.autofocus_batch = []
 
         self.autobrightness_result = None
         self.cellfinder_result = None
         self.autofocus_results = [None, None]
         self.fastflow_result = None
-
-        self.count = 0
-        self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
-
-        self.TH_time = None
-        self.start_time = None
-        self.accumulated_time = 0
-
-        self.update_img_count.emit(0)
-        self.update_msg.emit("Starting new experiment")
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -270,7 +273,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def reset(self):
         # Reset variables
-        self._set_variables()
+        self._set_exp_variables()
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
@@ -318,6 +321,8 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.warning("Did not return syringe to top-most position!")
         self.mscope.led.turnOff()
 
+        self._set_routine_variables()
+
     def _end_pause(self, *args):
         self.set_period.emit(ACQUISITION_PERIOD)
         self.mscope.led.turnOn()
@@ -363,7 +368,7 @@ class ScopeOp(QObject, NamedMachine):
         self.update_msg.emit(
             f"Moving motor to focus position at {self.cellfinder_result} steps."
         )
-        self.logger.info(f"Moving motor to {self.cellfinder_result}.")
+        self.logger.info(f"Moving motor to focus position at {self.cellfinder_result} steps.")
         self.mscope.motor.move_abs(self.cellfinder_result)
 
 
@@ -401,7 +406,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
-        self.TH_time = perf_counter()
         self.start_time = perf_counter()
         self.last_time = perf_counter()
 
