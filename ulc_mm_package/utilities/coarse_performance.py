@@ -25,7 +25,7 @@ import pandas as pd
 from pathlib import Path
 
 
-def coarse_performance(descriptor, file):
+def get_stats(descriptor, file):
     # Get data
     data = pd.read_csv(file)
 
@@ -94,4 +94,4 @@ if __name__ == "__main__":
         name = Path(metadata_file).name
 
     # Plot data
-    coarse_performance(name, metadata_file)
+    get_stats(name, metadata_file)
