@@ -335,7 +335,7 @@ class ScopeOp(QObject, NamedMachine):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
         try:
             pdiff = checkPressureDifference(self.mscope)
-            self.logger.info(f"Pressure difference={pdiff} hPa.")
+            self.logger.info(f"Passed pressure check. Pressure difference = {pdiff} hPa.")
             self.next_state()
         except PressureSensorBusy:
             self.logger.error(f"Unable to read value from the pressure sensor - {e}")
