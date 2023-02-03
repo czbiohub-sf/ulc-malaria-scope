@@ -160,17 +160,41 @@ class FlowController:
 
             if xcorr_coeff < CORRELATION_THRESH:
                 self.failed_corr_counter += 1
-                if (
-                    self.failed_corr_counter / (self.counter)
-                    > FAILED_CORR_PERC_TOLERANCE
-                    and self.failed_corr_counter
-                    > MIN_NUM_XCORR_FACTOR * self.feedback_delay_frames
-                ):
+                if self.too_many_failed_xcorrs():
                     raise LowConfidenceCorrelations(
                         self.failed_corr_counter,
                         self.counter,
                         FAILED_CORR_PERC_TOLERANCE,
                     )
+
+    def too_many_failed_xcorrs(self) -> bool:
+        """Check if there have been too many recent failed xcorr measurements.
+
+        Returns whether there have been more than a threshold percentage of failed cross correlations
+        in the "recent" window.
+
+        "Recent" is defined as the past MIN_NUM_XCORR_FACTOR * num feedback delay frames,
+        i.e a multiple of the number of frames that need to elapse before a syringe adjustment is made.
+
+        This function then resets the failed xcorr counter.
+
+        Returns
+        -------
+        bool:
+            True if the number of failed xcorrs since the last syringe adjustment exceeds some threshold.
+            False if that many frames have yet to elapse since the last adjustment, or if there was < threshold percentage
+            of failed xcorrs.
+        """
+        failed_xcorr_window_size = MIN_NUM_XCORR_FACTOR * self.feedback_delay_frames
+        if self.counter % failed_xcorr_window_size == 0:
+            too_many_bad_xcorrs: bool = (
+                self.failed_corr_counter / failed_xcorr_window_size
+                > FAILED_CORR_PERC_TOLERANCE
+            )
+            self.failed_corr_counter = 0
+            return too_many_bad_xcorrs
+        else:
+            return False
 
     def set_target_flowrate(self, target_flowrate: float):
         """Set the target flowrate.
@@ -187,18 +211,9 @@ class FlowController:
         self, img: np.ndarray, timestamp: int
     ) -> Tuple[Optional[float], Optional[float]]:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
+        Periodically is defined as twice the half-life of the EWMA filter (based on its alpha value).
 
         If the `self.target_flowrate` has not been set, this function raises an exception.
-
-        Some background explanation
-        ---------------------------
-        'Periodically' is defined as the number of frames it takes for the FlowRateEstimator to
-        fill its window multiplied by the number of flowrate measurements to fill the EWMA
-        window.
-
-        For example, if the FlowRateEstimator takes in 12 image pairs (i.e 24 frames), and the
-        EWMA window is 12, then a total of 288 frames will be observed before a syringe adjustment
-        is made (@30fps, that's every 9.6s).
 
         Parameters
         ----------
