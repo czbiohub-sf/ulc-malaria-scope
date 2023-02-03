@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 
 import sys
+from os import mkdir
+import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,6 +39,9 @@ def get_stats(name, data, save=None):
 
     if save is not None:
         plt.savefig(Path(save) / name.replace(".", "-"), bbox_inches="tight")
+        name = name + ".pkl"
+        with open(Path(save) / "Pickle" / name, "wb") as f:
+            pickle.dump(data, f)
     else:
         plt.show()
 
@@ -51,6 +56,10 @@ if __name__ == "__main__":
     filepath = sys.argv[1]
     if len(sys.argv) == 3:
         save = sys.argv[2]
+        try:
+            mkdir(Path(save) / "Pickle")
+        except:
+            pass
     else:
         save = None
 
