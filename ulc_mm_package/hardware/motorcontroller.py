@@ -38,7 +38,7 @@ class InvalidMove(MotorControllerError):
     """Error raised if an invalid move is attempted."""
 
 
-# TODO I am not sure the "correct" way to type these wrapped classes?
+# TODO Convert wrapper hardware classes to ABCs!
 
 
 @hardware
@@ -111,14 +111,3 @@ class DRV8825Nema:
     @staticmethod
     def is_locked():
         ...
-
-
-# TODO Move this and other hardware testing code into a single unified script/folder
-if __name__ == "__main__":
-    print("Instantiating motor...")
-    motor = DRV8825Nema(steptype="Full")  # Instantiate with all other defaults
-    print("Successfully instantiated.")
-
-    print("Beginning homing...")
-    motor.homeToLimitSwitches()
-    print("Homing complete.")
