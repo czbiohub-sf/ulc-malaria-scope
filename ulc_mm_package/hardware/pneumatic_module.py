@@ -19,7 +19,7 @@ class PneumaticModuleError(Exception):
 
 
 class InvalidConfigurationParameters(PneumaticModuleError):
-    """Raised if the configuration file has bad parameters to syringe min/max duty cycle."""
+    """Raised if the configuration file has bad parameters for the syringe servo's min/max duty cycle."""
 
 
 class PressureSensorNotInstantiated(PneumaticModuleError):
