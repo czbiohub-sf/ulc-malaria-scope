@@ -18,6 +18,10 @@ class PneumaticModuleError(Exception):
     pass
 
 
+class InvalidConfigurationParameters(PneumaticModuleError):
+    """Raised if the configuration file has bad parameters to syringe min/max duty cycle."""
+
+
 class PressureSensorNotInstantiated(PneumaticModuleError):
     """Raised when the Adafruit MPRLS can not be instantiated."""
 
