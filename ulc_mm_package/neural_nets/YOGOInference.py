@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import time
 
 import numpy as np
 import numpy.typing as npt
@@ -7,6 +8,15 @@ import numpy.typing as npt
 from collections import namedtuple
 from typing import Any, List, Union
 
+from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
+from openvino.runtime import (
+    Core,
+    Layout,
+    Type,
+    InferRequest,
+    AsyncInferQueue,
+    Tensor,
+)
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
