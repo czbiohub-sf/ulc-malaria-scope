@@ -222,8 +222,8 @@ class LiveviewGUI(QMainWindow):
         self.terminal_txt.setVerticalScrollBar(self.terminal_scroll)
 
         # Setup column size
-        self.pause_btn.setFixedWidth(150)
-        self.exit_btn.setFixedWidth(150)
+        self.pause_btn.setFixedWidth(140)
+        self.exit_btn.setFixedWidth(140)
 
         self.infopanel_layout.addWidget(self.state_lbl, 0, 1, 1, 2)
         self.infopanel_layout.addWidget(self.pause_btn, 1, 1)
