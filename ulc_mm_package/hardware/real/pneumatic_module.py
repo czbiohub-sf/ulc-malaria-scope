@@ -132,11 +132,11 @@ class PneumaticModule:
         if self.config_exists():
             config = configparser.ConfigParser()
             try:
-                assert len(
-                    config.read(f"{CONFIGURATION_FILE}") > 0
+                assert (
+                    len(config.read(f"{CONFIGURATION_FILE}")) > 0
                 ), f"configparser failed to read file {CONFIGURATION_FILE}."
-                min_duty_cycle = config["SYRINGE"]["MIN_DUTY_CYCLE"]
-                max_duty_cycle = config["SYRINGE"]["MAX_DUTY_CYCLE"]
+                min_duty_cycle = float(config["SYRINGE"]["MIN_DUTY_CYCLE"])
+                max_duty_cycle = float(config["SYRINGE"]["MAX_DUTY_CYCLE"])
                 if (
                     min_duty_cycle >= max_duty_cycle
                     or min_duty_cycle < 0
