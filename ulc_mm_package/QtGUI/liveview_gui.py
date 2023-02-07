@@ -162,6 +162,13 @@ class LiveviewGUI(QMainWindow):
         # self._load_thumbnail_ui()
         self._load_metadata_ui()
 
+        # Set up message terminal
+        self.terminal_txt = QPlainTextEdit(self.terminal_msg)
+        # Setup terminal box
+        self.terminal_txt.setReadOnly(True)
+        # Setup terminal box scrollbar
+        self.terminal_txt.setVerticalScrollBar(self.terminal_scroll)
+        
         # Set up tabs
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
@@ -170,7 +177,8 @@ class LiveviewGUI(QMainWindow):
 
         # Populate window
         self.main_layout.addWidget(self.tab_widget, 0, 0)
-        self.main_layout.addWidget(self.infopanel_widget, 0, 1)
+        self.main_layout.addWidget(self.infopanel_widget, 0, 1, 2, 1)
+        self.main_layout.addWidget(self.message_widget, 1, 0)
 
     def _load_infopanel_ui(self):
         # Set up infopanel layout + widget
@@ -186,7 +194,6 @@ class LiveviewGUI(QMainWindow):
         self.runtime_val = QLabel("-")
         self.img_count_lbl = QLabel("Fields of view:")
         self.img_count_val = QLabel("-")
-        self.terminal_txt = QPlainTextEdit(self.terminal_msg)
         self.terminal_scroll = QScrollBar()
         self.tcp_lbl = QLabel("-")
 
@@ -215,12 +222,6 @@ class LiveviewGUI(QMainWindow):
         self.focus_title.setAlignment(Qt.AlignCenter)
         self.flowrate_title.setAlignment(Qt.AlignCenter)
 
-        # Setup terminal box
-        self.terminal_txt.setReadOnly(True)
-
-        # Setup terminal box scrollbar
-        self.terminal_txt.setVerticalScrollBar(self.terminal_scroll)
-
         # Setup column size
         self.pause_btn.setFixedWidth(140)
         self.exit_btn.setFixedWidth(140)
@@ -232,7 +233,7 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.runtime_val, 2, 2)
         self.infopanel_layout.addWidget(self.img_count_lbl, 3, 1)
         self.infopanel_layout.addWidget(self.img_count_val, 3, 2)
-        self.infopanel_layout.addWidget(self.terminal_txt, 14, 1, 1, 2)
+        # self.infopanel_layout.addWidget(self.terminal_txt, 14, 1, 1, 2)
         self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
         self.infopanel_layout.addWidget(self.cell_count_title, 4, 1, 1, 2)
