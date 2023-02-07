@@ -21,9 +21,10 @@ from PyQt5.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QScrollBar,
+    QDesktopWidget,
 )
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, Qt
-from PyQt5.QtGui import QPixmap, QIcon, QDesktopWidget
+from PyQt5.QtGui import QPixmap, QIcon
 
 from ulc_mm_package.image_processing.flow_control import getFlowError
 
