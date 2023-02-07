@@ -119,7 +119,7 @@ class LiveviewGUI(QMainWindow):
     @pyqtSlot(str)
     def update_msg(self, msg):
         self.terminal_msg = self.terminal_msg + f"{msg}\n"
-        self.terminal_txt.setPlainText(self.terminal_msg)
+        self.message_widget.setPlainText(self.terminal_msg)
 
         # Scroll to latest message
         self.terminal_scroll.setValue(self.terminal_scroll.maximum())
@@ -163,11 +163,11 @@ class LiveviewGUI(QMainWindow):
         self._load_metadata_ui()
 
         # Set up message terminal
-        self.terminal_txt = QPlainTextEdit(self.terminal_msg)
+        self.message_widget = QPlainTextEdit(self.terminal_msg)
         # Setup terminal box
-        self.terminal_txt.setReadOnly(True)
+        self.message_widget.setReadOnly(True)
         # Setup terminal box scrollbar
-        self.terminal_txt.setVerticalScrollBar(self.terminal_scroll)
+        self.message_widget.setVerticalScrollBar(self.terminal_scroll)
         
         # Set up tabs
         self.tab_widget = QTabWidget()
@@ -233,7 +233,7 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.runtime_val, 2, 2)
         self.infopanel_layout.addWidget(self.img_count_lbl, 3, 1)
         self.infopanel_layout.addWidget(self.img_count_val, 3, 2)
-        # self.infopanel_layout.addWidget(self.terminal_txt, 14, 1, 1, 2)
+        # self.infopanel_layout.addWidget(self.message_widget, 14, 1, 1, 2)
         self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
         self.infopanel_layout.addWidget(self.cell_count_title, 4, 1, 1, 2)
@@ -256,7 +256,7 @@ class LiveviewGUI(QMainWindow):
     def set_infopanel_vals(self):
         # Flush terminal
         self.terminal_msg = ""
-        self.terminal_txt.clear()
+        self.message_widget.clear()
 
         self.update_runtime(0)
         self.update_img_count(BLANK_INFOPANEL_VAL)
