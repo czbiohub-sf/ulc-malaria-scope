@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
     QScrollBar,
 )
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, Qt
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QPixmap, QIcon, QDesktopWidget
 
 from ulc_mm_package.image_processing.flow_control import getFlowError
 
@@ -44,6 +44,8 @@ class LiveviewGUI(QMainWindow):
         self.metadata = None
         self.terminal_msg = ""
         self.target_flowrate = None
+
+        self.screen = QDesktopWidget().screenGeometry()
 
         super().__init__()
         self._load_main_ui()
@@ -145,7 +147,7 @@ class LiveviewGUI(QMainWindow):
 
     def _load_main_ui(self):
         self.setWindowTitle("Malaria scope")
-        self.setGeometry(100, 100, 1100, 700)
+        self.setGeometry(0, 0, self.screen.width(), self.screen.height())
         self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up central layout + widget
@@ -179,7 +181,7 @@ class LiveviewGUI(QMainWindow):
         self.state_lbl = QLabel("-")
         self.pause_btn = QPushButton("Pause")
         self.exit_btn = QPushButton("Exit")
-        self.runtime_lbl = QLabel("Experiment runtime:")
+        self.runtime_lbl = QLabel("Runtime:")
         self.runtime_val = QLabel("-")
         self.img_count_lbl = QLabel("Fields of view:")
         self.img_count_val = QLabel("-")
