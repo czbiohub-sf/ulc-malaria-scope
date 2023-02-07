@@ -331,13 +331,8 @@ class ScopeOp(QObject, NamedMachine):
 
         self.running = True
 
-<<<<<<< HEAD
-    def _start_autobrightness(self, *args):
-        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
-=======
     def _start_autobrightness_precells(self, *args):
         self.autobrightness_routine = self.routines.autobrightnessRoutine(self.mscope)
->>>>>>> develop
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
@@ -373,17 +368,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_signal.connect(self.run_cellfinder)
 
-<<<<<<< HEAD
-    def _end_cellfinder(self, *args):
-        if self.cellfinder_result != None:
-            self.update_msg.emit(
-                f"Moving motor to focus position at {self.cellfinder_result} steps."
-            )
-            self.logger.info(
-                f"Moving motor to focus position at {self.cellfinder_result} steps."
-            )
-            self.mscope.motor.move_abs(self.cellfinder_result)
-=======
     def _start_autobrightness_postcells(self, *args):
         self.update_msg.emit(
             f"Moving motor to focus position at {self.cellfinder_result} steps."
@@ -395,7 +379,6 @@ class ScopeOp(QObject, NamedMachine):
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
->>>>>>> develop
 
     def _start_autofocus(self, *args):
         self.img_signal.connect(self.run_autofocus)
