@@ -169,7 +169,7 @@ class AVTCamera:
             except queue.Full:
                 self.full_count += 1
                 self.logger.warning(
-                    f"queue full in _frame_handler. full_count={self.full_count}"
+                    f"Queue full in _frame_handler. Full_count = {self.full_count} frames."
                 )
             except np.core._exceptions.MemoryError as e:
                 self.logger.error(
@@ -179,7 +179,7 @@ class AVTCamera:
         else:
             self.incomplete_count += 1
             self.logger.warning(
-                f"camera returned incomplete frame. incomplete_count={self.incomplete_count}"
+                f"Camera returned incomplete frame. Incomplete_count = {self.incomplete_count} frames."
             )
 
         cam.queue_frame(frame)

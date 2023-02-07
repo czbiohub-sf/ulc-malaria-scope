@@ -421,3 +421,7 @@ class DRV8825Nema:
             threading.Thread(target=self.move_abs, args=args, kwargs=kwargs).start()
         else:
             raise MotorInMotion
+
+    @staticmethod
+    def is_locked():
+        return MOTOR_LOCK.locked()

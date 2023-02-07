@@ -115,5 +115,8 @@ profiles
 functiontrace*
 perf_results
 
+# Metadata compilation
+metadata_compilation.txt
+
 # Sagas
 *_saga.txt
