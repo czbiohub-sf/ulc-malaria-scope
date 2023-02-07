@@ -84,7 +84,6 @@ class Routines:
             img = yield steps_from_focus
             steps_from_focus = None
             img_arr.append(img)
-
             if len(img_arr) == nn_constants.AF_BATCH_SIZE:
                 steps_from_focus = self.singleShotAutofocusRoutine(mscope, img_arr)
                 img_arr = []

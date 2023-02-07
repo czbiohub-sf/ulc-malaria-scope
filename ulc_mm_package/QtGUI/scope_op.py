@@ -104,7 +104,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
-        self._set_variables()
+        self._set_exp_variables()
 
         states = [
             {
@@ -119,7 +119,7 @@ class ScopeOp(QObject, NamedMachine):
             {
                 "name": "autobrightness_precells",
                 "display_name": "autobrightness (pre-cells)",
-                "on_enter": [self._send_state, self._start_autobrightness_precells],
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "pressure_check",
@@ -129,11 +129,12 @@ class ScopeOp(QObject, NamedMachine):
             {
                 "name": "cellfinder",
                 "on_enter": [self._send_state, self._start_cellfinder],
+                "on_exit": [self._end_cellfinder],
             },
             {
                 "name": "autobrightness_postcells",
                 "display_name": "autobrightness (post-cells)",
-                "on_enter": [self._send_state, self._start_autobrightness_postcells],
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "autofocus",
@@ -175,29 +176,32 @@ class ScopeOp(QObject, NamedMachine):
             trigger="unpause", source="pause", dest="autobrightness_precells"
         )
 
-    def _set_variables(self):
+    def _set_exp_variables(self):
         self.running = None
         self.lid_opened = None
 
-        self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.target_flowrate = None
 
-        self.autobrightness_result = None
-        self.cellfinder_result = None
-        self.autofocus_result = None
-        self.fastflow_result = None
-
         self.count = 0
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
-        self.TH_time = None
         self.start_time = None
         self.accumulated_time = 0
 
+        self._set_routine_variables()
+
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
+
+    def _set_routine_variables(self):
+        self.autofocus_batch = []
+
+        self.autobrightness_result = None
+        self.cellfinder_result = None
+        self.autofocus_results = [None, None]
+        self.fastflow_result = None
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -271,7 +275,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def reset(self):
         # Reset variables
-        self._set_variables()
+        self._set_exp_variables()
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
@@ -318,6 +322,8 @@ class ScopeOp(QObject, NamedMachine):
             # This should not happen
             self.logger.warning("Did not return syringe to top-most position!")
         self.mscope.led.turnOff()
+
+        self._set_routine_variables()
 
     def _end_pause(self, *args):
         self.set_period.emit(ACQUISITION_PERIOD)
@@ -410,7 +416,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
-        self.TH_time = perf_counter()
         self.start_time = perf_counter()
         self.last_time = perf_counter()
 
@@ -531,14 +536,33 @@ class ScopeOp(QObject, NamedMachine):
                 self.img_signal.connect(self.run_autofocus)
         else:
             try:
-                self.autofocus_result = self.routines.singleShotAutofocusRoutine(
-                    self.mscope, self.autofocus_batch
-                )
-                self.autofocus_batch = []
-                self.logger.info(
-                    f"Autofocus complete. Calculated focus error = {self.autofocus_result} steps."
-                )
-                self.next_state()
+                if self.autofocus_results[0] == None:
+                    self.autofocus_results[0] = singleShotAutofocus(
+                        self.mscope, self.autofocus_batch
+                    )
+                    self.logger.info(
+                        f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
+                    )
+                    self.autofocus_batch = []
+
+                    # Wait for motor to stop moving
+                    while self.mscope.motor.is_locked():
+                        sleep(0.1)
+
+                    # Extra delay, to prevent any jitter from motor motion
+                    sleep(0.5)
+
+                    if self.running:
+                        self.img_signal.connect(self.run_autofocus)
+                else:
+                    self.autofocus_results[1] = singleShotAutofocus(
+                        self.mscope, self.autofocus_batch
+                    )
+                    self.logger.info(
+                        f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
+                    )
+                    self.autofocus_batch = []
+                    self.next_state()
             except InvalidMove:
                 self.logger.error(
                     "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."

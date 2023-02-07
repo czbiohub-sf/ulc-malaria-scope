@@ -107,3 +107,7 @@ class DRV8825Nema:
 
     def threaded_move_abs(self, *args, **kwargs):
         ...
+
+    @staticmethod
+    def is_locked():
+        ...

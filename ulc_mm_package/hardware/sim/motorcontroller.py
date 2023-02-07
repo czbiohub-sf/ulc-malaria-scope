@@ -335,3 +335,7 @@ class DRV8825Nema(RealDRV8825Nema):
                 print("Step Delay = {}".format(stepdelay))
                 print("Intial delay = {}".format(initdelay))
                 print("Size of turn in degrees = {}".format(self.degree_calc(steps)))
+
+    @staticmethod
+    def is_locked():
+        return False
