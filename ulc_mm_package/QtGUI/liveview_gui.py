@@ -72,7 +72,7 @@ class LiveviewGUI(QMainWindow):
         self.flowrate_lbl.setText(f"Target = {self.target_flowrate}")
 
     def update_tcp(self, tcp_addr):
-        self.tcp_lbl.setText(f"SSH address: {tcp_addr}")
+        self.tcp_lbl.setText(f"SSH: {tcp_addr}")
 
     @pyqtSlot(float)
     def update_runtime(self, runtime):
@@ -148,7 +148,7 @@ class LiveviewGUI(QMainWindow):
 
     def _load_main_ui(self):
         self.setWindowTitle("Malaria scope")
-        self.setGeometry(0, 0, self.screen.width(), self.screen.height()-10)
+        self.setGeometry(0, 0, self.screen.width(), self.screen.height()-150)
         self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up central layout + widget
@@ -221,10 +221,11 @@ class LiveviewGUI(QMainWindow):
         self.cell_count_title.setAlignment(Qt.AlignCenter)
         self.focus_title.setAlignment(Qt.AlignCenter)
         self.flowrate_title.setAlignment(Qt.AlignCenter)
+        self.tcp_lbl.setAlignment(Qt.AlignCenter)
 
         # Setup column size
-        self.pause_btn.setFixedWidth(140)
-        self.exit_btn.setFixedWidth(140)
+        self.pause_btn.setFixedWidth(120)
+        self.exit_btn.setFixedWidth(120)
 
         self.infopanel_layout.addWidget(self.state_lbl, 0, 1, 1, 2)
         self.infopanel_layout.addWidget(self.pause_btn, 1, 1)
@@ -274,6 +275,8 @@ class LiveviewGUI(QMainWindow):
 
         self._set_color(self.focus_val, STATUS.DEFAULT)
         self._set_color(self.flowrate_val, STATUS.DEFAULT)
+
+        self._set_color(self.tcp_lbl, STATUS.STANDBY)
 
     def _load_liveview_ui(self):
         # Set up liveview layout + widget
@@ -381,5 +384,5 @@ if __name__ == "__main__":
     gui.update_msg("Sample message here")
     gui.update_tcp("Sample address here")
 
-    gui.show()
+    gui.showMaximized()
     sys.exit(app.exec_())
