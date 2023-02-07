@@ -578,7 +578,7 @@ class Oracle(Machine):
             )
 
         self.lid_handler_enabled = True
-        self.liveview_window.showMaximized()
+        self.liveview_window.show()
         self.scopeop.start()
 
     def _end_liveview(self, *args):

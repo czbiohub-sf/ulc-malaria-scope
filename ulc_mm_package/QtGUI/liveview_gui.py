@@ -148,7 +148,7 @@ class LiveviewGUI(QMainWindow):
 
     def _load_main_ui(self):
         self.setWindowTitle("Malaria scope")
-        self.setGeometry(0, 0, self.screen.width(), self.screen.height())
+        self.setGeometry(0, 0, self.screen.width(), self.screen.height()-10)
         self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up central layout + widget
@@ -168,7 +168,7 @@ class LiveviewGUI(QMainWindow):
         self.message_widget.setReadOnly(True)
         # Setup terminal box scrollbar
         self.message_widget.setVerticalScrollBar(self.terminal_scroll)
-        
+
         # Set up tabs
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
