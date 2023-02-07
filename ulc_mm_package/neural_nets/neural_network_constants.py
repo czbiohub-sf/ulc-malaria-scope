@@ -15,7 +15,7 @@ AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files/valiant-disco-119.xm
 
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.3
-YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files/golden-kumquat-354.xml")
+YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files/glistening-dragon-356.xml")
 
 YOGO_CLASS_LIST: Tuple[str, ...] = ("healthy", "ring", "schizont", "troph")
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
