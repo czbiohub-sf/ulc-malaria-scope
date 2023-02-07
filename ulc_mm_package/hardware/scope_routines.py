@@ -141,16 +141,10 @@ def count_parasitemia_periodic_wrapper(
 
     while True:
         counter += 1
-        if counter >= nn_constants.YOGO_PERIOD_NUM:
-            counter = 0
-            img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
-            mscope.cell_diagnosis_model(img, counts)
-            prev_time = perf_counter()
-        else:
-            (
-                _,
-                _,
-            ) = yield []
+        counter = 0
+        img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
+        mscope.cell_diagnosis_model(img, counts)
+        prev_time = perf_counter()
 
 
 def flowControlRoutine(
