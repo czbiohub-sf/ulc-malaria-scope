@@ -500,13 +500,13 @@ class Oracle(Machine):
         self.scopeop_thread.start()
         self.acquisition_thread.start()
 
-        self.form_window.show()
+        self.form_window.showMaximized()
 
     def _end_setup(self, *args):
         self.form_window.unfreeze_buttons()
 
     def _start_form(self, *args):
-        self.form_window.show()
+        self.form_window.showMaximized()
 
     def save_form(self):
         self.form_metadata = self.form_window.get_form_input()
@@ -578,7 +578,7 @@ class Oracle(Machine):
             )
 
         self.lid_handler_enabled = True
-        self.liveview_window.show()
+        self.liveview_window.showMaximized()
         self.scopeop.start()
 
     def _end_liveview(self, *args):
