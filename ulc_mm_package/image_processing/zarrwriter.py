@@ -42,7 +42,7 @@ class ZarrWriter:
         self.writable = False
         self.futures: List[Future] = []
         self.logger = logging.getLogger(__name__)
-        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.executor = ThreadPoolExecutor(max_workers=4)
 
         self.camera_selection: CameraOptions = camera_selection
 
