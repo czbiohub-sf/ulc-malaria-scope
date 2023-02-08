@@ -47,11 +47,10 @@ from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 class LiveviewGUI(QMainWindow):
     close_event = pyqtSignal()
 
-    def __init__(self, fullscreen=False):
+    def __init__(self):
         self.metadata = None
         self.terminal_msg = ""
         self.target_flowrate = None
-        self.fullscreen = fullscreen
 
         self.screen = QDesktopWidget().screenGeometry()
 
