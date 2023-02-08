@@ -72,7 +72,6 @@ class FormGUI(QDialog):
                 self.screen.height(),
             )
 
-
         self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up layout + widget
