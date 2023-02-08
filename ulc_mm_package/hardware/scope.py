@@ -20,7 +20,7 @@ from typing import Dict, Optional, Callable
 
 import pigpio
 
-from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2
+from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2, CAMERA_FPS
 
 # FIXME no stars!
 from ulc_mm_package.hardware.hardware_modules import *
@@ -119,7 +119,7 @@ class MalariaScope:
             elif CAMERA_SELECTION == CameraOptions.AVT:
                 self.camera = AVTCamera()
                 self.camera.camera.AcquisitionFrameRateEnable.set(True)
-                self.camera.camera.AcquisitionFrameRate.set(53)
+                self.camera.camera.AcquisitionFrameRate.set(CAMERA_FPS)
                 self.camera_enabled = True
             elif SIMULATION:
                 # just choose AVT, the import will be overridden w/ the simulated class

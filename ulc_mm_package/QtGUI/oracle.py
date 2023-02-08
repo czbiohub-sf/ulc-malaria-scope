@@ -10,14 +10,18 @@ import socket
 import webbrowser
 import enum
 import logging
+import subprocess
 import numpy as np
 import multiprocessing
 
-from os import listdir
+from os import (
+    listdir,
+    mkdir,
+    path,
+)
 from transitions import Machine
 from time import perf_counter, sleep
 from logging.config import fileConfig
-from os import path, mkdir
 from datetime import datetime
 
 from PyQt5.QtWidgets import (
@@ -497,13 +501,13 @@ class Oracle(Machine):
         self.scopeop_thread.start()
         self.acquisition_thread.start()
 
-        self.form_window.show()
+        self.form_window.showMaximized()
 
     def _end_setup(self, *args):
         self.form_window.unfreeze_buttons()
 
     def _start_form(self, *args):
-        self.form_window.show()
+        self.form_window.showMaximized()
 
     def save_form(self):
         self.form_metadata = self.form_window.get_form_input()
@@ -524,6 +528,17 @@ class Oracle(Machine):
             "exposure"
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
+
+        self.experiment_metadata["git_branch"] = (
+            subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"])
+            .decode("ascii")
+            .strip()
+        )
+        self.experiment_metadata["git_commit"] = (
+            subprocess.check_output(["git", "rev-parse", "HEAD"])
+            .decode("ascii")
+            .strip()
+        )
 
         self.scopeop.mscope.data_storage.createNewExperiment(
             self.ext_dir,
@@ -564,7 +579,7 @@ class Oracle(Machine):
             )
 
         self.lid_handler_enabled = True
-        self.liveview_window.show()
+        self.liveview_window.showMaximized()
         self.scopeop.start()
 
     def _end_liveview(self, *args):

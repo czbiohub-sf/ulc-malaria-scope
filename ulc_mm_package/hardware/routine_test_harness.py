@@ -20,6 +20,9 @@ from ulc_mm_package.image_processing.cell_finder import LowDensity
 import cv2
 
 
+routines = Routines()
+
+
 def _displayImage(img: np.ndarray) -> None:
     """Convenince wrapper to display an image using opencv"""
 
@@ -35,9 +38,9 @@ def _displayForNSeconds(seconds: int):
             break
 
 
-def autobrightness_wrappper(mscope: MalariaScope):
+def autobrightness_wrapper(mscope: MalariaScope):
     print(f"Running Autobrightness...")
-    ab_routine = autobrightnessRoutine(mscope)
+    ab_routine = routines.autobrightnessRoutine(mscope)
     ab_routine.send(None)
     for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
@@ -74,7 +77,7 @@ def find_cells_wrapper(mscope: MalariaScope):
     """
 
     print("Running `find_cells_routine`")
-    find_cells = find_cells_routine(mscope)
+    find_cells = routines.find_cells_routine(mscope)
     find_cells.send(None)
     for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
@@ -108,7 +111,7 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
     mscope.motor.move_abs(motor_pos)
 
     print("Running SSAF")
-    ssaf = continuousSSAFRoutine(mscope, None)
+    ssaf = routines.continuousSSAFRoutine(mscope, None)
     ssaf.send(None)
     for img, _ in mscope.camera.yieldImages():
         _displayImage(img)
@@ -120,7 +123,7 @@ def ssaf_wrapper(mscope: MalariaScope, motor_pos: int):
 
 def fast_flow_wrapper(mscope: MalariaScope):
     print("Running fast_flow_routine")
-    fast_flow_routine = fastFlowRoutine(mscope, None, FLOWRATE.FAST.value)
+    fast_flow_routine = routines.fastFlowRoutine(mscope, None, FLOWRATE.FAST.value)
     fast_flow_routine.send(None)
     for img, timestamp in mscope.camera.yieldImages():
         _displayImage(img)
@@ -161,7 +164,7 @@ def initial_cell_check(mscope: MalariaScope):
     """
 
     # Autobrightness
-    autobrightness_wrappper(mscope)
+    autobrightness_wrapper(mscope)
 
     # Pull, check for cells
     find_cells_res = find_cells_wrapper(mscope)
@@ -214,10 +217,10 @@ def main_acquisition_loop(mscope: MalariaScope):
     periodic_ssaf = periodicAutofocusWrapper(mscope, None)
     periodic_ssaf.send(None)
 
-    flow_control = flowControlRoutine(mscope, FLOWRATE.FAST.value, None)
+    flow_control = routines.flowControlRoutine(mscope, FLOWRATE.FAST.value, None)
     flow_control.send(None)
 
-    cell_density = cell_density_routine(None)
+    cell_density = routines.cell_density_routine(None)
     cell_density.send(None)
 
     for i, (img, timestamp) in enumerate(mscope.camera.yieldImages()):
@@ -236,7 +239,7 @@ def main_acquisition_loop(mscope: MalariaScope):
             count = cell_density.send(img)
         except LowDensity as e:
             print(e)
-            cell_density = cell_density_routine(None)
+            cell_density = routines.cell_density_routine(None)
             cell_density.send(None)
         print(f"Cell density : {count}, {perf_counter() - density_start_time}")
 
