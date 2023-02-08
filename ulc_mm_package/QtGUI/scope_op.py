@@ -119,7 +119,7 @@ class ScopeOp(QObject, NamedMachine):
             {
                 "name": "autobrightness_precells",
                 "display_name": "autobrightness (pre-cells)",
-                "on_enter": [self._send_state, self._start_autobrightness],
+                "on_enter": [self._send_state, self._start_autobrightness_precells],
             },
             {
                 "name": "pressure_check",
@@ -134,7 +134,7 @@ class ScopeOp(QObject, NamedMachine):
             {
                 "name": "autobrightness_postcells",
                 "display_name": "autobrightness (post-cells)",
-                "on_enter": [self._send_state, self._start_autobrightness],
+                "on_enter": [self._send_state, self._start_autobrightness_postcells],
             },
             {
                 "name": "autofocus",
