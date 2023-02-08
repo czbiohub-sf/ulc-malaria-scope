@@ -19,6 +19,11 @@ class ERROR_BEHAVIORS(enum.Enum):
     YN = 2
 
 
+# ================ Image size ================ #
+IMG_WIDTH = 1032
+IMG_HEIGHT = 772
+IMG_SCALE = 3
+
 # ================ Infopanel values ================ #
 BLANK_INFOPANEL_VAL = "---"
 

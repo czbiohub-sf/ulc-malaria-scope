@@ -34,17 +34,25 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 )
 from ulc_mm_package.scope_constants import MAX_FRAMES
 from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
-from ulc_mm_package.QtGUI.gui_constants import STATUS, ICON_PATH, BLANK_INFOPANEL_VAL
+from ulc_mm_package.QtGUI.gui_constants import (
+    STATUS,
+    ICON_PATH,
+    BLANK_INFOPANEL_VAL,
+    IMG_WIDTH,
+    IMG_HEIGHT,
+    IMG_SCALE,
+)
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
 class LiveviewGUI(QMainWindow):
     close_event = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, fullscreen=False):
         self.metadata = None
         self.terminal_msg = ""
         self.target_flowrate = None
+        self.fullscreen = fullscreen
 
         self.screen = QDesktopWidget().screenGeometry()
 
@@ -118,11 +126,12 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(str)
     def update_msg(self, msg):
-        self.terminal_msg = self.terminal_msg + f"{msg}\n"
-        self.message_widget.setPlainText(self.terminal_msg)
+        if self.fullscreen:
+            self.terminal_msg = self.terminal_msg + f"{msg}\n"
+            self.message_widget.setPlainText(self.terminal_msg)
 
-        # Scroll to latest message
-        self.terminal_scroll.setValue(self.terminal_scroll.maximum())
+            # Scroll to latest message
+            self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
     @pyqtSlot(int)
     def update_focus(self, val):
@@ -162,12 +171,13 @@ class LiveviewGUI(QMainWindow):
         # self._load_thumbnail_ui()
         self._load_metadata_ui()
 
-        # Set up message terminal
-        self.message_widget = QPlainTextEdit(self.terminal_msg)
-        # Setup terminal box
-        self.message_widget.setReadOnly(True)
-        # Setup terminal box scrollbar
-        self.message_widget.setVerticalScrollBar(self.terminal_scroll)
+        if self.fullscreen:
+            # Set up message terminal
+            self.message_widget = QPlainTextEdit(self.terminal_msg)
+            # Setup terminal box
+            self.message_widget.setReadOnly(True)
+            # Setup terminal box scrollbar
+            self.message_widget.setVerticalScrollBar(self.terminal_scroll)
 
         # Set up tabs
         self.tab_widget = QTabWidget()
@@ -178,7 +188,8 @@ class LiveviewGUI(QMainWindow):
         # Populate window
         self.main_layout.addWidget(self.tab_widget, 0, 0)
         self.main_layout.addWidget(self.infopanel_widget, 0, 1, 2, 1)
-        self.main_layout.addWidget(self.message_widget, 1, 0)
+        if self.fullscreen:
+            self.main_layout.addWidget(self.message_widget, 1, 0)
 
     def _load_infopanel_ui(self):
         # Set up infopanel layout + widget
@@ -257,7 +268,8 @@ class LiveviewGUI(QMainWindow):
     def set_infopanel_vals(self):
         # Flush terminal
         self.terminal_msg = ""
-        self.message_widget.clear()
+        if self.fullscreen:
+            self.message_widget.clear()
 
         self.update_runtime(0)
         self.update_img_count(BLANK_INFOPANEL_VAL)
@@ -289,7 +301,8 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
-        self.liveview_img.setFixedSize(int(1032/3), int(772/3))
+        if not self.fullscreen:
+                self.liveview_img.setFixedSize(int(IMG_WIDTH/IMG_SCALE), int(IMG_HEIGHT/IMG_SCALE))
         self.liveview_img.setScaledContents(True)
 
         self.liveview_layout.addWidget(self.liveview_img)
