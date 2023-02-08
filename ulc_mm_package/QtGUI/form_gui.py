@@ -29,8 +29,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     FLOWRATE_LIST,
     SITE_LIST,
-    SCREEN_PARAMS,
-    BIG_SCREEN,
 )
 
 
