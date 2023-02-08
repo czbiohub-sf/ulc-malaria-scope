@@ -1,5 +1,6 @@
 import enum
 
+from PyQt5.QtWidgets import QDesktopWidget
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 
@@ -18,6 +19,13 @@ class ERROR_BEHAVIORS(enum.Enum):
     PRECHECK = 1
     YN = 2
 
+# ================ Screen size and position ================ #
+SCREEN_PARAMS = QDesktopWidget().screenGeometry()
+
+BIG_SCREEN = False
+# Check if height is larger than touchscreen height of 480
+if SCREEN_PARAMS.height > 480:
+    BIG_SCREEN = True
 
 # ================ Image display size ================ #
 IMG_DOWNSCALE = 2.5
