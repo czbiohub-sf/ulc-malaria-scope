@@ -302,7 +302,9 @@ class LiveviewGUI(QMainWindow):
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
         if not self.fullscreen:
-                self.liveview_img.setFixedSize(int(IMG_WIDTH/IMG_DOWNSCALE), int(IMG_HEIGHT/IMG_DOWNSCALE))
+            self.liveview_img.setFixedSize(
+                int(IMG_WIDTH / IMG_DOWNSCALE), int(IMG_HEIGHT / IMG_DOWNSCALE)
+            )
         self.liveview_img.setScaledContents(True)
 
         self.liveview_layout.addWidget(self.liveview_img)
