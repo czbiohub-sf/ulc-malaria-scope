@@ -148,7 +148,7 @@ class LiveviewGUI(QMainWindow):
 
     def _load_main_ui(self):
         self.setWindowTitle("Malaria scope")
-        self.setGeometry(0, 0, self.screen.width(), self.screen.height()-150)
+        self.setGeometry(0, 0, self.screen.width(), self.screen.height())
         self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up central layout + widget
@@ -289,6 +289,7 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
+        self.liveview_img.setFixedSize(int(1032/3), int(772/3))
         self.liveview_img.setScaledContents(True)
 
         self.liveview_layout.addWidget(self.liveview_img)
@@ -380,6 +381,7 @@ if __name__ == "__main__":
     gui.update_experiment(experiment_metadata)
 
     gui.set_infopanel_vals()
+    print(gui.screen)
 
     gui.update_msg("Sample message here")
     gui.update_tcp("Sample address here")
