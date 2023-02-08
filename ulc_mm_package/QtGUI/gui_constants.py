@@ -19,6 +19,7 @@ class ERROR_BEHAVIORS(enum.Enum):
     PRECHECK = 1
     YN = 2
 
+
 # ================ Screen size and position ================ #
 SCREEN_PARAMS = QDesktopWidget().screenGeometry()
 

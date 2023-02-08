@@ -63,7 +63,12 @@ class FormGUI(QDialog):
             window_geometry.moveCenter(centerpoint)
             self.move(window_geometry.topLeft())
         else:
-            self.setGeometry(SCREEN_PARAMS.x(), SCREEN_PARAMS.y(), SCREEN_PARAMS.width(), SCREEN_PARAMS.height())
+            self.setGeometry(
+                SCREEN_PARAMS.x(),
+                SCREEN_PARAMS.y(),
+                SCREEN_PARAMS.width(),
+                SCREEN_PARAMS.height(),
+            )
 
         self.setWindowIcon(QIcon(ICON_PATH))
 

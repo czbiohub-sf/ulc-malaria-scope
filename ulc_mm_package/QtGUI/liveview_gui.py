@@ -155,7 +155,10 @@ class LiveviewGUI(QMainWindow):
     def _load_main_ui(self):
         self.setWindowTitle("Malaria scope")
         self.setGeometry(
-            SCREEN_PARAMS.x(), SCREEN_PARAMS.y(), SCREEN_PARAMS.width(), SCREEN_PARAMS.height()
+            SCREEN_PARAMS.x(),
+            SCREEN_PARAMS.y(),
+            SCREEN_PARAMS.width(),
+            SCREEN_PARAMS.height(),
         )
         self.setWindowIcon(QIcon(ICON_PATH))
 
