@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QScrollBar,
+    QDesktopWidget,
 )
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, Qt
 from PyQt5.QtGui import QPixmap, QIcon
@@ -33,17 +34,26 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 )
 from ulc_mm_package.scope_constants import MAX_FRAMES
 from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
-from ulc_mm_package.QtGUI.gui_constants import STATUS, ICON_PATH, BLANK_INFOPANEL_VAL
+from ulc_mm_package.QtGUI.gui_constants import (
+    STATUS,
+    ICON_PATH,
+    BLANK_INFOPANEL_VAL,
+    IMG_DOWNSCALE,
+)
+from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
 class LiveviewGUI(QMainWindow):
     close_event = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, fullscreen=False):
         self.metadata = None
         self.terminal_msg = ""
         self.target_flowrate = None
+        self.fullscreen = fullscreen
+
+        self.screen = QDesktopWidget().screenGeometry()
 
         super().__init__()
         self._load_main_ui()
@@ -69,7 +79,7 @@ class LiveviewGUI(QMainWindow):
         self.flowrate_lbl.setText(f"Target = {self.target_flowrate}")
 
     def update_tcp(self, tcp_addr):
-        self.tcp_lbl.setText(f"SSH address: {tcp_addr}")
+        self.tcp_lbl.setText(f"SSH: {tcp_addr}")
 
     @pyqtSlot(float)
     def update_runtime(self, runtime):
@@ -115,11 +125,12 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(str)
     def update_msg(self, msg):
-        self.terminal_msg = self.terminal_msg + f"{msg}\n"
-        self.terminal_txt.setPlainText(self.terminal_msg)
+        if self.fullscreen:
+            self.terminal_msg = self.terminal_msg + f"{msg}\n"
+            self.message_widget.setPlainText(self.terminal_msg)
 
-        # Scroll to latest message
-        self.terminal_scroll.setValue(self.terminal_scroll.maximum())
+            # Scroll to latest message
+            self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
     @pyqtSlot(int)
     def update_focus(self, val):
@@ -145,7 +156,9 @@ class LiveviewGUI(QMainWindow):
 
     def _load_main_ui(self):
         self.setWindowTitle("Malaria scope")
-        self.setGeometry(100, 100, 1100, 700)
+        self.setGeometry(
+            self.screen.x(), self.screen.y(), self.screen.width(), self.screen.height()
+        )
         self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up central layout + widget
@@ -159,6 +172,14 @@ class LiveviewGUI(QMainWindow):
         # self._load_thumbnail_ui()
         self._load_metadata_ui()
 
+        if self.fullscreen:
+            # Set up message terminal
+            self.message_widget = QPlainTextEdit(self.terminal_msg)
+            # Setup terminal box
+            self.message_widget.setReadOnly(True)
+            # Setup terminal box scrollbar
+            self.message_widget.setVerticalScrollBar(self.terminal_scroll)
+
         # Set up tabs
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
@@ -167,7 +188,9 @@ class LiveviewGUI(QMainWindow):
 
         # Populate window
         self.main_layout.addWidget(self.tab_widget, 0, 0)
-        self.main_layout.addWidget(self.infopanel_widget, 0, 1)
+        self.main_layout.addWidget(self.infopanel_widget, 0, 1, 2, 1)
+        if self.fullscreen:
+            self.main_layout.addWidget(self.message_widget, 1, 0)
 
     def _load_infopanel_ui(self):
         # Set up infopanel layout + widget
@@ -179,11 +202,10 @@ class LiveviewGUI(QMainWindow):
         self.state_lbl = QLabel("-")
         self.pause_btn = QPushButton("Pause")
         self.exit_btn = QPushButton("Exit")
-        self.runtime_lbl = QLabel("Experiment runtime:")
+        self.runtime_lbl = QLabel("Runtime:")
         self.runtime_val = QLabel("-")
         self.img_count_lbl = QLabel("Fields of view:")
         self.img_count_val = QLabel("-")
-        self.terminal_txt = QPlainTextEdit(self.terminal_msg)
         self.terminal_scroll = QScrollBar()
         self.tcp_lbl = QLabel("-")
 
@@ -211,16 +233,11 @@ class LiveviewGUI(QMainWindow):
         self.cell_count_title.setAlignment(Qt.AlignCenter)
         self.focus_title.setAlignment(Qt.AlignCenter)
         self.flowrate_title.setAlignment(Qt.AlignCenter)
-
-        # Setup terminal box
-        self.terminal_txt.setReadOnly(True)
-
-        # Setup terminal box scrollbar
-        self.terminal_txt.setVerticalScrollBar(self.terminal_scroll)
+        self.tcp_lbl.setAlignment(Qt.AlignCenter)
 
         # Setup column size
-        self.pause_btn.setFixedWidth(150)
-        self.exit_btn.setFixedWidth(150)
+        self.pause_btn.setFixedWidth(120)
+        self.exit_btn.setFixedWidth(120)
 
         self.infopanel_layout.addWidget(self.state_lbl, 0, 1, 1, 2)
         self.infopanel_layout.addWidget(self.pause_btn, 1, 1)
@@ -229,7 +246,7 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.runtime_val, 2, 2)
         self.infopanel_layout.addWidget(self.img_count_lbl, 3, 1)
         self.infopanel_layout.addWidget(self.img_count_val, 3, 2)
-        self.infopanel_layout.addWidget(self.terminal_txt, 14, 1, 1, 2)
+        # self.infopanel_layout.addWidget(self.message_widget, 14, 1, 1, 2)
         self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
         self.infopanel_layout.addWidget(self.cell_count_title, 4, 1, 1, 2)
@@ -252,7 +269,8 @@ class LiveviewGUI(QMainWindow):
     def set_infopanel_vals(self):
         # Flush terminal
         self.terminal_msg = ""
-        self.terminal_txt.clear()
+        if self.fullscreen:
+            self.message_widget.clear()
 
         self.update_runtime(0)
         self.update_img_count(BLANK_INFOPANEL_VAL)
@@ -271,6 +289,8 @@ class LiveviewGUI(QMainWindow):
         self._set_color(self.focus_val, STATUS.DEFAULT)
         self._set_color(self.flowrate_val, STATUS.DEFAULT)
 
+        self._set_color(self.tcp_lbl, STATUS.STANDBY)
+
     def _load_liveview_ui(self):
         # Set up liveview layout + widget
         self.liveview_layout = QHBoxLayout()
@@ -282,6 +302,11 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
+        if not self.fullscreen:
+            self.liveview_img.setFixedSize(
+                int(CAMERA_SELECTION.IMG_WIDTH / IMG_DOWNSCALE),
+                int(CAMERA_SELECTION.IMG_HEIGHT / IMG_DOWNSCALE),
+            )
         self.liveview_img.setScaledContents(True)
 
         self.liveview_layout.addWidget(self.liveview_img)
@@ -373,9 +398,10 @@ if __name__ == "__main__":
     gui.update_experiment(experiment_metadata)
 
     gui.set_infopanel_vals()
+    print(gui.screen)
 
     gui.update_msg("Sample message here")
     gui.update_tcp("Sample address here")
 
-    gui.show()
+    gui.showMaximized()
     sys.exit(app.exec_())
