@@ -161,15 +161,15 @@ class FormGUI(QDialog):
         # Enable [x] button
         self.setWindowFlag(Qt.WindowCloseButtonHint, True)
 
-        # Enable text boxes
-        self.operator_val.setDisabled(False)
-        self.participant_val.setDisabled(False)
-        self.flowcell_val.setDisabled(False)
-        self.notes_val.setDisabled(False)
-
         # Enable dropdown menus
-        self.flowrate_val.setDisabled(False)
-        self.site_val.setDisabled(False)
+        self.flowrate_val.setEnabled(True)
+        self.site_val.setEnabled(True)
+
+        # Enable text boxes
+        self.operator_val.setEnabled(True)
+        self.participant_val.setEnabled(True)
+        self.flowcell_val.setEnabled(True)
+        self.notes_val.setEnabled(True)
 
     def get_form_input(self) -> dict:
         # Match keys with EXPERIMENT_METADATA_KEYS from processing_constants.py
