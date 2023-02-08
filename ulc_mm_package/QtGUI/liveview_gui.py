@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QScrollBar,
+    QDesktopWidget,
 )
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, Qt
 from PyQt5.QtGui import QPixmap, QIcon
@@ -38,8 +39,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     BLANK_INFOPANEL_VAL,
     IMG_DOWNSCALE,
-    SCREEN_PARAMS,
-    BIG_SCREEN,
 )
 from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
@@ -52,6 +51,13 @@ class LiveviewGUI(QMainWindow):
         self.metadata = None
         self.terminal_msg = ""
         self.target_flowrate = None
+
+        # Get screen parameters
+        self.screen = QDesktopWidget().screenGeometry()
+        if self.screen.height() > 480:
+            self.big_screen = True
+        else:
+            self.big_screen = False
 
         super().__init__()
         self._load_main_ui()
@@ -123,7 +129,7 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(str)
     def update_msg(self, msg):
-        if BIG_SCREEN:
+        if self.big_screen:
             self.terminal_msg = self.terminal_msg + f"{msg}\n"
             self.msg_lbl.setPlainText(self.terminal_msg)
 
@@ -155,10 +161,10 @@ class LiveviewGUI(QMainWindow):
     def _load_main_ui(self):
         self.setWindowTitle("Malaria scope")
         self.setGeometry(
-            SCREEN_PARAMS.x(),
-            SCREEN_PARAMS.y(),
-            SCREEN_PARAMS.width(),
-            SCREEN_PARAMS.height(),
+            self.screen.x(),
+            self.screen.y(),
+            self.screen.width(),
+            self.screen.height(),
         )
         self.setWindowIcon(QIcon(ICON_PATH))
 
@@ -201,7 +207,7 @@ class LiveviewGUI(QMainWindow):
         self.tcp_lbl = QLabel("-")
 
         # Set up message terminal
-        if BIG_SCREEN:
+        if self.big_screen:
             self.msg_lbl = QPlainTextEdit(self.terminal_msg)
             self.msg_lbl.setReadOnly(True)
             self.msg_lbl.setVerticalScrollBar(self.terminal_scroll)
@@ -243,7 +249,7 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.runtime_val, 2, 2)
         self.infopanel_layout.addWidget(self.img_count_lbl, 3, 1)
         self.infopanel_layout.addWidget(self.img_count_val, 3, 2)
-        if BIG_SCREEN:
+        if self.big_screen:
             self.infopanel_layout.addWidget(self.msg_lbl, 14, 1, 1, 2)
         self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
@@ -267,7 +273,7 @@ class LiveviewGUI(QMainWindow):
     def set_infopanel_vals(self):
         # Flush terminal
         self.terminal_msg = ""
-        if BIG_SCREEN:
+        if self.big_screen:
             self.msg_lbl.clear()
 
         self.update_runtime(0)
@@ -300,7 +306,7 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
-        if not BIG_SCREEN:
+        if not self.big_screen:
             self.liveview_img.setFixedSize(
                 int(CAMERA_SELECTION.IMG_WIDTH / IMG_DOWNSCALE),
                 int(CAMERA_SELECTION.IMG_HEIGHT / IMG_DOWNSCALE),
@@ -396,7 +402,7 @@ if __name__ == "__main__":
     gui.update_experiment(experiment_metadata)
 
     gui.set_infopanel_vals()
-    print(SCREEN_PARAMS)
+    print(gui.screen)
 
     gui.update_msg("Sample message here")
     gui.update_tcp("Sample address here")

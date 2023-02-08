@@ -54,7 +54,9 @@ class FormGUI(QDialog):
     def _load_ui(self):
         self.setWindowTitle("Experiment form")
 
-        if BIG_SCREEN:
+        # Get screen parameters
+        self.screen = QDesktopWidget().screenGeometry()
+        if self.screen.height() > 480:
             self.setGeometry(0, 0, 675, 500)
 
             # Move window to middle of screen
@@ -64,11 +66,12 @@ class FormGUI(QDialog):
             self.move(window_geometry.topLeft())
         else:
             self.setGeometry(
-                SCREEN_PARAMS.x(),
-                SCREEN_PARAMS.y(),
-                SCREEN_PARAMS.width(),
-                SCREEN_PARAMS.height(),
+                self.screen.x(),
+                self.screen.y(),
+                self.screen.width(),
+                self.screen.height(),
             )
+
 
         self.setWindowIcon(QIcon(ICON_PATH))
 
