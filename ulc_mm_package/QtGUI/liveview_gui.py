@@ -33,7 +33,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 )
 from ulc_mm_package.scope_constants import MAX_FRAMES
 from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
-from ulc_mm_package.QtGUI.gui_constants import STATUS, ICON_PATH
+from ulc_mm_package.QtGUI.gui_constants import STATUS, ICON_PATH, BLANK_INFOPANEL_VAL
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
@@ -117,6 +117,9 @@ class LiveviewGUI(QMainWindow):
     def update_msg(self, msg):
         self.terminal_msg = self.terminal_msg + f"{msg}\n"
         self.terminal_txt.setPlainText(self.terminal_msg)
+
+        # Scroll to latest message
+        self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
     @pyqtSlot(int)
     def update_focus(self, val):
@@ -214,8 +217,6 @@ class LiveviewGUI(QMainWindow):
 
         # Setup terminal box scrollbar
         self.terminal_txt.setVerticalScrollBar(self.terminal_scroll)
-        # TODO scrollbar setting doesn't work
-        self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
         # Setup column size
         self.pause_btn.setFixedWidth(150)
@@ -254,11 +255,11 @@ class LiveviewGUI(QMainWindow):
         self.terminal_txt.clear()
 
         self.update_runtime(0)
-        self.update_img_count("---")
+        self.update_img_count(BLANK_INFOPANEL_VAL)
         self.update_cell_count(np.zeros(len(YOGO_CLASS_LIST), dtype=int))
 
-        self.update_focus("---")
-        self.update_flowrate("---")
+        self.update_focus(BLANK_INFOPANEL_VAL)
+        self.update_flowrate(BLANK_INFOPANEL_VAL)
 
         # Setup status colors
         self._set_color(self.state_lbl, STATUS.IN_PROGRESS)

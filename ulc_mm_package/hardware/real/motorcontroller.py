@@ -12,6 +12,8 @@ import time
 import threading
 import pigpio
 
+from typing import Optional
+
 from ulc_mm_package.utilities.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
     FULL_STEP_TO_TRAVEL_DIST_UM,
@@ -57,7 +59,7 @@ class DRV8825Nema:
         steptype="Full",
         lim1=MOTOR_LIMIT_SWITCH1,
         lim2: int = None,
-        max_pos: int = None,
+        max_pos: Optional[int] = None,
         pi: pigpio.pi = None,
     ):
         """
@@ -93,7 +95,7 @@ class DRV8825Nema:
         self.lim2 = lim2
         self.steptype = steptype
         self.pos = -int(1e6)
-        self.homed = False
+        self._homed = False
         self.stop_motor = False
 
         # Get step degree based on steptype
@@ -114,8 +116,8 @@ class DRV8825Nema:
         )
 
         # TODO Calculate the max position allowable based on stepping mode and actual travel distance on the scope
-        self.max_pos = (
-            int(max_pos) if max_pos != None else int(450 * self.microstepping)
+        self.max_pos: int = (
+            int(max_pos) if isinstance(max_pos, int) else int(450 * self.microstepping)
         )
 
         # Set up GPIO
@@ -157,6 +159,14 @@ class DRV8825Nema:
 
     def getMinimumTravelDistance_um(self):
         return self.dist_per_step_um
+
+    @property
+    def homed(self):
+        return self._homed
+
+    @homed.setter
+    def homed(self, v: bool):
+        self._homed = bool(v)
 
     def isMoveValid(self, dir: Direction, steps: int):
         """If homing has been done, check to see if an attempted move is within the allowable range.
@@ -222,7 +232,6 @@ class DRV8825Nema:
         self.stop_motor = True
 
     def _move_rel_steps(self, steps: int, dir=Direction.CCW, stepdelay=0.005):
-
         # set direction
         self._pi.write(self.direction_pin, dir.value)
 
@@ -240,7 +249,7 @@ class DRV8825Nema:
         dir=Direction.CCW,
         steps: int = 200,
         stepdelay=0.005,
-        timeout_s: int = 1e6,
+        timeout_s: int = int(1e6),
         verbose=False,
         initdelay=0.05,
     ):
@@ -412,3 +421,7 @@ class DRV8825Nema:
             threading.Thread(target=self.move_abs, args=args, kwargs=kwargs).start()
         else:
             raise MotorInMotion
+
+    @staticmethod
+    def is_locked():
+        return MOTOR_LOCK.locked()

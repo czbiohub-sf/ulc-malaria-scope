@@ -11,6 +11,7 @@ Basler PyPlon Library:
 
 import sys
 import logging
+from enum import Enum
 from time import perf_counter
 import queue
 from typing import Generator, Tuple
@@ -26,6 +27,11 @@ from ulc_mm_package.hardware.hardware_constants import (
     DEVICELINK_THROUGHPUT,
 )
 from ulc_mm_package.hardware.camera import CameraError
+
+
+class BinningMode(Enum):
+    AVERAGE = "Average"
+    SUM = "Sum"
 
 
 class BaslerCamera(Basler):
@@ -55,9 +61,35 @@ class BaslerCamera(Basler):
 
 
 class AVTCamera:
+    """A class initially written for the AVT Alvium 1800 U-319m mono bareboard which wraps
+    AVT's `VimbaPython' library (https://github.com/alliedvision/VimbaPython)
+
+    A couple things to be aware of about this wrapper:
+    - This wrapper circumvents AVT's recommended context-manager usage structure, i.e instead of:
+    (pseudocode):
+
+        with cam:
+            cam.start_streaming()
+            ...
+
+    We instantiate an AVT Camera object:
+
+        cam = AVTCamera()
+
+    The reason for this was the initial malaria scope software was written for a Basler Camera.
+    There was a brief period of time during development when we had two scopes using the Basler, and one using the AVT.
+    To make the software run on either camera with minimal changes, this wrapper was created so that the AVT
+    would be a drop-in replacement for the Basler.
+    """
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
+        # Internal variables used to keep track of the number of
+        # > total images
+        # > incomplete frames
+        # > frames dropped (i.e the caller attempted to get an image but none were in the queue),
+        # > times a frame was attempted to be placed in the queue but failed because the queue was full
         self.all_count = 0
         self.incomplete_count = 0
         self.dropped_count = 0
@@ -69,29 +101,43 @@ class AVTCamera:
         self.connect()
 
     def __del__(self):
+        """Cleanup - however best not to rely on __del__."""
         self.deactivateCamera()
 
     def _get_camera(self):
+        """Returns the first listed AVT camera."""
         with Vimba.get_instance() as vimba:
             cams = vimba.get_all_cameras()
             return cams[0]
 
     def _camera_setup(self):
+        """Default settings for use with the malaria scope."""
         self.minExposure_ms, self.maxExposure_ms = self.getExposureBoundsMilliseconds()
         self.setDeviceLinkThroughputLimit(DEVICELINK_THROUGHPUT)
         self.camera.ExposureAuto.set("Off")
         self.exposureTime_ms = DEFAULT_EXPOSURE_MS
+
+        # Flip image in y (malaria scope specific nuance, want RBCs to be flowing 'downward' in the display)
         self.camera.ReverseY.set(True)
+
+        # 2x2 binning
         self.setBinning(bin_factor=2)
+
+        # Monochrome uint8
         self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
 
     def connect(self) -> None:
+        """Get and connect to the camera using an explicit __enter__ (circumvent the context manager)
+        and set default camera settings.
+        """
+
         self.camera = self._get_camera()
         self.camera.__enter__()
         self._camera_setup()
         self._isActivated = True
 
     def deactivateCamera(self) -> None:
+        """Deactivate the camera, manually exit the context manager using __exit__"""
         self.logger.info(
             f"CAMERA status: all={self.all_count} | full={self.full_count} | "
             f"incomplete={self.incomplete_count} | dropped={self.dropped_count}"
@@ -100,6 +146,15 @@ class AVTCamera:
         self.vimba.__exit__(*sys.exc_info())
 
     def _frame_handler(self, cam, frame):
+        """A callback used by Vimba under the hood, this function is called
+        every time a new frame is ready and runs asynchronously.
+
+        The frame handler will attempt to remove the most recent image in the queue.
+        If the queue is empty, it'll ignore the exception that is raised.
+
+        Then it will place the current image into the queue (as a tuple of image and current timestamp).
+        """
+
         try:
             self.queue.get_nowait()
         except queue.Empty:
@@ -114,7 +169,7 @@ class AVTCamera:
             except queue.Full:
                 self.full_count += 1
                 self.logger.warning(
-                    f"queue full in _frame_handler. full_count={self.full_count}"
+                    f"Queue full in _frame_handler. Full_count = {self.full_count} frames."
                 )
             except np.core._exceptions.MemoryError as e:
                 self.logger.error(
@@ -124,20 +179,26 @@ class AVTCamera:
         else:
             self.incomplete_count += 1
             self.logger.warning(
-                f"camera returned incomplete frame. incomplete_count={self.incomplete_count}"
+                f"Camera returned incomplete frame. Incomplete_count = {self.incomplete_count} frames."
             )
 
         cam.queue_frame(frame)
 
     def _flush_queue(self):
+        """Clear the queue of images."""
+
         with self.queue.mutex:
             self.queue.queue.clear()
 
     def startAcquisition(self) -> None:
+        """Begin acquisition, set the camera's callback function (i.e the function that is called everytime a new frame is ready)."""
+
         if not self.camera.is_streaming():
             self.camera.start_streaming(self._frame_handler)
 
     def stopAcquisition(self) -> None:
+        """Stop streaming."""
+
         if self.camera.is_streaming():
             self.camera.stop_streaming()
 
@@ -154,7 +215,6 @@ class AVTCamera:
         queue.Empty:
             Raised if no frames are received within 0.5s while the camera is streaming
         """
-
         if not self.camera.is_streaming():
             self._flush_queue()
             self.startAcquisition()
@@ -167,12 +227,21 @@ class AVTCamera:
                 self.dropped_count += 1
                 self.logger.warning("Dropped frame.")
 
-    def setBinning(self, mode: str = "Average", bin_factor=1):
+    def setBinning(self, mode: BinningMode = BinningMode.AVERAGE, bin_factor=1):
+        """Set the binning mode.
+
+        Parameters
+        ----------
+        mode: BinningMode (enum)
+            Either BinningMode.AVERAGE or BinningMode.SUM
+
+        bin_factor: int
+        """
         while self.camera.is_streaming():
             self.camera.stop_streaming()
 
-        self.camera.BinningHorizontalMode.set(mode)
-        self.camera.BinningVerticalMode.set(mode)
+        self.camera.BinningHorizontalMode.set(mode.value)
+        self.camera.BinningVerticalMode.set(mode.value)
         self.camera.BinningHorizontal.set(bin_factor)
         self.camera.BinningVertical.set(bin_factor)
 
@@ -183,45 +252,70 @@ class AVTCamera:
         self.camera.Height.set(self.camera.HeightMax.get())
 
     def getBinning(self):
+        """Return the binning factor."""
         return self.camera.BinningHorizontal.get()
 
     def setDeviceLinkThroughputLimit(self, bytes_per_second: int):
+        """Set the device link throughput (in bytes)."""
         self.camera.DeviceLinkThroughputLimit.set(bytes_per_second)
 
-    def _getTemperature(self):
+    def _getTemperature(self) -> float:
+        """Get the device temperature."""
         try:
             return self.camera.DeviceTemperature.get()
-        except:
-            print("Could not get the device temperature using DeviceTemperature.")
-        raise
+        except Exception as e:
+            self.logger.error(
+                "Could not get the device temperature using DeviceTemperature: {e}"
+            )
+            raise e
 
-    def _setExposureTimeMilliseconds(self, value_ms: int):
+    def _setExposureTimeMilliseconds(self, value_ms: int) -> None:
+        """Set the exposure time.
+
+        Parameters
+        ----------
+        value_ms: int
+            Desired exposure time in milliseconds.
+        """
         try:
             self.camera.ExposureTime.set(value_ms * 1000)
-            return
-        except:
-            print(f"Could not use ExposureTime.set().")
+        except Exception as e:
+            self.logger.error(f"Could not set exposure using ExposureTime.set().")
+            raise e
 
-        print(f"Could not set exposure time.")
-        raise
+    def _getCurrentExposureMilliseconds(self) -> float:
+        """Return the current exposure time in milliseconds.
 
-    def _getCurrentExposureMilliseconds(self):
+        Returns
+        -------
+        float: exposure time in milliseconds
+        """
         try:
-            exposureTime_ms = self.camera.ExposureTime.get() / 1000
-            return exposureTime_ms
-        except:
-            print(f"ExposureTime method failed.")
-        print(f"Could not get the current ExposureTime.")
-        return None
+            return self.camera.ExposureTime.get() / 1000
+        except Exception as e:
+            self.logger.error(
+                f"ExposureTime method failed - could not get the current ExposureTime: {e}"
+            )
+            raise e
 
-    def getExposureBoundsMilliseconds(self):
+    def getExposureBoundsMilliseconds(self) -> Tuple[float, float]:
+        """Get the min/max exposure time bounds
+
+        Returns
+        -------
+        Tuple[float, float]:
+            Min and max exposure times in milliseconds
+        """
+
         try:
             minExposure_ms = self.camera.ExposureAutoMin.get() / 1000
             maxExposure_ms = self.camera.ExposureAutoMax.get() / 1000
-            return [minExposure_ms, maxExposure_ms]
+            return (minExposure_ms, maxExposure_ms)
         except Exception as e:
-            print(e)
-            print(f"Could not get exposure using ExposureAutoMin / ExposureAutoMax.")
+            self.logger.error(
+                f"Could not get exposure using ExposureAutoMin / ExposureAutoMax: {e}"
+            )
+            raise e
 
     @property
     def exposureTime_ms(self):
@@ -229,14 +323,17 @@ class AVTCamera:
 
     @exposureTime_ms.setter
     def exposureTime_ms(self, value_ms: int):
-        if (value_ms > self.minExposure_ms) and (value_ms < self.maxExposure_ms):
+        if self.minExposure_ms < value_ms < self.maxExposure_ms:
             try:
                 self._setExposureTimeMilliseconds(value_ms)
                 exposureFromCamera = self._getCurrentExposureMilliseconds()
                 self._exposureTime_ms = exposureFromCamera
-                print(f"Exposure time set to {exposureFromCamera} ms.")
-
-            except:
-                print(f"Failed to set exposure'")
+                self.logger.info(f"Exposure time set to {exposureFromCamera} ms.")
+            except Exception as e:
+                self.logger.warning(f"Failed to set exposure: {e}")
+                raise e
         else:
-            raise ValueError
+            raise ValueError(
+                f"value_ms out of range: must be in "
+                "[{self.minExposure_ms, self.maxExposure_ms}], but value_ms={value_ms}"
+            )
