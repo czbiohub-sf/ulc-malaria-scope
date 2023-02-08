@@ -29,6 +29,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     FLOWRATE_LIST,
     SITE_LIST,
+    SCREEN_PARAMS,
+    BIG_SCREEN,
 )
 
 
@@ -51,7 +53,18 @@ class FormGUI(QDialog):
 
     def _load_ui(self):
         self.setWindowTitle("Experiment form")
-        self.setGeometry(0, 0, 675, 500)
+
+        if BIG_SCREEN:
+            self.setGeometry(0, 0, 675, 500)
+
+            # Move window to middle of screen
+            window_geometry = self.frameGeometry()
+            centerpoint = QDesktopWidget().availableGeometry().center()
+            window_geometry.moveCenter(centerpoint)
+            self.move(window_geometry.topLeft())
+        else:
+            self.setGeometry(SCREEN_PARAMS.x(), SCREEN_PARAMS.y(), SCREEN_PARAMS.width(), SCREEN_PARAMS.height())
+
         self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up layout + widget
@@ -130,12 +143,6 @@ class FormGUI(QDialog):
         # Set the focus order
         self.operator_val.setFocus()
         self.start_btn.setDefault(True)
-
-        # Move window to middle of screen
-        window_geometry = self.frameGeometry()
-        centerpoint = QDesktopWidget().availableGeometry().center()
-        window_geometry.moveCenter(centerpoint)
-        self.move(window_geometry.topLeft())
 
     def unfreeze_buttons(self):
         self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
