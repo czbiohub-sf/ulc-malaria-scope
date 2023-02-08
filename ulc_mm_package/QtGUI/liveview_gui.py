@@ -39,6 +39,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     BLANK_INFOPANEL_VAL,
     IMG_DOWNSCALE,
+    TOOLBAR_OFFSET,
 )
 from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
@@ -164,7 +165,7 @@ class LiveviewGUI(QMainWindow):
             self.screen.x(),
             self.screen.y(),
             self.screen.width(),
-            self.screen.height(),
+            self.screen.height()-TOOLBAR_OFFSET,
         )
         self.setWindowIcon(QIcon(ICON_PATH))
 

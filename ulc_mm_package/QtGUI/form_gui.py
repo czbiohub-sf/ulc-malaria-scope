@@ -29,6 +29,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     FLOWRATE_LIST,
     SITE_LIST,
+    TOOLBAR_OFFSET,
 )
 
 
@@ -67,7 +68,7 @@ class FormGUI(QDialog):
                 self.screen.x(),
                 self.screen.y(),
                 self.screen.width(),
-                self.screen.height(),
+                self.screen.height()-TOOLBAR_OFFSET,
             )
 
         self.setWindowIcon(QIcon(ICON_PATH))
