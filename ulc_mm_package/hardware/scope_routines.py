@@ -145,17 +145,8 @@ class Routines:
         counter = 0
 
         while True:
-            counter += 1
-            if counter >= nn_constants.YOGO_PERIOD_NUM:
-                counter = 0
-                img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
-                mscope.cell_diagnosis_model(img, counts)
-                prev_time = perf_counter()
-            else:
-                (
-                    _,
-                    _,
-                ) = yield []
+            img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
+            mscope.cell_diagnosis_model(img, counts)
 
     def flowControlRoutine(
         self, mscope: MalariaScope, target_flowrate: float, img: np.ndarray
