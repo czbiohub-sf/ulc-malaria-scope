@@ -21,7 +21,7 @@ class ERROR_BEHAVIORS(enum.Enum):
 
 
 # ================ Image display size ================ #
-IMG_DOWNSCALE = 2
+IMG_DOWNSCALE = 1.7
 TOOLBAR_OFFSET = 80
 
 # ================ Infopanel values ================ #
