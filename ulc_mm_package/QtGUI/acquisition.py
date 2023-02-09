@@ -17,6 +17,8 @@ from PyQt5.QtCore import (
     Qt,
 )
 
+from py_cameras import PyCamerasError
+
 from ulc_mm_package.hardware.scope import MalariaScope
 from ulc_mm_package.scope_constants import ACQUISITION_PERIOD
 
@@ -88,11 +90,8 @@ class Acquisition(QObject):
         try:
             self.img, self.img_timestamp = next(img_gen)
             self.update_scopeop.emit(self.img, self.img_timestamp)
-        except Exception as e:
-            # TODO This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
-            # Once that happens, this can be swapped to catch the PyCameraException
-            print(e)
-            print(traceback.format_exc())
+        except PyCamerasError as e:
+            self.logger.exception(e)
 
     def send_img(self):
         self.update_liveview.emit(self.img)
