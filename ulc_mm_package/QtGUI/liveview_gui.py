@@ -39,6 +39,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     BLANK_INFOPANEL_VAL,
     IMG_DOWNSCALE,
+    TOOLBAR_OFFSET,
 )
 from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
@@ -47,13 +48,17 @@ from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 class LiveviewGUI(QMainWindow):
     close_event = pyqtSignal()
 
-    def __init__(self, fullscreen=False):
+    def __init__(self):
         self.metadata = None
         self.terminal_msg = ""
         self.target_flowrate = None
-        self.fullscreen = fullscreen
 
+        # Get screen parameters
         self.screen = QDesktopWidget().screenGeometry()
+        if self.screen.height() > 480:
+            self.big_screen = True
+        else:
+            self.big_screen = False
 
         super().__init__()
         self._load_main_ui()
@@ -125,9 +130,9 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(str)
     def update_msg(self, msg):
-        if self.fullscreen:
+        if self.big_screen:
             self.terminal_msg = self.terminal_msg + f"{msg}\n"
-            self.message_widget.setPlainText(self.terminal_msg)
+            self.msg_lbl.setPlainText(self.terminal_msg)
 
             # Scroll to latest message
             self.terminal_scroll.setValue(self.terminal_scroll.maximum())
@@ -157,7 +162,10 @@ class LiveviewGUI(QMainWindow):
     def _load_main_ui(self):
         self.setWindowTitle("Malaria scope")
         self.setGeometry(
-            self.screen.x(), self.screen.y(), self.screen.width(), self.screen.height()
+            self.screen.x(),
+            self.screen.y(),
+            self.screen.width(),
+            self.screen.height() - TOOLBAR_OFFSET,
         )
         self.setWindowIcon(QIcon(ICON_PATH))
 
@@ -172,14 +180,6 @@ class LiveviewGUI(QMainWindow):
         # self._load_thumbnail_ui()
         self._load_metadata_ui()
 
-        if self.fullscreen:
-            # Set up message terminal
-            self.message_widget = QPlainTextEdit(self.terminal_msg)
-            # Setup terminal box
-            self.message_widget.setReadOnly(True)
-            # Setup terminal box scrollbar
-            self.message_widget.setVerticalScrollBar(self.terminal_scroll)
-
         # Set up tabs
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
@@ -188,9 +188,7 @@ class LiveviewGUI(QMainWindow):
 
         # Populate window
         self.main_layout.addWidget(self.tab_widget, 0, 0)
-        self.main_layout.addWidget(self.infopanel_widget, 0, 1, 2, 1)
-        if self.fullscreen:
-            self.main_layout.addWidget(self.message_widget, 1, 0)
+        self.main_layout.addWidget(self.infopanel_widget, 0, 1)
 
     def _load_infopanel_ui(self):
         # Set up infopanel layout + widget
@@ -208,6 +206,12 @@ class LiveviewGUI(QMainWindow):
         self.img_count_val = QLabel("-")
         self.terminal_scroll = QScrollBar()
         self.tcp_lbl = QLabel("-")
+
+        # Set up message terminal
+        if self.big_screen:
+            self.msg_lbl = QPlainTextEdit(self.terminal_msg)
+            self.msg_lbl.setReadOnly(True)
+            self.msg_lbl.setVerticalScrollBar(self.terminal_scroll)
 
         # Populate infopanel with cell counts
         self.cell_count_title = QLabel("CELL COUNTS")
@@ -246,7 +250,8 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.runtime_val, 2, 2)
         self.infopanel_layout.addWidget(self.img_count_lbl, 3, 1)
         self.infopanel_layout.addWidget(self.img_count_val, 3, 2)
-        # self.infopanel_layout.addWidget(self.message_widget, 14, 1, 1, 2)
+        if self.big_screen:
+            self.infopanel_layout.addWidget(self.msg_lbl, 14, 1, 1, 2)
         self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
         self.infopanel_layout.addWidget(self.cell_count_title, 4, 1, 1, 2)
@@ -269,8 +274,8 @@ class LiveviewGUI(QMainWindow):
     def set_infopanel_vals(self):
         # Flush terminal
         self.terminal_msg = ""
-        if self.fullscreen:
-            self.message_widget.clear()
+        if self.big_screen:
+            self.msg_lbl.clear()
 
         self.update_runtime(0)
         self.update_img_count(BLANK_INFOPANEL_VAL)
@@ -302,7 +307,7 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
-        if not self.fullscreen:
+        if not self.big_screen:
             self.liveview_img.setFixedSize(
                 int(CAMERA_SELECTION.IMG_WIDTH / IMG_DOWNSCALE),
                 int(CAMERA_SELECTION.IMG_HEIGHT / IMG_DOWNSCALE),
