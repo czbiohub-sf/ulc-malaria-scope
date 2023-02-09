@@ -20,9 +20,7 @@ from typing import Dict, Optional, Callable
 
 import pigpio
 
-from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2, CAMERA_FPS
-
-# FIXME no stars!
+from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
@@ -76,7 +74,6 @@ class MalariaScope:
         self.logger.info("Shutting off scope hardware.")
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
-        self.ht_sensor.stop()
         if self.camera._isActivated:
             self.camera.deactivateCamera()
             self.logger.info("Deactivated camera.")
@@ -107,6 +104,9 @@ class MalariaScope:
         try:
             self.motor = DRV8825Nema(steptype="Half")
             self.motor.homeToLimitSwitches()
+            # print("Moving motor to the middle.")
+            # sleep(0.5)
+            # self.motor.move_abs(int(self.motor.max_pos // 2))
             self.motor_enabled = True
         except MotorControllerError as e:
             self.logger.error(f"DRV8825 initialization failed. {e}")
@@ -119,7 +119,7 @@ class MalariaScope:
             elif CAMERA_SELECTION == CameraOptions.AVT:
                 self.camera = AVTCamera()
                 self.camera.camera.AcquisitionFrameRateEnable.set(True)
-                self.camera.camera.AcquisitionFrameRate.set(CAMERA_FPS)
+                self.camera.camera.AcquisitionFrameRate.set(53)
                 self.camera_enabled = True
             elif SIMULATION:
                 # just choose AVT, the import will be overridden w/ the simulated class
