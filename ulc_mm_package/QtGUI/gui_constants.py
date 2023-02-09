@@ -1,7 +1,8 @@
 import enum
 
-from ulc_mm_package.scope_constants import SIMULATION
+from PyQt5.QtWidgets import QDesktopWidget
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
+
 
 # ================ Status colors ================ #
 class STATUS(enum.Enum):
@@ -19,21 +20,20 @@ class ERROR_BEHAVIORS(enum.Enum):
     YN = 2
 
 
+# ================ Image display size ================ #
+IMG_DOWNSCALE = 2
+TOOLBAR_OFFSET = 80
+
+# ================ Infopanel values ================ #
+BLANK_INFOPANEL_VAL = "---"
+
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = ["Tororo, Uganda", "Biohub SF", "DeRisi Lab"]
 
-# ================ FPS constants ================ #
-ACQUISITION_PERIOD = 1000.0 / 30.0
-LIVEVIEW_PERIOD = 1000
-
-# ================ Hardware update period ================ #
-# TH sensor update period
-TH_PERIOD = 5
-
 # ================ Experiment timeout period ================ #
-TIMEOUT_M_PERIOD = 20  # minutes
-TIMEOUT_S_PERIOD = TIMEOUT_M_PERIOD * 60  # seconds
+TIMEOUT_PERIOD_M = 20  # minutes
+TIMEOUT_PERIOD_S = TIMEOUT_PERIOD_M * 60  # seconds
 
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"

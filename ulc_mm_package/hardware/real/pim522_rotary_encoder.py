@@ -111,6 +111,7 @@ class PIM522RotaryEncoder:
         self.ioe.output(self.pin_blue, b)
 
 
+# TODO Move this and other hardware testing code into a single unified script/folder
 if __name__ == "__main__":
 
     def test_callback(inc: int):

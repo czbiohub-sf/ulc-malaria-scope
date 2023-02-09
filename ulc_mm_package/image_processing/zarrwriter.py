@@ -101,6 +101,7 @@ class ZarrWriter:
             self.logger.error(
                 f"zarrwriter.py : writeSingleArray : Exception encountered - {e}"
             )
+            # FIXME is this the only exception? we should make it a general "ZarrWriterMessedUp" error
             raise AttemptingWriteWithoutFile()
 
     def threadedWriteSingleArray(self, data, pos: int):
