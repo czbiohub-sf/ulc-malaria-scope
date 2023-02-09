@@ -37,6 +37,8 @@ class Acquisition(QObject):
         self.img_timestamp = None
         self.mscope = None
 
+        self.img_gen = self.mscope.camera.yieldImages()
+
         self.period = ACQUISITION_PERIOD
 
     @pyqtSlot()
@@ -86,9 +88,8 @@ class Acquisition(QObject):
         self.mscope = mscope
 
     def get_img(self):
-        img_gen = self.mscope.camera.yieldImages()
         try:
-            self.img, self.img_timestamp = next(img_gen)
+            self.img, self.img_timestamp = next(self.img_gen)
             self.update_scopeop.emit(self.img, self.img_timestamp)
         except PyCamerasError as e:
             self.logger.exception(e)
