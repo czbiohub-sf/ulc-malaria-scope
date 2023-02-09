@@ -84,11 +84,12 @@ class Acquisition(QObject):
         self.mscope = mscope
 
     def get_img(self):
+        img_gen = self.mscope.camera.yieldImages()
         try:
-            self.img, self.img_timestamp = next(self.mscope.camera.yieldImages())
+            self.img, self.img_timestamp = next(img_gen)
             self.update_scopeop.emit(self.img, self.img_timestamp)
         except Exception as e:
-            # This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
+            # TODO This catch-all is here temporarily until the PyCameras error-handling PR is merged (https://github.com/czbiohub/pyCameras/pull/5)
             # Once that happens, this can be swapped to catch the PyCameraException
             print(e)
             print(traceback.format_exc())
