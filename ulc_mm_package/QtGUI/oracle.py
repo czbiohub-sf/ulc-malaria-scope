@@ -563,7 +563,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
-            '1. Insert flow cell\n\n2. Put the CAP module back on.\n\n3. Close the lid.\n\nClick "OK" once it is closed.',
+            '1. Insert flow cell\n\n2. Put the CAP module back on\n\n3. Close the lid\n\nClick "OK" once it is closed.',
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
