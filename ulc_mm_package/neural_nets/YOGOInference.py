@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import time
 
 import numpy as np
 import numpy.typing as npt
@@ -7,6 +8,15 @@ import numpy.typing as npt
 from collections import namedtuple
 from typing import Any, List, Union
 
+from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
+from openvino.runtime import (
+    Core,
+    Layout,
+    Type,
+    InferRequest,
+    AsyncInferQueue,
+    Tensor,
+)
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
@@ -51,6 +61,61 @@ class YOGO(NCSModel):
         camera_selection: CameraOptions = CAMERA_SELECTION,
     ):
         super().__init__(model_path, camera_selection)
+
+    def _compile_model(
+        self,
+        model_path: str,
+        camera_selection: CameraOptions,
+    ):
+        """
+        quick n dirty copy from NCS model w/o resize
+        """
+        if self.connected:
+            raise RuntimeError(f"model {self} already compiled")
+
+        # when the first subclass is initialized, core will be given a value
+        assert (
+            self.core is not None
+        ), "initialize a subclass of NCSModel, not NCSModel itself"
+
+        model = self.core.read_model(model_path)
+
+        ppp = PrePostProcessor(model)
+        # black likes to format this into a very unreadable format :(
+        # fmt: off
+        ppp.input() \
+            .tensor() \
+            .set_element_type(Type.u8) \
+            .set_layout(Layout("NHWC")) \
+            .set_spatial_static_shape(
+                camera_selection.IMG_HEIGHT, camera_selection.IMG_WIDTH
+            )
+        # fmt: on
+        ppp.input().model().set_layout(Layout("NCHW"))
+        ppp.output().tensor().set_element_type(Type.f32)
+        model = ppp.build()
+
+        err_msg = ""
+        connection_attempts = 0
+        while connection_attempts < 4:
+            # sleep 0, then 1, then 3, then 7
+            time.sleep(2**connection_attempts - 1)
+            try:
+                compiled_model = self.core.compile_model(
+                    model,
+                    self.device_name,
+                )
+                self.connected = True
+                return compiled_model
+            except Exception as e:
+                connection_attempts += 1
+                if connection_attempts < 4:
+                    print(
+                        f"Failed to connect NCS: {e}.\nRemaining connection "
+                        f"attempts: {4 - connection_attempts}. Retrying..."
+                    )
+                err_msg = str(e)
+        raise TPUError(f"Failed to connect to NCS: {err_msg}")
 
     @staticmethod
     def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD):
