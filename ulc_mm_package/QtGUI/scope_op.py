@@ -603,7 +603,7 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.default_error.emit(
                 "Calibration failed",
-                "Too many recent low confidence xcorr calculations.",
+                "While attempting to ramp up the flow rate of the cells, something anomalous was detected by the flow control system.\nIf the flowrate looked normal to you, you can try re-running with the same sample. Otherwise, discard this flow cell and place a new one with fresh sample please.",
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
         except StopIteration as e:
