@@ -18,7 +18,7 @@ from PyQt5.QtCore import (
 )
 
 from ulc_mm_package.hardware.scope import MalariaScope
-from ulc_mm_package.scope_constants import ACQUISITION_PERIOD
+from ulc_mm_package.QtGUI.gui_constants import ACQUISITION_PERIOD
 
 
 class Acquisition(QObject):

@@ -25,7 +25,7 @@ import pandas as pd
 from pathlib import Path
 
 
-def get_stats(descriptor, file):
+def metadata_parser(descriptor, file):
     # Get data
     data = pd.read_csv(file)
 
@@ -38,12 +38,8 @@ def get_stats(descriptor, file):
     time_ax.set_xlabel("Frame #")
     time_ax.set_ylabel("Time (ms)")
 
-    time_ax.scatter(
-        range(len(looptimes)), looptimes, color="red", label="Looptimes", s=2
-    )
-    time_ax.scatter(
-        range(len(runtimes)), runtimes, color="orange", label="Runtimes", s=2
-    )
+    time_ax.scatter(range(len(runtimes)), runtimes, label="Runtimes", s=2)
+    time_ax.scatter(range(len(looptimes)), looptimes, label="Looptimes", s=2)
 
     # Delineate expected looptimes
     time_ax.plot(
@@ -55,9 +51,7 @@ def get_stats(descriptor, file):
 
     # Plot size results
     size_ax = time_ax.twinx()
-    size_ax.scatter(range(len(qsizes)), qsizes, label="Zarr queue", color="green", s=2)
-    size_ax.tick_params(colors="green")
-    size_ax.set_ylabel("Queue size", color="green")
+    size_ax.scatter(range(len(qsizes)), qsizes, label="Queue size", color="green", s=2)
 
     # Format plots
     time_ax.legend(loc=2)
@@ -94,4 +88,4 @@ if __name__ == "__main__":
         name = Path(metadata_file).name
 
     # Plot data
-    get_stats(name, metadata_file)
+    metadata_parser(name, metadata_file)

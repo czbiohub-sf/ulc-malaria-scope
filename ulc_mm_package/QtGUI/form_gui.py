@@ -29,7 +29,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     FLOWRATE_LIST,
     SITE_LIST,
-    TOOLBAR_OFFSET,
 )
 
 
@@ -52,25 +51,7 @@ class FormGUI(QDialog):
 
     def _load_ui(self):
         self.setWindowTitle("Experiment form")
-
-        # Get screen parameters
-        self.screen = QDesktopWidget().screenGeometry()
-        if self.screen.height() > 480:
-            self.setGeometry(0, 0, 675, 500)
-
-            # Move window to middle of screen
-            window_geometry = self.frameGeometry()
-            centerpoint = QDesktopWidget().availableGeometry().center()
-            window_geometry.moveCenter(centerpoint)
-            self.move(window_geometry.topLeft())
-        else:
-            self.setGeometry(
-                self.screen.x(),
-                self.screen.y(),
-                self.screen.width(),
-                self.screen.height() - TOOLBAR_OFFSET,
-            )
-
+        self.setGeometry(0, 0, 675, 500)
         self.setWindowIcon(QIcon(ICON_PATH))
 
         # Set up layout + widget
@@ -150,6 +131,12 @@ class FormGUI(QDialog):
         self.operator_val.setFocus()
         self.start_btn.setDefault(True)
 
+        # Move window to middle of screen
+        window_geometry = self.frameGeometry()
+        centerpoint = QDesktopWidget().availableGeometry().center()
+        window_geometry.moveCenter(centerpoint)
+        self.move(window_geometry.topLeft())
+
     def unfreeze_buttons(self):
         self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
 
@@ -162,15 +149,15 @@ class FormGUI(QDialog):
         # Enable [x] button
         self.setWindowFlag(Qt.WindowCloseButtonHint, True)
 
-        # Enable dropdown menus
-        self.flowrate_val.setEnabled(True)
-        self.site_val.setEnabled(True)
-
         # Enable text boxes
-        self.operator_val.setEnabled(True)
-        self.participant_val.setEnabled(True)
-        self.flowcell_val.setEnabled(True)
-        self.notes_val.setEnabled(True)
+        self.operator_val.setDisabled(False)
+        self.participant_val.setDisabled(False)
+        self.flowcell_val.setDisabled(False)
+        self.notes_val.setDisabled(False)
+
+        # Enable dropdown menus
+        self.flowrate_val.setDisabled(False)
+        self.site_val.setDisabled(False)
 
     def get_form_input(self) -> dict:
         # Match keys with EXPERIMENT_METADATA_KEYS from processing_constants.py

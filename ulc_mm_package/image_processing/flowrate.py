@@ -1,10 +1,7 @@
-import multiprocessing as mp
-from typing import cast, List, Tuple
-
-import cv2
+from typing import Tuple
 import numpy as np
+import cv2
 
-from ulc_mm_package.hardware import multiprocess_scope_routine as msr
 from ulc_mm_package.image_processing.processing_constants import CORRELATION_THRESH
 
 
@@ -24,7 +21,7 @@ class FlowRateEstimator:
         coeff_of_var_thresh: float = 0.8,
     ):
         """A class for estimating the flow rate of cells using a 2D cross-correlation.
-        The class holds two images at a time in `frame_a` and `frame_b`. To use this class,
+        The class holds two images at a time in `frame_storage`. To use this class,
         a user needs only to provide a single image at a time. Every two images,
         the class calculates the displacement between those two.
 
@@ -54,25 +51,9 @@ class FlowRateEstimator:
 
         self.dx = [0] * num_image_pairs
         self.dy = [0] * num_image_pairs
-        self.timestamps: List[float] = [0.0, 0.0]
+        self.timestamps = [0, 0]
         self.img_height, self.img_width = img_height, img_width
-
-        # for multi-proc
-        self.multiproc_interface = msr.MultiProcFunc.from_arg_definitions(
-            get_flowrate_with_cross_correlation,
-            work_fn_inputs=[
-                msr.get_ctype_image_defn((img_height, img_width)),
-                msr.get_ctype_image_defn((img_height, img_width)),
-            ],
-            work_fn_outputs=[
-                msr.get_ctype_float_defn(),
-                msr.get_ctype_float_defn(),
-                msr.get_ctype_float_defn(),
-            ],
-        )
-
-        self.frame_a, self.frame_b = self.multiproc_interface._input_ctypes
-
+        self.frame_storage = np.zeros((img_height, img_width, 2), dtype=np.uint8)
         self._frame_counter = 0
         self._calc_idx = 0
         self.scale_factor = scale_factor
@@ -81,7 +62,7 @@ class FlowRateEstimator:
 
     def _getAverage(self) -> Tuple[float, float]:
         """Return the mean of the dx and dy displacement arrays"""
-        return cast(Tuple[float, float], (np.average(self.dx), np.average(self.dy)))
+        return (np.average(self.dx), np.average(self.dy))
 
     def _getStandardDeviation(self) -> Tuple[float, float]:
         """Return the standard deviation of the dx and dy displacement arrays"""
@@ -110,10 +91,11 @@ class FlowRateEstimator:
 
     def reset(self) -> None:
         """Reset idx and failed correlations counter."""
+
         self._calc_idx = 0
         self.failed_corr_counter = 0
 
-    def _addImage(self, img_arr: np.ndarray, timestamp: float):
+    def _addImage(self, img_arr: np.ndarray, timestamp: int):
         """Internal function - add image to the storage with the given timestamp.
 
         Parameters
@@ -123,18 +105,18 @@ class FlowRateEstimator:
         timestamp : int
             Timestamp of when the image was taken (units left to the user)
         """
-        if self._frame_counter == 0:
-            self.frame_a.set(img_arr)
-        else:
-            self.frame_b.set(img_arr)
-
+        self.frame_storage[:, :, self._frame_counter] = img_arr
         self.timestamps[self._frame_counter] = timestamp
         self._frame_counter = (self._frame_counter + 1) % 2
 
     def _calculatePairDisplacement(self):
         if self._frame_counter == 0 and not self.isFull():
-            dx, dy, confidence = self.multiproc_interface._func_call()
 
+            dx, dy, confidence = getFlowrateWithCrossCorrelation(
+                self.frame_storage[:, :, 0],
+                self.frame_storage[:, :, 1],
+                self.scale_factor,
+            )
             time_diff = self.timestamps[1] - self.timestamps[0]
             if self.isValidDisplacement(dx, dy, confidence):
                 self.dx[self._calc_idx] = (dx / time_diff) / (
@@ -165,7 +147,7 @@ class FlowRateEstimator:
         """
         return self._calc_idx >= len(self.dx)
 
-    def addImageAndCalculatePair(self, img: np.ndarray, timestamp: float):
+    def addImageAndCalculatePair(self, img: np.ndarray, timestamp: int):
         """A convenience function to add an image and perform a displacement calculation.
 
         `_calculatePairDisplacement` only runs if two images have been past since the last calculation.
@@ -230,7 +212,7 @@ def getTemplateRegion(
     return img[ys:yf, xs:xf], (xs, xf), (ys, yf)
 
 
-def get_flowrate_with_cross_correlation(
+def getFlowrateWithCrossCorrelation(
     prev_img: np.ndarray,
     next_img: np.ndarray,
     scale_factor: int = 10,
@@ -239,7 +221,8 @@ def get_flowrate_with_cross_correlation(
     temp_x2_perc: float = 0.45,
     temp_y2_perc: float = 0.85,
     debug: bool = False,
-) -> Tuple[float, float, float]:
+) -> Tuple[float, float]:
+
     """Find the displacement of a subregion of an image with another, temporally adjacent, image.
 
     Parameters
@@ -299,7 +282,7 @@ def get_flowrate_with_cross_correlation(
             dy,
         )
 
-    return float(dx), float(dy), float(max_val)
+    return dx, dy, max_val
 
 
 def plot_cc(im1, im2, im1_subregion, template_result, xy1, xy2, max_x, max_y, dx, dy):

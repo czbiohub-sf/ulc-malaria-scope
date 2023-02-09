@@ -26,20 +26,27 @@ class PIM522RotaryEncoder:
             If the encoder is spun quickly however, this number may be larger.
         """
 
-    def close(self):
-        ...
 
-    def disableInterrupt(self):
-        ...
+if __name__ == "__main__":
 
-    def enableInterrupt(self):
-        ...
+    def hi(dir: int):
+        print(f"Hi: {dir}")
 
-    def setInterruptCallback(self, callback_func: Callable):
-        ...
+    def bye(dir: int):
+        print(f"Bye: {dir}")
 
-    def getCount(self):
-        ...
+    enc = PIM522RotaryEncoder(callback_func=hi)
+    try:
+        from time import sleep
 
-    def setColor(self, r, g, b):
-        ...
+        while True:
+            if enc.getCount() > 300:
+                enc.setColor(255, 0, 0)
+            elif enc.getCount() > 200:
+                enc.setColor(0, 255, 0)
+            elif enc.getCount() > 0:
+                enc.setColor(0, 0, 255)
+            sleep(1 / 30)
+    except KeyboardInterrupt:
+        enc.setColor(0, 0, 0)
+        quit()

@@ -1,18 +1,16 @@
 import os
+from datetime import datetime
 import cv2
 import numpy as np
-
 from time import sleep
-from typing import cast
-from datetime import datetime
 
-# FIXME no stars!
 from ulc_mm_package.image_processing.focus_metrics import *
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
 
 def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=None):
+
     if save_loc != None:
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")
@@ -82,7 +80,7 @@ def takeZStackCoroutine(
     # Do a 1um sweep closer to where the true focus is
     focus_metrics_fine = []
     step_counter = 0
-    best_focus_position: int = cast(int, np.argmax(focus_metrics)) * steps_per_coarse
+    best_focus_position = np.argmax(focus_metrics) * steps_per_coarse
     start = best_focus_position - steps_per_coarse
     end = best_focus_position + steps_per_coarse
     start = start if start >= 0 else 0
@@ -97,9 +95,7 @@ def takeZStackCoroutine(
         if save_loc != None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         step_counter += steps_per_fine
-    best_focus_position: int = (
-        start + cast(int, np.argmax(focus_metrics_fine)) * steps_per_fine
-    )
+    best_focus_position = start + np.argmax(focus_metrics_fine) * steps_per_fine
     motor.move_abs(best_focus_position)
 
 
@@ -184,7 +180,6 @@ def symmetricZStackCoroutine(
                 f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack."
             )
             return
-
     min_pos = int(start_point - num_steps)
     max_pos = int(start_point + num_steps)
     min_pos = int(min_pos) if min_pos >= 0 else 0
@@ -192,10 +187,12 @@ def symmetricZStackCoroutine(
 
     motor.move_abs(min_pos)
     step_counter = min_pos
+    focus_metrics = []
 
     while step_counter < max_pos:
         for i in range(num_imgs):
             img = yield img
+            # focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
             if save_loc != None:
                 cv2.imwrite(save_dir + f"{motor.pos:03d}_{i:03d}.png", img)
 
@@ -203,5 +200,6 @@ def symmetricZStackCoroutine(
         step_counter += steps_per_image
         if step_counter > max_pos:
             break
-
     motor.move_abs(start_point)
+    # best_focus_position = int(min_pos + np.argmax(focus_metrics) * steps_per_image)
+    # motor.move_abs(best_focus_position)

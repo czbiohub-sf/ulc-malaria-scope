@@ -1,4 +1,3 @@
-# FIXME no stars!
 from ulc_mm_package.QtGUI.gui_constants import *
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
@@ -9,16 +8,12 @@ from ulc_mm_package.scope_constants import (
     SIMULATION,
 )
 from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
-
-# FIXME no stars!
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.hardware.scope_routines import (
     fastFlowRoutine,
     flowControlRoutine,
     autobrightnessRoutine,
 )
-
-# FIXME no stars!
 from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
@@ -762,7 +757,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             cam_temp = self.acquisitionThread.mscope.camera._getTemperature()
         except Exception as e:
             print(f"Unable to get camera temperature: {e}")
-        sens_temp, _ = self.acquisitionThread.mscope.ht_sensor.get_temp_and_humidity()
+        sens_temp = self.acquisitionThread.mscope.ht_sensor.getTemperature()
 
         self.lblTemperatures.setText(
             f"C: {cam_temp:.2f} CPU: {cpu.temperature:.2f} A: {sens_temp:.2f} (C)"
@@ -1110,6 +1105,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         )
 
         if retval == QtWidgets.QMessageBox.Ok:
+
             # Move syringe back and de-energize
             self.pneumatic_module.close()
 

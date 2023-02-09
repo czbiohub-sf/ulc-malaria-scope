@@ -11,8 +11,6 @@ Servo Motor Pololu HD-1810MG:
 
 from time import sleep, perf_counter
 from typing import Tuple
-import configparser
-from pathlib import Path
 import threading
 import logging
 
@@ -20,7 +18,6 @@ import pigpio
 import board
 import adafruit_mprls
 
-from ulc_mm_package.scope_constants import CONFIGURATION_FILE
 from ulc_mm_package.utilities.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_5V_PIN,
@@ -29,8 +26,6 @@ from ulc_mm_package.hardware.hardware_constants import (
     STALE_PRESSURE_VAL_TIME_S,
     MPRLS_RST,
     MPRLS_PWR,
-    DEFAULT_SYRINGE_MAX_DUTY_CYCLE,
-    DEFAULT_SYRINGE_MIN_DUTY_CYCLE,
 )
 from ulc_mm_package.hardware.dtoverlay_pwm import (
     dtoverlay_PWM,
@@ -38,7 +33,6 @@ from ulc_mm_package.hardware.dtoverlay_pwm import (
 )
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorNotInstantiated,
-    InvalidConfigurationParameters,
     SyringeInMotion,
     SyringeDirection,
     SyringeEndOfTravel,
@@ -71,10 +65,11 @@ class PneumaticModule:
         self.mprls_rst_pin = mprls_rst_pin
         self.mprls_pwr_pin = mprls_pwr_pin
 
-        self.min_duty_cycle, self.max_duty_cycle = self.get_config_params()
         self.min_step_size = (
-            self.max_duty_cycle - self.min_duty_cycle
+            0.23 - 0.16
         ) / 60  # empircally found the top/bottom vals, ~60 steps between min/max pressure
+        self.min_duty_cycle = 0.16
+        self.max_duty_cycle = 0.23
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
         self.polling_time_s = 3
@@ -120,43 +115,6 @@ class PneumaticModule:
         self._pi.stop()
         self.pwm.setDutyCycle(0)
         sleep(0.5)
-
-    def config_exists(self) -> bool:
-        """Check for the existence of a configuration file."""
-        if Path(CONFIGURATION_FILE).is_file():
-            return True
-        return False
-
-    def get_config_params(self) -> Tuple[float, float]:
-        """Returns minimum and maximum duty cycles for syringe position from the configuration file if it exists."""
-        if self.config_exists():
-            config = configparser.ConfigParser()
-            try:
-                assert (
-                    len(config.read(f"{CONFIGURATION_FILE}")) > 0
-                ), f"configparser failed to read file {CONFIGURATION_FILE}."
-                min_duty_cycle = float(config["SYRINGE"]["MIN_DUTY_CYCLE"])
-                max_duty_cycle = float(config["SYRINGE"]["MAX_DUTY_CYCLE"])
-                if (
-                    min_duty_cycle >= max_duty_cycle
-                    or min_duty_cycle < 0
-                    or max_duty_cycle > 1
-                ):
-                    raise InvalidConfigurationParameters(
-                        f"Invalid syringe duty cycle configuration parameters. Min: {min_duty_cycle}, Max: {max_duty_cycle}\n"
-                        f"Min must be >= 0 and less than max_duty_cycle. Max must be <=1.0"
-                    )
-                return min_duty_cycle, max_duty_cycle
-            except Exception as e:
-                self.logger.exception(
-                    f"Error encountered while reading syringe min/max from the config file, {CONFIGURATION_FILE}. Setting defaults instead.\nException: {e}"
-                )
-                return DEFAULT_SYRINGE_MIN_DUTY_CYCLE, DEFAULT_SYRINGE_MAX_DUTY_CYCLE
-        else:
-            self.logger.info(
-                f"{CONFIGURATION_FILE} was not found, using default values instead for syringe min/max duty cycle."
-            )
-            return DEFAULT_SYRINGE_MIN_DUTY_CYCLE, DEFAULT_SYRINGE_MAX_DUTY_CYCLE
 
     def getCurrentDutyCycle(self):
         return self.duty_cycle

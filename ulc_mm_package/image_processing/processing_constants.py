@@ -1,7 +1,6 @@
 import enum
 from ulc_mm_package.scope_constants import SIMULATION
 
-
 # ================ Flowrate options ================ #
 class FLOWRATE(enum.Enum):
     FAST = 15.15  # 2 frames per cell
