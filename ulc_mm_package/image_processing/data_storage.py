@@ -270,7 +270,6 @@ class DataStorage:
     def _unif_subsequence_distribution(
         max_val: int, subsequence_length: int, num_subsequences: int
     ) -> List[int]:
-
         """Generate a set number of uniformly distributed subsequences.
 
         Parameters

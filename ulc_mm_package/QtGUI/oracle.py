@@ -10,13 +10,17 @@ import socket
 import webbrowser
 import enum
 import logging
+import subprocess
 import numpy as np
 
-from os import listdir
+from os import (
+    listdir,
+    mkdir,
+    path,
+)
 from transitions import Machine
 from time import perf_counter, sleep
 from logging.config import fileConfig
-from os import path, mkdir
 from datetime import datetime
 
 from PyQt5.QtWidgets import (
@@ -46,6 +50,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     FLOWCELL_QC_FORM_LINK,
     ERROR_BEHAVIORS,
+    BLANK_INFOPANEL_VAL,
 )
 
 from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
@@ -327,8 +332,7 @@ class Oracle(Machine):
     def lid_open_pause_handler(self):
         if self.lid_handler_enabled and self.scopeop.state != "pause":
             self.scopeop.to_pause()
-            self.close_lid_display_message()
-            self.scopeop.unpause()
+            self.unpause()
 
     def general_pause_handler(
         self,
@@ -368,6 +372,12 @@ class Oracle(Machine):
             image=_IMAGE_RELOAD_PATH,
         )
         self.close_lid_display_message()
+        self.unpause()
+
+    def unpause(self):
+        self.close_lid_display_message()
+        self.liveview_window.update_flowrate(BLANK_INFOPANEL_VAL)
+        self.liveview_window.update_focus(BLANK_INFOPANEL_VAL)
         self.scopeop.unpause()
 
     def close_handler(self):
@@ -490,13 +500,13 @@ class Oracle(Machine):
         self.scopeop_thread.start()
         self.acquisition_thread.start()
 
-        self.form_window.show()
+        self.form_window.showMaximized()
 
     def _end_setup(self, *args):
         self.form_window.unfreeze_buttons()
 
     def _start_form(self, *args):
-        self.form_window.show()
+        self.form_window.showMaximized()
 
     def save_form(self):
         self.form_metadata = self.form_window.get_form_input()
@@ -518,6 +528,17 @@ class Oracle(Machine):
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
+        self.experiment_metadata["git_branch"] = (
+            subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"])
+            .decode("ascii")
+            .strip()
+        )
+        self.experiment_metadata["git_commit"] = (
+            subprocess.check_output(["git", "rev-parse", "HEAD"])
+            .decode("ascii")
+            .strip()
+        )
+
         self.scopeop.mscope.data_storage.createNewExperiment(
             self.ext_dir,
             "",
@@ -532,7 +553,10 @@ class Oracle(Machine):
         self.next_state()
 
     def _end_form(self, *args):
-        self.scopeop.lid_opened = self.scopeop.mscope.read_lim_sw()
+        if not SIMULATION:
+            self.scopeop.lid_opened = self.scopeop.mscope.read_lim_sw()
+        else:
+            self.scopeop.lid_opened = False
         self.form_window.close()
 
     def _start_liveview(self, *args):
@@ -554,7 +578,7 @@ class Oracle(Machine):
             )
 
         self.lid_handler_enabled = True
-        self.liveview_window.show()
+        self.liveview_window.showMaximized()
         self.scopeop.start()
 
     def _end_liveview(self, *args):
