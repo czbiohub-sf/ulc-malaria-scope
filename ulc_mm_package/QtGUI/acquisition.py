@@ -37,8 +37,6 @@ class Acquisition(QObject):
         self.img_timestamp = None
         self.mscope = None
 
-        self.img_gen = self.mscope.camera.yieldImages()
-
         self.period = ACQUISITION_PERIOD
 
     @pyqtSlot()
@@ -86,6 +84,7 @@ class Acquisition(QObject):
     @pyqtSlot(MalariaScope)
     def get_mscope(self, mscope: MalariaScope):
         self.mscope = mscope
+        self.img_gen = self.mscope.camera.yieldImages()
 
     def get_img(self):
         try:
