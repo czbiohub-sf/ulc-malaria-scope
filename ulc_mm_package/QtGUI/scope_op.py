@@ -603,7 +603,7 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.default_error.emit(
                 "Calibration failed",
-                "While attempting to ramp up the flow rate of the cells, something anomalous was detected by the flow control system.\nIf the flowrate looked normal to you, you can try re-running with the same sample. Otherwise, discard this flow cell and place a new one with fresh sample please.",
+                "While attempting to ramp up the flow rate of the cells, something anomalous was detected by the flow control system.\nIf the flow rate looked normal to you, you can try re-running with this same flow cell and sample. Otherwise, discard this flow cell and use a new one with fresh sample please.",
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
         except StopIteration as e:
