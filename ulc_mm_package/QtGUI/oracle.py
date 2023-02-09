@@ -563,7 +563,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
-            'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
+            '1. Insert flow cell\n\n2. Put the CAP module back on\n\n3. Close the lid\n\nClick "OK" once it is closed.',
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
@@ -572,7 +572,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Information,
                 "Starting run",
-                'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
+                "The lid has not been closed. Please close the lid to proceed.",
                 buttons=Buttons.OK,
                 image=_IMAGE_INSERT_PATH,
             )
