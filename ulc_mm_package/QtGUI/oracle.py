@@ -550,7 +550,9 @@ class Oracle(Machine):
                     .strip()
                 )
                 self.experiment_metadata["git_commit"] = (
-                    subprocess.check_output(["git", "rev-list", "--tags", "--max-count=1"])
+                    subprocess.check_output(
+                        ["git", "rev-list", "--tags", "--max-count=1"]
+                    )
                     .decode("ascii")
                     .strip()
                 )
