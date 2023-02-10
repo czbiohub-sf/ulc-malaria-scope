@@ -528,11 +528,16 @@ class Oracle(Machine):
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
-        self.experiment_metadata["git_branch"] = (
-            subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"])
-            .decode("ascii")
-            .strip()
-        )
+        try:
+            git_branch = (
+                subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"])
+                .decode("ascii")
+                .strip()
+            )
+        except subprocess.CalledProcessError:
+            git_branch = "detached head"
+
+        self.experiment_metadata["git_branch"] = git_branch
         self.experiment_metadata["git_commit"] = (
             subprocess.check_output(["git", "rev-parse", "HEAD"])
             .decode("ascii")
