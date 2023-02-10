@@ -537,6 +537,9 @@ class Oracle(Machine):
         except subprocess.CalledProcessError:
             git_branch = "detached head"
 
+
+
+
         self.experiment_metadata["git_branch"] = git_branch
         self.experiment_metadata["git_commit"] = (
             subprocess.check_output(["git", "rev-parse", "HEAD"])
