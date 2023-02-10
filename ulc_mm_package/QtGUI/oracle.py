@@ -528,16 +528,36 @@ class Oracle(Machine):
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
 
-        self.experiment_metadata["git_branch"] = (
-            subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"])
-            .decode("ascii")
-            .strip()
-        )
-        self.experiment_metadata["git_commit"] = (
-            subprocess.check_output(["git", "rev-parse", "HEAD"])
-            .decode("ascii")
-            .strip()
-        )
+        # TODO try a cleaner solution than nested try-excepts?
+        # On Git branch
+        try:
+            self.experiment_metadata["git_branch"] = (
+                subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"])
+                .decode("ascii")
+                .strip()
+            )
+            self.experiment_metadata["git_commit"] = (
+                subprocess.check_output(["git", "rev-parse", "HEAD"])
+                .decode("ascii")
+                .strip()
+            )
+        except subprocess.CalledProcessError:
+            # On Git tag (ie. headless)
+            try:
+                self.experiment_metadata["git_branch"] = (
+                    subprocess.check_output(["git", "describe", "--tags"])
+                    .decode("ascii")
+                    .strip()
+                )
+                self.experiment_metadata["git_commit"] = (
+                    subprocess.check_output(
+                        ["git", "rev-list", "--tags", "--max-count=1"]
+                    )
+                    .decode("ascii")
+                    .strip()
+                )
+            except subprocess.CalledProcessError:
+                self.logger.info("No Git branch or tag found.")
 
         self.scopeop.mscope.data_storage.createNewExperiment(
             self.ext_dir,
