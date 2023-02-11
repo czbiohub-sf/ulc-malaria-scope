@@ -1,9 +1,11 @@
 import os
 import usb
-
-from typing import Tuple
+import pathlib
 from enum import auto, Enum
 from collections import namedtuple
+import socket
+
+curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
 
 
 # ================ Simulation constants ================ #
@@ -29,6 +31,9 @@ if SIMULATION:
             "Sample video for simulation mode could not be found. "
             f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
         )
+
+
+CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
 
 
 class MissingCameraError(Exception):
@@ -122,6 +127,8 @@ EXPERIMENT_METADATA_KEYS = [
     "camera",
     "exposure",
     "target_brightness",
+    "git_branch",
+    "git_commit",
 ]
 
 PER_IMAGE_METADATA_KEYS = [

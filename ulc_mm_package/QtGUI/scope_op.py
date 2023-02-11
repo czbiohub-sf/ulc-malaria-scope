@@ -101,9 +101,12 @@ class ScopeOp(QObject, NamedMachine):
         self.acquisition = Acquisition()
         self.img_signal = self.acquisition.update_scopeop
 
+        self.routines = Routines()
+
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
-        self._set_variables()
+
+        self._set_exp_variables()
 
         states = [
             {
@@ -118,7 +121,7 @@ class ScopeOp(QObject, NamedMachine):
             {
                 "name": "autobrightness_precells",
                 "display_name": "autobrightness (pre-cells)",
-                "on_enter": [self._send_state, self._start_autobrightness_precells],
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "pressure_check",
@@ -128,11 +131,12 @@ class ScopeOp(QObject, NamedMachine):
             {
                 "name": "cellfinder",
                 "on_enter": [self._send_state, self._start_cellfinder],
+                "on_exit": [self._end_cellfinder],
             },
             {
                 "name": "autobrightness_postcells",
                 "display_name": "autobrightness (post-cells)",
-                "on_enter": [self._send_state, self._start_autobrightness_postcells],
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "autofocus",
@@ -174,29 +178,32 @@ class ScopeOp(QObject, NamedMachine):
             trigger="unpause", source="pause", dest="autobrightness_precells"
         )
 
-    def _set_variables(self):
+    def _set_exp_variables(self):
         self.running = None
         self.lid_opened = None
 
-        self.autofocus_batch = []
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.target_flowrate = None
 
-        self.autobrightness_result = None
-        self.cellfinder_result = None
-        self.autofocus_result = None
-        self.fastflow_result = None
-
         self.count = 0
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
-        self.TH_time = None
         self.start_time = None
         self.accumulated_time = 0
 
+        self._set_routine_variables()
+
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
+
+    def _set_routine_variables(self):
+        self.autofocus_batch = []
+
+        self.autobrightness_result = None
+        self.cellfinder_result = None
+        self.autofocus_results = [None, None]
+        self.fastflow_result = None
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -270,7 +277,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def reset(self):
         # Reset variables
-        self._set_variables()
+        self._set_exp_variables()
 
         self.set_period.emit(ACQUISITION_PERIOD)
         self.reset_done.emit()
@@ -318,14 +325,16 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.warning("Did not return syringe to top-most position!")
         self.mscope.led.turnOff()
 
+        self._set_routine_variables()
+
     def _end_pause(self, *args):
         self.set_period.emit(ACQUISITION_PERIOD)
         self.mscope.led.turnOn()
 
         self.running = True
 
-    def _start_autobrightness_precells(self, *args):
-        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
+    def _start_autobrightness(self, *args):
+        self.autobrightness_routine = self.routines.autobrightnessRoutine(self.mscope)
         self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
@@ -333,8 +342,10 @@ class ScopeOp(QObject, NamedMachine):
     def _check_pressure_seal(self, *args):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
         try:
-            pdiff = checkPressureDifference(self.mscope)
-            self.logger.info(f"Pressure difference ok: {pdiff} hPa.")
+            pdiff = self.routines.checkPressureDifference(self.mscope)
+            self.logger.info(
+                f"Passed pressure check. Pressure difference = {pdiff} hPa."
+            )
             self.next_state()
         except PressureSensorBusy:
             self.logger.error(f"Unable to read value from the pressure sensor - {e}")
@@ -354,22 +365,18 @@ class ScopeOp(QObject, NamedMachine):
             )
 
     def _start_cellfinder(self, *args):
-        self.cellfinder_routine = find_cells_routine(self.mscope)
+        self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
         self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
-    def _start_autobrightness_postcells(self, *args):
-        self.update_msg.emit(
-            f"Moving motor to focus position at {self.cellfinder_result} steps."
-        )
-        self.logger.info(f"Moving motor to {self.cellfinder_result}.")
-        self.mscope.motor.move_abs(self.cellfinder_result)
-
-        self.autobrightness_routine = autobrightnessRoutine(self.mscope)
-        self.autobrightness_routine.send(None)
-
-        self.img_signal.connect(self.run_autobrightness)
+    def _end_cellfinder(self, *args):
+        if self.cellfinder_result != None:
+            self.update_msg.emit(
+                f"Moving motor to focus position at {self.cellfinder_result} steps."
+            )
+            self.logger.info(f"Moving motor to {self.cellfinder_result}.")
+            self.mscope.motor.move_abs(self.cellfinder_result)
 
     def _start_autofocus(self, *args):
         self.img_signal.connect(self.run_autofocus)
@@ -381,7 +388,7 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
             return
 
-        self.fastflow_routine = fastFlowRoutine(
+        self.fastflow_routine = self.routines.fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
         )
         self.fastflow_routine.send(None)
@@ -389,23 +396,24 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self, *args):
-        self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
+        self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
         self.PSSAF_routine.send(None)
 
-        self.flowcontrol_routine = flowControlRoutine(
+        self.flowcontrol_routine = self.routines.flowControlRoutine(
             self.mscope, self.target_flowrate, None
         )
         self.flowcontrol_routine.send(None)
 
-        self.density_routine = cell_density_routine()
+        self.density_routine = self.routines.cell_density_routine()
         self.density_routine.send(None)
 
-        self.count_parasitemia_routine = count_parasitemia_periodic_wrapper(self.mscope)
+        self.count_parasitemia_routine = (
+            self.routines.count_parasitemia_periodic_wrapper(self.mscope)
+        )
         self.count_parasitemia_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
-        self.TH_time = perf_counter()
         self.start_time = perf_counter()
         self.last_time = perf_counter()
 
@@ -527,14 +535,37 @@ class ScopeOp(QObject, NamedMachine):
                 self.img_signal.connect(self.run_autofocus)
         else:
             try:
-                self.autofocus_result = singleShotAutofocusRoutine(
-                    self.mscope, self.autofocus_batch
-                )
-                self.autofocus_batch = []
-                self.logger.info(
-                    f"Autofocus complete. Calculated focus error = {self.autofocus_result} steps."
-                )
-                self.next_state()
+                if self.autofocus_results[0] == None:
+                    self.autofocus_results[
+                        0
+                    ] = self.routines.singleShotAutofocusRoutine(
+                        self.mscope, self.autofocus_batch
+                    )
+                    self.logger.info(
+                        f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
+                    )
+                    self.autofocus_batch = []
+
+                    # Wait for motor to stop moving
+                    while self.mscope.motor.is_locked():
+                        sleep(0.1)
+
+                    # Extra delay, to prevent any jitter from motor motion
+                    sleep(0.5)
+
+                    if self.running:
+                        self.img_signal.connect(self.run_autofocus)
+                else:
+                    self.autofocus_results[
+                        1
+                    ] = self.routines.singleShotAutofocusRoutine(
+                        self.mscope, self.autofocus_batch
+                    )
+                    self.logger.info(
+                        f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
+                    )
+                    self.autofocus_batch = []
+                    self.next_state()
             except InvalidMove:
                 self.logger.error(
                     "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
@@ -574,7 +605,7 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.default_error.emit(
                 "Calibration failed",
-                "Too many recent low confidence xcorr calculations.",
+                "While attempting to ramp up the flow rate of the cells, something anomalous was detected by the flow control system.\nIf the flow rate looked normal to you, you can try re-running with this same flow cell and sample.\nOtherwise, discard this flow cell and use a new one with fresh sample please.",
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
         except StopIteration as e:
@@ -683,7 +714,9 @@ class ScopeOp(QObject, NamedMachine):
                     )
                     focus_err = None
 
-                    self.PSSAF_routine = periodicAutofocusWrapper(self.mscope, None)
+                    self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
+                        self.mscope, None
+                    )
                     self.PSSAF_routine.send(None)
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
@@ -697,7 +730,7 @@ class ScopeOp(QObject, NamedMachine):
                 )
                 flowrate = None
 
-                self.flowcontrol_routine = flowControlRoutine(
+                self.flowcontrol_routine = self.routines.flowControlRoutine(
                     self.mscope, self.target_flowrate, None
                 )
                 self.flowcontrol_routine.send(None)

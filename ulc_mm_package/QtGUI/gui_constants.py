@@ -1,5 +1,6 @@
 import enum
 
+from PyQt5.QtWidgets import QDesktopWidget
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 
@@ -18,6 +19,10 @@ class ERROR_BEHAVIORS(enum.Enum):
     PRECHECK = 1
     YN = 2
 
+
+# ================ Image display size ================ #
+IMG_DOWNSCALE = 2
+TOOLBAR_OFFSET = 80
 
 # ================ Infopanel values ================ #
 BLANK_INFOPANEL_VAL = "---"

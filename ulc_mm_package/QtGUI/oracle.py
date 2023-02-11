@@ -10,13 +10,17 @@ import socket
 import webbrowser
 import enum
 import logging
+import subprocess
 import numpy as np
 
-from os import listdir
+from os import (
+    listdir,
+    mkdir,
+    path,
+)
 from transitions import Machine
 from time import perf_counter, sleep
 from logging.config import fileConfig
-from os import path, mkdir
 from datetime import datetime
 
 from PyQt5.QtWidgets import (
@@ -496,13 +500,13 @@ class Oracle(Machine):
         self.scopeop_thread.start()
         self.acquisition_thread.start()
 
-        self.form_window.show()
+        self.form_window.showMaximized()
 
     def _end_setup(self, *args):
         self.form_window.unfreeze_buttons()
 
     def _start_form(self, *args):
-        self.form_window.show()
+        self.form_window.showMaximized()
 
     def save_form(self):
         self.form_metadata = self.form_window.get_form_input()
@@ -523,6 +527,37 @@ class Oracle(Machine):
             "exposure"
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
+
+        # TODO try a cleaner solution than nested try-excepts?
+        # On Git branch
+        try:
+            self.experiment_metadata["git_branch"] = (
+                subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"])
+                .decode("ascii")
+                .strip()
+            )
+            self.experiment_metadata["git_commit"] = (
+                subprocess.check_output(["git", "rev-parse", "HEAD"])
+                .decode("ascii")
+                .strip()
+            )
+        except subprocess.CalledProcessError:
+            # On Git tag (ie. headless)
+            try:
+                self.experiment_metadata["git_branch"] = (
+                    subprocess.check_output(["git", "describe", "--tags"])
+                    .decode("ascii")
+                    .strip()
+                )
+                self.experiment_metadata["git_commit"] = (
+                    subprocess.check_output(
+                        ["git", "rev-list", "--tags", "--max-count=1"]
+                    )
+                    .decode("ascii")
+                    .strip()
+                )
+            except subprocess.CalledProcessError:
+                self.logger.info("No Git branch or tag found.")
 
         self.scopeop.mscope.data_storage.createNewExperiment(
             self.ext_dir,
@@ -548,7 +583,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting run",
-            'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
+            '1. Insert flow cell\n\n2. Put the CAP module back on\n\n3. Close the lid\n\nClick "OK" once it is closed.',
             buttons=Buttons.OK,
             image=_IMAGE_INSERT_PATH,
         )
@@ -557,13 +592,13 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Information,
                 "Starting run",
-                'Insert flow cell and replace CAP module now. Make sure to close the lid after.\n\nClick "OK" once it is closed.',
+                "The lid has not been closed. Please close the lid to proceed.",
                 buttons=Buttons.OK,
                 image=_IMAGE_INSERT_PATH,
             )
 
         self.lid_handler_enabled = True
-        self.liveview_window.show()
+        self.liveview_window.showMaximized()
         self.scopeop.start()
 
     def _end_liveview(self, *args):
