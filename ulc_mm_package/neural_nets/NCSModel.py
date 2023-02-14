@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 
-import sys
 import time
 import threading
 import numpy as np
@@ -8,8 +7,7 @@ import operator as op
 import numpy.typing as npt
 
 from copy import copy
-from contextlib import contextmanager
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 from functools import partial
 from collections import namedtuple
@@ -20,7 +18,6 @@ from typing import (
     Optional,
     Union,
     TypeVar,
-    cast,
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
@@ -31,7 +28,6 @@ from openvino.runtime import (
     Core,
     Layout,
     Type,
-    Shape,
     InferRequest,
     AsyncInferQueue,
     Tensor,
@@ -192,7 +188,7 @@ class NCSModel:
         """
         input_tensor = self._format_image_to_tensor(input_img)
 
-        f = self._executor.submit(
+        self._executor.submit(
             self.asyn_infer_queue.start_async,
             inputs={0: input_tensor},
             userdata=id,

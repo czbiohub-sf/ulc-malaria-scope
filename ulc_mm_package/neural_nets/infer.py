@@ -1,8 +1,6 @@
-import os
 import cv2
 import sys
 import zarr
-import time
 import signal
 import argparse
 
@@ -14,7 +12,6 @@ from PIL import Image, ImageDraw
 from pathlib import Path
 
 from ulc_mm_package.scope_constants import CameraOptions
-from ulc_mm_package.neural_nets.NCSModel import NCSModel
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 
@@ -119,8 +116,8 @@ def asyn_infer(model, image_loader: ImageLoader):
 def calculate_allan_dev(data, fname):
     ds = at.Dataset(data=data)
     res = ds.compute("tdev")
-    taus = res["taus"]
-    stat = res["stat"]
+    res["taus"]
+    res["stat"]
 
     pl = at.Plot()
     pl.plot(ds, errorbars=True, grid=True)
