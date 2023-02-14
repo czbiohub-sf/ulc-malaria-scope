@@ -244,7 +244,7 @@ class NCSModel:
         return [maybe_list]
 
     def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
-       return np.expand_dims(img, (0, 3))
+        return np.expand_dims(img, (0, 3))
 
     def shutdown(self):
         self._executor.shutdown(wait=True)
