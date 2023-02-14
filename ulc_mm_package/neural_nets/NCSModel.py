@@ -31,6 +31,7 @@ from openvino.runtime import (
     Core,
     Layout,
     Type,
+    Shape,
     InferRequest,
     AsyncInferQueue,
     Tensor,
@@ -166,6 +167,9 @@ class NCSModel:
         self._temp_infer_queue.set_callback(partial(self._cb, res))
 
         for i, image in enumerate(self._as_sequence(input_imgs)):
+            # do we even need to format to tensor? How much slower will this be?
+            # why the HECK does Tensor try to __str__ the dtype, and why does
+            # that oepration take like 18ms????
             tensor = self._format_image_to_tensor(image)
             self._temp_infer_queue.start_async({0: tensor}, userdata=i)
 
@@ -243,7 +247,8 @@ class NCSModel:
         return [maybe_list]
 
     def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
-        return Tensor(np.expand_dims(img, (0, 3)), shared_memory=False)
+       ed = np.expand_dims(img, (0, 3))
+       return Tensor(ed, Shape(ed.shape))
 
     def shutdown(self):
         self._executor.shutdown(wait=True)
