@@ -116,8 +116,6 @@ def asyn_infer(model, image_loader: ImageLoader):
 def calculate_allan_dev(data, fname):
     ds = at.Dataset(data=data)
     res = ds.compute("tdev")
-    res["taus"]
-    res["stat"]
 
     pl = at.Plot()
     pl.plot(ds, errorbars=True, grid=True)
