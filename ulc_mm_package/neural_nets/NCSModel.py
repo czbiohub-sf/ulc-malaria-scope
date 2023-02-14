@@ -81,7 +81,6 @@ class NCSModel:
         self.model = self._compile_model(model_path, camera_selection)
 
         self.asyn_result_lock = threading.Lock()
-        self.futures_lock = threading.Lock()
 
         # used for syn
         self._temp_infer_queue = AsyncInferQueue(self.model)
@@ -92,7 +91,6 @@ class NCSModel:
         self._asyn_results: List[AsyncInferenceResult] = []
 
         self._executor = ThreadPoolExecutor(max_workers=1)
-        self._futures: List[Future] = []
 
     def _compile_model(
         self,
@@ -198,8 +196,6 @@ class NCSModel:
             inputs={0: input_tensor},
             userdata=id,
         )
-        with lock_timeout(self.futures_lock):
-            self._futures.append(f)
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
@@ -212,18 +208,6 @@ class NCSModel:
         # openvino sets timeout to indefinite on timeout < 0, not timeout == None
         if timeout is None:
             timeout = -1
-
-        futures = []
-        with lock_timeout(self.futures_lock, timeout=timeout):
-            for f in self._futures:
-                if not f.done():
-                    futures.append(f)
-                else:
-                    # this will return a result, or will raise an exception
-                    # if the future encountered one
-                    f.result()
-
-            self._futures = futures
 
         res = None
 
