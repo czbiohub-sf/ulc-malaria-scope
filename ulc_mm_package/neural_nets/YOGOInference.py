@@ -4,7 +4,6 @@
 import numpy as np
 import numpy.typing as npt
 
-from collections import namedtuple
 from typing import Any, List, Union
 
 
@@ -17,7 +16,6 @@ from ulc_mm_package.neural_nets.NCSModel import (
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
-    YOGO_CLASS_LIST,
 )
 
 
