@@ -55,7 +55,6 @@ class FlowRateEstimator:
 
         self.timestamps: List[float] = [0.0, 0.0]
         self.img_height, self.img_width = img_height, img_width
-        self._is_first_calc = True
 
         # for multi-proc
         self.multiproc_interface = msr.MultiProcFunc.from_arg_definitions(
@@ -73,18 +72,17 @@ class FlowRateEstimator:
 
         self.frame_a, self.frame_b = self.multiproc_interface._input_ctypes
 
-        self._primed = False
+        self._prev_img: np.ndarray = None
         self.scale_factor = scale_factor
 
     def reset(self) -> None:
         """Reset initialization booleans."""
 
-        self._primed = False
-        self._is_first_calc = True
+        self._prev_img: np.ndarray = None
 
     def is_primed(self) -> bool:
         """Check whether the estimator is ready to return a value."""
-        return self._primed and (not self._is_first_calc)
+        return self._prev_img is not None
 
     def _add_image(self, img_arr: np.ndarray, timestamp: float) -> None:
         """Internal function - add image to the storage with the given timestamp.
@@ -97,19 +95,19 @@ class FlowRateEstimator:
             Timestamp of when the image was taken (units left to the user)
         """
 
-        if not self._primed:
+        # Initialization
+        if self._prev_img is None:
             self.frame_a.set(img_arr)
-            self.timestamps[0] = timestamp
-            self._primed = True
+            self.timestamps[1] = timestamp
+            self._prev_img = img_arr
         else:
-            # Account for very first calculation, when the second frame hasn't been set yet
-            if not self._is_first_calc:
-                self.frame_a.set(self.frame_b.get())
-                self.timestamps[0] = self.timestamps[1]
-            else:
-                self._is_first_calc = False
+            self.frame_a.set(self._prev_img)
+            self.timestamps[0] = self.timestamps[1]
+
             self.frame_b.set(img_arr)
             self.timestamps[1] = timestamp
+
+            self._prev_img = img_arr
 
     @staticmethod
     def _convert_to_px_per_unit_time(displacement: float, tdiff: float) -> float:
@@ -251,7 +249,7 @@ def get_flowrate_with_cross_correlation(
 
     # Select the subregion within the first image by defining which quantiles to use
     im1_ds_subregion, x_offset, y_offset = get_template_region(
-        im1_ds, 0.05, 0.05, 0.85, 0.45
+        im1_ds, temp_x1_perc, temp_y1_perc, temp_x2_perc, temp_y2_perc
     )
 
     # Run a normalized cross correlation between the image to search and subregion
