@@ -51,7 +51,7 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
         for count, value in enumerate(duty_vec):
             pwm.setDutyCycle(value)
             time.sleep(0.25)
-            press_vec[count] = int(mpr.pressure)
+            press_vec[count] = int(mpr.getPressureMaxReadAttempts())
             system("clear")
             print("Sweeping: duty = " + str(value) + "%")
             print("Pressure = " + str(press_vec[count]) + " mbar")
@@ -103,10 +103,10 @@ def create_calibration_file(cal) -> None:
         f.write("MAX_DUTY_CYCLE = " + str(cal["duty_upper_bound"]) + "\n")
 
 
-def init(mpr, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
+def init(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
     # Initial pressure reading
     p_read = int(
-        mpr.pressure,
+        mpr.getPressureMaxReadAttempts(),
     )
     print("Starting pressure -", p_read, "mb")
 
@@ -116,7 +116,7 @@ def init(mpr, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
     input("Press enter to start after loading a sealed consumable ")
 
 
-def stabilize_pressure(mpr, pwm: dtoverlay_PWM, p_set) -> None:
+def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
     # Stabilizes pressure using proportional feedback
     # Assumes the user installs a flow cell or otherwise seals
     # the flow path into a dead end.
@@ -130,7 +130,7 @@ def stabilize_pressure(mpr, pwm: dtoverlay_PWM, p_set) -> None:
         # CTRL-C out
         while True:
             p_read = int(
-                mpr.pressure,
+                mpr.getPressureMaxReadAttempts(),
             )
             system("clear")
             print("CTRL-C to exit...")
