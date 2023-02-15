@@ -10,7 +10,7 @@ from collections import namedtuple
 curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
 
 # ================ Locality constant ================ #
-WIFI_NAME = subprocess.check_output(['sudo', 'iwgetid']).decode().split('"')[1]
+WIFI_NAME = subprocess.check_output(["sudo", "iwgetid"]).decode().split('"')[1]
 LOCAL = WIFI_NAME == "HUBdev"
 
 print(f"Local run: {LOCAL}")
