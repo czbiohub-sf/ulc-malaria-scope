@@ -14,6 +14,7 @@ from typing import Tuple
 import configparser
 from pathlib import Path
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import logging
 
 import pigpio
@@ -67,6 +68,7 @@ class PneumaticModule:
     ):
         self.logger = logging.getLogger(__name__)
         self._pi = pi if pi != None else pigpio.pi()
+        self.executor = ThreadPoolExecutor(max_workers=1)
         self.servo_pin = servo_pin
         self.mprls_rst_pin = mprls_rst_pin
         self.mprls_pwr_pin = mprls_pwr_pin
@@ -193,21 +195,21 @@ class PneumaticModule:
                 while self.duty_cycle >= duty_cycle + self.min_step_size:
                     self.decreaseDutyCycle()
 
-    def threadedDecreaseDutyCycle(self, *args, **kwargs):
+    def threadedDecreaseDutyCycle(self):
         if not SYRINGE_LOCK.locked():
-            threading.Thread(target=self.decreaseDutyCycle, *args, **kwargs).start()
+            self.executor.submit(self.decreaseDutyCycle)
         else:
             raise SyringeInMotion
 
-    def threadedIncreaseDutyCycle(self, *args, **kwargs):
+    def threadedIncreaseDutyCycle(self):
         if not SYRINGE_LOCK.locked():
-            threading.Thread(target=self.increaseDutyCycle, *args, **kwargs).start()
+            self.executor.submit(self.increaseDutyCycle)
         else:
             raise SyringeInMotion
 
     def threadedSetDutyCycle(self, *args, **kwargs):
         if not SYRINGE_LOCK.locked():
-            threading.Thread(target=self.setDutyCycle, args=args, kwargs=kwargs).start()
+            self.executor.submit(self.setDutyCycle, *args, **kwargs)
         else:
             raise SyringeInMotion
 
