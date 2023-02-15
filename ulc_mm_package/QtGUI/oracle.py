@@ -38,7 +38,6 @@ from ulc_mm_package.scope_constants import (
     SSD_DIR,
     VERBOSE,
     SIMULATION,
-    LOCAL,
     SSD_NAME,
 )
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -604,10 +603,6 @@ class Oracle(Machine):
 
     def _end_liveview(self, *args):
         self.liveview_window.close()
-
-        if LOCAL:
-            self.logger.info("Opening survey.")
-            webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
 
     def _start_intermission(self, msg):
         self.display_message(
