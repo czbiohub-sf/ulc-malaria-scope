@@ -7,6 +7,10 @@ import socket
 
 curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
 
+# ================ Local constant ================ #
+MS_LOCAL_FLAG = int(os.environ.get("MS_LOCAL", 0))
+LOCAL = MS_LOCAL_FLAG > 0
+
 
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
