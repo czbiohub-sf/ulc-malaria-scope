@@ -188,7 +188,6 @@ class Routines:
         flow_val = None
         h, w = img.shape
         flow_controller = FlowController(mscope.pneumatic_module, h, w)
-        flow_controller.reset()
         flow_controller.set_target_flowrate(target_flowrate)
         if ramp:
             flow_controller.set_alpha(

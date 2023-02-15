@@ -3,10 +3,7 @@ import logging
 
 import numpy as np
 
-from ulc_mm_package.image_processing.processing_modules import (
-    ewma_update_step,
-    get_adjustment_period_ewma,
-)
+from ulc_mm_package.image_processing.processing_modules import EWMAFiltering
 from ulc_mm_package.image_processing.processing_constants import (
     FLOW_CONTROL_EWMA_ALPHA,
     TOL_PERC,
@@ -111,11 +108,12 @@ class FlowController:
 
         self.pneumatic_module: PneumaticModule = pneumatic_module
         self.flowrate: Optional[float] = None
+        self.alpha: float = FLOW_CONTROL_EWMA_ALPHA
+        self.EWMA = EWMAFiltering(self.alpha)
         self.counter: int = 0
         self.prev_adjustment_stamp: int = 0
         self.failed_corr_counter: int = 0
-        self.alpha: float = FLOW_CONTROL_EWMA_ALPHA
-        self.feedback_delay_frames = get_adjustment_period_ewma(self.alpha)
+        self.feedback_delay_frames = self.EWMA.get_adjustment_period_ewma()
         self.fre: FlowRateEstimator = FlowRateEstimator(h, w)
 
         self.first_image: bool = True
@@ -133,7 +131,8 @@ class FlowController:
     def set_alpha(self, alpha: float) -> None:
         """Set the alpha value for EWMA filtering"""
         self.alpha = alpha
-        self.feedback_delay_frames = get_adjustment_period_ewma(self.alpha)
+        self.EWMA.set_alpha(self.alpha)
+        self.feedback_delay_frames = self.EWMA.get_adjustment_period_ewma(self.alpha)
 
     def _add_image_and_update_flowrate(self, img: np.ndarray, time: float) -> None:
         """Adds an image to the FlowRateEsimator and updates the flowrate measurement.
@@ -154,8 +153,9 @@ class FlowController:
         if self.fre.is_primed():
             if self.flowrate is None:
                 self.flowrate = dy
+                self.EWMA.set_init_val(self.flowrate)
             else:
-                self.update_flowrate(dy)
+                self.flowrate = self.EWMA.update_and_get_val(dy)
             self.counter += 1
 
             if xcorr_coeff < CORRELATION_THRESH:
@@ -288,6 +288,3 @@ class FlowController:
                 self.pneumatic_module.increaseDutyCycle()
             except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate(self.flowrate)
-
-    def update_flowrate(self, new_flowrate_dy: float):
-        self.flowrate = ewma_update_step(self.flowrate, new_flowrate_dy, self.alpha)
