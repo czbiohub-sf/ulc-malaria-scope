@@ -5,23 +5,23 @@
 import argparse
 import socket
 from os import system
-from typing import List
-import RPi.GPIO as GPIO
 import board
-import busio
 import time
 import adafruit_mprls
-import numpy as np
-import numpy.typing as npt
-import matplotlib.pyplot as plt
 
-PWM_PIN = 12
+import numpy as np
+import matplotlib.pyplot as plt
+import pigpio
+
+from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
+from ulc_mm_package.hardware.real.pneumatic_module import AdafruitMPRLS
+
 PWM_FREQ = 100
 # 20.5 is 1.5mm off end, 21.2 is fully empty. 15.2 is the physical limit before the servo arm crashes, therefore 18.2 is the center
-DUTY_MAX = 21.2
-DUTY_MIN = 15.5
-DUTY_MIN_WIDE = 14
-DUTY_MAX_WIDE = 22.5
+DUTY_MAX = 21.2 / 100
+DUTY_MIN = 15.5 / 100
+DUTY_MIN_WIDE = 14 / 100
+DUTY_MAX_WIDE = 22.5 / 100
 P_GAIN = 0.001
 P_SET_DEF = 950
 LOOP_DELAY = 0.1
@@ -41,7 +41,7 @@ def init_argparse() -> argparse.ArgumentParser:
     return parser
 
 
-def calibrate_range(mpr, pwm) -> None:
+def calibrate_range(pi: pigpio.pi, mpr, pwm: dtoverlay_PWM) -> None:
     # Sweeps the PWM duty ratio over a wider range in order
     # to generate a pressure vs. duty ratio plot for calibration purposes
 
@@ -52,7 +52,7 @@ def calibrate_range(mpr, pwm) -> None:
         init(mpr, pwm, initial=DUTY_MAX_WIDE)
 
         for count, value in enumerate(duty_vec):
-            pwm.ChangeDutyCycle(value)
+            pwm.setDutyCycle(value)
             time.sleep(0.25)
             press_vec[count] = int(mpr.pressure)
             system("clear")
@@ -62,9 +62,13 @@ def calibrate_range(mpr, pwm) -> None:
         pass
 
     finally:
-        pwm.ChangeDutyCycle(DUTY_MAX)
+        pwm.setDutyCycle(DUTY_MAX)
         time.sleep(0.5)
-        GPIO.cleanup()
+
+        # Close pressure sensor
+        pi.write(MPRLS_RST, 0)
+        time.sleep(0.005)
+        pi.write(MPRLS_PWR, 1)
 
     p_max = max(press_vec)
     p_min = min(press_vec)
@@ -98,7 +102,6 @@ def calibrate_range(mpr, pwm) -> None:
 
 
 def create_calibration_file(cal) -> None:
-
     host = socket.gethostname()
     with open(host + "-config.ini", "w") as f:
         f.write("[SYRINGE]" + "\n")
@@ -106,8 +109,7 @@ def create_calibration_file(cal) -> None:
         f.write("MAX_DUTY_CYCLE = " + str(cal["duty_upper_bound"]) + "\n")
 
 
-def init(mpr, pwm, initial=DUTY_MAX) -> None:
-
+def init(mpr, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
     # Initial pressure reading
     p_read = int(
         mpr.pressure,
@@ -115,12 +117,12 @@ def init(mpr, pwm, initial=DUTY_MAX) -> None:
     print("Starting pressure -", p_read, "mb")
 
     # Max is no vacuum. Set initially to max
-    pwm.start(DUTY_MAX)
+    pwm.setDutyCycle(initial)
 
     input("Press enter to start after loading a sealed consumable ")
 
 
-def stabilize_pressure(mpr, pwm, p_set) -> None:
+def stabilize_pressure(mpr, pwm: dtoverlay_PWM, p_set) -> None:
     # Stabilizes pressure using proportional feedback
     # Assumes the user installs a flow cell or otherwise seals
     # the flow path into a dead end.
@@ -129,7 +131,6 @@ def stabilize_pressure(mpr, pwm, p_set) -> None:
     duty = DUTY_MAX
 
     try:
-
         init(mpr, pwm)
 
         # CTRL-C out
@@ -146,30 +147,27 @@ def stabilize_pressure(mpr, pwm, p_set) -> None:
             duty = min(duty, DUTY_MAX)
 
             print("Duty = " + str(duty) + "%")
-            pwm.ChangeDutyCycle(duty)
+            pwm.setDutyCycle(duty)
             time.sleep(LOOP_DELAY)
 
     except KeyboardInterrupt:
         pass
 
     finally:
-        pwm.ChangeDutyCycle(DUTY_MAX)
+        pwm.setDutyCycle(DUTY_MAX)
         time.sleep(0.5)
-        GPIO.cleanup()
 
 
 def main() -> None:
     parser = init_argparse()
     args = parser.parse_args()
 
-    # Connect to sensor over I2C
-    i2c = busio.I2C(board.SCL, board.SDA)
-    mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
+    # Instantiate pressure sensor
+    mpr = AdafruitMPRLS()
 
     # Set up PWM output to servo
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(PWM_PIN, GPIO.OUT)  # was 18
-    pwm = GPIO.PWM(PWM_PIN, PWM_FREQ)  # was port18, 100hz
+    pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
+    pwm.setFreq(PWM_FREQ)
 
     if args.action[0] == "stabilize":
         # Simply stabilize pressure at the setpoint
@@ -182,7 +180,7 @@ def main() -> None:
 
     elif args.action[0] == "sweep":
         # Perform a sweep of the PWM range, returning pressure vs. PWM duty ratio
-        duty, press = calibrate_range(mpr, pwm)
+        duty, press = calibrate_range(pi, mpr, pwm)
 
     else:
         print("Argument " + str(args.action[0] + " not recognized"))

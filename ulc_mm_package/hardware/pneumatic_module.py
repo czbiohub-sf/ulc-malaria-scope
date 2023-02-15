@@ -74,11 +74,6 @@ class PneumaticModule:
     PWM-driven Servo motor (Pololu HD-1810MG) to adjust the position of the syringe (thereby adjusting the pressure).
     """
 
-    def fastFlowAdjustment(
-        self, img: np.ndarray, timestamp: float
-    ) -> Union[Tuple[None, None], Tuple[float, float]]:
-        ...
-
     def getCurrentDutyCycle(self):
         ...
 
