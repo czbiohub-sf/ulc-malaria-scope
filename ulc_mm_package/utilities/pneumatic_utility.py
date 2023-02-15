@@ -4,14 +4,11 @@
 
 import argparse
 import socket
-from os import system
-import board
 import time
-import adafruit_mprls
+from os import system
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pigpio
 
 from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 from ulc_mm_package.hardware.real.pneumatic_module import AdafruitMPRLS
@@ -41,7 +38,7 @@ def init_argparse() -> argparse.ArgumentParser:
     return parser
 
 
-def calibrate_range(pi: pigpio.pi, mpr, pwm: dtoverlay_PWM) -> None:
+def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
     # Sweeps the PWM duty ratio over a wider range in order
     # to generate a pressure vs. duty ratio plot for calibration purposes
 
@@ -65,10 +62,7 @@ def calibrate_range(pi: pigpio.pi, mpr, pwm: dtoverlay_PWM) -> None:
         pwm.setDutyCycle(DUTY_MAX)
         time.sleep(0.5)
 
-        # Close pressure sensor
-        pi.write(MPRLS_RST, 0)
-        time.sleep(0.005)
-        pi.write(MPRLS_PWR, 1)
+        mpr.close()
 
     p_max = max(press_vec)
     p_min = min(press_vec)
@@ -180,7 +174,7 @@ def main() -> None:
 
     elif args.action[0] == "sweep":
         # Perform a sweep of the PWM range, returning pressure vs. PWM duty ratio
-        duty, press = calibrate_range(pi, mpr, pwm)
+        duty, press = calibrate_range(mpr, pwm)
 
     else:
         print("Argument " + str(args.action[0] + " not recognized"))
