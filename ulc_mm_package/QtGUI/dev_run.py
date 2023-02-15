@@ -12,11 +12,7 @@ from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
 
 # FIXME no stars!
 from ulc_mm_package.hardware.hardware_modules import *
-from ulc_mm_package.hardware.scope_routines import (
-    fastFlowRoutine,
-    flowControlRoutine,
-    autobrightnessRoutine,
-)
+from ulc_mm_package.hardware.scope_routines import Routines
 
 # FIXME no stars!
 from ulc_mm_package.image_processing.processing_modules import *
@@ -114,13 +110,15 @@ class AcquisitionThread(QThread):
         mscope._init_data_storage(fps_lim=30)
         self.data_storage = mscope.data_storage
 
+        # Routines
+        self.routines = Routines()
         self.flow_controller: FlowController = FlowController(
             self.pneumatic_module, 600, 800
         )  # default shell
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
         self.fast_flow_enabled = False
-        self.autobrightness = autobrightnessRoutine(mscope)
+        self.autobrightness = self.routines.autobrightnessRoutine(mscope)
         self.autobrightness.send(None)
         self.autobrightness_on = False
 
@@ -341,7 +339,9 @@ class AcquisitionThread(QThread):
         self.target_flowrate = val
 
     def initializeActiveFlowControl(self, img: np.ndarray):
-        self.fastFlowRoutine = fastFlowRoutine(self.mscope, img, self.target_flowrate)
+        self.fastFlowRoutine = self.routines.fastFlowRoutine(
+            self.mscope, img, self.target_flowrate
+        )
         self.fastFlowRoutine.send(None)
         self.initializeFlowControl = False
         self.fast_flow_enabled = True
@@ -362,7 +362,7 @@ class AcquisitionThread(QThread):
                     self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
-                self.flowControl = flowControlRoutine(
+                self.flowControl = self.routines.flowControlRoutine(
                     self.mscope, self.target_flowrate, img
                 )
                 self.flowControl.send(None)
@@ -799,7 +799,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self._enableLEDGUIElements()
 
     def btnAutobrightnessHandler(self):
-        self.acquisitionThread.autobrightness = autobrightnessRoutine(self.mscope)
+        self.acquisitionThread.autobrightness = (
+            self.acquisitionThread.routines.autobrightnessRoutine(self.mscope)
+        )
         self.acquisitionThread.autobrightness.send(None)
         self.btnAutobrightness.setEnabled(False)
         self.btnLEDToggle.setEnabled(False)
