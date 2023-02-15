@@ -13,6 +13,8 @@ curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
 WIFI_NAME = subprocess.check_output(['sudo', 'iwgetid']).decode().split('"')[1]
 LOCAL = WIFI_NAME == "HUBdev"
 
+print(f"Local run: {LOCAL}")
+
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
 SIMULATION = MS_SIMULATE_FLAG > 0
