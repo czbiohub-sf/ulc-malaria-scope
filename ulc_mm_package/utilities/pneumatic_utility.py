@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 PWM_PIN = 12
 PWM_FREQ = 100
-#20.5 is 1.5mm off end, 21.2 is fully empty. 15.2 is the physical limit before the servo arm crashes, therefore 18.2 is the center
+# 20.5 is 1.5mm off end, 21.2 is fully empty. 15.2 is the physical limit before the servo arm crashes, therefore 18.2 is the center
 DUTY_MAX = 21.2
 DUTY_MIN = 15.5
 DUTY_MIN_WIDE = 14
@@ -34,19 +34,20 @@ def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         usage="%(prog)s [ACTION] [optional: PRESSURE SETPOINT (mbar)]",
         description="Pneumatic module testing and calibration utiliy.",
-        )
+    )
     parser.add_argument("action", nargs=1)
     parser.add_argument("-p", default=P_SET_DEF, type=int)
 
     return parser
 
-def calibrate_range(mpr, pwm)-> None:
+
+def calibrate_range(mpr, pwm) -> None:
     # Sweeps the PWM duty ratio over a wider range in order
     # to generate a pressure vs. duty ratio plot for calibration purposes
-    
+
     duty_vec = np.linspace(DUTY_MAX_WIDE, DUTY_MIN_WIDE, N_SWEEP_POINTS)
     press_vec = np.zeros_like(duty_vec)
-    
+
     try:
         init(mpr, pwm, initial=DUTY_MAX_WIDE)
 
@@ -54,23 +55,23 @@ def calibrate_range(mpr, pwm)-> None:
             pwm.ChangeDutyCycle(value)
             time.sleep(0.25)
             press_vec[count] = int(mpr.pressure)
-            system('clear')
-            print("Sweeping: duty = " + str(value) + '%')
-            print( "Pressure = " + str(press_vec[count]) + " mbar")
+            system("clear")
+            print("Sweeping: duty = " + str(value) + "%")
+            print("Pressure = " + str(press_vec[count]) + " mbar")
     except KeyboardInterrupt:
         pass
-    
+
     finally:
         pwm.ChangeDutyCycle(DUTY_MAX)
-        time.sleep(.5)
+        time.sleep(0.5)
         GPIO.cleanup()
 
     p_max = max(press_vec)
     p_min = min(press_vec)
     press_range = p_max - p_min
-    press_lower_bound = p_min + (PERC_LOWER/100)*press_range
-    press_upper_bound = p_min + (PERC_UPPER/100)*press_range
-    
+    press_lower_bound = p_min + (PERC_LOWER / 100) * press_range
+    press_upper_bound = p_min + (PERC_UPPER / 100) * press_range
+
     # Using < works as the vector is in decending order
     duty_lower_bound = duty_vec[np.where(press_vec < press_lower_bound)[0][0]]
     duty_upper_bound = duty_vec[np.where(press_vec < press_upper_bound)[0][0]]
@@ -88,70 +89,76 @@ def calibrate_range(mpr, pwm)-> None:
 
     create_calibration_file(cal)
 
-    plt.plot(duty_vec, press_vec,'o-b')
-    plt.plot(duty_lower_bound, press_lower_bound, 'o-r')
-    plt.plot(duty_upper_bound, press_upper_bound, 'o-r')
+    plt.plot(duty_vec, press_vec, "o-b")
+    plt.plot(duty_lower_bound, press_lower_bound, "o-r")
+    plt.plot(duty_upper_bound, press_upper_bound, "o-r")
     plt.show()
-    
+
     return duty_vec, press_vec
 
-def create_calibration_file(cal)->None:
+
+def create_calibration_file(cal) -> None:
 
     host = socket.gethostname()
-    with open(host + '-config.ini', 'w') as f:
-        f.write('[SYRINGE]' + '\n')
-        f.write("MIN_DUTY_CYCLE = " + str(cal["duty_lower_bound"]) + '\n')
-        f.write("MAX_DUTY_CYCLE = " + str(cal["duty_upper_bound"]) + '\n')
-        
-def init(mpr, pwm, initial=DUTY_MAX)->None:
+    with open(host + "-config.ini", "w") as f:
+        f.write("[SYRINGE]" + "\n")
+        f.write("MIN_DUTY_CYCLE = " + str(cal["duty_lower_bound"]) + "\n")
+        f.write("MAX_DUTY_CYCLE = " + str(cal["duty_upper_bound"]) + "\n")
+
+
+def init(mpr, pwm, initial=DUTY_MAX) -> None:
 
     # Initial pressure reading
-    p_read = int(mpr.pressure,)
-    print('Starting pressure -', p_read, 'mb')
-    
+    p_read = int(
+        mpr.pressure,
+    )
+    print("Starting pressure -", p_read, "mb")
+
     # Max is no vacuum. Set initially to max
     pwm.start(DUTY_MAX)
-    
-    input('Press enter to start after loading a sealed consumable ')
+
+    input("Press enter to start after loading a sealed consumable ")
 
 
 def stabilize_pressure(mpr, pwm, p_set) -> None:
     # Stabilizes pressure using proportional feedback
     # Assumes the user installs a flow cell or otherwise seals
-    # the flow path into a dead end. 
-    #CTRL-C to exit
+    # the flow path into a dead end.
+    # CTRL-C to exit
 
     duty = DUTY_MAX
-    
+
     try:
 
         init(mpr, pwm)
 
         # CTRL-C out
         while True:
-            p_read=(int(mpr.pressure,))
-            system('clear')
-            print('CTRL-C to exit...')
-            print('Setpoint = ' + str(p_set) + ' mbar')
-            print( "Pressure = " + str(p_read) + " mbar")
-            duty = duty + (p_set-p_read)*P_GAIN
+            p_read = int(
+                mpr.pressure,
+            )
+            system("clear")
+            print("CTRL-C to exit...")
+            print("Setpoint = " + str(p_set) + " mbar")
+            print("Pressure = " + str(p_read) + " mbar")
+            duty = duty + (p_set - p_read) * P_GAIN
             duty = max(duty, DUTY_MIN)
             duty = min(duty, DUTY_MAX)
-            
-            print( "Duty = " + str(duty) + "%")
+
+            print("Duty = " + str(duty) + "%")
             pwm.ChangeDutyCycle(duty)
             time.sleep(LOOP_DELAY)
 
     except KeyboardInterrupt:
         pass
-        
+
     finally:
         pwm.ChangeDutyCycle(DUTY_MAX)
-        time.sleep(.5)
+        time.sleep(0.5)
         GPIO.cleanup()
-    
 
-def main()-> None:
+
+def main() -> None:
     parser = init_argparse()
     args = parser.parse_args()
 
@@ -161,9 +168,8 @@ def main()-> None:
 
     # Set up PWM output to servo
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(PWM_PIN, GPIO.OUT) # was 18
-    pwm = GPIO.PWM(PWM_PIN, PWM_FREQ) # was port18, 100hz
-
+    GPIO.setup(PWM_PIN, GPIO.OUT)  # was 18
+    pwm = GPIO.PWM(PWM_PIN, PWM_FREQ)  # was port18, 100hz
 
     if args.action[0] == "stabilize":
         # Simply stabilize pressure at the setpoint
@@ -174,17 +180,13 @@ def main()-> None:
 
         stabilize_pressure(mpr, pwm, p_set)
 
-    
-    elif args.action[0] == 'sweep':
+    elif args.action[0] == "sweep":
         # Perform a sweep of the PWM range, returning pressure vs. PWM duty ratio
         duty, press = calibrate_range(mpr, pwm)
 
     else:
-        print("Argument " + str(args.action[0] + " not recognized"))    
+        print("Argument " + str(args.action[0] + " not recognized"))
 
-    
+
 if __name__ == "__main__":
     main()
-    
-    
-    
