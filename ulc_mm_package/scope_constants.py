@@ -1,19 +1,12 @@
 import os
 import usb
 import pathlib
-import subprocess
 import socket
 
 from enum import auto, Enum
 from collections import namedtuple
 
 curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
-
-# ================ Locality constant ================ #
-WIFI_NAME = subprocess.check_output(["sudo", "iwgetid"]).decode().split('"')[1]
-LOCAL = WIFI_NAME == "HUBdev"
-
-print(f"Local run: {LOCAL}")
 
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
