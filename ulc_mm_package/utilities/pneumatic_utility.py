@@ -51,7 +51,7 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
         for count, value in enumerate(duty_vec):
             pwm.setDutyCycle(value)
             time.sleep(0.25)
-            press_vec[count] = int(mpr.getPressureMaxReadAttempts())
+            press_vec[count] = int(mpr.getPressureMaxReadAttempts()[0])
             system("clear")
             print("Sweeping: duty = " + str(value) + "%")
             print("Pressure = " + str(press_vec[count]) + " mbar")
@@ -105,9 +105,7 @@ def create_calibration_file(cal) -> None:
 
 def init(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
     # Initial pressure reading
-    p_read = int(
-        mpr.getPressureMaxReadAttempts(),
-    )
+    p_read = int(mpr.getPressureMaxReadAttempts()[0])
     print("Starting pressure -", p_read, "mb")
 
     # Max is no vacuum. Set initially to max
@@ -129,9 +127,7 @@ def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
 
         # CTRL-C out
         while True:
-            p_read = int(
-                mpr.getPressureMaxReadAttempts(),
-            )
+            p_read = int(mpr.getPressureMaxReadAttempts()[0])
             system("clear")
             print("CTRL-C to exit...")
             print("Setpoint = " + str(p_set) + " mbar")
