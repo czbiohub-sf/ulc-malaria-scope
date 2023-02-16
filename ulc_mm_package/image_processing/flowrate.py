@@ -181,6 +181,9 @@ class FlowRateEstimator:
         self._addImage(img, timestamp)
         self._calculatePairDisplacement()
 
+    def stop(self):
+        self.multiproc_interface.stop()
+
 
 def downSampleImage(img: np.ndarray, scale_factor: int) -> np.ndarray:
     """Downsamples an image by `scale_factor`"""
