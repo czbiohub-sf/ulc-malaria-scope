@@ -61,15 +61,11 @@ class PneumaticModule:
     def __init__(
         self,
         servo_pin: int = SERVO_PWM_PIN,
-        mprls_rst_pin: int = MPRLS_RST,
-        mprls_pwr_pin: int = MPRLS_PWR,
         pi: pigpio.pi = None,
     ):
         self.logger = logging.getLogger(__name__)
         self._pi = pi if pi != None else pigpio.pi()
         self.servo_pin = servo_pin
-        self.mprls_rst_pin = mprls_rst_pin
-        self.mprls_pwr_pin = mprls_pwr_pin
 
         self.min_duty_cycle, self.max_duty_cycle = self.get_config_params()
         self.min_step_size = (
@@ -77,13 +73,6 @@ class PneumaticModule:
         ) / 60  # empircally found the top/bottom vals, ~60 steps between min/max pressure
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
-        self.polling_time_s = 3
-        self.prev_poll_time_s = 0
-        self.prev_pressure = 0
-        self.prev_status = PressureSensorRead.ALL_GOOD
-        self.io_error_counter = 0
-        self.mpr_enabled = False
-        self.mpr_err_msg = ""
 
         # Toggle 5V line
         self._pi.write(SERVO_5V_PIN, 1)
@@ -95,25 +84,12 @@ class PneumaticModule:
         self.pwm.setFreq(SERVO_FREQ)
         self.pwm.setDutyCycle(self.duty_cycle)
 
-        # Instantiate pressure sensor
-        self._pi.write(self.mprls_pwr_pin, 0)
-        sleep(0.005)
-        self._pi.write(self.mprls_rst_pin, 1)
-        sleep(0.005)
-
-        try:
-            i2c = board.I2C()
-            self.mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
-            self.mpr_enabled = True
-        except Exception as e:
-            self.mpr_err_msg = f"{e}"
-            self.mpr_enabled = False
+        # Pressure sensor
+        self.mpr = AdafruitMPRLS()
+        self.mpr_enabled = self.mpr.mpr_enabled
 
     def close(self):
         """Move the servo to its lowest-pressure position and close."""
-        self._pi.write(self.mprls_rst_pin, 0)
-        sleep(0.005)
-        self._pi.write(self.mprls_pwr_pin, 1)
 
         self.setDutyCycle(self.max_duty_cycle)
         sleep(0.5)
@@ -211,16 +187,77 @@ class PneumaticModule:
         else:
             raise SyringeInMotion
 
-    def sweepAndGetPressures(self):
-        """Sweep the syringe and read pressure values."""
-        min, max = self.getMinDutyCycle(), self.getMaxDutyCycle()
-        self.setDutyCycle(max)
-        pressure_readings_hpa = []
-        while self.duty_cycle > min:
-            pressure_readings_hpa.append(self.getPressure())
-            sleep(0.5)
-            self.decreaseDutyCycle()
-        return pressure_readings_hpa
+    def isMovePossible(self, move_dir: SyringeDirection) -> bool:
+        """Return true if the syringe can still move in the specified direction."""
+
+        # Cannot move the syringe up
+        if self.duty_cycle > self.max_duty_cycle and move_dir == SyringeDirection.UP:
+            return False
+
+        # Cannot move the syringe down
+        elif (
+            self.duty_cycle < self.min_duty_cycle and move_dir == SyringeDirection.DOWN
+        ):
+            return False
+
+        return True
+
+    @staticmethod
+    def is_locked():
+        return SYRINGE_LOCK.locked()
+
+    def getPressure(self) -> Tuple[float, PressureSensorRead]:
+        return self.mpr.getPressure()
+
+    def getPressureImmediately(self) -> Tuple[float, PressureSensorRead]:
+        return self.mpr.getPressureImmediately()
+
+    def getPressureMaxReadAttempts(
+        self, max_attempts: int = 10
+    ) -> Tuple[float, PressureSensorRead]:
+        return self.mpr.getPressureMaxReadAttempts(max_attempts)
+
+    def direct_read(self) -> Tuple[float, PressureSensorRead]:
+        return self.mpr.direct_read()
+
+
+class AdafruitMPRLS:
+    def __init__(
+        self,
+        mprls_rst_pin: int = MPRLS_RST,
+        mprls_pwr_pin: int = MPRLS_PWR,
+        pi: pigpio.pi = None,
+    ):
+        self.logger = logging.getLogger(__name__)
+        self._pi = pi if pi != None else pigpio.pi()
+        self.mprls_rst_pin = mprls_rst_pin
+        self.mprls_pwr_pin = mprls_pwr_pin
+        self.prev_poll_time_s = 0
+        self.prev_pressure = 0
+        self.prev_status = PressureSensorRead.ALL_GOOD
+
+        self.io_error_counter = 0
+        self.mpr_enabled = False
+        self.mpr_err_msg = ""
+
+        # Instantiate pressure sensor
+        self._pi.write(self.mprls_pwr_pin, 0)
+        sleep(0.005)
+        self._pi.write(self.mprls_rst_pin, 1)
+        sleep(0.005)
+
+        try:
+            i2c = board.I2C()
+            self.mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
+            self.mpr_enabled = True
+        except Exception as e:
+            self.mpr_err_msg = f"{e}"
+            self.mpr_enabled = False
+
+    def close(self):
+        self._pi.write(self.mprls_rst_pin, 0)
+        sleep(0.005)
+        self._pi.write(self.mprls_pwr_pin, 1)
 
     def getPressure(self) -> Tuple[float, PressureSensorRead]:
         """Attempt to read the pressure sensor. Return pressure and status.
@@ -314,7 +351,17 @@ class PneumaticModule:
             max_attempts -= 1
             sleep(0.05)
 
-    def _direct_read(self, timeout_s: float = 1e6):
+    def _direct_read(self, timeout_s: float = 1e6) -> bool:
+        """Internal function - direct read of mprls buffer.
+
+        Stores the read in an internal variable.
+
+        Returns
+        -------
+        bool
+            Whether the read was successful or not.
+        """
+
         # Attempt to read the sensor first
         self.mpr._buffer[0] = 0xAA
         self.mpr._buffer[1] = 0
@@ -394,22 +441,3 @@ class PneumaticModule:
 
             # convert PSI to hPA
             return (psi * PSI_TO_HPA, error_flag)
-
-    def isMovePossible(self, move_dir: SyringeDirection) -> bool:
-        """Return true if the syringe can still move in the specified direction."""
-
-        # Cannot move the syringe up
-        if self.duty_cycle > self.max_duty_cycle and move_dir == SyringeDirection.UP:
-            return False
-
-        # Cannot move the syringe down
-        elif (
-            self.duty_cycle < self.min_duty_cycle and move_dir == SyringeDirection.DOWN
-        ):
-            return False
-
-        return True
-
-    @staticmethod
-    def is_locked():
-        return SYRINGE_LOCK.locked()
