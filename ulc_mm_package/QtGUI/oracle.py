@@ -604,9 +604,6 @@ class Oracle(Machine):
     def _end_liveview(self, *args):
         self.liveview_window.close()
 
-        self.logger.info("Opening survey.")
-        webbrowser.open(FLOWCELL_QC_FORM_LINK, new=0, autoraise=True)
-
     def _start_intermission(self, msg):
         self.display_message(
             QMessageBox.Icon.Information,
