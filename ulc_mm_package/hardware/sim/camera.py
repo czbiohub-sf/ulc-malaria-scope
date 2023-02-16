@@ -12,13 +12,26 @@ import cv2
 
 from time import time, perf_counter, sleep
 
-from ulc_mm_package.scope_constants import VIDEO_PATH
+from ulc_mm_package.scope_constants import VIDEO_REC
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS
 from ulc_mm_package.hardware.camera import CameraError
 
 
 class SimCamera:
     def __init__(self):
+
+        _viable_videos = (
+            "../QtGUI/sim_media/avt-sample.mp4",
+            "../QtGUI/sim_media/sample.avi",
+            "../QtGUI/sim_media/sample.mp4",
+        )
+        VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
+        if VIDEO_PATH == None:
+            raise RuntimeError(
+                "Sample video for simulation mode could not be found. "
+                f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
+            )
+
         self._isActivated = True
 
         try:

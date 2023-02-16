@@ -429,18 +429,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
         media_dir = SSD_DIR
 
-        if SIMULATION:
-            print("---------------------\n|  SIMULATION MODE  |\n---------------------")
-
-            if not path.exists(VIDEO_PATH):
-                print(
-                    "Error - no sample video exists. To add your own video, save it under "
-                    + VIDEO_PATH
-                    + "\nRecommended video: "
-                    + VIDEO_REC
-                )
-                quit()
-
         try:
             self.external_dir = media_dir + listdir(media_dir)[0] + "/"
         except IndexError:
