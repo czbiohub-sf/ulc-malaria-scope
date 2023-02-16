@@ -225,7 +225,7 @@ class MalariaScope:
             self.flow_controller = FlowController(
                 self.pneumatic_module,
                 CAMERA_SELECTION.IMG_HEIGHT,
-                CAMERA_SELECTION.IMG_WIDTH
+                CAMERA_SELECTION.IMG_WIDTH,
             )
             self.flow_controller_enabled = False
         except Exception as e:
