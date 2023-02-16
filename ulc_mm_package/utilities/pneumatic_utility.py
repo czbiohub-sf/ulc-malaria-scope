@@ -5,6 +5,7 @@
 import argparse
 import socket
 import time
+from pathlib import Path
 from os import system
 
 import numpy as np
@@ -96,8 +97,14 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
 
 
 def create_calibration_file(cal) -> None:
+    # TODO - make more extensible config?
+    # i.e currently this will overwrite any existing config and makes it so that it only stores pneumatic_module constants
+    # Ideally we'd want it to check to see if there is an existing config file and only write/update the pneumatic constants portion of that
+    # existing config.
     host = socket.gethostname()
-    with open(host + "-config.ini", "w") as f:
+    config_dir = Path(".").resolve().parents[0]
+    save_path = Path(config_dir / (host + "-config.ini"))
+    with open(save_path, "w") as f:
         f.write("[SYRINGE]" + "\n")
         f.write("MIN_DUTY_CYCLE = " + str(cal["duty_lower_bound"]) + "\n")
         f.write("MAX_DUTY_CYCLE = " + str(cal["duty_upper_bound"]) + "\n")
