@@ -2,6 +2,7 @@
 # Uses LFM scope pneumatic module w/ PWM controlled servo
 # and MPRLS sensor
 
+import os
 import argparse
 import socket
 import time
@@ -97,13 +98,15 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
 
 
 def create_calibration_file(cal) -> None:
-    # TODO - make more extensible config?
-    # i.e currently this will overwrite any existing config and makes it so that it only stores pneumatic_module constants
-    # Ideally we'd want it to check to see if there is an existing config file and only write/update the pneumatic constants portion of that
-    # existing config.
     host = socket.gethostname()
-    config_dir = Path(".").resolve().parents[0]
-    save_path = Path(config_dir / (host + "-config.ini"))
+    parent_dir = Path(".").resolve().parents[0]
+
+    # Attempt to make config dir if not already there
+    try:
+        os.mkdir(f"{parent_dir / 'configs'}")
+    except:
+        pass
+    save_path = Path(parent_dir / "configs" / (host + "-config.ini"))
     with open(save_path, "w") as f:
         f.write("[SYRINGE]" + "\n")
         f.write("MIN_DUTY_CYCLE = " + str(cal["duty_lower_bound"]) + "\n")

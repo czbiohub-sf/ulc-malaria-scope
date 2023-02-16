@@ -86,6 +86,7 @@ class PneumaticModule:
 
         # Pressure sensor
         self.mpr = AdafruitMPRLS()
+        self.mpr_enabled = self.mpr.mpr_enabled
 
     def close(self):
         """Move the servo to its lowest-pressure position and close."""
