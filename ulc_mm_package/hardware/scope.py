@@ -58,6 +58,7 @@ class MalariaScope:
         self.fan_enabled = False
         self.ht_sensor_enabled = False
         self.data_storage_enabled = False
+        self.flow_controller_enabled = False
         self.tpu_enabled = False
 
         # Initialize Components
@@ -68,6 +69,7 @@ class MalariaScope:
         self._init_fan()
         self._init_humidity_temp_sensor()
         self._init_data_storage()
+        self._init_flow_controller()
         self._init_TPU()
 
         self.logger.info("Initialized scope hardware.")
@@ -77,6 +79,7 @@ class MalariaScope:
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.ht_sensor.stop()
+        self.flow_controller.stop()
         if self.camera._isActivated:
             self.camera.deactivateCamera()
             self.logger.info("Deactivated camera.")
@@ -216,6 +219,17 @@ class MalariaScope:
             self.tpu_enabled = True
         except TPUError as e:
             self.logger.error(f"TPU initialization failed. {e}")
+
+    def _init_flow_controller(self):
+        try:
+            self.flow_controller = FlowController(
+                self.pneumatic_module,
+                CAMERA_SELECTION.IMG_HEIGHT,
+                CAMERA_SELECTION.IMG_WIDTH
+            )
+            self.flow_controller_enabled = False
+        except Exception as e:
+            self.logger.error(f"Flow controller initialization failed")
 
     def set_gpio_callback(
         self,
