@@ -327,3 +327,6 @@ class FlowController:
         cumsums = mult.cumsum()
         out = offset + cumsums * scale_arr[::-1]
         return out[-1]
+
+    def stop(self):
+        self.fre.stop()

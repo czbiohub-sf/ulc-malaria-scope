@@ -180,13 +180,11 @@ class Routines:
 
         img, timestamp = yield
         flow_val = None
-        h, w = img.shape
-        flow_controller = FlowController(mscope.pneumatic_module, h, w)
-        flow_controller.setTargetFlowrate(target_flowrate)
 
+        mscope.flow_controller.setTargetFlowrate(target_flowrate)
         while True:
             img, timestamp = yield flow_val
-            flow_val = flow_controller.controlFlow(img, timestamp)
+            flow_val = mscope.flow_controller.controlFlow(img, timestamp)
 
     def fastFlowRoutine(
         self,
@@ -237,14 +235,13 @@ class Routines:
 
         flow_val = 0
         img, timestamp = yield
-        h, w = img.shape
-        flow_controller = FlowController(mscope.pneumatic_module, h, w)
-        flow_controller.setTargetFlowrate(target_flowrate)
+
+        mscope.flow_controller.setTargetFlowrate(target_flowrate)
 
         while True:
             img, timestamp = yield flow_val
             try:
-                flow_val, flow_error = flow_controller.fastFlowAdjustment(
+                flow_val, flow_error = mscope.flow_controller.fastFlowAdjustment(
                     img, timestamp
                 )
             except CantReachTargetFlowrate:

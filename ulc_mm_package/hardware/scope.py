@@ -26,6 +26,7 @@ from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2, CAMERA
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
+from ulc_mm_package.image_processing.flow_control import FlowController
 from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
 
 
@@ -44,7 +45,8 @@ class Components(enum.Enum):
     ENCODER = 5
     HT_SENSOR = 6
     DATA_STORAGE = 7
-    TPU = 8
+    FLOW_CONTROLLER = 8
+    TPU = 9
 
 
 class MalariaScope:
@@ -58,6 +60,7 @@ class MalariaScope:
         self.fan_enabled = False
         self.ht_sensor_enabled = False
         self.data_storage_enabled = False
+        self.flow_controller_enabled = False
         self.tpu_enabled = False
 
         # Initialize Components
@@ -68,6 +71,7 @@ class MalariaScope:
         self._init_fan()
         self._init_humidity_temp_sensor()
         self._init_data_storage()
+        self._init_flow_controller()
         self._init_TPU()
 
         self.logger.info("Initialized scope hardware.")
@@ -77,6 +81,7 @@ class MalariaScope:
         self.led.turnOff()
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.ht_sensor.stop()
+        self.flow_controller.stop()
         if self.camera._isActivated:
             self.camera.deactivateCamera()
             self.logger.info("Deactivated camera.")
@@ -99,6 +104,7 @@ class MalariaScope:
             Components.FAN: self.fan_enabled,
             Components.HT_SENSOR: self.ht_sensor_enabled,
             Components.DATA_STORAGE: self.data_storage_enabled,
+            Components.FLOW_CONTROLLER: self.flow_controller_enabled,
             Components.TPU: self.tpu_enabled,
         }
 
@@ -216,6 +222,17 @@ class MalariaScope:
             self.tpu_enabled = True
         except TPUError as e:
             self.logger.error(f"TPU initialization failed. {e}")
+
+    def _init_flow_controller(self):
+        try:
+            self.flow_controller = FlowController(
+                self.pneumatic_module,
+                CAMERA_SELECTION.IMG_HEIGHT,
+                CAMERA_SELECTION.IMG_WIDTH,
+            )
+            self.flow_controller_enabled = True
+        except Exception as e:
+            self.logger.error(f"Flow controller initialization failed. {e}")
 
     def set_gpio_callback(
         self,
