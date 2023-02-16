@@ -26,6 +26,7 @@ from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2, CAMERA
 from ulc_mm_package.hardware.hardware_modules import *
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
+from ulc_mm_package.image_processing.flow_control import FlowController
 from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
 
 
@@ -44,7 +45,8 @@ class Components(enum.Enum):
     ENCODER = 5
     HT_SENSOR = 6
     DATA_STORAGE = 7
-    TPU = 8
+    FLOW_CONTROLLER = 8
+    TPU = 9
 
 
 class MalariaScope:
@@ -102,6 +104,7 @@ class MalariaScope:
             Components.FAN: self.fan_enabled,
             Components.HT_SENSOR: self.ht_sensor_enabled,
             Components.DATA_STORAGE: self.data_storage_enabled,
+            Components.FLOW_CONTROLLER: self.flow_controller_enabled,
             Components.TPU: self.tpu_enabled,
         }
 
@@ -229,7 +232,7 @@ class MalariaScope:
             )
             self.flow_controller_enabled = False
         except Exception as e:
-            self.logger.error(f"Flow controller initialization failed")
+            self.logger.error(f"Flow controller initialization failed. {e}")
 
     def set_gpio_callback(
         self,

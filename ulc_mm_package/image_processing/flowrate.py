@@ -182,7 +182,7 @@ class FlowRateEstimator:
         self._calculatePairDisplacement()
 
     def stop(self):
-        self.msr.stop()
+        self.multiproc_interface.stop()
 
 
 def downSampleImage(img: np.ndarray, scale_factor: int) -> np.ndarray:
