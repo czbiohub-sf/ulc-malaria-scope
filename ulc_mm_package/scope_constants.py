@@ -1,12 +1,12 @@
 import os
 import usb
 import pathlib
-from enum import auto, Enum
-from collections import namedtuple
 import socket
 
-curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
+from enum import auto, Enum
+from collections import namedtuple
 
+curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
 
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
