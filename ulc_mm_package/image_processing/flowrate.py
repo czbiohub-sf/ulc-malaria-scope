@@ -154,6 +154,9 @@ class FlowRateEstimator:
 
         return dx, dy, confidence
 
+    def stop(self):
+        self.multiproc_interface.stop()
+
 
 def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
     """Downsamples an image by `scale_factor`"""

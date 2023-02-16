@@ -290,3 +290,6 @@ class FlowController:
                     self.pneumatic_module.threadedIncreaseDutyCycle()
             except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate(self.flowrate)
+
+    def stop(self):
+        self.fre.stop()
