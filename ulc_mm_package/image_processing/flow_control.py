@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 
-from ulc_mm_package.image_processing.processing_modules import EWMAFiltering
+from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 from ulc_mm_package.image_processing.processing_constants import (
     FLOW_CONTROL_EWMA_ALPHA,
     TOL_PERC,
@@ -131,7 +131,7 @@ class FlowController:
     def set_alpha(self, alpha: float) -> None:
         """Set the alpha value for EWMA filtering"""
         self.alpha = alpha
-        self.EWMA.set_alpha(self.alpha)
+        self.EWMA.alpha = self.alpha
         self.feedback_delay_frames = self.EWMA.get_adjustment_period_ewma(self.alpha)
 
     def _add_image_and_update_flowrate(self, img: np.ndarray, time: float) -> None:
