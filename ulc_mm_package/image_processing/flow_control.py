@@ -132,7 +132,7 @@ class FlowController:
         """Set the alpha value for EWMA filtering"""
         self.alpha = alpha
         self.EWMA.alpha = self.alpha
-        self.feedback_delay_frames = self.EWMA.get_adjustment_period_ewma(self.alpha)
+        self.feedback_delay_frames = self.EWMA.get_adjustment_period_ewma()
 
     def _add_image_and_update_flowrate(self, img: np.ndarray, time: float) -> None:
         """Adds an image to the FlowRateEsimator and updates the flowrate measurement.
