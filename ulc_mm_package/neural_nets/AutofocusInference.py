@@ -2,7 +2,8 @@
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel
 from ulc_mm_package.neural_nets.neural_network_constants import AUTOFOCUS_MODEL_DIR
-from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
+from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
+from ulc_mm_package.scope_constants import CameraOptions
 
 
 class AutoFocus(NCSModel):

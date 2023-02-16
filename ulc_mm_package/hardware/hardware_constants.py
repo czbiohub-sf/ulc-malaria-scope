@@ -1,15 +1,44 @@
-from ulc_mm_package.scope_constants import ACQUISITION_FPS
+import usb
+
+from ulc_mm_package.scope_constants import ACQUISITION_FPS, CameraOptions
 
 
 # ================ Misc constants ================ #
 RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
 
-# ================ Camera constants ================ #
+# ================ Camera operation constants ================ #
 DEFAULT_EXPOSURE_MS = 0.5
 DEVICELINK_THROUGHPUT = 200000000
 
 CAMERA_FPS = 53
+
+# ================ Camera selection constants ================ #
+AVT_VENDOR_ID = 0x1AB2
+AVT_PRODUCT_ID = 0x0001
+
+BASLER_VENDOR_ID = 0x2676
+BASLER_PRODUCT_ID = 0xBA03
+
+try:
+    if SIMULATION:
+        CAMERA_SELECTION = CameraOptions.SIMULATED
+    else:
+        _avt_dev = usb.core.find(idVendor=AVT_VENDOR_ID, idProduct=AVT_PRODUCT_ID)
+        _basler_dev = usb.core.find(
+            idVendor=BASLER_VENDOR_ID, idProduct=BASLER_PRODUCT_ID
+        )
+
+        if _avt_dev is not None:
+            CAMERA_SELECTION = CameraOptions.AVT
+        elif _basler_dev is not None:
+            CAMERA_SELECTION = CameraOptions.BASLER
+        else:
+            raise MissingCameraError(
+                "There is no camera found on the device and we are not simulating: "
+            )
+except usb.core.NoBackendError:
+    CAMERA_SELECTION = CameraOptions.SIMULATED
 
 # ================ Motor controller constants ================ #
 FULL_STEP_TO_TRAVEL_DIST_UM = 0.56

@@ -73,33 +73,6 @@ MAX_FRAMES = 20000  # Rounded up from 10 minutes of data at 30 FPS
 if SIMULATION:
     MAX_FRAMES = 2000
 
-AVT_VENDOR_ID = 0x1AB2
-AVT_PRODUCT_ID = 0x0001
-
-BASLER_VENDOR_ID = 0x2676
-BASLER_PRODUCT_ID = 0xBA03
-
-try:
-    if SIMULATION:
-        CAMERA_SELECTION = CameraOptions.SIMULATED
-    else:
-        _avt_dev = usb.core.find(idVendor=AVT_VENDOR_ID, idProduct=AVT_PRODUCT_ID)
-        _basler_dev = usb.core.find(
-            idVendor=BASLER_VENDOR_ID, idProduct=BASLER_PRODUCT_ID
-        )
-
-        if _avt_dev is not None:
-            CAMERA_SELECTION = CameraOptions.AVT
-        elif _basler_dev is not None:
-            CAMERA_SELECTION = CameraOptions.BASLER
-        else:
-            raise MissingCameraError(
-                "There is no camera found on the device and we are not simulating: "
-            )
-except usb.core.NoBackendError:
-    CAMERA_SELECTION = CameraOptions.SIMULATED
-
-
 # ================ Data storage metadata ================ #
 EXPERIMENT_METADATA_KEYS = [
     "operator_id",

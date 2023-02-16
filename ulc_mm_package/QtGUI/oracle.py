@@ -34,13 +34,15 @@ from PyQt5.QtGui import QIcon, QPixmap
 from ulc_mm_package.scope_constants import (
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
-    CAMERA_SELECTION,
     SSD_DIR,
     VERBOSE,
     SIMULATION,
     SSD_NAME,
 )
-from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.hardware.hardware_constants import (
+    CAMERA_SELECTION,
+    DATETIME_FORMAT,
+)
 from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,

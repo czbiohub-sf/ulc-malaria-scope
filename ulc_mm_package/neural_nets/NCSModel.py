@@ -21,7 +21,8 @@ from typing import (
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
-from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
+from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
+from ulc_mm_package.scope_constants import CameraOptions
 
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import (

@@ -41,7 +41,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     IMG_DOWNSCALE,
     TOOLBAR_OFFSET,
 )
-from ulc_mm_package.scope_constants import CAMERA_SELECTION
+from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 

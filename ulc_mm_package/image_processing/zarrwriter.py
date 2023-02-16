@@ -18,7 +18,8 @@ from time import perf_counter
 from typing import List, Tuple, Optional
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, Future, wait
 
-from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION, MAX_FRAMES
+from ulc_mm_package.hardware.hardware_constants import CAMERA_SELECTION
+from ulc_mm_package.scope_constants import MAX_FRAMES, CameraOptions
 
 
 class AttemptingWriteWithoutFile(Exception):

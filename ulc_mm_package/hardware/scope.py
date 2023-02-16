@@ -20,11 +20,14 @@ from typing import Dict, Optional, Callable
 
 import pigpio
 
-from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2, CAMERA_FPS
-
+from ulc_mm_package.hardware.hardware_constants import (
+    LID_LIMIT_SWITCH2,
+    CAMERA_FPS,
+    CAMERA_SELECTION,
+)
 # FIXME no stars!
 from ulc_mm_package.hardware.hardware_modules import *
-from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
+from ulc_mm_package.scope_constants import CameraOptions, SIMULATION
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
 
