@@ -1,6 +1,10 @@
 import usb
 
-from ulc_mm_package.scope_constants import ACQUISITION_FPS, CameraOptions
+from ulc_mm_package.scope_constants import (
+    ACQUISITION_FPS,
+    CameraOptions,
+    SIMULATION,
+)
 
 
 # ================ Misc constants ================ #
