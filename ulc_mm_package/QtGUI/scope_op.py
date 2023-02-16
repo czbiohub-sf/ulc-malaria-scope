@@ -246,7 +246,6 @@ class ScopeOp(QObject, NamedMachine):
 
         if all([status == True for status in component_status.values()]):
             self.setup_done.emit()
-            print("setup done")
         else:
             failed_components = [
                 comp.name
