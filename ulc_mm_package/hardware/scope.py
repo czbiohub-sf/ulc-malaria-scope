@@ -230,7 +230,7 @@ class MalariaScope:
                 CAMERA_SELECTION.IMG_HEIGHT,
                 CAMERA_SELECTION.IMG_WIDTH,
             )
-            self.flow_controller_enabled = False
+            self.flow_controller_enabled = True
         except Exception as e:
             self.logger.error(f"Flow controller initialization failed. {e}")
 
