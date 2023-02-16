@@ -261,7 +261,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Hardware pre-check failed",
                 "The following component(s) could not be instantiated: "
                 f"{', '.join(failed_components).capitalize()}.",
-                ERROR_BEHAVIORS.INSTANT_ABORT.value,
+                ERROR_BEHAVIORS.PRECHECK.value,
             )
             self.precheck_error.emit()
 
