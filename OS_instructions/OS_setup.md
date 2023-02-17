@@ -35,6 +35,7 @@ Please note: I found that a *lot* of the documentation for the installation of O
 ```console
 cd ~
 git clone https://github.com/openvinotoolkit/openvino.git
+cd openvino
 git checkout tags/2022.1.1
 git submodule update --init --recursive
 mkdir build && cd build
