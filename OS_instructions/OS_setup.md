@@ -81,10 +81,13 @@ sudo ldconfig
 
 ### Install Vimba
 
-I could not find Vimba for `armv71` online. I `rsync`'d the source (Vimba for Linux ARMv7 32-bit - Release Notes) from a previous Malaria Scope's OS and installed
-from there.
+Download and uncompress Vimba for your version of the software:
 
-I `rsync`'d it to `/opt/`, then
+- [Vimba 64 bit](https://drive.google.com/file/d/1_0ckwfBUPX-drv2zrvJkzIj39QkT-eUr/view?usp=share_link)
+- [Vimba 32 bit](https://drive.google.com/file/d/16OUi32I5QPsywLyl9qaezAkova_Dz53e/view?usp=sharing)
+
+`rsync` it to `/opt/`, then
+
 ```console
 cd /opt/Vimba_5_0/VimbaUSBTL
 sudo ./Install.sh
