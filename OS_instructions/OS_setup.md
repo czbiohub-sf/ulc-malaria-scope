@@ -58,7 +58,7 @@ cmake \
 
 ### Add the openvino Python libraries to the `PYTHONPATH`
 ```console
-export PYTHONPATH=/home/pi/openvino/bin/armv7l/Release/lib/python_api/python3.9:$PYTHONPATH
+echo "export PYTHONPATH=/home/pi/openvino/bin/armv7l/Release/lib/python_api/python3.9:$PYTHONPATH" >> ~/.bashrc
 ```
 
 ### Manually update NCS2 udev rules
