@@ -26,6 +26,7 @@ pip3 install -e .
 sudo apt install -y cmake
 sudo apt install libusb-1.0-0-dev
 sudo apt install libatlas-base-dev
+pip3 install Cython>=0.29.33
 ```
 
 ### Install Openvino
