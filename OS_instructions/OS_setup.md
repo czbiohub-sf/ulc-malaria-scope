@@ -33,6 +33,7 @@ sudo apt install libatlas-base-dev
 Please note: I found that a *lot* of the documentation for the installation of Openvino is simply wrong. I suspect that it is way out of date, and nobody at Intel bother to update it. The instructions I have below are the result of what I found to work, but it could change in future Openvino versions. A *large* part of figuring it out was looking at the post-install setup scripts that openvino wrote (primarily setupvars.sh and install_NCS_udev_rules.sh), figuring out what those scripts were *supposed* to do, and doing those steps. At the very least, you learn a lot about linux when installing all of this ;)
 
 ```console
+cd ~
 git clone https://github.com/openvinotoolkit/openvino.git
 git checkout tags/2022.1.1
 git submodule update --init --recursive
