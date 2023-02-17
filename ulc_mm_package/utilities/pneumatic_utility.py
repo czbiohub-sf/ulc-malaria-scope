@@ -1,15 +1,15 @@
 # Tools for calibrating and simple usage of the pneumatic module on lfm-scope
 
 # It has two functions so far:
-#   1. Stabilize: simply stabilizes the pressure at a setpoint (cmd line input). 
-#       Used as a basic tool for applyign a known pressure to the flow cell. 
+#   1. Stabilize: simply stabilizes the pressure at a setpoint (cmd line input).
+#       Used as a basic tool for applyign a known pressure to the flow cell.
 
-#   2. Sweep: sweep the PWM duty ratio over a pre-defined range in order to 
+#   2. Sweep: sweep the PWM duty ratio over a pre-defined range in order to
 #       discover the pressure as a function of duty ratio. Calibration values
 #       are computed, corresponding to lower and upper bounds of the useful range.
 #       A configuration file is written to record the upper and lower duty ratio bounds.
 
-#       Note: a sealed flow cell must be installed on the scope in order to hold vacuum. 
+#       Note: a sealed flow cell must be installed on the scope in order to hold vacuum.
 
 # Uses LFM scope pneumatic module w/ PWM controlled servo and MPRLS sensor
 
@@ -112,7 +112,7 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
 
 def create_calibration_file(cal) -> None:
     # Writes upper and lower duty ratio bounds to a configuration file
-    
+
     host = socket.gethostname()
     parent_dir = Path(".").resolve().parents[0]
 
@@ -129,8 +129,8 @@ def create_calibration_file(cal) -> None:
 
 
 def init(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
-    # Takes initial pressure measurement; pauses to wait for user to install 
-    # a sealed flow cell. 
+    # Takes initial pressure measurement; pauses to wait for user to install
+    # a sealed flow cell.
 
     # Initial pressure reading
     p_read = int(mpr.getPressureMaxReadAttempts()[0])
