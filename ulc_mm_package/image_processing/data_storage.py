@@ -5,6 +5,7 @@ import shutil
 from typing import Dict, List, Optional
 from os import mkdir, path
 from datetime import datetime
+from concurrent.futures import Future
 
 import cv2
 import numpy as np
@@ -157,7 +158,7 @@ class DataStorage:
         )
         cv2.imwrite(filename, image)
 
-    def close(self):
+    def close(self) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
         Returns
@@ -170,13 +171,13 @@ class DataStorage:
         self.logger.info("Closing data storage.")
         self.save_uniform_sample()
 
+        if self.metadata_file is not None:
+            self.metadata_file.close()
+            self.metadata_file = None
+
         if self.zw.writable:
             self.zw.writable = False
             future = self.zw.threadedCloseFile()
-
-        if self.metadata_file != None:
-            self.metadata_file.close()
-            self.metadata_file = None
 
             return future
 
