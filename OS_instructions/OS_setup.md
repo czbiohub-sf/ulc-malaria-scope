@@ -56,6 +56,8 @@ cmake \
   .. && make --jobs=$(nproc --all)
 ```
 
+If you are running a 64 bit OS, swap out `-DPYTHON_LIBRARY="/usr/lib/arm-linux-gnueabihf/libpython3.9.so"` with `-DPYTHON_LIBRARY="/usr/lib/aarch64-linux-gnu/libpython3.9.so"`.
+
 ### Add the openvino Python libraries to the `PYTHONPATH`
 ```console
 echo "export PYTHONPATH=/home/pi/openvino/bin/armv7l/Release/lib/python_api/python3.9:$PYTHONPATH" >> ~/.bashrc
