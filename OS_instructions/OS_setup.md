@@ -114,9 +114,6 @@ Uncomment the following
 dtparam=i2c_arm=on
 ```
 
-and now reboot.
-
-
 ### Install Others
 
 To automate running the daemon at boot time, run:
@@ -139,6 +136,8 @@ sudo systemctl enable init_led_pneumatic.service
 sudo systemctl enable fan.service
 ```
 
+and now reboot.
+
 ### Congrats!
 
-You are done!
+You are done.
