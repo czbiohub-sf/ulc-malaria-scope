@@ -73,7 +73,7 @@ AFC_NUM_IMAGE_PAIRS = 12
 MPRLS_RST = 10
 MPRLS_PWR = 22
 
-MIN_PRESSURE_DIFF = 400  # In units of hPa
+MIN_PRESSURE_DIFF = 380  # In units of hPa
 # ================ Fan constants ================ #
 FAN_GPIO = 5
 CAM_FAN_1 = 23
