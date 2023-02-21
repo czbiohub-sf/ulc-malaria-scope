@@ -26,6 +26,7 @@ pip3 install -e .
 sudo apt install -y cmake
 sudo apt install libusb-1.0-0-dev
 sudo apt install libatlas-base-dev
+pip3 install Cython>=0.29.33
 ```
 
 ### Install Openvino
@@ -33,7 +34,9 @@ sudo apt install libatlas-base-dev
 Please note: I found that a *lot* of the documentation for the installation of Openvino is simply wrong. I suspect that it is way out of date, and nobody at Intel bother to update it. The instructions I have below are the result of what I found to work, but it could change in future Openvino versions. A *large* part of figuring it out was looking at the post-install setup scripts that openvino wrote (primarily setupvars.sh and install_NCS_udev_rules.sh), figuring out what those scripts were *supposed* to do, and doing those steps. At the very least, you learn a lot about linux when installing all of this ;)
 
 ```console
+cd ~
 git clone https://github.com/openvinotoolkit/openvino.git
+cd openvino
 git checkout tags/2022.1.1
 git submodule update --init --recursive
 mkdir build && cd build
@@ -53,9 +56,11 @@ cmake \
   .. && make --jobs=$(nproc --all)
 ```
 
+If you are running a 64 bit OS, swap out `-DPYTHON_LIBRARY="/usr/lib/arm-linux-gnueabihf/libpython3.9.so"` with `-DPYTHON_LIBRARY="/usr/lib/aarch64-linux-gnu/libpython3.9.so"`.
+
 ### Add the openvino Python libraries to the `PYTHONPATH`
 ```console
-export PYTHONPATH=/home/pi/openvino/bin/armv7l/Release/lib/python_api/python3.9:$PYTHONPATH
+echo "export PYTHONPATH=/home/pi/openvino/bin/armv7l/Release/lib/python_api/python3.9:$PYTHONPATH" >> ~/.bashrc
 ```
 
 ### Manually update NCS2 udev rules
@@ -76,10 +81,13 @@ sudo ldconfig
 
 ### Install Vimba
 
-I could not find Vimba for `armv71` online. I `rsync`'d the source (Vimba for Linux ARMv7 32-bit - Release Notes) from a previous Malaria Scope's OS and installed
-from there.
+Download and uncompress Vimba for your version of the software:
 
-I `rsync`'d it to `/opt/`, then
+- [Vimba 64 bit](https://drive.google.com/file/d/1_0ckwfBUPX-drv2zrvJkzIj39QkT-eUr/view?usp=share_link)
+- [Vimba 32 bit](https://drive.google.com/file/d/16OUi32I5QPsywLyl9qaezAkova_Dz53e/view?usp=sharing)
+
+`rsync` it to `/opt/`, then
+
 ```console
 cd /opt/Vimba_5_0/VimbaUSBTL
 sudo ./Install.sh
@@ -109,9 +117,6 @@ Uncomment the following
 dtparam=i2c_arm=on
 ```
 
-and now reboot.
-
-
 ### Install Others
 
 To automate running the daemon at boot time, run:
@@ -134,6 +139,8 @@ sudo systemctl enable init_led_pneumatic.service
 sudo systemctl enable fan.service
 ```
 
+and now reboot.
+
 ### Congrats!
 
-You are done!
+You are done.
