@@ -2,7 +2,7 @@
 
 # It has two functions so far:
 #   1. Stabilize: simply stabilizes the pressure at a setpoint (cmd line input).
-#       Used as a basic tool for applyign a known pressure to the flow cell.
+#       Used as a basic tool for applying a known pressure to the flow cell.
 
 #   2. Sweep: sweep the PWM duty ratio over a pre-defined range in order to
 #       discover the pressure as a function of duty ratio. Calibration values
