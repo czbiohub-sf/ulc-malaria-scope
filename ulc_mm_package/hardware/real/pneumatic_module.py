@@ -32,6 +32,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     MPRLS_PWR,
     DEFAULT_SYRINGE_MAX_DUTY_CYCLE,
     DEFAULT_SYRINGE_MIN_DUTY_CYCLE,
+    DEFAULT_STEP,
 )
 from ulc_mm_package.hardware.dtoverlay_pwm import (
     dtoverlay_PWM,
@@ -69,10 +70,13 @@ class PneumaticModule:
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.servo_pin = servo_pin
 
-        self.min_duty_cycle, self.max_duty_cycle = self.get_config_params()
-        self.min_step_size = (
-            self.max_duty_cycle - self.min_duty_cycle
-        ) / 60  # empircally found the top/bottom vals, ~60 steps between min/max pressure
+        # Load configuration file parameters
+        (
+            self.min_duty_cycle,
+            self.max_duty_cycle,
+            self.min_step_size,
+        ) = self.get_config_params()
+
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
 
@@ -105,8 +109,8 @@ class PneumaticModule:
             return True
         return False
 
-    def get_config_params(self) -> Tuple[float, float]:
-        """Returns minimum and maximum duty cycles for syringe position from the configuration file if it exists."""
+    def get_config_params(self) -> Tuple[float, float, float]:
+        """Returns min/max duty cycles for syringe position and step size from the configuration file if it exists."""
         if self.config_exists():
             config = configparser.ConfigParser()
             try:
@@ -115,21 +119,28 @@ class PneumaticModule:
                 ), f"configparser failed to read file {CONFIGURATION_FILE}."
                 min_duty_cycle = float(config["SYRINGE"]["MIN_DUTY_CYCLE"])
                 max_duty_cycle = float(config["SYRINGE"]["MAX_DUTY_CYCLE"])
+                step_size = float(config["SYRINGE"]["DUTY_CYCLE_STEP"])
+
                 if (
                     min_duty_cycle >= max_duty_cycle
                     or min_duty_cycle < 0
                     or max_duty_cycle > 1
+                    or step_size < 0
                 ):
                     raise InvalidConfigurationParameters(
-                        f"Invalid syringe duty cycle configuration parameters. Min: {min_duty_cycle}, Max: {max_duty_cycle}\n"
-                        f"Min must be >= 0 and less than max_duty_cycle. Max must be <=1.0"
+                        f"Invalid configuration parameters. Min: {min_duty_cycle}, Max: {max_duty_cycle}, Step: {step_size}\n"
+                        f"Min must be >= 0 and less than max_duty_cycle. Max must be <=1.0. Step size must be > 0"
                     )
-                return min_duty_cycle, max_duty_cycle
+                return min_duty_cycle, max_duty_cycle, step_size
             except Exception as e:
                 self.logger.exception(
                     f"Error encountered while reading syringe min/max from the config file, {CONFIGURATION_FILE}. Setting defaults instead.\nException: {e}"
                 )
-                return DEFAULT_SYRINGE_MIN_DUTY_CYCLE, DEFAULT_SYRINGE_MAX_DUTY_CYCLE
+                return (
+                    DEFAULT_SYRINGE_MIN_DUTY_CYCLE,
+                    DEFAULT_SYRINGE_MAX_DUTY_CYCLE,
+                    DEFAULT_STEP,
+                )
         else:
             self.logger.info(
                 f"{CONFIGURATION_FILE} was not found, using default values instead for syringe min/max duty cycle."
@@ -173,12 +184,16 @@ class PneumaticModule:
 
     def threadedDecreaseDutyCycle(self):
         if not SYRINGE_LOCK.locked():
+            if not self.isMovePossible(SyringeDirection.DOWN):
+                raise SyringeEndOfTravel()
             self.executor.submit(self.decreaseDutyCycle)
         else:
             raise SyringeInMotion
 
     def threadedIncreaseDutyCycle(self):
         if not SYRINGE_LOCK.locked():
+            if not self.isMovePossible(SyringeDirection.UP):
+                raise SyringeEndOfTravel()
             self.executor.submit(self.increaseDutyCycle)
         else:
             raise SyringeInMotion
