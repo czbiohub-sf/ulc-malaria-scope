@@ -82,7 +82,7 @@ class FlowRateEstimator:
 
     def is_primed(self) -> bool:
         """Check whether the estimator is ready to return a value."""
-        return self._prev_img is not None
+        return self.timestamps[0] != 0.0
 
     def _add_image(self, img_arr: np.ndarray, timestamp: float) -> None:
         """Internal function - add image to the storage with the given timestamp.
