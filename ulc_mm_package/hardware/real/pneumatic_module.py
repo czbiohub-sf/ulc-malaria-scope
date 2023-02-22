@@ -193,12 +193,16 @@ class PneumaticModule:
         """Return true if the syringe can still move in the specified direction."""
 
         # Cannot move the syringe up
-        if self.duty_cycle > self.max_duty_cycle and move_dir == SyringeDirection.UP:
+        if (
+            self.duty_cycle + self.min_step_size > self.max_duty_cycle
+            and move_dir == SyringeDirection.UP
+        ):
             return False
 
         # Cannot move the syringe down
         elif (
-            self.duty_cycle < self.min_duty_cycle and move_dir == SyringeDirection.DOWN
+            self.duty_cycle - self.min_step_size < self.min_duty_cycle
+            and move_dir == SyringeDirection.DOWN
         ):
             return False
 
