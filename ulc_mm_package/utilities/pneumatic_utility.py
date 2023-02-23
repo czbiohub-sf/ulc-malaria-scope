@@ -36,8 +36,8 @@ P_GAIN = 0.001
 P_SET_DEF = 950
 LOOP_DELAY = 0.1
 N_SWEEP_POINTS = 100
-PERC_LOWER = 4
-PERC_UPPER = 96
+PERC_LOWER = 2
+PERC_UPPER = 98
 
 
 def init_argparse() -> argparse.ArgumentParser:
