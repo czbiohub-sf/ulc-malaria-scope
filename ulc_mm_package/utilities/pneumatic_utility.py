@@ -36,8 +36,8 @@ P_GAIN = 0.001
 P_SET_DEF = 950
 LOOP_DELAY = 0.1
 N_SWEEP_POINTS = 100
-PERC_LOWER = 4
-PERC_UPPER = 96
+PERC_LOWER = 2
+PERC_UPPER = 98
 
 
 def init_argparse() -> argparse.ArgumentParser:
@@ -58,6 +58,7 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
     # to generate a pressure vs. duty ratio plot for calibration purposes
 
     duty_vec = np.linspace(DUTY_MAX_WIDE, DUTY_MIN_WIDE, N_SWEEP_POINTS)
+    step_size = abs(np.diff(duty_vec)[0])
     press_vec = np.zeros_like(duty_vec)
 
     try:
@@ -97,6 +98,7 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
     cal["press_upper_bound"] = press_upper_bound
     cal["duty_lower_bound"] = duty_lower_bound
     cal["duty_upper_bound"] = duty_upper_bound
+    cal["step_size"] = step_size
 
     print(cal)
 
@@ -126,6 +128,7 @@ def create_calibration_file(cal) -> None:
         f.write("[SYRINGE]" + "\n")
         f.write("MIN_DUTY_CYCLE = " + str(cal["duty_lower_bound"]) + "\n")
         f.write("MAX_DUTY_CYCLE = " + str(cal["duty_upper_bound"]) + "\n")
+        f.write("DUTY_CYCLE_STEP = " + str(cal["step_size"]) + "\n")
 
 
 def init(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
