@@ -767,6 +767,7 @@ class ScopeOp(QObject, NamedMachine):
                 "syringe_pos"
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = flowrate
+            self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
             self.img_metadata["focus_error"] = focus_err
 
             if self.count % TH_PERIOD_NUM == 0:

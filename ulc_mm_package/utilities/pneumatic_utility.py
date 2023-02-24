@@ -1,6 +1,18 @@
-# Quick and dirty stabilized pressure generator
-# Uses LFM scope pneumatic module w/ PWM controlled servo
-# and MPRLS sensor
+# Tools for calibrating and simple usage of the pneumatic module on lfm-scope
+
+# It has two functions so far:
+#   1. Stabilize: simply stabilizes the pressure at a setpoint (cmd line input).
+#       Used as a basic tool for applying a known pressure to the flow cell.
+
+#   2. Sweep: sweep the PWM duty ratio over a pre-defined range in order to
+#       discover the pressure as a function of duty ratio. Calibration values
+#       are computed, corresponding to lower and upper bounds of the useful range.
+#       A configuration file is written to record the upper and lower duty ratio bounds.
+
+#       Note: a sealed flow cell must be installed on the scope in order to hold vacuum.
+
+# Uses LFM scope pneumatic module w/ PWM controlled servo and MPRLS sensor
+
 
 import os
 import argparse
@@ -16,7 +28,6 @@ from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 from ulc_mm_package.hardware.real.pneumatic_module import AdafruitMPRLS
 
 PWM_FREQ = 100
-# 20.5 is 1.5mm off end, 21.2 is fully empty. 15.2 is the physical limit before the servo arm crashes, therefore 18.2 is the center
 DUTY_MAX = 21.2 / 100
 DUTY_MIN = 15.5 / 100
 DUTY_MIN_WIDE = 14 / 100
@@ -25,11 +36,13 @@ P_GAIN = 0.001
 P_SET_DEF = 950
 LOOP_DELAY = 0.1
 N_SWEEP_POINTS = 100
-PERC_LOWER = 4
-PERC_UPPER = 96
+PERC_LOWER = 2
+PERC_UPPER = 98
 
 
 def init_argparse() -> argparse.ArgumentParser:
+    # Not sure if this is done well, but it works
+
     parser = argparse.ArgumentParser(
         usage="%(prog)s [ACTION] [optional: PRESSURE SETPOINT (mbar)]",
         description="Pneumatic module testing and calibration utiliy.",
@@ -45,6 +58,7 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
     # to generate a pressure vs. duty ratio plot for calibration purposes
 
     duty_vec = np.linspace(DUTY_MAX_WIDE, DUTY_MIN_WIDE, N_SWEEP_POINTS)
+    step_size = abs(np.diff(duty_vec)[0])
     press_vec = np.zeros_like(duty_vec)
 
     try:
@@ -84,6 +98,7 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
     cal["press_upper_bound"] = press_upper_bound
     cal["duty_lower_bound"] = duty_lower_bound
     cal["duty_upper_bound"] = duty_upper_bound
+    cal["step_size"] = step_size
 
     print(cal)
 
@@ -98,6 +113,8 @@ def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
 
 
 def create_calibration_file(cal) -> None:
+    # Writes upper and lower duty ratio bounds to a configuration file
+
     host = socket.gethostname()
     parent_dir = Path(".").resolve().parents[0]
 
@@ -111,9 +128,13 @@ def create_calibration_file(cal) -> None:
         f.write("[SYRINGE]" + "\n")
         f.write("MIN_DUTY_CYCLE = " + str(cal["duty_lower_bound"]) + "\n")
         f.write("MAX_DUTY_CYCLE = " + str(cal["duty_upper_bound"]) + "\n")
+        f.write("DUTY_CYCLE_STEP = " + str(cal["step_size"]) + "\n")
 
 
 def init(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
+    # Takes initial pressure measurement; pauses to wait for user to install
+    # a sealed flow cell.
+
     # Initial pressure reading
     p_read = int(mpr.getPressureMaxReadAttempts()[0])
     print("Starting pressure -", p_read, "mb")
@@ -121,7 +142,7 @@ def init(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
     # Max is no vacuum. Set initially to max
     pwm.setDutyCycle(initial)
 
-    input("Press enter to start after loading a sealed consumable ")
+    input("Press enter to start after loading a sealed flow cell")
 
 
 def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
@@ -159,6 +180,8 @@ def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
 
 
 def main() -> None:
+    # Parse input arguments and decide which function to call
+
     parser = init_argparse()
     args = parser.parse_args()
 
@@ -180,7 +203,7 @@ def main() -> None:
 
     elif args.action[0] == "sweep":
         # Perform a sweep of the PWM range, returning pressure vs. PWM duty ratio
-        duty, press = calibrate_range(mpr, pwm)
+        calibrate_range(mpr, pwm)
 
     else:
         print("Argument " + str(args.action[0] + " not recognized"))
