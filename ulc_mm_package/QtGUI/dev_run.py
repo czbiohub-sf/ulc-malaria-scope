@@ -1,5 +1,4 @@
-# FIXME no stars!
-from ulc_mm_package.QtGUI.gui_constants import *
+from ulc_mm_package.QtGUI.gui_constants import FLOWCELL_QC_FORM_LINK
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
 from ulc_mm_package.scope_constants import (
@@ -10,12 +9,38 @@ from ulc_mm_package.scope_constants import (
 )
 from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
 
-# FIXME no stars!
-from ulc_mm_package.hardware.hardware_modules import *
+from ulc_mm_package.hardware.motorcontroller import (
+    Direction,
+    MotorControllerError,
+    MotorInMotion,
+)
+from ulc_mm_package.hardware.led_driver_tps54201ddct import LEDError
+from ulc_mm_package.hardware.pim522_rotary_encoder import EncoderI2CError
+from ulc_mm_package.hardware.pneumatic_module import (
+    PneumaticModule,
+    PneumaticModuleError,
+    PressureSensorNotInstantiated,
+    SyringeInMotion,
+    PressureSensorStaleValue,
+)
+
 from ulc_mm_package.hardware.scope_routines import Routines
 
-# FIXME no stars!
-from ulc_mm_package.image_processing.processing_modules import *
+from ulc_mm_package.image_processing.autobrightness import (
+    BrightnessTargetNotAchieved,
+    BrightnessCriticallyLow,
+    LEDNoPower,
+)
+from ulc_mm_package.image_processing.flow_control import (
+    FlowController,
+    CantReachTargetFlowrate,
+    LowConfidenceCorrelations,
+)
+from ulc_mm_package.image_processing.zstack import (
+    takeZStackCoroutine,
+    symmetricZStackCoroutine,
+)
+
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
