@@ -43,7 +43,7 @@ from ulc_mm_package.hardware.rtc_pcf8523 import RTC_PCF8523
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.image_processing.flow_control import FlowController
-from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
+from ulc_mm_package.neural_nets import TPUError, AutoFocus, YOGO
 
 
 class GPIOEdge(enum.Enum):

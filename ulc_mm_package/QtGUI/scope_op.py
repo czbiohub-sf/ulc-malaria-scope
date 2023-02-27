@@ -25,7 +25,7 @@ from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     VERBOSE,
 )
-from ulc_mm_package.hardware.hardware_modules import (
+from ulc_mm_package.hardware import (
     PressureSensorStaleValue,
     SyringeInMotion,
 )
