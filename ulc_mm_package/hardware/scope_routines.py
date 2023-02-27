@@ -13,7 +13,9 @@ from ulc_mm_package.image_processing.autobrightness import (
     checkLedWorking,
 )
 from ulc_mm_package.image_processing.flow_control import LowConfidenceCorrelations
-from ulc_mm_package.image_processing.focus_metrics import logPowerSpectrumRadialAverageSum
+from ulc_mm_package.image_processing.focus_metrics import (
+    logPowerSpectrumRadialAverageSum,
+)
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
     NoCellsFound,
