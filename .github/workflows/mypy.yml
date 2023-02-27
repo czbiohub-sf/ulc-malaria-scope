@@ -15,4 +15,4 @@ jobs:
           python-version: '3.7'
       - run: pip install --upgrade pip
       - run: pip install mypy==1.0.1
-      - run: mypy src
+      - run: mypy ulc_mm_package
