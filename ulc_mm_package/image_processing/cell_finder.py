@@ -1,6 +1,8 @@
-from typing import Tuple
-import numpy as np
 import cv2
+import numpy as np
+
+from typing import Tuple, List
+
 from ulc_mm_package.image_processing.processing_constants import (
     RBC_THUMBNAIL_PATH,
     CELLS_FOUND_THRESHOLD,
@@ -114,8 +116,8 @@ class CellFinder:
             cv2.imread(template_path, 0), downsample_factor
         )
         self.downsample_factor = downsample_factor
-        self.motor_pos = []
-        self.confidences = []
+        self.motor_pos: List[int] = []
+        self.confidences: List[float] = []
 
     def add_image(self, motor_pos: int, img: np.ndarray) -> None:
         """Check for cells for the given image, store the result + motor position the image was taken at."""
@@ -123,18 +125,18 @@ class CellFinder:
         self.motor_pos.append(motor_pos)
         self.confidences.append(self.find_cells_cross_corr(img))
 
-    def get_cells_found_position(self):
+    def get_cells_found_position(self) -> int:
         """Check if the cross-correlation value exceeds the threshold for cell detection."""
 
         max_val = np.max(self.confidences)
         if max_val >= CELLS_FOUND_THRESHOLD:
             return self.motor_pos[np.argmax(self.confidences)]
-        else:
-            raise NoCellsFound(
-                "None of the images at any of the motor positions had a maximum cross-correlation exceeding the CELLS_FOUND threshold"
-            )
 
-    def reset(self):
+        raise NoCellsFound(
+            "None of the images at any of the motor positions had a maximum cross-correlation exceeding the CELLS_FOUND threshold"
+        )
+
+    def reset(self) -> None:
         self.motor_pos = []
         self.confidences = []
 
