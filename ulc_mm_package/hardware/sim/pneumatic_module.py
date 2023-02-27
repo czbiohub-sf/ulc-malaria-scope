@@ -1,10 +1,9 @@
-from time import sleep, perf_counter
+from time import sleep
 from typing import Tuple
 
 import numpy as np
 
 from ulc_mm_package.hardware.hardware_constants import (
-    SERVO_5V_PIN,
     SERVO_PWM_PIN,
     SERVO_FREQ,
 )
@@ -15,10 +14,6 @@ from ulc_mm_package.hardware.real.pneumatic_module import (
     PneumaticModule as RealPneumaticModule,
 )
 from ulc_mm_package.hardware.pneumatic_module import (
-    PressureSensorNotInstantiated,
-    SyringeInMotion,
-    SyringeDirection,
-    SyringeEndOfTravel,
     PressureSensorRead,
 )
 

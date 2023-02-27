@@ -21,7 +21,6 @@ from ulc_mm_package.hardware.motorcontroller import (
     Direction,
     MotorControllerError,
     MotorMoveTimeout,
-    HomingError,
     StopMotorInterrupt,
     MotorInMotion,
     InvalidMove,
@@ -160,7 +159,7 @@ class DRV8825Nema(RealDRV8825Nema):
             # Move slightly until the limit switch is no longer active
             self.pos = 0
 
-        if self.lim2 != None:
+        if self.lim2 is not None:
             # Move to the CW limit switch
             try:
                 self.move_rel(dir=Direction.CW, steps=1e6, timeout_s=homing_timeout)
