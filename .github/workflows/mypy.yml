@@ -1,7 +1,7 @@
 # switch to official black linter
 # https://black.readthedocs.io/en/stable/integrations/github_actions.html
 
-name: black
+name: mypy
 
 on: [push, pull_request]
 
