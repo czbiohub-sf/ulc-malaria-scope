@@ -145,7 +145,11 @@ class PneumaticModule:
             self.logger.info(
                 f"{CONFIGURATION_FILE} was not found, using default values instead for syringe min/max duty cycle."
             )
-            return DEFAULT_SYRINGE_MIN_DUTY_CYCLE, DEFAULT_SYRINGE_MAX_DUTY_CYCLE
+            return (
+                DEFAULT_SYRINGE_MIN_DUTY_CYCLE,
+                DEFAULT_SYRINGE_MAX_DUTY_CYCLE,
+                DEFAULT_STEP,
+            )
 
     def getCurrentDutyCycle(self):
         return self.duty_cycle
