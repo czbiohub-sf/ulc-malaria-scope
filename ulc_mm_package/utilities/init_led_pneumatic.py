@@ -11,18 +11,18 @@ This script properly initializes the PWM chip when being run as a systemd script
 """
 
 from time import sleep
-from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
+
+from ulc_mm_package.hardware.dtoverlay_pwm import (
+    dtoverlay_PWM as dtoverlay_org,
+    PWM_CHANNEL,
+)
 
 if __name__ == "__main__":
-    pwm1 = dtoverlay_PWM(PWM_CHANNEL.PWM1)
-    pwm1 = dtoverlay_PWM(PWM_CHANNEL.PWM2)
+    pwm1 = dtoverlay_org(PWM_CHANNEL.PWM1)
+    pwm1 = dtoverlay_org(PWM_CHANNEL.PWM2)
+
 import subprocess
 import enum
-
-
-class PWM_CHANNEL(enum.Enum):
-    PWM1 = 0
-    PWM2 = 1
 
 
 class dtoverlay_PWM_Exception(Exception):
