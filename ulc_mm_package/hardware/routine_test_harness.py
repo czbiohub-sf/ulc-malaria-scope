@@ -9,8 +9,7 @@ from ulc_mm_package.scope_constants import (
 )
 from ulc_mm_package.hardware.scope import MalariaScope
 
-# FIXME no stars!
-from ulc_mm_package.hardware.scope_routines import *
+from ulc_mm_package.hardware.scope_routines import Routines
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
