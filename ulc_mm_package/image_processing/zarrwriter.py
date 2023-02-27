@@ -6,16 +6,10 @@ Library Documentation:
 
 """
 
-import time
 import zarr
 import logging
-import threading
-import functools
-import threading
-import numpy as np
 
-from time import perf_counter
-from typing import List, Tuple, Optional
+from typing import List
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, Future, wait
 
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION, MAX_FRAMES

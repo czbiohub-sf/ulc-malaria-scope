@@ -8,7 +8,6 @@ Datasheet:
 from time import sleep
 
 from ulc_mm_package.hardware.hardware_constants import (
-    LED_PWM_PIN,
     ANALOG_DIM_MODE_DUTYCYCLE,
     LED_FREQ,
 )

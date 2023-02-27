@@ -38,7 +38,7 @@ def _displayForNSeconds(seconds: int):
 
 
 def autobrightness_wrapper(mscope: MalariaScope):
-    print(f"Running Autobrightness...")
+    print("Running Autobrightness...")
     ab_routine = routines.autobrightnessRoutine(mscope)
     ab_routine.send(None)
     for img, _ in mscope.camera.yieldImages():
@@ -57,7 +57,7 @@ def autobrightness_wrapper(mscope: MalariaScope):
         except BrightnessCriticallyLow:
             raise
         except LEDNoPower:
-            print(f"LED is not working.")
+            print("LED is not working.")
             raise
 
 
@@ -199,7 +199,7 @@ def main_acquisition_loop(mscope: MalariaScope):
     # Get SSD directory
     try:
         self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-    except (FileNotFoundError, IndexError) as e:
+    except (FileNotFoundError, IndexError):
         print(
             f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
         )
@@ -231,7 +231,7 @@ def main_acquisition_loop(mscope: MalariaScope):
         if isinstance(steps_from_focus, int):
             print(f"SSAF: Motor move - {steps_from_focus} steps")
 
-        prev_results = count_parasitemia(mscope, img)
+        count_parasitemia(mscope, img)
 
         density_start_time = perf_counter()
         try:

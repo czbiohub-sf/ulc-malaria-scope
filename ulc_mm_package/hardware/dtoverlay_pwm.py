@@ -41,7 +41,7 @@ class dtoverlay_PWM:
         echo 1 > pwm1/enable;
         """
         subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+            cmd, capture_output=True, shell=True, cwd="/sys/class/pwm/pwmchip0"
         )
 
     def setFreq(self, freq: int):
@@ -81,7 +81,7 @@ class dtoverlay_PWM:
         echo 0 > pwm1/enable;
         """
         subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+            cmd, capture_output=True, shell=True, cwd="/sys/class/pwm/pwmchip0"
         )
         dtoverlay_PWM._started = True
 

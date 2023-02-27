@@ -37,7 +37,7 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
         )
         try:
             parent_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-        except (FileNotFoundError, IndexError) as e:
+        except (FileNotFoundError, IndexError):
             print(f"Could not find any folders within {SSD_DIR}.")
             return
     print(f"Getting data from {parent_dir}")
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
     if args.verbose:
         metadata_compiler(display_keys=VALID_KEYS)
-    elif args.key != None:
+    elif args.key is not None:
         custom_keys = DEFAULT_KEYS + [args.key]
         metadata_compiler(display_keys=custom_keys)
     else:
