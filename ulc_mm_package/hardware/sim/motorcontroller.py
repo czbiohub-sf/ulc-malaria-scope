@@ -2,6 +2,8 @@ import logging
 import time
 import threading
 
+import pigpio
+
 from ulc_mm_package.utilities.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
     FULL_STEP_TO_TRAVEL_DIST_UM,

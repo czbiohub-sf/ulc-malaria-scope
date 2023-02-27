@@ -197,6 +197,7 @@ class SharedctypeWrapper(abc.ABC):
         """Set the shared memory to the value of v"""
         ...
 
+    @abc.abstractmethod
     def get(self) -> _pytype:
         """Get the shared memory and return as python
         type (e.g. numeric or numpy.ndarray)
@@ -206,7 +207,9 @@ class SharedctypeWrapper(abc.ABC):
 
 class SharedctypeValue(SharedctypeWrapper):
     def __init__(self, type_: _ctype_type, init_value: Optional[Real]):
-        self._memory: mp.sharedctypes.Synchronized[Real] = mp.Value(type_, init_value)
+        self._memory: mp.sharedctypes.Synchronized[Real] = cast(
+            mp.sharedctypes.Synchronized[Real], mp.Value(type_, init_value)
+        )
 
     @classmethod
     def from_definition(cls, defn: ctypeDefn) -> SharedctypeValue:
