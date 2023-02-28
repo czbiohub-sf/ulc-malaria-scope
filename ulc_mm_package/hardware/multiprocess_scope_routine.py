@@ -208,7 +208,7 @@ class SharedctypeWrapper(abc.ABC):
 class SharedctypeValue(SharedctypeWrapper):
     def __init__(self, type_: _ctype_type, init_value: Optional[Real]):
         self._memory: mp.sharedctypes.Synchronized[Real] = cast(
-            mp.sharedctypes.Synchronized[Real], mp.Value(type_, init_value)
+            "mp.sharedctypes.Synchronized[Real]", mp.Value(type_, init_value)
         )
 
     @classmethod

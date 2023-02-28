@@ -29,6 +29,13 @@ from ulc_mm_package.hardware import (
     PressureSensorStaleValue,
     SyringeInMotion,
 )
+from ulc_mm_package.image_processing.autobrightness import (
+    BrightnessTargetNotAchieved,
+    BrightnessCriticallyLow,
+    LEDNoPower,
+)
+
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT, TH_PERIOD_NUM
 from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
@@ -336,7 +343,6 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_autobrightness(self, *args):
         self.autobrightness_routine = self.routines.autobrightnessRoutine(self.mscope)
-        self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
 
@@ -367,7 +373,6 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_cellfinder(self, *args):
         self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
-        self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
@@ -392,26 +397,21 @@ class ScopeOp(QObject, NamedMachine):
         self.fastflow_routine = self.routines.fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
         )
-        self.fastflow_routine.send(None)
 
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self, *args):
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
-        self.PSSAF_routine.send(None)
 
         self.flowcontrol_routine = self.routines.flowControlRoutine(
-            self.mscope, self.target_flowrate, None
+            self.mscope, self.target_flowrate
         )
-        self.flowcontrol_routine.send(None)
 
         self.density_routine = self.routines.cell_density_routine()
-        self.density_routine.send(None)
 
         self.count_parasitemia_routine = (
             self.routines.count_parasitemia_periodic_wrapper(self.mscope)
         )
-        self.count_parasitemia_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
@@ -715,7 +715,6 @@ class ScopeOp(QObject, NamedMachine):
                     self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
                         self.mscope, None
                     )
-                    self.PSSAF_routine.send(None)
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
 
@@ -731,7 +730,6 @@ class ScopeOp(QObject, NamedMachine):
                 self.flowcontrol_routine = self.routines.flowControlRoutine(
                     self.mscope, self.target_flowrate, None
                 )
-                self.flowcontrol_routine.send(None)
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)

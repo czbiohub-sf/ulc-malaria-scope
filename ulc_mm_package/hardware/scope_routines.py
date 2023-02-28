@@ -1,6 +1,8 @@
 import logging
+
+from functools import wraps
 from time import perf_counter, sleep
-from typing import List, Tuple, Optional, Sequence, Generator, Union
+from typing import Any, Callable, List, Tuple, Optional, Sequence, Generator, Union
 
 import numpy as np
 
@@ -26,30 +28,27 @@ from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerEr
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
 
 from ulc_mm_package.neural_nets import AsyncInferenceResult
+
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
+
+
+def init_generator(
+    generator: Callable[..., Generator[Any, Any, Any]]
+) -> Generator[Any, Any, Any]:
+    @wraps(generator)
+    def call(*a, **k):
+        g = generator(*a, **k)
+        # advance just-started generator without requiring generator 'send' type to be optional
+        next(g)
+        return g
+
+    return call
 
 
 class Routines:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-
-    def focusRoutine(
-        self,
-        mscope: MalariaScope,
-        lower_bound: int,
-        upper_bound: int,
-        img: np.ndarray = None,
-    ):
-        mscope.motor.move_abs(lower_bound)
-        focus_metrics = []
-        while mscope.motor.pos < upper_bound:
-            img = yield img
-            focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
-            mscope.motor.move_rel(steps=1, dir=Direction.CW)
-
-        best_focus_pos = lower_bound + np.argmax(focus_metrics)
-        mscope.motor.move_abs(best_focus_pos)
 
     def singleShotAutofocusRoutine(
         self, mscope: MalariaScope, img_arr: List[np.ndarray]
@@ -85,22 +84,24 @@ class Routines:
 
         return steps_from_focus
 
+    @init_generator
     def continuousSSAFRoutine(
-        self, mscope: MalariaScope, img: np.ndarray
-    ) -> Generator[Union[None, int], np.ndarray, None]:
+        self, mscope: MalariaScope
+    ) -> Generator[Optional[int], np.ndarray, None]:
         """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
 
         img_arr = []
         steps_from_focus = None
 
         while True:
-            img = yield steps_from_focus
+            img: np.ndarray = yield steps_from_focus
             steps_from_focus = None
             img_arr.append(img)
             if len(img_arr) == nn_constants.AF_BATCH_SIZE:
                 steps_from_focus = self.singleShotAutofocusRoutine(mscope, img_arr)
                 img_arr = []
 
+    @init_generator
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope, img: np.ndarray
     ) -> Generator[Union[None, int], np.ndarray, None]:
@@ -125,8 +126,7 @@ class Routines:
 
         counter = 0
         steps_from_focus = None
-        ssaf_routine = self.continuousSSAFRoutine(mscope, None)
-        ssaf_routine.send(None)
+        ssaf_routine = self.continuousSSAFRoutine(mscope)
 
         while True:
             img = yield steps_from_focus
@@ -147,6 +147,7 @@ class Routines:
         mscope.cell_diagnosis_model(img, counts)
         return results
 
+    @init_generator
     def count_parasitemia_periodic_wrapper(
         self,
         mscope: MalariaScope,
@@ -169,8 +170,11 @@ class Routines:
                     _,
                 ) = yield []
 
+    @init_generator
     def flowControlRoutine(
-        self, mscope: MalariaScope, target_flowrate: float, img: np.ndarray
+        self,
+        mscope: MalariaScope,
+        target_flowrate: float,
     ) -> Generator[float, np.ndarray, None]:
         """Keep the flowrate steady by continuously calculating the flowrate and periodically
         adjusting the syringe position. Need to initially pass in the flowrate to maintain.
@@ -190,14 +194,16 @@ class Routines:
             is still outside the tolerance band.
         """
 
-        img, timestamp = yield
-        flow_val = None
+        img: np.ndarray
+        img, timestamp = yield 0.0
+        flow_val = 0.0
 
         mscope.flow_controller.setTargetFlowrate(target_flowrate)
         while True:
             img, timestamp = yield flow_val
             flow_val = mscope.flow_controller.controlFlow(img, timestamp)
 
+    @init_generator
     def fastFlowRoutine(
         self,
         mscope: MalariaScope,
@@ -264,6 +270,7 @@ class Routines:
             if flow_error == 0:
                 return flow_val
 
+    @init_generator
     def autobrightnessRoutine(
         self, mscope: MalariaScope, img: np.ndarray = None
     ) -> float:
@@ -400,6 +407,7 @@ class Routines:
 
             return pressure_diff
 
+    @init_generator
     def find_cells_routine(
         self,
         mscope: MalariaScope,
@@ -492,6 +500,7 @@ class Routines:
                 max_attempts -= 1
                 self.logger.warning("MAX ATTEMPTS LEFT {}".format(max_attempts))
 
+    @init_generator
     def cell_density_routine(self) -> Generator[Optional[int], np.ndarray, None]:
         prev_time = perf_counter()
         prev_measurements = np.asarray(
