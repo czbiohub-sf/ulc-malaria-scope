@@ -14,7 +14,10 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     checkLedWorking,
 )
-from ulc_mm_package.image_processing.flow_control import CantReachTargetFlowrate, LowConfidenceCorrelations
+from ulc_mm_package.image_processing.flow_control import (
+    CantReachTargetFlowrate,
+    LowConfidenceCorrelations,
+)
 from ulc_mm_package.image_processing.focus_metrics import (
     logPowerSpectrumRadialAverageSum,
 )
@@ -93,8 +96,9 @@ class Routines:
         img_arr = []
         steps_from_focus = None
 
+        img: np.ndarray
         while True:
-            img: np.ndarray = yield steps_from_focus
+            img = yield steps_from_focus
             steps_from_focus = None
             img_arr.append(img)
             if len(img_arr) == nn_constants.AF_BATCH_SIZE:
@@ -251,7 +255,7 @@ class Routines:
             2 * the measurement window size.
         """
 
-        flow_val = 0.
+        flow_val = 0.0
         img, timestamp = yield None
 
         mscope.flow_controller.setTargetFlowrate(target_flowrate)
