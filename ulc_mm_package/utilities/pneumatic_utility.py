@@ -15,17 +15,21 @@
 
 
 import os
-import argparse
-import socket
 import time
-from pathlib import Path
-from os import system
+import socket
+import argparse
 
 import numpy as np
+import numpy.typing as npt
 import matplotlib.pyplot as plt
+
+from os import system
+from pathlib import Path
+from typing import Tuple
 
 from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 from ulc_mm_package.hardware.real.pneumatic_module import AdafruitMPRLS
+
 
 PWM_FREQ = 100
 DUTY_MAX = 21.2 / 100
@@ -53,7 +57,9 @@ def init_argparse() -> argparse.ArgumentParser:
     return parser
 
 
-def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
+def calibrate_range(
+    mpr: AdafruitMPRLS, pwm: dtoverlay_PWM
+) -> Tuple[npt.NDArray, npt.NDArray]:
     # Sweeps the PWM duty ratio over a wider range in order
     # to generate a pressure vs. duty ratio plot for calibration purposes
 
