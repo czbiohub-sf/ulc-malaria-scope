@@ -12,6 +12,9 @@ from typing import List
 
 
 class PatchyBackgroundSubtraction:
+    def __init__(self):
+        self._backgroundAverageArray = np.empty()
+
     def _maskBoxedRegions(
         self,
         img_arr: np.ndarray,
