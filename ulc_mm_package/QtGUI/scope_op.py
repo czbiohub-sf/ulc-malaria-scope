@@ -32,7 +32,7 @@ from ulc_mm_package.hardware import (
 from ulc_mm_package.image_processing.autobrightness import (
     BrightnessTargetNotAchieved,
     BrightnessCriticallyLow,
-    LEDNoPower
+    LEDNoPower,
 )
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT, TH_PERIOD_NUM

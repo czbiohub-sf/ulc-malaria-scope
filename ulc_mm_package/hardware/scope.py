@@ -248,7 +248,9 @@ class MalariaScope:
             )
             self.flow_controller_enabled = True
         except Exception as e:
-            self.logger.error(f"Flow controller initialization failed. {traceback.format_exc()}")
+            self.logger.error(
+                f"Flow controller initialization failed. {traceback.format_exc()}"
+            )
 
     def set_gpio_callback(
         self,
