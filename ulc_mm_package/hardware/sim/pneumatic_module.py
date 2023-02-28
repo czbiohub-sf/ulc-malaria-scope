@@ -49,6 +49,15 @@ class PneumaticModule(PneumaticModuleBase):
         self.pwm.setDutyCycle(0)
         sleep(0.5)
 
+    def getMaxDutyCycle(self):
+        return self.max_duty_cycle
+
+    def getMinDutyCycle(self):
+        return self.min_duty_cycle
+
+    def getCurrentDutyCycle(self):
+        return self.duty_cycle
+
     def getPressure(self) -> Tuple[float, PressureSensorRead]:
         ### TODO - mimic the real pressure sensor more
         # TODO: Can write in here mock errors - e.g. throw IOError
