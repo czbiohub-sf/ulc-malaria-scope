@@ -58,7 +58,7 @@ class DRV8825Nema:
         motor_type="DRV8825",
         steptype="Full",
         lim1=MOTOR_LIMIT_SWITCH1,
-        lim2: int = None,
+        lim2: Optional[int] = None,
         max_pos: Optional[int] = None,
         pi: pigpio.pi = None,
     ):
