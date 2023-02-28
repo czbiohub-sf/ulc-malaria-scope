@@ -95,8 +95,6 @@ class dtoverlay_PWM:
 
 
 if __name__ == "__main__":
-    from time import sleep
-
     pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
     pwm.setFreq(50000)
     pwm.setDutyCycle(0)

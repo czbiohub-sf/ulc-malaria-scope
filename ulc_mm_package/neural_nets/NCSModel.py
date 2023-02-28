@@ -30,7 +30,6 @@ from openvino.runtime import (
     Type,
     InferRequest,
     AsyncInferQueue,
-    Tensor,
 )
 
 

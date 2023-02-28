@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import (
     QScrollBar,
     QDesktopWidget,
 )
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, Qt
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QPixmap, QIcon
 
 from ulc_mm_package.image_processing.flow_control import getFlowError

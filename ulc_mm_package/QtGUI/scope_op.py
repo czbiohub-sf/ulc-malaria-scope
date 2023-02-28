@@ -8,7 +8,7 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 import logging
 import numpy as np
 
-from typing import Any
+from typing import Any, List
 from time import sleep, perf_counter
 from transitions import Machine, State
 
@@ -25,16 +25,21 @@ from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     VERBOSE,
 )
-from ulc_mm_package.hardware import (
-    PressureSensorStaleValue,
-    SyringeInMotion,
+
+from ulc_mm_package.image_processing.flow_control import (
+    CantReachTargetFlowrate,
+    LowConfidenceCorrelations,
+)
+from ulc_mm_package.image_processing.cell_finder import (
+    LowDensity,
+    NoCellsFound,
 )
 from ulc_mm_package.image_processing.autobrightness import (
     BrightnessTargetNotAchieved,
     BrightnessCriticallyLow,
     LEDNoPower,
 )
-
+from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureLeak,
@@ -359,7 +364,7 @@ class ScopeOp(QObject, NamedMachine):
                 f"Passed pressure check. Pressure difference = {pdiff} hPa."
             )
             self.next_state()
-        except PressureSensorBusy:
+        except PressureSensorBusy as e:
             self.logger.error(f"Unable to read value from the pressure sensor - {e}")
             # TODO What to do in a case where the sensor is acting funky?
             self.default_error.emit(

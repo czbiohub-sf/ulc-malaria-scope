@@ -9,7 +9,6 @@ Purpose: Dummy hardware object simulating fan.
 """
 
 from ulc_mm_package.hardware.fan import FanBase
-from ulc_mm_package.hardware.hardware_constants import FAN_GPIO
 
 
 class Fan(FanBase):

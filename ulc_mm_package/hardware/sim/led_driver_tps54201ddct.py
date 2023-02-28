@@ -15,7 +15,6 @@ from ulc_mm_package.hardware.hardware_constants import (
     ANALOG_DIM_MODE_DUTYCYCLE,
     LED_FREQ,
 )
-from ulc_mm_package.hardware.hardware_constants import LED_FREQ, LED_PWM_PIN
 from ulc_mm_package.hardware.dtoverlay_pwm import PWM_CHANNEL
 
 from ulc_mm_package.hardware.sim.dtoverlay_pwm import dtoverlay_PWM
