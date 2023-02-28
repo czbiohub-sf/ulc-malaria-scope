@@ -1,7 +1,8 @@
-import enum
-from typing import Tuple
-import numpy as np
 import cv2
+import enum
+import numpy as np
+
+from typing import Tuple, Optional
 
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
