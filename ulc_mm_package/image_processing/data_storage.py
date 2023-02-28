@@ -39,8 +39,8 @@ class DataStorage:
             self.fps = default_fps
             self.dt = 1 / self.fps
         else:
-            self.dt = 0.
-        self.prev_write_time = 0.
+            self.dt = 0.0
+        self.prev_write_time = 0.0
 
         # Calculate max number of digits, to zeropad subsample img filenames
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
@@ -53,9 +53,7 @@ class DataStorage:
         try:
             self.main_dir.mkdir()
         except FileNotFoundError as e:
-            raise DataStorageError(
-                f"Unable to make top-level directory: {e}"
-            )
+            raise DataStorageError(f"Unable to make top-level directory: {e}")
         except PermissionError as e:
             raise DataStorageError(
                 f"Unable to make top-level directory, permission issue: {e}"
@@ -98,7 +96,11 @@ class DataStorage:
         except Exception as e:
             raise DataStorageError from e
 
-        filename = self.main_dir / self.experiment_folder / f"{time_str}perimage_{custom_experiment_name}_metadata.csv"
+        filename = (
+            self.main_dir
+            / self.experiment_folder
+            / f"{time_str}perimage_{custom_experiment_name}_metadata.csv"
+        )
         self.metadata_file = open(str(filename), "w")
         self.md_writer = csv.DictWriter(
             self.metadata_file, fieldnames=per_image_metadata_keys
@@ -118,7 +120,11 @@ class DataStorage:
             writer.writerow(experiment_initialization_metdata)
 
         # Create Zarr Storage
-        filename = self.main_dir / self.experiment_folder / f"{time_str}_{custom_experiment_name}"
+        filename = (
+            self.main_dir
+            / self.experiment_folder
+            / f"{time_str}_{custom_experiment_name}"
+        )
         self.zw.createNewFile(str(filename))
 
     def writeData(self, image: np.ndarray, metadata: Dict, count: int):
@@ -151,7 +157,10 @@ class DataStorage:
             Name to use to save the image (appended at the end of the timestamp)
         """
         assert self.main_dir is not None, "DataStorage has not been initialized"
-        filename = self.main_dir / f"{datetime.now().strftime(DATETIME_FORMAT)}_{custom_image_name}.png"
+        filename = (
+            self.main_dir
+            / f"{datetime.now().strftime(DATETIME_FORMAT)}_{custom_image_name}.png"
+        )
         cv2.imwrite(str(filename), image)
 
     def close(self) -> Optional[Future]:
