@@ -35,23 +35,6 @@ class Routines:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    def focusRoutine(
-        self,
-        mscope: MalariaScope,
-        lower_bound: int,
-        upper_bound: int,
-        img: np.ndarray = None,
-    ):
-        mscope.motor.move_abs(lower_bound)
-        focus_metrics = []
-        while mscope.motor.pos < upper_bound:
-            img = yield img
-            focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
-            mscope.motor.move_rel(steps=1, dir=Direction.CW)
-
-        best_focus_pos = lower_bound + np.argmax(focus_metrics)
-        mscope.motor.move_abs(best_focus_pos)
-
     def singleShotAutofocusRoutine(
         self, mscope: MalariaScope, img_arr: List[np.ndarray]
     ) -> int:
