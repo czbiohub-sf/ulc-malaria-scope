@@ -257,8 +257,8 @@ class AdafruitMPRLS:
         self._pi = pi if pi is not None else pigpio.pi()
         self.mprls_rst_pin = mprls_rst_pin
         self.mprls_pwr_pin = mprls_pwr_pin
-        self.prev_poll_time_s = 0
-        self.prev_pressure = 0
+        self.prev_poll_time_s: float = 0.0
+        self.prev_pressure: float = 0.0
         self.prev_status = PressureSensorRead.ALL_GOOD
 
         self.io_error_counter = 0
@@ -365,16 +365,16 @@ class AdafruitMPRLS:
         PressureSensorBusy:
             Raised if a value is unable to be read after max_attempts
         """
-
-        try:
-            if max_attempts <= 0:
-                raise PressureSensorBusy(
-                    f"Failed to get a pressure sensor read after: {max_attempts} attempts."
-                )
-            return self.getPressureImmediately()
-        except PressureSensorBusy:
-            max_attempts -= 1
-            sleep(0.05)
+        while max_attempts <= 0:
+            try:
+                return self.getPressureImmediately()
+            except PressureSensorBusy:
+                max_attempts -= 1
+                sleep(0.05)
+        else:
+            raise PressureSensorBusy(
+                f"Failed to get a pressure sensor read after: {max_attempts} attempts."
+            )
 
     def _direct_read(self, timeout_s: float = 1e6) -> bool:
         """Internal function - direct read of mprls buffer.
