@@ -12,7 +12,7 @@ from ulc_mm_package.hardware.sim.dtoverlay_pwm import dtoverlay_PWM
 
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorRead,
-    PneumaticModuleBase
+    PneumaticModuleBase,
 )
 
 

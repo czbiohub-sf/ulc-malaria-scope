@@ -84,6 +84,7 @@ class PneumaticModuleBase(ABC):
     def getMaxDutyCycle(self):
         ...
 
+
 @hardware
 class PneumaticModule(PneumaticModuleBase):
     """Class that deals with monitoring and adjusting the pressure.
