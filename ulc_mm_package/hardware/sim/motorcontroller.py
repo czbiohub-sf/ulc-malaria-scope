@@ -1,8 +1,10 @@
-import logging
 import time
+import logging
 import threading
 
 import pigpio
+
+from typing import Optional
 
 from ulc_mm_package.utilities.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
@@ -48,8 +50,8 @@ class DRV8825Nema(RealDRV8825Nema):
         motor_type="DRV8825",
         steptype="Full",
         lim1=MOTOR_LIMIT_SWITCH1,
-        lim2: int = None,
-        max_pos: int = None,
+        lim2: Optional[int] = None,
+        max_pos: Optional[int] = None,
         pi: "pigpio.pi" = None,
     ):
         """

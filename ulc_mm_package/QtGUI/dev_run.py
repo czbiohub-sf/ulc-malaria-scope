@@ -59,7 +59,7 @@ from typing import Dict
 from time import perf_counter, sleep
 from os import listdir, mkdir, path
 from datetime import datetime, timedelta
-from PyQt5 import QtWidgets, uic
+from PyQt5 import QtWidgets, uic  # type: ignore
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 from cv2 import imwrite

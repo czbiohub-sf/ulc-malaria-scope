@@ -222,6 +222,3 @@ class MedianBGSubtraction:
     def getVariance(self):
         self._backgroundVariance = np.var(self.frame_storage, axis=2)
         return self._backgroundVariance
-
-    def isPrimed(self) -> bool:
-        pass

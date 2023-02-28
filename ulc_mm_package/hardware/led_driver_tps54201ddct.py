@@ -13,7 +13,7 @@ class LEDError(Exception):
     """Base class for catching LED errors."""
 
 
-class LED_TPS5420TDDCT_Base(ABC):
+class LED_TPS5420TDDCT_Base:
     @property
     def pwm_duty_cycle(self):
         ...
