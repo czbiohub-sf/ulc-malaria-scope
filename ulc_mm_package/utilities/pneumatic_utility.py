@@ -116,7 +116,7 @@ def create_calibration_file(cal) -> None:
     # Writes upper and lower duty ratio bounds to a configuration file
 
     host = socket.gethostname()
-    parent_dir = Path(".").resolve().parents[0]
+    parent_dir = Path("/home/pi/Documents/ulc-malaria-scope/ulc_mm_package/")
 
     # Attempt to make config dir if not already there
     try:
