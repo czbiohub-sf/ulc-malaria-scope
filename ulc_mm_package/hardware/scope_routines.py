@@ -152,11 +152,7 @@ class Routines:
     def count_parasitemia_periodic_wrapper(
         self,
         mscope: MalariaScope,
-    ) -> Generator[
-        List[AsyncInferenceResult],
-        Tuple[np.ndarray, Optional[int]],
-        None,
-    ]:
+    ) -> Generator[List[AsyncInferenceResult], Tuple[np.ndarray, Optional[int]], None,]:
         counter = 0
 
         while True:
