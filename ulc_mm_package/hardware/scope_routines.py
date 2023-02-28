@@ -2,7 +2,7 @@ import logging
 
 from functools import wraps
 from time import perf_counter, sleep
-from typing import Any, Callable, List, Tuple, Optional, Sequence, Generator, Union
+from typing import cast, Any, Callable, List, Tuple, Optional, Sequence, Generator
 
 import numpy as np
 
@@ -36,6 +36,7 @@ import ulc_mm_package.image_processing.processing_constants as processing_consta
 def init_generator(
     generator: Callable[..., Generator[Any, Any, Any]]
 ) -> Generator[Any, Any, Any]:
+
     @wraps(generator)
     def call(*a, **k):
         g = generator(*a, **k)
@@ -43,7 +44,7 @@ def init_generator(
         next(g)
         return g
 
-    return call
+    return call  # type: ignore
 
 
 class Routines:
@@ -104,7 +105,7 @@ class Routines:
     @init_generator
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope, img: np.ndarray
-    ) -> Generator[Union[None, int], np.ndarray, None]:
+    ) -> Generator[Optional[int], np.ndarray, None]:
         """A periodic wrapper around the `continuousSSAFRoutine`.
 
         This function adds a simple time wrapper around `continuousSSAFRoutine`
