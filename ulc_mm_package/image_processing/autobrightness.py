@@ -1,5 +1,5 @@
 import enum
-from typing import Union
+from typing import Tuple
 import numpy as np
 import cv2
 
@@ -92,7 +92,7 @@ def assessBrightness(
 
 def adjustBrightness(
     img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float
-) -> Union[AB, float]:
+) -> Tuple[AB, float]:
     """Adjusts the LED's duty cycle to achieve the target brightness.
 
     Returns
