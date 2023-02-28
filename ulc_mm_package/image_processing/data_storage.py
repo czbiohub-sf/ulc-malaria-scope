@@ -1,16 +1,15 @@
-import logging
+import io
 import csv
-from time import perf_counter
+import cv2
 import shutil
-from typing import Dict, List, Optional
-from os import mkdir, path
+import logging
+import numpy as np
+
+from pathlib import Path
+from time import perf_counter
 from datetime import datetime
 from concurrent.futures import Future
-from pathlib import Path
-
-import io
-import cv2
-import numpy as np
+from typing import Dict, List, Optional
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
@@ -109,8 +108,9 @@ class DataStorage:
 
         # Create experiment initialization metadata file
         exp_run_md_file = (
-            path.join(self.main_dir, self.experiment_folder, time_str)
-            + f"exp_{custom_experiment_name}_metadata.csv"
+            self.main_dir
+            / self.experiment_folder
+            / f"{time_str}exp_{custom_experiment_name}_metadata.csv"
         )
         with open(f"{exp_run_md_file}", "w") as f:
             writer = csv.DictWriter(
@@ -248,8 +248,8 @@ class DataStorage:
 
         for idx in indices:
             img = self.zw.array[..., idx]
-            filepath = path.join(sub_seq_path, f"{idx:0{self.digits}d}.png")
-            cv2.imwrite(filepath, img)
+            filepath = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
+            cv2.imwrite(str(filepath), img)
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
