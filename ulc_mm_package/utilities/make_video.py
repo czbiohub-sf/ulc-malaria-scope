@@ -207,10 +207,15 @@ def main(
         img_gen = zarr_image_generator(zstore)
         for i, img in enumerate(tqdm(range(zstore.initialized))):
             img = next(img_gen)
-            if bg_sub and bg_sub_set:
-                img = np.asarray(np.clip(img + (max_val - bg), 0, 255), dtype=np.uint8)
-            if img is not None:
-                writer.write(img)
+
+            ### TEMPORARY workaround for the bug in `dev_run`
+            if not np.all(img == 0):
+                if bg_sub and bg_sub_set:
+                    img = np.asarray(
+                        np.clip(img + (max_val - bg), 0, 255), dtype=np.uint8
+                    )
+                if img is not None:
+                    writer.write(img)
         writer.release()
 
 
