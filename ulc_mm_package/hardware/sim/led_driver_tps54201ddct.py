@@ -5,10 +5,11 @@
 
 Purpose: Dummy hardware object simulating LED.
          See LED module under hardware/real/ for info on actual functionality.
-         
+
 """
 
 from time import sleep
+from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT_Base
 from ulc_mm_package.hardware.hardware_constants import (
     LED_PWM_PIN,
     ANALOG_DIM_MODE_DUTYCYCLE,
@@ -19,12 +20,8 @@ from ulc_mm_package.hardware.dtoverlay_pwm import PWM_CHANNEL
 
 from ulc_mm_package.hardware.sim.dtoverlay_pwm import dtoverlay_PWM
 
-from ulc_mm_package.hardware.real.led_driver_tps54201ddct import (
-    LED_TPS5420TDDCT as RealLED_TPS5420TDDCT,
-)
 
-
-class LED_TPS5420TDDCT(RealLED_TPS5420TDDCT):
+class LED_TPS5420TDDCT(LED_TPS5420TDDCT_Base):
     def __init__(self, pwm_pin: int = LED_PWM_PIN):
         self._isOn = False
         self.pwm_freq = int(LED_FREQ)

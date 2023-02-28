@@ -13,11 +13,11 @@ import cv2
 from time import perf_counter, sleep
 
 from ulc_mm_package.scope_constants import VIDEO_PATH
+from ulc_mm_package.hardware.camera import CameraError, CameraBase
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS
-from ulc_mm_package.hardware.camera import CameraError
 
 
-class SimCamera:
+class SimCamera(CameraBase):
     def __init__(self):
         self._isActivated = True
 

@@ -11,11 +11,14 @@ from ulc_mm_package.hardware.hardware_constants import (
     ANALOG_DIM_MODE_DUTYCYCLE,
     LED_FREQ,
 )
-from ulc_mm_package.hardware.led_driver_tps54201ddct import LEDError
 from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
+from ulc_mm_package.hardware.led_driver_tps54201ddct import (
+    LEDError,
+    LED_TPS5420TDDCT_Base,
+)
 
 
-class LED_TPS5420TDDCT:
+class LED_TPS5420TDDCT(LED_TPS5420TDDCT_Base):
     """An LED driver class for the TPS5420TDDCT and sets the dimming mode to PWM on initialization."""
 
     def __init__(self):

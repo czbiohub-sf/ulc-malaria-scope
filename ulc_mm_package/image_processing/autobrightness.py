@@ -103,7 +103,6 @@ def adjustBrightness(
     float:
         Mean image-pixel value
     """
-
     current_led_pwm_perc = led.pwm_duty_cycle
     current_brightness = assessBrightness(img, TOP_PERC)
     diff = target_pixel_val - current_brightness

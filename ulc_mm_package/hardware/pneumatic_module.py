@@ -6,6 +6,7 @@ See pneumatic module under hardware/real/ for more info
 
 import enum
 
+from abc import ABC
 
 from ulc_mm_package.hardware.hardware_wrapper import hardware
 
@@ -64,14 +65,7 @@ class PressureSensorRead(enum.Enum):
     INTEGRITY = 2
 
 
-@hardware
-class PneumaticModule:
-    """Class that deals with monitoring and adjusting the pressure.
-
-    Interfaces with an Adafruit MPRLS pressure sensor to get the readings (valid for 0-25 bar). Uses a
-    PWM-driven Servo motor (Pololu HD-1810MG) to adjust the position of the syringe (thereby adjusting the pressure).
-    """
-
+class PneumaticModuleBase(ABC):
     def getCurrentDutyCycle(self):
         ...
 
@@ -80,3 +74,20 @@ class PneumaticModule:
 
     def increaseDutyCycle(self):
         ...
+
+    def getPressure(self):
+        ...
+
+    def getMinDutyCycle(self):
+        ...
+
+    def getMaxDutyCycle(self):
+        ...
+
+@hardware
+class PneumaticModule(PneumaticModuleBase):
+    """Class that deals with monitoring and adjusting the pressure.
+
+    Interfaces with an Adafruit MPRLS pressure sensor to get the readings (valid for 0-25 bar). Uses a
+    PWM-driven Servo motor (Pololu HD-1810MG) to adjust the position of the syringe (thereby adjusting the pressure).
+    """

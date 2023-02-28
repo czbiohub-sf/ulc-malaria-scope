@@ -10,15 +10,13 @@ from ulc_mm_package.hardware.hardware_constants import (
 from ulc_mm_package.hardware.dtoverlay_pwm import PWM_CHANNEL
 from ulc_mm_package.hardware.sim.dtoverlay_pwm import dtoverlay_PWM
 
-from ulc_mm_package.hardware.real.pneumatic_module import (
-    PneumaticModule as RealPneumaticModule,
-)
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorRead,
+    PneumaticModuleBase
 )
 
 
-class PneumaticModule(RealPneumaticModule):
+class PneumaticModule(PneumaticModuleBase):
     """Class that deals with monitoring and adjusting the pressure.
 
     Interfaces with an Adafruit MPRLS pressure sensor to get the readings (valid for 0-25 bar). Uses a
