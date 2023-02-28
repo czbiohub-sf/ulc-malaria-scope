@@ -189,7 +189,7 @@ class Autobrightness:
                 self.step_size_perc /= 2
 
         self.prev_brightness_enum = curr_brightness_enum
-        self.prev_mean_img_brightness: float = curr_mean_brightness_val
+        self.prev_mean_img_brightness = curr_mean_brightness_val
         self.step_counter += 1
 
         if self.step_counter >= self.timeout_steps:
