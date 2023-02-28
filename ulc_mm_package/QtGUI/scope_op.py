@@ -36,7 +36,12 @@ from ulc_mm_package.image_processing.autobrightness import (
 )
 
 from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
-from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
+from ulc_mm_package.hardware.pneumatic_module import (
+    PressureLeak,
+    SyringeInMotion,
+    PressureSensorStaleValue,
+    PressureSensorBusy,
+)
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
