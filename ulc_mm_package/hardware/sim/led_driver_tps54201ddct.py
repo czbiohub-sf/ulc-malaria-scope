@@ -25,7 +25,6 @@ class LED_TPS5420TDDCT(LED_TPS5420TDDCT_Base):
     def __init__(self, pwm_pin: int = LED_PWM_PIN):
         self._isOn = False
         self.pwm_freq = int(LED_FREQ)
-        self.pwm_duty_cycle = ANALOG_DIM_MODE_DUTYCYCLE
         self.pwm = dtoverlay_PWM(PWM_CHANNEL.PWM2)
 
         # Set the dimming mode (see datasheet, page 17)

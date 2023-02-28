@@ -7,6 +7,7 @@ See LED module under hardware/real/ for more info.
 from abc import ABC
 
 from ulc_mm_package.hardware.hardware_wrapper import hardware
+from ulc_mm_package.hardware.hardware_constants import ANALOG_DIM_MODE_DUTYCYCLE
 
 
 class LEDError(Exception):
@@ -14,9 +15,8 @@ class LEDError(Exception):
 
 
 class LED_TPS5420TDDCT_Base:
-    @property
-    def pwm_duty_cycle(self):
-        ...
+    def __init__(self):
+        self.pwm_duty_cycle = ANALOG_DIM_MODE_DUTYCYCLE
 
     def turnOn(self):
         ...

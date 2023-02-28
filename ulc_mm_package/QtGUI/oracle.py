@@ -466,7 +466,8 @@ class Oracle(Machine):
             image_lbl.setPixmap(QPixmap(image))
 
             # Row/column span determined using layout.rowCount() and layout.columnCount()
-            layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)
+            # TODO: Mypy doesn't like this because of "too many args" and "alignment"
+            layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)  # type: ignore
 
         message_result = self.message_window.exec()
         return message_result
