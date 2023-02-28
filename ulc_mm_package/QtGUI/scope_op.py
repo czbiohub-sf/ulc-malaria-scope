@@ -35,7 +35,7 @@ from ulc_mm_package.image_processing.autobrightness import (
     LEDNoPower,
 )
 
-from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT, TH_PERIOD_NUM
+from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
 from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult

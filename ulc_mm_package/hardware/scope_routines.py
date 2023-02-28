@@ -2,7 +2,7 @@ import logging
 
 from functools import wraps
 from time import perf_counter, sleep
-from typing import cast, Any, Callable, List, Tuple, Optional, Sequence, Generator
+from typing import Any, Callable, List, Tuple, Optional, Sequence, Generator
 
 import numpy as np
 
@@ -17,9 +17,6 @@ from ulc_mm_package.image_processing.autobrightness import (
 from ulc_mm_package.image_processing.flow_control import (
     CantReachTargetFlowrate,
     LowConfidenceCorrelations,
-)
-from ulc_mm_package.image_processing.focus_metrics import (
-    logPowerSpectrumRadialAverageSum,
 )
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,

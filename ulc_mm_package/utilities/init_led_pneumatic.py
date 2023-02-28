@@ -22,7 +22,6 @@ if __name__ == "__main__":
     pwm1 = dtoverlay_org(PWM_CHANNEL.PWM2)
 
 import subprocess
-import enum
 
 
 class dtoverlay_PWM_Exception(Exception):

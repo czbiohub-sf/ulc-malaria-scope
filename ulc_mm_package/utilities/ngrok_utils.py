@@ -5,7 +5,7 @@ import subprocess
 
 from urllib.error import URLError
 from urllib.request import urlopen
-from typing import Optional, Dict
+from typing import Dict
 
 from pyngrok import ngrok, conf
 

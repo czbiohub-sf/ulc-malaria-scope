@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from typing import Tuple, List
+from typing import List
 
 from ulc_mm_package.image_processing.processing_constants import (
     RBC_THUMBNAIL_PATH,
