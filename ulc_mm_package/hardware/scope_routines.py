@@ -355,8 +355,12 @@ class Routines:
             except BrightnessCriticallyLow:
                 raise
 
-        # Get the mean image brightness to store in the experiment metadata
-        return autobrightness.prev_mean_img_brightness
+        # Get the mean image brightness to store in the experiment metadata.
+        # Since brightness was achieved, we know that this is now a float
+        # instead of an Optional[float].
+        brightness = autobrightness.prev_mean_img_brightness
+        assert brightness is not None, "not possible"
+        return brightness
 
     def checkPressureDifference(self, mscope: MalariaScope) -> float:
         """Check the pressure differential. Raises an exception if difference is insufficent
