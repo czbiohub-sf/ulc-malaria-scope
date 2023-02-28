@@ -13,6 +13,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.7'
+      - run: echo "${pwd}"
       - run: pip install --upgrade pip
       - run: pip install mypy==1.0.1
       - run: mypy --pretty ulc_mm_package
