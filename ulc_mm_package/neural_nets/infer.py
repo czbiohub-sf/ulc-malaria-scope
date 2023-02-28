@@ -219,7 +219,7 @@ if __name__ == "__main__":
         tqdm = _tqdm
     else:
         try:
-            from tqdm import tqdm
+            from tqdm import tqdm  # type: ignore
         except ImportError:
             print("install tqdm for progress bars")
             tqdm = _tqdm
