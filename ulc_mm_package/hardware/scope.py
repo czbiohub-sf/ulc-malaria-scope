@@ -42,7 +42,9 @@ from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.image_processing.flow_control import FlowController
-from ulc_mm_package.neural_nets import TPUError, AutoFocus, YOGO
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
+from ulc_mm_package.neural_nets.NCSModel import TPUError
 
 
 class GPIOEdge(enum.Enum):

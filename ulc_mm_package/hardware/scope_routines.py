@@ -23,11 +23,10 @@ from ulc_mm_package.image_processing.cell_finder import (
     NoCellsFound,
     LowDensity,
 )
-from ulc_mm_package.hardware import PressureLeak, PressureSensorBusy
+from ulc_mm_package.hardware.pneumatic_module import PressureLeak, PressureSensorBusy
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
-
-from ulc_mm_package.neural_nets import AsyncInferenceResult
+from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
