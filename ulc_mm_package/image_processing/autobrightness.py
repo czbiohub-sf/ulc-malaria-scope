@@ -170,9 +170,9 @@ class Autobrightness:
         target_pixel_val: int = TOP_PERC_TARGET_VAL,
         step_size_perc: float = 0.01,
     ):
-        self.prev_brightness_enum = None
-        self.prev_mean_img_brightness = None
-        self.target_pixel_val = target_pixel_val
+        self.prev_brightness_enum: Optional[AB] = None
+        self.prev_mean_img_brightness: Optional[float] = None
+        self.target_pixel_val: int = target_pixel_val
         self.led = led
         self.step_size_perc = step_size_perc
         self.default_step_size_perc = step_size_perc
@@ -188,7 +188,7 @@ class Autobrightness:
                 self.step_size_perc /= 2
 
         self.prev_brightness_enum = curr_brightness_enum
-        self.prev_mean_img_brightness = curr_mean_brightness_val
+        self.prev_mean_img_brightness: float = curr_mean_brightness_val
         self.step_counter += 1
 
         if self.step_counter >= self.timeout_steps:

@@ -14,7 +14,7 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     checkLedWorking,
 )
-from ulc_mm_package.image_processing.flow_control import LowConfidenceCorrelations
+from ulc_mm_package.image_processing.flow_control import CantReachTargetFlowrate, LowConfidenceCorrelations
 from ulc_mm_package.image_processing.focus_metrics import (
     logPowerSpectrumRadialAverageSum,
 )
@@ -209,7 +209,7 @@ class Routines:
         mscope: MalariaScope,
         img: np.ndarray,
         target_flowrate: float = processing_constants.FLOWRATE.FAST.value,
-    ) -> Generator[float, np.ndarray, float]:
+    ) -> Generator[Optional[float], np.ndarray, float]:
         """Faster flowrate feedback for initial flow ramp-up.
 
         See FlowController.fastFlowAdjustment for specifics.
@@ -251,8 +251,8 @@ class Routines:
             2 * the measurement window size.
         """
 
-        flow_val = 0
-        img, timestamp = yield
+        flow_val = 0.
+        img, timestamp = yield None
 
         mscope.flow_controller.setTargetFlowrate(target_flowrate)
 
@@ -273,7 +273,7 @@ class Routines:
     @init_generator
     def autobrightnessRoutine(
         self, mscope: MalariaScope, img: np.ndarray = None
-    ) -> float:
+    ) -> Generator[None, np.ndarray, float]:
         """Autobrightness routine to set led power.
 
         Parameters
@@ -414,7 +414,7 @@ class Routines:
         pull_time: float = 5,
         steps_per_image: int = 10,
         img: np.ndarray = None,
-    ) -> int:
+    ) -> Generator[None, np.ndarray, int]:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
         This routine does the following:
