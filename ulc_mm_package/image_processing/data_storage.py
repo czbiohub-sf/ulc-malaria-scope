@@ -33,7 +33,7 @@ class DataStorage:
         self.metadata_file = None
         self.main_dir = None
         self.md_keys = None
-        if default_fps != None:
+        if default_fps is not None:
             self.fps = default_fps
             self.dt = 1 / self.fps
         else:
@@ -81,7 +81,7 @@ class DataStorage:
             A list of the metadata keys to be stored on a per-image basis. The keys are used to create a .csv file.
         """
 
-        if self.main_dir == None:
+        if self.main_dir is None:
             self.createTopLevelFolder(ext_dir, datetime_str)
 
         # Create per-image metadata file
@@ -253,7 +253,7 @@ class DataStorage:
             Path as a string
         """
 
-        if self.zw.store != None:
+        if self.zw.store is not None:
             try:
                 dir_path = path.join(
                     self.main_dir, self.experiment_folder, "sub_sample_imgs/"
@@ -262,7 +262,7 @@ class DataStorage:
                 return dir_path
             except:
                 # TODO
-                print(f"Could not create the subsample directory")
+                print("Could not create the subsample directory")
                 raise
         else:
             raise

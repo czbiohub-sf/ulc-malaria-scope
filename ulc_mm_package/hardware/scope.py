@@ -39,7 +39,6 @@ from ulc_mm_package.hardware.pneumatic_module import (
 )
 from ulc_mm_package.hardware.fan import Fan
 from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X
-from ulc_mm_package.hardware.rtc_pcf8523 import RTC_PCF8523
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.image_processing.flow_control import FlowController
@@ -214,7 +213,7 @@ class MalariaScope:
                 self.logger.error(f"Encoder I2C initialization failed. {e}")
         else:
             self.logger.error(
-                f"Motor initialization failed, so encoder will not initialize."
+                "Motor initialization failed, so encoder will not initialize."
             )
 
     def _init_humidity_temp_sensor(self):
@@ -283,7 +282,7 @@ class MalariaScope:
                 f"Set callback on pin: {interrupt_pin} w/ debounce time of {glitch_filer_us} us."
             )
         else:
-            self.logger.info(f"We're simulating, no callback set.")
+            self.logger.info("We're simulating, no callback set.")
 
     @staticmethod
     def read_lim_sw(pin: int = LID_LIMIT_SWITCH2):

@@ -24,7 +24,6 @@ from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
 )
 from ulc_mm_package.hardware import PressureLeak, PressureSensorBusy
-from ulc_mm_package.hardware.motorcontroller import InvalidMove
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
 
@@ -165,7 +164,6 @@ class Routines:
                 counter = 0
                 img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
                 mscope.cell_diagnosis_model(img, counts)
-                prev_time = perf_counter()
             else:
                 (
                     _,
@@ -351,9 +349,9 @@ class Routines:
             img = yield
             try:
                 brightness_achieved = autobrightness.runAutobrightness(img)
-            except BrightnessTargetNotAchieved as e:
+            except BrightnessTargetNotAchieved:
                 raise
-            except BrightnessCriticallyLow as e:
+            except BrightnessCriticallyLow:
                 raise
 
         # Get the mean image brightness to store in the experiment metadata

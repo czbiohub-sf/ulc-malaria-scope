@@ -13,7 +13,7 @@ import queue
 import threading
 import adafruit_sht31d
 
-from typing import Optional, Union, Tuple, List
+from typing import Optional, Tuple
 
 from ulc_mm_package.hardware.sht31d_temphumiditysensor import (
     TemperatureSensorNotInstantiated,

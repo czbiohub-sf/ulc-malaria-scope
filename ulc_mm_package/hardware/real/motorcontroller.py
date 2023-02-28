@@ -121,7 +121,7 @@ class DRV8825Nema:
         )
 
         # Set up GPIO
-        self._pi = pi if pi != None else pigpio.pi()
+        self._pi = pi if pi is not None else pigpio.pi()
         self._pi.set_mode(self.enable_pin, pigpio.OUTPUT)
         self._pi.set_mode(self.sleep_pin, pigpio.OUTPUT)
         self._pi.set_mode(self.reset_pin, pigpio.OUTPUT)
@@ -210,7 +210,7 @@ class DRV8825Nema:
                 self._move_rel_steps(dir=Direction.CW, steps=1)
             self.pos = 0
 
-        if self.lim2 != None:
+        if self.lim2 is not None:
             # Move to the CW limit switch
             try:
                 self.move_rel(dir=Direction.CW, steps=1e6, timeout_s=homing_timeout)

@@ -41,7 +41,7 @@ class BrightnessTargetNotAchieved(AutobrightnessError):
 
 class BrightnessCriticallyLow(AutobrightnessError):
     def __init__(self, brightness_val):
-        msg = f""
+        msg = ""
         self.value = brightness_val
         super().__init__(f"{msg}")
 
@@ -183,7 +183,7 @@ class Autobrightness:
         curr_brightness_enum, curr_mean_brightness_val = adjustBrightness(
             img, self.target_pixel_val, self.led, self.step_size_perc
         )
-        if not self.prev_brightness_enum == None:
+        if self.prev_brightness_enum is not None:
             if self.prev_brightness_enum != curr_brightness_enum:
                 self.step_size_perc /= 2
 
