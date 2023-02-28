@@ -153,7 +153,7 @@ class Routines:
         self,
         mscope: MalariaScope,
     ) -> Generator[
-        Optional[List[AsyncInferenceResult]],
+        List[AsyncInferenceResult],
         Tuple[np.ndarray, Optional[int]],
         None,
     ]:
