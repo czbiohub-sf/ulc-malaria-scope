@@ -154,7 +154,7 @@ class AcquisitionThread(QThread):
                 f'got {str(e)}:\n {subprocess.getoutput("lsusb | grep Myriad")}'
             )
         self.active_autofocus = False
-        self.prev_autofocus_time = 0
+        self.prev_autofocus_time = 0.0
         self.af_adjustment_done = False
 
     def run(self):
