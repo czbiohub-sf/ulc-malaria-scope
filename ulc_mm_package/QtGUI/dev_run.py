@@ -144,7 +144,6 @@ class AcquisitionThread(QThread):
         self.flowcontrol_enabled = False
         self.fast_flow_enabled = False
         self.autobrightness = self.routines.autobrightnessRoutine(mscope)
-        self.autobrightness.send(None)
         self.autobrightness_on = False
 
         # Single-shot autofocus
