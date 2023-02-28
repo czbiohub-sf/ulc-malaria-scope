@@ -418,7 +418,7 @@ class Routines:
         mscope: MalariaScope,
         pull_time: float = 5,
         steps_per_image: int = 10,
-        img: np.ndarray = None,
+        img: Optional[np.ndarray] = None,
     ) -> Generator[None, np.ndarray, int]:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
