@@ -98,7 +98,7 @@ def takeZStackCoroutine(
         if save_loc is not None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         step_counter += steps_per_fine
-    best_focus_position: int = (
+    best_focus_position = (
         start + cast(int, np.argmax(focus_metrics_fine)) * steps_per_fine
     )
     motor.move_abs(best_focus_position)
