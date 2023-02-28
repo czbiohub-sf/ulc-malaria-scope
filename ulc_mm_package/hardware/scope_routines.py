@@ -35,19 +35,22 @@ import ulc_mm_package.image_processing.processing_constants as processing_consta
 
 
 def init_generator(
-    generator: Callable[..., Generator[Any, Any, Any]], *args, **kwargs
+    generator: Callable[..., Generator[Any, Any, Any]]
 ) -> Generator[Any, Any, Any]:
-    g = generator(*args, **kwargs)
-    # advance just-started generator without requiring generator 'send' type to be optional
-    next(g)
-    return g
+    @wraps(generator)
+    def call(*a, **k):
+        g = generator(*a, **k)
+        # advance just-started generator without requiring generator 'send' type to be optional
+        next(g)
+        return g
+
+    return call
 
 
 class Routines:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    @wraps(init_generator)
     def singleShotAutofocusRoutine(
         self, mscope: MalariaScope, img_arr: List[np.ndarray]
     ) -> int:
@@ -82,7 +85,7 @@ class Routines:
 
         return steps_from_focus
 
-    @wraps(init_generator)
+    @init_generator
     def continuousSSAFRoutine(
         self, mscope: MalariaScope
     ) -> Generator[Optional[int], np.ndarray, None]:
@@ -99,7 +102,7 @@ class Routines:
                 steps_from_focus = self.singleShotAutofocusRoutine(mscope, img_arr)
                 img_arr = []
 
-    @wraps(init_generator)
+    @init_generator
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope, img: np.ndarray
     ) -> Generator[Union[None, int], np.ndarray, None]:
@@ -145,7 +148,7 @@ class Routines:
         mscope.cell_diagnosis_model(img, counts)
         return results
 
-    @wraps(init_generator)
+    @init_generator
     def count_parasitemia_periodic_wrapper(
         self,
         mscope: MalariaScope,
@@ -169,7 +172,7 @@ class Routines:
                     _,
                 ) = yield []
 
-    @wraps(init_generator)
+    @init_generator
     def flowControlRoutine(
         self,
         mscope: MalariaScope,
@@ -202,7 +205,7 @@ class Routines:
             img, timestamp = yield flow_val
             flow_val = mscope.flow_controller.controlFlow(img, timestamp)
 
-    @wraps(init_generator)
+    @init_generator
     def fastFlowRoutine(
         self,
         mscope: MalariaScope,
@@ -269,7 +272,7 @@ class Routines:
             if flow_error == 0:
                 return flow_val
 
-    @wraps(init_generator)
+    @init_generator
     def autobrightnessRoutine(
         self, mscope: MalariaScope, img: np.ndarray = None
     ) -> float:
@@ -406,7 +409,7 @@ class Routines:
 
             return pressure_diff
 
-    @wraps(init_generator)
+    @init_generator
     def find_cells_routine(
         self,
         mscope: MalariaScope,
@@ -499,7 +502,7 @@ class Routines:
                 max_attempts -= 1
                 self.logger.warning("MAX ATTEMPTS LEFT {}".format(max_attempts))
 
-    @wraps(init_generator)
+    @init_generator
     def cell_density_routine(self) -> Generator[Optional[int], np.ndarray, None]:
         prev_time = perf_counter()
         prev_measurements = np.asarray(
