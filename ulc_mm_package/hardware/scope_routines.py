@@ -36,7 +36,6 @@ import ulc_mm_package.image_processing.processing_constants as processing_consta
 def init_generator(
     generator: Callable[..., Generator[Any, Any, Any]]
 ) -> Callable[..., Generator[Any, Any, Any]]:
-
     @wraps(generator)
     def call(*a, **k):
         g = generator(*a, **k)
