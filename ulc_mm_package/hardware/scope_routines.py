@@ -137,7 +137,7 @@ class Routines:
             counter += 1
             if counter >= nn_constants.AF_PERIOD_NUM:
                 ssaf_steps_from_focus = mscope.autofocus_model(img)
-                steps_from_focus = -round(asaf_steps_from_focus)
+                steps_from_focus = -round(np.mean(ssaf_steps_from_focus))
 
                 filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
                 counter = 0
