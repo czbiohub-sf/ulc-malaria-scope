@@ -53,6 +53,7 @@ setup(
             "mypy==1.0.1",
             "mypy-extensions==1.0.0",
             "PyQt5-stubs",
+            "ruff==0.0.253",
         ]
     },
     classifiers=["CZ Biohub :: Bioengineering"],
