@@ -20,7 +20,7 @@ INSIDE_BBOX_FLAG = 0
 
 # ================ Flow control constants ================ #
 NUM_IMAGE_PAIRS = 12  # Number of image pair xcorr calculations to average to make a single measurement
-NUM_FAILED_CORR_MEASUREMENTS = 75  # at 30fps, 75pairs = 150 = 5s
+NUM_FAILED_CORR_MEASUREMENTS = 75  # at 30fps, 75pairs = 150imgs = 5s
 WINDOW_SIZE = 12  # EWMA window size
 TOL_PERC = 0.1
 
