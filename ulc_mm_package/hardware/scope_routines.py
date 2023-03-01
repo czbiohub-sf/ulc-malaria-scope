@@ -435,6 +435,7 @@ class Routines:
         max_attempts = 3
         cell_finder = CellFinder()
         img = yield
+        cells_present_motor_pos: int = None
 
         # Initial check for cells, return current motor position if cells found
         cell_finder.add_image(mscope.motor.pos, img)
@@ -471,14 +472,19 @@ class Routines:
                 mscope.motor.move_abs(pos)
                 img = yield
                 cell_finder.add_image(mscope.motor.pos, img)
+                try:
+                    cells_present_motor_pos = cell_finder.get_cells_found_position()
+                except NoCellsFound:
+                    pass
 
             # Return the motor position where cells were found
-            try:
-                cells_present_motor_pos = cell_finder.get_cells_found_position()
+            if cells_present_motor_pos is not None:
                 return cells_present_motor_pos
-            except NoCellsFound:
+            else:
                 max_attempts -= 1
-                self.logger.warning("MAX ATTEMPTS LEFT {}".format(max_attempts))
+                self.logger.warning(
+                    f"No cells found, attempting again. Remaining attempts: {max_attempts}"
+                )
 
     def cell_density_routine(self) -> Generator[Optional[int], np.ndarray, None]:
         prev_time = perf_counter()
