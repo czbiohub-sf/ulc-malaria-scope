@@ -122,7 +122,7 @@ def create_calibration_file(cal) -> None:
     # Writes upper and lower duty ratio bounds to a configuration file
 
     host = socket.gethostname()
-    parent_dir = Path(".").resolve().parents[0]
+    parent_dir = Path(__file__).resolve().parents[0]
 
     # Attempt to make config dir if not already there
     try:
