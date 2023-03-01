@@ -1,11 +1,11 @@
-from typing import Tuple
+from typing import Optional
+
 import numpy as np
 import cv2
+
 from ulc_mm_package.image_processing.processing_constants import (
     RBC_THUMBNAIL_PATH,
     CELLS_FOUND_THRESHOLD,
-    CROSS_CORR_CELL_DENSITY_THRESHOLD,
-    MIN_CELL_COUNT,
 )
 
 RBC_THUMBNAIL = cv2.imread(RBC_THUMBNAIL_PATH, 0)
@@ -55,49 +55,6 @@ def get_correlation_map(
     return cv2.matchTemplate(img_ds, template_img, cv2.TM_CCOEFF)
 
 
-def cross_corr_count_cells(img: np.ndarray) -> int:
-    """Count the number of cells using cross-correlation and thresholding.
-
-    Parameters
-    ----------
-    img: np.ndarray
-
-    Returns
-    -------
-    int:
-        The number of cells found
-    """
-
-    return np.count_nonzero(
-        get_correlation_map(img) > CROSS_CORR_CELL_DENSITY_THRESHOLD
-    )
-
-
-def binarize_count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
-    """Count the number of cells using a basic binarizing+connected-components analysis.
-
-    Parameters
-    ----------
-    img: np.ndarray
-    downsample_factor: int
-
-    Returns
-    -------
-    int:
-        The number of bounding boxes found
-    """
-
-    ds_img = downsample_image(img, downsample_factor)
-    th = cv2.adaptiveThreshold(
-        ds_img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 10
-    )
-    _, _, boxes, _ = cv2.connectedComponentsWithStats(th)
-
-    return len(
-        boxes[1:]
-    )  # First bbox is the background, so we exclude and return the reset
-
-
 class LowDensity(Exception):
     pass
 
@@ -123,8 +80,15 @@ class CellFinder:
         self.motor_pos.append(motor_pos)
         self.confidences.append(self.find_cells_cross_corr(img))
 
-    def get_cells_found_position(self):
-        """Check if the cross-correlation value exceeds the threshold for cell detection."""
+    def get_cells_found_position(self) -> Optional[int]:
+        """Check if the cross-correlation value exceeds the threshold for cell detection.
+
+        Exceptions
+        ----------
+        NoCellsFound
+            Raised if the value of the maximum cross correlation value from the given images
+            does not exceed a threshold.
+        """
 
         max_val = np.max(self.confidences)
         if max_val >= CELLS_FOUND_THRESHOLD:
