@@ -397,7 +397,7 @@ class Routines:
         pressure_diff = initial_pressure - final_pressure
         if pressure_diff < MIN_PRESSURE_DIFF:
             raise PressureLeak(
-                f"Pressure leak detected, could only generate {pressure_diff} hPa pressure differential."
+                f"Pressure leak detected, could only generate {pressure_diff:.3f} hPa pressure differential."
             )
         else:
             # Return syringe to its initial position
