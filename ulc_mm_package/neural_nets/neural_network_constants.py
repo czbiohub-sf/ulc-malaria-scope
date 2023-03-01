@@ -7,9 +7,10 @@ curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
 
 
 # ================ Autofocus constants ================ #
-AF_PERIOD_S = 10
+AF_PERIOD_S = 1
 AF_PERIOD_NUM = int(AF_PERIOD_S * ACQUISITION_FPS)
-AF_BATCH_SIZE = 10
+
+AF_THRESHOLD = 2
 
 AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files/valiant-disco-119.xml")
 

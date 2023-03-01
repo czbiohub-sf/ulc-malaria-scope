@@ -85,24 +85,6 @@ class Routines:
         return steps_from_focus
 
     @init_generator
-    def continuousSSAFRoutine(
-        self, mscope: MalariaScope
-    ) -> Generator[Optional[int], np.ndarray, None]:
-        """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
-
-        img_arr = []
-        steps_from_focus = None
-
-        img: np.ndarray
-        while True:
-            img = yield steps_from_focus
-            steps_from_focus = None
-            img_arr.append(img)
-            if len(img_arr) == nn_constants.AF_BATCH_SIZE:
-                steps_from_focus = self.singleShotAutofocusRoutine(mscope, img_arr)
-                img_arr = []
-
-    @init_generator
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope, img: np.ndarray
     ) -> Generator[Optional[int], np.ndarray, None]:
@@ -142,7 +124,7 @@ class Routines:
                 filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
                 counter = 0
 
-                if abs(filtered_error) > 2:
+                if abs(filtered_error) > nn_constants.AF_THRESHOLD:
                     try:
                         dir = Direction.CW if filtered_error > 0 else Direction.CCW
                         mscope.motor.threaded_move_rel(dir=dir, steps=abs(filtered_error))
