@@ -83,6 +83,10 @@ class CellFinder:
     def get_cells_found_position(self) -> Optional[int]:
         """Check if the cross-correlation value exceeds the threshold for cell detection.
 
+        Returns
+        -------
+        int
+            Motor position if cells were foudn
         Exceptions
         ----------
         NoCellsFound
