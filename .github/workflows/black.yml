@@ -1,9 +1,6 @@
-# switch to official black linter
-# https://black.readthedocs.io/en/stable/integrations/github_actions.html
+name: format-check
 
-name: black
-
-on: [push, pull_request]
+on: pull_request
 
 jobs:
   lint:
