@@ -171,7 +171,7 @@ class Routines:
         self,
         mscope: MalariaScope,
         target_flowrate: float,
-    ) -> Generator[float, np.ndarray, None]:
+    ) -> Generator[Optional[float], np.ndarray, None]:
         """Keep the flowrate steady by continuously calculating the flowrate and periodically
         adjusting the syringe position. Need to initially pass in the flowrate to maintain.
 
@@ -190,9 +190,10 @@ class Routines:
             is still outside the tolerance band.
         """
 
+        flow_val: Optional[float] = None
+
         img: np.ndarray
-        img, timestamp = yield 0.0
-        flow_val = 0.0
+        img, timestamp = yield flow_val
 
         mscope.flow_controller.setTargetFlowrate(target_flowrate)
         while True:
