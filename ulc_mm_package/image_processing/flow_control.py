@@ -329,4 +329,5 @@ class FlowController:
         return out[-1]
 
     def stop(self):
+        self.fre.reset()
         self.fre.stop()
