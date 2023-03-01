@@ -11,6 +11,7 @@ from ulc_mm_package.image_processing.processing_constants import (
     NUM_IMAGE_PAIRS,
     WINDOW_SIZE,
     TOL_PERC,
+    NUM_FAILED_CORR_MEASUREMENTS,
 )
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
@@ -47,11 +48,11 @@ class LowConfidenceCorrelations(FlowControlError):
         - etc.
     """
 
-    def __init__(self, num_failed_corrs, window_size, n_windows):
+    def __init__(self, num_failed_corrs, window_size):
         msg = (
             f"Too many recent xcorr calculations have yielded poor confidence. "
             f"The number of img pairs per measurement is = {window_size}. "
-            f"The number of recent low-confidence correlations is = {num_failed_corrs} >= {n_windows}*{window_size}. "
+            f"The number of recent low-confidence correlations is = {num_failed_corrs}. "
         )
         super().__init__(f"{msg}")
 
@@ -188,15 +189,15 @@ class FlowController:
 
         LowConfidenceCorrelations:
             Raised if the number of recent xcorrs which have 'failed' (had a low correlation value) exceeds
-            2 * the measurement window size.
+            a threshold
         """
 
         self.fre.addImageAndCalculatePair(img, timestamp)
 
-        # If the number of low-confidence correlations is larger than 2x the window size, raise an error.
-        if self.fre.failed_corr_counter >= 4 * NUM_IMAGE_PAIRS:
+        # If the number of low-confidence correlations is larger than the threshold, raise an error.
+        if self.fre.failed_corr_counter >= NUM_FAILED_CORR_MEASUREMENTS:
             raise LowConfidenceCorrelations(
-                self.fre.failed_corr_counter, NUM_IMAGE_PAIRS, 4
+                self.fre.failed_corr_counter, NUM_FAILED_CORR_MEASUREMENTS
             )
 
         if self.fre.isFull():
