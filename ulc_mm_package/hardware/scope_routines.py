@@ -25,8 +25,9 @@ from ulc_mm_package.image_processing.cell_finder import (
 )
 from ulc_mm_package.hardware.pneumatic_module import PressureLeak, PressureSensorBusy
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
+from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF, FOCUS_EWMA_ALPHA
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
+from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
@@ -128,14 +129,25 @@ class Routines:
         steps_from_focus = None
         ssaf_routine = self.continuousSSAFRoutine(mscope)
 
+        ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
+        ssaf_filter.set_init_val(0)
+
         while True:
             img = yield steps_from_focus
             counter += 1
             if counter >= nn_constants.AF_PERIOD_NUM:
-                steps_from_focus = ssaf_routine.send(img)
+                ssaf_steps_from_focus = mscope.autofocus_model(img)
+                steps_from_focus = -round(asaf_steps_from_focus)
 
-                if counter >= nn_constants.AF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
-                    counter = 0
+                filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
+                counter = 0
+
+                if abs(filtered_error) > 2:
+                    try:
+                        dir = Direction.CW if filtered_error > 0 else Direction.CCW
+                        mscope.motor.threaded_move_rel(dir=dir, steps=abs(filtered_error))
+                    except MotorControllerError as e:
+                        raise e
 
     def count_parasitemia(
         self,

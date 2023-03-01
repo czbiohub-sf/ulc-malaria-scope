@@ -5,6 +5,9 @@ from ulc_mm_package.scope_constants import ACQUISITION_FPS
 RPI_OUTPUT_V = 3.3
 BOARD_STATUS_INDICATOR = 4
 
+# ================ EWMA filter constants ================ #
+FOCUS_EWMA_ALPHA = 0.8
+
 # ================ Camera constants ================ #
 DEFAULT_EXPOSURE_MS = 0.5
 DEVICELINK_THROUGHPUT = 200000000

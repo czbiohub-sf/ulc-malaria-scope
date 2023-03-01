@@ -21,6 +21,7 @@ class EWMAFiltering:
                 - higher means more weight/confidence given to new measurements/i.e noisier
         """
 
+        # TODO set this using the setter so that invalid alpha values are rejected
         self._alpha = alpha
 
     @property
