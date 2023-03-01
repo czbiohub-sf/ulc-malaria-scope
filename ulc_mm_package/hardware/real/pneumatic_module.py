@@ -9,16 +9,17 @@ Servo Motor Pololu HD-1810MG:
     https://www.pololu.com/product/1047
 """
 
+import logging
+import threading
+import configparser
+
 from time import sleep, perf_counter
 from typing import Tuple
-import configparser
 from pathlib import Path
-import threading
 from concurrent.futures import ThreadPoolExecutor
-import logging
 
-import pigpio
 import board
+import pigpio
 import adafruit_mprls
 
 from ulc_mm_package.scope_constants import CONFIGURATION_FILE

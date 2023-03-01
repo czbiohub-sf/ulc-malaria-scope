@@ -84,6 +84,9 @@ class PneumaticModuleBase(ABC):
     def getMaxDutyCycle(self):
         ...
 
+    def setDutyCycle(self, duty_cycle: int):
+        ...
+
 
 @hardware
 class PneumaticModule(PneumaticModuleBase):

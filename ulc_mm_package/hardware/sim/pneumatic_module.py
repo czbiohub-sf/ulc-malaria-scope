@@ -1,7 +1,8 @@
+import threading
+import numpy as np
+
 from time import sleep
 from typing import Tuple
-
-import numpy as np
 
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_PWM_PIN,
@@ -14,6 +15,8 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorRead,
     PneumaticModuleBase,
 )
+
+SYRINGE_LOCK = threading.Lock()
 
 
 class PneumaticModule(PneumaticModuleBase):
@@ -97,3 +100,7 @@ class PneumaticModule(PneumaticModuleBase):
             PressureSensorRead.ALL_GOOD,
         )
         return (new_pressure, status)
+
+    @staticmethod
+    def is_locked():
+        return SYRINGE_LOCK.locked()
