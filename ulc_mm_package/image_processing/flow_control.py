@@ -2,8 +2,8 @@
 FlowController
 """
 
-from time import perf_counter
 from typing import Tuple, Union, Optional
+import logging
 
 import numpy as np
 
@@ -102,6 +102,7 @@ class FlowController:
         window_size : int
             Size of the exponentially weighted moving average (EWMA) window
         """
+        self.logger = logging.getLogger(__name__)
 
         self.window_size = window_size
         self.pneumatic_module = pneumatic_module
@@ -196,6 +197,9 @@ class FlowController:
 
         # If the number of low-confidence correlations is larger than the threshold, raise an error.
         if self.fre.failed_corr_counter >= NUM_FAILED_CORR_MEASUREMENTS:
+            self.logger.warning(
+                f"Flow control - low confidence correlations. Number of failed corrs: {self.fre.failed_corr_counter}"
+            )
             raise LowConfidenceCorrelations(
                 self.fre.failed_corr_counter, NUM_FAILED_CORR_MEASUREMENTS
             )
