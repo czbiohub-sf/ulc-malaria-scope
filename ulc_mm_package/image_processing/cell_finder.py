@@ -7,7 +7,6 @@ from typing import List, Optional
 from ulc_mm_package.image_processing.processing_constants import (
     RBC_THUMBNAIL_PATH,
     CELLS_FOUND_THRESHOLD,
-    CROSS_CORR_CELL_DENSITY_THRESHOLD,
 )
 
 RBC_THUMBNAIL = cv2.imread(RBC_THUMBNAIL_PATH, 0)
