@@ -110,26 +110,30 @@ class Routines:
             AF_PERIOD_NUM frames have elapsed since the last adjustment.
         """
 
-        counter = 0
+        throttle_counter = 0
+        move_counter = 0
         int_filtered_error = None
 
         ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
         ssaf_filter.set_init_val(0)
 
+        ssaf_period_num = ssaf_filter.get_adjustment_period_ewma()
+
         while True:
             img = yield int_filtered_error
-            counter += 1
-            if counter >= nn_constants.AF_PERIOD_NUM:
+            throttle_counter += 1
+            if throttle_counter >= nn_constants.AF_PERIOD_NUM:
                 batch_steps_from_focus = mscope.autofocus_model(img)
                 steps_from_focus = -(np.mean(batch_steps_from_focus))
 
                 filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
                 int_filtered_error = round(filtered_error)
-                counter = 0
+                throttle_counter = 0
 
                 print(f"UNFILTERED {steps_from_focus} FILTERED {filtered_error}")
 
-                if abs(filtered_error) > nn_constants.AF_THRESHOLD:
+                if move_counter >= ssaf_period_num and abs(filtered_error) > nn_constants.AF_THRESHOLD:
+                    move_counter = 0
                     try:
                         dir = Direction.CW if filtered_error > 0 else Direction.CCW
                         mscope.motor.threaded_move_rel(
@@ -137,6 +141,8 @@ class Routines:
                         )
                     except MotorControllerError as e:
                         raise e
+                else:
+                    move_counter += 1
 
     def count_parasitemia(
         self,
