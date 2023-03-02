@@ -25,7 +25,10 @@ from ulc_mm_package.image_processing.cell_finder import (
 )
 from ulc_mm_package.hardware.pneumatic_module import PressureLeak, PressureSensorBusy
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF, FOCUS_EWMA_ALPHA
+from ulc_mm_package.hardware.hardware_constants import (
+    MIN_PRESSURE_DIFF,
+    FOCUS_EWMA_ALPHA,
+)
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 
@@ -126,7 +129,9 @@ class Routines:
                 if abs(filtered_error) > nn_constants.AF_THRESHOLD:
                     try:
                         dir = Direction.CW if filtered_error > 0 else Direction.CCW
-                        mscope.motor.threaded_move_rel(dir=dir, steps=abs(filtered_error))
+                        mscope.motor.threaded_move_rel(
+                            dir=dir, steps=abs(filtered_error)
+                        )
                     except MotorControllerError as e:
                         raise e
 
