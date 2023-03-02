@@ -145,6 +145,16 @@ class DataStorage:
             self.zw.threadedWriteSingleArray(image, count)
             self.md_writer.writerow(metadata)
 
+    def is_writable(self) -> bool:
+        """Checks whether data can be written.
+
+        Returns
+        -------
+        bool
+        """
+
+        return self.zw.writable and perf_counter() - self.prev_write_time > self.dt
+
     def writeSingleImage(self, image: np.ndarray, custom_image_name: str):
         """Save a single image w/ a custom suffix
 

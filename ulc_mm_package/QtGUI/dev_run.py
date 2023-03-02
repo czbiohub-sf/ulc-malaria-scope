@@ -235,9 +235,10 @@ class AcquisitionThread(QThread):
             self.single_save = False
 
         if self.continuous_save:
-            self.data_storage.writeData(image, self.getMetadata(), self.im_counter)
-            self.measurementTime.emit(int(perf_counter() - self.start_time))
-            self.im_counter += 1
+            if self.data_storage.is_writable():
+                self.data_storage.writeData(image, self.getMetadata(), self.im_counter)
+                self.measurementTime.emit(int(perf_counter() - self.start_time))
+                self.im_counter += 1
 
     def updateGUIElements(self):
         self.update_counter += 1
