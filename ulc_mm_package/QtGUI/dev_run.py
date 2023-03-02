@@ -827,7 +827,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.autobrightness = (
             self.acquisitionThread.routines.autobrightnessRoutine(self.mscope)
         )
-        self.acquisitionThread.autobrightness.send(None)
         self.btnAutobrightness.setEnabled(False)
         self.btnLEDToggle.setEnabled(False)
         self.vsLED.blockSignals(True)
