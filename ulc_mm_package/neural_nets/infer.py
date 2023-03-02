@@ -115,7 +115,7 @@ def asyn_infer(model, image_loader: ImageLoader):
 
 def calculate_allan_dev(data, fname):
     ds = at.Dataset(data=data)
-    res = ds.compute("tdev")
+    ds.compute("tdev")
 
     pl = at.Plot()
     pl.plot(ds, errorbars=True, grid=True)
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         tqdm = _tqdm
     else:
         try:
-            from tqdm import tqdm
+            from tqdm import tqdm  # type: ignore
         except ImportError:
             print("install tqdm for progress bars")
             tqdm = _tqdm

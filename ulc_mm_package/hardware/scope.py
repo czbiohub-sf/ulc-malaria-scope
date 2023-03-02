@@ -22,12 +22,29 @@ import pigpio
 
 from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2, CAMERA_FPS
 
-# FIXME no stars!
-from ulc_mm_package.hardware.hardware_modules import *
+from ulc_mm_package.hardware.camera import BaslerCamera, AVTCamera, CameraError
+from ulc_mm_package.hardware.motorcontroller import (
+    DRV8825Nema,
+    Direction,
+    MotorControllerError,
+)
+from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
+from ulc_mm_package.hardware.pim522_rotary_encoder import (
+    PIM522RotaryEncoder,
+    EncoderI2CError,
+)
+from ulc_mm_package.hardware.pneumatic_module import (
+    PneumaticModule,
+    PneumaticModuleError,
+)
+from ulc_mm_package.hardware.fan import Fan
+from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.image_processing.flow_control import FlowController
-from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
+from ulc_mm_package.neural_nets.NCSModel import TPUError
 
 
 class GPIOEdge(enum.Enum):
@@ -198,7 +215,7 @@ class MalariaScope:
                 self.logger.error(f"Encoder I2C initialization failed. {e}")
         else:
             self.logger.error(
-                f"Motor initialization failed, so encoder will not initialize."
+                "Motor initialization failed, so encoder will not initialize."
             )
 
     def _init_humidity_temp_sensor(self):
@@ -265,7 +282,7 @@ class MalariaScope:
                 f"Set callback on pin: {interrupt_pin} w/ debounce time of {glitch_filer_us} us."
             )
         else:
-            self.logger.info(f"We're simulating, no callback set.")
+            self.logger.info("We're simulating, no callback set.")
 
     @staticmethod
     def read_lim_sw(pin: int = LID_LIMIT_SWITCH2):

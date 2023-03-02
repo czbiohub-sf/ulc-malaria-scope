@@ -7,11 +7,9 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 import sys
 import socket
-import webbrowser
 import enum
 import logging
 import subprocess
-import numpy as np
 
 from os import (
     listdir,
@@ -19,7 +17,7 @@ from os import (
     path,
 )
 from transitions import Machine
-from time import perf_counter, sleep
+from time import sleep
 from logging.config import fileConfig
 from datetime import datetime
 
@@ -44,11 +42,9 @@ from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
-    FLOWRATE,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
-    FLOWCELL_QC_FORM_LINK,
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
 )
@@ -288,7 +284,7 @@ class Oracle(Machine):
             )
             try:
                 self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-            except (FileNotFoundError, IndexError) as e:
+            except (FileNotFoundError, IndexError):
                 print(
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
                 )
@@ -308,12 +304,12 @@ class Oracle(Machine):
 
     def ssd_full_msg_and_exit(self):
         self.logger.warning(
-            f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            "The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
         )
         self.display_message(
             QMessageBox.Icon.Critical,
             "SSD is full",
-            f"The SSD is full. Data cannot be saved if the SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            "The SSD is full. Data cannot be saved if the SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
             + _ERROR_MSG,
             buttons=Buttons.OK,
         )
@@ -460,17 +456,18 @@ class Oracle(Machine):
 
         self.message_window.setText(f"{text}")
 
-        if buttons != None:
+        if buttons is not None:
             self.message_window.setStandardButtons(buttons.value)
 
-        if image != None:
+        if image is not None:
             layout = self.message_window.layout()
 
             image_lbl = QLabel()
             image_lbl.setPixmap(QPixmap(image))
 
             # Row/column span determined using layout.rowCount() and layout.columnCount()
-            layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)
+            # TODO: Mypy doesn't like this because of "too many args" and "alignment"
+            layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)  # type: ignore
 
         message_result = self.message_window.exec()
         return message_result
