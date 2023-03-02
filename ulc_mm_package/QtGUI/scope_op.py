@@ -50,10 +50,10 @@ from ulc_mm_package.hardware.pneumatic_module import (
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
-    AF_BATCH_SIZE,
     YOGO_CLASS_LIST,
     YOGO_PERIOD_NUM,
     YOGO_CLASS_IDX_MAP,
+    AF_BATCH_SIZE,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
@@ -738,7 +738,7 @@ class ScopeOp(QObject, NamedMachine):
                 flowrate = None
 
                 self.flowcontrol_routine = self.routines.flowControlRoutine(
-                    self.mscope, self.target_flowrate, None
+                    self.mscope, self.target_flowrate
                 )
 
             t1 = perf_counter()

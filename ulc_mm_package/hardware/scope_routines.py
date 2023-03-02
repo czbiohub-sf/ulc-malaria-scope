@@ -55,7 +55,7 @@ class Routines:
     ) -> int:
         """Single shot autofocus routine.
 
-        Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
+        Takes in an array of images (number based on AF_BATCH_SIZE), runs an inference
         using the SSAF model, averages the results, and adjusts the motor position by that step value.
 
         Parameters
@@ -88,9 +88,9 @@ class Routines:
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope, img: np.ndarray
     ) -> Generator[Optional[int], np.ndarray, None]:
-        """A periodic wrapper around the `continuousSSAFRoutine`.
+        """Periodic autofocus calculations with EWMA filtering
 
-        This function adds a simple time wrapper around `continuousSSAFRoutine`
+        This function adds a simple time wrapper around the autofocus model and EWMA filter
         such that inferences and motor adjustments are done every `AF_PERIOD_NUM' frames.
 
         When not making an adjustment, this Generator yields None. After an adjustment has been completed, the next
@@ -103,25 +103,28 @@ class Routines:
         None:
             In between periods, images are not being sent to SSAF.
         int:
-            Number of motor steps taken, returned after a full batch of images have been sent once
+            Number of motor steps taken, returned after an image has been sent once
             AF_PERIOD_NUM frames have elapsed since the last adjustment.
         """
 
         counter = 0
-        steps_from_focus = None
+        int_filtered_error = None
 
         ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
         ssaf_filter.set_init_val(0)
 
         while True:
-            img = yield ssaf_steps_from_focus
+            img = yield int_filtered_error
             counter += 1
             if counter >= nn_constants.AF_PERIOD_NUM:
-                ssaf_steps_from_focus = mscope.autofocus_model(img)
-                steps_from_focus = -round(np.mean(ssaf_steps_from_focus))
+                batch_steps_from_focus = mscope.autofocus_model(img)
+                steps_from_focus = -(np.mean(batch_steps_from_focus))
 
                 filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
+                int_filtered_error = round(filtered_error)
                 counter = 0
+
+                print(f"UNFILTERED {steps_from_focus} FILTERED {filtered_error}")
 
                 if abs(filtered_error) > nn_constants.AF_THRESHOLD:
                     try:
