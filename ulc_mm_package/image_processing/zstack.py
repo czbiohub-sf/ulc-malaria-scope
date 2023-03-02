@@ -2,7 +2,7 @@ import os
 import cv2
 import numpy as np
 
-from typing import cast, Optional
+from typing import cast, Optional, Generator
 from datetime import datetime
 
 from ulc_mm_package.image_processing.focus_metrics import (
@@ -48,7 +48,7 @@ def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=No
 
 def full_sweep_image_collection(
     motor: DRV8825Nema, steps_per_coarse: int = 10, save_loc: Optional[str] = None
-) -> None:
+) -> Generator[None, np.ndarray, None]:
     """Do a full sweep of the motor range and save images at defined motor position increments.
 
     Parameters
@@ -90,7 +90,7 @@ def local_sweep_image_collection(
     steps_per_image: int = 1,
     num_imgs_per_step: int = 30,
     save_loc: Optional[str] = None,
-) -> None:
+) -> Generator[None, np.ndarray, None]:
     """Sweep through a local vicinity (+/- num_steps from the start_point) and save images.
 
     Parameters
