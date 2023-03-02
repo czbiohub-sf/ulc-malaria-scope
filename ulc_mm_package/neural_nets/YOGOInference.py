@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 
 from typing import Any, List, Union
-
+from typing_extensions import TypeAlias
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
@@ -19,7 +19,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 )
 
 
-ClassCountResult = np.ndarray
+ClassCountResult: TypeAlias = np.ndarray
 
 
 class YOGO(NCSModel):

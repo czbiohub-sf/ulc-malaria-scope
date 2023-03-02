@@ -30,7 +30,6 @@ from openvino.runtime import (
     Type,
     InferRequest,
     AsyncInferQueue,
-    Tensor,
 )
 
 
@@ -239,7 +238,7 @@ class NCSModel:
             return maybe_list
         return [maybe_list]
 
-    def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
+    def _format_image_to_tensor(self, img: npt.NDArray) -> npt.NDArray:
         return np.expand_dims(img, (0, 3))
 
     def shutdown(self):

@@ -2,18 +2,19 @@ import os
 import cv2
 import numpy as np
 
-from time import sleep
 from typing import cast
 from datetime import datetime
 
-# FIXME no stars!
-from ulc_mm_package.image_processing.focus_metrics import *
+from ulc_mm_package.image_processing.focus_metrics import (
+    gradientAverage,
+    logPowerSpectrumRadialAverageSum,
+)
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema, Direction
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
 
 def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=None):
-    if save_loc != None:
+    if save_loc is not None:
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")
         try:
@@ -33,7 +34,7 @@ def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=No
     focus_metrics = []
     for image in camera.yieldImages():
         focus_metrics.append(gradientAverage(image))
-        if save_loc != None:
+        if save_loc is not None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.png", image)
         motor.move_rel(steps=steps_per_image, dir=Direction.CW)
         step_counter += steps_per_image
@@ -52,7 +53,7 @@ def takeZStackCoroutine(
     steps_per_fine: int = 1,
     save_loc=None,
 ):
-    if save_loc != None:
+    if save_loc is not None:
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")
         try:
@@ -75,7 +76,7 @@ def takeZStackCoroutine(
         img = yield img
         focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
         motor.move_rel(steps=steps_per_coarse, dir=Direction.CW, stepdelay=0.001)
-        if save_loc != None:
+        if save_loc is not None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         step_counter += steps_per_coarse
 
@@ -94,10 +95,10 @@ def takeZStackCoroutine(
         img = yield img
         focus_metrics_fine.append(logPowerSpectrumRadialAverageSum(img))
         motor.move_rel(steps=steps_per_fine, dir=Direction.CW)
-        if save_loc != None:
+        if save_loc is not None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         step_counter += steps_per_fine
-    best_focus_position: int = (
+    best_focus_position = (
         start + cast(int, np.argmax(focus_metrics_fine)) * steps_per_fine
     )
     motor.move_abs(best_focus_position)
@@ -133,7 +134,7 @@ def symmetricZStack(
         Default None - provide a location to save the ZStack images.
     """
 
-    if save_loc != None:
+    if save_loc is not None:
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-local_zstack/")
         try:
@@ -154,7 +155,7 @@ def symmetricZStack(
     for image in camera.yieldImages():
         focus_metrics.append(gradientAverage(image))
         motor.move_rel(steps=steps_per_image, dir=Direction.CW)
-        if save_loc != None:
+        if save_loc is not None:
             cv2.imwrite(save_dir + f"{motor.pos:03d}.png", image)
         step_counter += steps_per_image
         if step_counter > max_pos:
@@ -174,7 +175,7 @@ def symmetricZStackCoroutine(
 ):
     """The coroutine companion to symmetricZStack"""
 
-    if save_loc != None:
+    if save_loc is not None:
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
         save_dir = os.path.join(save_loc, timestamp + "-local_zstack/")
         try:
@@ -196,7 +197,7 @@ def symmetricZStackCoroutine(
     while step_counter < max_pos:
         for i in range(num_imgs):
             img = yield img
-            if save_loc != None:
+            if save_loc is not None:
                 cv2.imwrite(save_dir + f"{motor.pos:03d}_{i:03d}.png", img)
 
         motor.move_rel(steps=steps_per_image, dir=Direction.CW, stepdelay=0.001)

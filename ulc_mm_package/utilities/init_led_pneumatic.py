@@ -11,18 +11,17 @@ This script properly initializes the PWM chip when being run as a systemd script
 """
 
 from time import sleep
-from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
+
+from ulc_mm_package.hardware.dtoverlay_pwm import (
+    dtoverlay_PWM as dtoverlay_org,
+    PWM_CHANNEL,
+)
 
 if __name__ == "__main__":
-    pwm1 = dtoverlay_PWM(PWM_CHANNEL.PWM1)
-    pwm1 = dtoverlay_PWM(PWM_CHANNEL.PWM2)
+    pwm1 = dtoverlay_org(PWM_CHANNEL.PWM1)
+    pwm1 = dtoverlay_org(PWM_CHANNEL.PWM2)
+
 import subprocess
-import enum
-
-
-class PWM_CHANNEL(enum.Enum):
-    PWM1 = 0
-    PWM2 = 1
 
 
 class dtoverlay_PWM_Exception(Exception):
@@ -51,7 +50,7 @@ class dtoverlay_PWM:
             echo 1 > pwm1/enable;
         """
         subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+            cmd, capture_output=True, shell=True, cwd="/sys/class/pwm/pwmchip0"
         )
 
     def setFreq(self, freq: int):
@@ -62,7 +61,7 @@ class dtoverlay_PWM:
         self.period_ns = int((1 / freq) * 1e9)
         cmd = f"echo {self.period_ns} > pwm{self.channel}/period;"
         subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+            cmd, capture_output=True, shell=True, cwd="/sys/class/pwm/pwmchip0"
         )
 
     def setDutyCycle(self, duty_cycle_perc: float):
@@ -82,7 +81,7 @@ class dtoverlay_PWM:
         duty_cycle_val = int(duty_cycle_perc * self.period_ns)
         cmd = f"echo {duty_cycle_val} > pwm{self.channel}/duty_cycle;"
         subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+            cmd, capture_output=True, shell=True, cwd="/sys/class/pwm/pwmchip0"
         )
 
     def exit(self):
@@ -91,13 +90,11 @@ class dtoverlay_PWM:
         echo 0 > pwm1/enable;
         """
         subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+            cmd, capture_output=True, shell=True, cwd="/sys/class/pwm/pwmchip0"
         )
 
 
 if __name__ == "__main__":
-    from time import sleep
-
     pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
     pwm.setFreq(50000)
     pwm.setDutyCycle(0)

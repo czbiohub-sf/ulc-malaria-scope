@@ -35,8 +35,6 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-from os import path
-
 
 def log_parser(descriptor, qsizes_file, times_file):
     # Parse queue sizes

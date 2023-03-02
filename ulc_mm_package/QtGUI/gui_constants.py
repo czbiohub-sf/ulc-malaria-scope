@@ -1,6 +1,5 @@
 import enum
 
-from PyQt5.QtWidgets import QDesktopWidget
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 

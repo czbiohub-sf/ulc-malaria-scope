@@ -46,6 +46,15 @@ setup(
         "transitions==0.8.11",
         "pyngrok==5.1.0",
     ],
-    extras_require={"dev": ["AllanTools", "black"]},
+    extras_require={
+        "dev": [
+            "AllanTools",
+            "black",
+            "mypy==1.0.1",
+            "mypy-extensions==1.0.0",
+            "PyQt5-stubs",
+            "ruff==0.0.253",
+        ]
+    },
     classifiers=["CZ Biohub :: Bioengineering"],
 )

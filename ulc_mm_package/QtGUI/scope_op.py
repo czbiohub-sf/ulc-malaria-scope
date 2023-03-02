@@ -5,19 +5,18 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
 
-import numpy as np
 import logging
+import numpy as np
 
+from typing import Any, List
+from time import sleep, perf_counter
 from transitions import Machine, State
-from time import sleep
-from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 
-# FIXME no stars!
-from ulc_mm_package.hardware.scope_routines import *
+from ulc_mm_package.hardware.scope_routines import Routines
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.scope_constants import (
@@ -26,11 +25,28 @@ from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     VERBOSE,
 )
-from ulc_mm_package.hardware.hardware_modules import (
-    PressureSensorStaleValue,
-    SyringeInMotion,
+
+from ulc_mm_package.image_processing.flow_control import (
+    CantReachTargetFlowrate,
+    LowConfidenceCorrelations,
 )
-from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT, TH_PERIOD_NUM
+from ulc_mm_package.image_processing.cell_finder import (
+    LowDensity,
+    NoCellsFound,
+)
+from ulc_mm_package.image_processing.autobrightness import (
+    BrightnessTargetNotAchieved,
+    BrightnessCriticallyLow,
+    LEDNoPower,
+)
+from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorControllerError
+from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
+from ulc_mm_package.hardware.pneumatic_module import (
+    PressureLeak,
+    SyringeInMotion,
+    PressureSensorStaleValue,
+    PressureSensorBusy,
+)
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
@@ -42,7 +58,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
-    STATUS,
     ERROR_BEHAVIORS,
 )
 from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
@@ -244,13 +259,13 @@ class ScopeOp(QObject, NamedMachine):
         )
         component_status = self.mscope.getComponentStatus()
 
-        if all([status == True for status in component_status.values()]):
+        if all([status is True for status in component_status.values()]):
             self.setup_done.emit()
         else:
             failed_components = [
                 comp.name
                 for comp in component_status
-                if component_status.get(comp) == False
+                if component_status.get(comp) is False
             ]
             self.logger.error(
                 "Hardware pre-check failed: "
@@ -302,7 +317,7 @@ class ScopeOp(QObject, NamedMachine):
         self.running = False
 
         # Account for case when pause is entered during the initial setup
-        if self.start_time != None:
+        if self.start_time is not None:
             self.accumulated_time += perf_counter() - self.start_time
             self.start_time = None
 
@@ -338,7 +353,6 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_autobrightness(self, *args):
         self.autobrightness_routine = self.routines.autobrightnessRoutine(self.mscope)
-        self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
 
@@ -350,7 +364,7 @@ class ScopeOp(QObject, NamedMachine):
                 f"Passed pressure check. Pressure difference = {pdiff} hPa."
             )
             self.next_state()
-        except PressureSensorBusy:
+        except PressureSensorBusy as e:
             self.logger.error(f"Unable to read value from the pressure sensor - {e}")
             # TODO What to do in a case where the sensor is acting funky?
             self.default_error.emit(
@@ -369,12 +383,11 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_cellfinder(self, *args):
         self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
-        self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
     def _end_cellfinder(self, *args):
-        if self.cellfinder_result != None:
+        if self.cellfinder_result is not None:
             self.update_msg.emit(
                 f"Moving motor to focus position at {self.cellfinder_result} steps."
             )
@@ -394,26 +407,21 @@ class ScopeOp(QObject, NamedMachine):
         self.fastflow_routine = self.routines.fastFlowRoutine(
             self.mscope, None, target_flowrate=self.target_flowrate
         )
-        self.fastflow_routine.send(None)
 
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self, *args):
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
-        self.PSSAF_routine.send(None)
 
         self.flowcontrol_routine = self.routines.flowControlRoutine(
-            self.mscope, self.target_flowrate, None
+            self.mscope, self.target_flowrate
         )
-        self.flowcontrol_routine.send(None)
 
         self.density_routine = self.routines.cell_density_routine()
-        self.density_routine.send(None)
 
         self.count_parasitemia_routine = (
             self.routines.count_parasitemia_periodic_wrapper(self.mscope)
         )
-        self.count_parasitemia_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
@@ -425,7 +433,7 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
-        if self.start_time != None:
+        if self.start_time is not None:
             self.logger.info(
                 f"Net FPS is {self.count/(self._get_experiment_runtime())}"
             )
@@ -537,7 +545,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.img_signal.connect(self.run_autofocus)
         else:
             try:
-                if self.autofocus_results[0] == None:
+                if self.autofocus_results[0] is None:
                     self.autofocus_results[
                         0
                     ] = self.routines.singleShotAutofocusRoutine(
@@ -589,7 +597,7 @@ class ScopeOp(QObject, NamedMachine):
         try:
             flowrate = self.fastflow_routine.send((img, timestamp))
 
-            if flowrate != None:
+            if flowrate is not None:
                 self.update_flowrate.emit(flowrate)
         except CantReachTargetFlowrate as e:
             self.fastflow_result = e.flowrate
@@ -679,8 +687,8 @@ class ScopeOp(QObject, NamedMachine):
 
                 try:
                     self.density_routine.send(filtered_prediction)
-                except LowDensity as e:
-                    self.logger.warning(f"Cell density is too low.")
+                except LowDensity:
+                    self.logger.warning("Cell density is too low.")
                     self.reload_pause.emit(
                         "Low cell density",
                         (
@@ -717,7 +725,6 @@ class ScopeOp(QObject, NamedMachine):
                     self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
                         self.mscope, None
                     )
-                    self.PSSAF_routine.send(None)
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
 
@@ -733,18 +740,17 @@ class ScopeOp(QObject, NamedMachine):
                 self.flowcontrol_routine = self.routines.flowControlRoutine(
                     self.mscope, self.target_flowrate, None
                 )
-                self.flowcontrol_routine.send(None)
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
             t0 = perf_counter()
             # Update infopanel
-            if focus_err != None:
+            if focus_err is not None:
                 # TODO change this to non int?
                 self.update_focus.emit(int(focus_err))
 
-            if flowrate != None:
+            if flowrate is not None:
                 self.update_flowrate.emit(flowrate)
 
             t1 = perf_counter()
