@@ -951,7 +951,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Full Range ZStack",
-            "Press okay to sweep the motor over its entire range and automatically find and move to the focal position.",
+            "Press okay to sweep the motor over its entire range and save the images (save 1 img/step).",
             cancel=True,
         )
 
@@ -963,7 +963,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Local Vicinity ZStack",
-            "Press okay to sweep the motor over its current nearby vicinity and move to the focal position.",
+            "Press okay to sweep the motor over its current nearby vicinity and save images (note: by default we save 30 imgs/step so this may be slow).",
             cancel=True,
         )
 

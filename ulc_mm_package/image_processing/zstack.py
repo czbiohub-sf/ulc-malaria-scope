@@ -76,7 +76,7 @@ def full_sweep_image_collection(
     # Re-home the motor
     motor.homed = False
     motor.homeToLimitSwitches()
-    for _ in range(0, motor.max_pos):
+    for _ in range(0, motor.max_pos - steps_per_coarse):
         img = yield
         cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
         motor.move_rel(steps=steps_per_coarse, dir=Direction.CW, stepdelay=0.001)
