@@ -37,8 +37,8 @@ from ulc_mm_package.image_processing.flow_control import (
     LowConfidenceCorrelations,
 )
 from ulc_mm_package.image_processing.zstack import (
-    takeZStackCoroutine,
-    symmetricZStackCoroutine,
+    full_sweep_image_collection,
+    local_sweep_image_collection,
 )
 
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
@@ -313,15 +313,15 @@ class AcquisitionThread(QThread):
 
     def runFullZStack(self):
         self.takeZStack = True
-        self.zstack = takeZStackCoroutine(
-            None, motor=self.motor, save_loc=self.external_dir
+        self.zstack = full_sweep_image_collection(
+            motor=self.motor, steps_per_coarse=10, save_loc=self.external_dir
         )
         self.zstack.send(None)
 
     def runLocalZStack(self):
         self.takeZStack = True
-        self.zstack = symmetricZStackCoroutine(
-            None, self.motor, self.motor.pos, save_loc=self.external_dir
+        self.zstack = local_sweep_image_collection(
+            self.motor, self.motor.pos, save_loc=self.external_dir
         )
         self.zstack.send(None)
 
@@ -528,6 +528,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             sleep(0.5)
             self.motor.move_abs(int(self.motor.max_pos // 2))
             self.lblFocusMax.setText(f"{self.motor.max_pos}")
+
+            self.btnFullZstack.setText("Full sweep+save")
+            self.btnLocalZStack.setText("Local sweep+save")
 
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
             self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)

@@ -46,6 +46,94 @@ def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=No
     return best_focus_position, focus_metrics
 
 
+def full_sweep_image_collection(
+    motor: DRV8825Nema, steps_per_coarse: int = 10, save_loc: str = None
+) -> None:
+    """Do a full sweep of the motor range and save images at defined motor position increments.
+
+    Parameters
+    ----------
+    motor: DRV8825Nema
+    steps_per_coarse: int
+        Motor increments at which to save images
+    save_loc: str
+        Path where the folder of images will be saved
+    """
+    if save_loc is not None:
+        timestamp = datetime.now().strftime(DATETIME_FORMAT)
+        save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")
+        try:
+            os.mkdir(save_dir)
+        except Exception as e:
+            print(
+                f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack."
+            )
+            return
+    else:
+        print(f"Save location is necessary! Received: {save_loc}")
+        return
+
+    # Re-home the motor
+    motor.homed = False
+    motor.homeToLimitSwitches()
+    for _ in range(0, motor.max_pos):
+        img = yield
+        cv2.imwrite(save_dir + f"{motor.pos:03d}.png", img)
+        motor.move_rel(steps=steps_per_coarse, dir=Direction.CW, stepdelay=0.001)
+    motor.move_abs(10)
+
+
+def local_sweep_image_collection(
+    motor: DRV8825Nema,
+    start_point: int,
+    num_steps: int = 30,
+    steps_per_image: int = 1,
+    num_imgs_per_step: int = 30,
+    save_loc: str = None,
+) -> None:
+    """Sweep through a local vicinity (+/- num_steps from the start_point) and save images.
+
+    Parameters
+    ----------
+    motor: DRV8825Nema
+    start_point: int
+        Central position about which the motor will move +/- num_steps steps and save images
+    num_steps: int
+        Number of images to take above/below the start_point
+    num_imgs_per_step: int
+        The number of images to save at each motor position
+    save_loc: str
+        Where the folder of images will be saved
+    """
+
+    if save_loc is not None:
+        timestamp = datetime.now().strftime(DATETIME_FORMAT)
+        save_dir = os.path.join(save_loc, timestamp + "-local_zstack/")
+        try:
+            os.mkdir(save_dir)
+        except Exception as e:
+            print(
+                f"Could not make directory {save_dir}. Encountered: \n{e}. Cancelling ZStack."
+            )
+            return
+
+    # Get motion bounds
+    min_pos = int(start_point - num_steps)
+    max_pos = int(start_point + num_steps)
+    min_pos = int(min_pos) if min_pos >= 0 else 0
+    max_pos = int(max_pos) if max_pos <= motor.max_pos else motor.max_pos
+
+    motor.move_abs(min_pos)
+    for _ in range(min_pos, max_pos, steps_per_image):
+        for i in range(num_imgs_per_step):
+            img = yield
+            cv2.imwrite(save_dir + f"{motor.pos:03d}_{i:03d}.png", img)
+        motor.move_rel(steps=steps_per_image, dir=Direction.CW, stepdelay=0.001)
+
+    # Move the motor back to its original position
+    motor.move_abs(start_point)
+
+
 def takeZStackCoroutine(
     img,
     motor: DRV8825Nema,
