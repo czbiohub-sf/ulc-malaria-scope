@@ -20,11 +20,12 @@ INSIDE_BBOX_FLAG = 0
 
 # ================ Flow control constants ================ #
 NUM_IMAGE_PAIRS = 12  # Number of image pair xcorr calculations to average to make a single measurement
+NUM_FAILED_CORR_MEASUREMENTS = 75  # at 30fps, 75pairs = 150imgs = 5s
 WINDOW_SIZE = 12  # EWMA window size
 TOL_PERC = 0.1
 
 # ================ Flow rate constants ================ #
-CORRELATION_THRESH = 0.5
+CORRELATION_THRESH = 0.3
 
 # You'd work backwards here...how many images do you want of the same cells?
 # Let's say 2 frames/fov of cells. At 33ms/frame, we want each cell to pass
