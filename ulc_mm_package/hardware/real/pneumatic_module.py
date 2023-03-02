@@ -366,11 +366,12 @@ class AdafruitMPRLS:
         PressureSensorBusy:
             Raised if a value is unable to be read after max_attempts
         """
-        while max_attempts <= 0:
+        n = max_attempts
+        while n >= 0:
             try:
                 return self.getPressureImmediately()
             except PressureSensorBusy:
-                max_attempts -= 1
+                n -= 1
                 sleep(0.05)
         else:
             raise PressureSensorBusy(

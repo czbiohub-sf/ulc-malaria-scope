@@ -1,15 +1,15 @@
 import io
 import csv
-import cv2
 import shutil
 import logging
-import numpy as np
-
 from pathlib import Path
 from time import perf_counter
 from datetime import datetime
 from concurrent.futures import Future
 from typing import Dict, List, Optional
+
+import numpy as np
+import cv2
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter

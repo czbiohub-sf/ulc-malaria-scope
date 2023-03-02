@@ -27,7 +27,7 @@ setup(
     install_requires=[
         "Pillow",
         "matplotlib==3.4.3",
-        "numpy>=1.21.0",
+        "numpy==1.21.0",
         "opencv-python",
         "PyQt5>=5.15.2",
         "pypylon==1.7.2",
