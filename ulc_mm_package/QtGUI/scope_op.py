@@ -637,7 +637,7 @@ class ScopeOp(QObject, NamedMachine):
             self.img_metadata[key] = val
 
     @pyqtSlot(np.ndarray, float)
-    def run_experiment(self, img, timestamp):
+    def run_experiment(self, img, timestamp) -> None:
         if not self.running:
             self.logger.info("Slot executed after experiment ended.")
             return
