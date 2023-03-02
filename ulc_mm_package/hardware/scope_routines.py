@@ -109,13 +109,12 @@ class Routines:
 
         counter = 0
         steps_from_focus = None
-        ssaf_routine = self.continuousSSAFRoutine(mscope)
 
         ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
         ssaf_filter.set_init_val(0)
 
         while True:
-            img = yield steps_from_focus
+            img = yield ssaf_steps_from_focus
             counter += 1
             if counter >= nn_constants.AF_PERIOD_NUM:
                 ssaf_steps_from_focus = mscope.autofocus_model(img)
