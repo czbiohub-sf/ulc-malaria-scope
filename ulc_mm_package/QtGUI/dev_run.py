@@ -529,7 +529,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.motor.move_abs(int(self.motor.max_pos // 2))
             self.lblFocusMax.setText(f"{self.motor.max_pos}")
 
-            self.btnFullZstack.setText("Full sweep+save")
+            self.btnFullZStack.setText("Full sweep+save")
             self.btnLocalZStack.setText("Local sweep+save")
 
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
