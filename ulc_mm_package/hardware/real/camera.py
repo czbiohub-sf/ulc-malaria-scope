@@ -84,7 +84,7 @@ class AVTCamera(CameraBase):
     would be a drop-in replacement for the Basler.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
 
         # Internal variables used to keep track of the number of
