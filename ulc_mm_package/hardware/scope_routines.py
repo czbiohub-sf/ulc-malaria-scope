@@ -415,7 +415,7 @@ class Routines:
         pull_time: float = 5,
         steps_per_image: int = 10,
         img: Optional[np.ndarray] = None,
-    ) -> Generator[None, np.ndarray, int]:
+    ) -> Generator[None, np.ndarray, Optional[int]]:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
         This routine does the following:
