@@ -269,7 +269,7 @@ class Routines:
 
     @init_generator
     def autobrightnessRoutine(
-        self, mscope: MalariaScope, img: Optional[np.ndarray] = None
+        self, mscope: MalariaScope
     ) -> Generator[None, np.ndarray, float]:
         """Autobrightness routine to set led power.
 
