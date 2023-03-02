@@ -9,8 +9,17 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.7'
-      - run: pip install --upgrade pip
-      - run: pip install mypy==1.0.1 mypy-extensions==1.0.0 PyQt5-stubs==5.15.6.0 ruff==0.0.253
-      - run: mypy --pretty ulc_mm_package
-      - run: ruff ulc_mm_package --ignore E501 --ignore E722
+          python-version: '3.7' 
+      - name: install checking requirements
+        run: |
+          pip install --upgrade pip
+          pip install mypy==1.0.1 mypy-extensions==1.0.0 PyQt5-stubs==5.15.6.0 ruff==0.0.253
+      - name: mypy
+        run: mypy --pretty ulc_mm_package
+      - name: ruff
+        run: ruff ulc_mm_package --ignore E501 --ignore E722
+      - if: failure()
+        run: |
+          echo "Run the following locally:"
+          echo "    mypy --pretty ulc_mm_package"
+          echo "    ruff ulc_mm_package --ignore E501 --ignore E722"
