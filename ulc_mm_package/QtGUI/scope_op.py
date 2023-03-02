@@ -604,7 +604,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.error("Fastflow failed. Syringe already at max position.")
             self.default_error.emit(
                 "Calibration issue",
-                "Unable to achieve target flowrate with syringe at max position. Continue running anyways?",
+                "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                 ERROR_BEHAVIORS.YN.value,
             )
             self.update_flowrate.emit(self.fastflow_result)
@@ -615,8 +615,13 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.default_error.emit(
                 "Calibration failed - flowrate calculation errors",
-                "Flowrate ramp: The flow control system returned too many 'low confidence' measurements.\nIf the flow rate looked normal to you, you can try re-running with this same flow cell and sample. Otherwise, discard this flow cell and use a new one with fresh sample please.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                (
+                    "Flowrate ramp: The flow control system returned too many 'low confidence' measurements. "
+                    "You can continue with this run if the flow looks okay to you, "
+                    "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
+                    "Continue running anyway?"
+                ),
+                ERROR_BEHAVIORS.DEFAULT.YN.value,
             )
         except StopIteration as e:
             self.fastflow_result = e.value
