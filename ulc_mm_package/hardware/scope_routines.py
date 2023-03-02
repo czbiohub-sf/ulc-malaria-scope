@@ -130,8 +130,6 @@ class Routines:
                 int_filtered_error = round(filtered_error)
                 throttle_counter = 0
 
-                print(f"UNFILTERED {steps_from_focus} FILTERED {filtered_error}")
-
                 if move_counter >= ssaf_period_num and abs(filtered_error) > nn_constants.AF_THRESHOLD:
                     move_counter = 0
                     try:
