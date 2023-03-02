@@ -76,6 +76,9 @@ class CameraOptions(Enum):
         return self.img_dims().height
 
 
+# ================ Scope lock constants ================ #
+LOCKFILE = "lock.py"
+
 # ================ FPS constants ================ #
 ACQUISITION_FPS = 30.0
 LIVEVIEW_FPS = 1.0

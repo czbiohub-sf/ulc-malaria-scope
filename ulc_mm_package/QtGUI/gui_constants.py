@@ -17,7 +17,7 @@ class ERROR_BEHAVIORS(enum.Enum):
     DEFAULT = 0
     PRECHECK = 1
     YN = 2
-
+    
 
 # ================ Image display size ================ #
 IMG_DOWNSCALE = 2

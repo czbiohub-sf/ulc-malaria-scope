@@ -120,3 +120,6 @@ metadata_compilation.txt
 
 # Sagas
 *_saga.txt
+
+# Scope lock
+lock.py
