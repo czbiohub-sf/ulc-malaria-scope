@@ -738,7 +738,7 @@ class ScopeOp(QObject, NamedMachine):
                 flowrate = None
 
                 self.flowcontrol_routine = self.routines.flowControlRoutine(
-                    self.mscope, self.target_flowrate, None
+                    self.mscope, self.target_flowrate
                 )
 
             t1 = perf_counter()
