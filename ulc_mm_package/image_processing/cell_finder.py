@@ -81,7 +81,7 @@ class CellFinder:
         """Check for cells for the given image, store the result + motor position the image was taken at."""
 
         self.motor_pos.append(motor_pos)
-        xcorr_map = get_correlation_map(img)
+        xcorr_map = get_correlation_map(img, self.thumbnail, self.downsample_factor)
         self.confidences.append(np.max(xcorr_map))
         self.maps.append(xcorr_map)
 
