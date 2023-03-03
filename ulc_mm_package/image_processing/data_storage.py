@@ -2,7 +2,6 @@ import io
 import csv
 import shutil
 import logging
-import os
 
 from pathlib import Path
 from time import perf_counter
