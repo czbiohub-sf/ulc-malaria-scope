@@ -127,10 +127,7 @@ class CellFinder:
         """
 
         points = np.argwhere(xcorr_map >= CELLS_FOUND_THRESHOLD)
-        if len(points) > MIN_POINTS_ABOVE_THRESH:
-            return True
-        else:
-            return False
+        return len(points) > MIN_POINTS_ABOVE_THRESH
 
     def reset(self) -> None:
         self.motor_pos = []
