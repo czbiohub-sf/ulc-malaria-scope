@@ -455,14 +455,6 @@ class Routines:
         # Maximum number of times to run check for cells routine before aborting
         max_attempts = 3
         cell_finder = CellFinder()
-        img = yield
-
-        # Initial check for cells, return current motor position if cells found
-        cell_finder.add_image(mscope.motor.pos, img)
-        try:
-            return cell_finder.get_cells_found_position()
-        except NoCellsFound:
-            cell_finder.reset()
 
         while True:
             """
