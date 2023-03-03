@@ -227,11 +227,7 @@ class AcquisitionThread(QThread):
 
     def save(self, image):
         if self.single_save:
-            filename = (
-                path.join(self.main_dir, datetime.now().strftime(DATETIME_FORMAT))
-                + f"{self.custom_image_prefix}.png"
-            )
-            imwrite(filename, image)
+            self.data_storage.writeSingleImage(image, self.custom_image_prefix)
             self.single_save = False
 
         if self.continuous_save:
@@ -277,9 +273,10 @@ class AcquisitionThread(QThread):
 
     def takeImage(self):
         if self.main_dir is None:
-            self.main_dir = self.external_dir + datetime.now().strftime(DATETIME_FORMAT)
-            mkdir(self.main_dir)
-            self.data_storage.main_dir = self.main_dir
+            self.data_storage.createTopLevelFolder(
+                self.external_dir, datetime.now().strftime(DATETIME_FORMAT)
+            )
+            self.main_dir = self.data_storage.main_dir
 
         if self.continuous_save:
             self.data_storage.createNewExperiment(
@@ -289,8 +286,6 @@ class AcquisitionThread(QThread):
                 experiment_initialization_metdata={},
                 per_image_metadata_keys=self.getMetadata().keys(),
             )
-            if self.main_dir is None:
-                self.main_dir = self.data_storage.main_dir
 
             self.im_counter = 0
             self.start_time = perf_counter()
