@@ -2,12 +2,13 @@ import io
 import csv
 import shutil
 import logging
+import os
+
 from pathlib import Path
 from time import perf_counter
 from datetime import datetime
 from concurrent.futures import Future
 from typing import Dict, List, Optional
-from os import path
 
 import numpy as np
 import cv2
@@ -92,7 +93,7 @@ class DataStorage:
         self.experiment_folder = time_str + f"_{custom_experiment_name}"
 
         try:
-            path.join(self.main_dir, self.experiment_folder).mkdir()
+            os.mkdir(os.path.join(self.main_dir, self.experiment_folder))
         except Exception as e:
             raise DataStorageError from e
 
