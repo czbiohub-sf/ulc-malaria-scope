@@ -91,7 +91,7 @@ class DataStorage:
         self.experiment_folder = time_str + f"_{custom_experiment_name}"
 
         try:
-            (self.main_dir / self.experiment_folder).mkdir()
+            path.join(self.main_dir, self.experiment_folder).mkdir()
         except Exception as e:
             raise DataStorageError from e
 

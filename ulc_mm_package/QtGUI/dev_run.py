@@ -367,7 +367,6 @@ class AcquisitionThread(QThread):
         self.fastFlowRoutine = self.routines.fastFlowRoutine(
             self.mscope, img, self.target_flowrate
         )
-        self.fastFlowRoutine.send(None)
         self.initializeFlowControl = False
         self.fast_flow_enabled = True
 
@@ -388,9 +387,8 @@ class AcquisitionThread(QThread):
             except StopIteration as e:
                 final_val = e.value
                 self.flowControl = self.routines.flowControlRoutine(
-                    self.mscope, self.target_flowrate, img
+                    self.mscope, self.target_flowrate
                 )
-                self.flowControl.send(None)
                 self.fast_flow_enabled = False
                 self.flowcontrol_enabled = True
                 print(f"Final fast flow val: {final_val}")
