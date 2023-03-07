@@ -148,7 +148,7 @@ class Oracle(Machine):
                 QMessageBox.Icon.Information,
                 "Scope is locked",
                 'The scope is locked because another run is in progress. '
-                'Override lock and run anyways?\nClick "No" to end run (recommended). '
+                'Override lock and run anyways?\n\nClick "No" to end run (recommended). '
                 'Click "Yes" to override lock and run at your own risk.',
                 buttons=Buttons.YN,
             )
