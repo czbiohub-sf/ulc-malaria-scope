@@ -148,18 +148,22 @@ class Oracle(Machine):
             message_result = self.display_message(
                 QMessageBox.Icon.Information,
                 "Scope in use",
-                'The scope is locked because another run is in progress. '
+                "The scope is locked because another run is in progress. "
                 'Override lock and run anyways?\n\nClick "No" to end run (recommended). '
                 'Click "Yes" to override lock and run anyways, at your own risk.',
                 buttons=Buttons.YN,
             )
             if message_result == QMessageBox.No:
-                self.logger.warning(f"Terminating run because scope is locked when lockfile ({LOCKFILE}) exists.")
+                self.logger.warning(
+                    f"Terminating run because scope is locked when lockfile ({LOCKFILE}) exists."
+                )
                 sys.exit(1)
             else:
-                self.logger.warning(f"Overriding lock and running even though lockfile ({LOCKFILE}) exists.")
+                self.logger.warning(
+                    f"Overriding lock and running even though lockfile ({LOCKFILE}) exists."
+                )
         else:
-            with open(LOCKFILE, 'w') as fp:
+            with open(LOCKFILE, "w") as fp:
                 pass
 
     def _set_variables(self):
@@ -667,7 +671,9 @@ class Oracle(Machine):
             os.remove(LOCKFILE)
             self.logger.info(f"Removed lockfile ({LOCKFILE}).")
         except FileNotFoundError:
-            self.logger.warning(f"Lockfile ({LOCKFILE}) does not exist and could not be deleted.")
+            self.logger.warning(
+                f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+            )
 
         # Shut off acquisition thread
         self.acquisition_thread.quit()
@@ -706,7 +712,9 @@ class Oracle(Machine):
                 os.remove(LOCKFILE)
                 self.logger.info(f"Removed lockfile ({LOCKFILE}).")
             except FileNotFoundError:
-                self.logger.warning(f"Lockfile ({LOCKFILE}) does not exist and could not be deleted.")
+                self.logger.warning(
+                    f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+                )
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
