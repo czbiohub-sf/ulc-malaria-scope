@@ -274,13 +274,15 @@ if __name__ == "__main__":
             plt.show()
 
     elif args.output is None:
-        for res in infer_func(models, image_loader):
+        model = models.pop()
+        for res in infer_func(model, image_loader):
             print(res)
             if args.allan_dev:
                 results.append(res)
     else:
+        model = models.pop()
         with open(args.output, "w") as f:
-            for res in infer_func(models, tqdm(image_loader)):
+            for res in infer_func(model, tqdm(image_loader)):
                 f.write(f"{res}\n")
                 if args.allan_dev:
                     results.append(res)
