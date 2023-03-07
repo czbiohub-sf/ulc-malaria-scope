@@ -163,8 +163,7 @@ class Oracle(Machine):
                     f"Overriding lock and running even though lockfile ({LOCKFILE}) exists."
                 )
         else:
-            with open(LOCKFILE, "w") as fp:
-                pass
+            open(LOCKFILE, "w")
 
     def _set_variables(self):
         # Instantiate metadata dicts
