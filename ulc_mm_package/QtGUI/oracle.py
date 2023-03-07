@@ -5,6 +5,7 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
 
+import os
 import sys
 import socket
 import enum
@@ -146,9 +147,9 @@ class Oracle(Machine):
         if path.isfile(LOCKFILE):
             message_result = self.display_message(
                 QMessageBox.Icon.Information,
-                "Scope is locked",
+                "Scope in use",
                 'The scope is locked because another run is in progress. '
-                'Run anyways?\n\nClick "No" to end run (recommended). '
+                'Override lock and run anyways?\n\nClick "No" to end run (recommended). '
                 'Click "Yes" to override lock and run anyways, at your own risk.',
                 buttons=Buttons.YN,
             )
