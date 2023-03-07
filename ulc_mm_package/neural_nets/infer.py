@@ -65,8 +65,8 @@ class ImageLoader:
         data = zarr.open(path_to_zarr)
 
         def _iter():
-            for i in range(len(data)):
-                yield data[i][:]
+            for i in range(data.initialized):
+                yield data[:, :, i]
 
         _num_els = len(data)
 

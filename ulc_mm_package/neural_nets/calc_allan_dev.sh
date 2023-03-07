@@ -4,9 +4,15 @@ echo "starting allan dev calcs..."
 
 mkdir -p ~/Documents/autofocus-test-data/results/allan
 
-MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/allan/2023-03-03-130225__nomax1/2023-03-03-130225__nomax1.zip --output ~/Documents//allan/results/nomax1_focaldrift.png --model "autofocus"
+MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/allan/2023-03-03-123831__allssaf1/2023-03-03-123831__allssaf1.zip --output ~/Documents/allan/results/allssaf1.png --model "autofocus"
 echo "."
-# MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/autofocus-test-data/2022-11-17-113250_medflow_ohmu_focaldrift.zip --output ~/Documents/autofocus-test-data/results/allan/2022-11-17-113250_medflow_ohmu_focaldrift.png
-# echo "."
-# MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/autofocus-test-data/2022-11-10-181748_focaldrift.zip --output ~/Documents/autofocus-test-data/results/allan/2022-11-10-181748_focaldrift.png
-# echo "."
+MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/allan/2023-03-03-125005__allssaf2/2023-03-03-125005__allssaf2.zip --output ~/Documents/allan/results/allssaf2.png --model "autofocus"
+echo "."
+MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/allan/2023-03-03-130225__nomax1/2023-03-03-130225__nomax1.zip --output ~/Documents/allan/results/nomax1.png --model "autofocus"
+echo "."
+MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/allan/2023-03-03-131806__nomax2/2023-03-03-131806__nomax2.zip --output ~/Documents/allan/results/nomax2.png --model "autofocus"
+echo "."
+MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/allan/2023-03-03-132239__nomaxnoflowcontrol1/2023-03-03-132239__nomaxnoflowcontrol1.zip --output ~/Documents/allan/results/nomaxnoflowcontrol1.png --model "autofocus"
+echo "."
+MS_SIMULATE=1 python3 infer.py --allan-dev --zarr ~/Documents/allan/2023-03-03-135043__nomaxnoflowcontrol2/2023-03-03-135043__nomaxnoflowcontrol2.zip --output ~/Documents/allan/results/nomaxnoflowcontrol2.png --model "autofocus"
+echo "."
