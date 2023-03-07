@@ -248,6 +248,9 @@ if __name__ == "__main__":
         model_classes = [AutoFocus]
     elif args.model == "yogo":
         model_classes = [YOGO]
+    else:
+        print("warning: no model provided, defaulting to AutoFocus")
+        model_classes = [AutoFocus]
 
     if im.shape == (600, 800):
         models = [m(camera_selection=CameraOptions.BASLER) for m in model_classes]
