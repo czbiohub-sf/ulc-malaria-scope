@@ -152,7 +152,7 @@ class Oracle(Machine):
                 'Click "Yes" to override lock and run at your own risk.',
                 buttons=Buttons.YN,
             )
-            if message_result = QMessageBox.No:
+            if message_result == QMessageBox.No:
                 self.logger.warning(f"Terminating run because scope is locked (lockfile {LOCKFILE} exists).")
                 sys.exit(1)
             else:
