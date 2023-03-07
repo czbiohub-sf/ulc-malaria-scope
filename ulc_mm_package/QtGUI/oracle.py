@@ -160,8 +160,6 @@ class Oracle(Machine):
         else:
             with open(LOCKFILE, 'w') as fp:
                 pass
-            print(path.isfile(LOCKFILE))
-
 
     def _set_variables(self):
         # Instantiate metadata dicts
@@ -706,7 +704,8 @@ class Oracle(Machine):
             try:
                 os.remove(LOCKFILE)
                 self.logger.info(f"Removed lockfile {LOCKFILE}.")
-            except Exception:
+            except Exception as e:
+                print(e)
                 self.logger.warning(f"Lockfile {LOCKFILE} does not exist and could not be deleted.")
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
