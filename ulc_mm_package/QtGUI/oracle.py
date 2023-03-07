@@ -666,8 +666,7 @@ class Oracle(Machine):
         try:
             os.remove(LOCKFILE)
             self.logger.info(f"Removed lockfile ({LOCKFILE}).")
-        except Exception as e:
-            print(e)
+        except FileNotFoundError:
             self.logger.warning(f"Lockfile ({LOCKFILE}) does not exist and could not be deleted.")
 
         # Shut off acquisition thread
@@ -706,8 +705,7 @@ class Oracle(Machine):
             try:
                 os.remove(LOCKFILE)
                 self.logger.info(f"Removed lockfile ({LOCKFILE}).")
-            except Exception as e:
-                print(e)
+            except FileNotFoundError:
                 self.logger.warning(f"Lockfile ({LOCKFILE}) does not exist and could not be deleted.")
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
