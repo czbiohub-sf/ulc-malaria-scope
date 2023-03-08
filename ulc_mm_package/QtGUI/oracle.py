@@ -130,18 +130,55 @@ class Oracle(Machine):
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
 
-        # Instantiate and configure Oracle elements
+        # Check lock and tcp tunnel
+        self._init_tcp()
         self._check_lock()
+
+        # Instantiate and configure Oracle elements
         self._set_variables()
         self._init_threads()
         self._init_states()
         self._init_sigslots()
 
-        # Get tcp tunnel
-        self._init_tcp()
-
         # Trigger first transition
         self.next_state()
+
+    def _init_tcp(self):
+        try:
+            tcp_addr = make_tcp_tunnel()
+            self.logger.info(f"SSH address is {tcp_addr}.")
+            self.liveview_window.update_tcp(tcp_addr)
+            send_ngrok_email()
+        except NgrokError as e:
+            message_result = self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH tunnel failed",
+                (
+                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
+                    "The SSH tunnel is only recreated when the scope is rebooted."
+                    '\n\nClick "OK" to continue running without SSH or click "Cancel" to exit.'
+                ),
+                buttons=Buttons.CANCEL,
+            )
+            if message_result == QMessageBox.Cancel:
+                self.logger.warning(
+                    f"Terminating run because SSH address could not be found - {e}."
+                )
+                sys.exit(1)
+            self.logger.warning(f"SSH address could not be found - {e}")
+            self.liveview_window.update_tcp("unavailable")
+        except EmailError as e:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH email failed",
+                self.logger.info("STARTING ORACLE.")(
+                    "Could not automatically email SSH tunnel address. "
+                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
+                    '\n\nClick "OK" to continue running.'
+                ),
+                buttons=Buttons.OK,
+            )
+            self.logger.warning(f"SSH address could not be emailed - {e}")
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):
@@ -266,38 +303,6 @@ class Oracle(Machine):
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition.update_infopanel.connect(self.scopeop.update_infopanel)
-
-    def _init_tcp(self):
-        try:
-            tcp_addr = make_tcp_tunnel()
-            self.logger.info(f"SSH address is {tcp_addr}.")
-            self.liveview_window.update_tcp(tcp_addr)
-            send_ngrok_email()
-        except NgrokError as e:
-            self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH tunnel failed",
-                (
-                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
-                    "The SSH tunnel is only recreated when the scope is rebooted."
-                    '\n\nClick "OK" to continue running without SSH.'
-                ),
-                buttons=Buttons.OK,
-            )
-            self.logger.warning(f"SSH address could not be found - {e}")
-            self.liveview_window.update_tcp("unavailable")
-        except EmailError as e:
-            self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH email failed",
-                self.logger.info("STARTING ORACLE.")(
-                    "Could not automatically email SSH tunnel address. "
-                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
-                    '\n\nClick "OK" to continue running.'
-                ),
-                buttons=Buttons.OK,
-            )
-            self.logger.warning(f"SSH address could not be emailed - {e}")
 
     def _init_ssd(self):
         samsung_ext_dir = path.join(SSD_DIR, SSD_NAME)
