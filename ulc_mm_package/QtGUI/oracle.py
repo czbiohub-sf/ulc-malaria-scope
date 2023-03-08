@@ -162,7 +162,7 @@ class Oracle(Machine):
             )
             if message_result == QMessageBox.Cancel:
                 self.logger.warning(
-                    f"Terminating run because SSH address could not be found - {e}."
+                    f"Terminating run because SSH address could not be found - {e}"
                 )
                 sys.exit(1)
             self.logger.warning(f"SSH address could not be found - {e}")
