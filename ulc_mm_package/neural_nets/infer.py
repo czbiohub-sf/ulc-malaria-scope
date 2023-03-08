@@ -103,13 +103,13 @@ def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
 
 
 def infer(model, image_loader: ImageLoader):
-    for image in image_loader:
-        yield model.syn(image)
+    for image in yield_n(image_loader, 64):
+        yield model.syn(image, sort=True)
 
 
 def asyn_infer(model, image_loader: ImageLoader):
-    for image in image_loader:
-        model.asyn(image)
+    for i, image in enumerate(image_loader):
+        model.asyn(image, id=i)
         yield model.get_asyn_results(timeout=0.00005)
 
 
@@ -279,16 +279,20 @@ if __name__ == "__main__":
     elif args.output is None:
         model = models.pop()
         for res in infer_func(model, image_loader):
-            print(res)
-            if args.allan_dev:
-                results.append(res)
+            for r in res:
+                val = r.item() if isinstance(r, np.ndarray) else r.result
+                print(f"{val}\n")
+                if args.allan_dev:
+                    results.append(val)
     else:
         model = models.pop()
         with open(args.output, "w") as f:
             for res in infer_func(model, tqdm(image_loader)):
-                f.write(f"{res}\n")
-                if args.allan_dev:
-                    results.append(res)
+                for r in res:
+                    val = r.item() if isinstance(r, np.ndarray) else r.result
+                    f.write(f"{val}\n")
+                    if args.allan_dev:
+                        results.append(val)
 
     # safety
     [m.wait_all() for m in models]
