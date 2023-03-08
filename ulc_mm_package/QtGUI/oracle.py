@@ -5,6 +5,7 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
 
+import os
 import sys
 import socket
 import enum
@@ -30,6 +31,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.scope_constants import (
+    LOCKFILE,
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
@@ -129,6 +131,7 @@ class Oracle(Machine):
         self.liveview_window = LiveviewGUI()
 
         # Instantiate and configure Oracle elements
+        self._check_lock()
         self._set_variables()
         self._init_threads()
         self._init_states()
@@ -139,6 +142,28 @@ class Oracle(Machine):
 
         # Trigger first transition
         self.next_state()
+
+    def _check_lock(self):
+        if path.isfile(LOCKFILE):
+            message_result = self.display_message(
+                QMessageBox.Icon.Information,
+                "Scope in use",
+                "The scope is locked because another run is in progress. "
+                'Override lock and run anyways?\n\nClick "No" to end run (recommended). '
+                'Click "Yes" to override lock and run anyways, at your own risk.',
+                buttons=Buttons.YN,
+            )
+            if message_result == QMessageBox.No:
+                self.logger.warning(
+                    f"Terminating run because scope is locked when lockfile ({LOCKFILE}) exists."
+                )
+                sys.exit(1)
+            else:
+                self.logger.warning(
+                    f"Overriding lock and running even though lockfile ({LOCKFILE}) exists."
+                )
+        else:
+            open(LOCKFILE, "w")
 
     def _set_variables(self):
         # Instantiate metadata dicts
@@ -641,6 +666,14 @@ class Oracle(Machine):
         # Shut off hardware
         self.scopeop.mscope.shutoff()
 
+        try:
+            os.remove(LOCKFILE)
+            self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+        except FileNotFoundError:
+            self.logger.warning(
+                f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+            )
+
         # Shut off acquisition thread
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
@@ -673,6 +706,14 @@ class Oracle(Machine):
 
             # Shut off hardware
             self.scopeop.mscope.shutoff()
+
+            try:
+                os.remove(LOCKFILE)
+                self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+            except FileNotFoundError:
+                self.logger.warning(
+                    f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+                )
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 

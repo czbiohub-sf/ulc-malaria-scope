@@ -2,6 +2,7 @@ from ulc_mm_package.QtGUI.gui_constants import FLOWCELL_QC_FORM_LINK
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
 from ulc_mm_package.scope_constants import (
+    LOCKFILE,
     SSD_DIR,
     VIDEO_PATH,
     VIDEO_REC,
@@ -49,6 +50,7 @@ from ulc_mm_package.utilities.email_utils import send_ngrok_email
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 
+import os
 import sys
 import traceback
 import numpy as np
@@ -1147,6 +1149,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             if self.encoder:
                 self.encoder.close()
 
+            try:
+                os.remove(LOCKFILE)
+                print(f"Removed lockfile ({LOCKFILE}).")
+            except FileNotFoundError:
+                print(f"Lockfile ({LOCKFILE}) does not exist and could not be deleted.")
+
             quit()
 
     def closeEvent(self, event):
@@ -1155,6 +1163,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
+    if path.isfile(LOCKFILE):
+        print(
+            f"Terminating run. Lockfile ({LOCKFILE}) exists, so scope is locked while another run is in progress."
+        )
+        sys.exit(1)
+    else:
+        open(LOCKFILE, "w")
+
     try:
         app = QtWidgets.QApplication(sys.argv)
         main_window = MalariaScopeGUI()
