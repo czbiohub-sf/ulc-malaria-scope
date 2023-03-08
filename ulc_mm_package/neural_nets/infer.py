@@ -68,7 +68,7 @@ class ImageLoader:
             for i in range(data.initialized):
                 yield data[:, :, i]
 
-        _num_els = len(data)
+        _num_els = data.initialized
 
         return cls(_iter, _num_els)
 
