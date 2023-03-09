@@ -100,6 +100,7 @@ def yield_n(itr: Iterable[Any], n: int) -> Generator[List[Any], None, None]:
         if len(values) == n:
             yield values
             values = []
+    yield values
 
 
 def infer(model, image_loader: ImageLoader):
