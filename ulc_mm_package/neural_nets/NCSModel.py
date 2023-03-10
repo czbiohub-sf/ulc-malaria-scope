@@ -79,8 +79,10 @@ class NCSModel:
         self.asyn_result_lock = threading.Lock()
 
         # used for syn
-        self._SYN_INFER_NUM_JOBS = 128 # some big number
-        self._temp_infer_queue = AsyncInferQueue(self.model, jobs=self._SYN_INFER_NUM_JOBS)
+        self._SYN_INFER_NUM_JOBS = 128  # some big number
+        self._temp_infer_queue = AsyncInferQueue(
+            self.model, jobs=self._SYN_INFER_NUM_JOBS
+        )
 
         # used for asyn
         self.asyn_infer_queue = AsyncInferQueue(self.model)
@@ -166,7 +168,8 @@ class NCSModel:
         if len(img_sequence) > self._SYN_INFER_NUM_JOBS:
             raise ValueError(
                 f"max batch size for synchronous inference is {self._SYN_INFER_NUM_JOBS} "
-                f"- got {len(img_sequence)} images")
+                f"- got {len(img_sequence)} images"
+            )
 
         for i, image in enumerate(img_sequence):
             tensor = self._format_image_to_tensor(image)
