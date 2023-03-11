@@ -136,7 +136,7 @@ class Routines:
                 throttle_counter = 0
 
                 if move_counter >= ssaf_period_num and abs(filtered_error) > nn_constants.AF_THRESHOLD:
-                    print(f"Adjusted focus after {move_counter} measurements")
+                    self.logger.info(f"Adjusted focus after {move_counter} measurements")
                     move_counter = 0
                     adjusted = True
 
