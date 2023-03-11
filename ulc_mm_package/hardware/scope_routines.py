@@ -121,7 +121,7 @@ class Routines:
         ssaf_filter.set_init_val(0)
 
         ssaf_period_num = ssaf_filter.get_adjustment_period_ewma()
-        self.logger.info(f"SSAF adjustment period = {ssaf_period_num} measurements")
+        self.logger.info(f"Minimum SSAF adjustment period = {ssaf_period_num} measurements")
 
         while True:
             throttle_counter += 1
@@ -136,8 +136,10 @@ class Routines:
                 throttle_counter = 0
 
                 if move_counter >= ssaf_period_num and abs(filtered_error) > nn_constants.AF_THRESHOLD:
+                    print(f"Adjusted focus after {move_counter} measurements")
                     move_counter = 0
                     adjusted = True
+
                     try:
                         dir = Direction.CW if filtered_error > 0 else Direction.CCW
                         mscope.motor.threaded_move_rel(
