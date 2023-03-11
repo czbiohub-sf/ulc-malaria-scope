@@ -112,26 +112,32 @@ class Routines:
 
         throttle_counter = 0
         move_counter = 0
-        int_filtered_error = None
+
+        adjusted = None
+        steps_from_focus = None
+        filtered_error = None
 
         ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
         ssaf_filter.set_init_val(0)
 
         ssaf_period_num = ssaf_filter.get_adjustment_period_ewma()
+        self.logger.info(f"SSAF adjustment period = {ssaf_period_num} measurements")
 
         while True:
-            img = yield int_filtered_error
             throttle_counter += 1
             if throttle_counter >= nn_constants.AF_PERIOD_NUM:
-                batch_steps_from_focus = mscope.autofocus_model(img)
-                steps_from_focus = -(np.mean(batch_steps_from_focus))
+                img = yield steps_from_focus, filtered_error, adjusted
+                adjusted = None
+            
+                autofocus_model_output = mscope.autofocus_model(img)
+                steps_from_focus = -np.mean(autofocus_model_output)
 
                 filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
-                int_filtered_error = round(filtered_error)
                 throttle_counter = 0
 
                 if move_counter >= ssaf_period_num and abs(filtered_error) > nn_constants.AF_THRESHOLD:
                     move_counter = 0
+                    adjusted = True
                     try:
                         dir = Direction.CW if filtered_error > 0 else Direction.CCW
                         mscope.motor.threaded_move_rel(
@@ -141,6 +147,8 @@ class Routines:
                         raise e
                 else:
                     move_counter += 1
+            else:
+                _ = yield None, None, None
 
     def count_parasitemia(
         self,

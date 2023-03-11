@@ -704,7 +704,7 @@ class ScopeOp(QObject, NamedMachine):
 
             t0 = perf_counter()
             try:
-                focus_err = self.PSSAF_routine.send(img)
+                raw_focus_err, filtered_focus_err, focus_adjustment = self.PSSAF_routine.send(img)
             except MotorControllerError as e:
                 if not SIMULATION:
                     self.logger.error(
@@ -720,7 +720,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.logger.warning(
                         f"Ignoring periodic SSAF exception in simulation mode - {e}"
                     )
-                    focus_err = None
+                    raw_focus_err = None
 
                     self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
                         self.mscope, None
@@ -746,9 +746,9 @@ class ScopeOp(QObject, NamedMachine):
 
             t0 = perf_counter()
             # Update infopanel
-            if focus_err is not None:
+            if filtered_focus_err is not None:
                 # TODO change this to non int?
-                self.update_focus.emit(int(focus_err))
+                self.update_focus.emit(int(filtered_focus_err))
 
             if flowrate is not None:
                 self.update_flowrate.emit(flowrate)
@@ -774,7 +774,9 @@ class ScopeOp(QObject, NamedMachine):
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = flowrate
             self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
-            self.img_metadata["focus_error"] = focus_err
+            self.img_metadata["focus_error"] = raw_focus_err
+            self.img_metadata["filtered_focus_error"] = filtered_focus_err
+            self.img_metadata["focus_adjustment"] = focus_adjustment
 
             if self.count % TH_PERIOD_NUM == 0:
                 try:

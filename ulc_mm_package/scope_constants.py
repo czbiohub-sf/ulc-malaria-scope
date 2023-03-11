@@ -140,6 +140,8 @@ PER_IMAGE_METADATA_KEYS = [
     "syringe_pos",
     "flowrate",
     "focus_error",
+    "filtered_focus_error",
+    "focus_adjustment",
     "cell_count_cumulative",
     "temperature",
     "humidity",
