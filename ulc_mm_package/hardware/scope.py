@@ -166,7 +166,7 @@ class MalariaScope:
                 # If pressure sensor not created, raises PressureSensorNotInstantiated error
                 # when calling `pneumatic_module.getPressure()`
                 self.logger.error(
-                    f"Pressure sensor initialization failed. {self.pneumatic_module.mpr_err_msg}"
+                    f"Pressure sensor initialization failed. {self.pneumatic_module.mpr.mpr_err_msg}"
                 )
 
             self.pneumatic_module_enabled = True
