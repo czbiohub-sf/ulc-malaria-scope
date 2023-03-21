@@ -213,7 +213,7 @@ class NCSModel:
 
         return res
 
-    def wait_all(self):
+    def wait_all(self) -> None:
         """wait for all pending InferRequests to resolve"""
         self.asyn_infer_queue.wait_all()
 

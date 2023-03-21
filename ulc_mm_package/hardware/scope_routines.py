@@ -127,39 +127,24 @@ class Routines:
         while True:
             throttle_counter += 1
             if throttle_counter >= nn_constants.AF_PERIOD_NUM:
-                """
-                while num_submitted_images < 30:
-                    autofocus.asyn(img)
-                    yield
 
-                results = autofocus.get_asyn_results()  # sort results
-                # feed them into ewma in order
-                # if movement err > 2:
-                #   move!
-                #   yield
-                """
                 img = yield steps_from_focus, filtered_error, adjusted
                 adjusted = None
 
-                QSIZE_THRESH = 50
-                if mscope.autofocus_model._executor._work_queue.qsize() > QSIZE_THRESH:
-                    # empty _work_queue and submit new
+                if mscope.autofocus_model._executor._work_queue.qsize() > nn_constants.QSIZE_THRESHOLD:
+                    # TODO test if this is the right way to clear queue
+                    mscope.autofocus_model._executor.work_queue.clear()
 
                     # if we've done this too much:
                         # run_normal_syncrhonous_ssaf
 
                 autofocus_model_output = mscope.autofocus_model.asyn(img, img_count)
-
                 results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
 
                 for res in sorted(results, key=lambda res: res.id):
-                    if img_count - res.id > 100:
-                        DoSomething()
+                    # TODO if needed, check if stale values are returned
 
-                    autofocus_model_output = res.result
-
-                    steps_from_focus = -np.mean(autofocus_model_output)
-
+                    steps_from_focus = -res.result
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
                 throttle_counter = 0
