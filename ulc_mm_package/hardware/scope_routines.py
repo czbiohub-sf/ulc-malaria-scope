@@ -89,7 +89,7 @@ class Routines:
 
     @init_generator
     def periodicAutofocusWrapper(
-        self, mscope: MalariaScope, img: np.ndarray
+            self, mscope: MalariaScope, img: np.ndarray, img_count: int
     ) -> Generator[Optional[int], np.ndarray, None]:
         """Periodic autofocus calculations with EWMA filtering
 
@@ -110,6 +110,7 @@ class Routines:
             AF_PERIOD_NUM frames have elapsed since the last adjustment.
         """
 
+        filtered_error = 0
         throttle_counter = 0
         move_counter = 0
 
@@ -126,13 +127,41 @@ class Routines:
         while True:
             throttle_counter += 1
             if throttle_counter >= nn_constants.AF_PERIOD_NUM:
+                """
+                while num_submitted_images < 30:
+                    autofocus.asyn(img)
+                    yield
+
+                results = autofocus.get_asyn_results()  # sort results
+                # feed them into ewma in order
+                # if movement err > 2:
+                #   move!
+                #   yield
+                """
                 img = yield steps_from_focus, filtered_error, adjusted
                 adjusted = None
-            
-                autofocus_model_output = mscope.autofocus_model(img)
-                steps_from_focus = -np.mean(autofocus_model_output)
 
-                filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
+                QSIZE_THRESH = 50
+                if mscope.autofocus_model._executor._work_queue.qsize() > QSIZE_THRESH:
+                    # empty _work_queue and submit new
+
+                    # if we've done this too much:
+                        # run_normal_syncrhonous_ssaf
+
+                autofocus_model_output = mscope.autofocus_model.asyn(img, img_count)
+
+                results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
+
+                for res in sorted(results, key=lambda res: res.id):
+                    if img_count - res.id > 100:
+                        DoSomething()
+
+                    autofocus_model_output = res.result
+
+                    steps_from_focus = -np.mean(autofocus_model_output)
+
+                    filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
+
                 throttle_counter = 0
 
                 if move_counter >= ssaf_period_num and abs(filtered_error) > nn_constants.AF_THRESHOLD:
