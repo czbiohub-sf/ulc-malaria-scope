@@ -14,7 +14,7 @@ Components
 """
 
 import logging
-import enum
+from enum import Enum, auto
 from time import sleep
 from typing import Dict, Optional, Callable
 
@@ -30,23 +30,24 @@ from ulc_mm_package.image_processing.flow_control import FlowController
 from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
 
 
-class GPIOEdge(enum.Enum):
+class GPIOEdge(Enum):
     RISING_EDGE = 0
     FALLING_EDGE = 1
     EITHER_EDGE = 2
 
 
-class Components(enum.Enum):
-    MOTOR = 0
-    CAMERA = 1
-    PNEUMATIC_MODULE = 2
-    LED = 3
-    FAN = 4
-    ENCODER = 5
-    HT_SENSOR = 6
-    DATA_STORAGE = 7
-    FLOW_CONTROLLER = 8
-    TPU = 9
+class Components(Enum):
+    MOTOR = auto()
+    CAMERA = auto()
+    PNEUMATIC_MODULE = auto()
+    PRESSURE_SENSOR = auto()
+    LED = auto()
+    FAN = auto()
+    ENCODER = auto()
+    HT_SENSOR = auto()
+    DATA_STORAGE = auto()
+    FLOW_CONTROLLER = auto()
+    TPU = auto()
 
 
 class MalariaScope:
@@ -56,6 +57,7 @@ class MalariaScope:
         self.motor_enabled = False
         self.camera_enabled = False
         self.pneumatic_module_enabled = False
+        self.pressure_sensor_enabled = False
         self.led_enabled = False
         self.fan_enabled = False
         self.ht_sensor_enabled = False
@@ -100,6 +102,7 @@ class MalariaScope:
             Components.MOTOR: self.motor_enabled,
             Components.CAMERA: self.camera_enabled,
             Components.PNEUMATIC_MODULE: self.pneumatic_module_enabled,
+            Components.PRESSURE_SENSOR: self.pressure_sensor_enabled,
             Components.LED: self.led_enabled,
             Components.FAN: self.fan_enabled,
             Components.HT_SENSOR: self.ht_sensor_enabled,
@@ -151,6 +154,9 @@ class MalariaScope:
                 self.logger.error(
                     f"Pressure sensor initialization failed. {self.pneumatic_module.mpr.mpr_err_msg}"
                 )
+                self.pressure_sensor_enabled = False
+            else:
+                self.pressure_sensor_enabled = True
 
             self.pneumatic_module_enabled = True
         except PneumaticModuleError as e:
