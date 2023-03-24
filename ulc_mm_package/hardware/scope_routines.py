@@ -129,13 +129,15 @@ class Routines:
         ssaf_routine = self.continuousSSAFRoutine(mscope)
 
         while True:
-            img = yield steps_from_focus
             counter += 1
             if counter >= nn_constants.AF_PERIOD_NUM:
+                img = yield steps_from_focus
                 steps_from_focus = ssaf_routine.send(img)
 
-                if counter >= nn_constants.AF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
+                if counter >= nn_constants.AfF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
                     counter = 0
+            else:
+                _ = yield None
 
     def count_parasitemia(
         self,
