@@ -704,7 +704,11 @@ class ScopeOp(QObject, NamedMachine):
 
             t0 = perf_counter()
             try:
-                raw_focus_err, filtered_focus_err, focus_adjustment = self.PSSAF_routine.send(img)
+                (
+                    raw_focus_err,
+                    filtered_focus_err,
+                    focus_adjustment,
+                ) = self.PSSAF_routine.send(img)
             except MotorControllerError as e:
                 if not SIMULATION:
                     self.logger.error(

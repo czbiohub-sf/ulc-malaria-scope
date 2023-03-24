@@ -89,7 +89,7 @@ class Routines:
 
     @init_generator
     def periodicAutofocusWrapper(
-            self, mscope: MalariaScope, img: np.ndarray, img_count: int
+        self, mscope: MalariaScope, img: np.ndarray, img_count: int
     ) -> Generator[Optional[int], np.ndarray, None]:
         """Periodic autofocus calculations with EWMA filtering
 
@@ -122,21 +122,25 @@ class Routines:
         ssaf_filter.set_init_val(0)
 
         ssaf_period_num = ssaf_filter.get_adjustment_period_ewma()
-        self.logger.info(f"Minimum SSAF adjustment period = {ssaf_period_num} measurements")
+        self.logger.info(
+            f"Minimum SSAF adjustment period = {ssaf_period_num} measurements"
+        )
 
         while True:
             throttle_counter += 1
             if throttle_counter >= nn_constants.AF_PERIOD_NUM:
-
                 img = yield steps_from_focus, filtered_error, adjusted
                 adjusted = None
 
-                if mscope.autofocus_model._executor._work_queue.qsize() > nn_constants.QSIZE_THRESHOLD:
+                if (
+                    mscope.autofocus_model._executor._work_queue.qsize()
+                    > nn_constants.QSIZE_THRESHOLD
+                ):
                     # TODO test if this is the right way to clear queue
                     mscope.autofocus_model._executor.work_queue.clear()
 
                     # if we've done this too much:
-                        # run_normal_syncrhonous_ssaf
+                    # run_normal_syncrhonous_ssaf
 
                 autofocus_model_output = mscope.autofocus_model.asyn(img, img_count)
                 results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
@@ -149,8 +153,13 @@ class Routines:
 
                 throttle_counter = 0
 
-                if move_counter >= ssaf_period_num and abs(filtered_error) > nn_constants.AF_THRESHOLD:
-                    self.logger.info(f"Adjusted focus after {move_counter} measurements")
+                if (
+                    move_counter >= ssaf_period_num
+                    and abs(filtered_error) > nn_constants.AF_THRESHOLD
+                ):
+                    self.logger.info(
+                        f"Adjusted focus after {move_counter} measurements"
+                    )
                     move_counter = 0
                     adjusted = True
 
