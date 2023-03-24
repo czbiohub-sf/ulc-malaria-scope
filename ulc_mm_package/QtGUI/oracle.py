@@ -333,7 +333,7 @@ class Oracle(Machine):
             sys.exit(1)
 
     def ssd_full_msg_and_exit(self):
-        self.logger.warning(
+        print(
             "The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
         )
         self.display_message(
