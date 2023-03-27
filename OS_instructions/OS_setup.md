@@ -148,6 +148,41 @@ sudo systemctl enable fan.service
 
 and now reboot.
 
+### Setting up the SSD
+Instructions on Confluence here: https://czbiohub.atlassian.net/l/cp/SW5bEMJ4
+
+Tldr:
+**If choosing to format as exFAT**
+1. This process is straightforward - connect the SSD to your Mac, run DiskUtility, right-click and select format, choose exFAT.
+2. Rename the drive to SamsungSSD by right-clicking on it and renaming.
+
+
+
+**For ext4, the process is a little more involved**
+I outline the procedure here for MacOS, but the high-level steps are similar for Windows (it may just involve different tools)
+
+1. Connect the SSD and use e2fsprogs to format:
+
+  - `brew install e2fsprogs`
+
+  - `diskutil list` (note down the name of the 4TB SSD, e.g /dev/disk2)
+
+  - Run `sudo $(brew --prefix e2fsprogs)/sbin/mkfs.ext4 /dev/disk2`
+
+2. Connect the SSD to a Pi / Linux system
+
+  - Set the name of the SSD
+
+  - Run `lsblk` and note the location of the SSD (e.g `sda` or `sda2`)
+
+  - Run `e2label /dev/sda SamsungSSD`
+
+3. Set the permissions of the SSD
+
+  - `cd /media/pi/` (or wherever the SSD is located)
+
+  - `sudo chmod 777 SamsungSSD/`
+
 ### Congrats!
 
 You are done.
