@@ -64,7 +64,7 @@ def calibrate_range(
     # to generate a pressure vs. duty ratio plot for calibration purposes
 
     duty_vec = np.linspace(DUTY_MAX_WIDE, DUTY_MIN_WIDE, N_SWEEP_POINTS)
-    step_size = abs(np.diff(duty_vec)[0])
+    step_size = abs(np.diff(duty_vec)[1])
     press_vec = np.zeros_like(duty_vec)
 
     try:
