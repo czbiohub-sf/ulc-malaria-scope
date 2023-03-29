@@ -134,7 +134,7 @@ class Routines:
                 img = yield steps_from_focus
                 steps_from_focus = ssaf_routine.send(img)
 
-                if counter >= nn_constants.AfF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
+                if counter >= nn_constants.AF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
                     counter = 0
             else:
                 _ = yield None
