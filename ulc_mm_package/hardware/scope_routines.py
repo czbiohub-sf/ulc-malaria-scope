@@ -143,7 +143,7 @@ class Routines:
                     # if we've done this too much:
                     # run_normal_syncrhonous_ssaf
 
-                autofocus_model_output = mscope.autofocus_model.asyn(img, img_count)
+                mscope.autofocus_model.asyn(img, img_count)
                 results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
 
                 for res in sorted(results, key=lambda res: res.id):
