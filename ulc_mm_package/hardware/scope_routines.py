@@ -90,7 +90,7 @@ class Routines:
     @init_generator
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope, img: np.ndarray, img_count: int
-    ) -> Generator[Optional[int], np.ndarray, None]:
+    ) -> Generator[Tuple[Optional[float], Optional[float], Optional[bool]], np.ndarray, None]:
         """Periodic autofocus calculations with EWMA filtering
 
         This function adds a simple time wrapper around the autofocus model and EWMA filter
@@ -110,13 +110,12 @@ class Routines:
             AF_PERIOD_NUM frames have elapsed since the last adjustment.
         """
 
-        filtered_error = 0
+        filtered_error = 0.0
         throttle_counter = 0
         move_counter = 0
 
         adjusted = None
         steps_from_focus = None
-        filtered_error = None
 
         ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
         ssaf_filter.set_init_val(0)
@@ -134,7 +133,7 @@ class Routines:
 
                 if (
                     mscope.autofocus_model._executor._work_queue.qsize()
-                    > nn_constants.QSIZE_THRESHOLD
+                    > nn_constants.QSIZE_THRESH
                 ):
                     # TODO test if this is the right way to clear queue
                     mscope.autofocus_model._executor.work_queue.clear()
