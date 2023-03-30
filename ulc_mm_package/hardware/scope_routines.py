@@ -90,7 +90,9 @@ class Routines:
     @init_generator
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope, img: np.ndarray, img_count: int
-    ) -> Generator[Tuple[Optional[float], Optional[float], Optional[bool]], np.ndarray, None]:
+    ) -> Generator[
+        Tuple[Optional[float], Optional[float], Optional[bool]], np.ndarray, None
+    ]:
         """Periodic autofocus calculations with EWMA filtering
 
         This function adds a simple time wrapper around the autofocus model and EWMA filter
