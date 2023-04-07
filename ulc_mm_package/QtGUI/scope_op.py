@@ -424,7 +424,7 @@ class ScopeOp(QObject, NamedMachine):
                 f"Net FPS is {self.count/(self._get_experiment_runtime())}"
             )
 
-        self.mscope.reset_for_next_experiment()
+        self.mscope.reset_for_end_experiment()
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)

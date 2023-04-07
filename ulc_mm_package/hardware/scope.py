@@ -98,9 +98,11 @@ class MalariaScope:
 
     def reset_pneumatic_and_led_and_flow_control(self) -> None:
         """Set the syringe to its top most position, turn the LED off, reset flow control variables."""
+        self.logger.info(
+            "Resetting pneumatic module, turning LED off, and flow control constants"
+        )
 
         # Return pneumatic module to topmost position
-        self.logger.info("Resetting pneumatic module for pause.")
         while self.pneumatic_module.is_locked():
             sleep(0.1)
 
@@ -116,7 +118,7 @@ class MalariaScope:
         # Resetting flow_controller parameters
         self.flow_controller.reset()
 
-    def reset_for_next_experiment(self) -> None:
+    def reset_for_end_experiment(self) -> None:
         """Reset syringe, turn LED off, reset flow control, and close data storage."""
 
         # Reset syringe to top, turn LED off, reset flow control variables
