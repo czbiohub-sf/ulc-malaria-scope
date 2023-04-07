@@ -43,7 +43,6 @@ from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorController
 from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureLeak,
-    SyringeInMotion,
     PressureSensorStaleValue,
     PressureSensorBusy,
 )
@@ -328,20 +327,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Since img_signal is already disconnected, no signal/slot changes were made."
             )
 
-        self.logger.info("Resetting pneumatic module for pause.")
-        # Account for the case where the syringe might still be in motion
-        # e.g during cell finding or if a flow control adjustment is being done.
-        while self.mscope.pneumatic_module.is_locked():
-            sleep(0.1)
-
-        try:
-            self.mscope.pneumatic_module.setDutyCycle(
-                self.mscope.pneumatic_module.getMaxDutyCycle()
-            )
-        except SyringeInMotion:
-            # This should not happen
-            self.logger.warning("Did not return syringe to top-most position!")
-        self.mscope.led.turnOff()
+        self.mscope.reset_pneumatic_and_led_and_flow_control()
 
         self._set_routine_variables()
 
@@ -438,22 +424,7 @@ class ScopeOp(QObject, NamedMachine):
                 f"Net FPS is {self.count/(self._get_experiment_runtime())}"
             )
 
-        self.logger.info("Resetting pneumatic module for rerun.")
-        while self.mscope.pneumatic_module.is_locked():
-            sleep(0.1)
-        try:
-            self.mscope.pneumatic_module.setDutyCycle(
-                self.mscope.pneumatic_module.getMaxDutyCycle()
-            )
-        except SyringeInMotion:
-            # This should not happen
-            self.logger.warning("Did not return syringe to top-most position!")
-
-        self.mscope.led.turnOff()
-
-        closing_file_future = self.mscope.data_storage.close()
-        while not closing_file_future.done():
-            sleep(1)
+        self.mscope.reset_for_next_experiment()
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)

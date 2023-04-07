@@ -333,6 +333,9 @@ class FlowController:
         out = offset + cumsums * scale_arr[::-1]
         return out[-1]
 
+    def reset(self):
+        self.fre.reset()
+
     def stop(self):
         self.fre.stop()
         self.fre.reset()
