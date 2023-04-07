@@ -114,7 +114,7 @@ class MalariaScope:
         self.led.turnOff()
 
         # Resetting flow_controller parameters
-        self.mscope.flow_controller.reset()
+        self.flow_controller.reset()
 
     def reset_for_next_experiment(self) -> None:
         """Reset syringe, turn LED off, reset flow control, and close data storage."""
@@ -123,7 +123,7 @@ class MalariaScope:
         self.reset_pneumatic_and_led_and_flow_control()
 
         # Close data storage
-        closing_file_future = self.mscope.data_storage.close()
+        closing_file_future = self.data_storage.close()
         while not closing_file_future.done():
             sleep(1)
 
