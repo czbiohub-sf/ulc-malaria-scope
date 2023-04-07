@@ -124,8 +124,9 @@ class MalariaScope:
 
         # Close data storage
         closing_file_future = self.data_storage.close()
-        while not closing_file_future.done():
-            sleep(1)
+        if closing_file_future is not None:
+            while not closing_file_future.done():
+                sleep(1)
 
     def shutoff(self):
         self.logger.info("Shutting off scope hardware.")
