@@ -36,6 +36,7 @@ from ulc_mm_package.hardware.pim522_rotary_encoder import (
 from ulc_mm_package.hardware.pneumatic_module import (
     PneumaticModule,
     PneumaticModuleError,
+    SyringeInMotion,
 )
 from ulc_mm_package.hardware.fan import Fan
 from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X
@@ -94,6 +95,40 @@ class MalariaScope:
         self._init_TPU()
 
         self.logger.info("Initialized scope hardware.")
+
+    def reset_pneumatic_and_led_and_flow_control(self) -> None:
+        """Set the syringe to its top most position, turn the LED off, reset flow control variables."""
+        self.logger.info(
+            "Resetting pneumatic module, turning LED off, and flow control constants"
+        )
+
+        # Return pneumatic module to topmost position
+        while self.pneumatic_module.is_locked():
+            sleep(0.1)
+
+        try:
+            self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
+
+        # Turn off LED
+        self.led.turnOff()
+
+        # Resetting flow_controller parameters
+        self.flow_controller.reset()
+
+    def reset_for_end_experiment(self) -> None:
+        """Reset syringe, turn LED off, reset flow control, and close data storage."""
+
+        # Reset syringe to top, turn LED off, reset flow control variables
+        self.reset_pneumatic_and_led_and_flow_control()
+
+        # Close data storage
+        closing_file_future = self.data_storage.close()
+        if closing_file_future is not None:
+            while not closing_file_future.done():
+                sleep(1)
 
     def shutoff(self):
         self.logger.info("Shutting off scope hardware.")
