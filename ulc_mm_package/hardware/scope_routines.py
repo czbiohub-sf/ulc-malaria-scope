@@ -130,7 +130,7 @@ class Routines:
         while True:
             throttle_counter += 1
             if throttle_counter >= nn_constants.AF_PERIOD_NUM:
-                img = yield steps_from_focus, filtered_error, adjusted
+                img, img_count = yield steps_from_focus, filtered_error, adjusted
                 adjusted = None
 
                 if (
