@@ -113,6 +113,7 @@ class Routines:
         """
 
         filtered_error = 0.0
+        img_counter = 0
         throttle_counter = 0
         move_counter = 0
 
@@ -130,7 +131,8 @@ class Routines:
         while True:
             throttle_counter += 1
             if throttle_counter >= nn_constants.AF_PERIOD_NUM:
-                img, img_count = yield steps_from_focus, filtered_error, adjusted
+                img_counter += 1
+                img = yield steps_from_focus, filtered_error, adjusted
                 adjusted = None
 
                 if (
@@ -143,7 +145,7 @@ class Routines:
                     # if we've done this too much:
                     # run_normal_syncrhonous_ssaf
 
-                mscope.autofocus_model.asyn(img, img_count)
+                mscope.autofocus_model.asyn(img, img_counter)
                 results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
 
                 for res in sorted(results, key=lambda res: res.id):

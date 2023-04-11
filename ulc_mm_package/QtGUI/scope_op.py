@@ -411,7 +411,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self, *args):
-        self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
+        self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None, None)
 
         self.flowcontrol_routine = self.routines.flowControlRoutine(
             self.mscope, self.target_flowrate
@@ -708,7 +708,7 @@ class ScopeOp(QObject, NamedMachine):
                     raw_focus_err,
                     filtered_focus_err,
                     focus_adjustment,
-                ) = self.PSSAF_routine.send(img, self.count)
+                ) = self.PSSAF_routine.send(img)
             except MotorControllerError as e:
                 if not SIMULATION:
                     self.logger.error(
@@ -727,7 +727,7 @@ class ScopeOp(QObject, NamedMachine):
                     raw_focus_err = None
 
                     self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
-                        self.mscope, None
+                        self.mscope, None, None
                     )
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
