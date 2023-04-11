@@ -151,7 +151,7 @@ class Routines:
                 for res in sorted(results, key=lambda res: res.id):
                     # TODO if needed, check if stale values are returned
 
-                    steps_from_focus = -res.result
+                    steps_from_focus = -res.result[0][0]
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
                 throttle_counter = 0
