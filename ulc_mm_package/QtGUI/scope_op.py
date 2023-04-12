@@ -5,6 +5,7 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
 
+import cv2
 import logging
 import numpy as np
 
@@ -662,7 +663,7 @@ class ScopeOp(QObject, NamedMachine):
             t0 = perf_counter()
             prev_yogo_results: List[
                 AsyncInferenceResult
-            ] = self.count_parasitemia_routine.send((img, self.count))
+            ] = self.count_parasitemia_routine.send((resized_image, self.count))
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
@@ -703,12 +704,13 @@ class ScopeOp(QObject, NamedMachine):
             self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
             t0 = perf_counter()
+            resized_image = cv2.resize(img, (400, 300), interpolation=cv2.INTER_CUBIC)
             try:
                 (
                     raw_focus_err,
                     filtered_focus_err,
                     focus_adjustment,
-                ) = self.PSSAF_routine.send(img)
+                ) = self.PSSAF_routine.send(resized_image)
             except MotorControllerError as e:
                 if not SIMULATION:
                     self.logger.error(
