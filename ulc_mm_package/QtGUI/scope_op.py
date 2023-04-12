@@ -663,6 +663,7 @@ class ScopeOp(QObject, NamedMachine):
             self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
             t0 = perf_counter()
+            resized_image = cv2.resize(img, (400, 300), interpolation=cv2.INTER_CUBIC)
             prev_yogo_results: List[
                 AsyncInferenceResult
             ] = self.count_parasitemia_routine.send((resized_image, self.count))
@@ -706,7 +707,6 @@ class ScopeOp(QObject, NamedMachine):
             self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
             t0 = perf_counter()
-            resized_image = cv2.resize(img, (400, 300), interpolation=cv2.INTER_CUBIC)
             try:
                 (
                     raw_focus_err,

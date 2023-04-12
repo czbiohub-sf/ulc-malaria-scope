@@ -23,7 +23,7 @@ from typing import (
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
-from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
+from openvino.preprocess import PrePostProcessor
 from openvino.runtime import (
     Core,
     Layout,
