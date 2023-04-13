@@ -542,7 +542,8 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_autofocus)
 
         if len(self.autofocus_batch) < AF_BATCH_SIZE:
-            self.autofocus_batch.append(img)
+            resized_image = cv2.resize(img, (400, 300), interpolation=cv2.INTER_CUBIC)
+            self.autofocus_batch.append(resized_image)
 
             if self.running:
                 self.img_signal.connect(self.run_autofocus)
