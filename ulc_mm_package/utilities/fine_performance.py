@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import sys
-from os import mkdir
 import pickle
 
 import numpy as np
@@ -9,6 +8,7 @@ import matplotlib.pyplot as plt
 
 from pathlib import Path
 from csv import DictReader
+from typing import Optional, List, Dict
 
 from ulc_mm_package.scope_constants import PER_IMAGE_TIMING_KEYS
 
@@ -53,17 +53,18 @@ if __name__ == "__main__":
         print(f"usage: {sys.argv[0]} <path to metadata csv> [save]")
         sys.exit(1)
 
+    save: Optional[str]
     filepath = sys.argv[1]
     if len(sys.argv) == 3:
         save = sys.argv[2]
         try:
-            mkdir(Path(save) / "Pickle")
+            (Path(save) / "Pickle").mkdir()
         except:
             pass
     else:
         save = None
 
-    run_timings = {
+    run_timings: Dict[str, List[float]] = {
         k: []
         for k in PER_IMAGE_TIMING_KEYS + ["looptime", "runtime", "zarrwriter_qsize"]
     }

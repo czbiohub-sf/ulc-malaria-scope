@@ -5,13 +5,12 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
 
+import os
 import sys
 import socket
-import webbrowser
 import enum
 import logging
 import subprocess
-import numpy as np
 
 from os import (
     listdir,
@@ -19,7 +18,7 @@ from os import (
     path,
 )
 from transitions import Machine
-from time import perf_counter, sleep
+from time import sleep
 from logging.config import fileConfig
 from datetime import datetime
 
@@ -32,6 +31,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.scope_constants import (
+    LOCKFILE,
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
@@ -44,11 +44,9 @@ from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
-    FLOWRATE,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
-    FLOWCELL_QC_FORM_LINK,
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
 )
@@ -132,17 +130,77 @@ class Oracle(Machine):
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
 
+        # Check lock and tcp tunnel
+        self._init_tcp()
+        self._check_lock()
+
         # Instantiate and configure Oracle elements
         self._set_variables()
         self._init_threads()
         self._init_states()
         self._init_sigslots()
 
-        # Get tcp tunnel
-        self._init_tcp()
-
         # Trigger first transition
         self.next_state()
+
+    def _init_tcp(self):
+        try:
+            tcp_addr = make_tcp_tunnel()
+            self.logger.info(f"SSH address is {tcp_addr}.")
+            self.liveview_window.update_tcp(tcp_addr)
+            send_ngrok_email()
+        except NgrokError as e:
+            message_result = self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH tunnel failed",
+                (
+                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
+                    "The SSH tunnel is only recreated when the scope is rebooted."
+                    '\n\nClick "OK" to continue running without SSH or click "Cancel" to exit.'
+                ),
+                buttons=Buttons.CANCEL,
+            )
+            if message_result == QMessageBox.Cancel:
+                self.logger.warning(
+                    f"Terminating run because SSH address could not be found - {e}"
+                )
+                sys.exit(1)
+            self.logger.warning(f"SSH address could not be found - {e}")
+            self.liveview_window.update_tcp("unavailable")
+        except EmailError as e:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH email failed",
+                self.logger.info("STARTING ORACLE.")(
+                    "Could not automatically email SSH tunnel address. "
+                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
+                    '\n\nClick "OK" to continue running.'
+                ),
+                buttons=Buttons.OK,
+            )
+            self.logger.warning(f"SSH address could not be emailed - {e}")
+
+    def _check_lock(self):
+        if path.isfile(LOCKFILE):
+            message_result = self.display_message(
+                QMessageBox.Icon.Information,
+                "Scope in use",
+                "The scope is locked because another run is in progress. "
+                'Override lock and run anyways?\n\nClick "No" to end run (recommended). '
+                'Click "Yes" to override lock and run anyways, at your own risk.',
+                buttons=Buttons.YN,
+            )
+            if message_result == QMessageBox.No:
+                self.logger.warning(
+                    f"Terminating run because scope is locked when lockfile ({LOCKFILE}) exists."
+                )
+                sys.exit(1)
+            else:
+                self.logger.warning(
+                    f"Overriding lock and running even though lockfile ({LOCKFILE}) exists."
+                )
+        else:
+            open(LOCKFILE, "w")
 
     def _set_variables(self):
         # Instantiate metadata dicts
@@ -246,38 +304,6 @@ class Oracle(Machine):
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition.update_infopanel.connect(self.scopeop.update_infopanel)
 
-    def _init_tcp(self):
-        try:
-            tcp_addr = make_tcp_tunnel()
-            self.logger.info(f"SSH address is {tcp_addr}.")
-            self.liveview_window.update_tcp(tcp_addr)
-            send_ngrok_email()
-        except NgrokError as e:
-            self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH tunnel failed",
-                (
-                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
-                    "The SSH tunnel is only recreated when the scope is rebooted."
-                    '\n\nClick "OK" to continue running without SSH.'
-                ),
-                buttons=Buttons.OK,
-            )
-            self.logger.warning(f"SSH address could not be found - {e}")
-            self.liveview_window.update_tcp("unavailable")
-        except EmailError as e:
-            self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH email failed",
-                self.logger.info("STARTING ORACLE.")(
-                    "Could not automatically email SSH tunnel address. "
-                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
-                    '\n\nClick "OK" to continue running.'
-                ),
-                buttons=Buttons.OK,
-            )
-            self.logger.warning(f"SSH address could not be emailed - {e}")
-
     def _init_ssd(self):
         samsung_ext_dir = path.join(SSD_DIR, SSD_NAME)
         if path.exists(samsung_ext_dir):
@@ -288,7 +314,7 @@ class Oracle(Machine):
             )
             try:
                 self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-            except (FileNotFoundError, IndexError) as e:
+            except (FileNotFoundError, IndexError):
                 print(
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
                 )
@@ -307,13 +333,13 @@ class Oracle(Machine):
             sys.exit(1)
 
     def ssd_full_msg_and_exit(self):
-        self.logger.warning(
-            f"The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+        print(
+            "The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
         )
         self.display_message(
             QMessageBox.Icon.Critical,
             "SSD is full",
-            f"The SSD is full. Data cannot be saved if the SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            "The SSD is full. Data cannot be saved if the SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
             + _ERROR_MSG,
             buttons=Buttons.OK,
         )
@@ -460,17 +486,18 @@ class Oracle(Machine):
 
         self.message_window.setText(f"{text}")
 
-        if buttons != None:
+        if buttons is not None:
             self.message_window.setStandardButtons(buttons.value)
 
-        if image != None:
+        if image is not None:
             layout = self.message_window.layout()
 
             image_lbl = QLabel()
             image_lbl.setPixmap(QPixmap(image))
 
             # Row/column span determined using layout.rowCount() and layout.columnCount()
-            layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)
+            # TODO: Mypy doesn't like this because of "too many args" and "alignment"
+            layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)  # type: ignore
 
         message_result = self.message_window.exec()
         return message_result
@@ -644,6 +671,14 @@ class Oracle(Machine):
         # Shut off hardware
         self.scopeop.mscope.shutoff()
 
+        try:
+            os.remove(LOCKFILE)
+            self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+        except FileNotFoundError:
+            self.logger.warning(
+                f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+            )
+
         # Shut off acquisition thread
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
@@ -676,6 +711,14 @@ class Oracle(Machine):
 
             # Shut off hardware
             self.scopeop.mscope.shutoff()
+
+            try:
+                os.remove(LOCKFILE)
+                self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+            except FileNotFoundError:
+                self.logger.warning(
+                    f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+                )
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 

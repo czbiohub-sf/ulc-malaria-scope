@@ -10,23 +10,25 @@ Basler PyPlon Library:
 """
 
 import sys
-import logging
-from enum import Enum
-from time import perf_counter
 import queue
-from typing import Generator, Tuple
+import vimba
+import logging
 
 import numpy as np
-import vimba
+
+from enum import Enum
+from time import perf_counter
+from typing import Generator, Tuple
+
 from vimba import Vimba
 
 from py_cameras import Basler, GrabStrategy
 
+from ulc_mm_package.hardware.camera import CameraError, CameraBase
 from ulc_mm_package.hardware.hardware_constants import (
     DEFAULT_EXPOSURE_MS,
     DEVICELINK_THROUGHPUT,
 )
-from ulc_mm_package.hardware.camera import CameraError
 
 
 class BinningMode(Enum):
@@ -34,7 +36,7 @@ class BinningMode(Enum):
     SUM = "Sum"
 
 
-class BaslerCamera(Basler):
+class BaslerCamera(Basler, CameraBase):
     """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""
 
     def __init__(self):
@@ -60,7 +62,7 @@ class BaslerCamera(Basler):
         return self.camera.DeviceTemperature.GetValue()
 
 
-class AVTCamera:
+class AVTCamera(CameraBase):
     """A class initially written for the AVT Alvium 1800 U-319m mono bareboard which wraps
     AVT's `VimbaPython' library (https://github.com/alliedvision/VimbaPython)
 
@@ -82,7 +84,7 @@ class AVTCamera:
     would be a drop-in replacement for the Basler.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
 
         # Internal variables used to keep track of the number of
@@ -280,7 +282,7 @@ class AVTCamera:
         try:
             self.camera.ExposureTime.set(value_ms * 1000)
         except Exception as e:
-            self.logger.error(f"Could not set exposure using ExposureTime.set().")
+            self.logger.error("Could not set exposure using ExposureTime.set().")
             raise e
 
     def _getCurrentExposureMilliseconds(self) -> float:
@@ -334,6 +336,6 @@ class AVTCamera:
                 raise e
         else:
             raise ValueError(
-                f"value_ms out of range: must be in "
+                "value_ms out of range: must be in "
                 "[{self.minExposure_ms, self.maxExposure_ms}], but value_ms={value_ms}"
             )

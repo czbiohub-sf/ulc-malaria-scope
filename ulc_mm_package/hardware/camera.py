@@ -4,8 +4,9 @@ See camera module under hardware/real/ for more info.
 
 """
 
+from abc import ABC, abstractmethod
+
 from ulc_mm_package.hardware.hardware_wrapper import hardware
-from ulc_mm_package.hardware.hardware_constants import DEVICELINK_THROUGHPUT
 
 
 class CameraError(Exception):
@@ -15,11 +16,17 @@ class CameraError(Exception):
     # Once that is merged, we can simply raise the PyCameras error.
 
 
+class CameraBase(ABC):
+    @abstractmethod
+    def yieldImages(self):
+        pass
+
+
 @hardware
-class BaslerCamera:
+class BaslerCamera(CameraBase):
     """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""
 
 
 @hardware
-class AVTCamera:
+class AVTCamera(CameraBase):
     pass

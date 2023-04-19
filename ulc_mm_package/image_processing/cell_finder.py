@@ -1,11 +1,13 @@
-from typing import Tuple
-import numpy as np
 import cv2
+import numpy as np
+
+from typing import List, Optional
+
+
 from ulc_mm_package.image_processing.processing_constants import (
     RBC_THUMBNAIL_PATH,
     CELLS_FOUND_THRESHOLD,
-    CROSS_CORR_CELL_DENSITY_THRESHOLD,
-    MIN_CELL_COUNT,
+    MIN_POINTS_ABOVE_THRESH,
 )
 
 RBC_THUMBNAIL = cv2.imread(RBC_THUMBNAIL_PATH, 0)
@@ -55,49 +57,6 @@ def get_correlation_map(
     return cv2.matchTemplate(img_ds, template_img, cv2.TM_CCOEFF)
 
 
-def cross_corr_count_cells(img: np.ndarray) -> int:
-    """Count the number of cells using cross-correlation and thresholding.
-
-    Parameters
-    ----------
-    img: np.ndarray
-
-    Returns
-    -------
-    int:
-        The number of cells found
-    """
-
-    return np.count_nonzero(
-        get_correlation_map(img) > CROSS_CORR_CELL_DENSITY_THRESHOLD
-    )
-
-
-def binarize_count_cells(img: np.ndarray, downsample_factor: int = 4) -> int:
-    """Count the number of cells using a basic binarizing+connected-components analysis.
-
-    Parameters
-    ----------
-    img: np.ndarray
-    downsample_factor: int
-
-    Returns
-    -------
-    int:
-        The number of bounding boxes found
-    """
-
-    ds_img = downsample_image(img, downsample_factor)
-    th = cv2.adaptiveThreshold(
-        ds_img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 10
-    )
-    _, _, boxes, _ = cv2.connectedComponentsWithStats(th)
-
-    return len(
-        boxes[1:]
-    )  # First bbox is the background, so we exclude and return the reset
-
-
 class LowDensity(Exception):
     pass
 
@@ -114,27 +73,63 @@ class CellFinder:
             cv2.imread(template_path, 0), downsample_factor
         )
         self.downsample_factor = downsample_factor
-        self.motor_pos = []
-        self.confidences = []
+        self.motor_pos: List[int] = []
+        self.confidences: List[float] = []
+        self.maps: List[np.ndarray] = []
 
     def add_image(self, motor_pos: int, img: np.ndarray) -> None:
         """Check for cells for the given image, store the result + motor position the image was taken at."""
 
         self.motor_pos.append(motor_pos)
-        self.confidences.append(self.find_cells_cross_corr(img))
+        xcorr_map = get_correlation_map(img, self.thumbnail, self.downsample_factor)
+        self.confidences.append(np.max(xcorr_map))
+        self.maps.append(xcorr_map)
 
-    def get_cells_found_position(self):
-        """Check if the cross-correlation value exceeds the threshold for cell detection."""
+    def get_cells_found_position(self) -> Optional[int]:
+        """Check if the cross-correlation value exceeds the threshold for cell detection and there are
+        a sufficient number of points above the cells found threshold.
 
-        max_val = np.max(self.confidences)
-        if max_val >= CELLS_FOUND_THRESHOLD:
+        Returns
+        -------
+        int
+            Motor position if cells were found
+        Exceptions
+        ----------
+        NoCellsFound
+            Raised if the value of the maximum cross correlation value from the given images
+            does not exceed a threshold.
+        """
+
+        argmax = np.argmax(self.confidences)
+        max_val = self.confidences[argmax]
+        max_map = self.maps[argmax]
+
+        if max_val >= CELLS_FOUND_THRESHOLD and self.sufficient_points_above_thresh(
+            max_map
+        ):
             return self.motor_pos[np.argmax(self.confidences)]
-        else:
-            raise NoCellsFound(
-                "None of the images at any of the motor positions had a maximum cross-correlation exceeding the CELLS_FOUND threshold"
-            )
 
-    def reset(self):
+        raise NoCellsFound(
+            "None of the images at any of the motor positions had a maximum cross-correlation exceeding the CELLS_FOUND threshold"
+        )
+
+    def sufficient_points_above_thresh(self, xcorr_map: np.ndarray) -> bool:
+        """Check if a sufficient number of points are above the cells found threshold
+        in the xcorr map.
+
+        Parameters
+        ----------
+        xcorr_map: np.ndarray
+
+        Returns
+        -------
+        bool
+        """
+
+        points = np.argwhere(xcorr_map >= CELLS_FOUND_THRESHOLD)
+        return len(points) > MIN_POINTS_ABOVE_THRESH
+
+    def reset(self) -> None:
         self.motor_pos = []
         self.confidences = []
 

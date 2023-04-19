@@ -1,4 +1,3 @@
-import multiprocessing as mp
 from typing import cast, List, Tuple
 
 import cv2
@@ -85,7 +84,7 @@ class FlowRateEstimator:
 
     def _getStandardDeviation(self) -> Tuple[float, float]:
         """Return the standard deviation of the dx and dy displacement arrays"""
-        return (np.std(self.dx), np.std(self.dy))
+        return float(np.std(self.dx)), float(np.std(self.dy))
 
     def getStatsAndReset(self) -> Tuple[float, float, float, float]:
         """Returns the means and standard deviations of all the values in the x and y displacement arrays
