@@ -592,7 +592,7 @@ class ScopeOp(QObject, NamedMachine):
                     "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
                     "Continue running anyway?"
                 ),
-                ERROR_BEHAVIORS.DEFAULT.YN.value,
+                ERROR_BEHAVIORS.YN.value,
             )
         except StopIteration as e:
             self.fastflow_result = e.value
