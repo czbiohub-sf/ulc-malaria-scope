@@ -18,7 +18,7 @@ MAX_COLWIDTH = 50
 TXT_FILE = "metadata_compilation.txt"
 
 
-def metadata_compiler(display_keys=DEFAULT_KEYS):
+def metadata_compiler(display_keys=DEFAULT_KEYS, folder=None):
     # Check that requested keys are valid
     for key in display_keys:
         if key not in VALID_KEYS:
@@ -28,19 +28,22 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
             )
 
     # Get parent directory
-    ssd_dir = path.join(SSD_DIR, SSD_NAME)
-    if path.exists(ssd_dir):
-        parent_dir = ssd_dir + "/"
+    if folder == None:
+        ssd_dir = path.join(SSD_DIR, SSD_NAME)
+        if path.exists(ssd_dir):
+            parent_dir = ssd_dir + "/"
+        else:
+            print(
+                f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for other folders in this directory."
+            )
+            try:
+                parent_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+            except (FileNotFoundError, IndexError):
+                print(f"Could not find any folders within {SSD_DIR}.")
+                return
+        print(f"Getting data from {parent_dir}")
     else:
-        print(
-            f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for other folders in this directory."
-        )
-        try:
-            parent_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
-        except (FileNotFoundError, IndexError) as e:
-            print(f"Could not find any folders within {SSD_DIR}.")
-            return
-    print(f"Getting data from {parent_dir}")
+        parent_dir = folder
 
     # Get all experiment directories
     child_dirs = listdir(parent_dir)
@@ -80,6 +83,8 @@ def metadata_compiler(display_keys=DEFAULT_KEYS):
                 single_df[FILE_KEY] = filename
 
                 df_list.append(single_df)
+            except UnicodeDecodeError:
+                print(f"Corrupted file: {path.join(exp_dir, run_dir, filename)}")
             except pd.errors.EmptyDataError:
                 print(f"Empty file: {path.join(exp_dir, run_dir, filename)}")
 
@@ -120,12 +125,19 @@ if __name__ == "__main__":
         help=f"include the specified column in the displayed metadata, any of {VALID_KEYS} can be specified",
         action="store",
     )
+
+    parser.add_argument(
+        "-f",
+        "--folder",
+        help="select a custom folder to compile metadata from",
+        action="store",
+    )
     args = parser.parse_args()
 
     if args.verbose:
-        metadata_compiler(display_keys=VALID_KEYS)
+        metadata_compiler(display_keys=VALID_KEYS, folder=args.folder)
     elif args.key != None:
         custom_keys = DEFAULT_KEYS + [args.key]
-        metadata_compiler(display_keys=custom_keys)
+        metadata_compiler(display_keys=custom_keys, folder=args.folder)
     else:
-        metadata_compiler()
+        metadata_compiler(folder=args.folder)
