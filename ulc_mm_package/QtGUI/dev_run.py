@@ -22,6 +22,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PneumaticModuleError,
     PressureSensorNotInstantiated,
     SyringeInMotion,
+    SyringeEndOfTravel,
     PressureSensorStaleValue,
 )
 
@@ -995,22 +996,26 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def btnFlowUpHandler(self):
         try:
             self.pneumatic_module.threadedIncreaseDutyCycle()
+            duty_cycle = self.pneumatic_module.duty_cycle
+            self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
+            self.txtBoxFlow.setText(f"{duty_cycle}")
         except SyringeInMotion:
             # TODO: Change to logging
             print("Syringe already in motion.")
-        duty_cycle = self.pneumatic_module.duty_cycle
-        self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
-        self.txtBoxFlow.setText(f"{duty_cycle}")
+        except SyringeEndOfTravel:
+            print("Syringe end of travel (top range).")
 
     def btnFlowDownHandler(self):
         try:
             self.pneumatic_module.threadedDecreaseDutyCycle()
+            duty_cycle = self.pneumatic_module.duty_cycle
+            self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
+            self.txtBoxFlow.setText(f"{duty_cycle}")
         except SyringeInMotion:
             # TODO: Change to logging
             print("Syringe already in motion.")
-        duty_cycle = self.pneumatic_module.duty_cycle
-        self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
-        self.txtBoxFlow.setText(f"{duty_cycle}")
+        except SyringeEndOfTravel:
+            print("Syringe end of travel (bottom range).")
 
     def convertFromvsFlowVal(self):
         return (
