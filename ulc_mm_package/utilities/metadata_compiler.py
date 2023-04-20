@@ -28,7 +28,7 @@ def metadata_compiler(display_keys=DEFAULT_KEYS, folder=None):
             )
 
     # Get parent directory
-    if folder == None:
+    if folder is None:
         ssd_dir = path.join(SSD_DIR, SSD_NAME)
         if path.exists(ssd_dir):
             parent_dir = ssd_dir + "/"
@@ -47,10 +47,10 @@ def metadata_compiler(display_keys=DEFAULT_KEYS, folder=None):
 
     # Get all experiment directories
     child_dirs = listdir(parent_dir)
-    filtered_child_dirs = re.findall("\d{4}-\d{2}-\d{2}-\d{6}", " ".join(child_dirs))
-    exp_dirs = [
-        child_dir for child_dir in child_dirs if child_dir in filtered_child_dirs
-    ]
+    exp_dirs = re.findall("\d{4}-\d{2}-\d{2}-\d{6}", " ".join(child_dirs))
+    # exp_dirs = [
+    #     child_dir for child_dir in child_dirs if child_dir in filtered_child_dirs
+    # ]
 
     # Track dataframes from all run metadata file
     df_list = []
@@ -58,35 +58,37 @@ def metadata_compiler(display_keys=DEFAULT_KEYS, folder=None):
     # Get all run directories
     for exp_dir in exp_dirs:
         grandchild_dirs = listdir(path.join(parent_dir, exp_dir))
-        filtered_grandchild_dirs = re.findall(
+        run_dirs = re.findall(
             "\d{4}-\d{2}-\d{2}-\d{6}_", " ".join(grandchild_dirs)
         )
-        run_dirs = [
-            grandchild_dir
-            for grandchild_dir in grandchild_dirs
-            if grandchild_dir in filtered_grandchild_dirs
-        ]
+        # print(filtered_grandchild_dirs)
+        # run_dirs = [
+        #     grandchild_dir
+        #     for grandchild_dir in grandchild_dirs
+        #     if grandchild_dir in filtered_grandchild_dirs
+        # ]
 
         # Get run metadata file
         for run_dir in run_dirs:
             run_files = listdir(path.join(parent_dir, exp_dir, run_dir))
-            filename = [run_file for run_file in run_files if "exp" in run_file][0]
+            exp_files = [run_file for run_file in run_files if "exp" in run_file]
 
-            try:
-                # Get data from run metadata file
-                single_df = pd.read_csv(
-                    path.join(parent_dir, exp_dir, run_dir, filename)
-                )
+            for filename in [file in exp_files if not file.startswith('.')]:
+                try:
+                    # Get data from run metadata file
+                    single_df = pd.read_csv(
+                        path.join(parent_dir, exp_dir, run_dir, filename)
+                    )
 
-                # Add file location to dataframe
-                single_df[DIR_KEY] = path.join(exp_dir, run_dir)
-                single_df[FILE_KEY] = filename
+                    # Add file location to dataframe
+                    single_df[DIR_KEY] = path.join(exp_dir, run_dir)
+                    single_df[FILE_KEY] = filename
 
-                df_list.append(single_df)
-            except UnicodeDecodeError:
-                print(f"Corrupted file: {path.join(exp_dir, run_dir, filename)}")
-            except pd.errors.EmptyDataError:
-                print(f"Empty file: {path.join(exp_dir, run_dir, filename)}")
+                    df_list.append(single_df)
+                except UnicodeDecodeError:
+                    print(f"Corrupted file: {path.join(exp_dir, run_dir, filename)}")
+                except pd.errors.EmptyDataError:
+                    print(f"Empty file: {path.join(exp_dir, run_dir, filename)}")
 
     master_df = pd.concat(df_list, ignore_index=True)
     master_df = master_df.sort_values(by="directory", ignore_index=True)
@@ -136,7 +138,7 @@ if __name__ == "__main__":
 
     if args.verbose:
         metadata_compiler(display_keys=VALID_KEYS, folder=args.folder)
-    elif args.key != None:
+    elif args.key is not None:
         custom_keys = DEFAULT_KEYS + [args.key]
         metadata_compiler(display_keys=custom_keys, folder=args.folder)
     else:
