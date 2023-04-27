@@ -23,7 +23,7 @@ from typing import (
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
-from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
+from openvino.preprocess import PrePostProcessor
 from openvino.runtime import (
     Core,
     Layout,
@@ -104,17 +104,7 @@ class NCSModel:
         model = self.core.read_model(model_path)
 
         ppp = PrePostProcessor(model)
-        # black likes to format this into a very unreadable format :(
-        # fmt: off
-        ppp.input() \
-            .tensor() \
-            .set_element_type(Type.u8) \
-            .set_layout(Layout("NHWC")) \
-            .set_spatial_static_shape(
-                camera_selection.IMG_HEIGHT, camera_selection.IMG_WIDTH
-            )
-        # fmt: on
-        ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)
+        ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
         ppp.input().model().set_layout(Layout("NCHW"))
         ppp.output().tensor().set_element_type(Type.f32)
         model = ppp.build()
@@ -213,7 +203,7 @@ class NCSModel:
 
         return res
 
-    def wait_all(self):
+    def wait_all(self) -> None:
         """wait for all pending InferRequests to resolve"""
         self.asyn_infer_queue.wait_all()
 

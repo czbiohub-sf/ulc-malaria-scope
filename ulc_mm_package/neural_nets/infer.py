@@ -291,7 +291,8 @@ if __name__ == "__main__":
                     results.append(res)
 
     # safety
-    [m.wait_all() for m in models]
+    for m in models:
+        m.wait_all()
 
     if args.allan_dev:
         data_path = Path(
