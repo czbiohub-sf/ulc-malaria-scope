@@ -47,6 +47,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorStaleValue,
     PressureSensorBusy,
 )
+from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
@@ -513,8 +514,10 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_autofocus)
 
         if len(self.autofocus_batch) < AF_BATCH_SIZE:
-            resized_image = cv2.resize(img, (400, 300), interpolation=cv2.INTER_CUBIC)
-            self.autofocus_batch.append(resized_image)
+            resized_img = cv2.resize(
+                img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
+            )
+            self.autofocus_batch.append(resized_img)
 
             if self.running:
                 self.img_signal.connect(self.run_autofocus)
@@ -640,10 +643,13 @@ class ScopeOp(QObject, NamedMachine):
             self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
             t0 = perf_counter()
-            resized_image = cv2.resize(img, (400, 300), interpolation=cv2.INTER_CUBIC)
+
+            resized_img = cv2.resize(
+                img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
+            )
             prev_yogo_results: List[
                 AsyncInferenceResult
-            ] = self.count_parasitemia_routine.send((resized_image, self.count))
+            ] = self.count_parasitemia_routine.send((resized_img, self.count))
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
@@ -689,7 +695,7 @@ class ScopeOp(QObject, NamedMachine):
                     raw_focus_err,
                     filtered_focus_err,
                     focus_adjustment,
-                ) = self.PSSAF_routine.send(resized_image)
+                ) = self.PSSAF_routine.send(resized_img)
             except MotorControllerError as e:
                 if not SIMULATION:
                     self.logger.error(
