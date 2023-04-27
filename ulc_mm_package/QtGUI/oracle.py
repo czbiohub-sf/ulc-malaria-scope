@@ -5,6 +5,7 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
 
+import os
 import sys
 import socket
 import enum
@@ -30,6 +31,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 
 from ulc_mm_package.scope_constants import (
+    LOCKFILE,
     EXPERIMENT_METADATA_KEYS,
     PER_IMAGE_METADATA_KEYS,
     CAMERA_SELECTION,
@@ -128,17 +130,77 @@ class Oracle(Machine):
         self.form_window = FormGUI()
         self.liveview_window = LiveviewGUI()
 
+        # Check lock and tcp tunnel
+        self._init_tcp()
+        self._check_lock()
+
         # Instantiate and configure Oracle elements
         self._set_variables()
         self._init_threads()
         self._init_states()
         self._init_sigslots()
 
-        # Get tcp tunnel
-        self._init_tcp()
-
         # Trigger first transition
         self.next_state()
+
+    def _init_tcp(self):
+        try:
+            tcp_addr = make_tcp_tunnel()
+            self.logger.info(f"SSH address is {tcp_addr}.")
+            self.liveview_window.update_tcp(tcp_addr)
+            send_ngrok_email()
+        except NgrokError as e:
+            message_result = self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH tunnel failed",
+                (
+                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
+                    "The SSH tunnel is only recreated when the scope is rebooted."
+                    '\n\nClick "OK" to continue running without SSH or click "Cancel" to exit.'
+                ),
+                buttons=Buttons.CANCEL,
+            )
+            if message_result == QMessageBox.Cancel:
+                self.logger.warning(
+                    f"Terminating run because SSH address could not be found - {e}"
+                )
+                sys.exit(1)
+            self.logger.warning(f"SSH address could not be found - {e}")
+            self.liveview_window.update_tcp("unavailable")
+        except EmailError as e:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "SSH email failed",
+                self.logger.info("STARTING ORACLE.")(
+                    "Could not automatically email SSH tunnel address. "
+                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
+                    '\n\nClick "OK" to continue running.'
+                ),
+                buttons=Buttons.OK,
+            )
+            self.logger.warning(f"SSH address could not be emailed - {e}")
+
+    def _check_lock(self):
+        if path.isfile(LOCKFILE):
+            message_result = self.display_message(
+                QMessageBox.Icon.Information,
+                "Scope in use",
+                "The scope is locked because another run is in progress. "
+                'Override lock and run anyways?\n\nClick "No" to end run (recommended). '
+                'Click "Yes" to override lock and run anyways, at your own risk.',
+                buttons=Buttons.YN,
+            )
+            if message_result == QMessageBox.No:
+                self.logger.warning(
+                    f"Terminating run because scope is locked when lockfile ({LOCKFILE}) exists."
+                )
+                sys.exit(1)
+            else:
+                self.logger.warning(
+                    f"Overriding lock and running even though lockfile ({LOCKFILE}) exists."
+                )
+        else:
+            open(LOCKFILE, "w")
 
     def _set_variables(self):
         # Instantiate metadata dicts
@@ -242,38 +304,6 @@ class Oracle(Machine):
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition.update_infopanel.connect(self.scopeop.update_infopanel)
 
-    def _init_tcp(self):
-        try:
-            tcp_addr = make_tcp_tunnel()
-            self.logger.info(f"SSH address is {tcp_addr}.")
-            self.liveview_window.update_tcp(tcp_addr)
-            send_ngrok_email()
-        except NgrokError as e:
-            self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH tunnel failed",
-                (
-                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
-                    "The SSH tunnel is only recreated when the scope is rebooted."
-                    '\n\nClick "OK" to continue running without SSH.'
-                ),
-                buttons=Buttons.OK,
-            )
-            self.logger.warning(f"SSH address could not be found - {e}")
-            self.liveview_window.update_tcp("unavailable")
-        except EmailError as e:
-            self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH email failed",
-                self.logger.info("STARTING ORACLE.")(
-                    "Could not automatically email SSH tunnel address. "
-                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
-                    '\n\nClick "OK" to continue running.'
-                ),
-                buttons=Buttons.OK,
-            )
-            self.logger.warning(f"SSH address could not be emailed - {e}")
-
     def _init_ssd(self):
         samsung_ext_dir = path.join(SSD_DIR, SSD_NAME)
         if path.exists(samsung_ext_dir):
@@ -303,7 +333,7 @@ class Oracle(Machine):
             sys.exit(1)
 
     def ssd_full_msg_and_exit(self):
-        self.logger.warning(
+        print(
             "The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
         )
         self.display_message(
@@ -641,6 +671,14 @@ class Oracle(Machine):
         # Shut off hardware
         self.scopeop.mscope.shutoff()
 
+        try:
+            os.remove(LOCKFILE)
+            self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+        except FileNotFoundError:
+            self.logger.warning(
+                f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+            )
+
         # Shut off acquisition thread
         self.acquisition_thread.quit()
         self.acquisition_thread.wait()
@@ -673,6 +711,14 @@ class Oracle(Machine):
 
             # Shut off hardware
             self.scopeop.mscope.shutoff()
+
+            try:
+                os.remove(LOCKFILE)
+                self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+            except FileNotFoundError:
+                self.logger.warning(
+                    f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+                )
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 

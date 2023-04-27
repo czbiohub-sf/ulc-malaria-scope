@@ -258,7 +258,6 @@ class Routines:
         it raises a StopIteration exception and a float number (flowrate) is returned via the exception (e.value)
 
             fastflow_generator = fastFlowRoutine(mscope, None)
-            fastflow_generator.send(None) # need to start generator with a None value
             for img in cam.yieldImages():
                 try:
                     flow_val = fastflow_generator.send(img)
@@ -310,7 +309,7 @@ class Routines:
 
     @init_generator
     def autobrightnessRoutine(
-        self, mscope: MalariaScope, img: Optional[np.ndarray] = None
+        self, mscope: MalariaScope
     ) -> Generator[None, np.ndarray, float]:
         """Autobrightness routine to set led power.
 
@@ -349,7 +348,6 @@ class Routines:
         Usage
         -----
             ab_generator = autobrightnessRoutine(mscope, None)
-            ab_generator.send(None) # need to start the generator with a None value
 
             for img in cam.yieldImages():
                 try:

@@ -44,7 +44,6 @@ from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorController
 from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureLeak,
-    SyringeInMotion,
     PressureSensorStaleValue,
     PressureSensorBusy,
 )
@@ -329,20 +328,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Since img_signal is already disconnected, no signal/slot changes were made."
             )
 
-        self.logger.info("Resetting pneumatic module for pause.")
-        # Account for the case where the syringe might still be in motion
-        # e.g during cell finding or if a flow control adjustment is being done.
-        while self.mscope.pneumatic_module.is_locked():
-            sleep(0.1)
-
-        try:
-            self.mscope.pneumatic_module.setDutyCycle(
-                self.mscope.pneumatic_module.getMaxDutyCycle()
-            )
-        except SyringeInMotion:
-            # This should not happen
-            self.logger.warning("Did not return syringe to top-most position!")
-        self.mscope.led.turnOff()
+        self.mscope.reset_pneumatic_and_led_and_flow_control()
 
         self._set_routine_variables()
 
@@ -441,22 +427,7 @@ class ScopeOp(QObject, NamedMachine):
                 f"Net FPS is {self.count/(self._get_experiment_runtime())}"
             )
 
-        self.logger.info("Resetting pneumatic module for rerun.")
-        while self.mscope.pneumatic_module.is_locked():
-            sleep(0.1)
-        try:
-            self.mscope.pneumatic_module.setDutyCycle(
-                self.mscope.pneumatic_module.getMaxDutyCycle()
-            )
-        except SyringeInMotion:
-            # This should not happen
-            self.logger.warning("Did not return syringe to top-most position!")
-
-        self.mscope.led.turnOff()
-
-        closing_file_future = self.mscope.data_storage.close()
-        while not closing_file_future.done():
-            sleep(1)
+        self.mscope.reset_for_end_experiment()
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)
@@ -608,7 +579,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.error("Fastflow failed. Syringe already at max position.")
             self.default_error.emit(
                 "Calibration issue",
-                "Unable to achieve target flowrate with syringe at max position. Continue running anyways?",
+                "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                 ERROR_BEHAVIORS.YN.value,
             )
             self.update_flowrate.emit(self.fastflow_result)
@@ -619,8 +590,13 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.default_error.emit(
                 "Calibration failed - flowrate calculation errors",
-                "Flowrate ramp: The flow control system returned too many 'low confidence' measurements.\nIf the flow rate looked normal to you, you can try re-running with this same flow cell and sample. Otherwise, discard this flow cell and use a new one with fresh sample please.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                (
+                    "Flowrate ramp: The flow control system returned too many 'low confidence' measurements. "
+                    "You can continue with this run if the flow looks okay to you, "
+                    "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
+                    "Continue running anyway?"
+                ),
+                ERROR_BEHAVIORS.YN.value,
             )
         except StopIteration as e:
             self.fastflow_result = e.value
@@ -636,7 +612,7 @@ class ScopeOp(QObject, NamedMachine):
             self.img_metadata[key] = val
 
     @pyqtSlot(np.ndarray, float)
-    def run_experiment(self, img, timestamp):
+    def run_experiment(self, img, timestamp) -> None:
         if not self.running:
             self.logger.info("Slot executed after experiment ended.")
             return

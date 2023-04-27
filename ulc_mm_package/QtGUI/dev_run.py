@@ -2,6 +2,7 @@ from ulc_mm_package.QtGUI.gui_constants import FLOWCELL_QC_FORM_LINK
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
 from ulc_mm_package.scope_constants import (
+    LOCKFILE,
     SSD_DIR,
     VIDEO_PATH,
     VIDEO_REC,
@@ -21,6 +22,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PneumaticModuleError,
     PressureSensorNotInstantiated,
     SyringeInMotion,
+    SyringeEndOfTravel,
     PressureSensorStaleValue,
 )
 
@@ -37,8 +39,8 @@ from ulc_mm_package.image_processing.flow_control import (
     LowConfidenceCorrelations,
 )
 from ulc_mm_package.image_processing.zstack import (
-    takeZStackCoroutine,
-    symmetricZStackCoroutine,
+    full_sweep_image_collection,
+    local_sweep_image_collection,
 )
 
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
@@ -49,6 +51,7 @@ from ulc_mm_package.utilities.email_utils import send_ngrok_email
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 
+import os
 import sys
 import traceback
 import numpy as np
@@ -57,12 +60,11 @@ import subprocess
 
 from typing import Dict
 from time import perf_counter, sleep
-from os import listdir, mkdir, path
+from os import listdir, path
 from datetime import datetime, timedelta
 from PyQt5 import QtWidgets, uic  # type: ignore
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
-from cv2 import imwrite
 from qimage2ndarray import gray2qimage
 from gpiozero import CPUTemperature
 
@@ -227,11 +229,7 @@ class AcquisitionThread(QThread):
 
     def save(self, image):
         if self.single_save:
-            filename = (
-                path.join(self.main_dir, datetime.now().strftime(DATETIME_FORMAT))
-                + f"{self.custom_image_prefix}.png"
-            )
-            imwrite(filename, image)
+            self.data_storage.writeSingleImage(image, self.custom_image_prefix)
             self.single_save = False
 
         if self.continuous_save:
@@ -277,9 +275,10 @@ class AcquisitionThread(QThread):
 
     def takeImage(self):
         if self.main_dir is None:
-            self.main_dir = self.external_dir + datetime.now().strftime(DATETIME_FORMAT)
-            mkdir(self.main_dir)
-            self.data_storage.main_dir = self.main_dir
+            self.data_storage.createTopLevelFolder(
+                self.external_dir, datetime.now().strftime(DATETIME_FORMAT)
+            )
+            self.main_dir = self.data_storage.main_dir
 
         if self.continuous_save:
             self.data_storage.createNewExperiment(
@@ -289,8 +288,6 @@ class AcquisitionThread(QThread):
                 experiment_initialization_metdata={},
                 per_image_metadata_keys=self.getMetadata().keys(),
             )
-            if self.main_dir is None:
-                self.main_dir = self.data_storage.main_dir
 
             self.im_counter = 0
             self.start_time = perf_counter()
@@ -313,15 +310,15 @@ class AcquisitionThread(QThread):
 
     def runFullZStack(self):
         self.takeZStack = True
-        self.zstack = takeZStackCoroutine(
-            None, motor=self.motor, save_loc=self.external_dir
+        self.zstack = full_sweep_image_collection(
+            motor=self.motor, steps_per_coarse=10, save_loc=self.external_dir
         )
         self.zstack.send(None)
 
     def runLocalZStack(self):
         self.takeZStack = True
-        self.zstack = symmetricZStackCoroutine(
-            None, self.motor, self.motor.pos, save_loc=self.external_dir
+        self.zstack = local_sweep_image_collection(
+            self.motor, self.motor.pos, save_loc=self.external_dir
         )
         self.zstack.send(None)
 
@@ -367,7 +364,6 @@ class AcquisitionThread(QThread):
         self.fastFlowRoutine = self.routines.fastFlowRoutine(
             self.mscope, img, self.target_flowrate
         )
-        self.fastFlowRoutine.send(None)
         self.initializeFlowControl = False
         self.fast_flow_enabled = True
 
@@ -388,9 +384,8 @@ class AcquisitionThread(QThread):
             except StopIteration as e:
                 final_val = e.value
                 self.flowControl = self.routines.flowControlRoutine(
-                    self.mscope, self.target_flowrate, img
+                    self.mscope, self.target_flowrate
                 )
-                self.flowControl.send(None)
                 self.fast_flow_enabled = False
                 self.flowcontrol_enabled = True
                 print(f"Final fast flow val: {final_val}")
@@ -528,6 +523,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             sleep(0.5)
             self.motor.move_abs(int(self.motor.max_pos // 2))
             self.lblFocusMax.setText(f"{self.motor.max_pos}")
+
+            self.btnFullZStack.setText("Full sweep+save")
+            self.btnLocalZStack.setText("Local sweep+save")
 
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
             self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)
@@ -827,7 +825,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.autobrightness = (
             self.acquisitionThread.routines.autobrightnessRoutine(self.mscope)
         )
-        self.acquisitionThread.autobrightness.send(None)
         self.btnAutobrightness.setEnabled(False)
         self.btnLEDToggle.setEnabled(False)
         self.vsLED.blockSignals(True)
@@ -949,7 +946,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Full Range ZStack",
-            "Press okay to sweep the motor over its entire range and automatically find and move to the focal position.",
+            "Press okay to sweep the motor over its entire range and save the images (save 1 img/step).",
             cancel=True,
         )
 
@@ -961,7 +958,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Local Vicinity ZStack",
-            "Press okay to sweep the motor over its current nearby vicinity and move to the focal position.",
+            "Press okay to sweep the motor over its current nearby vicinity and save images (note: by default we save 30 imgs/step so this may be slow).",
             cancel=True,
         )
 
@@ -999,22 +996,26 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def btnFlowUpHandler(self):
         try:
             self.pneumatic_module.threadedIncreaseDutyCycle()
+            duty_cycle = self.pneumatic_module.duty_cycle
+            self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
+            self.txtBoxFlow.setText(f"{duty_cycle}")
         except SyringeInMotion:
             # TODO: Change to logging
             print("Syringe already in motion.")
-        duty_cycle = self.pneumatic_module.duty_cycle
-        self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
-        self.txtBoxFlow.setText(f"{duty_cycle}")
+        except SyringeEndOfTravel:
+            print("Syringe end of travel (top range).")
 
     def btnFlowDownHandler(self):
         try:
             self.pneumatic_module.threadedDecreaseDutyCycle()
+            duty_cycle = self.pneumatic_module.duty_cycle
+            self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
+            self.txtBoxFlow.setText(f"{duty_cycle}")
         except SyringeInMotion:
             # TODO: Change to logging
             print("Syringe already in motion.")
-        duty_cycle = self.pneumatic_module.duty_cycle
-        self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
-        self.txtBoxFlow.setText(f"{duty_cycle}")
+        except SyringeEndOfTravel:
+            print("Syringe end of travel (bottom range).")
 
     def convertFromvsFlowVal(self):
         return (
@@ -1153,6 +1154,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             if self.encoder:
                 self.encoder.close()
 
+            try:
+                os.remove(LOCKFILE)
+                print(f"Removed lockfile ({LOCKFILE}).")
+            except FileNotFoundError:
+                print(f"Lockfile ({LOCKFILE}) does not exist and could not be deleted.")
+
             quit()
 
     def closeEvent(self, event):
@@ -1161,6 +1168,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
+    if path.isfile(LOCKFILE):
+        print(
+            f"Terminating run. Lockfile ({LOCKFILE}) exists, so scope is locked while another run is in progress."
+        )
+        sys.exit(1)
+    else:
+        open(LOCKFILE, "w")
+
     try:
         app = QtWidgets.QApplication(sys.argv)
         main_window = MalariaScopeGUI()
