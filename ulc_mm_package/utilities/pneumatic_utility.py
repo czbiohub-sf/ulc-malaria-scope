@@ -234,7 +234,7 @@ def main() -> None:
         if not args.d:
             duty_set = DUTY_SET_DEF
         else:
-            duty_set = int(args.duty)
+            duty_set = int(args.d)
 
         set_pwm(pwm, duty_set)
 
