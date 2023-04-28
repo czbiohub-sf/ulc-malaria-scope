@@ -231,7 +231,7 @@ def main() -> None:
 
     elif args.action[0] == "pwm":
         # Simply set the PWM to the given setpoint
-        if not args.pwm:
+        if not args.d:
             duty_set = DUTY_SET_DEF
         else:
             duty_set = int(args.duty)
