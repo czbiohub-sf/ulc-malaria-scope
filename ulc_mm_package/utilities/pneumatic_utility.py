@@ -34,6 +34,7 @@ from ulc_mm_package.hardware.real.pneumatic_module import AdafruitMPRLS
 PWM_FREQ = 100
 DUTY_MAX = 21.2 / 100
 DUTY_MIN = 15.5 / 100
+DUTY_SET_DEF = 20/100
 DUTY_MIN_WIDE = 14 / 100
 DUTY_MAX_WIDE = 22.5 / 100
 P_GAIN = 0.001
@@ -53,6 +54,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument("action", nargs=1)
     parser.add_argument("-p", default=P_SET_DEF, type=int)
+    parser.add_argument("-d", default=DUTY_SET_DEF, type=int)
 
     return parser
 
@@ -184,6 +186,22 @@ def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
         pwm.setDutyCycle(DUTY_MAX)
         time.sleep(0.5)
 
+def set_pwm(pwm, duty_set)
+    try:
+        while True:
+            pwm.setDutyCycle(duty_set)
+            text = input("Enter a new setpoint duty ratio (%)")
+            try:
+                duty_set = int(text)
+            except:
+                print('Please enter an integer between 0-100')
+
+            pwm.setDutyCycle(duty_set)
+            time.sleep(LOOP_DELAY)
+
+    except KeyboardInterrupt:
+        pass
+
 
 def main() -> None:
     # Parse input arguments and decide which function to call
@@ -210,6 +228,15 @@ def main() -> None:
     elif args.action[0] == "sweep":
         # Perform a sweep of the PWM range, returning pressure vs. PWM duty ratio
         calibrate_range(mpr, pwm)
+
+    elif args.action[0] == "pwm":
+        # Simply set the PWM to the given setpoint
+        if not args.pwm:
+            duty_set = DUTY_SET_DEF
+        else:
+            duty_set = int(args.duty)
+
+        set_pwm(pwm, duty_set)
 
     else:
         print("Argument " + str(args.action[0] + " not recognized"))
