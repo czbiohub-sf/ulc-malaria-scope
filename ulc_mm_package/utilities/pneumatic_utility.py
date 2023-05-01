@@ -196,6 +196,7 @@ def set_pwm(pwm, duty_set):
                 if duty_set > 100.0 or duty_set < 0.0:
                     print('Please enter a number between 0-100')
                 else:
+                    print(f"Setting duty ratio to {duty_set}")
                     pwm.setDutyCycle(duty_set)
 
             except:
