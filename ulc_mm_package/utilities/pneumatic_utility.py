@@ -192,15 +192,15 @@ def set_pwm(pwm, duty_set):
             pwm.setDutyCycle(duty_set)
             text = input("Enter a new setpoint duty ratio (%)")
             try:
-                duty_set = int(text)
+                duty_set = float(text)
             except:
-                print('Please enter an integer between 0-100')
+                print('Please enter a number between 0-100')
 
-            if duty_set > 100 or duty_set < 0:
-                print('Please enter an integer between 0-100')
+            if duty_set > 100.0 or duty_set < 0.0:
+                print('Please enter a number between 0-100')
 
             else:
-                pwm.setDutyCycle(duty_set/100)
+                pwm.setDutyCycle(duty_set/100.0)
             
             time.sleep(LOOP_DELAY)
 
