@@ -196,7 +196,12 @@ def set_pwm(pwm, duty_set):
             except:
                 print('Please enter an integer between 0-100')
 
-            pwm.setDutyCycle(duty_set)
+            if duty_set > 100 or duty_set < 0:
+                print('Please enter an integer between 0-100')
+
+            else:
+                pwm.setDutyCycle(duty_set/100)
+            
             time.sleep(LOOP_DELAY)
 
     except KeyboardInterrupt:
