@@ -200,6 +200,8 @@ def set_pwm(pwm, duty_set):
                 print('Please enter a number between 0-100')
 
             else:
+                print(f"Setting duty cycle to: ")
+                print(duty_set)
                 pwm.setDutyCycle(duty_set/100.0)
             
             time.sleep(LOOP_DELAY)
