@@ -186,25 +186,21 @@ def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
         pwm.setDutyCycle(DUTY_MAX)
         time.sleep(0.5)
 
-def set_pwm(mpr, pwm, duty_set):
+def set_pwm(mpr, pwm):
     try:
 
         init(mpr, pwm)
 
         while True:
-            pwm.setDutyCycle(duty_set)
             text = input("Enter a new setpoint duty ratio (%)")
 
             try:
                 duty_set = float(text)/100.0
-                if duty_set > 100.0 or duty_set < 0.0:
-                    print('Please enter a number between 0-100')
-                else:
-                    print(f"Setting duty ratio to {duty_set}")
-
-                    pwm.setDutyCycle(duty_set)
-                    p_read = int(mpr.getPressureMaxReadAttempts()[0])
-                    print("Pressure = " + str(p_read) + " mbar")
+                print(f"Setting duty ratio to {duty_set}")
+                pwm.setDutyCycle(duty_set)
+                time.sleep(LOOP_DELAY)
+                p_read = int(mpr.getPressureMaxReadAttempts()[0])
+                print("Pressure = " + str(p_read) + " mbar")
 
             except:
                 print('Please enter a number between 0-100')
@@ -243,12 +239,7 @@ def main() -> None:
 
     elif args.action[0] == "pwm":
         # Simply set the PWM to the given setpoint
-        if not args.d:
-            duty_set = DUTY_SET_DEF
-        else:
-            duty_set = int(args.d)
-
-        set_pwm(mpr, pwm, duty_set)
+        set_pwm(mpr, pwm)
 
     else:
         print("Argument " + str(args.action[0] + " not recognized"))
