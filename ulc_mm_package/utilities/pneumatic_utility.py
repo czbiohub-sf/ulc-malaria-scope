@@ -192,19 +192,12 @@ def set_pwm(mpr, pwm):
         init(mpr, pwm)
 
         while True:
-            text = input("Enter a new setpoint duty ratio (%)")
-
-            try:
-                duty_set = float(text)/100.0
-                print(f"Setting duty ratio to {duty_set}")
-                pwm.setDutyCycle(duty_set)
-                time.sleep(LOOP_DELAY)
-                p_read = int(mpr.getPressureMaxReadAttempts()[0])
-                print("Pressure = " + str(p_read) + " mbar")
-
-            except:
-                print('Please enter a number between 0-100')
-            
+            duty_set = float(input("Enter a new setpoint duty ratio (%)"))/100.0
+            print(f"Setting duty ratio to {duty_set}")
+            pwm.setDutyCycle(duty_set)
+            time.sleep(LOOP_DELAY)
+            p_read = int(mpr.getPressureMaxReadAttempts()[0])
+            print("Pressure = " + str(p_read) + " mbar")
             time.sleep(LOOP_DELAY)
 
     except KeyboardInterrupt:
