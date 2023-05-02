@@ -248,7 +248,7 @@ def main() -> None:
         else:
             duty_set = int(args.d)
 
-        set_pwm(pwm, duty_set)
+        set_pwm(mpr, pwm, duty_set)
 
     else:
         print("Argument " + str(args.action[0] + " not recognized"))
