@@ -77,7 +77,7 @@ class FlowRateEstimator:
     def reset(self) -> None:
         """Reset initialization booleans."""
 
-        self._prev_img: np.ndarray = None
+        self._prev_img = None
 
     def is_primed(self) -> bool:
         """Check whether the estimator is ready to return a value."""
@@ -121,8 +121,8 @@ class FlowRateEstimator:
     def _calculate_pair_displacement(self) -> Tuple[float, float, float]:
         """Return dx, dy displacement in px and the cross correlation coefficient ('confidence')"""
 
-        dx, dy, confidence = self.multiproc_interface._func_call()
-        return dx, dy, confidence
+        dx, dy, confidence = self.multiproc_interface._func_call()  # type:ignore
+        return dx, dy, confidence  # type: ignore
 
     def add_image_and_calculate_pair(
         self, img: np.ndarray, timestamp: float

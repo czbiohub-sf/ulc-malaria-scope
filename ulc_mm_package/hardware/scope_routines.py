@@ -192,8 +192,8 @@ class Routines:
             Raised if the percentage of failed correlations exceeds FAILED_CORR_PERC_TOLERANCE of all measurements.
         """
 
-        img, timestamp = yield
-        flow_val = None
+        img, timestamp = yield 0.0  # yield 0.0 to tame the mypy type hint beast
+        flow_val: float = None
         h, w = img.shape
         flow_controller = FlowController(mscope.pneumatic_module, h, w)
         flow_controller.set_target_flowrate(target_flowrate)

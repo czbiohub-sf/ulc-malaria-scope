@@ -223,7 +223,7 @@ class AcquisitionThread(QThread):
             "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
             "flow_control_on": self.flowcontrol_enabled,
             "target_flowrate": self.flow_controller.target_flowrate,
-            "current_flowrate": self.flow_controller.curr_flowrate,
+            "current_flowrate": self.flow_controller.flowrate,
             "focus_adjustment": self.af_adjustment_done,
         }
 
@@ -360,7 +360,7 @@ class AcquisitionThread(QThread):
     def _set_target_flowrate(self, val):
         self.target_flowrate = val
 
-    def initializeActiveFlowControl(self, img: np.ndarray):
+    def initializeActiveFlowControl(self):
         self.fastFlowRoutine = self.routines.flow_control_routine(
             self.mscope, self.target_flowrate, ramp=True
         )
