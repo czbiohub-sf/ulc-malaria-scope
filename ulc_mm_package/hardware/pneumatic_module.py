@@ -93,7 +93,7 @@ class PneumaticModuleBase(ABC):
     def threadedIncreaseDutyCycle(self):
         ...
 
-    def is_locked() -> bool:
+    def is_locked(self):
         ...
 
 

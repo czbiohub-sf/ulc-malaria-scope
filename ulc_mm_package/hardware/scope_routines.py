@@ -167,7 +167,7 @@ class Routines:
 
     def flow_control_routine(
         self, mscope: MalariaScope, target_flowrate: float, ramp: bool = False
-    ) -> Generator[float, np.ndarray, Optional[float]]:
+    ) -> Generator[Optional[float], np.ndarray, Optional[float]]:
         """Keep the flowrate steady by continuously calculating the flowrate and periodically
         adjusting the syringe position. Need to initially pass in the flowrate to maintain.
 
@@ -192,8 +192,8 @@ class Routines:
             Raised if the percentage of failed correlations exceeds FAILED_CORR_PERC_TOLERANCE of all measurements.
         """
 
-        img, timestamp = yield 0.0  # yield 0.0 to tame the mypy type hint beast
-        flow_val: float = None
+        img, timestamp = yield None
+        flow_val: Optional[float] = None
         h, w = img.shape
         flow_controller = FlowController(mscope.pneumatic_module, h, w)
         flow_controller.set_target_flowrate(target_flowrate)
