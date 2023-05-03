@@ -5,9 +5,8 @@ Displays camera preview and conveys info to user during runs."""
 import sys
 import numpy as np
 
-from time import perf_counter, strftime, gmtime
+from time import strftime, gmtime
 from qimage2ndarray import gray2qimage
-from matplotlib.streamplot import streamplot
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -23,7 +22,7 @@ from PyQt5.QtWidgets import (
     QScrollBar,
     QDesktopWidget,
 )
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, Qt
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QPixmap, QIcon
 
 from ulc_mm_package.image_processing.flow_control import get_flow_error
@@ -33,7 +32,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_IDX_MAP,
 )
 from ulc_mm_package.scope_constants import MAX_FRAMES
-from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
 from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
     ICON_PATH,
@@ -148,7 +146,7 @@ class LiveviewGUI(QMainWindow):
         )
 
         # Set color based on status
-        if (self.target_flowrate != None) and isinstance(val, (float, int)):
+        if (self.target_flowrate is not None) and isinstance(val, (float, int)):
             if get_flow_error(self.target_flowrate, val) == 0:
                 self._set_color(self.flowrate_val, STATUS.GOOD)
             else:
@@ -228,7 +226,7 @@ class LiveviewGUI(QMainWindow):
         self.focus_title = QLabel("FOCUS ERROR (motor steps)")
         self.flowrate_title = QLabel("CELL FLOWRATE (FoVs/sec)")
         self.focus_lbl = QLabel("Target = 0")
-        self.flowrate_lbl = QLabel(f"Target = -")
+        self.flowrate_lbl = QLabel("Target = -")
         self.focus_val = QLabel("-")
         self.flowrate_val = QLabel("-")
 

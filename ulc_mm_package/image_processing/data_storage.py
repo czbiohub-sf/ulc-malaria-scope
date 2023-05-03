@@ -1,14 +1,16 @@
-import logging
+import io
 import csv
-from time import perf_counter
 import shutil
-from typing import Dict, List, Optional
-from os import mkdir, path
+import logging
+
+from pathlib import Path
+from time import perf_counter
 from datetime import datetime
 from concurrent.futures import Future
+from typing import Dict, List, Optional
 
-import cv2
 import numpy as np
+import cv2
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
@@ -29,16 +31,16 @@ class DataStorage:
     def __init__(self, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
         self.zw = ZarrWriter()
-        self.md_writer = None
-        self.metadata_file = None
-        self.main_dir = None
+        self.md_writer: Optional[csv.DictWriter] = None
+        self.metadata_file: Optional[io.TextIOWrapper] = None
+        self.main_dir: Optional[Path] = None
         self.md_keys = None
-        if default_fps != None:
+        if default_fps is not None:
             self.fps = default_fps
             self.dt = 1 / self.fps
         else:
-            self.dt = 0
-        self.prev_write_time = 0
+            self.dt = 0.0
+        self.prev_write_time = 0.0
 
         # Calculate max number of digits, to zeropad subsample img filenames
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
@@ -46,17 +48,15 @@ class DataStorage:
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
         self.external_dir = external_dir
-        self.main_dir = external_dir + datetime_str
+        self.main_dir = Path(external_dir + datetime_str)
 
         try:
-            mkdir(self.main_dir)
+            self.main_dir.mkdir()
         except FileNotFoundError as e:
-            raise DataStorageError(
-                f"DataStorageError - Unable to make top-level directory: {e}"
-            )
+            raise DataStorageError(f"Unable to make top-level directory: {e}")
         except PermissionError as e:
-            raise DataStorage(
-                f"DataStorageError - Unable to make top-level directory, permission issue: {e}"
+            raise DataStorageError(
+                f"Unable to make top-level directory, permission issue: {e}"
             )
 
     def createNewExperiment(
@@ -81,23 +81,27 @@ class DataStorage:
             A list of the metadata keys to be stored on a per-image basis. The keys are used to create a .csv file.
         """
 
-        if self.main_dir == None:
+        if self.main_dir is None:
             self.createTopLevelFolder(ext_dir, datetime_str)
+
+        # mypy
+        assert self.main_dir is not None
 
         # Create per-image metadata file
         time_str = datetime.now().strftime(DATETIME_FORMAT)
         self.experiment_folder = time_str + f"_{custom_experiment_name}"
 
         try:
-            mkdir(path.join(self.main_dir, self.experiment_folder))
+            (self.main_dir / self.experiment_folder).mkdir()
         except Exception as e:
-            raise DataStorage(e)
+            raise DataStorageError from e
 
         filename = (
-            path.join(self.main_dir, self.experiment_folder, time_str)
-            + f"perimage_{custom_experiment_name}_metadata.csv"
+            self.main_dir
+            / self.experiment_folder
+            / f"{time_str}perimage_{custom_experiment_name}_metadata.csv"
         )
-        self.metadata_file = open(f"{filename}", "w")
+        self.metadata_file = open(str(filename), "w")
         self.md_writer = csv.DictWriter(
             self.metadata_file, fieldnames=per_image_metadata_keys
         )
@@ -105,8 +109,9 @@ class DataStorage:
 
         # Create experiment initialization metadata file
         exp_run_md_file = (
-            path.join(self.main_dir, self.experiment_folder, time_str)
-            + f"exp_{custom_experiment_name}_metadata.csv"
+            self.main_dir
+            / self.experiment_folder
+            / f"{time_str}exp_{custom_experiment_name}_metadata.csv"
         )
         with open(f"{exp_run_md_file}", "w") as f:
             writer = csv.DictWriter(
@@ -117,10 +122,11 @@ class DataStorage:
 
         # Create Zarr Storage
         filename = (
-            path.join(self.main_dir, self.experiment_folder, time_str)
-            + f"_{custom_experiment_name}"
+            self.main_dir
+            / self.experiment_folder
+            / f"{time_str}_{custom_experiment_name}"
         )
-        self.zw.createNewFile(filename)
+        self.zw.createNewFile(str(filename))
 
     def writeData(self, image: np.ndarray, metadata: Dict, count: int):
         """Write a new image and its corresponding metadata.
@@ -134,11 +140,21 @@ class DataStorage:
             Dictionary of the per-image metadata to save. Must match the keys that were used to
             initialize the metadata file in `createNewExperiment(...)`
         """
-
-        if self.zw.writable and perf_counter() - self.prev_write_time > self.dt:
+        if self.is_writable():
+            assert self.md_writer is not None, "DataStorage has not been initialized"
             self.prev_write_time = perf_counter()
             self.zw.threadedWriteSingleArray(image, count)
             self.md_writer.writerow(metadata)
+
+    def is_writable(self) -> bool:
+        """Checks whether data can be written.
+
+        Returns
+        -------
+        bool
+        """
+
+        return self.zw.writable and perf_counter() - self.prev_write_time > self.dt
 
     def writeSingleImage(self, image: np.ndarray, custom_image_name: str):
         """Save a single image w/ a custom suffix
@@ -151,12 +167,12 @@ class DataStorage:
         custom_image_name: str
             Name to use to save the image (appended at the end of the timestamp)
         """
-
+        assert self.main_dir is not None, "DataStorage has not been initialized"
         filename = (
-            path.join(self.main_dir, datetime.now().strftime(DATETIME_FORMAT))
-            + f"_{custom_image_name}.png"
+            self.main_dir
+            / f"{datetime.now().strftime(DATETIME_FORMAT)}_{custom_image_name}.png"
         )
-        cv2.imwrite(filename, image)
+        cv2.imwrite(str(filename), image)
 
     def close(self) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
@@ -180,6 +196,8 @@ class DataStorage:
             future = self.zw.threadedCloseFile()
 
             return future
+
+        return None
 
     @classmethod
     def _get_remaining_storage_size_GB(cls, ssd_dir: str) -> float:
@@ -241,8 +259,8 @@ class DataStorage:
 
         for idx in indices:
             img = self.zw.array[..., idx]
-            filepath = path.join(sub_seq_path, f"{idx:0{self.digits}d}.png")
-            cv2.imwrite(filepath, img)
+            filepath = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
+            cv2.imwrite(str(filepath), img)
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
@@ -252,18 +270,15 @@ class DataStorage:
         str:
             Path as a string
         """
-
-        if self.zw.store != None:
+        if self.zw.store is not None:
+            assert self.main_dir is not None, "DataStorage has not been initialized"
             try:
-                dir_path = path.join(
-                    self.main_dir, self.experiment_folder, "sub_sample_imgs/"
-                )
-                mkdir(dir_path)
-                return dir_path
-            except:
-                # TODO
-                print(f"Could not create the subsample directory")
-                raise
+                dir_path = self.main_dir / self.experiment_folder / "sub_sample_imgs"
+                dir_path.mkdir()
+                return str(dir_path)
+            except Exception as e:
+                self.logger.error("Could not create the subsample directory: {e}")
+                raise e
         else:
             raise
 
@@ -294,9 +309,9 @@ class DataStorage:
                 f"Too few images to extract {num_subsequences} subsequences of size {subsequence_length}"
             )
 
-        all_indices = []
+        all_indices: List[int] = []
         for multiple in range(0, num_subsequences):
             idx = int(multiple * interval)
-            all_indices = all_indices + list(range(idx, idx + subsequence_length))
+            all_indices.extend(list(range(idx, idx + subsequence_length)))
 
         return all_indices

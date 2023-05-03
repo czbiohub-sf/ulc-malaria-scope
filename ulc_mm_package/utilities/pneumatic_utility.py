@@ -15,17 +15,21 @@
 
 
 import os
-import argparse
-import socket
 import time
-from pathlib import Path
-from os import system
+import socket
+import argparse
 
 import numpy as np
+import numpy.typing as npt
 import matplotlib.pyplot as plt
+
+from os import system
+from pathlib import Path
+from typing import Tuple
 
 from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 from ulc_mm_package.hardware.real.pneumatic_module import AdafruitMPRLS
+
 
 PWM_FREQ = 100
 DUTY_MAX = 21.2 / 100
@@ -36,8 +40,8 @@ P_GAIN = 0.001
 P_SET_DEF = 950
 LOOP_DELAY = 0.1
 N_SWEEP_POINTS = 100
-PERC_LOWER = 4
-PERC_UPPER = 96
+PERC_LOWER = 2
+PERC_UPPER = 98
 
 
 def init_argparse() -> argparse.ArgumentParser:
@@ -53,7 +57,9 @@ def init_argparse() -> argparse.ArgumentParser:
     return parser
 
 
-def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
+def calibrate_range(
+    mpr: AdafruitMPRLS, pwm: dtoverlay_PWM
+) -> Tuple[npt.NDArray, npt.NDArray]:
     # Sweeps the PWM duty ratio over a wider range in order
     # to generate a pressure vs. duty ratio plot for calibration purposes
 
@@ -116,7 +122,7 @@ def create_calibration_file(cal) -> None:
     # Writes upper and lower duty ratio bounds to a configuration file
 
     host = socket.gethostname()
-    parent_dir = Path(".").resolve().parents[0]
+    parent_dir = Path(__file__).resolve().parents[1]
 
     # Attempt to make config dir if not already there
     try:

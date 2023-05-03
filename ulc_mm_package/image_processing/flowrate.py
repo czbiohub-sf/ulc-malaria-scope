@@ -1,4 +1,3 @@
-import multiprocessing as mp
 from typing import cast, List, Tuple
 
 import cv2
@@ -74,6 +73,25 @@ class FlowRateEstimator:
 
         self._prev_img: np.ndarray = None
         self.scale_factor = scale_factor
+<<<<<<< HEAD
+=======
+        self.coeff_of_var_thresh = coeff_of_var_thresh
+        self.failed_corr_counter = 0
+
+    def _getAverage(self) -> Tuple[float, float]:
+        """Return the mean of the dx and dy displacement arrays"""
+        return cast(Tuple[float, float], (np.average(self.dx), np.average(self.dy)))
+
+    def _getStandardDeviation(self) -> Tuple[float, float]:
+        """Return the standard deviation of the dx and dy displacement arrays"""
+        return float(np.std(self.dx)), float(np.std(self.dy))
+
+    def getStatsAndReset(self) -> Tuple[float, float, float, float]:
+        """Returns the means and standard deviations of all the values in the x and y displacement arrays
+        and then resets the calculation counter.
+
+        A user calling this function should only call it once `isFull` returns True.
+>>>>>>> develop
 
     def reset(self) -> None:
         """Reset initialization booleans."""

@@ -30,7 +30,6 @@ from openvino.runtime import (
     Type,
     InferRequest,
     AsyncInferQueue,
-    Tensor,
 )
 
 
@@ -220,7 +219,7 @@ class NCSModel:
 
     def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
         r = AsyncInferenceResult(
-            id=userdata, result=infer_request.output_tensors[0].data[:]
+            id=userdata, result=infer_request.output_tensors[0].data.copy()
         )
         with lock_timeout(self.asyn_result_lock):
             self._asyn_results.append(r)
@@ -230,7 +229,7 @@ class NCSModel:
     ) -> None:
         result_list.append(
             AsyncInferenceResult(
-                id=userdata, result=infer_request.output_tensors[0].data[:]
+                id=userdata, result=infer_request.output_tensors[0].data.copy()
             )
         )
 
@@ -239,7 +238,7 @@ class NCSModel:
             return maybe_list
         return [maybe_list]
 
-    def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
+    def _format_image_to_tensor(self, img: npt.NDArray) -> npt.NDArray:
         return np.expand_dims(img, (0, 3))
 
     def shutdown(self):

@@ -10,14 +10,14 @@ Purpose: Dummy hardware object simulating camera.
 
 import cv2
 
-from time import time, perf_counter, sleep
+from time import perf_counter, sleep
 
 from ulc_mm_package.scope_constants import VIDEO_PATH
+from ulc_mm_package.hardware.camera import CameraError, CameraBase
 from ulc_mm_package.hardware.hardware_constants import DEFAULT_EXPOSURE_MS
-from ulc_mm_package.hardware.camera import CameraError
 
 
-class SimCamera:
+class SimCamera(CameraBase):
     def __init__(self):
         self._isActivated = True
 
@@ -29,8 +29,6 @@ class SimCamera:
             self.video = cv2.VideoCapture(VIDEO_PATH)
             self.frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
             self.fps = self.video.get(cv2.CAP_PROP_FPS)
-
-            success = True
 
         except Exception as e:
             print(e)

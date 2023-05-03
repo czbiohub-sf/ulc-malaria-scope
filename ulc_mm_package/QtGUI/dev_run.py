@@ -1,21 +1,48 @@
-# FIXME no stars!
-from ulc_mm_package.QtGUI.gui_constants import *
+from ulc_mm_package.QtGUI.gui_constants import FLOWCELL_QC_FORM_LINK
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
 from ulc_mm_package.scope_constants import (
+    LOCKFILE,
     SSD_DIR,
     VIDEO_PATH,
     VIDEO_REC,
     SIMULATION,
 )
-from ulc_mm_package.hardware.scope import MalariaScope, Components, GPIOEdge
+from ulc_mm_package.hardware.scope import MalariaScope, Components
 
-# FIXME no stars!
-from ulc_mm_package.hardware.hardware_modules import *
+from ulc_mm_package.hardware.motorcontroller import (
+    Direction,
+    MotorControllerError,
+    MotorInMotion,
+)
+from ulc_mm_package.hardware.led_driver_tps54201ddct import LEDError
+from ulc_mm_package.hardware.pim522_rotary_encoder import EncoderI2CError
+from ulc_mm_package.hardware.pneumatic_module import (
+    PneumaticModule,
+    PneumaticModuleError,
+    PressureSensorNotInstantiated,
+    SyringeInMotion,
+    SyringeEndOfTravel,
+    PressureSensorStaleValue,
+)
+
 from ulc_mm_package.hardware.scope_routines import Routines
 
-# FIXME no stars!
-from ulc_mm_package.image_processing.processing_modules import *
+from ulc_mm_package.image_processing.autobrightness import (
+    BrightnessTargetNotAchieved,
+    BrightnessCriticallyLow,
+    LEDNoPower,
+)
+from ulc_mm_package.image_processing.flow_control import (
+    FlowController,
+    CantReachTargetFlowrate,
+    LowConfidenceCorrelations,
+)
+from ulc_mm_package.image_processing.zstack import (
+    full_sweep_image_collection,
+    local_sweep_image_collection,
+)
+
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
@@ -24,6 +51,7 @@ from ulc_mm_package.utilities.email_utils import send_ngrok_email
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 
+import os
 import sys
 import traceback
 import numpy as np
@@ -32,12 +60,11 @@ import subprocess
 
 from typing import Dict
 from time import perf_counter, sleep
-from os import listdir, mkdir, path
+from os import listdir, path
 from datetime import datetime, timedelta
-from PyQt5 import QtWidgets, uic
+from PyQt5 import QtWidgets, uic  # type: ignore
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
-from cv2 import imwrite
 from qimage2ndarray import gray2qimage
 from gpiozero import CPUTemperature
 
@@ -119,7 +146,6 @@ class AcquisitionThread(QThread):
         self.flowcontrol_enabled = False
         self.fast_flow_enabled = False
         self.autobrightness = self.routines.autobrightnessRoutine(mscope)
-        self.autobrightness.send(None)
         self.autobrightness_on = False
 
         # Single-shot autofocus
@@ -130,7 +156,7 @@ class AcquisitionThread(QThread):
                 f'got {str(e)}:\n {subprocess.getoutput("lsusb | grep Myriad")}'
             )
         self.active_autofocus = False
-        self.prev_autofocus_time = 0
+        self.prev_autofocus_time = 0.0
         self.af_adjustment_done = False
 
     def run(self):
@@ -203,17 +229,14 @@ class AcquisitionThread(QThread):
 
     def save(self, image):
         if self.single_save:
-            filename = (
-                path.join(self.main_dir, datetime.now().strftime(DATETIME_FORMAT))
-                + f"{self.custom_image_prefix}.png"
-            )
-            imwrite(filename, image)
+            self.data_storage.writeSingleImage(image, self.custom_image_prefix)
             self.single_save = False
 
         if self.continuous_save:
-            self.data_storage.writeData(image, self.getMetadata(), self.im_counter)
-            self.measurementTime.emit(int(perf_counter() - self.start_time))
-            self.im_counter += 1
+            if self.data_storage.is_writable():
+                self.data_storage.writeData(image, self.getMetadata(), self.im_counter)
+                self.measurementTime.emit(int(perf_counter() - self.start_time))
+                self.im_counter += 1
 
     def updateGUIElements(self):
         self.update_counter += 1
@@ -225,7 +248,7 @@ class AcquisitionThread(QThread):
 
         if self.update_counter % self.num_loops == 0:
             self.update_counter = 0
-            if self.pneumatic_module != None:
+            if self.pneumatic_module is not None:
                 try:
                     # TODO: do something with the status
                     (
@@ -242,7 +265,7 @@ class AcquisitionThread(QThread):
             # Update temperatures
             self.temperatures.emit(1)
 
-        if self.finish_saving_future != None:
+        if self.finish_saving_future is not None:
             if self.finish_saving_future.done():
                 self.doneSaving.emit(1)
                 self.finish_saving_future = None
@@ -251,10 +274,11 @@ class AcquisitionThread(QThread):
         self.camera.exposureTime_ms = exposure
 
     def takeImage(self):
-        if self.main_dir == None:
-            self.main_dir = self.external_dir + datetime.now().strftime(DATETIME_FORMAT)
-            mkdir(self.main_dir)
-            self.data_storage.main_dir = self.main_dir
+        if self.main_dir is None:
+            self.data_storage.createTopLevelFolder(
+                self.external_dir, datetime.now().strftime(DATETIME_FORMAT)
+            )
+            self.main_dir = self.data_storage.main_dir
 
         if self.continuous_save:
             self.data_storage.createNewExperiment(
@@ -264,8 +288,6 @@ class AcquisitionThread(QThread):
                 experiment_initialization_metdata={},
                 per_image_metadata_keys=self.getMetadata().keys(),
             )
-            if self.main_dir == None:
-                self.main_dir = self.data_storage.main_dir
 
             self.im_counter = 0
             self.start_time = perf_counter()
@@ -288,15 +310,15 @@ class AcquisitionThread(QThread):
 
     def runFullZStack(self):
         self.takeZStack = True
-        self.zstack = takeZStackCoroutine(
-            None, motor=self.motor, save_loc=self.external_dir
+        self.zstack = full_sweep_image_collection(
+            motor=self.motor, steps_per_coarse=10, save_loc=self.external_dir
         )
         self.zstack.send(None)
 
     def runLocalZStack(self):
         self.takeZStack = True
-        self.zstack = symmetricZStackCoroutine(
-            None, self.motor, self.motor.pos, save_loc=self.external_dir
+        self.zstack = local_sweep_image_collection(
+            self.motor, self.motor.pos, save_loc=self.external_dir
         )
         self.zstack.send(None)
 
@@ -342,7 +364,6 @@ class AcquisitionThread(QThread):
         self.fastFlowRoutine = self.routines.flow_control_routine(
             self.mscope, self.target_flowrate, ramp=True
         )
-        self.fastFlowRoutine.send(None)
         self.initializeFlowControl = False
         self.fast_flow_enabled = True
 
@@ -358,14 +379,13 @@ class AcquisitionThread(QThread):
         if self.fast_flow_enabled:
             try:
                 flow_val = self.fastFlowRoutine.send((img, timestamp))
-                if flow_val != None:
+                if flow_val is not None:
                     self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
                 self.flowControl = self.routines.flow_control_routine(
                     self.mscope, self.target_flowrate
                 )
-                self.flowControl.send(None)
                 self.fast_flow_enabled = False
                 self.flowcontrol_enabled = True
                 print(f"Final fast flow val: {final_val}")
@@ -378,7 +398,7 @@ class AcquisitionThread(QThread):
             except LowConfidenceCorrelations:
                 self.stopActiveFlowControl()
                 print(
-                    f"A number of recent xcorr calculations have failed. Disabling active flow control."
+                    "A number of recent xcorr calculations have failed. Disabling active flow control."
                 )
                 self.pressureLeakDetected.emit(1)
 
@@ -386,7 +406,7 @@ class AcquisitionThread(QThread):
             try:
                 flow_val = self.flowControl.send((img, timestamp))
                 self.syringePosChanged.emit(1)
-                if flow_val != None:
+                if flow_val is not None:
                     self.flowValChanged.emit(flow_val)
             except CantReachTargetFlowrate:
                 self.stopActiveFlowControl()
@@ -475,7 +495,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread = AcquisitionThread(self.external_dir, mscope)
         self.recording = False
         if not hardware_status[Components.CAMERA]:
-            print(f"Error initializing camera. Disabling camera GUI elements.")
+            print("Error initializing camera. Disabling camera GUI elements.")
             self.btnSnap.setEnabled(False)
             self.chkBoxRecord.setEnabled(False)
             self.txtBoxExposure.setEnabled(False)
@@ -488,7 +508,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.setDutyCycle(0)
             self.vsLED.setValue(0)
             self.lblLED.setText(f"{int(self.vsLED.value())}%")
-            self.btnLEDToggle.setText(f"Turn off")
+            self.btnLEDToggle.setText("Turn off")
             self.vsLED.valueChanged.connect(self.vsLEDHandler)
             self.btnLEDToggle.clicked.connect(self.btnLEDToggleHandler)
             self.btnAutobrightness.clicked.connect(self.btnAutobrightnessHandler)
@@ -503,6 +523,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             sleep(0.5)
             self.motor.move_abs(int(self.motor.max_pos // 2))
             self.lblFocusMax.setText(f"{self.motor.max_pos}")
+
+            self.btnFullZStack.setText("Full sweep+save")
+            self.btnLocalZStack.setText("Local sweep+save")
 
             self.btnFocusUp.clicked.connect(self.btnFocusUpHandler)
             self.btnFocusDown.clicked.connect(self.btnFocusDownHandler)
@@ -744,7 +767,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
     @pyqtSlot(float)
     def updateFlowVal(self, flow_val):
-        if flow_val != None:
+        if flow_val is not None:
             self.lblFlowrate.setText(f"Flowrate: {flow_val:.2f}")
 
     @pyqtSlot(float)
@@ -783,12 +806,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsLED.blockSignals(False)
         self.vsLED.setEnabled(True)
         self.led.setDutyCycle(int(self.vsLED.value()) / 100)
-        self.btnLEDToggle.setText(f"Turn off")
+        self.btnLEDToggle.setText("Turn off")
 
     def _disableLEDGUIElements(self):
         self.vsLED.blockSignals(True)
         self.vsLED.setEnabled(False)
-        self.btnLEDToggle.setText(f"Turn on")
+        self.btnLEDToggle.setText("Turn on")
 
     def btnLEDToggleHandler(self):
         if self.led._isOn:
@@ -802,13 +825,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.autobrightness = (
             self.acquisitionThread.routines.autobrightnessRoutine(self.mscope)
         )
-        self.acquisitionThread.autobrightness.send(None)
         self.btnAutobrightness.setEnabled(False)
         self.btnLEDToggle.setEnabled(False)
         self.vsLED.blockSignals(True)
         self.vsLED.setEnabled(False)
         self.acquisitionThread.autobrightness_on = True
-        self.btnLEDToggle.setText(f"Turn off")
+        self.btnLEDToggle.setText("Turn off")
 
     @pyqtSlot(int)
     def autobrightnessDone(self, val):
@@ -897,7 +919,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         try:
             self.motor.threaded_move_abs(pos)
         except MotorInMotion:
-            print(f"Motor already in motion.")
+            print("Motor already in motion.")
 
         self.txtBoxFocus.setText(f"{self.motor.pos}")
         self.acquisitionThread.updateMotorPos = True
@@ -924,7 +946,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Full Range ZStack",
-            "Press okay to sweep the motor over its entire range and automatically find and move to the focal position.",
+            "Press okay to sweep the motor over its entire range and save the images (save 1 img/step).",
             cancel=True,
         )
 
@@ -936,7 +958,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Local Vicinity ZStack",
-            "Press okay to sweep the motor over its current nearby vicinity and move to the focal position.",
+            "Press okay to sweep the motor over its current nearby vicinity and save images (note: by default we save 30 imgs/step so this may be slow).",
             cancel=True,
         )
 
@@ -974,22 +996,26 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
     def btnFlowUpHandler(self):
         try:
             self.pneumatic_module.threadedIncreaseDutyCycle()
+            duty_cycle = self.pneumatic_module.duty_cycle
+            self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
+            self.txtBoxFlow.setText(f"{duty_cycle}")
         except SyringeInMotion:
             # TODO: Change to logging
             print("Syringe already in motion.")
-        duty_cycle = self.pneumatic_module.duty_cycle
-        self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
-        self.txtBoxFlow.setText(f"{duty_cycle}")
+        except SyringeEndOfTravel:
+            print("Syringe end of travel (top range).")
 
     def btnFlowDownHandler(self):
         try:
             self.pneumatic_module.threadedDecreaseDutyCycle()
+            duty_cycle = self.pneumatic_module.duty_cycle
+            self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
+            self.txtBoxFlow.setText(f"{duty_cycle}")
         except SyringeInMotion:
             # TODO: Change to logging
             print("Syringe already in motion.")
-        duty_cycle = self.pneumatic_module.duty_cycle
-        self.vsFlow.setValue(self.convertTovsFlowVal(duty_cycle))
-        self.txtBoxFlow.setText(f"{duty_cycle}")
+        except SyringeEndOfTravel:
+            print("Syringe end of travel (bottom range).")
 
     def convertFromvsFlowVal(self):
         return (
@@ -1119,7 +1145,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.led.close()
 
             # Turn off camera
-            if self.acquisitionThread != None:
+            if self.acquisitionThread is not None:
                 self.acquisitionThread.camera_activated = False
                 self.acquisitionThread.camera.stopAcquisition()
                 self.acquisitionThread.camera.deactivateCamera()
@@ -1127,6 +1153,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             # Turn off encoder
             if self.encoder:
                 self.encoder.close()
+
+            try:
+                os.remove(LOCKFILE)
+                print(f"Removed lockfile ({LOCKFILE}).")
+            except FileNotFoundError:
+                print(f"Lockfile ({LOCKFILE}) does not exist and could not be deleted.")
 
             quit()
 
@@ -1136,6 +1168,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
+    if path.isfile(LOCKFILE):
+        print(
+            f"Terminating run. Lockfile ({LOCKFILE}) exists, so scope is locked while another run is in progress."
+        )
+        sys.exit(1)
+    else:
+        open(LOCKFILE, "w")
+
     try:
         app = QtWidgets.QApplication(sys.argv)
         main_window = MalariaScopeGUI()

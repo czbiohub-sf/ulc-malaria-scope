@@ -5,18 +5,24 @@ class EWMAFiltering:
     def __init__(self, alpha: float):
         """Initialize the EWMA filter with a particular alpha and initialization value.
 
-        Usage
-        -----
-            filter = EWMAFiltering(alpha=0.1)
-            filter.init_val = 10
+                Usage
+                -----
+                    filter = EWMAFiltering(alpha=0.1)
+        <<<<<<< HEAD
+                    filter.init_val = 10
+        =======
+                    filter.set_init_val(10)
+        >>>>>>> develop
 
-            for new_measurement in measurements:
-                new_val = filter.update_and_get_val(new_measurement)
+                    for new_measurement in measurements:
+                        new_val = filter.update_and_get_val(new_measurement)
 
-        Parameters
-        ----------
-        alpha : float
-            Smoothing factor for the EWMA filter (0 < alpha < 1, lower means more memory, higher means more weight/confidence in new measurements)
+                Parameters
+                ----------
+                alpha : float
+                    Smoothing factor for the EWMA filter (0 < alpha < 1)
+                        - lower means more memory/heavier smoothing,
+                        - higher means more weight/confidence given to new measurements/i.e noisier
         """
 
         self._alpha = alpha
@@ -32,10 +38,10 @@ class EWMAFiltering:
         Exceptions
         ----------
         ValueError:
-            Alpha must be alpha > 1 or alpha < 0
+            Alpha must be 0 < alpha < 1
         """
 
-        if not isinstance(alpha, float) or not 0 < alpha < 1:
+        if not 0 < alpha < 1:
             raise ValueError(
                 f"Invalid alpha, must be 0 < alpha < 1. Received: {alpha, type(alpha)}"
             )
@@ -43,11 +49,13 @@ class EWMAFiltering:
         self._alpha = alpha
 
     def set_init_val(self, init_val: float) -> None:
-        """Set the initialization value"""
-        if not isinstance(init_val, (int, float)):
-            raise ValueError(
-                f"Invalid type for init_val. Must be number (int, float, etc.), received {type(init_val)}"
-            )
+        """Set the initialization value
+
+        Parameters
+        ----------
+        init_val: float
+        """
+
         self.prev_val = init_val
 
     @staticmethod

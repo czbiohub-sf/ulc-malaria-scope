@@ -9,16 +9,16 @@ Servo Motor Pololu HD-1810MG:
     https://www.pololu.com/product/1047
 """
 
+import logging
+import threading
+import configparser
 from time import sleep, perf_counter
 from typing import Tuple
-import configparser
 from pathlib import Path
-import threading
 from concurrent.futures import ThreadPoolExecutor
-import logging
 
-import pigpio
 import board
+import pigpio
 import adafruit_mprls
 
 from ulc_mm_package.scope_constants import CONFIGURATION_FILE
@@ -66,7 +66,7 @@ class PneumaticModule:
         pi: pigpio.pi = None,
     ):
         self.logger = logging.getLogger(__name__)
-        self._pi = pi if pi != None else pigpio.pi()
+        self._pi = pi if pi is not None else pigpio.pi()
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.servo_pin = servo_pin
 
@@ -145,7 +145,11 @@ class PneumaticModule:
             self.logger.info(
                 f"{CONFIGURATION_FILE} was not found, using default values instead for syringe min/max duty cycle."
             )
-            return DEFAULT_SYRINGE_MIN_DUTY_CYCLE, DEFAULT_SYRINGE_MAX_DUTY_CYCLE
+            return (
+                DEFAULT_SYRINGE_MIN_DUTY_CYCLE,
+                DEFAULT_SYRINGE_MAX_DUTY_CYCLE,
+                DEFAULT_STEP,
+            )
 
     def getCurrentDutyCycle(self):
         return self.duty_cycle
@@ -250,11 +254,11 @@ class AdafruitMPRLS:
         pi: pigpio.pi = None,
     ):
         self.logger = logging.getLogger(__name__)
-        self._pi = pi if pi != None else pigpio.pi()
+        self._pi = pi if pi is not None else pigpio.pi()
         self.mprls_rst_pin = mprls_rst_pin
         self.mprls_pwr_pin = mprls_pwr_pin
-        self.prev_poll_time_s = 0
-        self.prev_pressure = 0
+        self.prev_poll_time_s: float = 0.0
+        self.prev_pressure: float = 0.0
         self.prev_status = PressureSensorRead.ALL_GOOD
 
         self.io_error_counter = 0
@@ -309,7 +313,7 @@ class AdafruitMPRLS:
                 raise PressureSensorStaleValue(
                     f"{perf_counter() - self.prev_poll_time_s}s elapsed since last read (last value was: {self.prev_pressure} w/ status {self.prev_status.value})."
                 )
-            self.logger.info(f"Returning previous pressure value.")
+            self.logger.info("Returning previous pressure value.")
             return self.prev_pressure, self.prev_status
 
     def getPressureImmediately(self) -> Tuple[float, PressureSensorRead]:
@@ -361,16 +365,17 @@ class AdafruitMPRLS:
         PressureSensorBusy:
             Raised if a value is unable to be read after max_attempts
         """
-
-        try:
-            if max_attempts <= 0:
-                raise PressureSensorBusy(
-                    f"Failed to get a pressure sensor read after: {max_attempts} attempts."
-                )
-            return self.getPressureImmediately()
-        except PressureSensorBusy:
-            max_attempts -= 1
-            sleep(0.05)
+        n = max_attempts
+        while n >= 0:
+            try:
+                return self.getPressureImmediately()
+            except PressureSensorBusy:
+                n -= 1
+                sleep(0.05)
+        else:
+            raise PressureSensorBusy(
+                f"Failed to get a pressure sensor read after: {max_attempts} attempts."
+            )
 
     def _direct_read(self, timeout_s: float = 1e6) -> bool:
         """Internal function - direct read of mprls buffer.

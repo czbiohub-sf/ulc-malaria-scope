@@ -105,6 +105,7 @@ class FlowController:
         window_size : int
             Size of the exponentially weighted moving average (EWMA) window
         """
+        self.logger = logging.getLogger(__name__)
 
         self.pneumatic_module: PneumaticModule = pneumatic_module
         self.flowrate: Optional[float] = None
@@ -291,5 +292,9 @@ class FlowController:
             except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate(self.flowrate)
 
+    def reset(self):
+        self.fre.reset()
+
     def stop(self):
         self.fre.stop()
+        self.fre.reset()

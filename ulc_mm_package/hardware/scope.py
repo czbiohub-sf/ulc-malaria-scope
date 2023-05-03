@@ -14,7 +14,7 @@ Components
 """
 
 import logging
-import enum
+from enum import Enum, auto
 from time import sleep
 from typing import Dict, Optional, Callable
 
@@ -22,31 +22,50 @@ import pigpio
 
 from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2, CAMERA_FPS
 
-# FIXME no stars!
-from ulc_mm_package.hardware.hardware_modules import *
+from ulc_mm_package.hardware.camera import BaslerCamera, AVTCamera, CameraError
+from ulc_mm_package.hardware.motorcontroller import (
+    DRV8825Nema,
+    Direction,
+    MotorControllerError,
+)
+from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
+from ulc_mm_package.hardware.pim522_rotary_encoder import (
+    PIM522RotaryEncoder,
+    EncoderI2CError,
+)
+from ulc_mm_package.hardware.pneumatic_module import (
+    PneumaticModule,
+    PneumaticModuleError,
+    SyringeInMotion,
+)
+from ulc_mm_package.hardware.fan import Fan
+from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.image_processing.flow_control import FlowController
-from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
+from ulc_mm_package.neural_nets.NCSModel import TPUError
 
 
-class GPIOEdge(enum.Enum):
+class GPIOEdge(Enum):
     RISING_EDGE = 0
     FALLING_EDGE = 1
     EITHER_EDGE = 2
 
 
-class Components(enum.Enum):
-    MOTOR = 0
-    CAMERA = 1
-    PNEUMATIC_MODULE = 2
-    LED = 3
-    FAN = 4
-    ENCODER = 5
-    HT_SENSOR = 6
-    DATA_STORAGE = 7
-    FLOW_CONTROLLER = 8
-    TPU = 9
+class Components(Enum):
+    MOTOR = auto()
+    CAMERA = auto()
+    PNEUMATIC_MODULE = auto()
+    PRESSURE_SENSOR = auto()
+    LED = auto()
+    FAN = auto()
+    ENCODER = auto()
+    HT_SENSOR = auto()
+    DATA_STORAGE = auto()
+    FLOW_CONTROLLER = auto()
+    TPU = auto()
 
 
 class MalariaScope:
@@ -56,6 +75,7 @@ class MalariaScope:
         self.motor_enabled = False
         self.camera_enabled = False
         self.pneumatic_module_enabled = False
+        self.pressure_sensor_enabled = False
         self.led_enabled = False
         self.fan_enabled = False
         self.ht_sensor_enabled = False
@@ -75,6 +95,40 @@ class MalariaScope:
         self._init_TPU()
 
         self.logger.info("Initialized scope hardware.")
+
+    def reset_pneumatic_and_led_and_flow_control(self) -> None:
+        """Set the syringe to its top most position, turn the LED off, reset flow control variables."""
+        self.logger.info(
+            "Resetting pneumatic module, turning LED off, and flow control constants"
+        )
+
+        # Return pneumatic module to topmost position
+        while self.pneumatic_module.is_locked():
+            sleep(0.1)
+
+        try:
+            self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
+
+        # Turn off LED
+        self.led.turnOff()
+
+        # Resetting flow_controller parameters
+        self.flow_controller.reset()
+
+    def reset_for_end_experiment(self) -> None:
+        """Reset syringe, turn LED off, reset flow control, and close data storage."""
+
+        # Reset syringe to top, turn LED off, reset flow control variables
+        self.reset_pneumatic_and_led_and_flow_control()
+
+        # Close data storage
+        closing_file_future = self.data_storage.close()
+        if closing_file_future is not None:
+            while not closing_file_future.done():
+                sleep(1)
 
     def shutoff(self):
         self.logger.info("Shutting off scope hardware.")
@@ -100,6 +154,7 @@ class MalariaScope:
             Components.MOTOR: self.motor_enabled,
             Components.CAMERA: self.camera_enabled,
             Components.PNEUMATIC_MODULE: self.pneumatic_module_enabled,
+            Components.PRESSURE_SENSOR: self.pressure_sensor_enabled,
             Components.LED: self.led_enabled,
             Components.FAN: self.fan_enabled,
             Components.HT_SENSOR: self.ht_sensor_enabled,
@@ -149,10 +204,14 @@ class MalariaScope:
                 # If pressure sensor not created, raises PressureSensorNotInstantiated error
                 # when calling `pneumatic_module.getPressure()`
                 self.logger.error(
-                    f"Pressure sensor initialization failed. {self.pneumatic_module.mpr_err_msg}"
+                    f"Pressure sensor initialization failed. {self.pneumatic_module.mpr.mpr_err_msg}"
                 )
+                self.pressure_sensor_enabled = False
+            else:
+                self.pressure_sensor_enabled = True
 
             self.pneumatic_module_enabled = True
+
         except PneumaticModuleError as e:
             self.logger.error(f"Pressure controller initialization failed. {e}")
 
@@ -198,7 +257,7 @@ class MalariaScope:
                 self.logger.error(f"Encoder I2C initialization failed. {e}")
         else:
             self.logger.error(
-                f"Motor initialization failed, so encoder will not initialize."
+                "Motor initialization failed, so encoder will not initialize."
             )
 
     def _init_humidity_temp_sensor(self):
@@ -265,7 +324,7 @@ class MalariaScope:
                 f"Set callback on pin: {interrupt_pin} w/ debounce time of {glitch_filer_us} us."
             )
         else:
-            self.logger.info(f"We're simulating, no callback set.")
+            self.logger.info("We're simulating, no callback set.")
 
     @staticmethod
     def read_lim_sw(pin: int = LID_LIMIT_SWITCH2):
