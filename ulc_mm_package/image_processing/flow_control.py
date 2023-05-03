@@ -243,7 +243,7 @@ class FlowController:
 
         if self.target_flowrate is None:
             raise TargetFlowrateNotSet(
-                f"Please set a target flowrate using `set_target_flowrate(target_value)' first. The value should be a float."
+                "Please set a target flowrate using `set_target_flowrate(target_value)' first. The value should be a float."
             )
 
         self._add_image_and_update_flowrate(img, timestamp)

@@ -1,10 +1,9 @@
-from typing import cast, List, Tuple
+from typing import List, Tuple
 
 import cv2
 import numpy as np
 
 from ulc_mm_package.hardware import multiprocess_scope_routine as msr
-from ulc_mm_package.image_processing.processing_constants import CORRELATION_THRESH
 
 
 class FlowRateEstimatorError(Exception):

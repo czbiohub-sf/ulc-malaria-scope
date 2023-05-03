@@ -719,7 +719,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.flowcontrol_routine.send(None)
             except LowConfidenceCorrelations:
                 self.logger.error(
-                    f"Flow control - too many measurements have yielded low poor xcorr calculations, something is amiss."
+                    "Flow control - too many measurements have yielded low poor xcorr calculations, something is amiss."
                 )
                 flowrate = None
                 self.default_error.emit(
