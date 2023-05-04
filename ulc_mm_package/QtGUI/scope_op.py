@@ -154,13 +154,19 @@ class ScopeOp(QObject, NamedMachine):
                 "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
-                "name": "autofocus",
+                "name": "autofocus_preflow",
+                "display_name": "autofocus (pre-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
             },
             {
                 "name": "fastflow",
                 "display_name": "flow control",
                 "on_enter": [self._send_state, self._start_fastflow],
+            },
+            {
+                "name": "autofocus_postflow",
+                "display_name": "autofocus (post-flow)",
+                "on_enter": [self._send_state, self._start_autofocus],
             },
             {
                 "name": "experiment",
@@ -208,18 +214,8 @@ class ScopeOp(QObject, NamedMachine):
         self.start_time = None
         self.accumulated_time = 0
 
-        self._set_routine_variables()
-
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
-
-    def _set_routine_variables(self):
-        self.autofocus_batch = []
-
-        self.autobrightness_result = None
-        self.cellfinder_result = None
-        self.autofocus_results = [None, None]
-        self.fastflow_result = None
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -228,8 +224,6 @@ class ScopeOp(QObject, NamedMachine):
         self.freeze_liveview.emit(False)
 
     def _send_state(self, *args):
-        # TODO perhaps delete this to print more useful statements
-
         state_name = self.get_state(self.state).display_name
 
         if self.state != "standby":
@@ -334,8 +328,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope.reset_pneumatic_and_led_and_flow_control()
 
-        self._set_routine_variables()
-
     def _end_pause(self, *args):
         self.set_period.emit(ACQUISITION_PERIOD)
         self.mscope.led.turnOn()
@@ -343,6 +335,7 @@ class ScopeOp(QObject, NamedMachine):
         self.running = True
 
     def _start_autobrightness(self, *args):
+        self.autobrightness_result = None
         self.autobrightness_routine = self.routines.autobrightnessRoutine(self.mscope)
 
         self.img_signal.connect(self.run_autobrightness)
@@ -373,6 +366,7 @@ class ScopeOp(QObject, NamedMachine):
             )
 
     def _start_cellfinder(self, *args):
+        self.cellfinder_result = None
         self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
 
         self.img_signal.connect(self.run_cellfinder)
@@ -386,6 +380,8 @@ class ScopeOp(QObject, NamedMachine):
             self.mscope.motor.move_abs(self.cellfinder_result)
 
     def _start_autofocus(self, *args):
+        self.autofocus_batch = []
+        self.autofocus_results = [None, None]
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self, *args):
@@ -395,6 +391,7 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
             return
 
+        self.fastflow_result = None
         self.fastflow_routine = self.routines.flow_control_routine(
             self.mscope,
             target_flowrate=self.target_flowrate,
