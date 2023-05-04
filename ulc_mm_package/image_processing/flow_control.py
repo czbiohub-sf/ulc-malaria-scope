@@ -168,9 +168,10 @@ class FlowController:
             if xcorr_coeff < CORRELATION_THRESH:
                 self.failed_corr_counter += 1
                 if self.too_many_failed_xcorrs():
+                    num_failed = self.failed_corr_counter
                     self.failed_corr_counter = 0
                     raise LowConfidenceCorrelations(
-                        self.failed_corr_counter,
+                        num_failed,
                         self.counter,
                         FAILED_CORR_PERC_TOLERANCE,
                     )
