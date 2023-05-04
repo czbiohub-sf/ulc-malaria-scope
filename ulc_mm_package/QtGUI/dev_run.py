@@ -139,9 +139,8 @@ class AcquisitionThread(QThread):
 
         # Routines
         self.routines = Routines()
-        self.flow_controller: FlowController = FlowController(
-            self.pneumatic_module, 600, 800
-        )  # default shell
+        mscope.flow_controller.reset()
+        self.flow_controller: FlowController = mscope.flow_controller
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
         self.fast_flow_enabled = False
@@ -223,7 +222,7 @@ class AcquisitionThread(QThread):
             "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
             "flow_control_on": self.flowcontrol_enabled,
             "target_flowrate": self.flow_controller.target_flowrate,
-            "current_flowrate": self.flow_controller.curr_flowrate,
+            "current_flowrate": self.flow_controller.flowrate,
             "focus_adjustment": self.af_adjustment_done,
         }
 
@@ -360,9 +359,9 @@ class AcquisitionThread(QThread):
     def _set_target_flowrate(self, val):
         self.target_flowrate = val
 
-    def initializeActiveFlowControl(self, img: np.ndarray):
-        self.fastFlowRoutine = self.routines.fastFlowRoutine(
-            self.mscope, img, self.target_flowrate
+    def initializeActiveFlowControl(self):
+        self.fastFlowRoutine = self.routines.flow_control_routine(
+            self.mscope, self.target_flowrate, fast_flow=True
         )
         self.initializeFlowControl = False
         self.fast_flow_enabled = True
@@ -374,7 +373,7 @@ class AcquisitionThread(QThread):
 
     def activeFlowControl(self, img: np.ndarray, timestamp: int):
         if self.initializeFlowControl:
-            self.initializeActiveFlowControl(img)
+            self.initializeActiveFlowControl()
 
         if self.fast_flow_enabled:
             try:
@@ -383,8 +382,8 @@ class AcquisitionThread(QThread):
                     self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
-                self.flowControl = self.routines.flowControlRoutine(
-                    self.mscope, self.target_flowrate
+                self.flowControl = self.routines.flow_control_routine(
+                    self.mscope, self.target_flowrate, fast_flow=False
                 )
                 self.fast_flow_enabled = False
                 self.flowcontrol_enabled = True

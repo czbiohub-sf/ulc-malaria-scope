@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QPixmap, QIcon
 
-from ulc_mm_package.image_processing.flow_control import getFlowError
+from ulc_mm_package.image_processing.flow_control import get_flow_error
 
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
@@ -147,7 +147,7 @@ class LiveviewGUI(QMainWindow):
 
         # Set color based on status
         if (self.target_flowrate is not None) and isinstance(val, (float, int)):
-            if getFlowError(self.target_flowrate, val) == 0:
+            if get_flow_error(self.target_flowrate, val) == 0:
                 self._set_color(self.flowrate_val, STATUS.GOOD)
             else:
                 self._set_color(self.flowrate_val, STATUS.BAD)
