@@ -573,10 +573,10 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            flowrate = self.fastflow_routine.send((img, timestamp))
+            self.flowrate = self.fastflow_routine.send((img, timestamp))
 
-            if flowrate is not None:
-                self.update_flowrate.emit(flowrate)
+            if self.flowrate is not None:
+                self.update_flowrate.emit(self.flowrate)
         except CantReachTargetFlowrate as e:
             self.fastflow_result = e.flowrate
             self.logger.error("Fastflow failed. Syringe already at max position.")
@@ -713,12 +713,12 @@ class ScopeOp(QObject, NamedMachine):
 
             t0 = perf_counter()
             try:
-                flowrate = self.flowcontrol_routine.send((img, timestamp))
+                self.flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
                 self.logger.warning(
                     f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
                 )
-                flowrate = None
+                self.flowrate = None
                 self.flowcontrol_routine = self.routines.flow_control_routine(
                     self.mscope, self.target_flowrate
                 )
@@ -726,11 +726,10 @@ class ScopeOp(QObject, NamedMachine):
                 self.logger.warning(
                     f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
                 )
-                flowrate = None
+                self.flowrate = None
                 self.flowcontrol_routine = self.routines.flow_control_routine(
                     self.mscope, self.target_flowrate
                 )
-            self.flowrate = flowrate
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
