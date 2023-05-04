@@ -214,7 +214,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
-    
+
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
 
