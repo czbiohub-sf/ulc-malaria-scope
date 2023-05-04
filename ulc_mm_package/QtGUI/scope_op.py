@@ -390,8 +390,10 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
             return
 
-        self.fastflow_routine = self.routines.fastFlowRoutine(
-            self.mscope, None, target_flowrate=self.target_flowrate
+        self.fastflow_routine = self.routines.flow_control_routine(
+            self.mscope,
+            target_flowrate=self.target_flowrate,
+            fast_flow=True,
         )
 
         self.img_signal.connect(self.run_fastflow)
@@ -399,8 +401,10 @@ class ScopeOp(QObject, NamedMachine):
     def _start_experiment(self, *args):
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
 
-        self.flowcontrol_routine = self.routines.flowControlRoutine(
-            self.mscope, self.target_flowrate
+        self.flowcontrol_routine = self.routines.flow_control_routine(
+            self.mscope,
+            self.target_flowrate,
+            fast_flow=False,
         )
 
         self.density_routine = self.routines.cell_density_routine()
@@ -713,7 +717,7 @@ class ScopeOp(QObject, NamedMachine):
                 )
                 flowrate = None
 
-                self.flowcontrol_routine = self.routines.flowControlRoutine(
+                self.flowcontrol_routine = self.routines.flow_control_routine(
                     self.mscope, self.target_flowrate
                 )
 
