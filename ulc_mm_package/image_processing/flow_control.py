@@ -50,7 +50,7 @@ class LowConfidenceCorrelations(FlowControlError):
     def __init__(self, num_failed_corrs: int, total_pairs: int, tol_perc: float):
         msg = (
             f"Too many recent xcorr calculations have yielded poor confidence. "
-            f"The number of recent low-confidence correlations is = {num_failed_corrs} ({100*num_failed_corrs / total_pairs:.2f}% of measurements) "
+            f"The number of recent low-confidence correlations is = {num_failed_corrs} ({100*num_failed_corrs / total_pairs:.2f}% of measurements (threshold to cause error: {100*tol_perc:.2f}%))) "
         )
         super().__init__(f"{msg}")
 
@@ -146,6 +146,11 @@ class FlowController:
         img: np.ndarray
         time: float
             Timestamp of when the image was received
+
+        Exceptions
+        ----------
+        LowConfidenceCorrelations:
+            Raised if the number of low confidence correlations exceeds some percentage threshold of all flowrate measurements.
         """
 
         dx, dy, xcorr_coeff = self.fre.add_image_and_calculate_pair_displacement(
@@ -163,6 +168,7 @@ class FlowController:
             if xcorr_coeff < CORRELATION_THRESH:
                 self.failed_corr_counter += 1
                 if self.too_many_failed_xcorrs():
+                    self.failed_corr_counter = 0
                     raise LowConfidenceCorrelations(
                         self.failed_corr_counter,
                         self.counter,
@@ -178,8 +184,6 @@ class FlowController:
         "Recent" is defined as the past MIN_NUM_XCORR_FACTOR * num feedback delay frames,
         i.e a multiple of the number of frames that need to elapse before a syringe adjustment is made.
 
-        This function then resets the failed xcorr counter.
-
         Returns
         -------
         bool:
@@ -193,7 +197,6 @@ class FlowController:
                 self.failed_corr_counter / failed_xcorr_window_size
                 > FAILED_CORR_PERC_TOLERANCE
             )
-            self.failed_corr_counter = 0
             return too_many_bad_xcorrs
         else:
             return False

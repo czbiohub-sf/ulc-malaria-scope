@@ -21,7 +21,7 @@ INSIDE_BBOX_FLAG = 0
 # ================ Flow control constants ================ #
 FLOW_CONTROL_EWMA_ALPHA = 0.05
 TOL_PERC = 0.1
-FAILED_CORR_PERC_TOLERANCE = 0.5
+FAILED_CORR_PERC_TOLERANCE = 0.75
 
 # Factor by which to multiply the ewma feebdack adjustment delay (in frames) to set the window size
 # of the past measurements to check for failed xcorrs.

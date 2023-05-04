@@ -716,7 +716,14 @@ class ScopeOp(QObject, NamedMachine):
                     f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
                 )
                 flowrate = None
-
+                self.flowcontrol_routine = self.routines.flow_control_routine(
+                    self.mscope, self.target_flowrate
+                )
+            except LowConfidenceCorrelations as e:
+                self.logger.warning(
+                    f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
+                )
+                flowrate = None
                 self.flowcontrol_routine = self.routines.flow_control_routine(
                     self.mscope, self.target_flowrate
                 )
