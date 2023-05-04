@@ -152,13 +152,19 @@ class ScopeOp(QObject, NamedMachine):
                 "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
-                "name": "autofocus",
+                "name": "autofocus_preflow",
+                "display_name": "autobrightness (pre-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
             },
             {
                 "name": "fastflow",
                 "display_name": "flow control",
                 "on_enter": [self._send_state, self._start_fastflow],
+            },
+            {
+                "name": "autofocus_postflow",
+                "display_name": "autobrightness (post-flow)",
+                "on_enter": [self._send_state, self._start_autofocus],
             },
             {
                 "name": "experiment",
