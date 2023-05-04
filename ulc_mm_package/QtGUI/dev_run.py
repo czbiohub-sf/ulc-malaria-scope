@@ -359,7 +359,7 @@ class AcquisitionThread(QThread):
     def _set_target_flowrate(self, val):
         self.target_flowrate = val
 
-    def initializeActiveFlowControl(self, img: np.ndarray):
+    def initializeActiveFlowControl(self):
         self.fastFlowRoutine = self.routines.flow_control_routine(
             self.mscope, self.target_flowrate, fast_flow=True
         )
@@ -373,7 +373,7 @@ class AcquisitionThread(QThread):
 
     def activeFlowControl(self, img: np.ndarray, timestamp: int):
         if self.initializeFlowControl:
-            self.initializeActiveFlowControl(img)
+            self.initializeActiveFlowControl()
 
         if self.fast_flow_enabled:
             try:
