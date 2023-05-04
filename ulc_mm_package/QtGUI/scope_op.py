@@ -197,6 +197,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
+        self.flowrate = None
         self.target_flowrate = None
 
         self.count = 0
@@ -242,6 +243,8 @@ class ScopeOp(QObject, NamedMachine):
         if self.state == "experiment":
             self.update_cell_count.emit(self.cell_counts)
             self.update_runtime.emit(self._get_experiment_runtime())
+            if self.flowrate is not None:
+                self.update_flowrate.emit(self.flowrate)
 
     def setup(self):
         self.create_timers.emit()
@@ -727,6 +730,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.flowcontrol_routine = self.routines.flow_control_routine(
                     self.mscope, self.target_flowrate
                 )
+            self.flowrate = flowrate
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
@@ -736,9 +740,6 @@ class ScopeOp(QObject, NamedMachine):
             if focus_err is not None:
                 # TODO change this to non int?
                 self.update_focus.emit(int(focus_err))
-
-            if flowrate is not None:
-                self.update_flowrate.emit(flowrate)
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("ui_flowrate_focus", t1 - t0)
