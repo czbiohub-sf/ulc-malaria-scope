@@ -77,7 +77,7 @@ class FlowRateEstimator:
         """Reset initialization booleans."""
 
         self._prev_img = None
-        self.timestamps: List[float] = [0.0, 0.0]
+        self.timestamps = [0.0, 0.0]
 
     def is_primed(self) -> bool:
         """Check whether the estimator is ready to return a value."""
