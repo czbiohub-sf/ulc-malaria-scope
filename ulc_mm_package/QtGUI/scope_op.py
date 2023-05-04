@@ -153,7 +153,7 @@ class ScopeOp(QObject, NamedMachine):
             },
             {
                 "name": "autofocus_preflow",
-                "display_name": "autofocus (pre-flow)",
+                "display_name": "autobrightness (pre-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
             },
             {
@@ -163,7 +163,7 @@ class ScopeOp(QObject, NamedMachine):
             },
             {
                 "name": "autofocus_postflow",
-                "display_name": "autofocus (post-flow)",
+                "display_name": "autobrightness (post-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
             },
             {
@@ -220,7 +220,6 @@ class ScopeOp(QObject, NamedMachine):
 
     def _unfreeze_liveview(self):
         self.freeze_liveview.emit(False)
-self.cellfinder_result = Noneuseful statements
 
         state_name = self.get_state(self.state).display_name
 
