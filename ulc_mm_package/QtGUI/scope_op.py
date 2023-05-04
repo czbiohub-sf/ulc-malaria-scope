@@ -197,6 +197,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
+        self.flowrate = None
         self.target_flowrate = None
 
         self.count = 0
@@ -242,6 +243,8 @@ class ScopeOp(QObject, NamedMachine):
         if self.state == "experiment":
             self.update_cell_count.emit(self.cell_counts)
             self.update_runtime.emit(self._get_experiment_runtime())
+            if self.flowrate is not None:
+                self.update_flowrate.emit(self.flowrate)
 
     def setup(self):
         self.create_timers.emit()
@@ -390,8 +393,10 @@ class ScopeOp(QObject, NamedMachine):
             self.next_state()
             return
 
-        self.fastflow_routine = self.routines.fastFlowRoutine(
-            self.mscope, None, target_flowrate=self.target_flowrate
+        self.fastflow_routine = self.routines.flow_control_routine(
+            self.mscope,
+            target_flowrate=self.target_flowrate,
+            fast_flow=True,
         )
 
         self.img_signal.connect(self.run_fastflow)
@@ -399,8 +404,10 @@ class ScopeOp(QObject, NamedMachine):
     def _start_experiment(self, *args):
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
 
-        self.flowcontrol_routine = self.routines.flowControlRoutine(
-            self.mscope, self.target_flowrate
+        self.flowcontrol_routine = self.routines.flow_control_routine(
+            self.mscope,
+            self.target_flowrate,
+            fast_flow=False,
         )
 
         self.density_routine = self.routines.cell_density_routine()
@@ -566,10 +573,10 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            flowrate = self.fastflow_routine.send((img, timestamp))
+            self.flowrate = self.fastflow_routine.send((img, timestamp))
 
-            if flowrate is not None:
-                self.update_flowrate.emit(flowrate)
+            if self.flowrate is not None:
+                self.update_flowrate.emit(self.flowrate)
         except CantReachTargetFlowrate as e:
             self.fastflow_result = e.flowrate
             self.logger.error("Fastflow failed. Syringe already at max position.")
@@ -706,14 +713,21 @@ class ScopeOp(QObject, NamedMachine):
 
             t0 = perf_counter()
             try:
-                flowrate = self.flowcontrol_routine.send((img, timestamp))
+                self.flowrate = self.flowcontrol_routine.send((img, timestamp))
             except CantReachTargetFlowrate as e:
                 self.logger.warning(
                     f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
                 )
-                flowrate = None
-
-                self.flowcontrol_routine = self.routines.flowControlRoutine(
+                self.flowrate = None
+                self.flowcontrol_routine = self.routines.flow_control_routine(
+                    self.mscope, self.target_flowrate
+                )
+            except LowConfidenceCorrelations as e:
+                self.logger.warning(
+                    f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
+                )
+                self.flowrate = None
+                self.flowcontrol_routine = self.routines.flow_control_routine(
                     self.mscope, self.target_flowrate
                 )
 
@@ -725,9 +739,6 @@ class ScopeOp(QObject, NamedMachine):
             if focus_err is not None:
                 # TODO change this to non int?
                 self.update_focus.emit(int(focus_err))
-
-            if flowrate is not None:
-                self.update_flowrate.emit(flowrate)
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("ui_flowrate_focus", t1 - t0)
@@ -748,7 +759,7 @@ class ScopeOp(QObject, NamedMachine):
             self.img_metadata[
                 "syringe_pos"
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
-            self.img_metadata["flowrate"] = flowrate
+            self.img_metadata["flowrate"] = self.flowrate
             self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
             self.img_metadata["focus_error"] = focus_err
 

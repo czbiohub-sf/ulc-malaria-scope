@@ -14,10 +14,7 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     checkLedWorking,
 )
-from ulc_mm_package.image_processing.flow_control import (
-    CantReachTargetFlowrate,
-    LowConfidenceCorrelations,
-)
+
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
     NoCellsFound,
@@ -169,74 +166,22 @@ class Routines:
                 ) = yield []
 
     @init_generator
-    def flowControlRoutine(
-        self,
-        mscope: MalariaScope,
-        target_flowrate: float,
-    ) -> Generator[Optional[float], np.ndarray, None]:
+    def flow_control_routine(
+        self, mscope: MalariaScope, target_flowrate: float, fast_flow: bool = False
+    ) -> Generator[Optional[float], np.ndarray, Optional[float]]:
         """Keep the flowrate steady by continuously calculating the flowrate and periodically
         adjusting the syringe position. Need to initially pass in the flowrate to maintain.
+
+        If fast_flow is set to true, flow control feedback will run more rapidly (and with more noise) to attempt
+        to reach the target flow rate sooner.
 
         Parameters
         ----------
         mscope: MalariaScope
         target_flowrate: float
             The flowrate value to attempt to keep steady
-        img: np.ndarray
-            Image to be passed into the FlowController
-
-        Exceptions
-        ----------
-        CantReachTargetFlowrate:
-            Raised when the syringe is already at its maximally extended position but the flowrate
-            is still outside the tolerance band.
-        """
-
-        flow_val: Optional[float] = None
-
-        img: np.ndarray
-        img, timestamp = yield flow_val
-
-        mscope.flow_controller.setTargetFlowrate(target_flowrate)
-        while True:
-            img, timestamp = yield flow_val
-            flow_val = mscope.flow_controller.controlFlow(img, timestamp)
-
-    @init_generator
-    def fastFlowRoutine(
-        self,
-        mscope: MalariaScope,
-        img: np.ndarray,
-        target_flowrate: float = processing_constants.FLOWRATE.FAST.value,
-    ) -> Generator[Optional[float], np.ndarray, float]:
-        """Faster flowrate feedback for initial flow ramp-up.
-
-        See FlowController.fastFlowAdjustment for specifics.
-
-        Usage
-        -----
-        - Use this routine to do the initial ramp up. Once it hits the target,
-        it raises a StopIteration exception and a float number (flowrate) is returned via the exception (e.value)
-
-            fastflow_generator = fastFlowRoutine(mscope, None)
-            for img in cam.yieldImages():
-                try:
-                    flow_val = fastflow_generator.send(img)
-                except StopIteration as e:
-                    flow_val = e.value
-            cam.stopAcquisition()
-            print(flow_val)
-
-        Then this flow_val can be passed into `flowControlRoutine` on initialization to set
-        the flowrate that should be held steady: i.e:
-
-            flow_control = flowControlRoutine(mscope, flow_val, None)
-            ...
-            ...etc
-
-        Returns
-        -------
-        float: flow_rate if target achieved
+        fast_flow: bool
+            Toggle whether to do faster feedback loop to reach the target flowrate sooner
 
         Exceptions
         ----------
@@ -245,28 +190,26 @@ class Routines:
             is still outside the tolerance band.
 
         LowConfidenceCorrelations:
-            Raised if the number of recent xcorrs which have 'failed' (had a low correlation value) exceeds
-            2 * the measurement window size.
+            Raised if the percentage of failed correlations exceeds FAILED_CORR_PERC_TOLERANCE of all measurements.
         """
 
-        flow_val = 0.0
-        img, timestamp = yield None
-
-        mscope.flow_controller.setTargetFlowrate(target_flowrate)
+        flow_val: Optional[float] = None
+        mscope.flow_controller.reset()
+        flow_controller = mscope.flow_controller
+        flow_controller.set_target_flowrate(target_flowrate)
+        if fast_flow:
+            flow_controller.set_alpha(
+                processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
+            )  # Double the alpha, ~halve the half life
 
         while True:
             img, timestamp = yield flow_val
-            try:
-                flow_val, flow_error = mscope.flow_controller.fastFlowAdjustment(
-                    img, timestamp
-                )
-            except CantReachTargetFlowrate:
-                raise
-            except LowConfidenceCorrelations:
-                raise
+            flow_val, flow_error = flow_controller.control_flow(img, timestamp)
 
-            if flow_error == 0:
-                return flow_val
+            if fast_flow:
+                if flow_error is not None:
+                    if flow_error == 0:
+                        return flow_val
 
     @init_generator
     def autobrightnessRoutine(

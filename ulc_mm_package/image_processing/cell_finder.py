@@ -102,7 +102,6 @@ class CellFinder:
 
         argmax = np.argmax(self.confidences)
         max_val = self.confidences[argmax]
-        max_map = self.maps[argmax]
 
         if max_val >= CELLS_FOUND_THRESHOLD:
             return self.motor_pos[np.argmax(self.confidences)]
