@@ -221,6 +221,7 @@ class ScopeOp(QObject, NamedMachine):
     def _unfreeze_liveview(self):
         self.freeze_liveview.emit(False)
 
+    def _send_state(self, *args):
         state_name = self.get_state(self.state).display_name
 
         if self.state != "standby":
