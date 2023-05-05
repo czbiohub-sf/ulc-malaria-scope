@@ -22,6 +22,7 @@ from typing import (
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
+from ulc_mm_package.neural_networks.neural_network_constants import IMG_RESIZED_DIMS
 
 from openvino.preprocess import PrePostProcessor
 from openvino.runtime import (
@@ -175,6 +176,13 @@ class NCSModel:
 
         To get results, call 'get_asyn_results'
         """
+        w, h = IMG_RESIZED_DIMS
+        img_h, img_w = input_img.shape
+        if img_h != h or img_w != w:
+            raise ValueError(
+                f"input_img must have shape ({h}, {w}), but has shape ({img_h}, {img_w})"
+            )
+
         input_tensor = self._format_image_to_tensor(input_img)
 
         self._executor.submit(
