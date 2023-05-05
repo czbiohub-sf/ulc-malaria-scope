@@ -401,7 +401,7 @@ class Routines:
         img = yield
 
         # Initial check for cells, return current motor position if cells found
-        cell_finder.add_image(mscope.motor.pos, img)
+        cell_finder.add_image(mscope, img)
         try:
             return cell_finder.get_cells_found_position()
         except NoCellsFound:

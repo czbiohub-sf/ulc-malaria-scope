@@ -80,13 +80,6 @@ class CellFinder:
         self.xcorr_coeffs: List[float] = []
         self.cell_counts: List[int] = []
 
-    def add_image(self, motor_pos: int, img: np.ndarray) -> None:
-        """Check for cells for the given image, store the result + motor position the image was taken at."""
-
-        self.motor_pos.append(motor_pos)
-        xcorr_map = get_correlation_map(img, self.thumbnail, self.downsample_factor)
-        self.xcorr_coeffs.append(np.max(xcorr_map))
-
     def add_image(self, mscope: MalariaScope, img: np.ndarray) -> None:
         """Check for cells for the given image, store the result + motor position the image was taken at.
 
