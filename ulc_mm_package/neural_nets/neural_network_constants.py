@@ -22,3 +22,6 @@ YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_
 
 YOGO_PERIOD_S = 0.1
 YOGO_PERIOD_NUM = int(YOGO_PERIOD_S * ACQUISITION_FPS)
+
+# ================ Image size constants ================ #
+IMG_RESIZED_DIMS = (400, 300)
