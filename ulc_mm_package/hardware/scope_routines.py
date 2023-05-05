@@ -433,7 +433,7 @@ class Routines:
             for pos in range(0, mscope.motor.max_pos, steps_per_image):
                 mscope.motor.move_abs(pos)
                 img = yield
-                cell_finder.add_image(mscope.motor.pos, img)
+                cell_finder.add_image(mscope, img)
                 try:
                     return cell_finder.get_cells_found_position()
                 except NoCellsFound:
