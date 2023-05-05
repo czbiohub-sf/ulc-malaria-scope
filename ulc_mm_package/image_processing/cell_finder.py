@@ -4,10 +4,13 @@ import numpy as np
 from typing import List, Optional
 
 
+from ulc_mm_package.hardware.scope import MalariaScope
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.image_processing.processing_constants import (
     RBC_THUMBNAIL_PATH,
     CELLS_FOUND_THRESHOLD,
-    MIN_POINTS_ABOVE_THRESH,
+    MIN_CELL_COUNT,
 )
 
 RBC_THUMBNAIL = cv2.imread(RBC_THUMBNAIL_PATH, 0)
@@ -74,20 +77,32 @@ class CellFinder:
         )
         self.downsample_factor = downsample_factor
         self.motor_pos: List[int] = []
-        self.confidences: List[float] = []
-        self.maps: List[np.ndarray] = []
+        self.xcorr_coeffs: List[float] = []
+        self.cell_counts: List[int] = []
 
     def add_image(self, motor_pos: int, img: np.ndarray) -> None:
         """Check for cells for the given image, store the result + motor position the image was taken at."""
 
         self.motor_pos.append(motor_pos)
         xcorr_map = get_correlation_map(img, self.thumbnail, self.downsample_factor)
-        self.confidences.append(np.max(xcorr_map))
-        self.maps.append(xcorr_map)
+        self.xcorr_coeffs.append(np.max(xcorr_map))
+
+    def add_image(self, mscope: MalariaScope, img: np.ndarray) -> None:
+        """Check for cells for the given image, store the result + motor position the image was taken at.
+
+        Stores both the cross correlation result and the number of healthy cells detected via YOGO.
+        """
+        res = mscope.cell_diagnosis_model.syn(cv2.resize(img, IMG_RESIZED_DIMS))
+        num_healthy_cells = YOGO.class_instance_count(YOGO.filter_res(res[0]))[0]
+        xcorr_map = get_correlation_map(img, self.thumbnail, self.downsample_factor)
+
+        self.cell_counts.append(num_healthy_cells)
+        self.motor_pos.append(mscope.motor.pos)
+        self.xcorr_coeffs.append(np.max(xcorr_map))
 
     def get_cells_found_position(self) -> Optional[int]:
         """Check if the cross-correlation value exceeds the threshold for cell detection and there are
-        a sufficient number of points above the cells found threshold.
+        a sufficient number of cells present.
 
         Returns
         -------
@@ -100,35 +115,23 @@ class CellFinder:
             does not exceed a threshold.
         """
 
-        argmax = np.argmax(self.confidences)
-        max_val = self.confidences[argmax]
+        argmax = np.argmax(self.xcorr_coeffs)
+        max_val = self.xcorr_coeffs[argmax]
 
-        if max_val >= CELLS_FOUND_THRESHOLD:
-            return self.motor_pos[np.argmax(self.confidences)]
+        if (
+            max_val >= CELLS_FOUND_THRESHOLD
+            and self.cell_counts[argmax] > MIN_CELL_COUNT
+        ):
+            return self.motor_pos[np.argmax(self.xcorr_coeffs)]
 
         raise NoCellsFound(
             "None of the images at any of the motor positions had a maximum cross-correlation exceeding the CELLS_FOUND threshold"
         )
 
-    def sufficient_points_above_thresh(self, xcorr_map: np.ndarray) -> bool:
-        """Check if a sufficient number of points are above the cells found threshold
-        in the xcorr map.
-
-        Parameters
-        ----------
-        xcorr_map: np.ndarray
-
-        Returns
-        -------
-        bool
-        """
-
-        points = np.argwhere(xcorr_map >= CELLS_FOUND_THRESHOLD)
-        return len(points) > MIN_POINTS_ABOVE_THRESH
-
     def reset(self) -> None:
         self.motor_pos = []
-        self.confidences = []
+        self.xcorr_coeffs = []
+        self.cell_counts = []
 
     def find_cells_cross_corr(self, img: np.ndarray) -> float:
         """Returns the max value of the correlation between the RBC thumbnail and the given image (downsampled)
