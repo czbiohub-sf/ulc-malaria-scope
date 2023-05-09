@@ -61,8 +61,8 @@ class dtoverlay_PWM:
         ----------
         duty_cycle_perc: float
             Between 0 - 1.0.
-
         """
+
         if not 0 <= duty_cycle_val_normed <= 1:
             raise InvalidDutyCyclePerc(
                 f"Duty cycle must be between 0 and 1.0. Got {duty_cycle_val_normed}"
