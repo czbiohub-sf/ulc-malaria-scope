@@ -148,6 +148,8 @@ class Routines:
                 for res in sorted(results, key=lambda res: res.id):
                     # TODO if needed, check if stale values are returned
 
+                    move_counter += 1
+
                     steps_from_focus = -res.result[0][0]
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
@@ -170,8 +172,6 @@ class Routines:
                         )
                     except MotorControllerError as e:
                         raise e
-                else:
-                    move_counter += 1
             else:
                 _ = yield None, None, None
 
