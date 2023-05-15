@@ -136,24 +136,34 @@ class Routines:
                     mscope.autofocus_model._executor._work_queue.qsize()
                     > nn_constants.QSIZE_THRESH
                 ):
+                    self.logger.info(
+                        f"Clearing SSAF executor work queue (threshold = {nn_constants.QSIZE_THRESH}, queue = {mscope.autofocus_model._executor._work_queue.qsize()})"
+                    )
                     # TODO test if this is the right way to clear queue
-                    mscope.autofocus_model._executor.work_queue.clear()
-
+                    mscope.autofocus_model._executor._work_queue.clear()
+                    
                     # if we've done this too much:
                     # run_normal_syncrhonous_ssaf
 
+                # for i in range(1, 100):
+                #     mscope.autofocus_model.asyn(img, img_counter)
+                # results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
                 mscope.autofocus_model.asyn(img, img_counter)
-                results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
+
+                # test = 0
 
                 for res in sorted(results, key=lambda res: res.id):
                     # TODO if needed, check if stale values are returned
 
                     move_counter += 1
 
+                    # test += 1
+
                     steps_from_focus = -res.result[0][0]
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
                 throttle_counter = 0
+                # print(test)
 
                 if (
                     move_counter >= ssaf_period_num
