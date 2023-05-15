@@ -134,7 +134,7 @@ class AcquisitionThread(QThread):
         # Hardware peripherals
         self.motor = mscope.motor
         self.pneumatic_module: PneumaticModule = mscope.pneumatic_module
-        mscope._init_data_storage(fps_lim=30)
+        mscope._init_data_storage(fps_lim=40)
         self.data_storage = mscope.data_storage
 
         # Routines
@@ -146,6 +146,7 @@ class AcquisitionThread(QThread):
         self.fast_flow_enabled = False
         self.autobrightness = self.routines.autobrightnessRoutine(mscope)
         self.autobrightness_on = False
+        self.timestamp = 0
 
         # Single-shot autofocus
         try:
@@ -163,10 +164,11 @@ class AcquisitionThread(QThread):
             if self.camera_activated:
                 try:
                     for image, timestamp in self.camera.yieldImages():
+                        self.timestamp = timestamp
                         self.updateGUIElements()
                         self.save(image)
                         self.zStack(image)
-                        self.activeFlowControl(image, timestamp)
+                        self.activeFlowControl(image)
                         self._autobrightness(image)
                         self.autofocusWrapper(image)
 
@@ -214,7 +216,7 @@ class AcquisitionThread(QThread):
             "im_counter": self.im_counter,
             "measurement_type": "placeholder",
             "sample_type": "placeholder",
-            "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
+            "timestamp": self.timestamp,
             "exposure": self.camera.exposureTime_ms,
             "motor_pos": self.motor.pos,
             "pressure_hpa": pressure,
@@ -316,6 +318,7 @@ class AcquisitionThread(QThread):
 
     def runLocalZStack(self):
         self.takeZStack = True
+        self.mscope.fan.turn_off_all()
         self.zstack = local_sweep_image_collection(
             self.motor, self.motor.pos, save_loc=self.external_dir
         )
@@ -330,6 +333,7 @@ class AcquisitionThread(QThread):
                 self.takeZStack = False
                 self.motorPosChanged.emit(self.motor.pos)
                 self.zStackFinished.emit(1)
+                self.mscope.fan.turn_on_all()
             except ValueError:
                 # Occurs if an image is sent while the function is still moving the motor
                 pass
@@ -371,13 +375,13 @@ class AcquisitionThread(QThread):
         self.flowcontrol_enabled = False
         self.initializeFlowControl = False
 
-    def activeFlowControl(self, img: np.ndarray, timestamp: int):
+    def activeFlowControl(self, img: np.ndarray):
         if self.initializeFlowControl:
             self.initializeActiveFlowControl()
 
         if self.fast_flow_enabled:
             try:
-                flow_val = self.fastFlowRoutine.send((img, timestamp))
+                flow_val = self.fastFlowRoutine.send((img, self.timestamp))
                 if flow_val is not None:
                     self.flowValChanged.emit(flow_val)
             except StopIteration as e:
@@ -403,7 +407,7 @@ class AcquisitionThread(QThread):
 
         if self.flowcontrol_enabled:
             try:
-                flow_val = self.flowControl.send((img, timestamp))
+                flow_val = self.flowControl.send((img, self.timestamp))
                 self.syringePosChanged.emit(1)
                 if flow_val is not None:
                     self.flowValChanged.emit(flow_val)
@@ -957,7 +961,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Local Vicinity ZStack",
-            "Press okay to sweep the motor over its current nearby vicinity and save images (note: by default we save 30 imgs/step so this may be slow).",
+            "Press okay to sweep the motor over its current nearby vicinity and save images (note: by default we save 30 imgs/step so this may be slow).\nNOTE: the fans will turn off temporarily!\nDo not be alarmed!!!\nStay CALM!!!!",
             cancel=True,
         )
 
