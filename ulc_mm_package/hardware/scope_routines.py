@@ -1,4 +1,5 @@
 import logging
+import queue
 
 from functools import wraps
 from time import perf_counter, sleep
@@ -132,25 +133,30 @@ class Routines:
                 img = yield steps_from_focus, filtered_error, adjusted
                 adjusted = None
 
-                if (
-                    mscope.autofocus_model._executor._work_queue.qsize()
-                    > nn_constants.QSIZE_THRESH
-                ):
-                    self.logger.info(
-                        f"Clearing SSAF executor work queue (threshold = {nn_constants.QSIZE_THRESH}, queue = {mscope.autofocus_model._executor._work_queue.qsize()})"
-                    )
-                    # TODO test if this is the right way to clear queue
-                    mscope.autofocus_model._executor._work_queue.clear()
-                    
-                    # if we've done this too much:
-                    # run_normal_syncrhonous_ssaf
+                # if (
+                #     mscope.autofocus_model._executor._work_queue.qsize()
+                #     > nn_constants.QSIZE_THRESH
+                # ):
+                #     # TODO test if this is the right way to clear queue
+                #     mscope.autofocus_model._executor.work_queue.clear()
 
-                # for i in range(1, 100):
-                #     mscope.autofocus_model.asyn(img, img_counter)
-                # results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
-                mscope.autofocus_model.asyn(img, img_counter)
+                #     # if we've done this too much:
+                #     # run_normal_syncrhonous_ssaf
 
-                # test = 0
+                with mscope.autofocus_model._executor._work_queue.mutex:
+                    try:
+                        mscope.autofocus_model.asyn(img, img_counter)
+                    except queue.Full: 
+                        mscope.autofocus_model._executor._work_queue.get()
+                        mscope.autofocus_model.asyn(img, img_counter)
+
+                        self.logger.info(
+                            f"Discarded oldest image in SSAF queue because {nn_constants.AF_QSIZE} image queue is full."
+                        )
+
+                results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
+
+                test = 0
 
                 for res in sorted(results, key=lambda res: res.id):
                     # TODO if needed, check if stale values are returned
