@@ -134,35 +134,16 @@ class Routines:
                 adjusted = None
 
                 # Note: TBD because no mutex
-                # try:
-                    # for value in range(0, 100):
                 mscope.autofocus_model.asyn(img, img_counter)
-                    # print(mscope.autofocus_model._executor._work_queue.qsize())
-                # except queue.Full: 
-                #     print(f"FULL: {mscope.autofocus_model._executor._work_queue.qsize()}")
-                #     mscope.autofocus_model._executor._work_queue.get()
-                #     mscope.autofocus_model.asyn(img, img_counter)
-                #     print(f"REFILL: {mscope.autofocus_model._executor._work_queue.qsize()}")
-                #     self.logger.info(
-                #         f"Discarded oldest image in SSAF queue because {nn_constants.AF_QSIZE} image queue is full."
-                #     )
-
                 results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
 
-                test = 0
-
                 for res in sorted(results, key=lambda res: res.id):
-                    # TODO if needed, check if stale values are returned
-
                     move_counter += 1
-
-                    test += 1
 
                     steps_from_focus = -res.result[0][0]
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
                 throttle_counter = 0
-                print(test)
 
                 if (
                     move_counter >= ssaf_period_num
