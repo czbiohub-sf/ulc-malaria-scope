@@ -21,7 +21,7 @@ YOGO_CLASS_LIST: Tuple[str, ...] = ("healthy", "ring", "schizont", "troph", "gam
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
 
 YOGO_PERIOD_S = 0.1
-YOGO_PERIOD_NUM = int(YOGO_PERIOD_S * ACQUISITION_FPS)
+YOGO_PERIOD_NUM = 1
 
 # ================ Image size constants ================ #
 IMG_RESIZED_DIMS = (400, 300)
