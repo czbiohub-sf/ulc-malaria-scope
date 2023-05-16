@@ -133,26 +133,19 @@ class Routines:
                 img = yield steps_from_focus, filtered_error, adjusted
                 adjusted = None
 
-                # if (
-                #     mscope.autofocus_model._executor._work_queue.qsize()
-                #     > nn_constants.QSIZE_THRESH
-                # ):
-                #     # TODO test if this is the right way to clear queue
-                #     mscope.autofocus_model._executor.work_queue.clear()
-
-                #     # if we've done this too much:
-                #     # run_normal_syncrhonous_ssaf
-
-                with mscope.autofocus_model._executor._work_queue.mutex:
-                    try:
+                # Note: TBD because no mutex
+                try:
+                    for value in range(0, 100):
                         mscope.autofocus_model.asyn(img, img_counter)
-                    except queue.Full: 
-                        mscope.autofocus_model._executor._work_queue.get()
-                        mscope.autofocus_model.asyn(img, img_counter)
-
-                        self.logger.info(
-                            f"Discarded oldest image in SSAF queue because {nn_constants.AF_QSIZE} image queue is full."
-                        )
+                    print(mscope.autofocus_model._executor._work_queue.qsize())
+                except queue.Full: 
+                    print(f"FULL: {mscope.autofocus_model._executor._work_queue.qsize()}")
+                    mscope.autofocus_model._executor._work_queue.get()
+                    mscope.autofocus_model.asyn(img, img_counter)
+                    print(f"REFILL: {mscope.autofocus_model._executor._work_queue.qsize()}")
+                    self.logger.info(
+                        f"Discarded oldest image in SSAF queue because {nn_constants.AF_QSIZE} image queue is full."
+                    )
 
                 results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
 
@@ -163,13 +156,13 @@ class Routines:
 
                     move_counter += 1
 
-                    # test += 1
+                    test += 1
 
                     steps_from_focus = -res.result[0][0]
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
                 throttle_counter = 0
-                # print(test)
+                print(test)
 
                 if (
                     move_counter >= ssaf_period_num
