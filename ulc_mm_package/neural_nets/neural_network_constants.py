@@ -11,11 +11,11 @@ AF_PERIOD_S = 10
 AF_PERIOD_NUM = int(AF_PERIOD_S * ACQUISITION_FPS)
 AF_BATCH_SIZE = 10
 
-AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files/valiant-disco-119.xml")
+AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files" / "valiant-disco-119.xml")
 
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.3
-YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files/old-transport-1520.xml")
+YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / "scruffy-looking-transport-1520.xml")
 
 YOGO_CLASS_LIST: Tuple[str, ...] = ("healthy", "ring", "schizont", "troph", "gametocyte", "wbc", "misc")
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
