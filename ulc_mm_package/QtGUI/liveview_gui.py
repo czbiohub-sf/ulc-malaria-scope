@@ -137,7 +137,7 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(float)
     def update_focus(self, val):
-        self.focus_val.setText(f"Actual = {val:.2f}")
+        self.focus_val.setText(f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}")
 
     @pyqtSlot(float)
     def update_flowrate(self, val):
