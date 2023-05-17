@@ -725,7 +725,7 @@ class ScopeOp(QObject, NamedMachine):
                     )
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
-            
+
             if filtered_focus_err is not None:
                 self.filtered_focus_err = filtered_focus_err
 

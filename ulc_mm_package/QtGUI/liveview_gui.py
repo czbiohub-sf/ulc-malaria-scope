@@ -138,8 +138,10 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(float)
     def update_focus(self, val):
-        self.focus_val.setText(f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}")
-       
+        self.focus_val.setText(
+            f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}"
+        )
+
         # Set color based on status
         if isinstance(val, float):
             if abs(val) > AF_THRESHOLD:
