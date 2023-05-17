@@ -3,7 +3,10 @@
 import queue
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel
-from ulc_mm_package.neural_nets.neural_network_constants import AUTOFOCUS_MODEL_DIR, AF_QSIZE
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    AUTOFOCUS_MODEL_DIR,
+    AF_QSIZE,
+)
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 
 

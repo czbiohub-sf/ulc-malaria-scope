@@ -12,7 +12,7 @@ AF_PERIOD_NUM = int(AF_PERIOD_S * ACQUISITION_FPS)
 AF_BATCH_SIZE = 10
 
 AF_THRESHOLD = 1
-AF_QSIZE = 10 # For AF_PERIOD_S = 0.5, we have a max delay of 5 sec
+AF_QSIZE = 10  # For AF_PERIOD_S = 0.5, we have a max delay of 5 sec
 
 AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files/valiant-disco-119.xml")
 
