@@ -647,7 +647,6 @@ class ScopeOp(QObject, NamedMachine):
             self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
             t0 = perf_counter()
-
             resized_img = cv2.resize(
                 img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
             )
