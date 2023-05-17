@@ -2,8 +2,6 @@
 
 import queue
 
-from concurrent.futures.thread import _WorkItem
-
 from ulc_mm_package.neural_nets.NCSModel import NCSModel
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -33,7 +31,7 @@ class AutoFocus(NCSModel):
             camera_selection=camera_selection,
         )
 
-        self._executor._work_queue[_WorkItem] = queue.Queue(maxsize=AF_QSIZE)
+        self._executor._work_queue = queue.Queue(maxsize=AF_QSIZE) # type:ignore
 
     def __call__(self, input_img):
         return self.syn(input_img)
