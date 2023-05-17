@@ -36,10 +36,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
     ICON_PATH,
     BLANK_INFOPANEL_VAL,
-    IMG_DOWNSCALE,
     TOOLBAR_OFFSET,
 )
-from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
@@ -305,11 +303,6 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
-        if not self.big_screen:
-            self.liveview_img.setFixedSize(
-                int(CAMERA_SELECTION.IMG_WIDTH / IMG_DOWNSCALE),
-                int(CAMERA_SELECTION.IMG_HEIGHT / IMG_DOWNSCALE),
-            )
         self.liveview_img.setScaledContents(True)
 
         self.liveview_layout.addWidget(self.liveview_img)
