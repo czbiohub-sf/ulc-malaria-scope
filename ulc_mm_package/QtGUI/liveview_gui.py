@@ -143,12 +143,12 @@ class LiveviewGUI(QMainWindow):
         # Set color based on status
         if isinstance(val, float):
             if abs(val) > AF_THRESHOLD:
-                self._set_color(self.flowrate_val, STATUS.GOOD)
+                self._set_color(self.focus_val, STATUS.GOOD)
             else:
-                self._set_color(self.flowrate_val, STATUS.BAD)
+                self._set_color(self.focus_val, STATUS.BAD)
         else:
-            self._set_color(self.flowrate_val, STATUS.DEFAULT)
-            
+            self._set_color(self.focus_val, STATUS.DEFAULT)
+
     @pyqtSlot(float)
     def update_flowrate(self, val):
         self.flowrate_val.setText(
