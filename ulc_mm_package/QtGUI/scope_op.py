@@ -650,7 +650,7 @@ class ScopeOp(QObject, NamedMachine):
             )
             prev_yogo_results: List[
                 AsyncInferenceResult
-            ] = self.count_parasitemia_routine.send((img, self.count))
+            ] = self.count_parasitemia_routine.send((img[386-193//2:386+193//2+1], self.count))
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
@@ -662,10 +662,6 @@ class ScopeOp(QObject, NamedMachine):
                 filtered_prediction = YOGO.filter_res(result.result)
 
                 class_counts = YOGO.class_instance_count(filtered_prediction)
-                # very rough interpolation: ~30 FPS * period between YOGO calls * counts
-                class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
-                    class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
-                )
                 self.cell_counts += class_counts
 
                 self._update_metadata_if_verbose(
