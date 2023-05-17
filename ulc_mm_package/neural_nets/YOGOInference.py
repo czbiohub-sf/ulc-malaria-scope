@@ -36,8 +36,8 @@ class YOGO(NCSModel):
         >>> # ... eventually ...
         >>> Y.get_asyn_results()
         <
-         Bounding Boxes! tensor of shape (1, 9, Sy, Sx) where Sy and Sx are grid dimensions (i.e. rows and columns)
-         the second dimension (9) is the most important - it is [xc, yc, w, h, to, p_healthy, p_ring, p_schitzont, p_troph],
+         Bounding Boxes! tensor of shape (1, 12, Sy, Sx) where Sy and Sx are grid dimensions (i.e. rows and columns)
+         the second dimension (12) is the most important - it is [xc, yc, w, h, to, p_healthy, p_ring, p_schitzont, p_troph, p_gametocyte, p_wbc, p_misc],
          with each number normalized to [0,1]
         >
 
