@@ -718,8 +718,10 @@ class ScopeOp(QObject, NamedMachine):
                     )
                     raw_focus_err = None
 
-                    self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
-                    
+                    self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
+                        self.mscope
+                    )
+
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
 
