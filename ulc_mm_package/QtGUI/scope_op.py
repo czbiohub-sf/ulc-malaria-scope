@@ -700,7 +700,7 @@ class ScopeOp(QObject, NamedMachine):
             try:
                 (
                     raw_focus_err,
-                    self.filtered_focus_err,
+                    filtered_focus_err,
                     focus_adjustment,
                 ) = self.PSSAF_routine.send(resized_img)
             except MotorControllerError as e:
@@ -725,6 +725,9 @@ class ScopeOp(QObject, NamedMachine):
                     )
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
+            
+            if filtered_focus_err is not None:
+                self.filtered_focus_err = filtered_focus_err
 
             t0 = perf_counter()
             try:
@@ -768,7 +771,7 @@ class ScopeOp(QObject, NamedMachine):
             self.img_metadata["flowrate"] = self.flowrate
             self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
             self.img_metadata["focus_error"] = raw_focus_err
-            self.img_metadata["filtered_focus_error"] = self.filtered_focus_err
+            self.img_metadata["filtered_focus_error"] = filtered_focus_err
             self.img_metadata["focus_adjustment"] = focus_adjustment
 
             if self.count % TH_PERIOD_NUM == 0:
