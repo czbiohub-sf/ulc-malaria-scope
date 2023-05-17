@@ -20,6 +20,15 @@ def bbox_colour(label: str, opacity: float = 1.0) -> Tuple[int, int, int, int]:
 	return (255, 0, 0, int(opacity * 255))
 
 
+def bbox_convert(xc, yc, w, h, img_h, img_w) -> Tuple[int,int,int,int]:
+    return (
+        img_w * (xc - w/2),
+        img_h * (yc - h/2),
+        img_w * (xc + w/2),
+        img_h * (yc + h/2),
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -53,7 +62,7 @@ if __name__ == "__main__":
 			for r in formatted_rects:
                 label_idx = np.argmax(r[5:])
 				label = YOGO_CLASS_LIST[label_idx]
-                draw.rectangle(r[:4], outline=bbox_colour(label))
+                draw.rectangle(bbox_convert(*r[:4], image.size[2:]), outline=bbox_colour(label))
                 draw.text((r[0], r[1]), label, (0, 0, 0, 255))
 
 			return rgb
