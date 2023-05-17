@@ -1,5 +1,4 @@
 import logging
-import queue
 
 from functools import wraps
 from time import perf_counter, sleep
