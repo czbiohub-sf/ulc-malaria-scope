@@ -106,7 +106,7 @@ class ScopeOp(QObject, NamedMachine):
     update_msg = pyqtSignal(str)
 
     update_flowrate = pyqtSignal(float)
-    update_focus = pyqtSignal(int)
+    update_focus = pyqtSignal(float)
 
     def __init__(self):
         super().__init__()
@@ -749,8 +749,7 @@ class ScopeOp(QObject, NamedMachine):
             t0 = perf_counter()
             # Update infopanel
             if filtered_focus_err is not None:
-                # TODO change this to non int?
-                self.update_focus.emit(int(filtered_focus_err))
+                self.update_focus.emit(filtered_focus_err)
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("ui_flowrate_focus", t1 - t0)

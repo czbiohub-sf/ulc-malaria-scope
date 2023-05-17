@@ -135,9 +135,9 @@ class LiveviewGUI(QMainWindow):
             # Scroll to latest message
             self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def update_focus(self, val):
-        self.focus_val.setText(f"Actual = {val}")
+        self.focus_val.setText(f"Actual = {val:.2f}")
 
     @pyqtSlot(float)
     def update_flowrate(self, val):
