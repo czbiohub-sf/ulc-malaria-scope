@@ -2,7 +2,7 @@
 
 import queue
 
-from concurrent.futures import _WorkItem
+from concurrent.futures.thread import _WorkItem
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel
 from ulc_mm_package.neural_nets.neural_network_constants import (
