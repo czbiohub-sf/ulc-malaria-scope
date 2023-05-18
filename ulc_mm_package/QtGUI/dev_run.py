@@ -45,6 +45,8 @@ from ulc_mm_package.image_processing.zstack import (
     local_sweep_image_collection,
 )
 
+from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
+
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
