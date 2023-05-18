@@ -1,3 +1,5 @@
+import cv2
+
 from ulc_mm_package.QtGUI.gui_constants import FLOWCELL_QC_FORM_LINK
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
@@ -430,7 +432,10 @@ class AcquisitionThread(QThread):
         if self.active_autofocus:
             print("Autofocusing!")
             try:
-                steps_from_focus = -int(self.autofocus_model(img).pop())
+                resized_img = cv2.resize(
+                    img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
+                )     
+                steps_from_focus = -int(self.autofocus_model(resized_img).pop())
                 print(f"SSAF: {steps_from_focus} steps")
                 self.af_adjustment_done = True
 
