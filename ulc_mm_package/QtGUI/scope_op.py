@@ -51,10 +51,10 @@ from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
-    AF_BATCH_SIZE,
     YOGO_CLASS_LIST,
     YOGO_PERIOD_NUM,
     YOGO_CLASS_IDX_MAP,
+    AF_BATCH_SIZE,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
@@ -106,7 +106,7 @@ class ScopeOp(QObject, NamedMachine):
     update_msg = pyqtSignal(str)
 
     update_flowrate = pyqtSignal(float)
-    update_focus = pyqtSignal(int)
+    update_focus = pyqtSignal(float)
 
     def __init__(self):
         super().__init__()
@@ -205,6 +205,8 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
+        self.filtered_focus_err = None
+
         self.flowrate = None
         self.target_flowrate = None
 
@@ -241,6 +243,8 @@ class ScopeOp(QObject, NamedMachine):
             self.update_runtime.emit(self._get_experiment_runtime())
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
+            if self.filtered_focus_err is not None:
+                self.update_focus.emit(self.filtered_focus_err)
 
     def setup(self):
         self.create_timers.emit()
@@ -401,7 +405,9 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self, *args):
-        self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
+        self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
+            self.mscope, None, None
+        )
 
         self.flowcontrol_routine = self.routines.flow_control_routine(
             self.mscope,
@@ -692,7 +698,11 @@ class ScopeOp(QObject, NamedMachine):
 
             t0 = perf_counter()
             try:
-                focus_err = self.PSSAF_routine.send(resized_img)
+                (
+                    raw_focus_err,
+                    filtered_focus_err,
+                    focus_adjustment,
+                ) = self.PSSAF_routine.send(resized_img)
             except MotorControllerError as e:
                 if not SIMULATION:
                     self.logger.error(
@@ -708,13 +718,16 @@ class ScopeOp(QObject, NamedMachine):
                     self.logger.warning(
                         f"Ignoring periodic SSAF exception in simulation mode - {e}"
                     )
-                    focus_err = None
+                    raw_focus_err = None
 
                     self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
-                        self.mscope, None
+                        self.mscope, None, None
                     )
             t1 = perf_counter()
             self._update_metadata_if_verbose("pssaf", t1 - t0)
+
+            if filtered_focus_err is not None:
+                self.filtered_focus_err = filtered_focus_err
 
             t0 = perf_counter()
             try:
@@ -740,15 +753,6 @@ class ScopeOp(QObject, NamedMachine):
             self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
             t0 = perf_counter()
-            # Update infopanel
-            if focus_err is not None:
-                # TODO change this to non int?
-                self.update_focus.emit(int(focus_err))
-
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("ui_flowrate_focus", t1 - t0)
-
-            t0 = perf_counter()
             # Update remaining metadata
             self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
             try:
@@ -766,7 +770,9 @@ class ScopeOp(QObject, NamedMachine):
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = self.flowrate
             self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
-            self.img_metadata["focus_error"] = focus_err
+            self.img_metadata["focus_error"] = raw_focus_err
+            self.img_metadata["filtered_focus_error"] = filtered_focus_err
+            self.img_metadata["focus_adjustment"] = focus_adjustment
 
             if self.count % TH_PERIOD_NUM == 0:
                 try:
