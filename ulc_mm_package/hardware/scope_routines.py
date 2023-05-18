@@ -149,7 +149,7 @@ class Routines:
                     and abs(filtered_error) > nn_constants.AF_THRESHOLD
                 ):
                     self.logger.info(
-                        f"Adjusted focus after {move_counter} measurements"
+                        f"Adjusted focus by {filtered_error:.2f} steps after {move_counter} measurements"
                     )
                     move_counter = 0
                     adjusted = True
