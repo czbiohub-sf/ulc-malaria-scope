@@ -31,6 +31,7 @@ class AutoFocus(NCSModel):
             camera_selection=camera_selection,
         )
 
+        # Bypass mypy because it dislikes changing the queue type
         self._executor._work_queue = queue.Queue(maxsize=AF_QSIZE)  # type:ignore
 
     def __call__(self, input_img):

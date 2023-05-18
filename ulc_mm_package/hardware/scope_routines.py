@@ -72,10 +72,6 @@ class Routines:
         ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
         steps_from_focus = -round(np.mean(ssaf_steps_from_focus))
 
-        # Change to async batch inference? Check w/ Axel
-        # mscope.autofocus_model.asyn(img_arr)
-        # ssaf_steps_from_focus = mscope.autofocus_model.get_asyn_results()
-
         try:
             dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
             mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
@@ -132,14 +128,18 @@ class Routines:
                 img = yield steps_from_focus, filtered_error, adjusted
                 adjusted = None
 
-                # Note: TBD because no mutex
+                # if mscope.autofocus_model._executor._work_queue.full(), this will block
+                # until an element is removed from the queue
+                # TODO watch performance, if blocking a lot then we must subclass ThreadPoolExecutor
+                # and change https://github.com/python/cpython/blob/a712c5f42d5904e1a1cdaf11bd1f05852cfdd830/Lib/concurrent/futures/thread.py#L175
+                # to put_nowait```
                 mscope.autofocus_model.asyn(img, img_counter)
                 results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
 
                 for res in sorted(results, key=lambda res: res.id):
                     move_counter += 1
 
-                    steps_from_focus = -res.result[0][0]
+                    steps_from_focus = -res.result.item()
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
                 throttle_counter = 0
