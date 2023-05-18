@@ -82,7 +82,7 @@ class Routines:
 
     @init_generator
     def periodicAutofocusWrapper(
-        self, mscope: MalariaScope, img: np.ndarray, img_count: int
+        self, mscope: MalariaScope
     ) -> Generator[
         Tuple[Optional[float], Optional[float], Optional[bool]], np.ndarray, None
     ]:
@@ -385,7 +385,6 @@ class Routines:
         mscope: MalariaScope,
         pull_time: float = 5,
         steps_per_image: int = 10,
-        img: Optional[np.ndarray] = None,
     ) -> Generator[None, np.ndarray, Optional[int]]:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
