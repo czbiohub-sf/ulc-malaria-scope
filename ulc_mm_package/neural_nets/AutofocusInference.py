@@ -33,7 +33,7 @@ class AutoFocus(NCSModel):
             camera_selection=camera_selection,
         )
 
-        self._executor._work_queue: queue.Queue[_WorkItem] = queue.Queue(maxsize=AF_QSIZE)  # type:ignore
+        self._executor._work_queue: queue.Queue[_WorkItem] = queue.Queue(maxsize=AF_QSIZE)
 
     def __call__(self, input_img):
         return self.syn(input_img)
