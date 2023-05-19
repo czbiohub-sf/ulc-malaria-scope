@@ -22,8 +22,12 @@ from ulc_mm_package.image_processing.cell_finder import (
 )
 from ulc_mm_package.hardware.pneumatic_module import PressureLeak, PressureSensorBusy
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
+from ulc_mm_package.hardware.hardware_constants import (
+    MIN_PRESSURE_DIFF,
+    FOCUS_EWMA_ALPHA,
+)
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
+from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
@@ -51,7 +55,7 @@ class Routines:
     ) -> int:
         """Single shot autofocus routine.
 
-        Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
+        Takes in an array of images (number based on AF_BATCH_SIZE), runs an inference
         using the SSAF model, averages the results, and adjusts the motor position by that step value.
 
         Parameters
@@ -68,10 +72,6 @@ class Routines:
         ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
         steps_from_focus = -round(np.mean(ssaf_steps_from_focus))
 
-        # Change to async batch inference? Check w/ Axel
-        # mscope.autofocus_model.asyn(img_arr)
-        # ssaf_steps_from_focus = mscope.autofocus_model.get_asyn_results()
-
         try:
             dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
             mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
@@ -81,30 +81,14 @@ class Routines:
         return steps_from_focus
 
     @init_generator
-    def continuousSSAFRoutine(
-        self, mscope: MalariaScope
-    ) -> Generator[Optional[int], np.ndarray, None]:
-        """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
-
-        img_arr = []
-        steps_from_focus = None
-
-        img: np.ndarray
-        while True:
-            img = yield steps_from_focus
-            steps_from_focus = None
-            img_arr.append(img)
-            if len(img_arr) == nn_constants.AF_BATCH_SIZE:
-                steps_from_focus = self.singleShotAutofocusRoutine(mscope, img_arr)
-                img_arr = []
-
-    @init_generator
     def periodicAutofocusWrapper(
-        self, mscope: MalariaScope, img: np.ndarray
-    ) -> Generator[Optional[int], np.ndarray, None]:
-        """A periodic wrapper around the `continuousSSAFRoutine`.
+        self, mscope: MalariaScope
+    ) -> Generator[
+        Tuple[Optional[float], Optional[float], Optional[bool]], np.ndarray, None
+    ]:
+        """Periodic autofocus calculations with EWMA filtering
 
-        This function adds a simple time wrapper around `continuousSSAFRoutine`
+        This function adds a simple time wrapper around the autofocus model and EWMA filter
         such that inferences and motor adjustments are done every `AF_PERIOD_NUM' frames.
 
         When not making an adjustment, this Generator yields None. After an adjustment has been completed, the next
@@ -117,24 +101,68 @@ class Routines:
         None:
             In between periods, images are not being sent to SSAF.
         int:
-            Number of motor steps taken, returned after a full batch of images have been sent once
+            Number of motor steps taken, returned after an image has been sent once
             AF_PERIOD_NUM frames have elapsed since the last adjustment.
         """
 
-        counter = 0
+        filtered_error = 0.0
+        img_counter = 0
+        throttle_counter = 0
+        move_counter = 0
+
+        adjusted = None
         steps_from_focus = None
-        ssaf_routine = self.continuousSSAFRoutine(mscope)
+
+        ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
+        ssaf_filter.set_init_val(0)
+
+        ssaf_period_num = ssaf_filter.get_adjustment_period_ewma()
+        self.logger.info(
+            f"Minimum SSAF adjustment period = {ssaf_period_num} measurements"
+        )
 
         while True:
-            counter += 1
-            if counter >= nn_constants.AF_PERIOD_NUM:
-                img = yield steps_from_focus
-                steps_from_focus = ssaf_routine.send(img)
+            throttle_counter += 1
+            if throttle_counter >= nn_constants.AF_PERIOD_NUM:
+                img_counter += 1
+                img = yield steps_from_focus, filtered_error, adjusted
+                adjusted = None
 
-                if counter >= nn_constants.AF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
-                    counter = 0
+                # if mscope.autofocus_model._executor._work_queue.full(), this will block
+                # until an element is removed from the queue
+                # TODO watch performance, if blocking a lot then we must subclass ThreadPoolExecutor
+                # and change https://github.com/python/cpython/blob/a712c5f42d5904e1a1cdaf11bd1f05852cfdd830/Lib/concurrent/futures/thread.py#L175
+                # to put_nowait```
+                mscope.autofocus_model.asyn(img, img_counter)
+                results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
+
+                for res in sorted(results, key=lambda res: res.id):
+                    move_counter += 1
+
+                    steps_from_focus = res.result.item()
+                    filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
+
+                throttle_counter = 0
+
+                if (
+                    move_counter >= ssaf_period_num
+                    and abs(filtered_error) > nn_constants.AF_THRESHOLD
+                ):
+                    self.logger.info(
+                        f"Adjusted focus by {filtered_error:.2f} steps after {move_counter} measurements"
+                    )
+                    move_counter = 0
+                    adjusted = True
+
+                    try:
+                        dir = Direction.CW if filtered_error > 0 else Direction.CCW
+                        mscope.motor.threaded_move_rel(
+                            dir=dir, steps=abs(filtered_error)
+                        )
+                    except MotorControllerError as e:
+                        raise e
             else:
-                _ = yield None
+                _ = yield None, None, None
 
     def count_parasitemia(
         self,
@@ -357,7 +385,6 @@ class Routines:
         mscope: MalariaScope,
         pull_time: float = 5,
         steps_per_image: int = 10,
-        img: Optional[np.ndarray] = None,
     ) -> Generator[None, np.ndarray, Optional[int]]:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 

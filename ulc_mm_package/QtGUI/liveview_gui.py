@@ -30,16 +30,15 @@ from ulc_mm_package.image_processing.flow_control import get_flow_error
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
+    AF_THRESHOLD,
 )
 from ulc_mm_package.scope_constants import MAX_FRAMES
 from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
     ICON_PATH,
     BLANK_INFOPANEL_VAL,
-    IMG_DOWNSCALE,
     TOOLBAR_OFFSET,
 )
-from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
@@ -135,9 +134,20 @@ class LiveviewGUI(QMainWindow):
             # Scroll to latest message
             self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def update_focus(self, val):
-        self.focus_val.setText(f"Actual = {val}")
+        self.focus_val.setText(
+            f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}"
+        )
+
+        # Set color based on status
+        if isinstance(val, float):
+            if abs(val) > AF_THRESHOLD:
+                self._set_color(self.focus_val, STATUS.BAD)
+            else:
+                self._set_color(self.focus_val, STATUS.GOOD)
+        else:
+            self._set_color(self.focus_val, STATUS.DEFAULT)
 
     @pyqtSlot(float)
     def update_flowrate(self, val):
@@ -305,11 +315,6 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
-        if not self.big_screen:
-            self.liveview_img.setFixedSize(
-                int(CAMERA_SELECTION.IMG_WIDTH / IMG_DOWNSCALE),
-                int(CAMERA_SELECTION.IMG_HEIGHT / IMG_DOWNSCALE),
-            )
         self.liveview_img.setScaledContents(True)
 
         self.liveview_layout.addWidget(self.liveview_img)
