@@ -51,6 +51,13 @@ class YOGO(NCSModel):
         super().__init__(model_path, camera_selection)
 
     @staticmethod
+    def crop_img(img: npt.NDArray) -> npt.NDArray:
+        """
+        Crops the center of the image to the size expected by the model
+        """
+        return img[..., 386-193//2:386+193//2+1, :]
+
+    @staticmethod
     def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD):
         mask = (res[:, 4:5, :] > threshold).flatten()
         return res[:, :, mask]

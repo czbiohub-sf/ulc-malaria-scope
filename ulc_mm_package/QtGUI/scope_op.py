@@ -433,6 +433,10 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Net FPS is {self.count/(self._get_experiment_runtime())}"
             )
+            cell_count_estimate = "\n".join(f"\t{cls}: {count}" for cls, count in zip(YOGO_CLASS_LIST[:-1], self.cell_counts))
+            self.logger.info(
+                f"estimated cell counts: {cell_count_estimate}"
+            )
 
         self.mscope.reset_for_end_experiment()
 
@@ -654,7 +658,7 @@ class ScopeOp(QObject, NamedMachine):
             )
             prev_yogo_results: List[
                 AsyncInferenceResult
-            ] = self.count_parasitemia_routine.send((img[386-193//2:386+193//2+1], self.count))
+            ] = self.count_parasitemia_routine.send((YOGO.crop_img(img), self.count))
 
             t1 = perf_counter()
             self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
@@ -764,7 +768,7 @@ class ScopeOp(QObject, NamedMachine):
                 "syringe_pos"
             ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
             self.img_metadata["flowrate"] = self.flowrate
-            self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
+            self.img_metadata["cell_count_cumulative"] = self.cell_counts.sum()
             self.img_metadata["focus_error"] = raw_focus_err
             self.img_metadata["filtered_focus_error"] = filtered_focus_err
             self.img_metadata["focus_adjustment"] = focus_adjustment
