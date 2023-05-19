@@ -55,7 +55,7 @@ class YOGO(NCSModel):
         """
         Crops the center of the image to the size expected by the model
         """
-        return img[..., 386-193//2:386+193//2+1, :]
+        return img[..., 386 - 193 // 2 : 386 + 193 // 2 + 1, :]
 
     @staticmethod
     def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD):

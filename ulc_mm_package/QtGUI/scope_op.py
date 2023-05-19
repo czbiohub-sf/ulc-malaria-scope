@@ -52,8 +52,6 @@ from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
-    YOGO_PERIOD_NUM,
-    YOGO_CLASS_IDX_MAP,
     AF_BATCH_SIZE,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
@@ -433,10 +431,11 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Net FPS is {self.count/(self._get_experiment_runtime())}"
             )
-            cell_count_estimate = "\n".join(f"\t{cls}: {count}" for cls, count in zip(YOGO_CLASS_LIST[:-1], self.cell_counts))
-            self.logger.info(
-                f"estimated cell counts: {cell_count_estimate}"
+            cell_count_estimate = "\n".join(
+                f"\t{cls}: {count}"
+                for cls, count in zip(YOGO_CLASS_LIST[:-1], self.cell_counts)
             )
+            self.logger.info(f"estimated cell counts: {cell_count_estimate}")
 
         self.mscope.reset_for_end_experiment()
 
