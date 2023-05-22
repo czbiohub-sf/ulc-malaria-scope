@@ -237,7 +237,7 @@ class ScopeOp(QObject, NamedMachine):
     def _get_experiment_runtime(self) -> float:
         if self.start_time is None:
             return self.accumulated_time
-        else
+        else:
             return self.accumulated_time + perf_counter() - self.start_time
 
     def update_infopanel(self):
