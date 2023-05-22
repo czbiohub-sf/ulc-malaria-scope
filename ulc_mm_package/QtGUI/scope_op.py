@@ -222,7 +222,10 @@ class ScopeOp(QObject, NamedMachine):
         self.update_state.emit(state_name)
 
     def _get_experiment_runtime(self) -> float:
-        return self.accumulated_time + perf_counter() - self.start_time
+        if self.start_time is None:
+            return self.accumulated_time
+        else
+            return self.accumulated_time + perf_counter() - self.start_time
 
     def update_infopanel(self):
         if self.state == "experiment":
@@ -302,7 +305,7 @@ class ScopeOp(QObject, NamedMachine):
         self.running = False
 
         # Account for case when pause is entered during the initial setup
-        if self.start_time != None:
+        if self.start_time is not None:
             self.accumulated_time += perf_counter() - self.start_time
             self.start_time = None
 
@@ -425,9 +428,10 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
-        if self.start_time != None:
+        runtime = self._get_experiment_runtime()
+        if runtime != 0:
             self.logger.info(
-                f"Net FPS is {self.count/(self._get_experiment_runtime())}"
+                f"Net FPS is {self.count/runtime}"
             )
 
         self.logger.info("Resetting pneumatic module for rerun.")
@@ -635,12 +639,20 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["looptime"] = current_time - self.last_time
         self.last_time = current_time
 
+        if self.start_time is None:
+            # A race condition has triggered a non-experiment state
+            return
+
         if self.count >= MAX_FRAMES:
             self.to_intermission("Ending experiment since data collection is complete.")
-        elif current_time - self.start_time > TIMEOUT_PERIOD_S:
+            return
+
+        if current_time - self.start_time > TIMEOUT_PERIOD_S:
             self.to_intermission(
                 f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
             )
+            return
+
         else:
             # Record timestamp before running routines
             self.img_metadata["timestamp"] = timestamp
