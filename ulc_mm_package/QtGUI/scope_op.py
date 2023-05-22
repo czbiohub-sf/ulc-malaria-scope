@@ -434,9 +434,7 @@ class ScopeOp(QObject, NamedMachine):
 
         runtime = self._get_experiment_runtime()
         if runtime != 0:
-            self.logger.info(
-                f"Net FPS is {self.count/runtime}"
-            )
+            self.logger.info(f"Net FPS is {self.count/runtime}")
 
         self.mscope.reset_for_end_experiment()
 
@@ -660,9 +658,7 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
         t0 = perf_counter()
-        resized_img = cv2.resize(
-            img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
-        )
+        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         prev_yogo_results: List[
             AsyncInferenceResult
         ] = self.count_parasitemia_routine.send((resized_img, self.count))
@@ -729,9 +725,7 @@ class ScopeOp(QObject, NamedMachine):
                 )
                 raw_focus_err = None
 
-                self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
-                    self.mscope
-                )
+                self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("pssaf", t1 - t0)
