@@ -19,10 +19,13 @@ MIN_ACCEPTABLE_MEAN_BRIGHTNESS = 200
 INSIDE_BBOX_FLAG = 0
 
 # ================ Flow control constants ================ #
-NUM_IMAGE_PAIRS = 12  # Number of image pair xcorr calculations to average to make a single measurement
-NUM_FAILED_CORR_MEASUREMENTS = 75  # at 30fps, 75pairs = 150imgs = 5s
-WINDOW_SIZE = 12  # EWMA window size
+FLOW_CONTROL_EWMA_ALPHA = 0.05
 TOL_PERC = 0.1
+FAILED_CORR_PERC_TOLERANCE = 0.75
+
+# Factor by which to multiply the ewma feebdack adjustment delay (in frames) to set the window size
+# of the past measurements to check for failed xcorrs.
+MIN_NUM_XCORR_FACTOR = 10
 
 # ================ Flow rate constants ================ #
 CORRELATION_THRESH = 0.3
@@ -48,8 +51,8 @@ RBC_THUMBNAIL_PATH = (
 )
 
 # This value was found empirically, looking at several focal stacks with and without cells
-CELLS_FOUND_THRESHOLD = 9000  # It's got to be... OVER 9000!!!!!!
-CROSS_CORR_CELL_DENSITY_THRESHOLD = 6500
+CELLS_FOUND_THRESHOLD = 9001  # https://tinyurl.com/ykxu66zw
+MIN_POINTS_ABOVE_THRESH = 2
 
 MIN_CELL_COUNT = 20
 CELL_DENSITY_CHECK_PERIOD_S = 0.5  # How often to check cell density

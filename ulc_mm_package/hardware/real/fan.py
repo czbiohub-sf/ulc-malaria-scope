@@ -1,9 +1,10 @@
 import pigpio
 
+from ulc_mm_package.hardware.fan import FanBase
 from ulc_mm_package.hardware.hardware_constants import FAN_GPIO, CAM_FAN_1, CAM_FAN_2
 
 
-class Fan:
+class Fan(FanBase):
     def __init__(self, fan_pin: int = FAN_GPIO):
         self._pi = pigpio.pi()
 
