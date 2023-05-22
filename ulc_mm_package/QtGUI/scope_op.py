@@ -432,12 +432,8 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
-<<<<<<< HEAD
         runtime = self._get_experiment_runtime()
         if runtime != 0:
-=======
-        if self.start_time is not None:
->>>>>>> develop
             self.logger.info(
                 f"Net FPS is {self.count/runtime}"
             )
