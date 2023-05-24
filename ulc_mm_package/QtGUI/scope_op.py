@@ -296,7 +296,8 @@ class ScopeOp(QObject, NamedMachine):
     def start(self):
         self.running = True
         self.start_timers.emit()
-        self.next_state()
+        if self.state == "standby":
+            self.next_state()
 
     def reset(self):
         # Reset variables
@@ -354,7 +355,8 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Passed pressure check. Pressure difference = {pdiff} hPa."
             )
-            self.next_state()
+            if self.state == "pressure_check":
+                self.next_state()
         except PressureSensorBusy as e:
             self.logger.error(f"Unable to read value from the pressure sensor - {e}")
             # TODO What to do in a case where the sensor is acting funky?
@@ -395,7 +397,8 @@ class ScopeOp(QObject, NamedMachine):
         if SIMULATION:
             self.logger.info(f"Skipping {self.state} state in simulation mode.")
             sleep(1)
-            self.next_state()
+            if self.state == "fastflow":
+                self.next_state()
             return
 
         self.fastflow_result = None
@@ -456,13 +459,15 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}."
             )
-            self.next_state()
+            if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
+                self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
             self.logger.warning(
                 f"Autobrightness target not achieved, but still ok. Mean pixel val = {self.autobrightness_result}."
             )
-            self.next_state()
+            if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
+                self.next_state()
         except BrightnessCriticallyLow as e:
             self.logger.error(
                 f"Autobrightness failed. Mean pixel value = {e.value}.",
@@ -481,7 +486,8 @@ class ScopeOp(QObject, NamedMachine):
                     ERROR_BEHAVIORS.DEFAULT.value,
                 )
             else:
-                self.next_state()
+                if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
+                    self.next_state()
         else:
             if self.running:
                 self.img_signal.connect(self.run_autobrightness)
@@ -501,7 +507,8 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Cellfinder successful. Cells found at motor pos = {self.cellfinder_result}."
             )
-            self.next_state()
+            if self.state == "cellfinder":
+                self.next_state()
         except NoCellsFound:
             self.logger.error("Cellfinder failed. No cells found.")
             self.default_error.emit(
@@ -561,7 +568,8 @@ class ScopeOp(QObject, NamedMachine):
                         f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
                     )
                     self.autofocus_batch = []
-                    self.next_state()
+                    if self.state in {"autofocus_preflow", "autofocus_postflow"}:
+                        self.next_state()
             except InvalidMove:
                 self.logger.error(
                     "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
@@ -613,7 +621,8 @@ class ScopeOp(QObject, NamedMachine):
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
             self.update_flowrate.emit(self.fastflow_result)
-            self.next_state()
+            if self.state == "fastflow":
+                self.next_state()
         else:
             if self.running:
                 self.img_signal.connect(self.run_fastflow)
