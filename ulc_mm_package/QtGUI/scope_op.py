@@ -602,7 +602,7 @@ class ScopeOp(QObject, NamedMachine):
             self.default_error.emit(
                 "Calibration issue",
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
-                ERROR_BEHAVIORS.YN.value,
+                ERROR_BEHAVIORS.FLOWCONTROL.value,
             )
             self.update_flowrate.emit(self.fastflow_result)
         except LowConfidenceCorrelations:
@@ -618,7 +618,7 @@ class ScopeOp(QObject, NamedMachine):
                     "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
                     "Continue running anyway?"
                 ),
-                ERROR_BEHAVIORS.YN.value,
+                ERROR_BEHAVIORS.FLOWCONTROL.value,
             )
         except StopIteration as e:
             self.fastflow_result = e.value
