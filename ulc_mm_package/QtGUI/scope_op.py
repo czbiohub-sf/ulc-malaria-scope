@@ -648,13 +648,15 @@ class ScopeOp(QObject, NamedMachine):
             return
 
         if self.count >= MAX_FRAMES:
-            self.to_intermission("Ending experiment since data collection is complete.")
+            if self.state == "experiment":
+                self.to_intermission("Ending experiment since data collection is complete.")
             return
 
         if current_time - self.start_time > TIMEOUT_PERIOD_S:
-            self.to_intermission(
-                f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
-            )
+            if self.state == "experiment":
+                self.to_intermission(
+                    f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
+                )
             return
 
         # Record timestamp before running routines
