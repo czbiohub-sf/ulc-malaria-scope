@@ -16,8 +16,9 @@ class STATUS(enum.Enum):
 class ERROR_BEHAVIORS(enum.Enum):
     DEFAULT = 0
     PRECHECK = 1
-    YN = 2
+    FLOWCONTROL = 2
 
+NO_PAUSE_STATES = {"pause", "intermission", "standby"}
 
 # ================ Image display size ================ #
 IMG_DOWNSCALE = 2

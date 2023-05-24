@@ -46,6 +46,7 @@ from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
+    NO_PAUSE_STATES,
     ICON_PATH,
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
@@ -345,19 +346,20 @@ class Oracle(Machine):
         )
 
     def reload_pause_handler(self, title, message):
-        self.scopeop.to_pause()
+        if not self.scopeop.state in NO_PAUSE_STATES:
+            self.scopeop.to_pause()
 
         self.general_pause_handler(
             icon=QMessageBox.Icon.Warning,
             title=title,
             message=message,
             buttons=Buttons.OK,
-            pause_done=True,
         )
 
     def lid_open_pause_handler(self):
-        if self.lid_handler_enabled and self.scopeop.state != "pause":
+        if not self.scopeop.state in NO_PAUSE_STATES:
             self.scopeop.to_pause()
+        if self.scopeop.state == "pause":
             self.unpause()
 
     def general_pause_handler(
@@ -370,7 +372,6 @@ class Oracle(Machine):
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
         buttons=Buttons.CANCEL,
-        pause_done=False,
     ):
         message_result = self.display_message(
             icon,
@@ -379,7 +380,7 @@ class Oracle(Machine):
             buttons=buttons,
         )
         if message_result == QMessageBox.Ok:
-            if not pause_done:
+            if not self.scopeop.state in NO_PAUSE_STATES:
                 self.scopeop.to_pause()
         else:
             return
@@ -398,13 +399,16 @@ class Oracle(Machine):
             image=_IMAGE_RELOAD_PATH,
         )
         self.close_lid_display_message()
-        self.unpause()
+        if self.scopeop.state == "pause":
+            self.unpause()
 
     def unpause(self):
         self.close_lid_display_message()
         self.liveview_window.update_flowrate(BLANK_INFOPANEL_VAL)
         self.liveview_window.update_focus(BLANK_INFOPANEL_VAL)
-        self.scopeop.unpause()
+        
+        if self.scopeop.state == "pause":
+            self.scopeop.unpause()
 
     def close_handler(self):
         self.display_message(
@@ -456,7 +460,7 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
 
-        elif behavior == ERROR_BEHAVIORS.YN.value:
+        elif behavior == ERROR_BEHAVIORS.FLOWCONTROL.value:
             message_result = self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
