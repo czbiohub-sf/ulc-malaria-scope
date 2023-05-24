@@ -235,7 +235,10 @@ class ScopeOp(QObject, NamedMachine):
         self.update_state.emit(state_name)
 
     def _get_experiment_runtime(self) -> float:
-        return self.accumulated_time + perf_counter() - self.start_time
+        if self.start_time is None:
+            return self.accumulated_time
+        else:
+            return self.accumulated_time + perf_counter() - self.start_time
 
     def update_infopanel(self):
         if self.state == "experiment":
@@ -429,10 +432,9 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
-        if self.start_time is not None:
-            self.logger.info(
-                f"Net FPS is {self.count/(self._get_experiment_runtime())}"
-            )
+        runtime = self._get_experiment_runtime()
+        if runtime != 0:
+            self.logger.info(f"Net FPS is {self.count/runtime}")
 
         self.mscope.reset_for_end_experiment()
 
@@ -632,183 +634,186 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["looptime"] = current_time - self.last_time
         self.last_time = current_time
 
+        if self.start_time is None:
+            # A race condition has triggered a non-experiment state
+            return
+
         if self.count >= MAX_FRAMES:
             self.to_intermission("Ending experiment since data collection is complete.")
-        elif current_time - self.start_time > TIMEOUT_PERIOD_S:
+            return
+
+        if current_time - self.start_time > TIMEOUT_PERIOD_S:
             self.to_intermission(
                 f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
             )
-        else:
-            # Record timestamp before running routines
-            self.img_metadata["timestamp"] = timestamp
-            self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
+            return
 
-            t0 = perf_counter()
-            self.update_img_count.emit(self.count)
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("update_img_count", t1 - t0)
+        # Record timestamp before running routines
+        self.img_metadata["timestamp"] = timestamp
+        self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
 
-            t0 = perf_counter()
-            resized_img = cv2.resize(
-                img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
+        t0 = perf_counter()
+        self.update_img_count.emit(self.count)
+        t1 = perf_counter()
+        self._update_metadata_if_verbose("update_img_count", t1 - t0)
+
+        t0 = perf_counter()
+        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
+        prev_yogo_results: List[
+            AsyncInferenceResult
+        ] = self.count_parasitemia_routine.send((resized_img, self.count))
+
+        t1 = perf_counter()
+        self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
+
+        t0 = perf_counter()
+        # we can use this for cell counts in the future, and also density in the now
+
+        for result in prev_yogo_results:
+            filtered_prediction = YOGO.filter_res(result.result)
+
+            class_counts = YOGO.class_instance_count(filtered_prediction)
+            # very rough interpolation: ~30 FPS * period between YOGO calls * counts
+            class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
+                class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
             )
-            prev_yogo_results: List[
-                AsyncInferenceResult
-            ] = self.count_parasitemia_routine.send((resized_img, self.count))
+            self.cell_counts += class_counts
 
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
+            self._update_metadata_if_verbose(
+                "yogo_qsize",
+                self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
+            )
 
-            t0 = perf_counter()
-            # we can use this for cell counts in the future, and also density in the now
-
-            for result in prev_yogo_results:
-                filtered_prediction = YOGO.filter_res(result.result)
-
-                class_counts = YOGO.class_instance_count(filtered_prediction)
-                # very rough interpolation: ~30 FPS * period between YOGO calls * counts
-                class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
-                    class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
-                )
-                self.cell_counts += class_counts
-
-                self._update_metadata_if_verbose(
-                    "yogo_qsize",
-                    self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
-                )
-
-                try:
-                    self.density_routine.send(filtered_prediction)
-                except LowDensity:
-                    self.logger.warning("Cell density is too low.")
-                    self.reload_pause.emit(
-                        "Low cell density",
-                        (
-                            "Cell density is too low. "
-                            "Pausing operation so that more sample can be added without ending the experiment."
-                            '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
-                        ),
-                    )
-                    return
-
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
-
-            t0 = perf_counter()
             try:
-                (
-                    raw_focus_err,
-                    filtered_focus_err,
-                    focus_adjustment,
-                ) = self.PSSAF_routine.send(resized_img)
-            except MotorControllerError as e:
-                if not SIMULATION:
-                    self.logger.error(
-                        "Autofocus failed. Can't achieve focus within condenser's depth of field."
-                    )
-                    self.default_error.emit(
-                        "Autofocus failed",
-                        "Unable to achieve desired focus within condenser's depth of field.",
-                        ERROR_BEHAVIORS.DEFAULT.value,
-                    )
-                    return
-                else:
-                    self.logger.warning(
-                        f"Ignoring periodic SSAF exception in simulation mode - {e}"
-                    )
-                    raw_focus_err = None
-
-                    self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
-                        self.mscope
-                    )
-
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("pssaf", t1 - t0)
-
-            if filtered_focus_err is not None:
-                self.filtered_focus_err = filtered_focus_err
-
-            t0 = perf_counter()
-            try:
-                self.flowrate = self.flowcontrol_routine.send((img, timestamp))
-            except CantReachTargetFlowrate as e:
-                self.logger.warning(
-                    f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-                )
-                self.flowrate = None
-                self.flowcontrol_routine = self.routines.flow_control_routine(
-                    self.mscope, self.target_flowrate
-                )
-            except LowConfidenceCorrelations as e:
-                self.logger.warning(
-                    f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-                )
-                self.flowrate = None
-                self.flowcontrol_routine = self.routines.flow_control_routine(
-                    self.mscope, self.target_flowrate
-                )
-
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
-
-            t0 = perf_counter()
-            # Update remaining metadata
-            self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
-            try:
-                pressure, status = self.mscope.pneumatic_module.getPressure()
-                (
-                    self.img_metadata["pressure_hpa"],
-                    self.img_metadata["pressure_status_flag"],
-                ) = (pressure, status)
-            except PressureSensorStaleValue as e:
-                ## TODO???
-                self.logger.info(f"Stale pressure sensor value - {e}")
-
-            self.img_metadata[
-                "syringe_pos"
-            ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
-            self.img_metadata["flowrate"] = self.flowrate
-            self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
-            self.img_metadata["focus_error"] = raw_focus_err
-            self.img_metadata["filtered_focus_error"] = filtered_focus_err
-            self.img_metadata["focus_adjustment"] = focus_adjustment
-
-            if self.count % TH_PERIOD_NUM == 0:
-                try:
+                self.density_routine.send(filtered_prediction)
+            except LowDensity:
+                self.logger.warning("Cell density is too low.")
+                self.reload_pause.emit(
+                    "Low cell density",
                     (
-                        temperature,
-                        humidity,
-                    ) = self.mscope.ht_sensor.get_temp_and_humidity()
-                    self.img_metadata["humidity"] = humidity
-                    self.img_metadata["temperature"] = temperature
-                except Exception as e:
-                    # some error has occurred, but the TH sensor isn't critical, so just warn
-                    # and move on
-                    self.logger.warning(
-                        f"exception occurred while retrieving temperature and humidity: {e}"
-                    )
-                    self.img_metadata["humidity"] = None
-                    self.img_metadata["temperature"] = None
+                        "Cell density is too low. "
+                        "Pausing operation so that more sample can be added without ending the experiment."
+                        '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
+                    ),
+                )
+                return
+
+        t1 = perf_counter()
+        self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
+
+        t0 = perf_counter()
+        try:
+            (
+                raw_focus_err,
+                filtered_focus_err,
+                focus_adjustment,
+            ) = self.PSSAF_routine.send(resized_img)
+        except MotorControllerError as e:
+            if not SIMULATION:
+                self.logger.error(
+                    "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                )
+                self.default_error.emit(
+                    "Autofocus failed",
+                    "Unable to achieve desired focus within condenser's depth of field.",
+                    ERROR_BEHAVIORS.DEFAULT.value,
+                )
+                return
             else:
+                self.logger.warning(
+                    f"Ignoring periodic SSAF exception in simulation mode - {e}"
+                )
+                raw_focus_err = None
+
+                self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
+
+        t1 = perf_counter()
+        self._update_metadata_if_verbose("pssaf", t1 - t0)
+
+        if filtered_focus_err is not None:
+            self.filtered_focus_err = filtered_focus_err
+
+        t0 = perf_counter()
+        try:
+            self.flowrate = self.flowcontrol_routine.send((img, timestamp))
+        except CantReachTargetFlowrate as e:
+            self.logger.warning(
+                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
+            )
+            self.flowrate = None
+            self.flowcontrol_routine = self.routines.flow_control_routine(
+                self.mscope, self.target_flowrate
+            )
+        except LowConfidenceCorrelations as e:
+            self.logger.warning(
+                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
+            )
+            self.flowrate = None
+            self.flowcontrol_routine = self.routines.flow_control_routine(
+                self.mscope, self.target_flowrate
+            )
+
+        t1 = perf_counter()
+        self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
+
+        t0 = perf_counter()
+        # Update remaining metadata
+        self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
+        try:
+            pressure, status = self.mscope.pneumatic_module.getPressure()
+            (
+                self.img_metadata["pressure_hpa"],
+                self.img_metadata["pressure_status_flag"],
+            ) = (pressure, status)
+        except PressureSensorStaleValue as e:
+            ## TODO???
+            self.logger.info(f"Stale pressure sensor value - {e}")
+
+        self.img_metadata[
+            "syringe_pos"
+        ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
+        self.img_metadata["flowrate"] = self.flowrate
+        self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
+        self.img_metadata["focus_error"] = raw_focus_err
+        self.img_metadata["filtered_focus_error"] = filtered_focus_err
+        self.img_metadata["focus_adjustment"] = focus_adjustment
+
+        if self.count % TH_PERIOD_NUM == 0:
+            try:
+                (
+                    temperature,
+                    humidity,
+                ) = self.mscope.ht_sensor.get_temp_and_humidity()
+                self.img_metadata["humidity"] = humidity
+                self.img_metadata["temperature"] = temperature
+            except Exception as e:
+                # some error has occurred, but the TH sensor isn't critical, so just warn
+                # and move on
+                self.logger.warning(
+                    f"exception occurred while retrieving temperature and humidity: {e}"
+                )
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
+        else:
+            self.img_metadata["humidity"] = None
+            self.img_metadata["temperature"] = None
 
-            zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
-            self.img_metadata["zarrwriter_qsize"] = zarr_qsize
+        zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
+        self.img_metadata["zarrwriter_qsize"] = zarr_qsize
 
-            ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
-            self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)
+        ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
+        self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)
 
-            self.img_metadata["runtime"] = perf_counter() - current_time
+        self.img_metadata["runtime"] = perf_counter() - current_time
 
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("img_metadata", t1 - t0)
+        t1 = perf_counter()
+        self._update_metadata_if_verbose("img_metadata", t1 - t0)
 
-            t0 = perf_counter()
-            self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
-            self.count += 1
-            t1 = perf_counter()
-            self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
+        t0 = perf_counter()
+        self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
+        self.count += 1
+        t1 = perf_counter()
+        self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
 
-            if self.running:
-                self.img_signal.connect(self.run_experiment)
+        if self.running:
+            self.img_signal.connect(self.run_experiment)
