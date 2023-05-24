@@ -18,7 +18,8 @@ class ERROR_BEHAVIORS(enum.Enum):
     PRECHECK = 1
     FLOWCONTROL = 2
 
-NO_PAUSE_STATES = {"pause", "intermission", "standby"}
+# ================ State machine verification ================ #
+NO_PAUSE_STATES = {"pause", "intermission"}
 
 # ================ Image display size ================ #
 IMG_DOWNSCALE = 2
