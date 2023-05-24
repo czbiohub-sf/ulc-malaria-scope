@@ -18,6 +18,7 @@ from os import (
     path,
 )
 from transitions import Machine
+from transitions.core import MachineError
 from time import sleep
 from logging.config import fileConfig
 from datetime import datetime
@@ -273,8 +274,8 @@ class Oracle(Machine):
         self.liveview_window.close_event.connect(self.close_handler)
 
         # Connect scopeop signals and slots
-        self.scopeop.setup_done.connect(self.next_state)
-        self.scopeop.experiment_done.connect(self.next_state)
+        self.scopeop.setup_done.connect(self.to_form)
+        self.scopeop.experiment_done.connect(self.to_intermission)
         self.scopeop.reset_done.connect(self.rerun)
 
         self.scopeop.yield_mscope.connect(self.acquisition.get_mscope)
@@ -359,7 +360,6 @@ class Oracle(Machine):
     def lid_open_pause_handler(self):
         if not self.scopeop.state in NO_PAUSE_STATES:
             self.scopeop.to_pause()
-        if self.scopeop.state == "pause":
             self.unpause()
 
     def general_pause_handler(
@@ -399,15 +399,17 @@ class Oracle(Machine):
             image=_IMAGE_RELOAD_PATH,
         )
         self.close_lid_display_message()
-        if self.scopeop.state == "pause":
-            self.unpause()
+        self.unpause()
 
     def unpause(self):
         self.close_lid_display_message()
         self.liveview_window.update_flowrate(BLANK_INFOPANEL_VAL)
         self.liveview_window.update_focus(BLANK_INFOPANEL_VAL)
         
-        if self.scopeop.state == "pause":
+        try:            
+            self.scopeop.unpause()
+        except MachineError:
+            self.scopeop.to_pause()
             self.scopeop.unpause()
 
     def close_handler(self):
@@ -471,7 +473,8 @@ class Oracle(Machine):
             if message_result == QMessageBox.No:
                 self.scopeop.to_intermission("Ending experiment due to error.")
             else:
-                self.scopeop.next_state()
+                if self.scopeop.state == "flowcontrol":
+                    self.scopeop.next_state()
 
     def display_message(
         self,
@@ -601,7 +604,7 @@ class Oracle(Machine):
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
 
-        self.next_state()
+        self.to_liveview()
 
     def _end_form(self, *args):
         if not SIMULATION:
@@ -636,6 +639,10 @@ class Oracle(Machine):
         self.liveview_window.close()
 
     def _start_intermission(self, msg):
+        if msg == "":
+            # Retriggered intermission due to race condition
+            return
+
         self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
@@ -658,7 +665,11 @@ class Oracle(Machine):
                 self.ssd_full_msg_and_exit()
                 self.shutoff()
             else:
-                self.scopeop.rerun()
+                try:
+                    self.scopeop.rerun()
+                except MachineError:
+                    self.scopeop.to_intermission(None)
+                    self.scopeop.rerun()
 
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")

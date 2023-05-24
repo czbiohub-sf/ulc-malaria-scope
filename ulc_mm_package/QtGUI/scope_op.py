@@ -193,7 +193,7 @@ class ScopeOp(QObject, NamedMachine):
         Machine.__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
         self.add_transition(
-            trigger="rerun", source="intermission", dest="standby", before="reset"
+            trigger="rerun", source=["intermission", "standby"], dest="standby", before="reset"
         )
         self.add_transition(
             trigger="unpause", source="pause", dest="autobrightness_precells"
