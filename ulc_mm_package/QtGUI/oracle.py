@@ -473,7 +473,7 @@ class Oracle(Machine):
             if message_result == QMessageBox.No:
                 self.scopeop.to_intermission("Ending experiment due to error.")
             else:
-                if self.scopeop.state == "flowcontrol":
+                if self.scopeop.state == "fastflow":
                     self.scopeop.next_state()
 
     def display_message(
