@@ -486,7 +486,10 @@ class ScopeOp(QObject, NamedMachine):
                     ERROR_BEHAVIORS.DEFAULT.value,
                 )
             else:
-                if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
+                if self.state in {
+                    "autobrightness_precells",
+                    "autobrightness_postcells",
+                }:
                     self.next_state()
         else:
             if self.running:
@@ -649,7 +652,9 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.count >= MAX_FRAMES:
             if self.state == "experiment":
-                self.to_intermission("Ending experiment since data collection is complete.")
+                self.to_intermission(
+                    "Ending experiment since data collection is complete."
+                )
             return
 
         if current_time - self.start_time > TIMEOUT_PERIOD_S:
