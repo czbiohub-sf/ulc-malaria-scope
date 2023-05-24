@@ -18,6 +18,7 @@ class ERROR_BEHAVIORS(enum.Enum):
     PRECHECK = 1
     FLOWCONTROL = 2
 
+
 # ================ State machine verification ================ #
 NO_PAUSE_STATES = {"pause", "intermission"}
 

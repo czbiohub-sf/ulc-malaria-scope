@@ -405,8 +405,8 @@ class Oracle(Machine):
         self.close_lid_display_message()
         self.liveview_window.update_flowrate(BLANK_INFOPANEL_VAL)
         self.liveview_window.update_focus(BLANK_INFOPANEL_VAL)
-        
-        try:            
+
+        try:
             self.scopeop.unpause()
         except MachineError:
             self.scopeop.to_pause()
