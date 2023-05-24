@@ -347,7 +347,7 @@ class Oracle(Machine):
         )
 
     def reload_pause_handler(self, title, message):
-        if not self.scopeop.state in NO_PAUSE_STATES:
+        if self.scopeop.state not in NO_PAUSE_STATES:
             self.scopeop.to_pause()
 
         self.general_pause_handler(
@@ -358,7 +358,7 @@ class Oracle(Machine):
         )
 
     def lid_open_pause_handler(self):
-        if not self.scopeop.state in NO_PAUSE_STATES:
+        if self.scopeop.state not in NO_PAUSE_STATES:
             self.scopeop.to_pause()
             self.unpause()
 
@@ -380,7 +380,7 @@ class Oracle(Machine):
             buttons=buttons,
         )
         if message_result == QMessageBox.Ok:
-            if not self.scopeop.state in NO_PAUSE_STATES:
+            if self.scopeop.state not in NO_PAUSE_STATES:
                 self.scopeop.to_pause()
         else:
             return
