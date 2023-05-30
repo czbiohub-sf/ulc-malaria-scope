@@ -87,6 +87,15 @@ class PneumaticModuleBase(ABC):
     def setDutyCycle(self, duty_cycle: int):
         ...
 
+    def threadedDecreaseDutyCycle(self):
+        ...
+
+    def threadedIncreaseDutyCycle(self):
+        ...
+
+    def is_locked(self):
+        ...
+
 
 @hardware
 class PneumaticModule(PneumaticModuleBase):

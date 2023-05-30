@@ -18,6 +18,7 @@ from os import (
     path,
 )
 from transitions import Machine
+from transitions.core import MachineError
 from time import sleep
 from logging.config import fileConfig
 from datetime import datetime
@@ -46,6 +47,7 @@ from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
+    NO_PAUSE_STATES,
     ICON_PATH,
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
@@ -272,8 +274,8 @@ class Oracle(Machine):
         self.liveview_window.close_event.connect(self.close_handler)
 
         # Connect scopeop signals and slots
-        self.scopeop.setup_done.connect(self.next_state)
-        self.scopeop.experiment_done.connect(self.next_state)
+        self.scopeop.setup_done.connect(self.to_form)
+        self.scopeop.experiment_done.connect(self.to_intermission)
         self.scopeop.reset_done.connect(self.rerun)
 
         self.scopeop.yield_mscope.connect(self.acquisition.get_mscope)
@@ -345,18 +347,18 @@ class Oracle(Machine):
         )
 
     def reload_pause_handler(self, title, message):
-        self.scopeop.to_pause()
+        if self.scopeop.state not in NO_PAUSE_STATES:
+            self.scopeop.to_pause()
 
         self.general_pause_handler(
             icon=QMessageBox.Icon.Warning,
             title=title,
             message=message,
             buttons=Buttons.OK,
-            pause_done=True,
         )
 
     def lid_open_pause_handler(self):
-        if self.lid_handler_enabled and self.scopeop.state != "pause":
+        if self.scopeop.state not in NO_PAUSE_STATES:
             self.scopeop.to_pause()
             self.unpause()
 
@@ -370,7 +372,6 @@ class Oracle(Machine):
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
         buttons=Buttons.CANCEL,
-        pause_done=False,
     ):
         message_result = self.display_message(
             icon,
@@ -379,7 +380,7 @@ class Oracle(Machine):
             buttons=buttons,
         )
         if message_result == QMessageBox.Ok:
-            if not pause_done:
+            if self.scopeop.state not in NO_PAUSE_STATES:
                 self.scopeop.to_pause()
         else:
             return
@@ -404,7 +405,12 @@ class Oracle(Machine):
         self.close_lid_display_message()
         self.liveview_window.update_flowrate(BLANK_INFOPANEL_VAL)
         self.liveview_window.update_focus(BLANK_INFOPANEL_VAL)
-        self.scopeop.unpause()
+
+        try:
+            self.scopeop.unpause()
+        except MachineError:
+            self.scopeop.to_pause()
+            self.scopeop.unpause()
 
     def close_handler(self):
         self.display_message(
@@ -456,7 +462,7 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
 
-        elif behavior == ERROR_BEHAVIORS.YN.value:
+        elif behavior == ERROR_BEHAVIORS.FLOWCONTROL.value:
             message_result = self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
@@ -467,7 +473,8 @@ class Oracle(Machine):
             if message_result == QMessageBox.No:
                 self.scopeop.to_intermission("Ending experiment due to error.")
             else:
-                self.scopeop.next_state()
+                if self.scopeop.state == "fastflow":
+                    self.scopeop.next_state()
 
     def display_message(
         self,
@@ -597,7 +604,7 @@ class Oracle(Machine):
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
 
-        self.next_state()
+        self.to_liveview()
 
     def _end_form(self, *args):
         if not SIMULATION:
@@ -632,6 +639,10 @@ class Oracle(Machine):
         self.liveview_window.close()
 
     def _start_intermission(self, msg):
+        if msg == "":
+            # Retriggered intermission due to race condition
+            return
+
         self.display_message(
             QMessageBox.Icon.Information,
             "Run complete",
@@ -654,7 +665,11 @@ class Oracle(Machine):
                 self.ssd_full_msg_and_exit()
                 self.shutoff()
             else:
-                self.scopeop.rerun()
+                try:
+                    self.scopeop.rerun()
+                except MachineError:
+                    self.scopeop.to_intermission(None)
+                    self.scopeop.rerun()
 
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")

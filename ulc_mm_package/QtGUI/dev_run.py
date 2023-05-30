@@ -1,3 +1,5 @@
+import cv2
+
 from ulc_mm_package.QtGUI.gui_constants import FLOWCELL_QC_FORM_LINK
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 
@@ -42,6 +44,8 @@ from ulc_mm_package.image_processing.zstack import (
     full_sweep_image_collection,
     local_sweep_image_collection,
 )
+
+from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
@@ -134,19 +138,19 @@ class AcquisitionThread(QThread):
         # Hardware peripherals
         self.motor = mscope.motor
         self.pneumatic_module: PneumaticModule = mscope.pneumatic_module
-        mscope._init_data_storage(fps_lim=30)
+        mscope._init_data_storage(fps_lim=40)
         self.data_storage = mscope.data_storage
 
         # Routines
         self.routines = Routines()
-        self.flow_controller: FlowController = FlowController(
-            self.pneumatic_module, 600, 800
-        )  # default shell
+        mscope.flow_controller.reset()
+        self.flow_controller: FlowController = mscope.flow_controller
         self.initializeFlowControl = False
         self.flowcontrol_enabled = False
         self.fast_flow_enabled = False
         self.autobrightness = self.routines.autobrightnessRoutine(mscope)
         self.autobrightness_on = False
+        self.timestamp = 0
 
         # Single-shot autofocus
         try:
@@ -164,10 +168,11 @@ class AcquisitionThread(QThread):
             if self.camera_activated:
                 try:
                     for image, timestamp in self.camera.yieldImages():
+                        self.timestamp = timestamp
                         self.updateGUIElements()
                         self.save(image)
                         self.zStack(image)
-                        self.activeFlowControl(image, timestamp)
+                        self.activeFlowControl(image)
                         self._autobrightness(image)
                         self.autofocusWrapper(image)
 
@@ -215,7 +220,7 @@ class AcquisitionThread(QThread):
             "im_counter": self.im_counter,
             "measurement_type": "placeholder",
             "sample_type": "placeholder",
-            "timestamp": datetime.now().strftime("%Y-%m-%d-%H%M%S_%f"),
+            "timestamp": self.timestamp,
             "exposure": self.camera.exposureTime_ms,
             "motor_pos": self.motor.pos,
             "pressure_hpa": pressure,
@@ -223,7 +228,7 @@ class AcquisitionThread(QThread):
             "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
             "flow_control_on": self.flowcontrol_enabled,
             "target_flowrate": self.flow_controller.target_flowrate,
-            "current_flowrate": self.flow_controller.curr_flowrate,
+            "current_flowrate": self.flow_controller.flowrate,
             "focus_adjustment": self.af_adjustment_done,
         }
 
@@ -317,6 +322,7 @@ class AcquisitionThread(QThread):
 
     def runLocalZStack(self):
         self.takeZStack = True
+        self.mscope.fan.turn_off_all()
         self.zstack = local_sweep_image_collection(
             self.motor, self.motor.pos, save_loc=self.external_dir
         )
@@ -331,6 +337,7 @@ class AcquisitionThread(QThread):
                 self.takeZStack = False
                 self.motorPosChanged.emit(self.motor.pos)
                 self.zStackFinished.emit(1)
+                self.mscope.fan.turn_on_all()
             except ValueError:
                 # Occurs if an image is sent while the function is still moving the motor
                 pass
@@ -360,9 +367,9 @@ class AcquisitionThread(QThread):
     def _set_target_flowrate(self, val):
         self.target_flowrate = val
 
-    def initializeActiveFlowControl(self, img: np.ndarray):
-        self.fastFlowRoutine = self.routines.fastFlowRoutine(
-            self.mscope, img, self.target_flowrate
+    def initializeActiveFlowControl(self):
+        self.fastFlowRoutine = self.routines.flow_control_routine(
+            self.mscope, self.target_flowrate, fast_flow=True
         )
         self.initializeFlowControl = False
         self.fast_flow_enabled = True
@@ -372,19 +379,19 @@ class AcquisitionThread(QThread):
         self.flowcontrol_enabled = False
         self.initializeFlowControl = False
 
-    def activeFlowControl(self, img: np.ndarray, timestamp: int):
+    def activeFlowControl(self, img: np.ndarray):
         if self.initializeFlowControl:
-            self.initializeActiveFlowControl(img)
+            self.initializeActiveFlowControl()
 
         if self.fast_flow_enabled:
             try:
-                flow_val = self.fastFlowRoutine.send((img, timestamp))
+                flow_val = self.fastFlowRoutine.send((img, self.timestamp))
                 if flow_val is not None:
                     self.flowValChanged.emit(flow_val)
             except StopIteration as e:
                 final_val = e.value
-                self.flowControl = self.routines.flowControlRoutine(
-                    self.mscope, self.target_flowrate
+                self.flowControl = self.routines.flow_control_routine(
+                    self.mscope, self.target_flowrate, fast_flow=False
                 )
                 self.fast_flow_enabled = False
                 self.flowcontrol_enabled = True
@@ -404,7 +411,7 @@ class AcquisitionThread(QThread):
 
         if self.flowcontrol_enabled:
             try:
-                flow_val = self.flowControl.send((img, timestamp))
+                flow_val = self.flowControl.send((img, self.timestamp))
                 self.syringePosChanged.emit(1)
                 if flow_val is not None:
                     self.flowValChanged.emit(flow_val)
@@ -427,7 +434,10 @@ class AcquisitionThread(QThread):
         if self.active_autofocus:
             print("Autofocusing!")
             try:
-                steps_from_focus = -int(self.autofocus_model(img).pop())
+                resized_img = cv2.resize(
+                    img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
+                )
+                steps_from_focus = -int(self.autofocus_model(resized_img).pop())
                 print(f"SSAF: {steps_from_focus} steps")
                 self.af_adjustment_done = True
 
@@ -958,7 +968,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Local Vicinity ZStack",
-            "Press okay to sweep the motor over its current nearby vicinity and save images (note: by default we save 30 imgs/step so this may be slow).",
+            "Press okay to sweep the motor over its current nearby vicinity and save images (note: by default we save 30 imgs/step so this may be slow).\nNOTE: the fans will turn off temporarily!\nDo not be alarmed!!!\nStay CALM!!!!",
             cancel=True,
         )
 

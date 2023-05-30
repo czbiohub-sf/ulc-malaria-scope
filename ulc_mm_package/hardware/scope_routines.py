@@ -14,10 +14,7 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     checkLedWorking,
 )
-from ulc_mm_package.image_processing.flow_control import (
-    CantReachTargetFlowrate,
-    LowConfidenceCorrelations,
-)
+
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
     NoCellsFound,
@@ -25,8 +22,12 @@ from ulc_mm_package.image_processing.cell_finder import (
 )
 from ulc_mm_package.hardware.pneumatic_module import PressureLeak, PressureSensorBusy
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
+from ulc_mm_package.hardware.hardware_constants import (
+    MIN_PRESSURE_DIFF,
+    FOCUS_EWMA_ALPHA,
+)
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
+from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
@@ -54,7 +55,7 @@ class Routines:
     ) -> int:
         """Single shot autofocus routine.
 
-        Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
+        Takes in an array of images (number based on AF_BATCH_SIZE), runs an inference
         using the SSAF model, averages the results, and adjusts the motor position by that step value.
 
         Parameters
@@ -71,10 +72,6 @@ class Routines:
         ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
         steps_from_focus = -round(np.mean(ssaf_steps_from_focus))
 
-        # Change to async batch inference? Check w/ Axel
-        # mscope.autofocus_model.asyn(img_arr)
-        # ssaf_steps_from_focus = mscope.autofocus_model.get_asyn_results()
-
         try:
             dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
             mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
@@ -84,30 +81,14 @@ class Routines:
         return steps_from_focus
 
     @init_generator
-    def continuousSSAFRoutine(
-        self, mscope: MalariaScope
-    ) -> Generator[Optional[int], np.ndarray, None]:
-        """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
-
-        img_arr = []
-        steps_from_focus = None
-
-        img: np.ndarray
-        while True:
-            img = yield steps_from_focus
-            steps_from_focus = None
-            img_arr.append(img)
-            if len(img_arr) == nn_constants.AF_BATCH_SIZE:
-                steps_from_focus = self.singleShotAutofocusRoutine(mscope, img_arr)
-                img_arr = []
-
-    @init_generator
     def periodicAutofocusWrapper(
-        self, mscope: MalariaScope, img: np.ndarray
-    ) -> Generator[Optional[int], np.ndarray, None]:
-        """A periodic wrapper around the `continuousSSAFRoutine`.
+        self, mscope: MalariaScope
+    ) -> Generator[
+        Tuple[Optional[float], Optional[float], Optional[bool]], np.ndarray, None
+    ]:
+        """Periodic autofocus calculations with EWMA filtering
 
-        This function adds a simple time wrapper around `continuousSSAFRoutine`
+        This function adds a simple time wrapper around the autofocus model and EWMA filter
         such that inferences and motor adjustments are done every `AF_PERIOD_NUM' frames.
 
         When not making an adjustment, this Generator yields None. After an adjustment has been completed, the next
@@ -120,24 +101,68 @@ class Routines:
         None:
             In between periods, images are not being sent to SSAF.
         int:
-            Number of motor steps taken, returned after a full batch of images have been sent once
+            Number of motor steps taken, returned after an image has been sent once
             AF_PERIOD_NUM frames have elapsed since the last adjustment.
         """
 
-        counter = 0
+        filtered_error = 0.0
+        img_counter = 0
+        throttle_counter = 0
+        move_counter = 0
+
+        adjusted = None
         steps_from_focus = None
-        ssaf_routine = self.continuousSSAFRoutine(mscope)
+
+        ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
+        ssaf_filter.set_init_val(0)
+
+        ssaf_period_num = ssaf_filter.get_adjustment_period_ewma()
+        self.logger.info(
+            f"Minimum SSAF adjustment period = {ssaf_period_num} measurements"
+        )
 
         while True:
-            counter += 1
-            if counter >= nn_constants.AF_PERIOD_NUM:
-                img = yield steps_from_focus
-                steps_from_focus = ssaf_routine.send(img)
+            throttle_counter += 1
+            if throttle_counter >= nn_constants.AF_PERIOD_NUM:
+                img_counter += 1
+                img = yield steps_from_focus, filtered_error, adjusted
+                adjusted = None
 
-                if counter >= nn_constants.AF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
-                    counter = 0
+                # if mscope.autofocus_model._executor._work_queue.full(), this will block
+                # until an element is removed from the queue
+                # TODO watch performance, if blocking a lot then we must subclass ThreadPoolExecutor
+                # and change https://github.com/python/cpython/blob/a712c5f42d5904e1a1cdaf11bd1f05852cfdd830/Lib/concurrent/futures/thread.py#L175
+                # to put_nowait```
+                mscope.autofocus_model.asyn(img, img_counter)
+                results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
+
+                for res in sorted(results, key=lambda res: res.id):
+                    move_counter += 1
+
+                    steps_from_focus = -res.result.item()
+                    filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
+
+                throttle_counter = 0
+
+                if (
+                    move_counter >= ssaf_period_num
+                    and abs(filtered_error) > nn_constants.AF_THRESHOLD
+                ):
+                    self.logger.info(
+                        f"Adjusted focus by {-filtered_error:.2f} steps after {move_counter} measurements"
+                    )
+                    move_counter = 0
+                    adjusted = True
+
+                    try:
+                        dir = Direction.CW if filtered_error > 0 else Direction.CCW
+                        mscope.motor.threaded_move_rel(
+                            dir=dir, steps=abs(filtered_error)
+                        )
+                    except MotorControllerError as e:
+                        raise e
             else:
-                _ = yield None
+                _ = yield None, None, None
 
     def count_parasitemia(
         self,
@@ -169,74 +194,22 @@ class Routines:
                 ) = yield []
 
     @init_generator
-    def flowControlRoutine(
-        self,
-        mscope: MalariaScope,
-        target_flowrate: float,
-    ) -> Generator[Optional[float], np.ndarray, None]:
+    def flow_control_routine(
+        self, mscope: MalariaScope, target_flowrate: float, fast_flow: bool = False
+    ) -> Generator[Optional[float], np.ndarray, Optional[float]]:
         """Keep the flowrate steady by continuously calculating the flowrate and periodically
         adjusting the syringe position. Need to initially pass in the flowrate to maintain.
+
+        If fast_flow is set to true, flow control feedback will run more rapidly (and with more noise) to attempt
+        to reach the target flow rate sooner.
 
         Parameters
         ----------
         mscope: MalariaScope
         target_flowrate: float
             The flowrate value to attempt to keep steady
-        img: np.ndarray
-            Image to be passed into the FlowController
-
-        Exceptions
-        ----------
-        CantReachTargetFlowrate:
-            Raised when the syringe is already at its maximally extended position but the flowrate
-            is still outside the tolerance band.
-        """
-
-        flow_val: Optional[float] = None
-
-        img: np.ndarray
-        img, timestamp = yield flow_val
-
-        mscope.flow_controller.setTargetFlowrate(target_flowrate)
-        while True:
-            img, timestamp = yield flow_val
-            flow_val = mscope.flow_controller.controlFlow(img, timestamp)
-
-    @init_generator
-    def fastFlowRoutine(
-        self,
-        mscope: MalariaScope,
-        img: np.ndarray,
-        target_flowrate: float = processing_constants.FLOWRATE.FAST.value,
-    ) -> Generator[Optional[float], np.ndarray, float]:
-        """Faster flowrate feedback for initial flow ramp-up.
-
-        See FlowController.fastFlowAdjustment for specifics.
-
-        Usage
-        -----
-        - Use this routine to do the initial ramp up. Once it hits the target,
-        it raises a StopIteration exception and a float number (flowrate) is returned via the exception (e.value)
-
-            fastflow_generator = fastFlowRoutine(mscope, None)
-            for img in cam.yieldImages():
-                try:
-                    flow_val = fastflow_generator.send(img)
-                except StopIteration as e:
-                    flow_val = e.value
-            cam.stopAcquisition()
-            print(flow_val)
-
-        Then this flow_val can be passed into `flowControlRoutine` on initialization to set
-        the flowrate that should be held steady: i.e:
-
-            flow_control = flowControlRoutine(mscope, flow_val, None)
-            ...
-            ...etc
-
-        Returns
-        -------
-        float: flow_rate if target achieved
+        fast_flow: bool
+            Toggle whether to do faster feedback loop to reach the target flowrate sooner
 
         Exceptions
         ----------
@@ -245,28 +218,26 @@ class Routines:
             is still outside the tolerance band.
 
         LowConfidenceCorrelations:
-            Raised if the number of recent xcorrs which have 'failed' (had a low correlation value) exceeds
-            2 * the measurement window size.
+            Raised if the percentage of failed correlations exceeds FAILED_CORR_PERC_TOLERANCE of all measurements.
         """
 
-        flow_val = 0.0
-        img, timestamp = yield None
-
-        mscope.flow_controller.setTargetFlowrate(target_flowrate)
+        flow_val: Optional[float] = None
+        mscope.flow_controller.reset()
+        flow_controller = mscope.flow_controller
+        flow_controller.set_target_flowrate(target_flowrate)
+        if fast_flow:
+            flow_controller.set_alpha(
+                processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
+            )  # Double the alpha, ~halve the half life
 
         while True:
             img, timestamp = yield flow_val
-            try:
-                flow_val, flow_error = mscope.flow_controller.fastFlowAdjustment(
-                    img, timestamp
-                )
-            except CantReachTargetFlowrate:
-                raise
-            except LowConfidenceCorrelations:
-                raise
+            flow_val, flow_error = flow_controller.control_flow(img, timestamp)
 
-            if flow_error == 0:
-                return flow_val
+            if fast_flow:
+                if flow_error is not None:
+                    if flow_error == 0:
+                        return flow_val
 
     @init_generator
     def autobrightnessRoutine(
@@ -414,7 +385,6 @@ class Routines:
         mscope: MalariaScope,
         pull_time: float = 5,
         steps_per_image: int = 10,
-        img: Optional[np.ndarray] = None,
     ) -> Generator[None, np.ndarray, Optional[int]]:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
