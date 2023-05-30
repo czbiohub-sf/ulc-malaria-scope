@@ -1,3 +1,4 @@
+import enum
 import time
 import logging
 import threading
@@ -33,6 +34,17 @@ from ulc_mm_package.hardware.real.motorcontroller import DRV8825Nema as RealDRV8
 MOTOR_LOCK = threading.Lock()
 
 
+class Steptype(enum.Enum):
+    FULL = enum.auto()
+    ONE_HALF = enum.auto()  # 1/2
+    ONE_QUARTER = enum.auto()  # 1/4
+    ONE_EIGHTH = enum.auto()  # 1/8
+    ONE_SIXTEENTH = enum.auto()  # 1/16
+    ONE_THIRTY_SECOND = enum.auto()  # 1/32
+    ONE_SIXTY_FOURTH = enum.auto()  # 1/64
+    ONE_ONE_HUNDRED_TWENTY_EIGHTH = enum.auto()  # 1/128
+
+
 class DRV8825Nema(RealDRV8825Nema):
     """Class to control a Nema bi-polar stepper motor for a DRV8825.
 
@@ -48,7 +60,7 @@ class DRV8825Nema(RealDRV8825Nema):
         reset_pin=MOTOR_RESET,
         fault_pin=MOTOR_FAULT_PIN,
         motor_type="DRV8825",
-        steptype="Full",
+        steptype=Steptype.ONE_HALF,
         lim1=MOTOR_LIMIT_SWITCH1,
         lim2: Optional[int] = None,
         max_pos: Optional[int] = None,
@@ -65,7 +77,7 @@ class DRV8825Nema(RealDRV8825Nema):
             Type of motor two options: A4988 or DRV8825
         steptype : string
             Type of drive to step motor, options:
-            (Full, Half, 1/4, 1/8, 1/16) 1/32 for DRV8825 only
+            (Full, Half, 1/4, 1/8, 1/16, 1/32) for DRV8825 only
         lim1 : int
             Limit switch 1 GPIO pin
         lim2 : int
@@ -92,19 +104,19 @@ class DRV8825Nema(RealDRV8825Nema):
 
         # Get step degree based on steptype
         degree_value = {
-            "Full": 1.8,
-            "Half": 0.9,
-            "1/4": 0.45,
-            "1/8": 0.225,
-            "1/16": 0.1125,
-            "1/32": 0.05625,
-            "1/64": 0.028125,
-            "1/128": 0.0140625,
+            Steptype.FULL: 1.8,
+            Steptype.ONE_HALF: 0.9,
+            Steptype.ONE_QUARTER: 0.45,
+            Steptype.ONE_EIGHTH: 0.225,
+            Steptype.ONE_SIXTEENTH: 0.1125,
+            Steptype.ONE_THIRTY_SECOND: 0.05625,
+            Steptype.ONE_SIXTY_FOURTH: 0.028125,
+            Steptype.ONE_ONE_HUNDRED_TWENTY_EIGHTH: 0.0140625,
         }
         self.step_degree = degree_value[steptype]
         self.microstepping = 1.8 / self.step_degree  # 1, 2, 4, 8, 16, 32
         self.dist_per_step_um = (
-            self.step_degree / degree_value["Full"] * FULL_STEP_TO_TRAVEL_DIST_UM
+            self.step_degree / degree_value[Steptype.FULL] * FULL_STEP_TO_TRAVEL_DIST_UM
         )
 
         # TODO Calculate the max position allowable based on stepping mode and actual travel distance on the scope
