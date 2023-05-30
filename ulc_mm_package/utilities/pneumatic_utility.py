@@ -189,7 +189,6 @@ def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
 
 def set_pwm(mpr, pwm):
     try:
-
         init(mpr, pwm)
 
         while True:
