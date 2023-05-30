@@ -34,7 +34,7 @@ from ulc_mm_package.hardware.real.pneumatic_module import AdafruitMPRLS
 PWM_FREQ = 100
 DUTY_MAX = 21.2 / 100
 DUTY_MIN = 15.5 / 100
-DUTY_SET_DEF = 20/100
+DUTY_SET_DEF = 20 / 100
 DUTY_MIN_WIDE = 14 / 100
 DUTY_MAX_WIDE = 22.5 / 100
 P_GAIN = 0.001
@@ -186,13 +186,14 @@ def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
         pwm.setDutyCycle(DUTY_MAX)
         time.sleep(0.5)
 
+
 def set_pwm(mpr, pwm):
     try:
 
         init(mpr, pwm)
 
         while True:
-            duty_set = float(input("Enter a new setpoint duty ratio (%)"))/100.0
+            duty_set = float(input("Enter a new setpoint duty ratio (%)")) / 100.0
             print(f"Setting duty ratio to {duty_set}")
             pwm.setDutyCycle(duty_set)
             time.sleep(LOOP_DELAY)
