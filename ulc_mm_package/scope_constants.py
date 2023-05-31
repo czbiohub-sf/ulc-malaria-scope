@@ -47,6 +47,7 @@ class CameraOptions(Enum):
     AVT = auto()
     BASLER = auto()
     SIMULATED = auto()
+    NONE = auto()
 
     def img_dims(self) -> ImageDims:
         if self == CameraOptions.AVT:
@@ -111,9 +112,8 @@ try:
         elif _basler_dev is not None:
             CAMERA_SELECTION = CameraOptions.BASLER
         else:
-            raise MissingCameraError(
-                "There is no camera found on the device and we are not simulating: "
-            )
+            CAMERA_SELECTION = CameraOptions.NONE
+
 except usb.core.NoBackendError:
     CAMERA_SELECTION = CameraOptions.SIMULATED
 

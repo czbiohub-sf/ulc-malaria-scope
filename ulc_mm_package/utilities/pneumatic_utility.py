@@ -1,6 +1,6 @@
 # Tools for calibrating and simple usage of the pneumatic module on lfm-scope
 
-# It has two functions so far:
+# It has three functions so far:
 #   1. Stabilize: simply stabilizes the pressure at a setpoint (cmd line input).
 #       Used as a basic tool for applying a known pressure to the flow cell.
 
@@ -8,6 +8,8 @@
 #       discover the pressure as a function of duty ratio. Calibration values
 #       are computed, corresponding to lower and upper bounds of the useful range.
 #       A configuration file is written to record the upper and lower duty ratio bounds.
+
+#   3. A simple tool to fix the duty ratio of the PWM via command line argument.
 
 #       Note: a sealed flow cell must be installed on the scope in order to hold vacuum.
 
@@ -22,12 +24,14 @@ import argparse
 import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
+import pigpio
 
 from os import system
 from pathlib import Path
 from typing import Tuple
 
 from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
+from ulc_mm_package.hardware.hardware_constants import SERVO_5V_PIN
 from ulc_mm_package.hardware.real.pneumatic_module import AdafruitMPRLS
 
 
@@ -207,35 +211,44 @@ def set_pwm(mpr, pwm):
 def main() -> None:
     # Parse input arguments and decide which function to call
 
-    parser = init_argparse()
-    args = parser.parse_args()
+    try: 
+        parser = init_argparse()
+        args = parser.parse_args()
 
-    # Instantiate pressure sensor
-    mpr = AdafruitMPRLS()
+        # Instantiate pressure sensor
+        mpr = AdafruitMPRLS()
 
-    # Set up PWM output to servo
-    pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
-    pwm.setFreq(PWM_FREQ)
+        # Set up PWM output to servo
+        pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
+        pwm.setFreq(PWM_FREQ)
 
-    if args.action[0] == "stabilize":
-        # Simply stabilize pressure at the setpoint
-        if not args.p:
-            p_set = P_SET_DEF
+        pi = pigpio.pi()
+        pi.write(SERVO_5V_PIN, 1)
+
+        if args.action[0] == "stabilize":
+            # Simply stabilize pressure at the setpoint
+            if not args.p:
+                p_set = P_SET_DEF
+            else:
+                p_set = int(args.p)
+
+            stabilize_pressure(mpr, pwm, p_set)
+
+        elif args.action[0] == "sweep":
+            # Perform a sweep of the PWM range, returning pressure vs. PWM duty ratio
+            calibrate_range(mpr, pwm)
+
+        elif args.action[0] == "pwm":
+            # Simply set the PWM to the given setpoint
+            set_pwm(mpr, pwm)
+
         else:
-            p_set = int(args.p)
+            print("Argument " + str(args.action[0] + " not recognized"))
+    finally:
+        pi.write(SERVO_5V_PIN, 0)
+        mpr.close()
+        pi.stop()
 
-        stabilize_pressure(mpr, pwm, p_set)
-
-    elif args.action[0] == "sweep":
-        # Perform a sweep of the PWM range, returning pressure vs. PWM duty ratio
-        calibrate_range(mpr, pwm)
-
-    elif args.action[0] == "pwm":
-        # Simply set the PWM to the given setpoint
-        set_pwm(mpr, pwm)
-
-    else:
-        print("Argument " + str(args.action[0] + " not recognized"))
 
 
 if __name__ == "__main__":
