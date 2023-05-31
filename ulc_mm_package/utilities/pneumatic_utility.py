@@ -215,7 +215,7 @@ def set_pwm(mpr, pwm):
 def main() -> None:
     # Parse input arguments and decide which function to call
 
-    try: 
+    try:
         parser = init_argparse()
         args = parser.parse_args()
 
@@ -252,7 +252,6 @@ def main() -> None:
         pi.write(SERVO_5V_PIN, 0)
         mpr.close()
         pi.stop()
-
 
 
 if __name__ == "__main__":

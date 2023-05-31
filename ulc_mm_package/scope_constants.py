@@ -1,12 +1,12 @@
 import os
 import usb
-import pathlib
 import socket
 
+from pathlib import Path
 from enum import auto, Enum
 from collections import namedtuple
 
-curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
+curr_dir = Path(__file__).parent.resolve()  # Get full path
 
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
@@ -29,7 +29,7 @@ if SIMULATION:
     if VIDEO_PATH is None:
         raise RuntimeError(
             "Sample video for simulation mode could not be found. "
-            f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
+            f"Download a video from {VIDEO_REC} and save as {str(_viable_videos[0])} or {str(_viable_videos[1])}"
         )
 
 
@@ -58,14 +58,15 @@ class CameraOptions(Enum):
             # FIXME: if 'avt' in videopath, assume it is an avt vid
             # a bit hacky, but workable for just sim mode
             assert VIDEO_PATH is not None
-            if "avt" in VIDEO_PATH:
+            if "avt" in str(VIDEO_PATH):
                 return ImageDims(height=772, width=1032)
             return ImageDims(height=600, width=800)
-        raise ValueError("this is impossible because this class is an enum")
 
         raise ValueError(
-            f"CameraOptions somehow gained an enum type {self}. "
-            "Please report this strange bug!"
+            f"CameraOptions type {self} does not have a width "
+            f"or height - if {self} is NONE, a camera was not detected "
+            "and we are not running in simulation mode. To run in "
+            "simulation mode, set the environment variable MS_SIMULATE=1"
         )
 
     @property
