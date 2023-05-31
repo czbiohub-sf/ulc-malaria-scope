@@ -73,47 +73,49 @@ def calibrate_range(
     step_size = abs(np.diff(duty_vec)[0])
     press_vec = np.zeros_like(duty_vec)
 
-    try:
-        init(mpr, pwm, initial=DUTY_MAX_WIDE)
+    if mpr.mpr_enabled:
+        try:
+            init(mpr, pwm, initial=DUTY_MAX_WIDE)
 
-        for count, value in enumerate(duty_vec):
-            pwm.setDutyCycle(value)
-            time.sleep(0.25)
-            press_vec[count] = int(mpr.getPressureMaxReadAttempts()[0])
-            system("clear")
-            print("Sweeping: duty = " + str(value) + "%")
-            print("Pressure = " + str(press_vec[count]) + " mbar")
-    except KeyboardInterrupt:
-        pass
+            for count, value in enumerate(duty_vec):
+                pwm.setDutyCycle(value)
+                time.sleep(0.25)
+                press_vec[count] = int(mpr.getPressureMaxReadAttempts()[0])
+                system("clear")
+                print("Sweeping: duty = " + str(value) + "%")
+                print("Pressure = " + str(press_vec[count]) + " mbar")
+        except KeyboardInterrupt:
+            pass
 
-    finally:
-        pwm.setDutyCycle(DUTY_MAX)
-        time.sleep(0.5)
+        finally:
+            pwm.setDutyCycle(DUTY_MAX)
+            time.sleep(0.5)
 
-        mpr.close()
+            mpr.close()
 
-    p_max = max(press_vec)
-    p_min = min(press_vec)
-    press_range = p_max - p_min
-    press_lower_bound = p_min + (PERC_LOWER / 100) * press_range
-    press_upper_bound = p_min + (PERC_UPPER / 100) * press_range
+        p_max = max(press_vec)
+        p_min = min(press_vec)
+        press_range = p_max - p_min
+        press_lower_bound = p_min + (PERC_LOWER / 100) * press_range
+        press_upper_bound = p_min + (PERC_UPPER / 100) * press_range
 
-    # Using < works as the vector is in decending order
-    duty_lower_bound = duty_vec[np.where(press_vec < press_lower_bound)[0][0]]
-    duty_upper_bound = duty_vec[np.where(press_vec < press_upper_bound)[0][0]]
+        # Using < works as the vector is in decending order
+        duty_lower_bound = duty_vec[np.where(press_vec < press_lower_bound)[0][0]]
+        duty_upper_bound = duty_vec[np.where(press_vec < press_upper_bound)[0][0]]
 
-    cal = dict()
-    cal["press_range"] = press_range
-    cal["p_max"] = p_max
-    cal["p_min"] = p_min
-    cal["press_lower_bound"] = press_lower_bound
-    cal["press_upper_bound"] = press_upper_bound
-    cal["duty_lower_bound"] = duty_lower_bound
-    cal["duty_upper_bound"] = duty_upper_bound
-    cal["step_size"] = step_size
+        cal = dict()
+        cal["press_range"] = press_range
+        cal["p_max"] = p_max
+        cal["p_min"] = p_min
+        cal["press_lower_bound"] = press_lower_bound
+        cal["press_upper_bound"] = press_upper_bound
+        cal["duty_lower_bound"] = duty_lower_bound
+        cal["duty_upper_bound"] = duty_upper_bound
+        cal["step_size"] = step_size
 
-    print(cal)
+        print(cal)
 
+<<<<<<< Updated upstream
     create_calibration_file(cal)
 
     plt.plot(duty_vec, press_vec, "o-b")
@@ -124,7 +126,16 @@ def calibrate_range(
     plt.show()
 
     return duty_vec, press_vec
+=======
+        create_calibration_file(cal)
+>>>>>>> Stashed changes
 
+        plt.plot(duty_vec, press_vec, "o-b")
+        plt.plot(duty_lower_bound, press_lower_bound, "o-r")
+        plt.plot(duty_upper_bound, press_upper_bound, "o-r")
+        plt.show()
+    else:
+        print('Warning! MPRLS not enabled!')
 
 def create_calibration_file(cal) -> None:
     # Writes upper and lower duty ratio bounds to a configuration file
@@ -150,7 +161,12 @@ def init(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, initial=DUTY_MAX) -> None:
     # a sealed flow cell.
 
     # Initial pressure reading
-    p_read = int(mpr.getPressureMaxReadAttempts()[0])
+    if mpr.mpr_enabled:
+        p_read = int(mpr.getPressureMaxReadAttempts()[0])
+    else:
+        print("Warning! MPRLS not enabled!")
+        p_read = 0
+
     print("Starting pressure -", p_read, "mb")
 
     # Max is no vacuum. Set initially to max
@@ -172,8 +188,12 @@ def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
 
         # CTRL-C out
         while True:
-            p_read = int(mpr.getPressureMaxReadAttempts()[0])
             system("clear")
+            if mpr.mpr_enabled:
+                p_read = int(mpr.getPressureMaxReadAttempts()[0])
+            else:
+                print('Warning! MPRLS not enabled!')
+
             print("CTRL-C to exit...")
             print("Setpoint = " + str(p_set) + " mbar")
             print("Pressure = " + str(p_read) + " mbar")
