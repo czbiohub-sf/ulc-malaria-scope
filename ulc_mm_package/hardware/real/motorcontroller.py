@@ -37,6 +37,8 @@ from ulc_mm_package.hardware.motorcontroller import (
     MotorInMotion,
     InvalidMove,
     Steptype,
+    STEP_TYPE_TO_ANGLE,
+    MAX_STEPS_ON_FULL_STEPPING,
 )
 
 
@@ -100,26 +102,17 @@ class DRV8825Nema:
         self._homed = False
         self.stop_motor = False
 
-        # Get step degree based on steptype
-        degree_value = {
-            Steptype.FULL: 1.8,
-            Steptype.ONE_HALF: 0.9,
-            Steptype.ONE_QUARTER: 0.45,
-            Steptype.ONE_EIGHTH: 0.225,
-            Steptype.ONE_SIXTEENTH: 0.1125,
-            Steptype.ONE_THIRTY_SECOND: 0.05625,
-            Steptype.ONE_SIXTY_FOURTH: 0.028125,
-            Steptype.ONE_ONE_HUNDRED_TWENTY_EIGHTH: 0.0140625,
-        }
-        self.step_degree = degree_value[steptype]
+        self.step_degree = STEP_TYPE_TO_ANGLE[steptype]
         self.microstepping = 1.8 / self.step_degree  # 1, 2, 4, 8, 16, 32
         self.dist_per_step_um = (
-            self.step_degree / degree_value[Steptype.FULL] * FULL_STEP_TO_TRAVEL_DIST_UM
+            self.step_degree
+            / STEP_TYPE_TO_ANGLE[Steptype.FULL]
+            * FULL_STEP_TO_TRAVEL_DIST_UM
         )
 
         # TODO Calculate the max position allowable based on stepping mode and actual travel distance on the scope
         self.max_pos: int = (
-            int(max_pos) if isinstance(max_pos, int) else int(450 * self.microstepping)
+            int(max_pos) if isinstance(max_pos, int) else int(MAX_STEPS_ON_FULL_STEPPING * self.microstepping)
         )
 
         # Set up GPIO
