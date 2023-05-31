@@ -252,10 +252,7 @@ if __name__ == "__main__":
         print("warning: no model provided, defaulting to AutoFocus")
         model_classes = [AutoFocus]
 
-    if im.shape == (600, 800):
-        models = [m(camera_selection=CameraOptions.BASLER) for m in model_classes]
-    else:
-        models = [m(camera_selection=CameraOptions.AVT) for m in model_classes]
+    models = [m() for m in model_classes]
 
     if args.asyn and not args.view_img:
         infer_func = asyn_infer
