@@ -115,24 +115,13 @@ def calibrate_range(
 
         print(cal)
 
-<<<<<<< Updated upstream
-    create_calibration_file(cal)
-
-    plt.plot(duty_vec, press_vec, "o-b")
-    plt.plot(duty_lower_bound, press_lower_bound, "o-r")
-    plt.plot(duty_upper_bound, press_upper_bound, "o-r")
-    plt.xlabel("Duty ratio")
-    plt.ylabel("Pressure (mbar)")
-    plt.show()
-
-    return duty_vec, press_vec
-=======
         create_calibration_file(cal)
->>>>>>> Stashed changes
 
         plt.plot(duty_vec, press_vec, "o-b")
         plt.plot(duty_lower_bound, press_lower_bound, "o-r")
         plt.plot(duty_upper_bound, press_upper_bound, "o-r")
+        plt.xlabel("Duty ratio")
+        plt.ylabel("Pressure (mbar)")
         plt.show()
     else:
         print('Warning! MPRLS not enabled!')
