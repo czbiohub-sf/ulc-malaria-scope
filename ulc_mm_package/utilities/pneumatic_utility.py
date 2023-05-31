@@ -124,7 +124,8 @@ def calibrate_range(
         plt.ylabel("Pressure (mbar)")
         plt.show()
     else:
-        print('Warning! MPRLS not enabled!')
+        print("Warning! MPRLS not enabled!")
+
 
 def create_calibration_file(cal) -> None:
     # Writes upper and lower duty ratio bounds to a configuration file
@@ -181,7 +182,7 @@ def stabilize_pressure(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM, p_set) -> None:
             if mpr.mpr_enabled:
                 p_read = int(mpr.getPressureMaxReadAttempts()[0])
             else:
-                print('Warning! MPRLS not enabled!')
+                print("Warning! MPRLS not enabled!")
 
             print("CTRL-C to exit...")
             print("Setpoint = " + str(p_set) + " mbar")
