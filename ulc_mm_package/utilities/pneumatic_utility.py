@@ -214,7 +214,11 @@ def set_pwm(mpr, pwm):
             print(f"Setting duty ratio to {duty_set}")
             pwm.setDutyCycle(duty_set)
             time.sleep(LOOP_DELAY)
-            p_read = int(mpr.getPressureMaxReadAttempts()[0])
+            if mpr.mpr_enabled:
+                p_read = int(mpr.getPressureMaxReadAttempts()[0])
+            else:
+                p_read = 0
+                print("Warning! MPRLS is not enabled!")
             print("Pressure = " + str(p_read) + " mbar")
             time.sleep(LOOP_DELAY)
 
