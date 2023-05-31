@@ -21,8 +21,8 @@ VIDEO_PATH = None
 
 if SIMULATION:
     _viable_videos = (
-        curr_dir / "/QtGUI/sim_media/avt-sample.mp4",
-        curr_dir / "/QtGUI/sim_media/sample.avi",
+        curr_dir / "QtGUI/sim_media/avt-sample.mp4",
+        curr_dir / "QtGUI/sim_media/sample.avi",
         curr_dir / "QtGUI/sim_media/sample.mp4",
     )
     VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
