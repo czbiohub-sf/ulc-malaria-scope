@@ -7,7 +7,6 @@ Datasheet:
 *Adapted from Gavin Lyons' RPiMotorLib repository (https://github.com/gavinlyonsrepo/RpiMotorLib/blob/master/RpiMotorLib/RpiMotorLib.py)
 """
 
-import enum
 import logging
 import time
 import threading
