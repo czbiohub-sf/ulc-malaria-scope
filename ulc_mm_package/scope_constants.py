@@ -61,11 +61,12 @@ class CameraOptions(Enum):
             if "avt" in VIDEO_PATH:
                 return ImageDims(height=772, width=1032)
             return ImageDims(height=600, width=800)
-        raise ValueError("this is impossible because this class is an enum")
 
         raise ValueError(
-            f"CameraOptions somehow gained an enum type {self}. "
-            "Please report this strange bug!"
+            f"CameraOptions type {self} does not have a width "
+            f"or height - if {self} is NONE, a camera was not detected "
+            "and we are not running in simulation mode. To run in "
+            "simulation mode, set the environment variable MS_SIMULATE=1"
         )
 
     @property
