@@ -29,7 +29,7 @@ if SIMULATION:
     if VIDEO_PATH is None:
         raise RuntimeError(
             "Sample video for simulation mode could not be found. "
-            f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
+            f"Download a video from {VIDEO_REC} and save as {str(_viable_videos[0])} or {str(_viable_videos[1])}"
         )
 
 
