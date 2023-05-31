@@ -14,6 +14,17 @@ class Direction(enum.Enum):
     CCW = False
 
 
+class Steptype(enum.Enum):
+    FULL = enum.auto()
+    ONE_HALF = enum.auto()  # 1/2
+    ONE_QUARTER = enum.auto()  # 1/4
+    ONE_EIGHTH = enum.auto()  # 1/8
+    ONE_SIXTEENTH = enum.auto()  # 1/16
+    ONE_THIRTY_SECOND = enum.auto()  # 1/32
+    ONE_SIXTY_FOURTH = enum.auto()  # 1/64
+    ONE_ONE_HUNDRED_TWENTY_EIGHTH = enum.auto()  # 1/128
+
+
 class MotorControllerError(Exception):
     """Base class for catching all motor controller related errors."""
 

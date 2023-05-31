@@ -27,22 +27,12 @@ from ulc_mm_package.hardware.motorcontroller import (
     StopMotorInterrupt,
     MotorInMotion,
     InvalidMove,
+    Steptype,
 )
 from ulc_mm_package.hardware.real.motorcontroller import DRV8825Nema as RealDRV8825Nema
 
 
 MOTOR_LOCK = threading.Lock()
-
-
-class Steptype(enum.Enum):
-    FULL = enum.auto()
-    ONE_HALF = enum.auto()  # 1/2
-    ONE_QUARTER = enum.auto()  # 1/4
-    ONE_EIGHTH = enum.auto()  # 1/8
-    ONE_SIXTEENTH = enum.auto()  # 1/16
-    ONE_THIRTY_SECOND = enum.auto()  # 1/32
-    ONE_SIXTY_FOURTH = enum.auto()  # 1/64
-    ONE_ONE_HUNDRED_TWENTY_EIGHTH = enum.auto()  # 1/128
 
 
 class DRV8825Nema(RealDRV8825Nema):
