@@ -26,6 +26,9 @@ from ulc_mm_package.hardware.motorcontroller import (
     StopMotorInterrupt,
     MotorInMotion,
     InvalidMove,
+    Steptype,
+    STEP_TYPE_TO_ANGLE,
+    MAX_STEPS_ON_FULL_STEPPING,
 )
 from ulc_mm_package.hardware.real.motorcontroller import DRV8825Nema as RealDRV8825Nema
 
@@ -48,7 +51,7 @@ class DRV8825Nema(RealDRV8825Nema):
         reset_pin=MOTOR_RESET,
         fault_pin=MOTOR_FAULT_PIN,
         motor_type="DRV8825",
-        steptype="Full",
+        steptype=Steptype.ONE_HALF,
         lim1=MOTOR_LIMIT_SWITCH1,
         lim2: Optional[int] = None,
         max_pos: Optional[int] = None,
@@ -65,7 +68,7 @@ class DRV8825Nema(RealDRV8825Nema):
             Type of motor two options: A4988 or DRV8825
         steptype : string
             Type of drive to step motor, options:
-            (Full, Half, 1/4, 1/8, 1/16) 1/32 for DRV8825 only
+            (Full, Half, 1/4, 1/8, 1/16, 1/32) for DRV8825 only
         lim1 : int
             Limit switch 1 GPIO pin
         lim2 : int
@@ -91,25 +94,21 @@ class DRV8825Nema(RealDRV8825Nema):
         self.stop_motor = False
 
         # Get step degree based on steptype
-        degree_value = {
-            "Full": 1.8,
-            "Half": 0.9,
-            "1/4": 0.45,
-            "1/8": 0.225,
-            "1/16": 0.1125,
-            "1/32": 0.05625,
-            "1/64": 0.028125,
-            "1/128": 0.0140625,
-        }
-        self.step_degree = degree_value[steptype]
-        self.microstepping = 1.8 / self.step_degree  # 1, 2, 4, 8, 16, 32
+        self.step_degree = STEP_TYPE_TO_ANGLE[steptype]
+        self.microstepping = (
+            STEP_TYPE_TO_ANGLE[Steptype.FULL] / self.step_degree
+        )  # 1, 2, 4, 8, 16, 32
         self.dist_per_step_um = (
-            self.step_degree / degree_value["Full"] * FULL_STEP_TO_TRAVEL_DIST_UM
+            self.step_degree
+            / STEP_TYPE_TO_ANGLE[Steptype.FULL]
+            * FULL_STEP_TO_TRAVEL_DIST_UM
         )
 
         # TODO Calculate the max position allowable based on stepping mode and actual travel distance on the scope
         self.max_pos = (
-            int(max_pos) if isinstance(max_pos, int) else int(450 * self.microstepping)
+            int(max_pos)
+            if isinstance(max_pos, int)
+            else int(MAX_STEPS_ON_FULL_STEPPING * self.microstepping)
         )
 
         # Set up GPIO
