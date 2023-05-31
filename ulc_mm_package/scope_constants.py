@@ -1,12 +1,12 @@
 import os
 import usb
-import pathlib
 import socket
 
+from pathlib import Path
 from enum import auto, Enum
 from collections import namedtuple
 
-curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
+curr_dir = Path(__file__).parent.resolve()  # Get full path
 
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
@@ -58,7 +58,7 @@ class CameraOptions(Enum):
             # FIXME: if 'avt' in videopath, assume it is an avt vid
             # a bit hacky, but workable for just sim mode
             assert VIDEO_PATH is not None
-            if "avt" in VIDEO_PATH:
+            if "avt" in str(VIDEO_PATH):
                 return ImageDims(height=772, width=1032)
             return ImageDims(height=600, width=800)
 
