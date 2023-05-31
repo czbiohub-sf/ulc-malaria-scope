@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 from pathlib import Path
 
-from ulc_mm_package.scope_constants import CameraOptions
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 
