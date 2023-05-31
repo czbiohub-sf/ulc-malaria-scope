@@ -196,6 +196,8 @@ def set_pwm(mpr, pwm):
         init(mpr, pwm)
 
         while True:
+            system("clear")
+            print("CTRL-C to exit...")
             duty_set = float(input("Enter a new setpoint duty ratio (%)")) / 100.0
             print(f"Setting duty ratio to {duty_set}")
             pwm.setDutyCycle(duty_set)
