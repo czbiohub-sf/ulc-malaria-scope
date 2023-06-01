@@ -22,13 +22,11 @@ import socket
 import argparse
 
 import numpy as np
-import numpy.typing as npt
 import matplotlib.pyplot as plt
 import pigpio
 
 from os import system
 from pathlib import Path
-from typing import Tuple
 
 from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 from ulc_mm_package.hardware.hardware_constants import SERVO_5V_PIN
