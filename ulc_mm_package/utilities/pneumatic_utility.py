@@ -63,9 +63,7 @@ def init_argparse() -> argparse.ArgumentParser:
     return parser
 
 
-def calibrate_range(
-    mpr: AdafruitMPRLS, pwm: dtoverlay_PWM
-) -> Tuple[npt.NDArray, npt.NDArray]:
+def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM):
     # Sweeps the PWM duty ratio over a wider range in order
     # to generate a pressure vs. duty ratio plot for calibration purposes
 
