@@ -187,7 +187,7 @@ class MalariaScope:
                 self.camera = AVTCamera()
                 self.camera_enabled = True
             elif CAMERA_SELECTION == CameraOptions.NONE:
-                raise RuntimeError(
+                raise CameraError(
                     "Camera selection is set to NONE, but camera is being initialized. "
                     "A camera was not detected and this is not being run in simulation mode. "
                     "To run in simulation mode, run with MS_SIMULATE=1."
