@@ -139,7 +139,7 @@ class Routines:
                 for res in sorted(results, key=lambda res: res.id):
                     move_counter += 1
 
-                    steps_from_focus = res.result.item()
+                    steps_from_focus = -res.result.item()
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
                 throttle_counter = 0
@@ -149,7 +149,7 @@ class Routines:
                     and abs(filtered_error) > nn_constants.AF_THRESHOLD
                 ):
                     self.logger.info(
-                        f"Adjusted focus by {filtered_error:.2f} steps after {move_counter} measurements"
+                        f"Adjusted focus by {-filtered_error:.2f} steps after {move_counter} measurements"
                     )
                     move_counter = 0
                     adjusted = True

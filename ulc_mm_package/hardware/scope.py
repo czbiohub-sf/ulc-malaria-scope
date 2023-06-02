@@ -166,7 +166,7 @@ class MalariaScope:
     def _init_motor(self):
         # Create motor w/ default pins/settings (full step)
         try:
-            self.motor = DRV8825Nema(steptype="Half")
+            self.motor = DRV8825Nema()
             self.motor.homeToLimitSwitches()
             self.motor_enabled = True
         except MotorControllerError as e:

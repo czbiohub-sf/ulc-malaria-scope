@@ -123,3 +123,6 @@ metadata_compilation.txt
 
 # Scope lock
 lock.py
+
+# config ini files
+*/configs/*.ini
