@@ -29,7 +29,7 @@ if SIMULATION:
     if VIDEO_PATH is None:
         raise RuntimeError(
             "Sample video for simulation mode could not be found. "
-            f"Download a video from {VIDEO_REC} and save as {str(_viable_videos[0])} or {str(_viable_videos[1])}"
+            f"Download a video from {VIDEO_REC} and save as {str(v) for v in _viable_videos}"
         )
 
 
@@ -61,13 +61,9 @@ class CameraOptions(Enum):
             if "avt" in str(VIDEO_PATH):
                 return ImageDims(height=772, width=1032)
             return ImageDims(height=600, width=800)
-
-        raise ValueError(
-            f"CameraOptions type {self} does not have a width "
-            f"or height - if {self} is NONE, a camera was not detected "
-            "and we are not running in simulation mode. To run in "
-            "simulation mode, set the environment variable MS_SIMULATE=1"
-        )
+        elif self == CameraOptions.NONE:
+            # Make these 1 just to be finite
+            return ImageDims(height=1, width=1)
 
     @property
     def IMG_WIDTH(self) -> int:

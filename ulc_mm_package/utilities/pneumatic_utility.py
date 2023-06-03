@@ -61,7 +61,7 @@ def init_argparse() -> argparse.ArgumentParser:
     return parser
 
 
-def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM):
+def calibrate_range(mpr: AdafruitMPRLS, pwm: dtoverlay_PWM) -> None:
     # Sweeps the PWM duty ratio over a wider range in order
     # to generate a pressure vs. duty ratio plot for calibration purposes
 
@@ -204,17 +204,25 @@ def set_pwm(mpr, pwm):
         init(mpr, pwm)
 
         while True:
-            system("clear")
             print("CTRL-C to exit...")
-            duty_set = float(input("Enter a new setpoint duty ratio (%)")) / 100.0
-            print(f"Setting duty ratio to {duty_set}")
-            pwm.setDutyCycle(duty_set)
-            time.sleep(LOOP_DELAY)
+            duty_set = input("Enter a new setpoint duty ratio (%)")
+            try:
+                duty_set = float(duty_set)/100.0
+                
+                if (duty_set<0) or (duty_set>100):
+                    print("Please enter a number between [0-100]")
+                else:
+                    pwm.setDutyCycle(duty_set)
+
+            except ValueError:
+                print("Please enter a number between 0-100")           
+            
             if mpr.mpr_enabled:
                 p_read = int(mpr.getPressureMaxReadAttempts()[0])
             else:
                 p_read = 0
                 print("Warning! MPRLS is not enabled!")
+
             print("Pressure = " + str(p_read) + " mbar")
             time.sleep(LOOP_DELAY)
 
@@ -225,20 +233,20 @@ def set_pwm(mpr, pwm):
 def main() -> None:
     # Parse input arguments and decide which function to call
 
+    parser = init_argparse()
+    args = parser.parse_args()
+
+    # Instantiate pressure sensor
+    mpr = AdafruitMPRLS()
+
+    # Set up PWM output to servo
+    pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
+    pwm.setFreq(PWM_FREQ)
+
+    pi = pigpio.pi()
+    pi.write(SERVO_5V_PIN, 1)
+
     try:
-        parser = init_argparse()
-        args = parser.parse_args()
-
-        # Instantiate pressure sensor
-        mpr = AdafruitMPRLS()
-
-        # Set up PWM output to servo
-        pwm = dtoverlay_PWM(PWM_CHANNEL.PWM1)
-        pwm.setFreq(PWM_FREQ)
-
-        pi = pigpio.pi()
-        pi.write(SERVO_5V_PIN, 1)
-
         if args.action[0] == "stabilize":
             # Simply stabilize pressure at the setpoint
             if not args.p:
