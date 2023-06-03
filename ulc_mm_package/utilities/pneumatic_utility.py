@@ -207,16 +207,16 @@ def set_pwm(mpr, pwm):
             print("CTRL-C to exit...")
             duty_set = input("Enter a new setpoint duty ratio (%)")
             try:
-                duty_set = float(duty_set)/100.0
-                
-                if (duty_set<0) or (duty_set>100):
+                duty_set = float(duty_set) / 100.0
+
+                if (duty_set < 0) or (duty_set > 100):
                     print("Please enter a number between [0-100]")
                 else:
                     pwm.setDutyCycle(duty_set)
 
             except ValueError:
-                print("Please enter a number between 0-100")           
-            
+                print("Please enter a number between 0-100")
+
             if mpr.mpr_enabled:
                 p_read = int(mpr.getPressureMaxReadAttempts()[0])
             else:
