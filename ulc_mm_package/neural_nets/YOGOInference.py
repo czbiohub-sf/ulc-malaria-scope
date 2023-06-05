@@ -36,8 +36,8 @@ class YOGO(NCSModel):
         >>> # ... eventually ...
         >>> Y.get_asyn_results()
         <
-         Bounding Boxes! tensor of shape (1, 12, Sy, Sx) where Sy and Sx are grid dimensions (i.e. rows and columns)
-         the second dimension (12) is the most important - it is [xc, yc, w, h, to, p_healthy, p_ring, p_schitzont, p_troph, p_gametocyte, p_wbc, p_misc],
+         Bounding Boxes! tensor of shape (1, Sy, Sx, 12) where Sy and Sx are grid dimensions (i.e. rows and columns)
+         the last dimension (12) is the most important - it is [xc, yc, w, h, to, p_healthy, p_ring, p_schitzont, p_troph, p_gametocyte, p_wbc, p_misc],
          with each number normalized to [0,1]
         >
 
@@ -52,13 +52,13 @@ class YOGO(NCSModel):
 
     @staticmethod
     def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD):
-        mask = (res[:, 4:5, :] > threshold).flatten()
-        return res[:, :, mask]
+        mask = (res[:, :, 4:5] > threshold).flatten()
+        return res[:, mask, :]
 
     @staticmethod
     def _format_res(res: npt.NDArray):
-        bs, pred_dim, Sy, Sx = res.shape
-        res.shape = (bs, pred_dim, Sy * Sx)
+        bs, Sy, Sx, pred_dim = res.shape
+        res.shape = (bs, Sy * Sx, pred_dim)
         return res
 
     @staticmethod
@@ -69,7 +69,7 @@ class YOGO(NCSModel):
         """
         bs, pred_dim, num_predicted = filtered_res.shape
         num_classes = pred_dim - 5
-        class_preds = np.argmax(filtered_res[0, 5:, :], axis=0)
+        class_preds = np.argmax(filtered_res[0, :, 5:], axis=0)
         unique, counts = np.unique(class_preds, return_counts=True)
         # this dict (raw_counts) will be missing a given class if that class isn't predicted at all
         # this may be confusing and a pain to handle, so just handle it on our side
