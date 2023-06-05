@@ -64,6 +64,10 @@ class CameraOptions(Enum):
         elif self == CameraOptions.NONE:
             # Make these 1 just to be finite
             return ImageDims(height=1, width=1)
+        else:
+            raise ValueError(
+                f"CameraOptions should be one of the following CameraOptions: {[e.value for e in CameraOptions]}"
+            )
 
     @property
     def IMG_WIDTH(self) -> int:
