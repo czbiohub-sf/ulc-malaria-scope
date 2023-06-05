@@ -144,7 +144,9 @@ class MalariaScope:
             self.camera.deactivateCamera()
             self.logger.info("Deactivated camera.")
         else:
-            self.logger.info("Camera was not activated or is missing, no operations needed.")
+            self.logger.info(
+                "Camera was not activated or is missing, no operations needed."
+            )
 
     def getComponentStatus(self) -> Dict:
         """Returns a dictionary of component to initialization status.

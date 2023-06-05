@@ -717,7 +717,10 @@ class Oracle(Machine):
 
         if not self.shutoff_done:
             # Close data storage if it's not already closed
-            if hasattr(self.scopeop.mscope, "data_storage") and self.scopeop.mscope.data_storage.zw.writable:
+            if (
+                hasattr(self.scopeop.mscope, "data_storage")
+                and self.scopeop.mscope.data_storage.zw.writable
+            ):
                 self.scopeop.mscope.data_storage.close()
             else:
                 self.logger.info(
