@@ -671,9 +671,7 @@ class ScopeOp(QObject, NamedMachine):
             return
 
         t0 = perf_counter()
-        resized_img = cv2.resize(
-            img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
-        )
+        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         prev_yogo_results: List[
             AsyncInferenceResult
         ] = self.count_parasitemia_routine.send((YOGO.crop_img(img), self.count))
