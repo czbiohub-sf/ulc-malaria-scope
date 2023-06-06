@@ -31,6 +31,7 @@ from pathlib import Path
 from ulc_mm_package.hardware.dtoverlay_pwm import dtoverlay_PWM, PWM_CHANNEL
 from ulc_mm_package.hardware.hardware_constants import SERVO_5V_PIN
 from ulc_mm_package.hardware.real.pneumatic_module import AdafruitMPRLS
+from ulc_mm_package.hardware.pneumatic_module import PneumaticModuleError
 
 
 PWM_FREQ = 100
@@ -266,6 +267,10 @@ def main() -> None:
 
         else:
             print("Argument " + str(args.action[0] + " not recognized"))
+
+    except PneumaticModuleError as e:
+        print(f"Pneumatic module error: {e}")
+
     finally:
         pi.write(SERVO_5V_PIN, 0)
         mpr.close()
