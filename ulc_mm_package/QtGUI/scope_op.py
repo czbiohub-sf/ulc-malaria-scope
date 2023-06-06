@@ -686,17 +686,17 @@ class ScopeOp(QObject, NamedMachine):
         t1 = perf_counter()
         self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
 
+        self._update_metadata_if_verbose(
+            "yogo_qsize",
+            self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
+        )
+
         t0 = perf_counter()
         for result in prev_yogo_results:
             filtered_prediction = YOGO.filter_res(result.result)
 
             class_counts = YOGO.class_instance_count(filtered_prediction)
             self.cell_counts += class_counts
-
-            self._update_metadata_if_verbose(
-                "yogo_qsize",
-                self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
-            )
 
             try:
                 self.density_routine.send(filtered_prediction)
