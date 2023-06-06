@@ -670,12 +670,6 @@ class ScopeOp(QObject, NamedMachine):
                 )
             return
 
-        t0 = perf_counter()
-        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
-        prev_yogo_results: List[
-            AsyncInferenceResult
-        ] = self.count_parasitemia_routine.send((YOGO.crop_img(img), self.count))
-
         # Record timestamp before running routines
         self.img_metadata["timestamp"] = timestamp
         self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
@@ -686,16 +680,13 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
         t0 = perf_counter()
-        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         prev_yogo_results: List[
             AsyncInferenceResult
-        ] = self.count_parasitemia_routine.send((resized_img, self.count))
-
+        ] = self.count_parasitemia_routine.send((YOGO.crop_img(img), self.count))
         t1 = perf_counter()
         self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
 
         t0 = perf_counter()
-
         for result in prev_yogo_results:
             filtered_prediction = YOGO.filter_res(result.result)
 
@@ -725,6 +716,7 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
         t0 = perf_counter()
+        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         try:
             (
                 raw_focus_err,
