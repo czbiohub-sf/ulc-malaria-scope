@@ -462,10 +462,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         if SIMULATION:
             print("---------------------\n|  SIMULATION MODE  |\n---------------------")
 
-            if not VIDEO_PATH.exists():
+            if not path.exists(VIDEO_PATH):
                 print(
                     "Error - no sample video exists. To add your own video, save it under "
-                    + str(VIDEO_PATH)
+                    + VIDEO_PATH
                     + "\nRecommended video: "
                     + VIDEO_REC
                 )
