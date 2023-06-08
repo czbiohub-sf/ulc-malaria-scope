@@ -22,15 +22,15 @@ from typing import (
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
-from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 
-from openvino.preprocess import PrePostProcessor
+from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import (
     Core,
     Layout,
     Type,
     InferRequest,
     AsyncInferQueue,
+    Tensor,
 )
 
 
@@ -105,7 +105,17 @@ class NCSModel:
         model = self.core.read_model(model_path)
 
         ppp = PrePostProcessor(model)
-        ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
+        # black likes to format this into a very unreadable format :(
+        # fmt: off
+        ppp.input() \
+            .tensor() \
+            .set_element_type(Type.u8) \
+            .set_layout(Layout("NHWC")) \
+            .set_spatial_static_shape(
+                camera_selection.IMG_HEIGHT, camera_selection.IMG_WIDTH
+            )
+        # fmt: on
+        ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR)
         ppp.input().model().set_layout(Layout("NCHW"))
         ppp.output().tensor().set_element_type(Type.f32)
         model = ppp.build()
@@ -176,13 +186,6 @@ class NCSModel:
 
         To get results, call 'get_asyn_results'
         """
-        w, h = IMG_RESIZED_DIMS
-        img_h, img_w = input_img.shape
-        if img_h != h or img_w != w:
-            raise ValueError(
-                f"input_img must have shape ({h}, {w}), but has shape ({img_h}, {img_w})"
-            )
-
         input_tensor = self._format_image_to_tensor(input_img)
 
         self._executor.submit(
@@ -211,7 +214,7 @@ class NCSModel:
 
         return res
 
-    def wait_all(self) -> None:
+    def wait_all(self):
         """wait for all pending InferRequests to resolve"""
         self.asyn_infer_queue.wait_all()
 
@@ -236,7 +239,7 @@ class NCSModel:
             return maybe_list
         return [maybe_list]
 
-    def _format_image_to_tensor(self, img: npt.NDArray) -> npt.NDArray:
+    def _format_image_to_tensor(self, img: npt.NDArray) -> List[Tensor]:
         return np.expand_dims(img, (0, 3))
 
     def shutdown(self):

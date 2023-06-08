@@ -1,25 +1,29 @@
-import threading
-import numpy as np
-
-from time import sleep
+from time import sleep, perf_counter
 from typing import Tuple
 
+import numpy as np
+
 from ulc_mm_package.hardware.hardware_constants import (
+    SERVO_5V_PIN,
     SERVO_PWM_PIN,
     SERVO_FREQ,
 )
 from ulc_mm_package.hardware.dtoverlay_pwm import PWM_CHANNEL
 from ulc_mm_package.hardware.sim.dtoverlay_pwm import dtoverlay_PWM
 
+from ulc_mm_package.hardware.real.pneumatic_module import (
+    PneumaticModule as RealPneumaticModule,
+)
 from ulc_mm_package.hardware.pneumatic_module import (
+    PressureSensorNotInstantiated,
+    SyringeInMotion,
+    SyringeDirection,
+    SyringeEndOfTravel,
     PressureSensorRead,
-    PneumaticModuleBase,
 )
 
-SYRINGE_LOCK = threading.Lock()
 
-
-class PneumaticModule(PneumaticModuleBase):
+class PneumaticModule(RealPneumaticModule):
     """Class that deals with monitoring and adjusting the pressure.
 
     Interfaces with an Adafruit MPRLS pressure sensor to get the readings (valid for 0-25 bar). Uses a
@@ -51,15 +55,6 @@ class PneumaticModule(PneumaticModuleBase):
         sleep(0.5)
         self.pwm.setDutyCycle(0)
         sleep(0.5)
-
-    def getMaxDutyCycle(self):
-        return self.max_duty_cycle
-
-    def getMinDutyCycle(self):
-        return self.min_duty_cycle
-
-    def getCurrentDutyCycle(self):
-        return self.duty_cycle
 
     def getPressure(self) -> Tuple[float, PressureSensorRead]:
         ### TODO - mimic the real pressure sensor more
@@ -100,7 +95,3 @@ class PneumaticModule(PneumaticModuleBase):
             PressureSensorRead.ALL_GOOD,
         )
         return (new_pressure, status)
-
-    @staticmethod
-    def is_locked():
-        return SYRINGE_LOCK.locked()

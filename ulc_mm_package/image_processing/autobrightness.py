@@ -1,8 +1,7 @@
 import enum
-from typing import Tuple, Optional
-
-import cv2
+from typing import Union
 import numpy as np
+import cv2
 
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
@@ -42,7 +41,7 @@ class BrightnessTargetNotAchieved(AutobrightnessError):
 
 class BrightnessCriticallyLow(AutobrightnessError):
     def __init__(self, brightness_val):
-        msg = ""
+        msg = f""
         self.value = brightness_val
         super().__init__(f"{msg}")
 
@@ -93,7 +92,7 @@ def assessBrightness(
 
 def adjustBrightness(
     img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float
-) -> Tuple[AB, float]:
+) -> Union[AB, float]:
     """Adjusts the LED's duty cycle to achieve the target brightness.
 
     Returns
@@ -103,6 +102,7 @@ def adjustBrightness(
     float:
         Mean image-pixel value
     """
+
     current_led_pwm_perc = led.pwm_duty_cycle
     current_brightness = assessBrightness(img, TOP_PERC)
     diff = target_pixel_val - current_brightness
@@ -170,9 +170,9 @@ class Autobrightness:
         target_pixel_val: int = TOP_PERC_TARGET_VAL,
         step_size_perc: float = 0.01,
     ):
-        self.prev_brightness_enum: Optional[AB] = None
-        self.prev_mean_img_brightness: Optional[float] = None
-        self.target_pixel_val: int = target_pixel_val
+        self.prev_brightness_enum = None
+        self.prev_mean_img_brightness = None
+        self.target_pixel_val = target_pixel_val
         self.led = led
         self.step_size_perc = step_size_perc
         self.default_step_size_perc = step_size_perc
@@ -183,7 +183,7 @@ class Autobrightness:
         curr_brightness_enum, curr_mean_brightness_val = adjustBrightness(
             img, self.target_pixel_val, self.led, self.step_size_perc
         )
-        if self.prev_brightness_enum is not None:
+        if not self.prev_brightness_enum == None:
             if self.prev_brightness_enum != curr_brightness_enum:
                 self.step_size_perc /= 2
 

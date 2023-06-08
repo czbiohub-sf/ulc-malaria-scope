@@ -123,6 +123,6 @@ if __name__ == "__main__":
     encoder = PIM522RotaryEncoder(test_callback)
     encoder.setColor(12, 159, 217)
 
-    print("Running indefinitely, feel free to move the encoder! Ctrl+C to exit.")
+    print(f"Running for indefinitely, feel free to move the encoder! Ctrl+C to exit.")
     while True:
         sleep(5)

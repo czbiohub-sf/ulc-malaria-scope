@@ -14,31 +14,6 @@ class Direction(enum.Enum):
     CCW = False
 
 
-class Steptype(enum.Enum):
-    FULL = enum.auto()
-    ONE_HALF = enum.auto()  # 1/2
-    ONE_QUARTER = enum.auto()  # 1/4
-    ONE_EIGHTH = enum.auto()  # 1/8
-    ONE_SIXTEENTH = enum.auto()  # 1/16
-    ONE_THIRTY_SECOND = enum.auto()  # 1/32
-    ONE_SIXTY_FOURTH = enum.auto()  # 1/64
-    ONE_ONE_HUNDRED_TWENTY_EIGHTH = enum.auto()  # 1/128
-
-
-STEP_TYPE_TO_ANGLE = {
-    Steptype.FULL: 1.8,
-    Steptype.ONE_HALF: 0.9,
-    Steptype.ONE_QUARTER: 0.45,
-    Steptype.ONE_EIGHTH: 0.225,
-    Steptype.ONE_SIXTEENTH: 0.1125,
-    Steptype.ONE_THIRTY_SECOND: 0.05625,
-    Steptype.ONE_SIXTY_FOURTH: 0.028125,
-    Steptype.ONE_ONE_HUNDRED_TWENTY_EIGHTH: 0.0140625,
-}
-
-MAX_STEPS_ON_FULL_STEPPING = 450
-
-
 class MotorControllerError(Exception):
     """Base class for catching all motor controller related errors."""
 

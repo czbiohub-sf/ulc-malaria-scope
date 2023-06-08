@@ -5,8 +5,10 @@ Receives images from the camera and sends them to Liveview and ScopeOp.
 """
 
 import logging
+import traceback
 import numpy as np
 
+from time import perf_counter, sleep
 from PyQt5.QtCore import (
     QObject,
     QTimer,

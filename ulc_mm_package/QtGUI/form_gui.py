@@ -4,8 +4,10 @@ Takes user input and exports experiment metadata.
 
 """
 
+import numpy as np
 import sys
 
+from typing import Dict
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -19,7 +21,7 @@ from PyQt5.QtWidgets import (
     QDesktopWidget,
 )
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt
 
 from ulc_mm_package.scope_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE

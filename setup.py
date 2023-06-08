@@ -27,7 +27,7 @@ setup(
     install_requires=[
         "Pillow",
         "matplotlib==3.4.3",
-        "numpy==1.21.0",
+        "numpy>=1.21.0",
         "opencv-python",
         "PyQt5>=5.15.2",
         "pypylon==1.7.2",
@@ -46,15 +46,6 @@ setup(
         "transitions==0.8.11",
         "pyngrok==5.1.0",
     ],
-    extras_require={
-        "dev": [
-            "AllanTools",
-            "black",
-            "mypy==1.0.1",
-            "mypy-extensions==1.0.0",
-            "PyQt5-stubs",
-            "ruff==0.0.253",
-        ]
-    },
+    extras_require={"dev": ["AllanTools", "black"]},
     classifiers=["CZ Biohub :: Bioengineering"],
 )

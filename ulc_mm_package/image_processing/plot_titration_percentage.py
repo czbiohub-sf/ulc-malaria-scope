@@ -4,10 +4,8 @@ import sys
 import numpy as np
 import os
 
-from typing import List, Dict
 
-
-x = [18.0] + [8.5 * 0.5**i for i in range(1, 10)]
+x = [18] + [8.5 * 0.5**i for i in range(1, 10)]
 CONFIDENCE_THRESHOLDS = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 
 
@@ -29,7 +27,7 @@ if __name__ == "__main__":
     output_folder = sys.argv[2]
     lines = f.readlines()
     lines = [line for line in lines if not line.startswith("python")]
-    titration_points: List[int] = [int(line.split(" ")[1]) for line in lines]
+    titration_points = [int(line.split(" ")[1]) for line in lines]
     dictionaries = [
         ast.literal_eval("{" + line.split("{")[1].split("}")[0] + "}")
         for line in lines
@@ -40,9 +38,7 @@ if __name__ == "__main__":
     for titration_point, dictionary in zip(titration_points, dictionaries):
         simplified_dictionary[titration_point] = dictionary
 
-    slice_confidences: Dict[float, List[float]] = {
-        confidence: [0.0] * 10 for confidence in CONFIDENCE_THRESHOLDS
-    }
+    slice_confidences = {confidence: [0] * 10 for confidence in CONFIDENCE_THRESHOLDS}
     labels = []
     for confidence in CONFIDENCE_THRESHOLDS:
         for titration_point, dictionary in zip(titration_points, dictionaries):

@@ -5,19 +5,19 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
 
-import cv2
-import logging
 import numpy as np
+import logging
 
-from typing import Any, List
-from time import sleep, perf_counter
 from transitions import Machine, State
+from time import sleep
+from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 
-from ulc_mm_package.hardware.scope_routines import Routines
+# FIXME no stars!
+from ulc_mm_package.hardware.scope_routines import *
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.scope_constants import (
@@ -26,39 +26,23 @@ from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     VERBOSE,
 )
-
-from ulc_mm_package.image_processing.flow_control import (
-    CantReachTargetFlowrate,
-    LowConfidenceCorrelations,
-)
-from ulc_mm_package.image_processing.cell_finder import (
-    LowDensity,
-    NoCellsFound,
-)
-from ulc_mm_package.image_processing.autobrightness import (
-    BrightnessTargetNotAchieved,
-    BrightnessCriticallyLow,
-    LEDNoPower,
-)
-from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
-from ulc_mm_package.hardware.pneumatic_module import (
-    PressureLeak,
+from ulc_mm_package.hardware.hardware_modules import (
     PressureSensorStaleValue,
-    PressureSensorBusy,
+    SyringeInMotion,
 )
-from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
+from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT, TH_PERIOD_NUM
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
+    AF_BATCH_SIZE,
     YOGO_CLASS_LIST,
     YOGO_PERIOD_NUM,
     YOGO_CLASS_IDX_MAP,
-    AF_BATCH_SIZE,
 )
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
+    STATUS,
     ERROR_BEHAVIORS,
 )
 from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
@@ -106,7 +90,7 @@ class ScopeOp(QObject, NamedMachine):
     update_msg = pyqtSignal(str)
 
     update_flowrate = pyqtSignal(float)
-    update_focus = pyqtSignal(float)
+    update_focus = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -154,19 +138,13 @@ class ScopeOp(QObject, NamedMachine):
                 "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
-                "name": "autofocus_preflow",
-                "display_name": "autofocus (pre-flow)",
+                "name": "autofocus",
                 "on_enter": [self._send_state, self._start_autofocus],
             },
             {
                 "name": "fastflow",
                 "display_name": "flow control",
                 "on_enter": [self._send_state, self._start_fastflow],
-            },
-            {
-                "name": "autofocus_postflow",
-                "display_name": "autofocus (post-flow)",
-                "on_enter": [self._send_state, self._start_autofocus],
             },
             {
                 "name": "experiment",
@@ -193,10 +171,7 @@ class ScopeOp(QObject, NamedMachine):
         Machine.__init__(self, states=states, queued=True, initial="standby")
         self.add_ordered_transitions()
         self.add_transition(
-            trigger="rerun",
-            source=["intermission", "standby"],
-            dest="standby",
-            before="reset",
+            trigger="rerun", source="intermission", dest="standby", before="reset"
         )
         self.add_transition(
             trigger="unpause", source="pause", dest="autobrightness_precells"
@@ -208,9 +183,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
-        self.filtered_focus_err = None
-
-        self.flowrate = None
         self.target_flowrate = None
 
         self.count = 0
@@ -219,8 +191,18 @@ class ScopeOp(QObject, NamedMachine):
         self.start_time = None
         self.accumulated_time = 0
 
+        self._set_routine_variables()
+
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
+
+    def _set_routine_variables(self):
+        self.autofocus_batch = []
+
+        self.autobrightness_result = None
+        self.cellfinder_result = None
+        self.autofocus_results = [None, None]
+        self.fastflow_result = None
 
     def _freeze_liveview(self):
         self.freeze_liveview.emit(True)
@@ -229,6 +211,8 @@ class ScopeOp(QObject, NamedMachine):
         self.freeze_liveview.emit(False)
 
     def _send_state(self, *args):
+        # TODO perhaps delete this to print more useful statements
+
         state_name = self.get_state(self.state).display_name
 
         if self.state != "standby":
@@ -238,19 +222,12 @@ class ScopeOp(QObject, NamedMachine):
         self.update_state.emit(state_name)
 
     def _get_experiment_runtime(self) -> float:
-        if self.start_time is None:
-            return self.accumulated_time
-        else:
-            return self.accumulated_time + perf_counter() - self.start_time
+        return self.accumulated_time + perf_counter() - self.start_time
 
     def update_infopanel(self):
         if self.state == "experiment":
             self.update_cell_count.emit(self.cell_counts)
             self.update_runtime.emit(self._get_experiment_runtime())
-            if self.flowrate is not None:
-                self.update_flowrate.emit(self.flowrate)
-            if self.filtered_focus_err is not None:
-                self.update_focus.emit(self.filtered_focus_err)
 
     def setup(self):
         self.create_timers.emit()
@@ -267,13 +244,13 @@ class ScopeOp(QObject, NamedMachine):
         )
         component_status = self.mscope.getComponentStatus()
 
-        if all([status is True for status in component_status.values()]):
+        if all([status == True for status in component_status.values()]):
             self.setup_done.emit()
         else:
             failed_components = [
                 comp.name
                 for comp in component_status
-                if component_status.get(comp) is False
+                if component_status.get(comp) == False
             ]
             self.logger.error(
                 "Hardware pre-check failed: "
@@ -299,8 +276,7 @@ class ScopeOp(QObject, NamedMachine):
     def start(self):
         self.running = True
         self.start_timers.emit()
-        if self.state == "standby":
-            self.next_state()
+        self.next_state()
 
     def reset(self):
         # Reset variables
@@ -326,7 +302,7 @@ class ScopeOp(QObject, NamedMachine):
         self.running = False
 
         # Account for case when pause is entered during the initial setup
-        if self.start_time is not None:
+        if self.start_time != None:
             self.accumulated_time += perf_counter() - self.start_time
             self.start_time = None
 
@@ -337,7 +313,22 @@ class ScopeOp(QObject, NamedMachine):
                 "Since img_signal is already disconnected, no signal/slot changes were made."
             )
 
-        self.mscope.reset_pneumatic_and_led_and_flow_control()
+        self.logger.info("Resetting pneumatic module for pause.")
+        # Account for the case where the syringe might still be in motion
+        # e.g during cell finding or if a flow control adjustment is being done.
+        while self.mscope.pneumatic_module.is_locked():
+            sleep(0.1)
+
+        try:
+            self.mscope.pneumatic_module.setDutyCycle(
+                self.mscope.pneumatic_module.getMaxDutyCycle()
+            )
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
+        self.mscope.led.turnOff()
+
+        self._set_routine_variables()
 
     def _end_pause(self, *args):
         self.set_period.emit(ACQUISITION_PERIOD)
@@ -346,8 +337,8 @@ class ScopeOp(QObject, NamedMachine):
         self.running = True
 
     def _start_autobrightness(self, *args):
-        self.autobrightness_result = None
         self.autobrightness_routine = self.routines.autobrightnessRoutine(self.mscope)
+        self.autobrightness_routine.send(None)
 
         self.img_signal.connect(self.run_autobrightness)
 
@@ -358,9 +349,8 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Passed pressure check. Pressure difference = {pdiff} hPa."
             )
-            if self.state == "pressure_check":
-                self.next_state()
-        except PressureSensorBusy as e:
+            self.next_state()
+        except PressureSensorBusy:
             self.logger.error(f"Unable to read value from the pressure sensor - {e}")
             # TODO What to do in a case where the sensor is acting funky?
             self.default_error.emit(
@@ -378,13 +368,13 @@ class ScopeOp(QObject, NamedMachine):
             )
 
     def _start_cellfinder(self, *args):
-        self.cellfinder_result = None
         self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
+        self.cellfinder_routine.send(None)
 
         self.img_signal.connect(self.run_cellfinder)
 
     def _end_cellfinder(self, *args):
-        if self.cellfinder_result is not None:
+        if self.cellfinder_result != None:
             self.update_msg.emit(
                 f"Moving motor to focus position at {self.cellfinder_result} steps."
             )
@@ -392,41 +382,38 @@ class ScopeOp(QObject, NamedMachine):
             self.mscope.motor.move_abs(self.cellfinder_result)
 
     def _start_autofocus(self, *args):
-        self.autofocus_batch = []
-        self.autofocus_results = [None, None]
         self.img_signal.connect(self.run_autofocus)
 
     def _start_fastflow(self, *args):
         if SIMULATION:
             self.logger.info(f"Skipping {self.state} state in simulation mode.")
             sleep(1)
-            if self.state == "fastflow":
-                self.next_state()
+            self.next_state()
             return
 
-        self.fastflow_result = None
-        self.fastflow_routine = self.routines.flow_control_routine(
-            self.mscope,
-            target_flowrate=self.target_flowrate,
-            fast_flow=True,
+        self.fastflow_routine = self.routines.fastFlowRoutine(
+            self.mscope, None, target_flowrate=self.target_flowrate
         )
+        self.fastflow_routine.send(None)
 
         self.img_signal.connect(self.run_fastflow)
 
     def _start_experiment(self, *args):
-        self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
+        self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope, None)
+        self.PSSAF_routine.send(None)
 
-        self.flowcontrol_routine = self.routines.flow_control_routine(
-            self.mscope,
-            self.target_flowrate,
-            fast_flow=False,
+        self.flowcontrol_routine = self.routines.flowControlRoutine(
+            self.mscope, self.target_flowrate, None
         )
+        self.flowcontrol_routine.send(None)
 
         self.density_routine = self.routines.cell_density_routine()
+        self.density_routine.send(None)
 
         self.count_parasitemia_routine = (
             self.routines.count_parasitemia_periodic_wrapper(self.mscope)
         )
+        self.count_parasitemia_routine.send(None)
 
         self.set_period.emit(LIVEVIEW_PERIOD)
 
@@ -438,11 +425,27 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
-        runtime = self._get_experiment_runtime()
-        if runtime != 0:
-            self.logger.info(f"Net FPS is {self.count/runtime}")
+        if self.start_time != None:
+            self.logger.info(
+                f"Net FPS is {self.count/(self._get_experiment_runtime())}"
+            )
 
-        self.mscope.reset_for_end_experiment()
+        self.logger.info("Resetting pneumatic module for rerun.")
+        while self.mscope.pneumatic_module.is_locked():
+            sleep(0.1)
+        try:
+            self.mscope.pneumatic_module.setDutyCycle(
+                self.mscope.pneumatic_module.getMaxDutyCycle()
+            )
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
+
+        self.mscope.led.turnOff()
+
+        closing_file_future = self.mscope.data_storage.close()
+        while not closing_file_future.done():
+            sleep(1)
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)
@@ -462,15 +465,13 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}."
             )
-            if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
-                self.next_state()
+            self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
             self.logger.warning(
                 f"Autobrightness target not achieved, but still ok. Mean pixel val = {self.autobrightness_result}."
             )
-            if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
-                self.next_state()
+            self.next_state()
         except BrightnessCriticallyLow as e:
             self.logger.error(
                 f"Autobrightness failed. Mean pixel value = {e.value}.",
@@ -489,11 +490,7 @@ class ScopeOp(QObject, NamedMachine):
                     ERROR_BEHAVIORS.DEFAULT.value,
                 )
             else:
-                if self.state in {
-                    "autobrightness_precells",
-                    "autobrightness_postcells",
-                }:
-                    self.next_state()
+                self.next_state()
         else:
             if self.running:
                 self.img_signal.connect(self.run_autobrightness)
@@ -513,8 +510,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Cellfinder successful. Cells found at motor pos = {self.cellfinder_result}."
             )
-            if self.state == "cellfinder":
-                self.next_state()
+            self.next_state()
         except NoCellsFound:
             self.logger.error("Cellfinder failed. No cells found.")
             self.default_error.emit(
@@ -535,16 +531,13 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_autofocus)
 
         if len(self.autofocus_batch) < AF_BATCH_SIZE:
-            resized_img = cv2.resize(
-                img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
-            )
-            self.autofocus_batch.append(resized_img)
+            self.autofocus_batch.append(img)
 
             if self.running:
                 self.img_signal.connect(self.run_autofocus)
         else:
             try:
-                if self.autofocus_results[0] is None:
+                if self.autofocus_results[0] == None:
                     self.autofocus_results[
                         0
                     ] = self.routines.singleShotAutofocusRoutine(
@@ -574,8 +567,7 @@ class ScopeOp(QObject, NamedMachine):
                         f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
                     )
                     self.autofocus_batch = []
-                    if self.state in {"autofocus_preflow", "autofocus_postflow"}:
-                        self.next_state()
+                    self.next_state()
             except InvalidMove:
                 self.logger.error(
                     "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
@@ -595,17 +587,17 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            self.flowrate = self.fastflow_routine.send((img, timestamp))
+            flowrate = self.fastflow_routine.send((img, timestamp))
 
-            if self.flowrate is not None:
-                self.update_flowrate.emit(self.flowrate)
+            if flowrate != None:
+                self.update_flowrate.emit(flowrate)
         except CantReachTargetFlowrate as e:
             self.fastflow_result = e.flowrate
             self.logger.error("Fastflow failed. Syringe already at max position.")
             self.default_error.emit(
                 "Calibration issue",
-                "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
-                ERROR_BEHAVIORS.FLOWCONTROL.value,
+                "Unable to achieve target flowrate with syringe at max position. Continue running anyways?",
+                ERROR_BEHAVIORS.YN.value,
             )
             self.update_flowrate.emit(self.fastflow_result)
         except LowConfidenceCorrelations:
@@ -615,20 +607,14 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.default_error.emit(
                 "Calibration failed - flowrate calculation errors",
-                (
-                    "Flowrate ramp: The flow control system returned too many 'low confidence' measurements. "
-                    "You can continue with this run if the flow looks okay to you, "
-                    "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
-                    "Continue running anyway?"
-                ),
-                ERROR_BEHAVIORS.FLOWCONTROL.value,
+                "Flowrate ramp: The flow control system returned too many 'low confidence' measurements.\nIf the flow rate looked normal to you, you can try re-running with this same flow cell and sample. Otherwise, discard this flow cell and use a new one with fresh sample please.",
+                ERROR_BEHAVIORS.DEFAULT.value,
             )
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
             self.update_flowrate.emit(self.fastflow_result)
-            if self.state == "fastflow":
-                self.next_state()
+            self.next_state()
         else:
             if self.running:
                 self.img_signal.connect(self.run_fastflow)
@@ -638,7 +624,7 @@ class ScopeOp(QObject, NamedMachine):
             self.img_metadata[key] = val
 
     @pyqtSlot(np.ndarray, float)
-    def run_experiment(self, img, timestamp) -> None:
+    def run_experiment(self, img, timestamp):
         if not self.running:
             self.logger.info("Slot executed after experiment ended.")
             return
@@ -649,190 +635,177 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["looptime"] = current_time - self.last_time
         self.last_time = current_time
 
-        if self.start_time is None:
-            # A race condition has triggered a non-experiment state
-            return
-
         if self.count >= MAX_FRAMES:
-            if self.state == "experiment":
-                self.to_intermission(
-                    "Ending experiment since data collection is complete."
-                )
-            return
-
-        if current_time - self.start_time > TIMEOUT_PERIOD_S:
-            if self.state == "experiment":
-                self.to_intermission(
-                    f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
-                )
-            return
-
-        # Record timestamp before running routines
-        self.img_metadata["timestamp"] = timestamp
-        self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
-
-        t0 = perf_counter()
-        self.update_img_count.emit(self.count)
-        t1 = perf_counter()
-        self._update_metadata_if_verbose("update_img_count", t1 - t0)
-
-        t0 = perf_counter()
-        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
-        prev_yogo_results: List[
-            AsyncInferenceResult
-        ] = self.count_parasitemia_routine.send((resized_img, self.count))
-
-        t1 = perf_counter()
-        self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
-
-        t0 = perf_counter()
-        # we can use this for cell counts in the future, and also density in the now
-
-        for result in prev_yogo_results:
-            filtered_prediction = YOGO.filter_res(result.result)
-
-            class_counts = YOGO.class_instance_count(filtered_prediction)
-            # very rough interpolation: ~30 FPS * period between YOGO calls * counts
-            class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
-                class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
+            self.to_intermission("Ending experiment since data collection is complete.")
+        elif current_time - self.start_time > TIMEOUT_PERIOD_S:
+            self.to_intermission(
+                f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
             )
-            self.cell_counts += class_counts
+        else:
+            # Record timestamp before running routines
+            self.img_metadata["timestamp"] = timestamp
+            self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
 
-            self._update_metadata_if_verbose(
-                "yogo_qsize",
-                self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
-            )
+            t0 = perf_counter()
+            self.update_img_count.emit(self.count)
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
+            t0 = perf_counter()
+            prev_yogo_results: List[
+                AsyncInferenceResult
+            ] = self.count_parasitemia_routine.send((img, self.count))
+
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
+
+            t0 = perf_counter()
+            # we can use this for cell counts in the future, and also density in the now
+
+            for result in prev_yogo_results:
+                filtered_prediction = YOGO.filter_res(result.result)
+
+                class_counts = YOGO.class_instance_count(filtered_prediction)
+                # very rough interpolation: ~30 FPS * period between YOGO calls * counts
+                class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
+                    class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
+                )
+                self.cell_counts += class_counts
+
+                self._update_metadata_if_verbose(
+                    "yogo_qsize",
+                    self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
+                )
+
+                try:
+                    self.density_routine.send(filtered_prediction)
+                except LowDensity as e:
+                    self.logger.warning(f"Cell density is too low.")
+                    self.reload_pause.emit(
+                        "Low cell density",
+                        (
+                            "Cell density is too low. "
+                            "Pausing operation so that more sample can be added without ending the experiment."
+                            '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
+                        ),
+                    )
+                    return
+
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
+
+            t0 = perf_counter()
             try:
-                self.density_routine.send(filtered_prediction)
-            except LowDensity:
-                self.logger.warning("Cell density is too low.")
-                self.reload_pause.emit(
-                    "Low cell density",
-                    (
-                        "Cell density is too low. "
-                        "Pausing operation so that more sample can be added without ending the experiment."
-                        '\n\nClick "OK" and wait for the next dialog before removing the CAP module.'
-                    ),
-                )
-                return
+                focus_err = self.PSSAF_routine.send(img)
+            except MotorControllerError as e:
+                if not SIMULATION:
+                    self.logger.error(
+                        "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    )
+                    self.default_error.emit(
+                        "Autofocus failed",
+                        "Unable to achieve desired focus within condenser's depth of field.",
+                        ERROR_BEHAVIORS.DEFAULT.value,
+                    )
+                    return
+                else:
+                    self.logger.warning(
+                        f"Ignoring periodic SSAF exception in simulation mode - {e}"
+                    )
+                    focus_err = None
 
-        t1 = perf_counter()
-        self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
+                    self.PSSAF_routine = self.routines.periodicAutofocusWrapper(
+                        self.mscope, None
+                    )
+                    self.PSSAF_routine.send(None)
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("pssaf", t1 - t0)
 
-        t0 = perf_counter()
-        try:
-            (
-                raw_focus_err,
-                filtered_focus_err,
-                focus_adjustment,
-            ) = self.PSSAF_routine.send(resized_img)
-        except MotorControllerError as e:
-            if not SIMULATION:
-                self.logger.error(
-                    "Autofocus failed. Can't achieve focus within condenser's depth of field."
-                )
-                self.default_error.emit(
-                    "Autofocus failed",
-                    "Unable to achieve desired focus within condenser's depth of field.",
-                    ERROR_BEHAVIORS.DEFAULT.value,
-                )
-                return
-            else:
+            t0 = perf_counter()
+            try:
+                flowrate = self.flowcontrol_routine.send((img, timestamp))
+            except CantReachTargetFlowrate as e:
                 self.logger.warning(
-                    f"Ignoring periodic SSAF exception in simulation mode - {e}"
+                    f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
                 )
-                raw_focus_err = None
+                flowrate = None
 
-                self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
+                self.flowcontrol_routine = self.routines.flowControlRoutine(
+                    self.mscope, self.target_flowrate, None
+                )
+                self.flowcontrol_routine.send(None)
 
-        t1 = perf_counter()
-        self._update_metadata_if_verbose("pssaf", t1 - t0)
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
-        if filtered_focus_err is not None:
-            self.filtered_focus_err = filtered_focus_err
+            t0 = perf_counter()
+            # Update infopanel
+            if focus_err != None:
+                # TODO change this to non int?
+                self.update_focus.emit(int(focus_err))
 
-        t0 = perf_counter()
-        try:
-            self.flowrate = self.flowcontrol_routine.send((img, timestamp))
-        except CantReachTargetFlowrate as e:
-            self.logger.warning(
-                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-            )
-            self.flowrate = None
-            self.flowcontrol_routine = self.routines.flow_control_routine(
-                self.mscope, self.target_flowrate
-            )
-        except LowConfidenceCorrelations as e:
-            self.logger.warning(
-                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-            )
-            self.flowrate = None
-            self.flowcontrol_routine = self.routines.flow_control_routine(
-                self.mscope, self.target_flowrate
-            )
+            if flowrate != None:
+                self.update_flowrate.emit(flowrate)
 
-        t1 = perf_counter()
-        self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("ui_flowrate_focus", t1 - t0)
 
-        t0 = perf_counter()
-        # Update remaining metadata
-        self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
-        try:
-            pressure, status = self.mscope.pneumatic_module.getPressure()
-            (
-                self.img_metadata["pressure_hpa"],
-                self.img_metadata["pressure_status_flag"],
-            ) = (pressure, status)
-        except PressureSensorStaleValue as e:
-            ## TODO???
-            self.logger.info(f"Stale pressure sensor value - {e}")
-
-        self.img_metadata[
-            "syringe_pos"
-        ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
-        self.img_metadata["flowrate"] = self.flowrate
-        self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
-        self.img_metadata["focus_error"] = raw_focus_err
-        self.img_metadata["filtered_focus_error"] = filtered_focus_err
-        self.img_metadata["focus_adjustment"] = focus_adjustment
-
-        if self.count % TH_PERIOD_NUM == 0:
+            t0 = perf_counter()
+            # Update remaining metadata
+            self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
             try:
+                pressure, status = self.mscope.pneumatic_module.getPressure()
                 (
-                    temperature,
-                    humidity,
-                ) = self.mscope.ht_sensor.get_temp_and_humidity()
-                self.img_metadata["humidity"] = humidity
-                self.img_metadata["temperature"] = temperature
-            except Exception as e:
-                # some error has occurred, but the TH sensor isn't critical, so just warn
-                # and move on
-                self.logger.warning(
-                    f"exception occurred while retrieving temperature and humidity: {e}"
-                )
+                    self.img_metadata["pressure_hpa"],
+                    self.img_metadata["pressure_status_flag"],
+                ) = (pressure, status)
+            except PressureSensorStaleValue as e:
+                ## TODO???
+                self.logger.info(f"Stale pressure sensor value - {e}")
+
+            self.img_metadata[
+                "syringe_pos"
+            ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
+            self.img_metadata["flowrate"] = flowrate
+            self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
+            self.img_metadata["focus_error"] = focus_err
+
+            if self.count % TH_PERIOD_NUM == 0:
+                try:
+                    (
+                        temperature,
+                        humidity,
+                    ) = self.mscope.ht_sensor.get_temp_and_humidity()
+                    self.img_metadata["humidity"] = humidity
+                    self.img_metadata["temperature"] = temperature
+                except Exception as e:
+                    # some error has occurred, but the TH sensor isn't critical, so just warn
+                    # and move on
+                    self.logger.warning(
+                        f"exception occurred while retrieving temperature and humidity: {e}"
+                    )
+                    self.img_metadata["humidity"] = None
+                    self.img_metadata["temperature"] = None
+            else:
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
-        else:
-            self.img_metadata["humidity"] = None
-            self.img_metadata["temperature"] = None
 
-        zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
-        self.img_metadata["zarrwriter_qsize"] = zarr_qsize
+            zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
+            self.img_metadata["zarrwriter_qsize"] = zarr_qsize
 
-        ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
-        self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)
+            ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
+            self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)
 
-        self.img_metadata["runtime"] = perf_counter() - current_time
+            self.img_metadata["runtime"] = perf_counter() - current_time
 
-        t1 = perf_counter()
-        self._update_metadata_if_verbose("img_metadata", t1 - t0)
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("img_metadata", t1 - t0)
 
-        t0 = perf_counter()
-        self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
-        self.count += 1
-        t1 = perf_counter()
-        self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
+            t0 = perf_counter()
+            self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
+            self.count += 1
+            t1 = perf_counter()
+            self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
 
-        if self.running:
-            self.img_signal.connect(self.run_experiment)
+            if self.running:
+                self.img_signal.connect(self.run_experiment)

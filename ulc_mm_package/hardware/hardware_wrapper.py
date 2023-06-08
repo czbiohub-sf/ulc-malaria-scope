@@ -25,6 +25,7 @@ Usage:   Define a new hardware class as
 import inspect
 
 from importlib import import_module
+from os.path import basename
 
 from ulc_mm_package.scope_constants import SIMULATION
 
