@@ -12,6 +12,9 @@ from typing import List
 
 
 class PatchyBackgroundSubtraction:
+    def __init__(self):
+        self._backgroundAverageArray = np.empty()
+
     def _maskBoxedRegions(
         self,
         img_arr: np.ndarray,
@@ -219,6 +222,3 @@ class MedianBGSubtraction:
     def getVariance(self):
         self._backgroundVariance = np.var(self.frame_storage, axis=2)
         return self._backgroundVariance
-
-    def isPrimed(self) -> bool:
-        pass

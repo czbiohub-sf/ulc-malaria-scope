@@ -41,7 +41,7 @@ class dtoverlay_PWM:
         echo 1 > pwm1/enable;
         """
         subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+            cmd, capture_output=True, shell=True, cwd="/sys/class/pwm/pwmchip0"
         )
 
     def setFreq(self, freq: int):
@@ -54,21 +54,21 @@ class dtoverlay_PWM:
             f"/sys/class/pwm/pwmchip0/pwm{self.channel}/period", str(self.period_ns)
         )
 
-    def setDutyCycle(self, duty_cycle_perc: float):
-        """Sets the dutycycle (in ns) given an '% on time'.
+    def setDutyCycle(self, duty_cycle_val_normed: float):
+        """Sets the dutycycle (in ns) given an '% on time' (a value between 0 - 1, inclusive, e.g 0.3 would correspond to a 30% on time).
 
         Parameters
         ----------
         duty_cycle_perc: float
             Between 0 - 1.0.
-
         """
-        if not 0 <= duty_cycle_perc <= 1:
+
+        if not 0 <= duty_cycle_val_normed <= 1:
             raise InvalidDutyCyclePerc(
-                f"Duty cycle must be between 0 and 1.0. Got {duty_cycle_perc}"
+                f"Duty cycle must be between 0 and 1.0. Got {duty_cycle_val_normed}"
             )
 
-        duty_cycle_val = int(duty_cycle_perc * self.period_ns)
+        duty_cycle_val = int(duty_cycle_val_normed * self.period_ns)
         self._atomic_write_to_file(
             f"/sys/class/pwm/pwmchip0/pwm{self.channel}/duty_cycle", str(duty_cycle_val)
         )
@@ -81,7 +81,7 @@ class dtoverlay_PWM:
         echo 0 > pwm1/enable;
         """
         subprocess.run(
-            cmd, capture_output=True, shell=True, cwd=f"/sys/class/pwm/pwmchip0"
+            cmd, capture_output=True, shell=True, cwd="/sys/class/pwm/pwmchip0"
         )
         dtoverlay_PWM._started = True
 
