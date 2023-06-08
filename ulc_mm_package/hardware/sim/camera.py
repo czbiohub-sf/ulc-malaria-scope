@@ -26,7 +26,7 @@ class SimCamera(CameraBase):
             self.exposureTime_ms = DEFAULT_EXPOSURE_MS
 
             # Setup simulated video stream
-            self.video = cv2.VideoCapture(VIDEO_PATH)
+            self.video = cv2.VideoCapture(str(VIDEO_PATH))
             self.frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
             self.fps = self.video.get(cv2.CAP_PROP_FPS)
 
@@ -45,7 +45,7 @@ class SimCamera(CameraBase):
             success, frame = self.video.read()
             # Reload video
             if not success:
-                self.video = cv2.VideoCapture(VIDEO_PATH)
+                self.video = cv2.VideoCapture(str(VIDEO_PATH))
                 success, frame = self.video.read()
             yield cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), perf_counter()
             sleep(1 / self.fps)
