@@ -3,8 +3,6 @@ from typing import List, Tuple
 import cv2
 import numpy as np
 
-from typing import Optional
-
 from ulc_mm_package.hardware import multiprocess_scope_routine as msr
 
 
@@ -72,7 +70,7 @@ class FlowRateEstimator:
 
         self.frame_a, self.frame_b = self.multiproc_interface._input_ctypes
 
-        self._prev_img: Optional[np.ndarray] = None
+        self._prev_img: np.ndarray = None
         self.scale_factor = scale_factor
 
     def reset(self) -> None:

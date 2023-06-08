@@ -182,16 +182,10 @@ class MalariaScope:
                 self.camera.camera.AcquisitionFrameRateEnable.set(True)
                 self.camera.camera.AcquisitionFrameRate.set(CAMERA_FPS)
                 self.camera_enabled = True
-            elif CAMERA_SELECTION == CameraOptions.SIMULATED:
+            elif SIMULATION:
                 # just choose AVT, the import will be overridden w/ the simulated class
                 self.camera = AVTCamera()
                 self.camera_enabled = True
-            elif CAMERA_SELECTION == CameraOptions.NONE:
-                raise CameraError(
-                    "Camera selection is set to NONE, but camera is being initialized. "
-                    "A camera was not detected and this is not being run in simulation mode. "
-                    "To run in simulation mode, run with MS_SIMULATE=1."
-                )
             else:
                 raise CameraError(
                     "Invalid camera selection - must be 0 (Basler) or 1 (AVT)"

@@ -21,6 +21,7 @@ from typing import (
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
+from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 
 from openvino.preprocess import PrePostProcessor
@@ -65,14 +66,16 @@ class NCSModel:
     def __init__(
         self,
         model_path: str,
+        camera_selection: CameraOptions = CAMERA_SELECTION,
     ):
         """
         params:
             model_path: path to the 'xml' file
+            camera_selection: the camera that is used for inference. Just used for img dims
         """
         self.connected = False
         self.device_name = "MYRIAD"
-        self.model = self._compile_model(model_path)
+        self.model = self._compile_model(model_path, camera_selection)
 
         self.asyn_result_lock = threading.Lock()
 
@@ -89,6 +92,7 @@ class NCSModel:
     def _compile_model(
         self,
         model_path: str,
+        camera_selection: CameraOptions,
     ):
         if self.connected:
             raise RuntimeError(f"model {self} already compiled")
