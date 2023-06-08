@@ -1,61 +1,49 @@
 import logging
-
-from functools import wraps
 from time import perf_counter, sleep
-from typing import Any, Callable, List, Tuple, Optional, Sequence, Generator
+from typing import List, Tuple, Optional, Sequence, Generator, Union
 
 import numpy as np
 
 from ulc_mm_package.hardware.scope import MalariaScope
 
-from ulc_mm_package.image_processing.autobrightness import (
-    Autobrightness,
-    BrightnessTargetNotAchieved,
-    BrightnessCriticallyLow,
-    checkLedWorking,
-)
-
-from ulc_mm_package.image_processing.cell_finder import (
-    CellFinder,
-    NoCellsFound,
-    LowDensity,
-)
-from ulc_mm_package.hardware.pneumatic_module import PressureLeak, PressureSensorBusy
+# FIXME no stars!
+from ulc_mm_package.image_processing.processing_modules import *
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import (
-    MIN_PRESSURE_DIFF,
-    FOCUS_EWMA_ALPHA,
-)
-from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
+from ulc_mm_package.hardware.hardware_modules import PressureLeak, PressureSensorBusy
+from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
 
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
+from ulc_mm_package.neural_nets.neural_network_modules import AsyncInferenceResult
 import ulc_mm_package.image_processing.processing_constants as processing_constants
-
-
-def init_generator(
-    generator: Callable[..., Generator[Any, Any, Any]]
-) -> Callable[..., Generator[Any, Any, Any]]:
-    @wraps(generator)
-    def call(*a, **k):
-        g = generator(*a, **k)
-        # advance just-started generator without requiring generator 'send' type to be optional
-        next(g)
-        return g
-
-    return call
 
 
 class Routines:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
+    def focusRoutine(
+        self,
+        mscope: MalariaScope,
+        lower_bound: int,
+        upper_bound: int,
+        img: np.ndarray = None,
+    ):
+        mscope.motor.move_abs(lower_bound)
+        focus_metrics = []
+        while mscope.motor.pos < upper_bound:
+            img = yield img
+            focus_metrics.append(logPowerSpectrumRadialAverageSum(img))
+            mscope.motor.move_rel(steps=1, dir=Direction.CW)
+
+        best_focus_pos = lower_bound + np.argmax(focus_metrics)
+        mscope.motor.move_abs(best_focus_pos)
+
     def singleShotAutofocusRoutine(
         self, mscope: MalariaScope, img_arr: List[np.ndarray]
     ) -> int:
         """Single shot autofocus routine.
 
-        Takes in an array of images (number based on AF_BATCH_SIZE), runs an inference
+        Takes in an array of images (number of images defined by AF_BATCH_SIZE), runs an inference
         using the SSAF model, averages the results, and adjusts the motor position by that step value.
 
         Parameters
@@ -72,6 +60,10 @@ class Routines:
         ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
         steps_from_focus = -round(np.mean(ssaf_steps_from_focus))
 
+        # Change to async batch inference? Check w/ Axel
+        # mscope.autofocus_model.asyn(img_arr)
+        # ssaf_steps_from_focus = mscope.autofocus_model.get_asyn_results()
+
         try:
             dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
             mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
@@ -80,15 +72,28 @@ class Routines:
 
         return steps_from_focus
 
-    @init_generator
-    def periodicAutofocusWrapper(
-        self, mscope: MalariaScope
-    ) -> Generator[
-        Tuple[Optional[float], Optional[float], Optional[bool]], np.ndarray, None
-    ]:
-        """Periodic autofocus calculations with EWMA filtering
+    def continuousSSAFRoutine(
+        self, mscope: MalariaScope, img: np.ndarray
+    ) -> Generator[Union[None, int], np.ndarray, None]:
+        """A wrapper around singleShotAutofocusRoutine which continually accepts images and makes motor position adjustments."""
 
-        This function adds a simple time wrapper around the autofocus model and EWMA filter
+        img_arr = []
+        steps_from_focus = None
+
+        while True:
+            img = yield steps_from_focus
+            steps_from_focus = None
+            img_arr.append(img)
+            if len(img_arr) == nn_constants.AF_BATCH_SIZE:
+                steps_from_focus = self.singleShotAutofocusRoutine(mscope, img_arr)
+                img_arr = []
+
+    def periodicAutofocusWrapper(
+        self, mscope: MalariaScope, img: np.ndarray
+    ) -> Generator[Union[None, int], np.ndarray, None]:
+        """A periodic wrapper around the `continuousSSAFRoutine`.
+
+        This function adds a simple time wrapper around `continuousSSAFRoutine`
         such that inferences and motor adjustments are done every `AF_PERIOD_NUM' frames.
 
         When not making an adjustment, this Generator yields None. After an adjustment has been completed, the next
@@ -101,68 +106,23 @@ class Routines:
         None:
             In between periods, images are not being sent to SSAF.
         int:
-            Number of motor steps taken, returned after an image has been sent once
+            Number of motor steps taken, returned after a full batch of images have been sent once
             AF_PERIOD_NUM frames have elapsed since the last adjustment.
         """
 
-        filtered_error = 0.0
-        img_counter = 0
-        throttle_counter = 0
-        move_counter = 0
-
-        adjusted = None
+        counter = 0
         steps_from_focus = None
-
-        ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
-        ssaf_filter.set_init_val(0)
-
-        ssaf_period_num = ssaf_filter.get_adjustment_period_ewma()
-        self.logger.info(
-            f"Minimum SSAF adjustment period = {ssaf_period_num} measurements"
-        )
+        ssaf_routine = self.continuousSSAFRoutine(mscope, None)
+        ssaf_routine.send(None)
 
         while True:
-            throttle_counter += 1
-            if throttle_counter >= nn_constants.AF_PERIOD_NUM:
-                img_counter += 1
-                img = yield steps_from_focus, filtered_error, adjusted
-                adjusted = None
+            img = yield steps_from_focus
+            counter += 1
+            if counter >= nn_constants.AF_PERIOD_NUM:
+                steps_from_focus = ssaf_routine.send(img)
 
-                # if mscope.autofocus_model._executor._work_queue.full(), this will block
-                # until an element is removed from the queue
-                # TODO watch performance, if blocking a lot then we must subclass ThreadPoolExecutor
-                # and change https://github.com/python/cpython/blob/a712c5f42d5904e1a1cdaf11bd1f05852cfdd830/Lib/concurrent/futures/thread.py#L175
-                # to put_nowait```
-                mscope.autofocus_model.asyn(img, img_counter)
-                results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
-
-                for res in sorted(results, key=lambda res: res.id):
-                    move_counter += 1
-
-                    steps_from_focus = -res.result.item()
-                    filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
-
-                throttle_counter = 0
-
-                if (
-                    move_counter >= ssaf_period_num
-                    and abs(filtered_error) > nn_constants.AF_THRESHOLD
-                ):
-                    self.logger.info(
-                        f"Adjusted focus by {-filtered_error:.2f} steps after {move_counter} measurements"
-                    )
-                    move_counter = 0
-                    adjusted = True
-
-                    try:
-                        dir = Direction.CW if filtered_error > 0 else Direction.CCW
-                        mscope.motor.threaded_move_rel(
-                            dir=dir, steps=abs(filtered_error)
-                        )
-                    except MotorControllerError as e:
-                        raise e
-            else:
-                _ = yield None, None, None
+                if counter >= nn_constants.AF_PERIOD_NUM + nn_constants.AF_BATCH_SIZE:
+                    counter = 0
 
     def count_parasitemia(
         self,
@@ -174,11 +134,14 @@ class Routines:
         mscope.cell_diagnosis_model(img, counts)
         return results
 
-    @init_generator
     def count_parasitemia_periodic_wrapper(
         self,
         mscope: MalariaScope,
-    ) -> Generator[List[AsyncInferenceResult], Tuple[np.ndarray, Optional[int]], None,]:
+    ) -> Generator[
+        Optional[List[AsyncInferenceResult]],
+        Tuple[np.ndarray, Optional[int]],
+        None,
+    ]:
         counter = 0
 
         while True:
@@ -187,29 +150,77 @@ class Routines:
                 counter = 0
                 img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
                 mscope.cell_diagnosis_model(img, counts)
+                prev_time = perf_counter()
             else:
                 (
                     _,
                     _,
                 ) = yield []
 
-    @init_generator
-    def flow_control_routine(
-        self, mscope: MalariaScope, target_flowrate: float, fast_flow: bool = False
-    ) -> Generator[Optional[float], np.ndarray, Optional[float]]:
+    def flowControlRoutine(
+        self, mscope: MalariaScope, target_flowrate: float, img: np.ndarray
+    ) -> Generator[float, np.ndarray, None]:
         """Keep the flowrate steady by continuously calculating the flowrate and periodically
         adjusting the syringe position. Need to initially pass in the flowrate to maintain.
-
-        If fast_flow is set to true, flow control feedback will run more rapidly (and with more noise) to attempt
-        to reach the target flow rate sooner.
 
         Parameters
         ----------
         mscope: MalariaScope
         target_flowrate: float
             The flowrate value to attempt to keep steady
-        fast_flow: bool
-            Toggle whether to do faster feedback loop to reach the target flowrate sooner
+        img: np.ndarray
+            Image to be passed into the FlowController
+
+        Exceptions
+        ----------
+        CantReachTargetFlowrate:
+            Raised when the syringe is already at its maximally extended position but the flowrate
+            is still outside the tolerance band.
+        """
+
+        img, timestamp = yield
+        flow_val = None
+
+        mscope.flow_controller.setTargetFlowrate(target_flowrate)
+        while True:
+            img, timestamp = yield flow_val
+            flow_val = mscope.flow_controller.controlFlow(img, timestamp)
+
+    def fastFlowRoutine(
+        self,
+        mscope: MalariaScope,
+        img: np.ndarray,
+        target_flowrate: float = processing_constants.FLOWRATE.FAST.value,
+    ) -> Generator[float, np.ndarray, float]:
+        """Faster flowrate feedback for initial flow ramp-up.
+
+        See FlowController.fastFlowAdjustment for specifics.
+
+        Usage
+        -----
+        - Use this routine to do the initial ramp up. Once it hits the target,
+        it raises a StopIteration exception and a float number (flowrate) is returned via the exception (e.value)
+
+            fastflow_generator = fastFlowRoutine(mscope, None)
+            fastflow_generator.send(None) # need to start generator with a None value
+            for img in cam.yieldImages():
+                try:
+                    flow_val = fastflow_generator.send(img)
+                except StopIteration as e:
+                    flow_val = e.value
+            cam.stopAcquisition()
+            print(flow_val)
+
+        Then this flow_val can be passed into `flowControlRoutine` on initialization to set
+        the flowrate that should be held steady: i.e:
+
+            flow_control = flowControlRoutine(mscope, flow_val, None)
+            ...
+            ...etc
+
+        Returns
+        -------
+        float: flow_rate if target achieved
 
         Exceptions
         ----------
@@ -218,31 +229,32 @@ class Routines:
             is still outside the tolerance band.
 
         LowConfidenceCorrelations:
-            Raised if the percentage of failed correlations exceeds FAILED_CORR_PERC_TOLERANCE of all measurements.
+            Raised if the number of recent xcorrs which have 'failed' (had a low correlation value) exceeds
+            2 * the measurement window size.
         """
 
-        flow_val: Optional[float] = None
-        mscope.flow_controller.reset()
-        flow_controller = mscope.flow_controller
-        flow_controller.set_target_flowrate(target_flowrate)
-        if fast_flow:
-            flow_controller.set_alpha(
-                processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
-            )  # Double the alpha, ~halve the half life
+        flow_val = 0
+        img, timestamp = yield
+
+        mscope.flow_controller.setTargetFlowrate(target_flowrate)
 
         while True:
             img, timestamp = yield flow_val
-            flow_val, flow_error = flow_controller.control_flow(img, timestamp)
+            try:
+                flow_val, flow_error = mscope.flow_controller.fastFlowAdjustment(
+                    img, timestamp
+                )
+            except CantReachTargetFlowrate:
+                raise
+            except LowConfidenceCorrelations:
+                raise
 
-            if fast_flow:
-                if flow_error is not None:
-                    if flow_error == 0:
-                        return flow_val
+            if flow_error == 0:
+                return flow_val
 
-    @init_generator
     def autobrightnessRoutine(
-        self, mscope: MalariaScope
-    ) -> Generator[None, np.ndarray, float]:
+        self, mscope: MalariaScope, img: np.ndarray = None
+    ) -> float:
         """Autobrightness routine to set led power.
 
         Parameters
@@ -280,6 +292,7 @@ class Routines:
         Usage
         -----
             ab_generator = autobrightnessRoutine(mscope, None)
+            ab_generator.send(None) # need to start the generator with a None value
 
             for img in cam.yieldImages():
                 try:
@@ -317,17 +330,13 @@ class Routines:
             img = yield
             try:
                 brightness_achieved = autobrightness.runAutobrightness(img)
-            except BrightnessTargetNotAchieved:
+            except BrightnessTargetNotAchieved as e:
                 raise
-            except BrightnessCriticallyLow:
+            except BrightnessCriticallyLow as e:
                 raise
 
-        # Get the mean image brightness to store in the experiment metadata.
-        # Since brightness was achieved, we know that this is now a float
-        # instead of an Optional[float].
-        brightness = autobrightness.prev_mean_img_brightness
-        assert brightness is not None, "not possible"
-        return brightness
+        # Get the mean image brightness to store in the experiment metadata
+        return autobrightness.prev_mean_img_brightness
 
     def checkPressureDifference(self, mscope: MalariaScope) -> float:
         """Check the pressure differential. Raises an exception if difference is insufficent
@@ -369,7 +378,7 @@ class Routines:
         pressure_diff = initial_pressure - final_pressure
         if pressure_diff < MIN_PRESSURE_DIFF:
             raise PressureLeak(
-                f"Pressure leak detected, could only generate {pressure_diff:.3f} hPa pressure differential."
+                f"Pressure leak detected, could only generate {pressure_diff} hPa pressure differential."
             )
         else:
             # Return syringe to its initial position
@@ -379,13 +388,13 @@ class Routines:
 
             return pressure_diff
 
-    @init_generator
     def find_cells_routine(
         self,
         mscope: MalariaScope,
         pull_time: float = 5,
         steps_per_image: int = 10,
-    ) -> Generator[None, np.ndarray, Optional[int]]:
+        img: np.ndarray = None,
+    ) -> int:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
         This routine does the following:
@@ -430,7 +439,8 @@ class Routines:
         # Initial check for cells, return current motor position if cells found
         cell_finder.add_image(mscope.motor.pos, img)
         try:
-            return cell_finder.get_cells_found_position()
+            cells_present_motor_pos = cell_finder.get_cells_found_position()
+            return cells_present_motor_pos
         except NoCellsFound:
             cell_finder.reset()
 
@@ -461,18 +471,15 @@ class Routines:
                 mscope.motor.move_abs(pos)
                 img = yield
                 cell_finder.add_image(mscope.motor.pos, img)
-                try:
-                    return cell_finder.get_cells_found_position()
-                except NoCellsFound:
-                    pass
 
-            # The below only runs if the function didn't return early in the for loop above
-            max_attempts -= 1
-            self.logger.warning(
-                f"No cells found, attempting again. Remaining attempts: {max_attempts}"
-            )
+            # Return the motor position where cells were found
+            try:
+                cells_present_motor_pos = cell_finder.get_cells_found_position()
+                return cells_present_motor_pos
+            except NoCellsFound:
+                max_attempts -= 1
+                self.logger.warning("MAX ATTEMPTS LEFT {}".format(max_attempts))
 
-    @init_generator
     def cell_density_routine(self) -> Generator[Optional[int], np.ndarray, None]:
         prev_time = perf_counter()
         prev_measurements = np.asarray(

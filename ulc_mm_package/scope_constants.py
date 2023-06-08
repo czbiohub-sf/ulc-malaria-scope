@@ -26,7 +26,7 @@ if SIMULATION:
         "../QtGUI/sim_media/sample.mp4",
     )
     VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
-    if VIDEO_PATH is None:
+    if VIDEO_PATH == None:
         raise RuntimeError(
             "Sample video for simulation mode could not be found. "
             f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
@@ -75,9 +75,6 @@ class CameraOptions(Enum):
     def IMG_HEIGHT(self) -> int:
         return self.img_dims().height
 
-
-# ================ Scope lock constants ================ #
-LOCKFILE = "lock.py"
 
 # ================ FPS constants ================ #
 ACQUISITION_FPS = 30.0
@@ -143,8 +140,6 @@ PER_IMAGE_METADATA_KEYS = [
     "syringe_pos",
     "flowrate",
     "focus_error",
-    "filtered_focus_error",
-    "focus_adjustment",
     "cell_count_cumulative",
     "temperature",
     "humidity",

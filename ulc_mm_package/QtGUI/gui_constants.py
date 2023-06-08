@@ -1,5 +1,6 @@
 import enum
 
+from PyQt5.QtWidgets import QDesktopWidget
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 
 
@@ -16,11 +17,8 @@ class STATUS(enum.Enum):
 class ERROR_BEHAVIORS(enum.Enum):
     DEFAULT = 0
     PRECHECK = 1
-    FLOWCONTROL = 2
+    YN = 2
 
-
-# ================ State machine verification ================ #
-NO_PAUSE_STATES = {"pause", "intermission"}
 
 # ================ Image display size ================ #
 IMG_DOWNSCALE = 2

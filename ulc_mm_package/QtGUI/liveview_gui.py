@@ -5,8 +5,9 @@ Displays camera preview and conveys info to user during runs."""
 import sys
 import numpy as np
 
-from time import strftime, gmtime
+from time import perf_counter, strftime, gmtime
 from qimage2ndarray import gray2qimage
+from matplotlib.streamplot import streamplot
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -22,23 +23,25 @@ from PyQt5.QtWidgets import (
     QScrollBar,
     QDesktopWidget,
 )
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, Qt
 from PyQt5.QtGui import QPixmap, QIcon
 
-from ulc_mm_package.image_processing.flow_control import get_flow_error
+from ulc_mm_package.image_processing.flow_control import getFlowError
 
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
-    AF_THRESHOLD,
 )
 from ulc_mm_package.scope_constants import MAX_FRAMES
+from ulc_mm_package.image_processing.processing_constants import TOP_PERC_TARGET_VAL
 from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
     ICON_PATH,
     BLANK_INFOPANEL_VAL,
+    IMG_DOWNSCALE,
     TOOLBAR_OFFSET,
 )
+from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 
 
@@ -134,20 +137,9 @@ class LiveviewGUI(QMainWindow):
             # Scroll to latest message
             self.terminal_scroll.setValue(self.terminal_scroll.maximum())
 
-    @pyqtSlot(float)
+    @pyqtSlot(int)
     def update_focus(self, val):
-        self.focus_val.setText(
-            f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}"
-        )
-
-        # Set color based on status
-        if isinstance(val, float):
-            if abs(val) > AF_THRESHOLD:
-                self._set_color(self.focus_val, STATUS.BAD)
-            else:
-                self._set_color(self.focus_val, STATUS.GOOD)
-        else:
-            self._set_color(self.focus_val, STATUS.DEFAULT)
+        self.focus_val.setText(f"Actual = {val}")
 
     @pyqtSlot(float)
     def update_flowrate(self, val):
@@ -156,8 +148,8 @@ class LiveviewGUI(QMainWindow):
         )
 
         # Set color based on status
-        if (self.target_flowrate is not None) and isinstance(val, (float, int)):
-            if get_flow_error(self.target_flowrate, val) == 0:
+        if (self.target_flowrate != None) and isinstance(val, (float, int)):
+            if getFlowError(self.target_flowrate, val) == 0:
                 self._set_color(self.flowrate_val, STATUS.GOOD)
             else:
                 self._set_color(self.flowrate_val, STATUS.BAD)
@@ -236,7 +228,7 @@ class LiveviewGUI(QMainWindow):
         self.focus_title = QLabel("FOCUS ERROR (motor steps)")
         self.flowrate_title = QLabel("CELL FLOWRATE (FoVs/sec)")
         self.focus_lbl = QLabel("Target = 0")
-        self.flowrate_lbl = QLabel("Target = -")
+        self.flowrate_lbl = QLabel(f"Target = -")
         self.focus_val = QLabel("-")
         self.flowrate_val = QLabel("-")
 
@@ -315,6 +307,11 @@ class LiveviewGUI(QMainWindow):
 
         self.liveview_img.setAlignment(Qt.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
+        if not self.big_screen:
+            self.liveview_img.setFixedSize(
+                int(CAMERA_SELECTION.IMG_WIDTH / IMG_DOWNSCALE),
+                int(CAMERA_SELECTION.IMG_HEIGHT / IMG_DOWNSCALE),
+            )
         self.liveview_img.setScaledContents(True)
 
         self.liveview_layout.addWidget(self.liveview_img)

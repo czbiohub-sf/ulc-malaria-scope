@@ -1,10 +1,9 @@
 import os
-import json
-import logging
 import subprocess
-
+import logging
 from urllib.error import URLError
 from urllib.request import urlopen
+import json
 from typing import Dict
 
 from pyngrok import ngrok, conf
@@ -40,9 +39,8 @@ def _get_ngrok_json() -> Dict:
     try:
         content = urlopen(addr).read().decode("utf-8")
         return json.loads(content)
-    except URLError as e:
+    except URLError:
         logger.info("Address unavailable - ngrok is not on.")
-        raise e
 
 
 def is_ngrok_running() -> bool:
@@ -64,6 +62,7 @@ def is_ngrok_running() -> bool:
 
 def _get_addr_from_json(json_dict: Dict):
     """Get the public_url from the json."""
+
     return json_dict["tunnels"][0]["public_url"]
 
 
@@ -78,6 +77,7 @@ def get_addr() -> str:
     str:
         ngrok public url
     """
+
     ngrok_json = _get_ngrok_json()
     return _get_addr_from_json(ngrok_json)
 
@@ -95,6 +95,7 @@ def _make_tcp_tunnel() -> ngrok.NgrokTunnel:
     NgrokError:
         Unable to create the tunnel.
     """
+
     try:
         return ngrok.connect(22, "tcp")
     except ngrok.PyngrokError as e:
@@ -132,7 +133,7 @@ def _kill_old_ngrok_sessions() -> None:
         subprocess.run(
             ["killall", "ngrok"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT
         )
-    except Exception as e:
+    except Exception:
         logger.exception(f"Unknown failure when attempting to `killall ngrok`: {e}")
 
 
@@ -162,7 +163,7 @@ def make_tcp_tunnel() -> str:
             try:
                 addr = get_addr()
                 return addr
-            except (URLError, IndexError):
+            except IndexError:
                 logger.error(
                     "ngrok is running but unable to get address from api/tunnels."
                 )

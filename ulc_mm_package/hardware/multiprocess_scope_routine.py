@@ -8,7 +8,9 @@ import multiprocessing as mp
 
 from numbers import Real
 from ctypes import _SimpleCData
+from collections import namedtuple
 from contextlib import contextmanager
+from multiprocessing import sharedctypes
 from typing import (
     cast,
     Dict,
@@ -181,7 +183,7 @@ class SharedctypeWrapper(abc.ABC):
         of doing the more elegant `return _type_to_typecode.get(type_, type_)` which
         has the same type guarantee"""
         if isinstance(type_, str):
-            if type_ not in _ctype_codes:
+            if not type_ in _ctype_codes:
                 raise ValueError(f"invalid ctype code {type_}")
             return type_
         return _type_to_typecode[type_]
@@ -197,7 +199,6 @@ class SharedctypeWrapper(abc.ABC):
         """Set the shared memory to the value of v"""
         ...
 
-    @abc.abstractmethod
     def get(self) -> _pytype:
         """Get the shared memory and return as python
         type (e.g. numeric or numpy.ndarray)
@@ -207,9 +208,7 @@ class SharedctypeWrapper(abc.ABC):
 
 class SharedctypeValue(SharedctypeWrapper):
     def __init__(self, type_: _ctype_type, init_value: Optional[Real]):
-        self._memory: mp.sharedctypes.Synchronized[Real] = cast(
-            "mp.sharedctypes.Synchronized[Real]", mp.Value(type_, init_value)
-        )
+        self._memory: mp.sharedctypes.Synchronized[Real] = mp.Value(type_, init_value)
 
     @classmethod
     def from_definition(cls, defn: ctypeDefn) -> SharedctypeValue:
