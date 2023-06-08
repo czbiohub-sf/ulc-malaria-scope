@@ -1,4 +1,4 @@
-from ulc_mm_package.hardware.dtoverlay_pwm import PWM_CHANNEL
+from ulc_mm_package.hardware.dtoverlay_pwm import PWM_CHANNEL, InvalidDutyCyclePerc
 
 
 class dtoverlay_PWM:

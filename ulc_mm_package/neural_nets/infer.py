@@ -65,10 +65,10 @@ class ImageLoader:
         data = zarr.open(path_to_zarr)
 
         def _iter():
-            for i in range(len(data)):
-                yield data[i][:]
+            for i in range(data.initialized):
+                yield data[:, :, i]
 
-        _num_els = len(data)
+        _num_els = data.initialized
 
         return cls(_iter, _num_els)
 
@@ -115,7 +115,7 @@ def asyn_infer(model, image_loader: ImageLoader):
 
 def calculate_allan_dev(data, fname):
     ds = at.Dataset(data=data)
-    res = ds.compute("tdev")
+    ds.compute("tdev")
 
     pl = at.Plot()
     pl.plot(ds, errorbars=True, grid=True)
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         tqdm = _tqdm
     else:
         try:
-            from tqdm import tqdm
+            from tqdm import tqdm  # type: ignore
         except ImportError:
             print("install tqdm for progress bars")
             tqdm = _tqdm
@@ -248,6 +248,9 @@ if __name__ == "__main__":
         model_classes = [AutoFocus]
     elif args.model == "yogo":
         model_classes = [YOGO]
+    else:
+        print("warning: no model provided, defaulting to AutoFocus")
+        model_classes = [AutoFocus]
 
     if im.shape == (600, 800):
         models = [m(camera_selection=CameraOptions.BASLER) for m in model_classes]
@@ -274,19 +277,22 @@ if __name__ == "__main__":
             plt.show()
 
     elif args.output is None:
-        for res in infer_func(models, image_loader):
+        model = models.pop()
+        for res in infer_func(model, image_loader):
             print(res)
             if args.allan_dev:
                 results.append(res)
     else:
+        model = models.pop()
         with open(args.output, "w") as f:
-            for res in infer_func(models, tqdm(image_loader)):
+            for res in infer_func(model, tqdm(image_loader)):
                 f.write(f"{res}\n")
                 if args.allan_dev:
                     results.append(res)
 
     # safety
-    [m.wait_all() for m in models]
+    for m in models:
+        m.wait_all()
 
     if args.allan_dev:
         data_path = Path(

@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 
 from typing import Any, List, Union
-
+from typing_extensions import TypeAlias
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
@@ -19,7 +19,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 )
 
 
-ClassCountResult = np.ndarray
+ClassCountResult: TypeAlias = np.ndarray
 
 
 class YOGO(NCSModel):
@@ -36,8 +36,8 @@ class YOGO(NCSModel):
         >>> # ... eventually ...
         >>> Y.get_asyn_results()
         <
-         Bounding Boxes! tensor of shape (1, 9, Sy, Sx) where Sy and Sx are grid dimensions (i.e. rows and columns)
-         the second dimension (9) is the most important - it is [xc, yc, w, h, to, p_healthy, p_ring, p_schitzont, p_troph],
+         Bounding Boxes! tensor of shape (1, 12, Sy, Sx) where Sy and Sx are grid dimensions (i.e. rows and columns)
+         the second dimension (12) is the most important - it is [xc, yc, w, h, to, p_healthy, p_ring, p_schitzont, p_troph, p_gametocyte, p_wbc, p_misc],
          with each number normalized to [0,1]
         >
 

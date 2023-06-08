@@ -22,12 +22,30 @@ import pigpio
 
 from ulc_mm_package.hardware.hardware_constants import LID_LIMIT_SWITCH2, CAMERA_FPS
 
-# FIXME no stars!
-from ulc_mm_package.hardware.hardware_modules import *
+from ulc_mm_package.hardware.camera import BaslerCamera, AVTCamera, CameraError
+from ulc_mm_package.hardware.motorcontroller import (
+    DRV8825Nema,
+    Direction,
+    MotorControllerError,
+)
+from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
+from ulc_mm_package.hardware.pim522_rotary_encoder import (
+    PIM522RotaryEncoder,
+    EncoderI2CError,
+)
+from ulc_mm_package.hardware.pneumatic_module import (
+    PneumaticModule,
+    PneumaticModuleError,
+    SyringeInMotion,
+)
+from ulc_mm_package.hardware.fan import Fan
+from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X
 from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.image_processing.flow_control import FlowController
-from ulc_mm_package.neural_nets.neural_network_modules import TPUError, AutoFocus, YOGO
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
+from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
+from ulc_mm_package.neural_nets.NCSModel import TPUError
 
 
 class GPIOEdge(Enum):
@@ -78,6 +96,40 @@ class MalariaScope:
 
         self.logger.info("Initialized scope hardware.")
 
+    def reset_pneumatic_and_led_and_flow_control(self) -> None:
+        """Set the syringe to its top most position, turn the LED off, reset flow control variables."""
+        self.logger.info(
+            "Resetting pneumatic module, turning LED off, and flow control constants"
+        )
+
+        # Return pneumatic module to topmost position
+        while self.pneumatic_module.is_locked():
+            sleep(0.1)
+
+        try:
+            self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
+        except SyringeInMotion:
+            # This should not happen
+            self.logger.warning("Did not return syringe to top-most position!")
+
+        # Turn off LED
+        self.led.turnOff()
+
+        # Resetting flow_controller parameters
+        self.flow_controller.reset()
+
+    def reset_for_end_experiment(self) -> None:
+        """Reset syringe, turn LED off, reset flow control, and close data storage."""
+
+        # Reset syringe to top, turn LED off, reset flow control variables
+        self.reset_pneumatic_and_led_and_flow_control()
+
+        # Close data storage
+        closing_file_future = self.data_storage.close()
+        if closing_file_future is not None:
+            while not closing_file_future.done():
+                sleep(1)
+
     def shutoff(self):
         self.logger.info("Shutting off scope hardware.")
         self.led.turnOff()
@@ -114,7 +166,7 @@ class MalariaScope:
     def _init_motor(self):
         # Create motor w/ default pins/settings (full step)
         try:
-            self.motor = DRV8825Nema(steptype="Half")
+            self.motor = DRV8825Nema()
             self.motor.homeToLimitSwitches()
             self.motor_enabled = True
         except MotorControllerError as e:
@@ -159,6 +211,7 @@ class MalariaScope:
                 self.pressure_sensor_enabled = True
 
             self.pneumatic_module_enabled = True
+
         except PneumaticModuleError as e:
             self.logger.error(f"Pressure controller initialization failed. {e}")
 
@@ -204,7 +257,7 @@ class MalariaScope:
                 self.logger.error(f"Encoder I2C initialization failed. {e}")
         else:
             self.logger.error(
-                f"Motor initialization failed, so encoder will not initialize."
+                "Motor initialization failed, so encoder will not initialize."
             )
 
     def _init_humidity_temp_sensor(self):
@@ -271,7 +324,7 @@ class MalariaScope:
                 f"Set callback on pin: {interrupt_pin} w/ debounce time of {glitch_filer_us} us."
             )
         else:
-            self.logger.info(f"We're simulating, no callback set.")
+            self.logger.info("We're simulating, no callback set.")
 
     @staticmethod
     def read_lim_sw(pin: int = LID_LIMIT_SWITCH2):
