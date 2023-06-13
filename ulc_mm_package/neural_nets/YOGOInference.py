@@ -103,6 +103,7 @@ class YOGO(NCSModel):
         if num_confidences == 0:
             return "N/A"
 
+        # TODO: How to account for multiplication by YOGO_PERIOD_NUM
         poisson_rel_err = 1 / sqrt(num_confidences)
         # TODO: Is it better to calculate standard dev of predictions using RMS instead?
         # TODO: Is 1-confidence equivalent to percent error/standard deviation or variance?

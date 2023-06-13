@@ -711,7 +711,7 @@ class ScopeOp(QObject, NamedMachine):
 
             self.preds[:, :, self.pred_count:self.pred_count+num_preds] = filtered_prediction
             self.pred_count += num_preds
-
+            
             class_counts = YOGO.class_instance_count(filtered_prediction)
             # very rough interpolation: ~30 FPS * period between YOGO calls * counts
             class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
