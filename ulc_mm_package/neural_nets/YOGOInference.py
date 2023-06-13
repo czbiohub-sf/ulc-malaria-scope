@@ -87,8 +87,10 @@ class YOGO(NCSModel):
         class_confidences = filtered_res[0, 5:, :]
         class_preds = np.argmax(class_confidences, axis=0)
 
-        return [class_confidences[class_preds == class_idx] for class_idx in range(num_classes)]
-
+        return [
+            class_confidences[class_preds == class_idx]
+            for class_idx in range(num_classes)
+        ]
 
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)
