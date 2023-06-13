@@ -446,6 +446,15 @@ class ScopeOp(QObject, NamedMachine):
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
+        if self.pred_count != 0:
+            self.nonzero_preds = self.preds[:self.pred_count]
+            filtered_res = YOGO.filter_res(result.result)
+            class_counts = YOGO.class_instance_count(filtered_res)
+            class_confidences = YOGO.sort_confidences(filtered_res)
+
+            results_strings = [f"{pair.key}: {int(class_counts[pair.value] * YOGO_PERIOD_NUM)} ({np.mean(class_confidences[pair.value])})\n" for pair in YOGO_CLASS_IDX_MAP]
+            self.logger.info(f("Class results: Cell count (average confidence)\n".join(results_strings))
+
         self.mscope.reset_for_end_experiment()
 
     def _start_intermission(self, msg):
@@ -694,9 +703,9 @@ class ScopeOp(QObject, NamedMachine):
 
         for result in prev_yogo_results:
             filtered_prediction = YOGO.filter_res(result.result)
-
             num_preds = np.shape(filtered_prediction)[0]
-            self.preds[self.pred_count:num_preds] = filtered_prediction
+
+            self.preds[self.pred_count:num_preds] = result.result
             self.pred_count += num_preds
 
             class_counts = YOGO.class_instance_count(filtered_prediction)
