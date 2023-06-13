@@ -15,6 +15,7 @@ from ulc_mm_package.neural_nets.NCSModel import (
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
     YOGO_PRED_THRESHOLD,
+    YOGO_CROP_HEIGHT_PX,
 )
 
 
@@ -37,9 +38,8 @@ class YOGO(NCSModel):
         <
          Bounding Boxes! tensor of shape (1, 12, Sy, Sx) where Sy and Sx are grid dimensions (i.e. rows and columns)
          the second dimension (12) is the most important - it is [xc, yc, w, h, to, p_healthy, p_ring, p_schitzont, p_troph, p_gametocyte, p_wbc, p_misc],
-         with each number normalized to [0,1]
+         with each number normalized to [0,1] (and the class probabilities summing to 1)
         >
-
     """
 
     def __init__(
@@ -53,7 +53,9 @@ class YOGO(NCSModel):
         """
         Crops the center of the image to the size expected by the model
         """
-        return img[..., 386 - 193 // 2 : 386 + 193 // 2 + 1, :]
+        return img[
+            ..., 386 - YOGO_CROP_HEIGHT_PX // 2 : 386 + YOGO_CROP_HEIGHT_PX // 2 + 1, :
+        ]
 
     @staticmethod
     def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD):

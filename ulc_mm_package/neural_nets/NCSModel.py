@@ -22,7 +22,6 @@ from typing import (
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 
-from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 
 from openvino.preprocess import PrePostProcessor
 from openvino.runtime import (

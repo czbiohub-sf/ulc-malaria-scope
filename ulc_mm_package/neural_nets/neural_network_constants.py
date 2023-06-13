@@ -18,9 +18,7 @@ AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files" / "valiant-disco-11
 
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.3
-YOGO_MODEL_DIR = str(
-    curr_dir / "yogo_model_files" / "scruffy-looking-transport-1520.xml"
-)
+YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / "brisk-sweep-9.xml")
 
 YOGO_CLASS_LIST: Tuple[str, ...] = (
     "healthy",
@@ -31,6 +29,7 @@ YOGO_CLASS_LIST: Tuple[str, ...] = (
     "wbc",
     "misc",
 )
+YOGO_CROP_HEIGHT_PX: int = 386
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
 
 YOGO_PERIOD_S = 0.1
