@@ -23,9 +23,6 @@ YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files/glowing-sunset-342.xml")
 YOGO_CLASS_LIST: Tuple[str, ...] = ("healthy", "ring", "schizont", "troph")
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
 
-# TODO name this better and add other classes
-FULL_YOGO_CLASS_LIST: Tuple[str, ...] = ("healthy", "ring", "schizont", "troph")
-
 YOGO_PERIOD_S = 0.1
 YOGO_PERIOD_NUM = int(YOGO_PERIOD_S * ACQUISITION_FPS)
 
