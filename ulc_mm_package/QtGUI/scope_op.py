@@ -52,7 +52,7 @@ from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
-    NUM_YOGO_CLASSES,
+    FULL_YOGO_CLASS_LIST,
     YOGO_PERIOD_NUM,
     YOGO_CLASS_IDX_MAP,
     AF_BATCH_SIZE,
@@ -217,7 +217,7 @@ class ScopeOp(QObject, NamedMachine):
         self.frame_count = 0
         self.pred_count = 0
         # TODO do we have a desired dtype
-        self.preds = np.zeros(1e6, 5 + NUM_YOGO_CLASSES)
+        self.preds = np.zeros((1, 5 + len(FULL_YOGO_CLASS_LIST), int(1e6)))
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.start_time = None
@@ -447,22 +447,15 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
         if self.pred_count != 0:
-            self.nonzero_preds = self.preds[: self.pred_count]
-            filtered_res = YOGO.filter_res(result.result)
-            class_counts = YOGO.class_instance_count(filtered_res)
-            class_confidences = YOGO.sort_confidences(filtered_res)
+            nonzero_preds = self.preds[:, :, :self.pred_count]
+            class_counts = YOGO.class_instance_count(nonzero_preds)
+            class_confidences = YOGO.sort_confidences(nonzero_preds)
 
             results_strings = [
-                f"{pair.key}: {int(class_counts[pair.value] * YOGO_PERIOD_NUM)} ({np.mean(class_confidences[pair.value])})\n"
-                for pair in YOGO_CLASS_IDX_MAP
+                f"\t{class_name.upper()}: {int(class_counts[class_idx] * YOGO_PERIOD_NUM)} ({np.mean(class_confidences[class_idx])})\n"
+                for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
             ]
-            self.logger.info(
-                f(
-                    "Class results: Cell count (average confidence)\n".join(
-                        results_strings
-                    )
-                )
-            )
+            self.logger.info(f"Class results: Cell count (average confidence)\n" + "".join(results_strings))
 
         self.mscope.reset_for_end_experiment()
 
@@ -712,9 +705,9 @@ class ScopeOp(QObject, NamedMachine):
 
         for result in prev_yogo_results:
             filtered_prediction = YOGO.filter_res(result.result)
-            num_preds = np.shape(filtered_prediction)[0]
+            num_preds = np.shape(filtered_prediction)[2]
 
-            self.preds[self.pred_count : num_preds] = result.result
+            self.preds[:, :, self.pred_count:self.pred_count+num_preds] = filtered_prediction
             self.pred_count += num_preds
 
             class_counts = YOGO.class_instance_count(filtered_prediction)

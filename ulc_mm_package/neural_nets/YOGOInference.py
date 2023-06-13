@@ -88,7 +88,7 @@ class YOGO(NCSModel):
         class_preds = np.argmax(class_confidences, axis=0)
 
         return [
-            class_confidences[class_preds == class_idx]
+            class_confidences[class_idx, class_preds == class_idx]
             for class_idx in range(num_classes)
         ]
 
