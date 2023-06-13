@@ -1,11 +1,11 @@
 #! /usr/bin/env python3
 
-
 import numpy as np
 import numpy.typing as npt
 
 from typing import Any, List, Union
 from typing_extensions import TypeAlias
+from math import sqrt
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.neural_nets.NCSModel import (
@@ -78,7 +78,7 @@ class YOGO(NCSModel):
         return class_counts
 
     @staticmethod
-    def sort_confidences(filtered_res: npt.NDArray) -> List[float]:
+    def sort_confidences(filtered_res: npt.NDArray) -> List[npt.NDArray]:
         """
         Return compiled confidences for each class
         """
@@ -91,6 +91,26 @@ class YOGO(NCSModel):
             class_confidences[class_idx, class_preds == class_idx]
             for class_idx in range(num_classes)
         ]
+
+    @staticmethod
+    def calc_perc_err(confidence_res: npt.NDArray) -> str:
+        """"
+        Return percent error based on model confidences and Poisson statistics
+        """
+        num_confidences = len(confidence_res)
+        print(num_confidences)
+
+        if num_confidences == 0:
+            return "N/A"
+
+        poisson_rel_err = 1 / sqrt(num_confidences)
+        # TODO: Is it better to calculate standard dev of predictions using RMS instead?
+        # TODO: Is 1-confidence equivalent to percent error/standard deviation or variance?
+        confidence_rel_err = 1-np.mean(confidence_res)
+        total_perc_err = (poisson_rel_err + confidence_rel_err)*100
+
+        return(f"{total_perc_err:.3g}%%")
+
 
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)
