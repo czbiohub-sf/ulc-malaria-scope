@@ -55,5 +55,5 @@ CELLS_FOUND_THRESHOLD = 9001  # https://tinyurl.com/ykxu66zw
 MIN_POINTS_ABOVE_THRESH = 2
 
 MIN_CELL_COUNT = 20
-CELL_DENSITY_CHECK_PERIOD_S = 0.5  # How often to check cell density
-CELL_DENSITY_HISTORY_LEN = 50  # Number of continuuous cell density measurements that need to be < MIN_CELL_COUNT before an exception is raised
+CELL_DENSITY_CHECK_PERIOD_S = 0.2  # How often to check cell density
+CELL_DENSITY_HISTORY_LEN = 40  # Number of continuuous cell density measurements that need to be < MIN_CELL_COUNT before an exception is raised

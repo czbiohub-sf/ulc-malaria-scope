@@ -47,10 +47,10 @@ class LowConfidenceCorrelations(FlowControlError):
         - etc.
     """
 
-    def __init__(self, num_failed_corrs: int, total_pairs: int, tol_perc: float):
+    def __init__(self, num_failed_corrs: int, total_pairs: int):
         msg = (
             f"Too many recent xcorr calculations have yielded poor confidence. "
-            f"The number of recent low-confidence correlations is = {num_failed_corrs} ({100*num_failed_corrs / total_pairs:.2f}% of measurements (threshold to cause error: {100*tol_perc:.2f}%))) "
+            f"The number of recent low-confidence correlations is = {num_failed_corrs} ({100*num_failed_corrs / total_pairs:.2f}% of measurements (threshold to cause error: {100*FAILED_CORR_PERC_TOLERANCE:.2f}%))) "
         )
         super().__init__(f"{msg}")
 
@@ -172,8 +172,7 @@ class FlowController:
                     self.failed_corr_counter = 0
                     raise LowConfidenceCorrelations(
                         num_failed,
-                        self.counter,
-                        FAILED_CORR_PERC_TOLERANCE,
+                        self.feedback_delay_frames * MIN_NUM_XCORR_FACTOR,
                     )
 
     def too_many_failed_xcorrs(self) -> bool:

@@ -188,6 +188,9 @@ class DRV8825Nema:
         If a second limit switch is present, move to that one and set the max position.
         """
 
+        # Reset homed variable
+        self.homed = False
+
         # Adjust the timeout based on the microstepping mode
         homing_timeout = DEFAULT_FULL_STEP_HOMING_TIMEOUT * self.microstepping
 
