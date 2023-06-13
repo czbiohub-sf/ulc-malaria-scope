@@ -447,8 +447,6 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
         if self.pred_count != 0:
-            print(self.pred_count)
-            print(self.cell_counts)
             nonzero_preds = self.preds[:, :, :self.pred_count]
             class_counts = YOGO.class_instance_count(nonzero_preds)
             class_confidences = YOGO.sort_confidences(nonzero_preds)
@@ -457,7 +455,7 @@ class ScopeOp(QObject, NamedMachine):
                 f"\t{class_name.upper()}: {int(class_counts[class_idx] * YOGO_PERIOD_NUM)} ({YOGO.calc_perc_err(class_confidences[class_idx])})\n"
                 for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
             ]
-            self.logger.info(f"Class results: Cell count (percent error)\n" + "".join(results_strings))
+            self.logger.info(f"Class results: Cell count (percent uncertainty)\n" + "".join(results_strings))
 
         self.mscope.reset_for_end_experiment()
 
@@ -711,7 +709,7 @@ class ScopeOp(QObject, NamedMachine):
 
             self.preds[:, :, self.pred_count:self.pred_count+num_preds] = filtered_prediction
             self.pred_count += num_preds
-            
+
             class_counts = YOGO.class_instance_count(filtered_prediction)
             # very rough interpolation: ~30 FPS * period between YOGO calls * counts
             class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(

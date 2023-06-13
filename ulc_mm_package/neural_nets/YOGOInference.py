@@ -98,7 +98,6 @@ class YOGO(NCSModel):
         Return percent error based on model confidences and Poisson statistics
         """
         num_confidences = len(confidence_res)
-        print(num_confidences)
 
         if num_confidences == 0:
             return "N/A"
