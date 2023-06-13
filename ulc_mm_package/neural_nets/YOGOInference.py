@@ -92,26 +92,6 @@ class YOGO(NCSModel):
             for class_idx in range(num_classes)
         ]
 
-    @staticmethod
-    def calc_perc_err(confidence_res: npt.NDArray) -> str:
-        """"
-        Return percent error based on model confidences and Poisson statistics
-        """
-        num_confidences = len(confidence_res)
-
-        if num_confidences == 0:
-            return "N/A"
-
-        # TODO: How to account for multiplication by YOGO_PERIOD_NUM
-        poisson_rel_err = 1 / sqrt(num_confidences)
-        # TODO: Is it better to calculate standard dev of predictions using RMS instead?
-        # TODO: Is 1-confidence equivalent to percent error/standard deviation or variance?
-        confidence_rel_err = 1-np.mean(confidence_res)
-        total_perc_err = (poisson_rel_err + confidence_rel_err)*100
-
-        return(f"{total_perc_err:.3g}%%")
-
-
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)
 

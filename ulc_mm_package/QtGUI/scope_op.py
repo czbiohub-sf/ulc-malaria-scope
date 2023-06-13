@@ -52,7 +52,6 @@ from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
-    FULL_YOGO_CLASS_LIST,
     YOGO_PERIOD_NUM,
     YOGO_CLASS_IDX_MAP,
     AF_BATCH_SIZE,
@@ -62,6 +61,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
 )
+from ulc_mm_package.utilities.statistics_utils import calc_total_perc_err
 from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
 
 # TODO populate info?
@@ -217,7 +217,7 @@ class ScopeOp(QObject, NamedMachine):
         self.frame_count = 0
         self.pred_count = 0
         # TODO do we have a desired dtype
-        self.preds = np.zeros((1, 5 + len(FULL_YOGO_CLASS_LIST), int(1e6)))
+        self.preds = np.zeros((1, 5 + len(YOGO_CLASS_LIST), int(1e6)))
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.start_time = None
@@ -452,7 +452,7 @@ class ScopeOp(QObject, NamedMachine):
             class_confidences = YOGO.sort_confidences(nonzero_preds)
 
             results_strings = [
-                f"\t{class_name.upper()}: {int(class_counts[class_idx] * YOGO_PERIOD_NUM)} ({YOGO.calc_perc_err(class_confidences[class_idx])})\n"
+                f"\t{class_name.upper()}: {int(class_counts[class_idx] * YOGO_PERIOD_NUM)} ({calc_total_perc_err(class_confidences[class_idx])})\n"
                 for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
             ]
             self.logger.info(f"Class results: Cell count (percent uncertainty)\n" + "".join(results_strings))
