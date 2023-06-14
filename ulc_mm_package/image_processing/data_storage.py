@@ -283,16 +283,27 @@ class DataStorage:
         else:
             raise
 
-    def get_YOGO_filename(self) -> Path:
+    def get_experiment_path(self) -> Path:
         """
-        Return filename to save YOGO tensor to
+        Return path to experiment folder
         """
         assert self.main_dir is not None, "DataStorage has not been initialized"
         assert self.experiment_folder is not None, "Experiment has not been initialized"
         try:
-            filename = self.main_dir / self.experiment_folder / f"{self.time_str}_YOGO_data.csv"
-            return filename
+            experiment_path = self.main_dir / self.experiment_folder
+            return experiment_path
         except NameError as e:
+            self.logger.error(f"Could not get experiment path: {e}")
+            raise e
+
+    def get_YOGO_filename(self) -> Path:
+        """
+        Return filename for saving YOGO tensor
+        """
+        try:
+            filename = self.get_experiment_path() / f"{self.time_str}_YOGO_data.csv"
+            return filename
+        except Exception as e:
             self.logger.error(f"Could not get YOGO filename: {e}")
             raise e
 
@@ -308,6 +319,16 @@ class DataStorage:
             self.logger.error(f"Could not save YOGO data: {e}")
             raise e
 
+    def get_summary_filename(self) -> Path:
+        """
+        Return filename for saving statistics summary
+        """
+        try:
+            filename = self.get_experiment_path() / f"{self.time_str}_summary.pdf"
+            return filename
+        except Exception as e:
+            self.logger.error(f"Could not get statistics filename: {e}")
+            raise e
 
     @staticmethod
     def _unif_subsequence_distribution(
