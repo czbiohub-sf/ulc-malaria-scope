@@ -29,8 +29,10 @@ YOGO_CLASS_LIST: Tuple[str, ...] = (
     "wbc",
     "misc",
 )
-YOGO_CROP_HEIGHT_PX: int = 386
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
+
+# best way to find this number is to look for input shape in the model definition xml file
+YOGO_CROP_HEIGHT_PX: int = 386
 
 YOGO_PERIOD_S = 0.1
 YOGO_PERIOD_NUM = 1
