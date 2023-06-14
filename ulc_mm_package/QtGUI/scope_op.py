@@ -454,11 +454,8 @@ class ScopeOp(QObject, NamedMachine):
             sorted_confidences = YOGO.sort_confidences(nonzero_preds)
             unsorted_confidences = YOGO.extract_confidences(nonzero_preds)
 
-            results_strings = [
-                f"\t{class_name.upper()}: {int(class_counts[class_idx])} | {np.mean(unsorted_confidences[class_idx])} ({calc_total_perc_err(sorted_confidences[class_idx])})\n"
-                for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
-            ]
-            self.logger.info(f"Class results: Unscaled cell count | expectation value (percent uncertainty)\n" + "".join(results_strings))
+            stats_string = get_all_stats_string(class_counts, sorted_confidences, unsorted_confidences)
+            self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
 

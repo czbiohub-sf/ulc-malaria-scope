@@ -5,6 +5,7 @@ from path import Path
 from typing import List, Union
 from math import sqrt
 
+from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_MAP
 from ulc_mm_package.image_processing.data_storage import DataStorage
 
 
@@ -41,3 +42,20 @@ def calc_rms(arr: Union[npt.NDArray, List]) -> float:
     Calculate RMS of array
     """
     return np.sqrt(np.mean(np.square(np.array(arr))))
+
+def get_class_stats_str(name: str, count: npt.NDArray, unsorted_confidences: npt.NDArray, sorted_confidences: npt.NDArray)
+    """"
+    Return results string with statistics for individual class
+    """
+    return f"\t{name.upper()}: {int(count)} | {np.mean(unsorted_confidences):.3g} ({calc_total_perc_err(sorted_confidences):.3g} | {np.mean(sorted_confidences):.3g} | {np.std(sorted_confidences):.3g})\n"
+
+def get_all_stats_str(counts: npt.NDArray, unsorted_confidences: npt.NDArray, sorted_confidences: npt.NDArray)
+    """"
+    Return results string with statistics for all classes
+    """
+    template_string = f"Class results: Unscaled cell count | expectation value (percent uncertainty | confidence mean | confidence std)\n"
+    class_strings = [
+        get_class_stats_str(class_name, class_counts[class_idx], unsorted_confidences[class_idx], sorted_confidences[class_idx])
+        for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
+    ]
+    return template_string + "".join(class_strings))
