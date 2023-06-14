@@ -16,7 +16,7 @@ def calc_total_perc_err(confidences: npt.NDArray) -> str:
     num_confidences = len(confidences)
 
     if num_confidences == 0:
-        return "N/A"
+        return np.nan
 
     poisson_rel_err = calc_poisson_rel_err(num_confidences)
     total_perc_err = poisson_rel_err * 100
@@ -47,7 +47,7 @@ def get_class_stats_str(name: str, count: npt.NDArray, unsorted_confidences: npt
     """"
     Return results string with statistics for individual class
     """
-    return f"\t{name.upper()}: {int(count)} | {np.mean(unsorted_confidences):.3g} ({calc_total_perc_err(sorted_confidences):.3g} | {np.mean(sorted_confidences):.3g} | {np.std(sorted_confidences):.3g})\n"
+    return f"\t{name.upper()}: {int(count)} | {int(np.sum(unsorted_confidences))} ({calc_total_perc_err(sorted_confidences)} | {np.mean(sorted_confidences):.3g} | {np.std(sorted_confidences):.3g})\n"
 
 def get_all_stats_str(counts: npt.NDArray, unsorted_confidences: npt.NDArray, sorted_confidences: npt.NDArray) -> str:
     """"
@@ -55,7 +55,7 @@ def get_all_stats_str(counts: npt.NDArray, unsorted_confidences: npt.NDArray, so
     """
     template_string = f"Class results: Unscaled cell count | expectation value (percent uncertainty | confidence mean | confidence std)\n"
     class_strings = [
-        get_class_stats_str(class_name, class_counts[class_idx], unsorted_confidences[class_idx], sorted_confidences[class_idx])
+        get_class_stats_str(class_name, counts[class_idx], unsorted_confidences[class_idx], sorted_confidences[class_idx])
         for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
     ]
     return template_string + "".join(class_strings)

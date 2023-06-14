@@ -454,7 +454,7 @@ class ScopeOp(QObject, NamedMachine):
             sorted_confidences = YOGO.sort_confidences(nonzero_preds)
             unsorted_confidences = extract_confidences(nonzero_preds)
 
-            stats_string = get_all_stats_str(class_counts, sorted_confidences, unsorted_confidences)
+            stats_string = get_all_stats_str(class_counts, unsorted_confidences, sorted_confidences)
             self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
