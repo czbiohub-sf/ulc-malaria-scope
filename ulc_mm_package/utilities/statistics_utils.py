@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 
-from path import Path
+from pathlib import Path
 from typing import List, Union
 from math import sqrt
 
@@ -20,7 +20,7 @@ def calc_total_perc_err(confidences: npt.NDArray) -> str:
 
     poisson_rel_err = calc_poisson_rel_err(num_confidences)
     total_perc_err = poisson_rel_err * 100
-c
+
     return(f"{total_perc_err:.3g}%%")
 
 def calc_poisson_rel_err(count: int) -> float:
@@ -43,13 +43,13 @@ def calc_rms(arr: Union[npt.NDArray, List]) -> float:
     """
     return np.sqrt(np.mean(np.square(np.array(arr))))
 
-def get_class_stats_str(name: str, count: npt.NDArray, unsorted_confidences: npt.NDArray, sorted_confidences: npt.NDArray)
+def get_class_stats_str(name: str, count: npt.NDArray, unsorted_confidences: npt.NDArray, sorted_confidences: npt.NDArray) -> str:
     """"
     Return results string with statistics for individual class
     """
     return f"\t{name.upper()}: {int(count)} | {np.mean(unsorted_confidences):.3g} ({calc_total_perc_err(sorted_confidences):.3g} | {np.mean(sorted_confidences):.3g} | {np.std(sorted_confidences):.3g})\n"
 
-def get_all_stats_str(counts: npt.NDArray, unsorted_confidences: npt.NDArray, sorted_confidences: npt.NDArray)
+def get_all_stats_str(counts: npt.NDArray, unsorted_confidences: npt.NDArray, sorted_confidences: npt.NDArray) -> str:
     """"
     Return results string with statistics for all classes
     """
@@ -58,4 +58,4 @@ def get_all_stats_str(counts: npt.NDArray, unsorted_confidences: npt.NDArray, so
         get_class_stats_str(class_name, class_counts[class_idx], unsorted_confidences[class_idx], sorted_confidences[class_idx])
         for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
     ]
-    return template_string + "".join(class_strings))
+    return template_string + "".join(class_strings)
