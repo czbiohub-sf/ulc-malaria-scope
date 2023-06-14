@@ -256,6 +256,7 @@ class ScopeOp(QObject, NamedMachine):
         self.create_timers.emit()
 
         self.mscope = MalariaScope()
+
         self.yield_mscope.emit(self.mscope)
         if not SIMULATION:
             self.lid_opened = self.mscope.read_lim_sw()
