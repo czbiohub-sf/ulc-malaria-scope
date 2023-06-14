@@ -9,7 +9,7 @@ import cv2
 import logging
 import numpy as np
 
-from typing import Any, List
+from typing import Any
 from time import sleep, perf_counter
 from transitions import Machine, State
 
@@ -48,7 +48,6 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorBusy,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
-from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
@@ -422,10 +421,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.density_routine = self.routines.cell_density_routine()
 
-        self.count_parasitemia_routine = (
-            self.routines.count_parasitemia_periodic_wrapper(self.mscope)
-        )
-
         self.set_period.emit(LIVEVIEW_PERIOD)
 
         self.start_time = perf_counter()
@@ -675,10 +670,11 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
         t0 = perf_counter()
-        prev_yogo_results: List[
-            AsyncInferenceResult
-        ] = self.count_parasitemia_routine.send((YOGO.crop_img(img), self.count))
+        prev_yogo_results = self.routines.count_parasitemia(
+            self.mscope, YOGO.crop_img(img), self.count
+        )
         t1 = perf_counter()
+
         self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
 
         self._update_metadata_if_verbose(
