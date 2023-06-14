@@ -53,7 +53,10 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
 )
-from ulc_mm_package.neural_nets.neural_network_constants import AUTOFOCUS_MODEL_DIR, YOGO_MODEL_DIR
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    AUTOFOCUS_MODEL_DIR,
+    YOGO_MODEL_DIR,
+)
 from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
