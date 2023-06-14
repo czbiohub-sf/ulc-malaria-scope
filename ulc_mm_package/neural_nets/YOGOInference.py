@@ -53,8 +53,10 @@ class YOGO(NCSModel):
         """
         Crops the center of the image to the size expected by the model
         """
+        crop_lower_bound = 386 - YOGO_CROP_HEIGHT_PX // 2
+        crop_upper_bound = 386 + YOGO_CROP_HEIGHT_PX // 2 + (YOGO_CROP_HEIGHT_PX % 2)
         return img[
-            ..., 386 - YOGO_CROP_HEIGHT_PX // 2 : 386 + YOGO_CROP_HEIGHT_PX // 2 + 1, :
+            ..., crop_lower_bound : crop_upper_bound, :
         ]
 
     @staticmethod
