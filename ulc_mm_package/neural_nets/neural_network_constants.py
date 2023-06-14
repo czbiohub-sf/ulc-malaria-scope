@@ -34,8 +34,5 @@ YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_
 # best way to find this number is to look for input shape in the model definition xml file
 YOGO_CROP_HEIGHT_PX: int = 193
 
-YOGO_PERIOD_S = 0.1
-YOGO_PERIOD_NUM = 1
-
 # ================ Image size constants ================ #
 IMG_RESIZED_DIMS = (400, 300)
