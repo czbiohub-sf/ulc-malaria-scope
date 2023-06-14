@@ -226,7 +226,20 @@ class NCSModel:
         return [maybe_list]
 
     def _format_image_to_tensor(self, img: npt.NDArray) -> npt.NDArray:
-        return np.expand_dims(img, (0, 3))
+        dims = img.shape
+        if len(dims) == 2:
+            return np.expand_dims(img, (0, 3))
+        elif len(dims) == 3 and dims[0] == 1:
+            return np.expand_dims(img, 3)
+        elif len(dims) == 3 and dims[-1] == 1:
+            return np.expand_dims(img, 0)
+        elif len(dims) == 4 and dims[0] == dims[-1] == 1:
+            return img
+        else:
+            raise ValueError(
+                f"Invalid shape for img; got {dims}, but need\n"
+                "\t(h, w), (1, h, w), (h, w, 1), or (1, h, w, 1)"
+            )
 
     def shutdown(self):
         self._executor.shutdown(wait=True)
