@@ -23,8 +23,8 @@ YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / "brisk-sweep-9.xml")
 YOGO_CLASS_LIST: Tuple[str, ...] = (
     "healthy",
     "ring",
+    "trophozoite",
     "schizont",
-    "troph",
     "gametocyte",
     "wbc",
     "misc",
