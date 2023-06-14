@@ -292,7 +292,7 @@ class DataStorage:
         try:
             experiment_path = self.main_dir / self.experiment_folder
             return experiment_path
-        except NameError as e:
+        except Exception as e:
             self.logger.error(f"Could not get experiment path: {e}")
             raise e
 
