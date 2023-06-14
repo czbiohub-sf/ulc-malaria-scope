@@ -439,11 +439,6 @@ class ScopeOp(QObject, NamedMachine):
         runtime = self._get_experiment_runtime()
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.count/runtime}")
-            cell_count_estimate = "\n".join(
-                f"\t{cls}: {count}"
-                for cls, count in zip(YOGO_CLASS_LIST[:-1], self.cell_counts)
-            )
-            self.logger.info(f"estimated cell counts: {cell_count_estimate}")
 
         self.mscope.reset_for_end_experiment()
 
