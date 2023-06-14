@@ -109,8 +109,8 @@ class LiveviewGUI(QMainWindow):
         # TODO add the rest of the cell types (can probably ignore misc?)
         healthy_cell_count = cell_count[YOGO_CLASS_IDX_MAP["healthy"]]
         ring_cell_count = cell_count[YOGO_CLASS_IDX_MAP["ring"]]
+        troph_cell_count = cell_count[YOGO_CLASS_IDX_MAP["trophozoite"]]
         schiz_cell_count = cell_count[YOGO_CLASS_IDX_MAP["schizont"]]
-        troph_cell_count = cell_count[YOGO_CLASS_IDX_MAP["troph"]]
 
         # 'x or y' syntax means 'x if x is "truthy" else y'
         # x is "truthy" if bool(x) == True
@@ -118,13 +118,13 @@ class LiveviewGUI(QMainWindow):
         # so we get string '---'
         healthy_count_str = f"{healthy_cell_count or '---'}"
         ring_count_str = f"{ring_cell_count or '---'}"
-        schiz_count_str = f"{schiz_cell_count or '---'}"
         troph_count_str = f"{troph_cell_count or '---'}"
+        schiz_count_str = f"{schiz_cell_count or '---'}"
 
         self.healthy_count_val.setText(healthy_count_str)
         self.ring_count_val.setText(ring_count_str)
-        self.schizont_count_val.setText(schiz_count_str)
         self.troph_count_val.setText(troph_count_str)
+        self.schizont_count_val.setText(schiz_count_str)
 
     @pyqtSlot(str)
     def update_msg(self, msg):
@@ -226,8 +226,8 @@ class LiveviewGUI(QMainWindow):
         self.cell_count_title = QLabel("CELL COUNTS")
         self.healthy_count_lbl = QLabel("Healthy:")
         self.ring_count_lbl = QLabel("Ring:")
-        self.schizont_count_lbl = QLabel("Schizont:")
         self.troph_count_lbl = QLabel("Troph:")
+        self.schizont_count_lbl = QLabel("Schizont:")
         self.healthy_count_val = QLabel("-")
         self.ring_count_val = QLabel("-")
         self.schizont_count_val = QLabel("-")
