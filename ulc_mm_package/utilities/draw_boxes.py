@@ -50,27 +50,30 @@ if __name__ == "__main__":
     for image_path in args.image_dir.iterdir():
         if image_path.is_file() and image_path.name.endswith(".png"):
             pil_img = Image.open(image_path)
-            image = np.array(pil_img)[None, None, :, :]
+
+            image = np.array(pil_img)
             image = model.crop_img(image)
-            img_h, img_w = image.shape[2:]
+            img_h, img_w = image.shape
 
             predictions = model.syn(image)
-            predictions = predictions[0, ...]
+            predictions = predictions[0]
             predictions = model.filter_res(predictions, threshold=args.threshold)
             predictions = predictions.T
 
-            rgb = Image.new("RGBA", image.size[2:])
-            rgb.paste(image)
+            rgb = Image.new("RGB", image.T.shape)
+            rgb.paste(Image.fromarray(image))
             draw = ImageDraw.Draw(rgb)
 
             for r in predictions:
+                print(r[:4])
                 label_idx = np.argmax(r[5:])
                 label = YOGO_CLASS_LIST[label_idx]
+                x1, y1, x2, y2 = bbox_convert(r[0], r[1], r[2], r[3], img_h, img_w)
                 draw.rectangle(
-                    bbox_convert(r[0], r[1], r[2], r[3], img_h, img_w),
+                    (x1, y1, x2, y2),
                     outline=bbox_colour(label),
                 )
-                draw.text((r[0], r[1]), label, (0, 0, 0, 255))
+                draw.text((x1, y1), label, (0, 0, 0))
 
-            plt.imshow(draw)
+            plt.imshow(np.array(rgb))
             plt.show()
