@@ -49,7 +49,11 @@ from ulc_mm_package.hardware.pneumatic_module import (
 )
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult, extract_confidences
+from ulc_mm_package.neural_nets.YOGOInference import (
+    YOGO,
+    ClassCountResult,
+    extract_confidences,
+)
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_PERIOD_NUM,
@@ -61,7 +65,10 @@ from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
 )
-from ulc_mm_package.utilities.statistics_utils import calc_total_perc_err, get_all_stats_str
+from ulc_mm_package.utilities.statistics_utils import (
+    calc_total_perc_err,
+    get_all_stats_str,
+)
 from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
 
 # TODO populate info?
@@ -447,14 +454,16 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
         if self.pred_count != 0:
-            nonzero_preds = self.preds[:, :, :self.pred_count]
+            nonzero_preds = self.preds[:, :, : self.pred_count]
             self.mscope.data_storage.save_YOGO_data(nonzero_preds[0])
 
             class_counts = YOGO.class_instance_count(nonzero_preds)
             sorted_confidences = YOGO.sort_confidences(nonzero_preds)
             unsorted_confidences = extract_confidences(nonzero_preds)
 
-            stats_string = get_all_stats_str(class_counts, unsorted_confidences, sorted_confidences)
+            stats_string = get_all_stats_str(
+                class_counts, unsorted_confidences, sorted_confidences
+            )
             self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
@@ -707,7 +716,9 @@ class ScopeOp(QObject, NamedMachine):
             filtered_prediction = YOGO.filter_res(result.result)
             num_preds = np.shape(filtered_prediction)[2]
 
-            self.preds[:, :, self.pred_count:self.pred_count+num_preds] = filtered_prediction
+            self.preds[
+                :, :, self.pred_count : self.pred_count + num_preds
+            ] = filtered_prediction
             self.pred_count += num_preds
 
             class_counts = YOGO.class_instance_count(filtered_prediction)

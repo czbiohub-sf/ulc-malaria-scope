@@ -313,7 +313,7 @@ class DataStorage:
         """
         try:
             YOGO_filename = self.get_YOGO_filename()
-            np.savetxt(YOGO_filename, data, delimiter=',')
+            np.savetxt(YOGO_filename, data, delimiter=",")
             self.logger.info(f"Saved YOGO tensors to {YOGO_filename}")
         except Exception as e:
             self.logger.error(f"Could not save YOGO data: {e}")
