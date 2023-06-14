@@ -8,6 +8,7 @@ from time import perf_counter
 from datetime import datetime
 from concurrent.futures import Future
 from typing import Dict, List, Optional
+import numpy.typing as npt
 
 import numpy as np
 import cv2
@@ -88,8 +89,8 @@ class DataStorage:
         assert self.main_dir is not None
 
         # Create per-image metadata file
-        time_str = datetime.now().strftime(DATETIME_FORMAT)
-        self.experiment_folder = time_str + f"_{custom_experiment_name}"
+        self.time_str = datetime.now().strftime(DATETIME_FORMAT)
+        self.experiment_folder = self.time_str + f"_{custom_experiment_name}"
 
         try:
             (self.main_dir / self.experiment_folder).mkdir()
@@ -99,7 +100,7 @@ class DataStorage:
         filename = (
             self.main_dir
             / self.experiment_folder
-            / f"{time_str}perimage_{custom_experiment_name}_metadata.csv"
+            / f"{self.time_str}perimage_{custom_experiment_name}_metadata.csv"
         )
         self.metadata_file = open(str(filename), "w")
         self.md_writer = csv.DictWriter(
@@ -111,7 +112,7 @@ class DataStorage:
         exp_run_md_file = (
             self.main_dir
             / self.experiment_folder
-            / f"{time_str}exp_{custom_experiment_name}_metadata.csv"
+            / f"{self.time_str}exp_{custom_experiment_name}_metadata.csv"
         )
         with open(f"{exp_run_md_file}", "w") as f:
             writer = csv.DictWriter(
@@ -124,7 +125,7 @@ class DataStorage:
         filename = (
             self.main_dir
             / self.experiment_folder
-            / f"{time_str}_{custom_experiment_name}"
+            / f"{self.time_str}_{custom_experiment_name}"
         )
         self.zw.createNewFile(str(filename))
 
@@ -277,10 +278,36 @@ class DataStorage:
                 dir_path.mkdir()
                 return str(dir_path)
             except Exception as e:
-                self.logger.error("Could not create the subsample directory: {e}")
+                self.logger.error(f"Could not create the subsample directory: {e}")
                 raise e
         else:
             raise
+
+    def get_YOGO_filename(self) -> Path:
+        """
+        Return filename to save YOGO tensor to
+        """
+        assert self.main_dir is not None, "DataStorage has not been initialized"
+        assert self.experiment_folder is not None, "Experiment has not been initialized"
+        try:
+            filename = self.main_dir / self.experiment_folder / f"{self.time_str}_YOGO_data.csv"
+            return filename
+        except NameError as e:
+            self.logger.error(f"Could not get YOGO filename: {e}")
+            raise e
+
+    def save_YOGO_data(self, data: npt.NDArray) -> None:
+        """
+        Save YOGO tensor
+        """
+        try:
+            YOGO_filename = self.get_YOGO_filename()
+            np.savetxt(YOGO_filename, data, delimiter=',')
+            self.logger.info(f"Saved YOGO tensors to {YOGO_filename}")
+        except Exception as e:
+            self.logger.error(f"Could not save YOGO data: {e}")
+            raise e
+
 
     @staticmethod
     def _unif_subsequence_distribution(

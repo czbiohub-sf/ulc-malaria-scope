@@ -1,10 +1,12 @@
 import numpy as np
 import numpy.typing as npt
 
+from path import Path
 from typing import List, Union
 from math import sqrt
 
-from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PERIOD_NUM
+from ulc_mm_package.image_processing.data_storage import DataStorage
+
 
 def calc_total_perc_err(confidences: npt.NDArray) -> str:
     """"
@@ -26,8 +28,7 @@ def calc_poisson_rel_err(count: int) -> float:
     """"
     Return relative error based on Poisson statistics
     """
-    # TODO: Does this accurately account for multiplication by YOGO_PERIOD_NUM
-    return YOGO_PERIOD_NUM / sqrt(count)
+    return 1 / sqrt(count)
 
 def calc_confidence_rel_err(confidences: npt.NDArray) -> float:    
     """"
@@ -42,4 +43,3 @@ def calc_rms(arr: Union[npt.NDArray, List]) -> float:
     Calculate RMS of array
     """
     return np.sqrt(np.mean(np.square(np.array(arr))))
-

@@ -448,14 +448,17 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.pred_count != 0:
             nonzero_preds = self.preds[:, :, :self.pred_count]
+            self.mscope.data_storage.save_YOGO_data(nonzero_preds)
+
             class_counts = YOGO.class_instance_count(nonzero_preds)
-            class_confidences = YOGO.sort_confidences(nonzero_preds)
+            sorted_confidences = YOGO.sort_confidences(nonzero_preds)
+            unsorted_confidences = YOGO.extract_confidences(nonzero_preds)
 
             results_strings = [
-                f"\t{class_name.upper()}: {int(class_counts[class_idx] * YOGO_PERIOD_NUM)} ({calc_total_perc_err(class_confidences[class_idx])})\n"
+                f"\t{class_name.upper()}: {int(class_counts[class_idx])} | {np.mean(unsorted_confidences[class_idx])} ({calc_total_perc_err(sorted_confidences[class_idx])})\n"
                 for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
             ]
-            self.logger.info(f"Class results: Cell count (percent uncertainty)\n" + "".join(results_strings))
+            self.logger.info(f"Class results: Unscaled cell count | expectation value (percent uncertainty)\n" + "".join(results_strings))
 
         self.mscope.reset_for_end_experiment()
 

@@ -60,6 +60,13 @@ class YOGO(NCSModel):
         return res
 
     @staticmethod
+    def extract_confidences(filtered_res: npt.NDArray) -> npt.NDArray:
+        """
+        Returns confidence values only (ie. isolates confidence from bounding box info)
+        """
+        return filtered_res[0, 5:, :]
+
+    @staticmethod
     def class_instance_count(filtered_res: npt.NDArray) -> ClassCountResult:
         """
         ClassCountResult mapping the class (represented as an integer) to its count
@@ -67,7 +74,7 @@ class YOGO(NCSModel):
         """
         bs, pred_dim, num_predicted = filtered_res.shape
         num_classes = pred_dim - 5
-        class_preds = np.argmax(filtered_res[0, 5:, :], axis=0)
+        class_preds = np.argmax(extract_confidences(filtered_res), axis=0)
         unique, counts = np.unique(class_preds, return_counts=True)
         # this dict (raw_counts) will be missing a given class if that class isn't predicted at all
         # this may be confusing and a pain to handle, so just handle it on our side
@@ -84,7 +91,7 @@ class YOGO(NCSModel):
         """
         bs, pred_dim, num_predicted = filtered_res.shape
         num_classes = pred_dim - 5
-        class_confidences = filtered_res[0, 5:, :]
+        class_confidences = extract_confidences(filtered_res)
         class_preds = np.argmax(class_confidences, axis=0)
 
         return [
