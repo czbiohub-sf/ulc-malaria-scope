@@ -55,9 +55,7 @@ class YOGO(NCSModel):
         """
         crop_lower_bound = 386 - YOGO_CROP_HEIGHT_PX // 2
         crop_upper_bound = 386 + YOGO_CROP_HEIGHT_PX // 2 + (YOGO_CROP_HEIGHT_PX % 2)
-        return img[
-            ..., crop_lower_bound : crop_upper_bound, :
-        ]
+        return img[..., crop_lower_bound:crop_upper_bound, :]
 
     @staticmethod
     def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD):
