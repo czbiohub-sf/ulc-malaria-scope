@@ -103,7 +103,7 @@ class NCSModel:
         ppp = PrePostProcessor(model)
         ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
         ppp.input().model().set_layout(Layout("NCHW"))
-        ppp.output().tensor().set_element_type(Type.f32)
+        ppp.output().tensor().set_element_type(Type.f16)
         model = ppp.build()
 
         err_msg = ""
