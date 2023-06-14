@@ -18,10 +18,8 @@ def calc_total_perc_err(confidences: npt.NDArray) -> str:
         return "N/A"
 
     poisson_rel_err = calc_poisson_rel_err(num_confidences)
-    confidence_rel_err = calc_confidence_rel_err(confidences)
-
-    total_perc_err = calc_rms([poisson_rel_err, confidence_rel_err])*100
-
+    total_perc_err = poisson_rel_err * 100
+c
     return(f"{total_perc_err:.3g}%%")
 
 def calc_poisson_rel_err(count: int) -> float:
