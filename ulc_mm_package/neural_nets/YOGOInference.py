@@ -5,7 +5,6 @@ import numpy.typing as npt
 
 from typing import Any, List, Union
 from typing_extensions import TypeAlias
-from math import sqrt
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
 from ulc_mm_package.neural_nets.NCSModel import (

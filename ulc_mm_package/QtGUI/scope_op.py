@@ -65,10 +65,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
 )
-from ulc_mm_package.utilities.statistics_utils import (
-    calc_total_perc_err,
-    get_all_stats_str,
-)
+from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
 from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
 
 # TODO populate info?

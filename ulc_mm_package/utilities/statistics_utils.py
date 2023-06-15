@@ -1,12 +1,10 @@
 import numpy as np
 import numpy.typing as npt
 
-from pathlib import Path
 from typing import List, Union
 from math import sqrt
 
 from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_MAP
-from ulc_mm_package.image_processing.data_storage import DataStorage
 
 
 def calc_total_perc_err(confidences: npt.NDArray) -> str:
@@ -67,7 +65,7 @@ def get_all_stats_str(
     """ "
     Return results string with statistics for all classes
     """
-    template_string = f"Class results: Unscaled cell count | expectation value (percent uncertainty | confidence mean | confidence std)\n"
+    template_string = "Class results: Unscaled cell count | expectation value (percent uncertainty | confidence mean | confidence std)\n"
     class_strings = [
         get_class_stats_str(
             class_name,
