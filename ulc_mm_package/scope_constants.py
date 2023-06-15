@@ -133,6 +133,8 @@ EXPERIMENT_METADATA_KEYS = [
     "target_brightness",
     "git_branch",
     "git_commit",
+    "autofocus_model",
+    "yogo_model",
 ]
 
 PER_IMAGE_METADATA_KEYS = [
