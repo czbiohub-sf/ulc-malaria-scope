@@ -81,14 +81,14 @@ class YOGO(NCSModel):
 
     @staticmethod
     def parse_prediction_tensor(
-        prediction_tensor: np.ndarray, img_h: int, img_w: int
-    ) -> np.ndarray:
+        prediction_tensor: npt.NDArray, img_h: int, img_w: int
+    ) -> npt.NDArray:
         """Function to parse a prediction tensor.
 
         Parameters
         ----------
         prediction_tensor: np.ndarray
-            The direct output tensor from a call to the YOGO model
+            The direct output tensor from a call to the YOGO model (1 * (5+NUM_CLASSES) * (Sx*Sy))
         img_h: int
         img_w: int
 
@@ -98,14 +98,14 @@ class YOGO(NCSModel):
             bboxes_and_classes
                 A 6 x N array representing...
 
-                idx 0 - 4 (bounding boxes):
+                idx 0 - 3 (bounding boxes):
                     int: top left x,
                     int: top left y,
                     int: bottom right x,
                     int: bottom right y
-                idx 5 (objectness)
+                idx 4 (objectness)
                     float: [0-1]
-                idx 6 (predictions)
+                idx 5 (predictions)
                     int: Number from 0 to M, where M is the number of classes - 1) for all N objects
                     detected in the image.
         """
@@ -158,14 +158,18 @@ class YOGO(NCSModel):
             res = yogo_model.get_asyn_results()
             clean_res = parse_prediction(res, img_h, img_w)
             img_id = clean_res.id
-            bboxes_and_classes = clean_res.bboxes_and_classes # Will have shape like [5 x N],
-            bbox1 = bboxes_and_classes[:4, 0] # --> will get something like (46, 23, 92, 68)
-            predicted_class1 = bboxes_and_classes[5, 0] --> will get something like 2 (hot damn it's a troph!)
+
+            bboxes_and_classes = clean_res.bboxes_and_classes # Will have shape like [6 x N],
+            bbox_1 = bboxes_and_classes[:3, 0] # --> will get something like (46, 23, 92, 68)
+            predicted_class_1 = bboxes_and_classes[4, 0] --> will get something like 2 (hot damn it's a troph!)
+            objectness_1 = bboxes_and_classes[5, 0]
             ```
         """
 
         img_id, prediction_tensor = prediction.id, prediction.result
-        bboxes_and_classes = YOGO.parse_prediction_tensor(prediction_tensor)
+        bboxes_and_classes: np.ndarray = YOGO.parse_prediction_tensor(
+            prediction_tensor, img_h, img_w
+        )
         return YOGOPrediction(id=img_id, bboxes_and_classes=bboxes_and_classes)
 
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
