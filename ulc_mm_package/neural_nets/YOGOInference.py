@@ -96,7 +96,7 @@ class YOGO(NCSModel):
         -------
         np.ndarray
             bboxes_and_classes
-                A 6 x N array representing...
+                A 7 x N array representing...
 
                 idx 0 - 3 (bounding boxes):
                     int: top left x,
@@ -108,6 +108,8 @@ class YOGO(NCSModel):
                 idx 5 (predictions)
                     int: Number from 0 to M, where M is the number of classes - 1) for all N objects
                     detected in the image.
+                idx 6 (prediction probability)
+                    float: confidence of the predicted label
         """
 
         filtered_pred = YOGO.filter_res(
@@ -124,9 +126,12 @@ class YOGO(NCSModel):
         bry = np.rint(xc + pred_half_height).astype(int)
 
         objectness = filtered_pred[4, :]
-        preds = np.argmax(filtered_pred[5:, :], axis=0)
+        pred_labels = np.argmax(filtered_pred[5:, :], axis=0)
+        pred_probs = filtered_pred[5:, :][
+            pred_labels, np.arange(filtered_pred.shape[1])
+        ]
 
-        return np.stack([tlx, tly, brx, bry, objectness, preds])
+        return np.stack([tlx, tly, brx, bry, objectness, pred_labels, pred_probs])
 
     @staticmethod
     def parse_prediction(
@@ -148,7 +153,7 @@ class YOGO(NCSModel):
         YOGOPrediction
             img_id - id that you passed in
             bboxes_and_classes
-                A 6 x N array representing the bounding boxes, objectness, and class labels
+                A 7 x N array representing the bounding boxes, objectness, class labels and the confidence associated with that class label
 
         Example
         -------

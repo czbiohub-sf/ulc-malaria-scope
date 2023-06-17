@@ -54,7 +54,7 @@ class TestYOGOTensorParsing(unittest.TestCase):
         )
         d1, d2 = parsed_predictions.shape
 
-        self.assertEqual(d1, 6)
+        self.assertEqual(d1, 7)
         self.assertGreater(d2, 1)
 
     def test_parse_AsyncInferenceResult(self):
@@ -63,7 +63,7 @@ class TestYOGOTensorParsing(unittest.TestCase):
         d1, d2 = parsed_predictions.bboxes_and_classes.shape
 
         self.assertEqual(parsed_predictions.id, self.img_id)
-        self.assertEqual(d1, 6)
+        self.assertEqual(d1, 7)
         self.assertGreater(d2, 1)
 
 
