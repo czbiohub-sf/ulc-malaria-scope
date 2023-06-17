@@ -80,11 +80,61 @@ class YOGO(NCSModel):
         return class_counts
 
     @staticmethod
+    def parse_prediction_tensor(
+        prediction_tensor: np.ndarray, img_h: int, img_w: int
+    ) -> np.ndarray:
+        """Function to parse a prediction tensor.
+
+        Parameters
+        ----------
+        prediction_tensor: np.ndarray
+            The direct output tensor from a call to the YOGO model
+        img_h: int
+        img_w: int
+
+        Returns
+        -------
+        np.ndarray
+            bboxes_and_classes
+                A 6 x N array representing...
+
+                idx 0 - 4 (bounding boxes):
+                    int: top left x,
+                    int: top left y,
+                    int: bottom right x,
+                    int: bottom right y
+                idx 5 (objectness)
+                    float: [0-1]
+                idx 6 (predictions)
+                    int: Number from 0 to M, where M is the number of classes - 1) for all N objects
+                    detected in the image.
+        """
+
+        filtered_pred = YOGO.filter_res(
+            prediction_tensor
+        ).squeeze()  # 9 x N (TODO the 9 here is variable based on number of classes, N is however many cells are predicted, but may include some double-counted/overlapping bboxes)
+        xc = filtered_pred[0, :] * img_w
+        yc = filtered_pred[1, :] * img_h
+        pred_half_width = filtered_pred[2] / 2 * img_w
+        pred_half_height = filtered_pred[3] / 2 * img_h
+
+        tlx = np.rint(xc - pred_half_width).astype(int)
+        tly = np.rint(yc - pred_half_height).astype(int)
+        brx = np.rint(xc + pred_half_width).astype(int)
+        bry = np.rint(xc + pred_half_height).astype(int)
+
+        objectness = filtered_pred[4, :]
+        preds = np.argmax(filtered_pred[5:, :], axis=0)
+
+        return np.stack([tlx, tly, brx, bry, objectness, preds])
+
+    @staticmethod
     def parse_prediction(
         prediction: AsyncInferenceResult, img_h: int, img_w: int
     ) -> YOGOPrediction:
         """
         Given a prediction result tensor, return a cleaned up tensor of bounding boxes and associated classes.
+        See `parse_prediction_tensor()` function for more details about the output.
 
         Parameters
         ----------
@@ -98,9 +148,7 @@ class YOGO(NCSModel):
         YOGOPrediction
             img_id - id that you passed in
             bboxes_and_classes
-                A 5 x N array representing the bounding boxes (top left x, top left y, bottom right x, bottom right y)
-                and the predictions (number from 0 to M, where M is the number of classes - 1) for all N objects
-                detected in the image.
+                A 6 x N array representing the bounding boxes, objectness, and class labels
 
         Example
         -------
@@ -108,28 +156,16 @@ class YOGO(NCSModel):
             yogo_model(img)
             ... some time later
             res = yogo_model.get_asyn_results()
-            bboxes_and_classes = parse_prediction(res, img_h, img_w).bboxes_and_classes  # Will have shape like [5 x N],
+            clean_res = parse_prediction(res, img_h, img_w)
+            img_id = clean_res.id
+            bboxes_and_classes = clean_res.bboxes_and_classes # Will have shape like [5 x N],
             bbox1 = bboxes_and_classes[:4, 0] # --> will get something like (46, 23, 92, 68)
             predicted_class1 = bboxes_and_classes[5, 0] --> will get something like 2 (hot damn it's a troph!)
             ```
         """
 
-        img_id, res = prediction.id, prediction.result
-        filtered_pred = YOGO.filter_res(
-            res
-        ).squeeze()  # 9 x N (TODO the 9 here is variable based on number of classes, N is however many cells are predicted, but may include some double-counted/overlapping bboxes)
-        xc = filtered_pred[0, :] * img_w
-        yc = filtered_pred[1, :] * img_h
-        pred_half_width = filtered_pred[2] / 2 * img_w
-        pred_half_height = filtered_pred[3] / 2 * img_h
-
-        tlx = xc - pred_half_width
-        tly = yc - pred_half_height
-        brx = xc + pred_half_width
-        bry = xc + pred_half_height
-        preds = np.argmax(filtered_pred[5:, :], axis=0)
-
-        bboxes_and_classes = np.stack([tlx, tly, brx, bry, preds])
+        img_id, prediction_tensor = prediction.id, prediction.result
+        bboxes_and_classes = YOGO.parse_prediction_tensor(prediction_tensor)
         return YOGOPrediction(id=img_id, bboxes_and_classes=bboxes_and_classes)
 
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
