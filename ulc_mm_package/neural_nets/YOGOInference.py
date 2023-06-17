@@ -4,6 +4,7 @@
 import numpy as np
 import numpy.typing as npt
 
+from collections import namedtuple
 from typing import Any, List, Union
 from typing_extensions import TypeAlias
 
@@ -19,6 +20,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 
 
 ClassCountResult: TypeAlias = np.ndarray
+YOGOPrediction = namedtuple("YOGOPrediction", ["id", "bboxes_and_classes"])
 
 
 class YOGO(NCSModel):
@@ -49,7 +51,7 @@ class YOGO(NCSModel):
         super().__init__(model_path)
 
     @staticmethod
-    def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD):
+    def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD) -> npt.NDArray:
         mask = (res[:, 4:5, :] > threshold).flatten()
         return res[:, :, mask]
 
@@ -76,6 +78,59 @@ class YOGO(NCSModel):
             [raw_counts.get(i, 0) for i in range(num_classes)], dtype=int
         )
         return class_counts
+
+    @staticmethod
+    def parse_prediction(
+        prediction: AsyncInferenceResult, img_h: int, img_w: int
+    ) -> YOGOPrediction:
+        """
+        Given a prediction result tensor, return a cleaned up tensor of bounding boxes and associated classes.
+
+        Parameters
+        ----------
+        prediction: AsyncInferenceResult
+            A result from a YOGO(img) call
+        img_h: int
+        img_w: int
+
+        Returns
+        -------
+        YOGOPrediction
+            img_id - id that you passed in
+            bboxes_and_classes
+                A 5 x N array representing the bounding boxes (top left x, top left y, bottom right x, bottom right y)
+                and the predictions (number from 0 to M, where M is the number of classes - 1) for all N objects
+                detected in the image.
+
+        Example
+        -------
+            ```
+            yogo_model(img)
+            ... some time later
+            res = yogo_model.get_asyn_results()
+            bboxes_and_classes = parse_prediction(res, img_h, img_w).bboxes_and_classes  # Will have shape like [5 x N],
+            bbox1 = bboxes_and_classes[:4, 0] # --> will get something like (46, 23, 92, 68)
+            predicted_class1 = bboxes_and_classes[5, 0] --> will get something like 2 (hot damn it's a troph!)
+            ```
+        """
+
+        img_id, res = prediction.id, prediction.result
+        filtered_pred = YOGO.filter_res(
+            res
+        ).squeeze()  # 9 x N (TODO the 9 here is variable based on number of classes, N is however many cells are predicted, but may include some double-counted/overlapping bboxes)
+        xc = filtered_pred[0, :] * img_w
+        yc = filtered_pred[1, :] * img_h
+        pred_half_width = filtered_pred[2] / 2 * img_w
+        pred_half_height = filtered_pred[3] / 2 * img_h
+
+        tlx = xc - pred_half_width
+        tly = yc - pred_half_height
+        brx = xc + pred_half_width
+        bry = xc + pred_half_height
+        preds = np.argmax(filtered_pred[5:, :], axis=0)
+
+        bboxes_and_classes = np.stack([tlx, tly, brx, bry, preds])
+        return YOGOPrediction(id=img_id, bboxes_and_classes=bboxes_and_classes)
 
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)
