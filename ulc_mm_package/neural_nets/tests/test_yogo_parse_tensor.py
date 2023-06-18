@@ -56,15 +56,47 @@ class TestYOGOTensorParsing(unittest.TestCase):
 
         self.assertEqual(d1, 7)
         self.assertGreater(d2, 1)
+        self.assertEqual(parsed_predictions.dtype, np.uint16)
 
     def test_parse_AsyncInferenceResult(self):
         res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
         parsed_predictions = YOGO.parse_prediction(res, self.img_h, self.img_w)
-        d1, d2 = parsed_predictions.bboxes_and_classes.shape
+        d1, d2 = parsed_predictions.parsed_pred.shape
 
         self.assertEqual(parsed_predictions.id, self.img_id)
         self.assertEqual(d1, 7)
         self.assertGreater(d2, 1)
+
+    def test_get_specific_class(self):
+        res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
+        parsed_predictions = YOGO.parse_prediction(res, self.img_h, self.img_w)
+        healthy_cells = YOGO.get_specific_class_from_parsed_tensor(
+            parsed_predictions.parsed_pred, 0
+        )
+
+        self.assertGreater(healthy_cells.shape[1], 0)
+
+    def test_get_vals_greater_than_conf_thresh(self):
+        res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
+        parsed_predictions = YOGO.parse_prediction(res, self.img_h, self.img_w)
+        healthy_cells = YOGO.get_specific_class_from_parsed_tensor(
+            parsed_predictions.parsed_pred, 0
+        )
+        above_thresh = YOGO.get_vals_greater_than_conf_thresh(healthy_cells, 0.9)
+
+        self.assertEqual(above_thresh.shape[0], healthy_cells.shape[0])
+        self.assertLess(above_thresh.shape[1], healthy_cells.shape[1])
+
+    def test_get_vals_less_than_conf_thresh(self):
+        res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
+        parsed_predictions = YOGO.parse_prediction(res, self.img_h, self.img_w)
+        healthy_cells = YOGO.get_specific_class_from_parsed_tensor(
+            parsed_predictions.parsed_pred, 0
+        )
+        below_thresh = YOGO.get_vals_less_than_conf_thresh(healthy_cells, 0.9)
+
+        self.assertEqual(below_thresh.shape[0], healthy_cells.shape[0])
+        self.assertLess(below_thresh.shape[1], healthy_cells.shape[1])
 
 
 if __name__ == "__main__":
