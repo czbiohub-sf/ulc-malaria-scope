@@ -213,3 +213,6 @@ class PredictionsHandler:
         """
 
         return self._get_thumbnails(zarr_store, self.min_confs)
+
+    def get_prediction_tensors(self) -> List[npt.NDArray]:
+        return self.pred_tensors
