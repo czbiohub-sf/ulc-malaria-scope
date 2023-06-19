@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import NamedTuple, List, Tuple
+from typing import NamedTuple, List, Tuple, no_type_check
 
 import numpy as np
 import numpy.typing as npt
@@ -15,6 +15,7 @@ class SinglePredictedObject(NamedTuple):
     parsed: npt.NDArray  # 7 x 1
     conf: int  # np.uint16 (same as parsed[6])
 
+    @no_type_check
     def __lt__(self, other: SinglePredictedObject):
         return self.conf < other.conf
 
