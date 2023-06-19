@@ -4,6 +4,8 @@ import time
 import numpy as np
 
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, AsyncInferenceResult
+from ulc_mm_package.neural_nets.utils import *
+from ulc_mm_package.neural_nets.predictions_handler import PredictionsHandler
 
 MOCK_YOGO_IMG_H = 772
 MOCK_YOGO_IMG_W = 1032
@@ -49,7 +51,7 @@ class TestYOGOTensorParsing(unittest.TestCase):
         self.assertGreater(d2, 1)
 
     def test_parse_pred_tensor(self):
-        parsed_predictions: np.ndarray = YOGO.parse_prediction_tensor(
+        parsed_predictions: np.ndarray = parse_prediction_tensor(
             self.mock_yogo_output, self.img_h, self.img_w
         )
         d1, d2 = parsed_predictions.shape
@@ -58,42 +60,27 @@ class TestYOGOTensorParsing(unittest.TestCase):
         self.assertGreater(d2, 1)
         self.assertEqual(parsed_predictions.dtype, np.uint16)
 
-    def test_parse_AsyncInferenceResult(self):
-        res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
-        parsed_predictions = YOGO.parse_prediction(res, self.img_h, self.img_w)
-        d1, d2 = parsed_predictions.parsed_pred.shape
-
-        self.assertEqual(parsed_predictions.id, self.img_id)
-        self.assertEqual(d1, 7)
-        self.assertGreater(d2, 1)
-
     def test_get_specific_class(self):
         res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
-        parsed_predictions = YOGO.parse_prediction(res, self.img_h, self.img_w)
-        healthy_cells = YOGO.get_specific_class_from_parsed_tensor(
-            parsed_predictions.parsed_pred, 0
-        )
+        parsed_predictions = parse_prediction_tensor(res.result, self.img_h, self.img_w)
+        healthy_cells = get_specific_class_from_parsed_tensor(parsed_predictions, 0)
 
         self.assertGreater(healthy_cells.shape[1], 0)
 
     def test_get_vals_greater_than_conf_thresh(self):
         res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
-        parsed_predictions = YOGO.parse_prediction(res, self.img_h, self.img_w)
-        healthy_cells = YOGO.get_specific_class_from_parsed_tensor(
-            parsed_predictions.parsed_pred, 0
-        )
-        above_thresh = YOGO.get_vals_greater_than_conf_thresh(healthy_cells, 0.9)
+        parsed_predictions = parse_prediction_tensor(res.result, self.img_h, self.img_w)
+        healthy_cells = get_specific_class_from_parsed_tensor(parsed_predictions, 0)
+        above_thresh = get_vals_greater_than_conf_thresh(healthy_cells, 0.9 * 2**16)
 
         self.assertEqual(above_thresh.shape[0], healthy_cells.shape[0])
         self.assertLess(above_thresh.shape[1], healthy_cells.shape[1])
 
     def test_get_vals_less_than_conf_thresh(self):
         res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
-        parsed_predictions = YOGO.parse_prediction(res, self.img_h, self.img_w)
-        healthy_cells = YOGO.get_specific_class_from_parsed_tensor(
-            parsed_predictions.parsed_pred, 0
-        )
-        below_thresh = YOGO.get_vals_less_than_conf_thresh(healthy_cells, 0.9)
+        parsed_predictions = parse_prediction_tensor(res.result, self.img_h, self.img_w)
+        healthy_cells = get_specific_class_from_parsed_tensor(parsed_predictions, 0)
+        below_thresh = get_vals_less_than_conf_thresh(healthy_cells, 0.9 * 2**16)
 
         self.assertEqual(below_thresh.shape[0], healthy_cells.shape[0])
         self.assertLess(below_thresh.shape[1], healthy_cells.shape[1])
