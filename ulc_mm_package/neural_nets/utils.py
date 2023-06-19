@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -134,7 +134,7 @@ def get_col_ids_for_matching_class_and_above_conf_thresh(
     parsed_prediction_tensor: npt.NDArray,
     class_id: int,
     confidence_threshold: np.uint16,
-) -> List[int]:
+) -> Tuple[np.ndarray]:
     """Get the column ids of the passed-in prediction tensor which have
     the given class_id and are above the given confidence threshold.
 
@@ -164,7 +164,7 @@ def get_col_ids_for_matching_class_and_below_conf_thresh(
     parsed_prediction_tensor: npt.NDArray,
     class_id: int,
     confidence_threshold: np.uint16,
-) -> List[int]:
+) -> Tuple[np.ndarray]:
     """Get the column ids of the passed-in prediction tensor which have
     the given class_id and are below the given confidence threshold.
 
