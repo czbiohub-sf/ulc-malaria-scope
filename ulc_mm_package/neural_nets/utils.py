@@ -237,7 +237,7 @@ def get_vals_less_than_conf_thresh(
 def get_individual_prediction_objs_from_parsed_tensor(
     img_id: int,
     parsed_prediction_tensor: npt.NDArray,
-    col_idxs: List[int],
+    col_idxs: Tuple[npt.NDArray],
     flip_conf_sign: bool = False,
 ) -> List[SinglePredictedObject]:
     """Get a list of individual prediction objects given a prediction tensor and
