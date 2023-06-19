@@ -690,6 +690,7 @@ class ScopeOp(QObject, NamedMachine):
         # we can use this for cell counts in the future, and also density in the now
 
         for result in prev_yogo_results:
+            self.mscope.predictions_handler.add_yogo_pred(result)
             filtered_prediction = YOGO.filter_res(result.result)
 
             class_counts = YOGO.class_instance_count(filtered_prediction)
