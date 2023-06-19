@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from typing import Any, List, Union, NamedTuple
+from typing import Any, List, Union
 from typing_extensions import TypeAlias
 
 import numpy as np

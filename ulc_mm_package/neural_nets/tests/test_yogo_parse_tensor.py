@@ -4,8 +4,12 @@ import time
 import numpy as np
 
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, AsyncInferenceResult
-from ulc_mm_package.neural_nets.utils import *
-from ulc_mm_package.neural_nets.predictions_handler import PredictionsHandler
+from ulc_mm_package.neural_nets.utils import (
+    parse_prediction_tensor,
+    get_specific_class_from_parsed_tensor,
+    get_vals_greater_than_conf_thresh,
+    get_vals_less_than_conf_thresh,
+)
 
 MOCK_YOGO_IMG_H = 772
 MOCK_YOGO_IMG_W = 1032

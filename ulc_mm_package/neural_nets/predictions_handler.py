@@ -1,8 +1,6 @@
 import heapq as hq
 from typing import Dict, List
 
-import numpy as np
-
 import ulc_mm_package.neural_nets.utils as nn_utils
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.scope_constants import CameraOptions, MAX_FRAMES
