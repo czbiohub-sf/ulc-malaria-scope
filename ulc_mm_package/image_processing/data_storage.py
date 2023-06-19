@@ -252,10 +252,14 @@ class DataStorage:
         """
 
         assert self.main_dir is not None, "DataStorage has not been initialized"
-            try:
-                filename = self.main_dir / self.experiment_folder / "parsed_prediction_tensors.pkl"
-                with open(filename, "wb") as f:
-                    pickle.dump(pred_tensors, f)
+        try:
+            filename = (
+                self.main_dir / self.experiment_folder / "parsed_prediction_tensors.pkl"
+            )
+            with open(filename, "wb") as f:
+                pickle.dump(pred_tensors, f)
+        except Exception as e:
+            self.logger.error(f"Error saving prediction tensors. {e}")
 
     def save_uniform_sample(self) -> None:
         """Extract and save a uniform random sample of images from the currently active Zarr store.
