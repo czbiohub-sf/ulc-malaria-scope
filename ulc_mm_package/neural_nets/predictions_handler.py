@@ -1,20 +1,29 @@
 import heapq as hq
-from typing import Dict, List
+from typing import Dict, List, NamedTuple
+
+import numpy.typing as npt
+import zarr
 
 import ulc_mm_package.neural_nets.utils as nn_utils
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.scope_constants import CameraOptions, MAX_FRAMES
+from ulc_mm_package.scope_constants import CAMERA_SELECTION, MAX_FRAMES
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
 )
 
-IMG_W, IMG_H = CameraOptions.IMG_WIDTH, CameraOptions.IMG_HEIGHT
+IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, CAMERA_SELECTION.IMG_HEIGHT
 RESIZED_W, RESIZED_H = IMG_RESIZED_DIMS
+SCALE_H, SCALE_W = IMG_W / RESIZED_W, IMG_H / RESIZED_H
 
 MAX_THUMBNAILS = 10
 UINT16_MAX = 65535
+
+
+class Thumbnail(NamedTuple):
+    img_crop: npt.NDArray  # n x m array (different for every thumbnail)
+    confidence: float  # value between [0-1]
 
 
 class PredictionsHandler:
@@ -59,6 +68,10 @@ class PredictionsHandler:
         parsed_tensor = nn_utils.parse_prediction_tensor(
             pred_tensor, img_h=RESIZED_H, img_w=RESIZED_W
         )
+
+        # Scale the bounding box locations so they can be used with
+        # the original sized images
+        nn_utils.scale_bbox_vals(parsed_tensor, SCALE_H, SCALE_W)
         self.pred_tensors[img_id] = parsed_tensor
 
         for x in self.class_ids:
@@ -129,3 +142,74 @@ class PredictionsHandler:
                 ]
                 highest_min_conf = self.min_confs[x][0].conf
                 self.curr_max_of_min_confs_by_class[x] = highest_min_conf
+
+    def _get_thumbnails(
+        self,
+        zarr_store: zarr.core.Array,
+        confs: Dict[int, List[nn_utils.SinglePredictedObject]],
+    ) -> Dict[int, List[Thumbnail]]:
+        """Extract thumbnails from the specified confidence Dict (i.e self.min_confs or self.max_confs)
+
+        Parameters
+        ----------
+        zarr_store: zarr.core.Array
+            Zarr store in which the original images are stored
+        confs: Dict[int, List[nn_utils.SinglePredictedObject]]
+            Either self.min_confs or self.max_confs
+
+        Returns
+        -------
+        Dict[int, List[npt.NDArray]]
+            int (class_id) -> List of thumbnails (numpy arrays)
+        """
+
+        thumbnails: Dict[int, List[npt.NDArray]] = {x: [] for x in self.class_ids}
+        for c in self.class_ids:
+            for obj in confs[c]:
+                img_id = obj.img_id
+                tlx, tly, brx, bry = obj.parsed[:4]
+                img_crop = zarr_store[:, :, img_id][tly:bry, tlx:brx]
+                thumbnails[c].append(
+                    Thumbnail(
+                        img_crop=img_crop,
+                        confidence=nn_utils.convert_uint16_to_float(obj.parsed[6]),
+                    )
+                )
+
+        return thumbnails
+
+    def get_max_conf_thumbnails(
+        self, zarr_store: zarr.core.Array
+    ) -> Dict[int, List[Thumbnail]]:
+        """Get the maximum confidence thumbnails.
+
+        Parameters
+        ----------
+        zarr_store: zarr.core.Array
+            Zarr store in which the original images are stored
+
+        Returns
+        -------
+        Dict[int, List[npt.NDArray]]
+            int (class_id) -> List of thumbnails (numpy arrays)
+        """
+
+        return self._get_thumbnails(zarr_store, self.max_confs)
+
+    def get_min_conf_thumbnails(
+        self, zarr_store: zarr.core.Array
+    ) -> Dict[int, List[Thumbnail]]:
+        """Get the minimum confidence thumbnails.
+
+        Parameters
+        ----------
+        zarr_store: zarr.core.Array
+            Zarr store in which the original images are stored
+
+        Returns
+        -------
+        Dict[int, List[npt.NDArray]]
+            int (class_id) -> List of thumbnails (numpy arrays)
+        """
+
+        return self._get_thumbnails(zarr_store, self.min_confs)

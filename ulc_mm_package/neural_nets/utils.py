@@ -116,6 +116,30 @@ def get_specific_class_from_parsed_tensor(
     return parsed_prediction_tensor[:, mask]
 
 
+def scale_bbox_vals(
+    parsed_prediction_tensor: npt.NDArray, scale_h: float, scale_w: float
+) -> None:
+    """Scale the bounding box locations by the given scale factors.
+    NOTE: this modifies the array existing array!
+
+    Parameters
+    ----------
+    parsed_prediction_tensor: np.ndarray (7 x N)
+    scale_h: float
+    scale_w: float
+
+    Returns
+    -------
+    np.ndarray
+        7 x N array with the indices [0-3] (corresponding to the bounding box corners) scaled by the given scale factors.
+    """
+
+    parsed_prediction_tensor[0, :] = np.rint(parsed_prediction_tensor[0, :] * scale_w)
+    parsed_prediction_tensor[1, :] = np.rint(parsed_prediction_tensor[1, :] * scale_h)
+    parsed_prediction_tensor[2, :] = np.rint(parsed_prediction_tensor[2, :] * scale_w)
+    parsed_prediction_tensor[3, :] = np.rint(parsed_prediction_tensor[3, :] * scale_h)
+
+
 def convert_float_to_uint16(val: float) -> np.uint16:
     """Convert a float between 0 - 1 to an uint16 (between 0 - 65,535).
 
@@ -129,6 +153,21 @@ def convert_float_to_uint16(val: float) -> np.uint16:
     """
 
     return np.rint(val * 2**16).astype(np.uint16)
+
+
+def convert_uint16_to_float(val: np.uint16) -> float:
+    """Convert a uint16 (0 - 65535) to a float between 0-1
+
+    Parameters
+    ----------
+    val: np.uint16
+
+    Returns
+    -------
+    float [0-1]
+    """
+
+    return val / 2**16
 
 
 def get_col_ids_for_matching_class_and_above_conf_thresh(
