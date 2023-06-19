@@ -2,7 +2,7 @@ import io
 import csv
 import shutil
 import logging
-
+import pickle
 from pathlib import Path
 from time import perf_counter
 from datetime import datetime
@@ -10,6 +10,7 @@ from concurrent.futures import Future
 from typing import Dict, List, Optional
 
 import numpy as np
+import numpy.typing as npt
 import cv2
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -174,8 +175,13 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self) -> Optional[Future]:
+    def close(self, pred_tensors: List[npt.NDArray]) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
+
+        Parameters
+        ----------
+        pred_tensors: List[npt.NDArray]
+            Parsed predictions tensors from PredictionsHandler()
 
         Returns
         -------
@@ -185,6 +191,7 @@ class DataStorage:
         """
 
         self.logger.info("Closing data storage.")
+        self.save_parsed_prediction_tensors(pred_tensors)
         self.save_uniform_sample()
 
         if self.metadata_file is not None:
@@ -230,6 +237,25 @@ class DataStorage:
 
         storage_remaining_gb = cls._get_remaining_storage_size_GB(ssd_dir)
         return storage_remaining_gb > MIN_GB_REQUIRED
+
+    def save_parsed_prediction_tensors(self, pred_tensors: List[npt.NDArray]) -> None:
+        """Save the predictions list (List[np.ndarray]) containing
+        the parsed prediction tensors for each image.
+
+        The index of the np array in the list corresponds to the image to which it belongs.
+        For example, pred_tensors[0] are the predictions for the first image, pred_tensors[1234] for the 1233rd image, etc.
+
+        Parameters
+        ----------
+        pred_tensors: List[npt.NDArray]
+            The list of parsed prediction tensors from PredictionsHandler()
+        """
+
+        assert self.main_dir is not None, "DataStorage has not been initialized"
+            try:
+                filename = self.main_dir / self.experiment_folder / "parsed_prediction_tensors.pkl"
+                with open(filename, "wb") as f:
+                    pickle.dump(pred_tensors, f)
 
     def save_uniform_sample(self) -> None:
         """Extract and save a uniform random sample of images from the currently active Zarr store.
