@@ -59,7 +59,7 @@ class PredictionsHandler:
         res: AsyncInferenceResult
         """
 
-        img_id = res.id
+        img_id = int(res.id)
         pred_tensor = res.result
 
         # Parse tensor to 7 x N format (N predictions)
