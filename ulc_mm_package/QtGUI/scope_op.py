@@ -114,8 +114,6 @@ class ScopeOp(QObject, NamedMachine):
 
     update_thumbnails = pyqtSignal()
 
-    update_thumbnails = pyqtSignal()
-
     def __init__(self):
         super().__init__()
 
@@ -702,8 +700,12 @@ class ScopeOp(QObject, NamedMachine):
             if self.count % int(ACQUISITION_PERIOD / THUMBNAIL_UPDATE_FPS) == 0:
                 self.update_thumbnails.emit(
                     (
-                        self.mscope.predictions_handler.get_max_conf_thumbnails(),
-                        self.mscope.predictions_handler.get_min_conf_thumbnails(),
+                        self.mscope.predictions_handler.get_max_conf_thumbnails(
+                            self.mscope.data_storage.zw.array
+                        ),
+                        self.mscope.predictions_handler.get_min_conf_thumbnails(
+                            self.mscope.data_storage.zw.array
+                        ),
                     )
                 )
 
