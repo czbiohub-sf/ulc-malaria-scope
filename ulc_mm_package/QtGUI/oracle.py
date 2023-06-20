@@ -726,7 +726,9 @@ class Oracle(Machine):
         if not self.shutoff_done:
             # Close data storage if it's not already closed
             if self.scopeop.mscope.data_storage.zw.writable:
-                self.scopeop.mscope.data_storage.close()
+                self.scopeop.mscope.data_storage.close(
+                    self.scopeop.mscope.predictions_handler.get_prediction_tensors()
+                )
             else:
                 self.logger.info(
                     "Since data storage is already closed, no data storage operations were needed."
