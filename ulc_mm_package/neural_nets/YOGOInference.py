@@ -20,6 +20,13 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 ClassCountResult: TypeAlias = np.ndarray
 
 
+def extract_confidences(filtered_res: npt.NDArray) -> npt.NDArray:
+    """
+    Returns confidence values only (ie. isolates confidence from bounding box info)
+    """
+    return filtered_res[0, 5:, :]
+
+
 class YOGO(NCSModel):
     """
     YOGO Model
@@ -66,7 +73,7 @@ class YOGO(NCSModel):
         """
         bs, pred_dim, num_predicted = filtered_res.shape
         num_classes = pred_dim - 5
-        class_preds = np.argmax(filtered_res[0, 5:, :], axis=0)
+        class_preds = np.argmax(extract_confidences(filtered_res), axis=0)
         unique, counts = np.unique(class_preds, return_counts=True)
         # this dict (raw_counts) will be missing a given class if that class isn't predicted at all
         # this may be confusing and a pain to handle, so just handle it on our side
@@ -75,6 +82,21 @@ class YOGO(NCSModel):
             [raw_counts.get(i, 0) for i in range(num_classes)], dtype=int
         )
         return class_counts
+
+    @staticmethod
+    def sort_confidences(filtered_res: npt.NDArray) -> List[npt.NDArray]:
+        """
+        Return compiled confidences for each class
+        """
+        bs, pred_dim, num_predicted = filtered_res.shape
+        num_classes = pred_dim - 5
+        class_confidences = extract_confidences(filtered_res)
+        class_preds = np.argmax(class_confidences, axis=0)
+
+        return [
+            class_confidences[class_idx, class_preds == class_idx]
+            for class_idx in range(num_classes)
+        ]
 
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)

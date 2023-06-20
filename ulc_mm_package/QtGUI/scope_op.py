@@ -49,7 +49,11 @@ from ulc_mm_package.hardware.pneumatic_module import (
 )
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
+from ulc_mm_package.neural_nets.YOGOInference import (
+    YOGO,
+    ClassCountResult,
+    extract_confidences,
+)
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_PERIOD_NUM,
@@ -66,6 +70,7 @@ from ulc_mm_package.scope_constants import (
     LIVEVIEW_PERIOD,
     THUMBNAIL_UPDATE_FPS,
 )
+from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
 
 # TODO populate info?
 
@@ -219,7 +224,10 @@ class ScopeOp(QObject, NamedMachine):
         self.flowrate = None
         self.target_flowrate = None
 
-        self.count = 0
+        self.frame_count = 0
+        self.pred_count = 0
+        # TODO do we have a desired dtype
+        self.preds = np.zeros((1, 5 + len(YOGO_CLASS_LIST), int(1e6)))
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.start_time = None
@@ -447,7 +455,20 @@ class ScopeOp(QObject, NamedMachine):
 
         runtime = self._get_experiment_runtime()
         if runtime != 0:
-            self.logger.info(f"Net FPS is {self.count/runtime}")
+            self.logger.info(f"Net FPS is {self.frame_count/runtime}")
+
+        if self.pred_count != 0:
+            nonzero_preds = self.preds[:, :, : self.pred_count]
+            self.mscope.data_storage.save_YOGO_data(nonzero_preds[0])
+
+            class_counts = YOGO.class_instance_count(nonzero_preds)
+            sorted_confidences = YOGO.sort_confidences(nonzero_preds)
+            unsorted_confidences = extract_confidences(nonzero_preds)
+
+            stats_string = get_all_stats_str(
+                class_counts, unsorted_confidences, sorted_confidences
+            )
+            self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
 
@@ -660,7 +681,7 @@ class ScopeOp(QObject, NamedMachine):
             # A race condition has triggered a non-experiment state
             return
 
-        if self.count >= MAX_FRAMES:
+        if self.frame_count >= MAX_FRAMES:
             if self.state == "experiment":
                 self.to_intermission(
                     "Ending experiment since data collection is complete."
@@ -676,10 +697,10 @@ class ScopeOp(QObject, NamedMachine):
 
         # Record timestamp before running routines
         self.img_metadata["timestamp"] = timestamp
-        self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
+        self.img_metadata["im_counter"] = f"{self.frame_count:0{self.digits}d}"
 
         t0 = perf_counter()
-        self.update_img_count.emit(self.count)
+        self.update_img_count.emit(self.frame_count)
         t1 = perf_counter()
         self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
@@ -687,7 +708,7 @@ class ScopeOp(QObject, NamedMachine):
         resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         prev_yogo_results: List[
             AsyncInferenceResult
-        ] = self.count_parasitemia_routine.send((resized_img, self.count))
+        ] = self.count_parasitemia_routine.send((resized_img, self.frame_count))
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
@@ -699,6 +720,12 @@ class ScopeOp(QObject, NamedMachine):
             self.mscope.predictions_handler.add_yogo_pred(result)
 
             filtered_prediction = YOGO.filter_res(result.result)
+            num_preds = np.shape(filtered_prediction)[2]
+
+            self.preds[
+                :, :, self.pred_count : self.pred_count + num_preds
+            ] = filtered_prediction
+            self.pred_count += num_preds
 
             class_counts = YOGO.class_instance_count(filtered_prediction)
             # very rough interpolation: ~30 FPS * period between YOGO calls * counts
@@ -727,7 +754,7 @@ class ScopeOp(QObject, NamedMachine):
                 return
 
         # Update thumbnails
-        if self.count % int(ACQUISITION_PERIOD / THUMBNAIL_UPDATE_FPS) == 0:
+        if self.frame_count % int(ACQUISITION_PERIOD / THUMBNAIL_UPDATE_FPS) == 0:
             self.update_thumbnails.emit(
                 (
                     self.mscope.predictions_handler.get_max_conf_thumbnails(
@@ -819,7 +846,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment
 
-        if self.count % TH_PERIOD_NUM == 0:
+        if self.frame_count % TH_PERIOD_NUM == 0:
             try:
                 (
                     temperature,
@@ -851,8 +878,8 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("img_metadata", t1 - t0)
 
         t0 = perf_counter()
-        self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
-        self.count += 1
+        self.mscope.data_storage.writeData(img, self.img_metadata, self.frame_count)
+        self.frame_count += 1
         t1 = perf_counter()
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
 
