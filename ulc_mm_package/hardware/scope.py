@@ -67,6 +67,7 @@ class Components(Enum):
     DATA_STORAGE = auto()
     FLOW_CONTROLLER = auto()
     TPU = auto()
+    PREDICTIONS_HANDLER = auto()
 
 
 class MalariaScope:
@@ -136,7 +137,7 @@ class MalariaScope:
                 sleep(1)
 
         # Reset predictions handler
-        self.predictions_handler = PredictionsHandler()
+        self.predictions_handler: PredictionsHandler = PredictionsHandler()
 
     def shutoff(self):
         self.logger.info("Shutting off scope hardware.")
@@ -169,6 +170,7 @@ class MalariaScope:
             Components.DATA_STORAGE: self.data_storage_enabled,
             Components.FLOW_CONTROLLER: self.flow_controller_enabled,
             Components.TPU: self.tpu_enabled,
+            Components.PREDICTIONS_HANDLER: self.predictions_handler_enabled,
         }
 
     def _init_motor(self):
