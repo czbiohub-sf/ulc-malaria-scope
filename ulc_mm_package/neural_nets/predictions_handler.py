@@ -6,7 +6,7 @@ import zarr
 
 import ulc_mm_package.neural_nets.utils as nn_utils
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.scope_constants import CAMERA_SELECTION, MAX_FRAMES
+from ulc_mm_package.scope_constants import CAMERA_SELECTION, MAX_FRAMES, MAX_THUMBNAILS
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     YOGO_CLASS_LIST,
@@ -16,8 +16,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, CAMERA_SELECTION.IMG_HEIGHT
 RESIZED_W, RESIZED_H = IMG_RESIZED_DIMS
 SCALE_H, SCALE_W = IMG_W / RESIZED_W, IMG_H / RESIZED_H
-
-MAX_THUMBNAILS = 10
 UINT16_MAX = 65535
 
 
