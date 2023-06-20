@@ -459,7 +459,6 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.pred_count != 0:
             nonzero_preds = self.preds[:, :, : self.pred_count]
-            self.mscope.data_storage.save_YOGO_data(nonzero_preds[0])
 
             class_counts = YOGO.class_instance_count(nonzero_preds)
             sorted_confidences = YOGO.sort_confidences(nonzero_preds)
