@@ -1,6 +1,7 @@
 import heapq as hq
 from typing import Dict, List, NamedTuple
 
+import numpy as np
 import numpy.typing as npt
 import zarr
 
@@ -164,7 +165,7 @@ class PredictionsHandler:
         for c in self.class_ids:
             for obj in confs[c]:
                 img_id = obj.img_id
-                tlx, tly, brx, bry = obj.parsed[:4]
+                tlx, tly, brx, bry = obj.parsed[:4].astype(np.uint16)
                 img_crop = zarr_store[:, :, img_id][tly:bry, tlx:brx]
                 thumbnails[c].append(
                     Thumbnail(
