@@ -184,7 +184,7 @@ class LiveviewGUI(QMainWindow):
         else:
             self._set_color(self.flowrate_val, STATUS.DEFAULT)
 
-    @pyqtSlot()
+    @pyqtSlot(object)
     def update_thumbnails(
         self,
         tuple_of_dict_of_thumbnails: Tuple[
