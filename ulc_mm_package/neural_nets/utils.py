@@ -35,7 +35,7 @@ def parse_prediction_tensor(
 
     Returns
     -------
-    np.ndarray
+    np.ndarray (dtype=DTYPE)
             A 7 x N array representing...
 
             idx 0 - 3 (bounding boxes):
