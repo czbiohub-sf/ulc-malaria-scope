@@ -477,6 +477,7 @@ class LiveviewGUI(QMainWindow):
 
             # Synchronize scrollbars
             sbars = [x.list_widget.horizontalScrollBar() for x in thumbnail_lists]
+
             for i, x in enumerate(thumbnail_lists):
                 [
                     x.list_widget.horizontalScrollBar().valueChanged.connect(
@@ -557,21 +558,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui = LiveviewGUI()
 
-    import pickle
-
-    with open(
-        "/Users/ilakkiyan.jeyakumar/Documents/ulc-malaria-scope/ulc-malaria-scope/ulc_mm_package/neural_nets/tests/min_conf_thumbnails.pkl",
-        "rb",
-    ) as f:
-        min_confs = pickle.load(f)
-
-    with open(
-        "/Users/ilakkiyan.jeyakumar/Documents/ulc-malaria-scope/ulc-malaria-scope/ulc_mm_package/neural_nets/tests/max_conf_thumbnails.pkl",
-        "rb",
-    ) as f:
-        max_confs = pickle.load(f)
-
-    gui.update_thumbnails((max_confs, min_confs))
     experiment_metadata = {
         "operator_id": "1234",
         "participant_id": "567",
