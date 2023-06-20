@@ -105,13 +105,12 @@ class PredictionsHandler:
                 lowest_max_conf = self.max_confs[x][0].conf
                 self.curr_min_of_max_confs_by_class[x] = lowest_max_conf
 
+                # This is for the very first iteration so that we don't get
+                # duplicate entries in both the max conf and min conf lists
+                if self.curr_max_of_min_confs_by_class[x] == UINT16_MAX:
+                    self.curr_max_of_min_confs_by_class[x] = lowest_max_conf
+
             # Repeat the above for minimum confidences
-
-            # This is for the very first iteration so that we don't get
-            # duplicate entries in both the max conf and min conf lists
-            if self.curr_max_of_min_confs_by_class[x] == UINT16_MAX:
-                self.curr_max_of_min_confs_by_class[x] = lowest_max_conf
-
             min_conf_col_ids = (
                 nn_utils.get_col_ids_for_matching_class_and_below_conf_thresh(
                     parsed_tensor, x, self.curr_max_of_min_confs_by_class[x]
