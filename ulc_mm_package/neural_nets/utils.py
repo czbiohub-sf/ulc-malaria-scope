@@ -146,14 +146,14 @@ def get_col_ids_for_matching_class_and_above_conf_thresh(
     Returns
     -------
     List[int]
-        List of column IDs of the original parsed_prediction_tensor which
-        have the matching class_id and confidence threshold strictly greater than the one
+        List of column IDs of the original parsed_prediction_tensor which have the
+        matching class_id and confidence threshold greater than or equal to the one
         passed in.
     """
 
     mask = np.logical_and(
         parsed_prediction_tensor[5, :] == class_id,
-        parsed_prediction_tensor[6, :] > confidence_threshold,
+        parsed_prediction_tensor[6, :] >= confidence_threshold,
     )
     return np.nonzero(mask)
 
@@ -176,14 +176,14 @@ def get_col_ids_for_matching_class_and_below_conf_thresh(
     Returns
     -------
     List[int]
-        List of column IDs of the original parsed_prediction_tensor which
-        have the matching class_id and confidence threshold strictly below than the one
+        List of column IDs of the original parsed_prediction_tensor which have the
+        matching class_id and confidence threshold less than or equal to the one
         passed in.
     """
 
     mask = np.logical_and(
         parsed_prediction_tensor[5, :] == class_id,
-        parsed_prediction_tensor[6, :] < confidence_threshold,
+        parsed_prediction_tensor[6, :] <= confidence_threshold,
     )
     return np.nonzero(mask)
 
