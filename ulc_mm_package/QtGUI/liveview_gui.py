@@ -10,7 +10,6 @@ from time import strftime, gmtime
 
 from qimage2ndarray import gray2qimage
 import numpy as np
-import numpy.typing as npt
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -420,9 +419,11 @@ class LiveviewGUI(QMainWindow):
 
                 for i in range(MAX_THUMBNAILS):
                     w = QWidget()
-                    l = QVBoxLayout()
-                    l.setSpacing(0)
-                    l.setContentsMargins(THUMBNAIL_SPACING, 0, THUMBNAIL_SPACING, 0)
+                    layout = QVBoxLayout()
+                    layout.setSpacing(0)
+                    layout.setContentsMargins(
+                        THUMBNAIL_SPACING, 0, THUMBNAIL_SPACING, 0
+                    )
 
                     conf_label = QLabel()
                     conf_label.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
@@ -431,10 +432,10 @@ class LiveviewGUI(QMainWindow):
                     conf_labels.append(conf_label)
                     img_labels.append(img_label)
 
-                    l.addWidget(conf_label)
-                    l.addWidget(img_label)
-                    l.setAlignment(Qt.AlignVCenter)
-                    w.setLayout(l)
+                    layout.addWidget(conf_label)
+                    layout.addWidget(img_label)
+                    layout.setAlignment(Qt.AlignVCenter)
+                    w.setLayout(layout)
 
                     v = QListWidgetItem()
                     qs = QSize()
