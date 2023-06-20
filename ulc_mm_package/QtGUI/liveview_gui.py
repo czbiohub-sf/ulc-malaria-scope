@@ -460,7 +460,10 @@ class LiveviewGUI(QMainWindow):
         self.toggle_confs.clicked.connect(self.toggle_thumbnails)
 
         # Class labels
-        [self.thumbnail_layout.addWidget(l, i, 0) for i, l in enumerate(class_labels)]
+        [
+            self.thumbnail_layout.addWidget(label, i, 0)
+            for i, label in enumerate(class_labels)
+        ]
 
         for k in self.max_and_min_conf_thumbnail_displays.keys():
             thumbnail_lists = self.max_and_min_conf_thumbnail_displays[k]
