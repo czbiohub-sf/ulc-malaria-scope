@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import NamedTuple, List, Tuple, no_type_check
-
+from typing_extensions import TypeAlias
 import numpy as np
 import numpy.typing as npt
 
@@ -8,7 +8,7 @@ from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 
 DEFAULT_W, DEFAULT_H = IMG_RESIZED_DIMS
-DTYPE = np.float16
+DTYPE: TypeAlias = np.float16
 
 
 class SinglePredictedObject(NamedTuple):
