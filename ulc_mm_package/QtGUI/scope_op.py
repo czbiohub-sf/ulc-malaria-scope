@@ -112,7 +112,7 @@ class ScopeOp(QObject, NamedMachine):
     update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(float)
 
-    update_thumbnails = pyqtSignal()
+    update_thumbnails = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -697,17 +697,6 @@ class ScopeOp(QObject, NamedMachine):
 
         for result in prev_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
-            if self.count % int(ACQUISITION_PERIOD / THUMBNAIL_UPDATE_FPS) == 0:
-                self.update_thumbnails.emit(
-                    (
-                        self.mscope.predictions_handler.get_max_conf_thumbnails(
-                            self.mscope.data_storage.zw.array
-                        ),
-                        self.mscope.predictions_handler.get_min_conf_thumbnails(
-                            self.mscope.data_storage.zw.array
-                        ),
-                    )
-                )
 
             filtered_prediction = YOGO.filter_res(result.result)
 
@@ -736,6 +725,19 @@ class ScopeOp(QObject, NamedMachine):
                     ),
                 )
                 return
+
+        # Update thumbnails
+        if self.count % int(ACQUISITION_PERIOD / THUMBNAIL_UPDATE_FPS) == 0:
+            self.update_thumbnails.emit(
+                (
+                    self.mscope.predictions_handler.get_max_conf_thumbnails(
+                        self.mscope.data_storage.zw.array
+                    ),
+                    self.mscope.predictions_handler.get_min_conf_thumbnails(
+                        self.mscope.data_storage.zw.array
+                    ),
+                )
+            )
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
