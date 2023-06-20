@@ -61,7 +61,11 @@ from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
 )
-from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
+from ulc_mm_package.scope_constants import (
+    ACQUISITION_PERIOD,
+    LIVEVIEW_PERIOD,
+    THUMBNAIL_UPDATE_FPS,
+)
 
 # TODO populate info?
 
@@ -107,6 +111,8 @@ class ScopeOp(QObject, NamedMachine):
 
     update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(float)
+
+    update_thumbnails = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -691,6 +697,14 @@ class ScopeOp(QObject, NamedMachine):
 
         for result in prev_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
+            if self.count % int(ACQUISITION_PERIOD / THUMBNAIL_UPDATE_FPS) == 0:
+                self.update_thumbnails.emit(
+                    (
+                        self.mscope.predictions_handler.get_max_conf_thumbnails(),
+                        self.mscope.predictions_handler.get_min_conf_thumbnails(),
+                    )
+                )
+
             filtered_prediction = YOGO.filter_res(result.result)
 
             class_counts = YOGO.class_instance_count(filtered_prediction)
