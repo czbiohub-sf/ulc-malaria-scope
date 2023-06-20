@@ -5,7 +5,6 @@ Displays camera preview and conveys info to user during runs."""
 import sys
 from functools import partial
 from typing import List, NamedTuple, Dict, Tuple
-from typing_extensions import TypeAlias
 from time import strftime, gmtime
 
 from qimage2ndarray import gray2qimage
@@ -399,7 +398,7 @@ class LiveviewGUI(QMainWindow):
 
         # Populate thumbnail tab
         class_labels = [QLabel(c) for c in CLASSES_TO_DISPLAY]
-        [l.setAlignment(Qt.AlignVCenter) for l in class_labels]
+        [label.setAlignment(Qt.AlignVCenter) for label in class_labels]
 
         self.max_and_min_conf_thumbnail_displays: Dict[str, List[ThumbnailDisplay]] = {
             "max_conf": [],
