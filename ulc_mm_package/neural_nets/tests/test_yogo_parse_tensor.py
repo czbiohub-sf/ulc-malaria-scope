@@ -5,12 +5,11 @@ import numpy as np
 
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, AsyncInferenceResult
 from ulc_mm_package.neural_nets.utils import (
-    convert_float_to_uint16,
     parse_prediction_tensor,
     get_specific_class_from_parsed_tensor,
     get_vals_greater_than_conf_thresh,
     get_vals_less_than_conf_thresh,
-    convert_uint16_to_float,
+    DTYPE,
 )
 
 MOCK_YOGO_IMG_H = 772
@@ -64,7 +63,7 @@ class TestYOGOTensorParsing(unittest.TestCase):
 
         self.assertEqual(d1, 7)
         self.assertGreater(d2, 1)
-        self.assertEqual(parsed_predictions.dtype, np.uint16)
+        self.assertEqual(parsed_predictions.dtype, DTYPE)
 
     def test_get_specific_class(self):
         res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
@@ -77,7 +76,7 @@ class TestYOGOTensorParsing(unittest.TestCase):
         res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
         parsed_predictions = parse_prediction_tensor(res.result, self.img_h, self.img_w)
         healthy_cells = get_specific_class_from_parsed_tensor(parsed_predictions, 0)
-        above_thresh = get_vals_greater_than_conf_thresh(healthy_cells, 0.9 * 2**16)
+        above_thresh = get_vals_greater_than_conf_thresh(healthy_cells, 0.9)
 
         self.assertEqual(above_thresh.shape[0], healthy_cells.shape[0])
         self.assertLess(above_thresh.shape[1], healthy_cells.shape[1])
@@ -86,22 +85,10 @@ class TestYOGOTensorParsing(unittest.TestCase):
         res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
         parsed_predictions = parse_prediction_tensor(res.result, self.img_h, self.img_w)
         healthy_cells = get_specific_class_from_parsed_tensor(parsed_predictions, 0)
-        below_thresh = get_vals_less_than_conf_thresh(healthy_cells, 0.9 * 2**16)
+        below_thresh = get_vals_less_than_conf_thresh(healthy_cells, 0.9)
 
         self.assertEqual(below_thresh.shape[0], healthy_cells.shape[0])
         self.assertLess(below_thresh.shape[1], healthy_cells.shape[1])
-
-    def test_uint16_to_float(self):
-        test_num = 53483
-        expected_float = 0.8160858154296875
-        val = convert_uint16_to_float(test_num)
-        self.assertEqual(val, expected_float)
-
-    def test_float_to_uint16(self):
-        test_num = 0.8123
-        expected_uint16 = 53235
-        val = convert_float_to_uint16(test_num)
-        self.assertEqual(val, expected_uint16)
 
 
 if __name__ == "__main__":

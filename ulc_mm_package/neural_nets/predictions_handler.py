@@ -169,7 +169,7 @@ class PredictionsHandler:
                 thumbnails[c].append(
                     Thumbnail(
                         img_crop=img_crop,
-                        confidence=nn_utils.convert_uint16_to_float(obj.parsed[6]),
+                        confidence=obj.parsed[6],
                     )
                 )
 
