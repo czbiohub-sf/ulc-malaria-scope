@@ -485,6 +485,11 @@ class LiveviewGUI(QMainWindow):
                     for j, s in enumerate(sbars)
                     if j != i
                 ]
+            [
+                x.list_widget.horizontalScrollBar().hide()
+                for i, x in enumerate(thumbnail_lists)
+                if (i != len(thumbnail_lists) - 1)
+            ]
 
         self.thumbnail_layout.addWidget(self.toggle_confs, len(CLASSES_TO_DISPLAY), 1)
 
