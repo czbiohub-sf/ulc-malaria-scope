@@ -114,6 +114,8 @@ class ScopeOp(QObject, NamedMachine):
 
     update_thumbnails = pyqtSignal()
 
+    update_thumbnails = pyqtSignal()
+
     def __init__(self):
         super().__init__()
 
