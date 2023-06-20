@@ -140,6 +140,7 @@ def scale_bbox_vals(
     parsed_prediction_tensor[3, :] = np.rint(parsed_prediction_tensor[3, :] * scale_h)
 
 
+@staticmethod
 def convert_float_to_uint16(val: float) -> np.uint16:
     """Convert a float between 0 - 1 to an uint16 (between 0 - 65,535).
 
@@ -155,6 +156,7 @@ def convert_float_to_uint16(val: float) -> np.uint16:
     return np.rint(val * 2**16).astype(np.uint16)
 
 
+@staticmethod
 def convert_uint16_to_float(val: np.uint16) -> float:
     """Convert a uint16 (0 - 65535) to a float between 0-1
 
