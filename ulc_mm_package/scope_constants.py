@@ -174,7 +174,7 @@ if VERBOSE:
     PER_IMAGE_METADATA_KEYS.extend(PER_IMAGE_TIMING_KEYS)
 
 # ================ Thumbnail display ================ #
-MAX_THUMBNAILS = 20
+MAX_THUMBNAILS = 10
 
 # ================ Environment variables ================ #
 NGROK_AUTH_TOKEN_ENV_VAR = "NGROK_AUTH_TOKEN"
