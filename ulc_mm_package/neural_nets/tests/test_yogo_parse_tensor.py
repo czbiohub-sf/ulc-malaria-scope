@@ -1,4 +1,3 @@
-import sys
 import unittest
 import time
 
@@ -21,7 +20,6 @@ from ulc_mm_package.neural_nets.utils import (
 
 from ulc_mm_package.neural_nets.predictions_handler import (
     NUM_CLASSES,
-    PredictionsHandler,
 )
 
 MOCK_YOGO_IMG_H = 772
