@@ -17,7 +17,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, CAMERA_SELECTION.IMG_HEIGHT
 RESIZED_W, RESIZED_H = IMG_RESIZED_DIMS
 SCALE_H, SCALE_W = IMG_W / RESIZED_W, IMG_H / RESIZED_H
-UINT16_MAX = 65535
 
 
 class Thumbnail(NamedTuple):
@@ -50,7 +49,7 @@ class PredictionsHandler:
         self.min_confs: Dict[int, List[nn_utils.SinglePredictedObject]] = {
             x: [] for x in class_ids
         }
-        self.curr_max_of_min_confs_by_class = {x: UINT16_MAX for x in class_ids}
+        self.curr_max_of_min_confs_by_class = {x: 1.0 for x in class_ids}
 
     def add_yogo_pred(self, res: AsyncInferenceResult) -> None:
         """Store the parsed YOGO prediction tensor and update the min/max confidence objects for each class.
@@ -108,7 +107,7 @@ class PredictionsHandler:
 
                 # This is for the very first iteration so that we don't get
                 # duplicate entries in both the max conf and min conf lists
-                if self.curr_max_of_min_confs_by_class[x] == UINT16_MAX:
+                if self.curr_max_of_min_confs_by_class[x] == 1.0:
                     self.curr_max_of_min_confs_by_class[x] = lowest_max_conf
 
             # Repeat the above for minimum confidences
