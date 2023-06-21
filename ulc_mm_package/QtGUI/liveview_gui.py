@@ -437,6 +437,7 @@ class LiveviewGUI(QMainWindow):
                     w.setLayout(layout)
 
                     v = QListWidgetItem()
+                    v.setFlags(Qt.NoItemFlags)
                     qs = QSize()
                     qs.setHeight(MIN_THUMBNAIL_DISPLAY_SIZE)
                     qs.setWidth(MIN_THUMBNAIL_DISPLAY_SIZE)
