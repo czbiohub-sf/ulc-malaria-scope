@@ -8,7 +8,7 @@ from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 
 DEFAULT_W, DEFAULT_H = IMG_RESIZED_DIMS
-DTYPE: TypeAlias = np.float16
+DTYPE: TypeAlias = np.float32
 
 
 class SinglePredictedObject(NamedTuple):
@@ -268,3 +268,23 @@ def get_individual_prediction_objs_from_parsed_tensor(
         )
         for i in col_idxs
     ]
+
+
+def get_all_confs_for_specific_class(
+    class_id: int, merged_tensor: np.ndarray
+) -> npt.NDArray:
+    """
+    Get all the confidence values associated with a particular class id.
+
+    Parameters
+    ----------
+    merged_tensor: np.ndarray (7 x N), N total predicted objects
+        The merged tensor outputted from `PredictionsHandler().get_merged_pred_tensor()`
+
+    Returns
+    -------
+    np.ndarray
+        1 x N where N is however many instances of that class were predicted
+    """
+
+    return merged_tensor[6, merged_tensor[5, :] == class_id]
