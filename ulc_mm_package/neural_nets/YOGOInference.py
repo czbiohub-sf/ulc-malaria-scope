@@ -20,13 +20,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 ClassCountResult: TypeAlias = np.ndarray
 
 
-def extract_confidences(filtered_res: npt.NDArray) -> npt.NDArray:
-    """
-    Returns confidence values only (ie. isolates confidence from bounding box info)
-    """
-    return filtered_res[0, 5:, :]
-
-
 class YOGO(NCSModel):
     """
     YOGO Model

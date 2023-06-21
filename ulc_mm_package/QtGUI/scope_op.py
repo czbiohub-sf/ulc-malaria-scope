@@ -52,7 +52,6 @@ from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import (
     YOGO,
     ClassCountResult,
-    extract_confidences,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
