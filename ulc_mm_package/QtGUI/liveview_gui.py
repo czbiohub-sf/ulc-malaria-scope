@@ -38,20 +38,20 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_IDX_MAP,
     AF_THRESHOLD,
 )
-from ulc_mm_package.scope_constants import MAX_FRAMES, MAX_THUMBNAILS
+from ulc_mm_package.scope_constants import MAX_FRAMES
 from ulc_mm_package.QtGUI.gui_constants import (
     STATUS,
     ICON_PATH,
     BLANK_INFOPANEL_VAL,
     TOOLBAR_OFFSET,
+    MAX_THUMBNAILS,
+    CLASSES_TO_DISPLAY,
+    CLASS_IDS,
+    MIN_THUMBNAIL_DISPLAY_SIZE,
+    THUMBNAIL_SPACING,
 )
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
 from ulc_mm_package.neural_nets.predictions_handler import Thumbnail
-
-CLASSES_TO_DISPLAY = ["Healthy", "Ring", "Troph", "Schizont"]
-CLASS_IDS = [0, 1, 2, 3]
-MIN_THUMBNAIL_DISPLAY_SIZE = 55
-THUMBNAIL_SPACING = 5
 
 
 class ThumbnailDisplay(NamedTuple):
@@ -471,9 +471,6 @@ class LiveviewGUI(QMainWindow):
                 if k == "min_conf":
                     x.list_widget.setVisible(False)
                 self.thumbnail_layout.addWidget(x.list_widget, i, 1)
-                # arr = np.random.randint(0, 255, (55, 155), dtype=np.uint8)
-                # for img_label in x.list_widget_img_labels:
-                #     img_label.setPixmap(QPixmap.fromImage(gray2qimage(arr)))
 
             # Synchronize scrollbars
             sbars = [x.list_widget.horizontalScrollBar() for x in thumbnail_lists]
@@ -486,11 +483,7 @@ class LiveviewGUI(QMainWindow):
                     for j, s in enumerate(sbars)
                     if j != i
                 ]
-            [
-                x.list_widget.horizontalScrollBar().hide()
-                for i, x in enumerate(thumbnail_lists)
-                if (i != len(thumbnail_lists) - 1)
-            ]
+            [x.list_widget.horizontalScrollBar().hide() for x in thumbnail_lists[1:]]
 
         self.thumbnail_layout.addWidget(self.toggle_confs, len(CLASSES_TO_DISPLAY), 1)
 

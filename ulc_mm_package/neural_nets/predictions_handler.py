@@ -7,7 +7,8 @@ import zarr
 
 import ulc_mm_package.neural_nets.utils as nn_utils
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.scope_constants import CAMERA_SELECTION, MAX_THUMBNAILS
+from ulc_mm_package.scope_constants import CAMERA_SELECTION
+from ulc_mm_package.QtGUI.gui_constants import MAX_THUMBNAILS
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     YOGO_CLASS_LIST,

@@ -29,6 +29,13 @@ TOOLBAR_OFFSET = 80
 # ================ Infopanel values ================ #
 BLANK_INFOPANEL_VAL = "---"
 
+# ================ Thumbnail preview ================ #
+MAX_THUMBNAILS = 10
+CLASSES_TO_DISPLAY = ["Healthy", "Ring", "Troph", "Schizont"]
+CLASS_IDS = [0, 1, 2, 3]
+MIN_THUMBNAIL_DISPLAY_SIZE = 55
+THUMBNAIL_SPACING = 5
+
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = ["Tororo, Uganda", "Biohub SF", "DeRisi Lab"]
