@@ -1,5 +1,5 @@
 import heapq as hq
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -7,13 +7,14 @@ import zarr
 
 import ulc_mm_package.neural_nets.utils as nn_utils
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.scope_constants import CAMERA_SELECTION, MAX_FRAMES, MAX_THUMBNAILS
+from ulc_mm_package.scope_constants import CAMERA_SELECTION, MAX_THUMBNAILS
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
 )
 
+NUM_CLASSES = len(YOGO_CLASS_LIST)
 IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, CAMERA_SELECTION.IMG_HEIGHT
 RESIZED_W, RESIZED_H = IMG_RESIZED_DIMS
 SCALE_H, SCALE_W = IMG_W / RESIZED_W, IMG_H / RESIZED_H
@@ -36,7 +37,12 @@ class PredictionsHandler:
     """
 
     def __init__(self):
-        self.pred_tensors = [None] * MAX_FRAMES
+        # 8+NUM_CLASSES x N, 0 - img id, 1-4 bbox, 5 objectness, 6 class label, 7 max conf, [8-M] - confs for each class
+        self.pred_tensors = np.zeros((8 + NUM_CLASSES, 1_000_000)).astype(
+            nn_utils.DTYPE
+        )
+
+        self.new_pred_pointer: int = 0
 
         class_ids = [YOGO_CLASS_IDX_MAP[x] for x in YOGO_CLASS_LIST]
         self.class_ids = class_ids
@@ -51,6 +57,43 @@ class PredictionsHandler:
         }
         self.curr_max_of_min_confs_by_class = {x: 1.0 for x in class_ids}
 
+    def _add_pred_tensor_to_store(
+        self, img_id: int, prediction_tensor: npt.NDArray
+    ) -> Tuple[int, int]:
+        """Append the image id to the given prediction tensor and add it to the storage.
+
+        Parameters
+        ----------
+        img_id: int
+            Img id to which these predictions belong
+        prediction_tensor: np.ndarray (7 x N)
+
+        Returns
+        -------
+        Tuple[int, int]
+            The start and end column positions of the added array in the tensor store
+        """
+
+        # Parse tensor to (8+NUM_CLASSES) x N format (N predictions)
+        parsed_tensor = nn_utils.parse_prediction_tensor(
+            img_id, prediction_tensor, img_h=RESIZED_H, img_w=RESIZED_W
+        )
+
+        # Scale the bounding box locations so they can be used with
+        # the original sized images (note this function scales the array in-place)
+        nn_utils.scale_bbox_vals(parsed_tensor, SCALE_H, SCALE_W)
+
+        # Store the parsed tensor
+        num_preds = parsed_tensor.shape[1]
+        self.pred_tensors[
+            :, self.new_pred_pointer : self.new_pred_pointer + num_preds
+        ] = parsed_tensor
+
+        start = self.new_pred_pointer
+        self.new_pred_pointer += num_preds
+
+        return (start, self.new_pred_pointer)
+
     def add_yogo_pred(self, res: AsyncInferenceResult) -> None:
         """Store the parsed YOGO prediction tensor and update the min/max confidence objects for each class.
 
@@ -61,16 +104,8 @@ class PredictionsHandler:
 
         img_id = int(res.id)
         pred_tensor = res.result
-
-        # Parse tensor to 7 x N format (N predictions)
-        parsed_tensor = nn_utils.parse_prediction_tensor(
-            pred_tensor, img_h=RESIZED_H, img_w=RESIZED_W
-        )
-
-        # Scale the bounding box locations so they can be used with
-        # the original sized images
-        nn_utils.scale_bbox_vals(parsed_tensor, SCALE_H, SCALE_W)
-        self.pred_tensors[img_id] = parsed_tensor
+        start, end = self._add_pred_tensor_to_store(img_id, pred_tensor)
+        parsed_tensor = self.pred_tensors[:, start:end]
 
         for x in self.class_ids:
             max_conf_col_ids = (
@@ -86,7 +121,7 @@ class PredictionsHandler:
                     *list(
                         sorted(
                             zip(
-                                list(parsed_tensor[6, max_conf_col_ids][0]),
+                                list(parsed_tensor[7, max_conf_col_ids][0]),
                                 list(max_conf_col_ids[0]),
                             ),
                             key=lambda y: y[0],
@@ -121,7 +156,7 @@ class PredictionsHandler:
                     *list(
                         sorted(
                             zip(
-                                list(parsed_tensor[6, min_conf_col_ids][0]),
+                                list(parsed_tensor[7, min_conf_col_ids][0]),
                                 list(min_conf_col_ids[0]),
                             ),
                             key=lambda y: y[0],
@@ -156,20 +191,20 @@ class PredictionsHandler:
 
         Returns
         -------
-        Dict[int, List[npt.NDArray]]
+        Dict[int, List[Thumbnail]]
             int (class_id) -> List of thumbnails (numpy arrays)
         """
 
-        thumbnails: Dict[int, List[npt.NDArray]] = {x: [] for x in self.class_ids}
+        thumbnails: Dict[int, List[Thumbnail]] = {x: [] for x in self.class_ids}
         for c in self.class_ids:
             for obj in confs[c]:
-                img_id = obj.img_id
-                tlx, tly, brx, bry = obj.parsed[:4].astype(np.uint16)
+                img_id = obj.parsed[0].astype(np.uint32)
+                tlx, tly, brx, bry = obj.parsed[1:5].astype(np.uint32)
                 img_crop = zarr_store[:, :, img_id][tly:bry, tlx:brx]
                 thumbnails[c].append(
                     Thumbnail(
                         img_crop=img_crop,
-                        confidence=obj.parsed[6],
+                        confidence=obj.parsed[7],
                     )
                 )
 
@@ -211,5 +246,5 @@ class PredictionsHandler:
 
         return self._get_thumbnails(zarr_store, self.min_confs)
 
-    def get_prediction_tensors(self) -> List[npt.NDArray]:
-        return self.pred_tensors
+    def get_prediction_tensors(self) -> npt.NDArray:
+        return self.pred_tensors[:, : self.new_pred_pointer]

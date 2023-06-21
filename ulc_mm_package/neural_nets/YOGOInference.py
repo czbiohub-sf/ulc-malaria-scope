@@ -83,21 +83,6 @@ class YOGO(NCSModel):
         )
         return class_counts
 
-    @staticmethod
-    def sort_confidences(filtered_res: npt.NDArray) -> List[npt.NDArray]:
-        """
-        Return compiled confidences for each class
-        """
-        bs, pred_dim, num_predicted = filtered_res.shape
-        num_classes = pred_dim - 5
-        class_confidences = extract_confidences(filtered_res)
-        class_preds = np.argmax(class_confidences, axis=0)
-
-        return [
-            class_confidences[class_idx, class_preds == class_idx]
-            for class_idx in range(num_classes)
-        ]
-
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)
 

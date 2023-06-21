@@ -1,21 +1,35 @@
+import sys
 import unittest
 import time
 
 import numpy as np
 
-from ulc_mm_package.neural_nets.YOGOInference import YOGO, AsyncInferenceResult
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.utils import (
+    get_all_argmax_class_confidences_for_all_classes,
+    get_all_argmax_confs_for_specific_class,
+    get_all_confs_for_all_classes,
+    get_all_confs_for_specific_class,
+    get_class_counts,
     parse_prediction_tensor,
     get_specific_class_from_parsed_tensor,
     get_vals_greater_than_conf_thresh,
     get_vals_less_than_conf_thresh,
+    get_individual_prediction_objs_from_parsed_tensor,
     DTYPE,
+)
+
+from ulc_mm_package.neural_nets.predictions_handler import (
+    NUM_CLASSES,
+    PredictionsHandler,
 )
 
 MOCK_YOGO_IMG_H = 772
 MOCK_YOGO_IMG_W = 1032
 MOCK_YOGO_OUTPUT = "mock_yogo_output.npy"
-NUM_CLASSES = 7  # variable, older models predicted 5 classes
+MOCK_OUTPUT_NUM_CLASSES = (
+    7  # the mock output I used was from a newer model which predicts 7 classes
+)
 
 
 class TestYOGOTensorParsing(unittest.TestCase):
@@ -33,6 +47,9 @@ class TestYOGOTensorParsing(unittest.TestCase):
         )  # 1 x (5+NUM_CLASSES) x 12,513
 
     def setUp(self):
+        self.parsed_predictions = parse_prediction_tensor(
+            self.img_id, self.mock_yogo_output, self.img_h, self.img_w
+        )
         self.start_time = time.time()
 
     def tearDown(self):
@@ -47,48 +64,90 @@ class TestYOGOTensorParsing(unittest.TestCase):
         ) = self.mock_yogo_output.shape
 
         self.assertEqual(d1, 1)
-        self.assertEqual(d2, 5 + NUM_CLASSES)
+        self.assertEqual(d2, 5 + MOCK_OUTPUT_NUM_CLASSES)
 
     def test_filtered_tensor_shape(self):
         d1, d2 = YOGO.filter_res(self.mock_yogo_output).squeeze().shape
 
-        self.assertEqual(d1, 5 + NUM_CLASSES)
+        self.assertEqual(d1, 5 + MOCK_OUTPUT_NUM_CLASSES)
         self.assertGreater(d2, 1)
 
     def test_parse_pred_tensor(self):
-        parsed_predictions: np.ndarray = parse_prediction_tensor(
-            self.mock_yogo_output, self.img_h, self.img_w
-        )
-        d1, d2 = parsed_predictions.shape
+        d1, d2 = self.parsed_predictions.shape
 
-        self.assertEqual(d1, 7)
+        self.assertEqual(d1, 8 + MOCK_OUTPUT_NUM_CLASSES)
         self.assertGreater(d2, 1)
-        self.assertEqual(parsed_predictions.dtype, DTYPE)
+        self.assertEqual(self.parsed_predictions.dtype, DTYPE)
 
     def test_get_specific_class(self):
-        res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
-        parsed_predictions = parse_prediction_tensor(res.result, self.img_h, self.img_w)
-        healthy_cells = get_specific_class_from_parsed_tensor(parsed_predictions, 0)
+        healthy_cells = get_specific_class_from_parsed_tensor(
+            self.parsed_predictions, 0
+        )
 
         self.assertGreater(healthy_cells.shape[1], 0)
 
     def test_get_vals_greater_than_conf_thresh(self):
-        res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
-        parsed_predictions = parse_prediction_tensor(res.result, self.img_h, self.img_w)
-        healthy_cells = get_specific_class_from_parsed_tensor(parsed_predictions, 0)
+        healthy_cells = get_specific_class_from_parsed_tensor(
+            self.parsed_predictions, 0
+        )
         above_thresh = get_vals_greater_than_conf_thresh(healthy_cells, 0.9)
 
         self.assertEqual(above_thresh.shape[0], healthy_cells.shape[0])
         self.assertLess(above_thresh.shape[1], healthy_cells.shape[1])
 
     def test_get_vals_less_than_conf_thresh(self):
-        res = AsyncInferenceResult(self.img_id, self.mock_yogo_output)
-        parsed_predictions = parse_prediction_tensor(res.result, self.img_h, self.img_w)
-        healthy_cells = get_specific_class_from_parsed_tensor(parsed_predictions, 0)
+        healthy_cells = get_specific_class_from_parsed_tensor(
+            self.parsed_predictions, 0
+        )
         below_thresh = get_vals_less_than_conf_thresh(healthy_cells, 0.9)
 
         self.assertEqual(below_thresh.shape[0], healthy_cells.shape[0])
         self.assertLess(below_thresh.shape[1], healthy_cells.shape[1])
+
+    def test_get_individual_prediction_objs(self):
+        single_objs = get_individual_prediction_objs_from_parsed_tensor(
+            self.parsed_predictions, ([0, 1, 3]), flip_conf_sign=False
+        )
+
+        self.assertEqual(len(single_objs), 3)
+        self.assertEqual(single_objs[0].parsed.dtype, DTYPE)
+        self.assertEqual(single_objs[0].parsed.shape[0], 8 + MOCK_OUTPUT_NUM_CLASSES)
+
+    def test_get_all_argmax_confs_for_specific_class(self):
+        class_id = 0
+        healthy_confs = get_all_argmax_confs_for_specific_class(
+            class_id, self.parsed_predictions
+        )
+
+        self.assertGreater(healthy_confs.shape[0], 0)
+        self.assertGreater(np.mean(healthy_confs), 0.9)
+
+    def get_all_argmax_class_confidences_for_all_classes(self):
+        all_confs = get_all_argmax_class_confidences_for_all_classes(
+            self.parsed_predictions
+        )
+
+        self.assertEqual(len(all_confs), NUM_CLASSES)
+
+    def test_get_all_confs_for_specific_class(self):
+        class_id = 0
+        all_healthy_confs = get_all_confs_for_specific_class(
+            class_id, self.parsed_predictions
+        )
+
+        self.assertGreater(all_healthy_confs.shape[0], 0)
+        self.assertGreater(np.mean(all_healthy_confs), 0.9)
+
+    def test_get_all_confs_for_all_classes(self):
+        all_confs = get_all_confs_for_all_classes(self.parsed_predictions)
+
+        self.assertEqual(len(all_confs), NUM_CLASSES)
+
+    def test_get_class_counts(self):
+        class_counts = get_class_counts(self.parsed_predictions)
+
+        self.assertEqual(len(class_counts), NUM_CLASSES)
+        self.assertGreater(class_counts[0], 0)
 
 
 if __name__ == "__main__":

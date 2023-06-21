@@ -2,7 +2,6 @@ import io
 import csv
 import shutil
 import logging
-import pickle
 from pathlib import Path
 from time import perf_counter
 from datetime import datetime
@@ -238,7 +237,7 @@ class DataStorage:
         storage_remaining_gb = cls._get_remaining_storage_size_GB(ssd_dir)
         return storage_remaining_gb > MIN_GB_REQUIRED
 
-    def save_parsed_prediction_tensors(self, pred_tensors: List[npt.NDArray]) -> None:
+    def save_parsed_prediction_tensors(self, pred_tensors: npt.NDArray) -> None:
         """Save the predictions list (List[np.ndarray]) containing
         the parsed prediction tensors for each image.
 
@@ -256,8 +255,7 @@ class DataStorage:
             filename = (
                 self.main_dir / self.experiment_folder / "parsed_prediction_tensors.pkl"
             )
-            with open(filename, "wb") as f:
-                pickle.dump(pred_tensors, f)
+            np.save(filename, pred_tensors.astype(np.float16))
         except Exception as e:
             self.logger.error(f"Error saving prediction tensors. {e}")
 
@@ -323,29 +321,6 @@ class DataStorage:
             return experiment_path
         except Exception as e:
             self.logger.error(f"Could not get experiment path: {e}")
-            raise e
-
-    def get_YOGO_filename(self) -> Path:
-        """
-        Return filename for saving YOGO tensor
-        """
-        try:
-            filename = self.get_experiment_path() / f"{self.time_str}_YOGO_data.csv"
-            return filename
-        except Exception as e:
-            self.logger.error(f"Could not get YOGO filename: {e}")
-            raise e
-
-    def save_YOGO_data(self, data: npt.NDArray) -> None:
-        """
-        Save YOGO tensor
-        """
-        try:
-            YOGO_filename = self.get_YOGO_filename()
-            np.savetxt(YOGO_filename, data, delimiter=",")
-            self.logger.info(f"Saved YOGO tensors to {YOGO_filename}")
-        except Exception as e:
-            self.logger.error(f"Could not save YOGO data: {e}")
             raise e
 
     def get_summary_filename(self) -> Path:

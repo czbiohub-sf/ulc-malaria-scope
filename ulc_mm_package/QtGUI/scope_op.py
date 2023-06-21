@@ -60,6 +60,9 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_IDX_MAP,
     AF_BATCH_SIZE,
 )
+
+import ulc_mm_package.neural_nets.utils as nn_utils
+
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
@@ -225,9 +228,6 @@ class ScopeOp(QObject, NamedMachine):
         self.target_flowrate = None
 
         self.frame_count = 0
-        self.pred_count = 0
-        # TODO do we have a desired dtype
-        self.preds = np.zeros((1, 5 + len(YOGO_CLASS_LIST), int(1e6)))
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.start_time = None
@@ -457,12 +457,17 @@ class ScopeOp(QObject, NamedMachine):
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
-        if self.pred_count != 0:
-            nonzero_preds = self.preds[:, :, : self.pred_count]
+        pred_counter = self.mscope.predictions_handler.new_pred_pointer
+        if pred_counter != 0:
+            nonzero_preds = (
+                self.mscope.predictions_handler.get_prediction_tensors()
+            )  # (8+NUM_CLASSES) x N
 
-            class_counts = YOGO.class_instance_count(nonzero_preds)
-            sorted_confidences = YOGO.sort_confidences(nonzero_preds)
-            unsorted_confidences = extract_confidences(nonzero_preds)
+            class_counts = nn_utils.get_class_counts(nonzero_preds)
+            sorted_confidences = (
+                nn_utils.get_all_argmax_class_confidences_for_all_classes(nonzero_preds)
+            )
+            unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
 
             stats_string = get_all_stats_str(
                 class_counts, unsorted_confidences, sorted_confidences
@@ -717,14 +722,7 @@ class ScopeOp(QObject, NamedMachine):
 
         for result in prev_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
-
             filtered_prediction = YOGO.filter_res(result.result)
-            num_preds = np.shape(filtered_prediction)[2]
-
-            self.preds[
-                :, :, self.pred_count : self.pred_count + num_preds
-            ] = filtered_prediction
-            self.pred_count += num_preds
 
             class_counts = YOGO.class_instance_count(filtered_prediction)
             # very rough interpolation: ~30 FPS * period between YOGO calls * counts
