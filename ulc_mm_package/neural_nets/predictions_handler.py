@@ -134,7 +134,7 @@ class PredictionsHandler:
                     if len(self.max_confs[x]) > MAX_THUMBNAILS
                     else hq.heappush(self.max_confs[x], i)  # type: ignore
                     for i in nn_utils.get_individual_prediction_objs_from_parsed_tensor(
-                        img_id, parsed_tensor, max_conf_col_ids
+                        parsed_tensor, max_conf_col_ids
                     )
                 ]
                 lowest_max_conf = self.max_confs[x][0].conf
@@ -169,7 +169,7 @@ class PredictionsHandler:
                     if len(self.max_confs[x]) > MAX_THUMBNAILS
                     else hq.heappush(self.min_confs[x], i)  # type: ignore
                     for i in nn_utils.get_individual_prediction_objs_from_parsed_tensor(
-                        img_id, parsed_tensor, min_conf_col_ids, flip_conf_sign=True
+                        parsed_tensor, min_conf_col_ids, flip_conf_sign=True
                     )
                 ]
                 highest_min_conf = self.min_confs[x][0].conf
