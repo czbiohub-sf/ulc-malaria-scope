@@ -19,6 +19,7 @@ NUM_CLASSES = len(YOGO_CLASS_LIST)
 IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, CAMERA_SELECTION.IMG_HEIGHT
 RESIZED_W, RESIZED_H = IMG_RESIZED_DIMS
 SCALE_H, SCALE_W = IMG_W / RESIZED_W, IMG_H / RESIZED_H
+MAX_POSSIBLE_PREDICTIONS = 1_500_000
 
 
 class Thumbnail(NamedTuple):
@@ -39,9 +40,9 @@ class PredictionsHandler:
 
     def __init__(self):
         # 8+NUM_CLASSES x N, 0 - img id, 1-4 bbox, 5 objectness, 6 class label, 7 max conf, [8-M] - confs for each class
-        self.pred_tensors = np.zeros((8 + NUM_CLASSES, 1_000_000)).astype(
-            nn_utils.DTYPE
-        )
+        self.pred_tensors = np.zeros(
+            (8 + NUM_CLASSES, MAX_POSSIBLE_PREDICTIONS)
+        ).astype(nn_utils.DTYPE)
 
         self.new_pred_pointer: int = 0
 
