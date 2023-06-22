@@ -1,6 +1,7 @@
 import enum
 
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
+from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_MAP
 
 
 # ================ Status colors ================ #
@@ -31,8 +32,8 @@ BLANK_INFOPANEL_VAL = "---"
 
 # ================ Thumbnail preview ================ #
 MAX_THUMBNAILS = 10
-CLASSES_TO_DISPLAY = ["Healthy", "Ring", "Troph", "Schizont"]
-CLASS_IDS = [0, 1, 2, 3]
+CLASSES_TO_DISPLAY = ["healthy", "ring", "troph", "schizont"]
+CLASS_IDS = [YOGO_CLASS_IDX_MAP[class_name] for class_name in CLASSES_TO_DISPLAY]
 MIN_THUMBNAIL_DISPLAY_SIZE = 55
 THUMBNAIL_SPACING = 5
 

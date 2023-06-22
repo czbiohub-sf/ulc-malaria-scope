@@ -397,8 +397,8 @@ class LiveviewGUI(QMainWindow):
         self.thumbnail_widget.setLayout(self.thumbnail_layout)
 
         # Populate thumbnail tab
-        class_labels = [QLabel(c) for c in CLASSES_TO_DISPLAY]
-        [label.setAlignment(Qt.AlignVCenter) for label in class_labels]
+        class_labels = [QLabel(c.capitalize()) for c in CLASSES_TO_DISPLAY]
+        [label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft) for label in class_labels]
 
         self.max_and_min_conf_thumbnail_displays: Dict[str, List[ThumbnailDisplay]] = {
             "max_conf": [],
@@ -456,7 +456,7 @@ class LiveviewGUI(QMainWindow):
                 )
                 self.max_and_min_conf_thumbnail_displays[k] = thumbnail_lists
 
-        self.refresh_thumbnails = QPushButton("Click to refresh thumbnails")
+        self.refresh_thumbnails = QPushButton("Click to refresh\nthumbnails")
         self.toggle_confs = QPushButton("Click to display min confidence thumbnails")
         self.toggle_confs.setCheckable(True)
         self.toggle_confs.clicked.connect(self.toggle_thumbnails)
