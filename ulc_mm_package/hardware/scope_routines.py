@@ -486,7 +486,7 @@ class Routines:
                 >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
             ):
                 class_counts = yield prev_measurements[idx]
-                prev_measurements[idx] = class_counts[idx]
+                prev_measurements[idx] = class_counts[0]
 
                 idx = (idx + 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
 
