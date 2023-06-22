@@ -119,7 +119,7 @@ class ScopeOp(QObject, NamedMachine):
     update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(float)
 
-    update_thumbnails = pyqtSignal(object)
+    update_thumbnails_signal = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -268,7 +268,7 @@ class ScopeOp(QObject, NamedMachine):
     def update_thumbnails(self):
         # Update thumbnails
         if self.state == "experiment":
-            self.update_thumbnails.emit(
+            self.update_thumbnails_signal.emit(
                 (
                     self.mscope.predictions_handler.get_max_conf_thumbnails(
                         self.mscope.data_storage.zw.array
