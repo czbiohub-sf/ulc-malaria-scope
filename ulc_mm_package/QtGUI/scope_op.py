@@ -734,9 +734,11 @@ class ScopeOp(QObject, NamedMachine):
 
         for result in prev_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
-            filtered_prediction = YOGO.filter_res(result.result)
 
-            class_counts = YOGO.class_instance_count(filtered_prediction)
+            class_counts = nn_utils.get_class_counts(
+                self.mscope.predictions_handler.parsed_tensor
+            )
+
             # very rough interpolation: ~30 FPS * period between YOGO calls * counts
             class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
                 class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
@@ -749,7 +751,7 @@ class ScopeOp(QObject, NamedMachine):
             )
 
             try:
-                self.density_routine.send(filtered_prediction)
+                self.density_routine.send(class_counts)
             except LowDensity:
                 self.logger.warning("Cell density is too low.")
                 self.reload_pause.emit(
