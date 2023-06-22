@@ -238,11 +238,13 @@ class DataStorage:
         return storage_remaining_gb > MIN_GB_REQUIRED
 
     def save_parsed_prediction_tensors(self, pred_tensors: npt.NDArray) -> None:
-        """Save the predictions list (List[np.ndarray]) containing
+        """Save the predictions tensor (np.ndarray) containing
         the parsed prediction tensors for each image.
 
-        The index of the np array in the list corresponds to the image to which it belongs.
-        For example, pred_tensors[0] are the predictions for the first image, pred_tensors[1234] for the 1233rd image, etc.
+        The shape of this tensor is (8+NUM_CLASSES) x TOTAL_NUM_PREDICTIONS, for example if there
+        are 4 classes that YOGO predicts, this array would be (12 x N).
+
+        For details on what the indices correspond to, see `parse_prediction_tensor` in `neural_nets/utils.py`
 
         Parameters
         ----------
@@ -253,7 +255,9 @@ class DataStorage:
         assert self.main_dir is not None, "DataStorage has not been initialized"
         try:
             filename = (
-                self.main_dir / self.experiment_folder / "parsed_prediction_tensors"
+                self.main_dir
+                / self.experiment_folder
+                / f"{self.time_str}_parsed_prediction_tensors"
             )
             np.save(filename, pred_tensors.astype(np.float16))
         except Exception as e:
