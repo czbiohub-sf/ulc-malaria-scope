@@ -396,7 +396,7 @@ def get_class_counts(prediction_tensor: npt.NDArray) -> List[int]:
     return [id_and_counts.get(i, 0) for i in range(NUM_CLASSES)]
 
 
-def nms(parsed_prediction_tensor: npt.NDArray, thresh: float):
+def nms(parsed_prediction_tensor: npt.NDArray, thresh: float) -> List[int]:
     """
     Fast R-CNN
     Copyright (c) 2015 Microsoft
