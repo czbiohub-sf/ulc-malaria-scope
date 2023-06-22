@@ -265,6 +265,20 @@ class ScopeOp(QObject, NamedMachine):
             if self.filtered_focus_err is not None:
                 self.update_focus.emit(self.filtered_focus_err)
 
+    def update_thumbnails(self):
+        # Update thumbnails
+        if self.state == "experiment":
+            self.update_thumbnails.emit(
+                (
+                    self.mscope.predictions_handler.get_max_conf_thumbnails(
+                        self.mscope.data_storage.zw.array
+                    ),
+                    self.mscope.predictions_handler.get_min_conf_thumbnails(
+                        self.mscope.data_storage.zw.array
+                    ),
+                )
+            )
+
     def setup(self):
         self.create_timers.emit()
 
@@ -748,19 +762,6 @@ class ScopeOp(QObject, NamedMachine):
                     ),
                 )
                 return
-
-        # Update thumbnails
-        if self.frame_count % int(ACQUISITION_PERIOD / THUMBNAIL_UPDATE_FPS) == 0:
-            self.update_thumbnails.emit(
-                (
-                    self.mscope.predictions_handler.get_max_conf_thumbnails(
-                        self.mscope.data_storage.zw.array
-                    ),
-                    self.mscope.predictions_handler.get_min_conf_thumbnails(
-                        self.mscope.data_storage.zw.array
-                    ),
-                )
-            )
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)

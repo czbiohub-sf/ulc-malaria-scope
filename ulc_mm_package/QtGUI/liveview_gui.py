@@ -456,13 +456,17 @@ class LiveviewGUI(QMainWindow):
                 )
                 self.max_and_min_conf_thumbnail_displays[k] = thumbnail_lists
 
+        self.refresh_thumbnails = QPushButton("Click to refresh thumbnails")
         self.toggle_confs = QPushButton("Click to display min confidence thumbnails")
         self.toggle_confs.setCheckable(True)
         self.toggle_confs.clicked.connect(self.toggle_thumbnails)
 
+        self.thumbnail_layout.addWidget(self.refresh_thumbnails, 0, 0)
+        self.thumbnail_layout.addWidget(self.toggle_confs, 0, 1)
+
         # Class labels
         [
-            self.thumbnail_layout.addWidget(label, i, 0)
+            self.thumbnail_layout.addWidget(label, i + 1, 0)
             for i, label in enumerate(class_labels)
         ]
 
@@ -471,7 +475,7 @@ class LiveviewGUI(QMainWindow):
             for i, x in enumerate(thumbnail_lists):
                 if k == "min_conf":
                     x.list_widget.setVisible(False)
-                self.thumbnail_layout.addWidget(x.list_widget, i, 1)
+                self.thumbnail_layout.addWidget(x.list_widget, i + 1, 1)
 
             # Synchronize scrollbars
             sbars = [x.list_widget.horizontalScrollBar() for x in thumbnail_lists]
@@ -486,7 +490,7 @@ class LiveviewGUI(QMainWindow):
                 ]
             [x.list_widget.horizontalScrollBar().hide() for x in thumbnail_lists[1:]]
 
-        self.thumbnail_layout.addWidget(self.toggle_confs, len(CLASSES_TO_DISPLAY), 1)
+        # self.thumbnail_layout.addWidget(self.toggle_confs, len(CLASSES_TO_DISPLAY), 1)
 
     def move_scrollbar(self, vs, value):
         vs.setValue(value)
