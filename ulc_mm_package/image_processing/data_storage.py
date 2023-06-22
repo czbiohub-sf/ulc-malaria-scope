@@ -253,7 +253,7 @@ class DataStorage:
         assert self.main_dir is not None, "DataStorage has not been initialized"
         try:
             filename = (
-                self.main_dir / self.experiment_folder / "parsed_prediction_tensors.pkl"
+                self.main_dir / self.experiment_folder / "parsed_prediction_tensors"
             )
             np.save(filename, pred_tensors.astype(np.float16))
         except Exception as e:
