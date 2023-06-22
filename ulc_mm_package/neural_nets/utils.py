@@ -413,7 +413,7 @@ def nms(parsed_prediction_tensor: npt.NDArray, thresh: float) -> List[int]:
 
     Returns
     -------
-    list[int]
+    List[int]
         Indices of which predictions to keep
     """
     x1 = parsed_prediction_tensor[1, :]
