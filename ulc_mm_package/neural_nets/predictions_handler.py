@@ -11,7 +11,6 @@ from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.QtGUI.gui_constants import MAX_THUMBNAILS
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
-    IOU_THRESH,
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
 )
