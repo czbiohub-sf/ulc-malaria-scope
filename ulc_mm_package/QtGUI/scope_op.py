@@ -70,7 +70,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
 from ulc_mm_package.scope_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
-    THUMBNAIL_UPDATE_FPS,
 )
 from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
 
