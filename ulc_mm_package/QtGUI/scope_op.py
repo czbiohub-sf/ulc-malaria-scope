@@ -50,7 +50,6 @@ from ulc_mm_package.hardware.pneumatic_module import (
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import (
-    YOGO,
     ClassCountResult,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
