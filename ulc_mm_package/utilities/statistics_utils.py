@@ -54,7 +54,7 @@ def get_class_stats_str(
     """
     Return results string with statistics for individual class
     """
-    return f"\t{name.upper()}: {int(count)} | {int(np.sum(all_confidences_by_class))} ({calc_total_perc_err(peak_confidences_by_class)} | {np.mean(sorted_confidences):.3g} | {np.std(peak_confidences_by_class):.3g})\n"
+    return f"\t{name.upper()}: {int(count)} | {int(np.sum(all_confidences_by_class))} ({calc_total_perc_err(peak_confidences_by_class)} | {np.mean(peak_confidences_by_class):.3g} | {np.std(peak_confidences_by_class):.3g})\n"
 
 
 def get_all_stats_str(
