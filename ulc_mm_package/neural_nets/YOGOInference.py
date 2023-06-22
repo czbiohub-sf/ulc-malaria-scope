@@ -58,24 +58,6 @@ class YOGO(NCSModel):
         res.shape = (bs, pred_dim, Sy * Sx)
         return res
 
-    @staticmethod
-    def class_instance_count(filtered_res: npt.NDArray) -> ClassCountResult:
-        """
-        ClassCountResult mapping the class (represented as an integer) to its count
-        for the given prediction
-        """
-        bs, pred_dim, num_predicted = filtered_res.shape
-        num_classes = pred_dim - 5
-        class_preds = np.argmax(filtered_res[0, 5:, :], axis=0)
-        unique, counts = np.unique(class_preds, return_counts=True)
-        # this dict (raw_counts) will be missing a given class if that class isn't predicted at all
-        # this may be confusing and a pain to handle, so just handle it on our side
-        raw_counts = dict(zip(unique, counts))
-        class_counts = np.array(
-            [raw_counts.get(i, 0) for i in range(num_classes)], dtype=int
-        )
-        return class_counts
-
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)
 
