@@ -10,6 +10,7 @@ from ulc_mm_package.neural_nets.utils import (
     get_all_confs_for_all_classes,
     get_all_confs_for_specific_class,
     get_class_counts,
+    nms,
     parse_prediction_tensor,
     get_specific_class_from_parsed_tensor,
     get_vals_greater_than_conf_thresh,
@@ -146,6 +147,13 @@ class TestYOGOTensorParsing(unittest.TestCase):
 
         self.assertEqual(len(class_counts), NUM_CLASSES)
         self.assertGreater(class_counts[0], 0)
+
+    def test_nms(self):
+        # Add more robust tests later, this is just a quick
+        # no dumb run-time crashes check
+        keep_idxs = nms(self.parsed_predictions, 0.5)
+        self.assertEqual(self.parsed_predictions.shape[1], 58)
+        self.assertEqual(len(keep_idxs), 47)
 
 
 if __name__ == "__main__":

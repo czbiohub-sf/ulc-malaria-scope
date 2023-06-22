@@ -394,3 +394,53 @@ def get_class_counts(prediction_tensor: npt.NDArray) -> List[int]:
     ids, counts = np.unique(prediction_tensor[6, :], return_counts=True)
     id_and_counts = dict(zip(ids, counts))
     return [id_and_counts.get(i, 0) for i in range(NUM_CLASSES)]
+
+
+def nms(parsed_prediction_tensor: npt.NDArray, thresh: float):
+    """
+    Fast R-CNN
+    Copyright (c) 2015 Microsoft
+    Licensed under The MIT License [see LICENSE for details]
+    Written by Ross Girshick
+    --------------------------------------------------------
+
+    Uses a greedy algorithm to determine which bboxes to keep.
+
+    Parameters
+    ----------
+    parsed_prediction_tensor: npt.NDArray (8+NUM_CLASSES) x N
+        Prediction tensor for a single image
+
+    Returns
+    -------
+    list[int]
+        Indices of which predictions to keep
+    """
+    x1 = parsed_prediction_tensor[1, :]
+    y1 = parsed_prediction_tensor[2, :]
+    x2 = parsed_prediction_tensor[3, :]
+    y2 = parsed_prediction_tensor[4, :]
+
+    areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+
+    confs: npt.NDArray = parsed_prediction_tensor[8, :]
+    order = confs.argsort()[::-1]
+
+    keep = []
+    while order.size > 0:
+        i = order[0]  # pick maxmum iou box
+        keep.append(i)
+        xx1 = np.maximum(x1[i], x1[order[1:]])
+        yy1 = np.maximum(y1[i], y1[order[1:]])
+        xx2 = np.minimum(x2[i], x2[order[1:]])
+        yy2 = np.minimum(y2[i], y2[order[1:]])
+
+        w = np.maximum(0.0, xx2 - xx1 + 1)  # maximum width
+        h = np.maximum(0.0, yy2 - yy1 + 1)  # maxiumum height
+        inter = w * h
+        ovr = inter / (areas[i] + areas[order[1:]] - inter)
+
+        inds = np.where(ovr <= thresh)[0]
+        order = order[inds + 1]
+
+    return keep
