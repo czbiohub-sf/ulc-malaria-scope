@@ -53,12 +53,8 @@ def parse_prediction_tensor(
         idx 5 (objectness)
             [0 - 1]
         idx 6 (predictions)
-            number from 0 to M, where M is the number of classes - 1) for all N objects
-            detected in the image.
-        idx 7 (peak prediction confidence)
-            [0 - 1]
-            confidence of the predicted label
-        idx (8 - NUM_CLASSES)
+            Class id with the highest confidence value, number from 0 to M, where M is the number of classes - 1)
+        idx (7 - NUM_CLASSES)
             All the confidence values (the peak prediction confidence is repeated) for each class
     """
 
@@ -300,7 +296,7 @@ def get_all_argmax_confs_for_specific_class(
     ----------
     prediction_tensor: npt.NDArray (8+NUM_CLASSES x N)
         Array containing all the predictions (note filter out for non-zero predictions first)
-        since the array is preallocated to (8+NUM_CLASSES x 1_000_000).
+        since the array is preallocated to (8+NUM_CLASSES x SOME_MAX_NUM).
 
     Returns
     -------
@@ -320,7 +316,7 @@ def get_all_argmax_class_confidences_for_all_classes(
     ----------
     prediction_tensor: npt.NDArray
         Array containing all the predictions (note filter out for non-zero predictions first)
-        since the array is preallocated to (8+NUM_CLASSES x 1_000_000).
+        since the array is preallocated to (8+NUM_CLASSES x SOME_MAX_NUM).
 
     Returns
     -------
@@ -346,7 +342,7 @@ def get_all_confs_for_specific_class(
     ----------
     prediction_tensor: npt.NDArray
         Array containing all the predictions (note filter out for non-zero predictions first)
-        since the array is preallocated to (8+NUM_CLASSES x 1_000_000).
+        since the array is preallocated to (8+NUM_CLASSES x SOME_MAX_NUM).
 
     Returns
     -------
@@ -366,7 +362,7 @@ def get_all_confs_for_all_classes(prediction_tensor: npt.NDArray) -> List[npt.ND
     ----------
     prediction_tensor: npt.NDArray
         Array containing all the predictions (note filter out for non-zero predictions first)
-        since the array is preallocated to (8+NUM_CLASSES x 1_000_000).
+        since the array is preallocated to (8+NUM_CLASSES x SOME_MAX_NUM).
 
     Returns
     -------
@@ -387,7 +383,7 @@ def get_class_counts(prediction_tensor: npt.NDArray) -> List[int]:
     ----------
     prediction_tensor: npt.NDArray
         Array containing all the predictions (note filter out for non-zero predictions first)
-        since the array is preallocated to (8+NUM_CLASSES x 1_000_000).
+        since the array is preallocated to (8+NUM_CLASSES x SOME_MAX_NUM).
 
     Returns
     -------
