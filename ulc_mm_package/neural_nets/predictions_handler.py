@@ -112,12 +112,12 @@ class PredictionsHandler:
         img_id = int(res.id)
         pred_tensor = res.result
         start, end = self._add_pred_tensor_to_store(img_id, pred_tensor)
-        parsed_tensor = self.pred_tensors[:, start:end]
+        self.parsed_tensor = self.pred_tensors[:, start:end]
 
         for x in self.class_ids:
             max_conf_col_ids = (
                 nn_utils.get_col_ids_for_matching_class_and_above_conf_thresh(
-                    parsed_tensor, x, self.curr_min_of_max_confs_by_class[x]
+                    self.parsed_tensor, x, self.curr_min_of_max_confs_by_class[x]
                 )
             )
 
@@ -128,7 +128,7 @@ class PredictionsHandler:
                     *list(
                         sorted(
                             zip(
-                                list(parsed_tensor[7, max_conf_col_ids][0]),
+                                list(self.parsed_tensor[7, max_conf_col_ids][0]),
                                 list(max_conf_col_ids[0]),
                             ),
                             key=lambda y: y[0],
@@ -141,7 +141,7 @@ class PredictionsHandler:
                     if len(self.max_confs[x]) > MAX_THUMBNAILS
                     else hq.heappush(self.max_confs[x], i)  # type: ignore
                     for i in nn_utils.get_individual_prediction_objs_from_parsed_tensor(
-                        parsed_tensor, max_conf_col_ids
+                        self.parsed_tensor, max_conf_col_ids
                     )
                 ]
                 lowest_max_conf = self.max_confs[x][0].conf
@@ -155,7 +155,7 @@ class PredictionsHandler:
             # Repeat the above for minimum confidences
             min_conf_col_ids = (
                 nn_utils.get_col_ids_for_matching_class_and_below_conf_thresh(
-                    parsed_tensor, x, self.curr_max_of_min_confs_by_class[x]
+                    self.parsed_tensor, x, self.curr_max_of_min_confs_by_class[x]
                 )
             )
             if len(min_conf_col_ids[0] > 0):
@@ -163,7 +163,7 @@ class PredictionsHandler:
                     *list(
                         sorted(
                             zip(
-                                list(parsed_tensor[7, min_conf_col_ids][0]),
+                                list(self.parsed_tensor[7, min_conf_col_ids][0]),
                                 list(min_conf_col_ids[0]),
                             ),
                             key=lambda y: y[0],
@@ -176,7 +176,7 @@ class PredictionsHandler:
                     if len(self.max_confs[x]) > MAX_THUMBNAILS
                     else hq.heappush(self.min_confs[x], i)  # type: ignore
                     for i in nn_utils.get_individual_prediction_objs_from_parsed_tensor(
-                        parsed_tensor, min_conf_col_ids, flip_conf_sign=True
+                        self.parsed_tensor, min_conf_col_ids, flip_conf_sign=True
                     )
                 ]
                 highest_min_conf = self.min_confs[x][0].conf
