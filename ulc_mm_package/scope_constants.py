@@ -84,7 +84,6 @@ LOCKFILE = "lock.py"
 # ================ FPS constants ================ #
 ACQUISITION_FPS = 30.0
 LIVEVIEW_FPS = 1.0
-THUMBNAIL_UPDATE_FPS = 0.1
 
 ACQUISITION_PERIOD = 1000.0 / ACQUISITION_FPS  # ms
 LIVEVIEW_PERIOD = 1000.0 / LIVEVIEW_FPS  # ms
