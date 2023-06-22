@@ -82,11 +82,6 @@ class PredictionsHandler:
             img_id, prediction_tensor, img_h=RESIZED_H, img_w=RESIZED_W
         )
 
-        # Remove duplicate bounding boxes (nms - non maximal suppression)
-        parsed_tensor = parsed_tensor[
-            :, nn_utils.nms(parsed_tensor, IOU_THRESH)
-        ]  # TODO move threshold to constants file
-
         # Scale the bounding box locations so they can be used with
         # the original sized images (note this function scales the array in-place)
         nn_utils.scale_bbox_vals(parsed_tensor, SCALE_H, SCALE_W)
