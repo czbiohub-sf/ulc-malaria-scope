@@ -281,7 +281,9 @@ class Oracle(Machine):
         self.liveview_window.refresh_thumbnails.clicked.connect(
             self.scopeop.update_thumbnails
         )
-        self.scopeop.update_thumbnails.connect(self.liveview_window.update_thumbnails)
+        self.scopeop.update_thumbnails_signal.connect(
+            self.liveview_window.update_thumbnails
+        )
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.to_form)
