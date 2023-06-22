@@ -11,6 +11,7 @@ from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.QtGUI.gui_constants import MAX_THUMBNAILS
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
+    IOU_THRESH,
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
 )
@@ -83,7 +84,7 @@ class PredictionsHandler:
 
         # Remove duplicate bounding boxes (nms - non maximal suppression)
         parsed_tensor = parsed_tensor[
-            :, nn_utils.nms(parsed_tensor, 0.5)
+            :, nn_utils.nms(parsed_tensor, IOU_THRESH)
         ]  # TODO move threshold to constants file
 
         # Scale the bounding box locations so they can be used with

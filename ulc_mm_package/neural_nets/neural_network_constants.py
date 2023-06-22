@@ -28,3 +28,7 @@ YOGO_PERIOD_NUM = int(YOGO_PERIOD_S * ACQUISITION_FPS)
 
 # ================ Image size constants ================ #
 IMG_RESIZED_DIMS = (400, 300)
+
+# ================ Prediction filtering constants ================ #
+IOU_THRESH = 0.5
+# add constant for min size filtering (by class?)

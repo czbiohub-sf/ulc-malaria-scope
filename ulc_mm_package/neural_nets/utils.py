@@ -410,6 +410,8 @@ def nms(parsed_prediction_tensor: npt.NDArray, thresh: float) -> List[int]:
     ----------
     parsed_prediction_tensor: npt.NDArray (8+NUM_CLASSES) x N
         Prediction tensor for a single image
+    thresh: float
+        Intersection-over-union threshold for removal
 
     Returns
     -------
