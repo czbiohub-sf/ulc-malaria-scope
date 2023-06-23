@@ -308,7 +308,7 @@ def get_all_argmax_confs_for_specific_class(
 
 
 def get_all_argmax_class_confidences_for_all_classes(
-    prediction_tensor: npt.NDArray,
+    prediction_tensor: npt.NDArray, num_classes: int = NUM_CLASSES
 ) -> List[npt.NDArray]:
     """Get all the confidences for each predicted class.
 
@@ -326,7 +326,7 @@ def get_all_argmax_class_confidences_for_all_classes(
 
     return [
         get_all_argmax_confs_for_specific_class(id, prediction_tensor)
-        for id in range(NUM_CLASSES)
+        for id in range(num_classes)
     ]
 
 
@@ -352,7 +352,9 @@ def get_all_confs_for_specific_class(
     return prediction_tensor[8 + class_id, :]
 
 
-def get_all_confs_for_all_classes(prediction_tensor: npt.NDArray) -> List[npt.NDArray]:
+def get_all_confs_for_all_classes(
+    prediction_tensor: npt.NDArray, num_classes: int = NUM_CLASSES
+) -> List[npt.NDArray]:
     """Get all the confidences for each class (includes confidences that are not the argmax
     confidence for that particular prediction!).
 
@@ -372,11 +374,13 @@ def get_all_confs_for_all_classes(prediction_tensor: npt.NDArray) -> List[npt.ND
     """
     return [
         get_all_confs_for_specific_class(i, prediction_tensor)
-        for i in range(NUM_CLASSES)
+        for i in range(num_classes)
     ]
 
 
-def get_class_counts(prediction_tensor: npt.NDArray) -> List[int]:
+def get_class_counts(
+    prediction_tensor: npt.NDArray, num_classes: int = NUM_CLASSES
+) -> List[int]:
     """Get the number of occurrences for each class.
 
     Parameters
@@ -393,7 +397,7 @@ def get_class_counts(prediction_tensor: npt.NDArray) -> List[int]:
 
     ids, counts = np.unique(prediction_tensor[6, :], return_counts=True)
     id_and_counts = dict(zip(ids, counts))
-    return [id_and_counts.get(i, 0) for i in range(NUM_CLASSES)]
+    return [id_and_counts.get(i, 0) for i in range(num_classes)]
 
 
 def nms(parsed_prediction_tensor: npt.NDArray, thresh: float) -> List[int]:

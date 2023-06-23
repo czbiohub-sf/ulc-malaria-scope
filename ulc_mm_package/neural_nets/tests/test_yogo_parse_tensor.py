@@ -143,10 +143,15 @@ class TestYOGOTensorParsing(unittest.TestCase):
         self.assertEqual(len(all_confs), NUM_CLASSES)
 
     def test_get_class_counts(self):
-        class_counts = get_class_counts(self.parsed_predictions)
+        class_counts = get_class_counts(
+            self.parsed_predictions, MOCK_OUTPUT_NUM_CLASSES
+        )
 
-        self.assertEqual(len(class_counts), NUM_CLASSES)
-        self.assertGreater(class_counts[0], 0)
+        self.assertEqual(len(class_counts), MOCK_OUTPUT_NUM_CLASSES)
+
+        # These values are specific to the particular MOCK_YOGO_OUTPUT.npy used
+        self.assertEqual(class_counts[0], 53)
+        self.assertEqual(class_counts[6], 5)
 
     def test_nms(self):
         # Add more robust tests later, this is just a quick
