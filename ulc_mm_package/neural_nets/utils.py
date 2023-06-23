@@ -58,7 +58,9 @@ def parse_prediction_tensor(
             All the confidence values (the peak prediction confidence is repeated) for each class
     """
 
-    filtered_pred = YOGO.filter_res(prediction_tensor).squeeze()  # (5+NUM_CLASSES) x N
+    filtered_pred = YOGO.filter_res(prediction_tensor).squeeze(
+        axis=0
+    )  # (5+NUM_CLASSES) x N
     img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
     xc = filtered_pred[0, :] * img_w
     yc = filtered_pred[1, :] * img_h
