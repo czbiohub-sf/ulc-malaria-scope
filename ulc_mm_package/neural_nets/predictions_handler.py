@@ -68,7 +68,7 @@ class PredictionsHandler:
         ----------
         img_id: int
             Img id to which these predictions belong
-        prediction_tensor: np.ndarray (7 x N)
+        prediction_tensor: (1 * (5+NUM_CLASSES) * (Sx*Sy))
 
         Returns
         -------
