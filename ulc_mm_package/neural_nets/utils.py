@@ -21,7 +21,18 @@ class SinglePredictedObject(NamedTuple):
 
     @no_type_check
     def __lt__(self, other: SinglePredictedObject):
-        return self.conf < other.conf
+        """Compare the confidences, if there is a tie, then compare the image ids.
+
+        This has the effect that older image id entries will be bubbled up
+        to the top of the min priority queue, meaning newer entries will get
+        cycled in. Users will get to see more recent thumbnails.
+        """
+
+        return (self.conf, self.parsed[0]) < (other.conf, other.parsed[0])
+
+    def __repr__(self):
+        """Print object, helpful for debugging"""
+        return f"img_id: {self.parsed[0]} - conf: {self.conf}\n"
 
 
 def parse_prediction_tensor(

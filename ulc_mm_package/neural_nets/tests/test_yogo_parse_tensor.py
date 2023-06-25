@@ -2,6 +2,8 @@ import unittest
 import time
 
 import numpy as np
+from ulc_mm_package.hardware.scope import PredictionsHandler
+from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.utils import (
@@ -159,6 +161,51 @@ class TestYOGOTensorParsing(unittest.TestCase):
         keep_idxs = nms(self.parsed_predictions, 0.5)
         self.assertEqual(self.parsed_predictions.shape[1], 58)
         self.assertEqual(len(keep_idxs), 47)
+
+    def test_predictions_handler_add(self):
+        predictions_handler = PredictionsHandler()
+        self.assertEqual(predictions_handler.pred_tensors.shape[0], 8 + NUM_CLASSES)
+
+        mock_new_res = np.random.rand(1, 5 + NUM_CLASSES, 20)
+        mock_new_res[0, 4, :] = 1.0  # set objectness > thresh
+        mock_new_res[0, 5, :5] = 1.0
+        mock_new_res[0, 6, 5:10] = 1.0
+        mock_new_res[0, 7, 10:15] = 1.0
+        mock_new_res[0, 8, 15:] = 1.0
+        res = AsyncInferenceResult(id=0, result=mock_new_res)
+        predictions_handler.add_yogo_pred(res)
+
+        self.assertEqual(
+            get_class_counts(predictions_handler.get_prediction_tensors()), [5, 5, 5, 5]
+        )
+
+    def test_predictions_handler_max_heap(self):
+        predictions_handler = PredictionsHandler()
+        mock_new_res = np.random.rand(1, 5 + NUM_CLASSES, 11)
+
+        mock_new_res[0, 4, :] = 1.0
+        mock_new_res[0, 5, :] = 0.8
+        mock_new_res[0, 6:, :] = 0.0
+        res = AsyncInferenceResult(id=0, result=mock_new_res)
+        predictions_handler.add_yogo_pred(res)
+        healthy_max_confs = predictions_handler.max_confs[0]
+        self.assertEqual(len(healthy_max_confs), 10)
+        self.assertAlmostEqual(healthy_max_confs[0].conf, 0.8)
+
+        mock_new_res[0, 5, :] = 0.9
+        res = AsyncInferenceResult(id=1, result=mock_new_res)
+        predictions_handler.add_yogo_pred(res)
+        healthy_max_confs = predictions_handler.max_confs[0]
+        self.assertEqual(len(healthy_max_confs), 10)
+        self.assertAlmostEqual(healthy_max_confs[0].conf, 0.9)
+
+        mock_new_res[0, 5, :] = 0.9
+        res = AsyncInferenceResult(id=2, result=mock_new_res)
+        predictions_handler.add_yogo_pred(res)
+        healthy_max_confs = predictions_handler.max_confs[0]
+        self.assertEqual(len(healthy_max_confs), 10)
+        self.assertAlmostEqual(healthy_max_confs[0].conf, 0.9)
+        self.assertEqual(healthy_max_confs[0].parsed[0], 2)  # verify img id
 
 
 if __name__ == "__main__":
