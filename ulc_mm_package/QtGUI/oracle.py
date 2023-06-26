@@ -22,6 +22,7 @@ from transitions.core import MachineError
 from time import sleep
 from logging.config import fileConfig
 from datetime import datetime
+from pathlib import Path
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -52,7 +53,10 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
 )
-
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    AUTOFOCUS_MODEL_DIR,
+    YOGO_MODEL_DIR,
+)
 from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
@@ -272,6 +276,14 @@ class Oracle(Machine):
         self.liveview_window.pause_btn.clicked.connect(self.general_pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
         self.liveview_window.close_event.connect(self.close_handler)
+
+        # Thumbnail display signals
+        self.liveview_window.refresh_thumbnails.clicked.connect(
+            self.scopeop.update_thumbnails
+        )
+        self.scopeop.update_thumbnails_signal.connect(
+            self.liveview_window.update_thumbnails
+        )
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.to_form)
@@ -561,6 +573,8 @@ class Oracle(Machine):
             "exposure"
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
+        self.experiment_metadata["autofocus_model"] = Path(AUTOFOCUS_MODEL_DIR).stem
+        self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).stem
 
         # TODO try a cleaner solution than nested try-excepts?
         # On Git branch
@@ -718,7 +732,9 @@ class Oracle(Machine):
         if not self.shutoff_done:
             # Close data storage if it's not already closed
             if self.scopeop.mscope.data_storage.zw.writable:
-                self.scopeop.mscope.data_storage.close()
+                self.scopeop.mscope.data_storage.close(
+                    self.scopeop.mscope.predictions_handler.get_prediction_tensors()
+                )
             else:
                 self.logger.info(
                     "Since data storage is already closed, no data storage operations were needed."

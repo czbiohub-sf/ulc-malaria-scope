@@ -86,7 +86,7 @@ def full_sweep_image_collection(
 def local_sweep_image_collection(
     motor: DRV8825Nema,
     start_point: int,
-    num_steps: int = 30,
+    num_steps: int = 20,
     steps_per_image: int = 1,
     num_imgs_per_step: int = 30,
     save_loc: Optional[str] = None,

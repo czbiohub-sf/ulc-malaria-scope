@@ -2,7 +2,6 @@ import io
 import csv
 import shutil
 import logging
-
 from pathlib import Path
 from time import perf_counter
 from datetime import datetime
@@ -10,6 +9,7 @@ from concurrent.futures import Future
 from typing import Dict, List, Optional
 
 import numpy as np
+import numpy.typing as npt
 import cv2
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -88,8 +88,8 @@ class DataStorage:
         assert self.main_dir is not None
 
         # Create per-image metadata file
-        time_str = datetime.now().strftime(DATETIME_FORMAT)
-        self.experiment_folder = time_str + f"_{custom_experiment_name}"
+        self.time_str = datetime.now().strftime(DATETIME_FORMAT)
+        self.experiment_folder = self.time_str + f"_{custom_experiment_name}"
 
         try:
             (self.main_dir / self.experiment_folder).mkdir()
@@ -99,7 +99,7 @@ class DataStorage:
         filename = (
             self.main_dir
             / self.experiment_folder
-            / f"{time_str}perimage_{custom_experiment_name}_metadata.csv"
+            / f"{self.time_str}perimage_{custom_experiment_name}_metadata.csv"
         )
         self.metadata_file = open(str(filename), "w")
         self.md_writer = csv.DictWriter(
@@ -111,7 +111,7 @@ class DataStorage:
         exp_run_md_file = (
             self.main_dir
             / self.experiment_folder
-            / f"{time_str}exp_{custom_experiment_name}_metadata.csv"
+            / f"{self.time_str}exp_{custom_experiment_name}_metadata.csv"
         )
         with open(f"{exp_run_md_file}", "w") as f:
             writer = csv.DictWriter(
@@ -124,7 +124,7 @@ class DataStorage:
         filename = (
             self.main_dir
             / self.experiment_folder
-            / f"{time_str}_{custom_experiment_name}"
+            / f"{self.time_str}_{custom_experiment_name}"
         )
         self.zw.createNewFile(str(filename))
 
@@ -174,8 +174,13 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self) -> Optional[Future]:
+    def close(self, pred_tensors: List[npt.NDArray]) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
+
+        Parameters
+        ----------
+        pred_tensors: List[npt.NDArray]
+            Parsed predictions tensors from PredictionsHandler()
 
         Returns
         -------
@@ -185,6 +190,7 @@ class DataStorage:
         """
 
         self.logger.info("Closing data storage.")
+        self.save_parsed_prediction_tensors(pred_tensors)
         self.save_uniform_sample()
 
         if self.metadata_file is not None:
@@ -230,6 +236,32 @@ class DataStorage:
 
         storage_remaining_gb = cls._get_remaining_storage_size_GB(ssd_dir)
         return storage_remaining_gb > MIN_GB_REQUIRED
+
+    def save_parsed_prediction_tensors(self, pred_tensors: npt.NDArray) -> None:
+        """Save the predictions tensor (np.ndarray) containing
+        the parsed prediction tensors for each image.
+
+        The shape of this tensor is (8+NUM_CLASSES) x TOTAL_NUM_PREDICTIONS, for example if there
+        are 4 classes that YOGO predicts, this array would be (12 x N).
+
+        For details on what the indices correspond to, see `parse_prediction_tensor` in `neural_nets/utils.py`
+
+        Parameters
+        ----------
+        pred_tensors: List[npt.NDArray]
+            The list of parsed prediction tensors from PredictionsHandler()
+        """
+
+        assert self.main_dir is not None, "DataStorage has not been initialized"
+        try:
+            filename = (
+                self.main_dir
+                / self.experiment_folder
+                / f"{self.time_str}_parsed_prediction_tensors"
+            )
+            np.save(filename, pred_tensors.astype(np.float16))
+        except Exception as e:
+            self.logger.error(f"Error saving prediction tensors. {e}")
 
     def save_uniform_sample(self) -> None:
         """Extract and save a uniform random sample of images from the currently active Zarr store.
@@ -277,10 +309,34 @@ class DataStorage:
                 dir_path.mkdir()
                 return str(dir_path)
             except Exception as e:
-                self.logger.error("Could not create the subsample directory: {e}")
+                self.logger.error(f"Could not create the subsample directory: {e}")
                 raise e
         else:
             raise
+
+    def get_experiment_path(self) -> Path:
+        """
+        Return path to experiment folder
+        """
+        assert self.main_dir is not None, "DataStorage has not been initialized"
+        assert self.experiment_folder is not None, "Experiment has not been initialized"
+        try:
+            experiment_path = self.main_dir / self.experiment_folder
+            return experiment_path
+        except Exception as e:
+            self.logger.error(f"Could not get experiment path: {e}")
+            raise e
+
+    def get_summary_filename(self) -> Path:
+        """
+        Return filename for saving statistics summary
+        """
+        try:
+            filename = self.get_experiment_path() / f"{self.time_str}_summary.pdf"
+            return filename
+        except Exception as e:
+            self.logger.error(f"Could not get statistics filename: {e}")
+            raise e
 
     @staticmethod
     def _unif_subsequence_distribution(
