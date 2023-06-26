@@ -712,7 +712,7 @@ class ScopeOp(QObject, NamedMachine):
 
         t0 = perf_counter()
         prev_yogo_results = self.routines.count_parasitemia(
-            self.mscope, YOGO.crop_img(img), self.count
+            self.mscope, YOGO.crop_img(img), self.frame_count
         )
         t1 = perf_counter()
 
