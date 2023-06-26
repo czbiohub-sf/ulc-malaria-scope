@@ -735,7 +735,9 @@ class ScopeOp(QObject, NamedMachine):
                 self.mscope.predictions_handler.parsed_tensor
             )
 
-            class_counts = YOGO.class_instance_count(filtered_prediction)
+            class_counts = nn_utils.get_class_counts(
+                self.mscope.predictions_handler.parsed_tensor
+            )
 
             self.cell_counts += class_counts
 
