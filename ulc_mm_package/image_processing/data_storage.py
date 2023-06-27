@@ -259,7 +259,7 @@ class DataStorage:
                 / self.experiment_folder
                 / f"{self.time_str}_parsed_prediction_tensors"
             )
-            np.save(filename, pred_tensors.astype(np.float16))
+            np.save(filename, pred_tensors.astype(np.float32))
         except Exception as e:
             self.logger.error(f"Error saving prediction tensors. {e}")
 
