@@ -14,12 +14,11 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
+    YOGO_CROP_HEIGHT_PX,
 )
 
 NUM_CLASSES = len(YOGO_CLASS_LIST)
-IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, CAMERA_SELECTION.IMG_HEIGHT
-RESIZED_W, RESIZED_H = IMG_RESIZED_DIMS
-SCALE_H, SCALE_W = IMG_W / RESIZED_W, IMG_H / RESIZED_H
+IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, YOGO_CROP_HEIGHT_PX
 MAX_POSSIBLE_PREDICTIONS = 1_500_000
 
 
@@ -79,12 +78,12 @@ class PredictionsHandler:
 
         # Parse tensor to (8+NUM_CLASSES) x N format (N predictions)
         parsed_tensor = nn_utils.parse_prediction_tensor(
-            img_id, prediction_tensor, img_h=RESIZED_H, img_w=RESIZED_W
+            img_id, prediction_tensor, img_h=IMG_H, img_w=IMG_W
         )
 
         # Scale the bounding box locations so they can be used with
         # the original sized images (note this function scales the array in-place)
-        nn_utils.scale_bbox_vals(parsed_tensor, SCALE_H, SCALE_W)
+        nn_utils.scale_bbox_vals(parsed_tensor, scale_h=1, scale_w=1)
 
         # Store the parsed tensor
         num_preds = parsed_tensor.shape[1]
