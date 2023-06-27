@@ -473,7 +473,7 @@ class Routines:
             )
 
     @init_generator
-    def cell_density_routine(self) -> Generator[Optional[int], np.ndarray, None]:
+    def cell_density_routine(self) -> Generator[Optional[int], List[int], None]:
         prev_time = perf_counter()
         prev_measurements = np.asarray(
             [100] * processing_constants.CELL_DENSITY_HISTORY_LEN
@@ -485,10 +485,8 @@ class Routines:
                 perf_counter() - prev_time
                 >= processing_constants.CELL_DENSITY_CHECK_PERIOD_S
             ):
-                inference_results = yield prev_measurements[idx]
-
-                batch_dim, pred_dim, num_predictions = inference_results.shape
-                prev_measurements[idx] = num_predictions
+                class_counts = yield prev_measurements[idx]
+                prev_measurements[idx] = class_counts[0]
 
                 idx = (idx + 1) % processing_constants.CELL_DENSITY_HISTORY_LEN
 

@@ -46,6 +46,7 @@ from ulc_mm_package.image_processing.flow_control import FlowController
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 from ulc_mm_package.neural_nets.NCSModel import TPUError
+from ulc_mm_package.neural_nets.predictions_handler import PredictionsHandler
 
 
 class GPIOEdge(Enum):
@@ -66,6 +67,7 @@ class Components(Enum):
     DATA_STORAGE = auto()
     FLOW_CONTROLLER = auto()
     TPU = auto()
+    PREDICTIONS_HANDLER = auto()
 
 
 class MalariaScope:
@@ -82,6 +84,7 @@ class MalariaScope:
         self.data_storage_enabled = False
         self.flow_controller_enabled = False
         self.tpu_enabled = False
+        self.predictions_handler_enabled = False
 
         # Initialize Components
         self._init_motor()
@@ -93,6 +96,7 @@ class MalariaScope:
         self._init_data_storage()
         self._init_flow_controller()
         self._init_TPU()
+        self._init_predictions_handler()
 
         self.logger.info("Initialized scope hardware.")
 
@@ -125,10 +129,15 @@ class MalariaScope:
         self.reset_pneumatic_and_led_and_flow_control()
 
         # Close data storage
-        closing_file_future = self.data_storage.close()
+        closing_file_future = self.data_storage.close(
+            self.predictions_handler.get_prediction_tensors()
+        )
         if closing_file_future is not None:
             while not closing_file_future.done():
                 sleep(1)
+
+        # Reset predictions handler
+        self.predictions_handler: PredictionsHandler = PredictionsHandler()
 
     def shutoff(self):
         self.logger.info("Shutting off scope hardware.")
@@ -161,6 +170,7 @@ class MalariaScope:
             Components.DATA_STORAGE: self.data_storage_enabled,
             Components.FLOW_CONTROLLER: self.flow_controller_enabled,
             Components.TPU: self.tpu_enabled,
+            Components.PREDICTIONS_HANDLER: self.predictions_handler_enabled,
         }
 
     def _init_motor(self):
@@ -298,6 +308,13 @@ class MalariaScope:
             self.flow_controller_enabled = True
         except Exception as e:
             self.logger.error(f"Flow controller initialization failed. {e}")
+
+    def _init_predictions_handler(self):
+        try:
+            self.predictions_handler = PredictionsHandler()
+            self.predictions_handler_enabled = True
+        except Exception as e:
+            self.logger.error(f"PredictionsHandler initialization failed. {e}")
 
     def set_gpio_callback(
         self,

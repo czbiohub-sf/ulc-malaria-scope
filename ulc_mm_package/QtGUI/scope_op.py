@@ -49,19 +49,28 @@ from ulc_mm_package.hardware.pneumatic_module import (
 )
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
+from ulc_mm_package.neural_nets.YOGOInference import (
+    ClassCountResult,
+)
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_PERIOD_NUM,
     YOGO_CLASS_IDX_MAP,
     AF_BATCH_SIZE,
 )
+
+import ulc_mm_package.neural_nets.utils as nn_utils
+
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
 )
-from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
+from ulc_mm_package.scope_constants import (
+    ACQUISITION_PERIOD,
+    LIVEVIEW_PERIOD,
+)
+from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
 
 # TODO populate info?
 
@@ -107,6 +116,8 @@ class ScopeOp(QObject, NamedMachine):
 
     update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(float)
+
+    update_thumbnails_signal = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -213,7 +224,7 @@ class ScopeOp(QObject, NamedMachine):
         self.flowrate = None
         self.target_flowrate = None
 
-        self.count = 0
+        self.frame_count = 0
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.start_time = None
@@ -251,6 +262,20 @@ class ScopeOp(QObject, NamedMachine):
                 self.update_flowrate.emit(self.flowrate)
             if self.filtered_focus_err is not None:
                 self.update_focus.emit(self.filtered_focus_err)
+
+    def update_thumbnails(self):
+        # Update thumbnails
+        if self.state == "experiment":
+            self.update_thumbnails_signal.emit(
+                (
+                    self.mscope.predictions_handler.get_max_conf_thumbnails(
+                        self.mscope.data_storage.zw.array
+                    ),
+                    self.mscope.predictions_handler.get_min_conf_thumbnails(
+                        self.mscope.data_storage.zw.array
+                    ),
+                )
+            )
 
     def setup(self):
         self.create_timers.emit()
@@ -441,7 +466,24 @@ class ScopeOp(QObject, NamedMachine):
 
         runtime = self._get_experiment_runtime()
         if runtime != 0:
-            self.logger.info(f"Net FPS is {self.count/runtime}")
+            self.logger.info(f"Net FPS is {self.frame_count/runtime}")
+
+        pred_counter = self.mscope.predictions_handler.new_pred_pointer
+        if pred_counter != 0:
+            nonzero_preds = (
+                self.mscope.predictions_handler.get_prediction_tensors()
+            )  # (8+NUM_CLASSES) x N
+
+            class_counts = nn_utils.get_class_counts(nonzero_preds)
+            sorted_confidences = (
+                nn_utils.get_all_argmax_class_confidences_for_all_classes(nonzero_preds)
+            )
+            unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
+
+            stats_string = get_all_stats_str(
+                class_counts, unsorted_confidences, sorted_confidences
+            )
+            self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
 
@@ -654,7 +696,7 @@ class ScopeOp(QObject, NamedMachine):
             # A race condition has triggered a non-experiment state
             return
 
-        if self.count >= MAX_FRAMES:
+        if self.frame_count >= MAX_FRAMES:
             if self.state == "experiment":
                 self.to_intermission(
                     "Ending experiment since data collection is complete."
@@ -670,10 +712,10 @@ class ScopeOp(QObject, NamedMachine):
 
         # Record timestamp before running routines
         self.img_metadata["timestamp"] = timestamp
-        self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
+        self.img_metadata["im_counter"] = f"{self.frame_count:0{self.digits}d}"
 
         t0 = perf_counter()
-        self.update_img_count.emit(self.count)
+        self.update_img_count.emit(self.frame_count)
         t1 = perf_counter()
         self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
@@ -681,7 +723,7 @@ class ScopeOp(QObject, NamedMachine):
         resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         prev_yogo_results: List[
             AsyncInferenceResult
-        ] = self.count_parasitemia_routine.send((resized_img, self.count))
+        ] = self.count_parasitemia_routine.send((resized_img, self.frame_count))
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
@@ -690,9 +732,12 @@ class ScopeOp(QObject, NamedMachine):
         # we can use this for cell counts in the future, and also density in the now
 
         for result in prev_yogo_results:
-            filtered_prediction = YOGO.filter_res(result.result)
+            self.mscope.predictions_handler.add_yogo_pred(result)
 
-            class_counts = YOGO.class_instance_count(filtered_prediction)
+            class_counts = nn_utils.get_class_counts(
+                self.mscope.predictions_handler.parsed_tensor
+            )
+
             # very rough interpolation: ~30 FPS * period between YOGO calls * counts
             class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
                 class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
@@ -705,7 +750,7 @@ class ScopeOp(QObject, NamedMachine):
             )
 
             try:
-                self.density_routine.send(filtered_prediction)
+                self.density_routine.send(class_counts)
             except LowDensity:
                 self.logger.warning("Cell density is too low.")
                 self.reload_pause.emit(
@@ -798,7 +843,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment
 
-        if self.count % TH_PERIOD_NUM == 0:
+        if self.frame_count % TH_PERIOD_NUM == 0:
             try:
                 (
                     temperature,
@@ -830,8 +875,8 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("img_metadata", t1 - t0)
 
         t0 = perf_counter()
-        self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
-        self.count += 1
+        self.mscope.data_storage.writeData(img, self.img_metadata, self.frame_count)
+        self.frame_count += 1
         t1 = perf_counter()
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
 

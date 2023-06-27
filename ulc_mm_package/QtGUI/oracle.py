@@ -277,6 +277,14 @@ class Oracle(Machine):
         self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
         self.liveview_window.close_event.connect(self.close_handler)
 
+        # Thumbnail display signals
+        self.liveview_window.refresh_thumbnails.clicked.connect(
+            self.scopeop.update_thumbnails
+        )
+        self.scopeop.update_thumbnails_signal.connect(
+            self.liveview_window.update_thumbnails
+        )
+
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.to_form)
         self.scopeop.experiment_done.connect(self.to_intermission)
@@ -724,7 +732,9 @@ class Oracle(Machine):
         if not self.shutoff_done:
             # Close data storage if it's not already closed
             if self.scopeop.mscope.data_storage.zw.writable:
-                self.scopeop.mscope.data_storage.close()
+                self.scopeop.mscope.data_storage.close(
+                    self.scopeop.mscope.predictions_handler.get_prediction_tensors()
+                )
             else:
                 self.logger.info(
                     "Since data storage is already closed, no data storage operations were needed."

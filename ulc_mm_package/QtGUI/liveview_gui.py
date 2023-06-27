@@ -3,26 +3,32 @@
 Displays camera preview and conveys info to user during runs."""
 
 import sys
-import numpy as np
-
+from functools import partial
+from typing import List, NamedTuple, Dict, Tuple
 from time import strftime, gmtime
+
 from qimage2ndarray import gray2qimage
+import numpy as np
 
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QGridLayout,
     QHBoxLayout,
+    QVBoxLayout,
     QTabWidget,
     QWidget,
     QLabel,
     QLineEdit,
+    QListView,
+    QListWidget,
+    QListWidgetItem,
     QPlainTextEdit,
     QPushButton,
     QScrollBar,
     QDesktopWidget,
 )
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QSize
 from PyQt5.QtGui import QPixmap, QIcon
 
 from ulc_mm_package.image_processing.flow_control import get_flow_error
@@ -38,8 +44,22 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     BLANK_INFOPANEL_VAL,
     TOOLBAR_OFFSET,
+    MAX_THUMBNAILS,
+    CLASSES_TO_DISPLAY,
+    CLASS_IDS,
+    MIN_THUMBNAIL_DISPLAY_SIZE,
+    THUMBNAIL_SPACING,
 )
 from ulc_mm_package.neural_nets.YOGOInference import ClassCountResult
+from ulc_mm_package.neural_nets.predictions_handler import Thumbnail
+
+
+class ThumbnailDisplay(NamedTuple):
+    class_name: str
+    class_id: int
+    list_widget: QListWidget
+    list_widget_conf_labels: List[QLabel]
+    list_widget_img_labels: List[QLabel]
 
 
 class LiveviewGUI(QMainWindow):
@@ -164,6 +184,57 @@ class LiveviewGUI(QMainWindow):
         else:
             self._set_color(self.flowrate_val, STATUS.DEFAULT)
 
+    @pyqtSlot(object)
+    def update_thumbnails(
+        self,
+        tuple_of_dict_of_thumbnails: Tuple[
+            Dict[int, List[Thumbnail]], Dict[int, List[Thumbnail]]
+        ],
+    ):
+        max_confs = tuple_of_dict_of_thumbnails[0]
+        min_confs = tuple_of_dict_of_thumbnails[1]
+
+        max_conf_display = self.max_and_min_conf_thumbnail_displays["max_conf"]
+        min_conf_display = self.max_and_min_conf_thumbnail_displays["min_conf"]
+
+        for i in CLASS_IDS:
+            max_conf_thumbnails = max_confs[i]
+            min_conf_thumbnails = min_confs[i]
+            max_display_for_i = max_conf_display[
+                i
+            ]  # row corresponding to this class id
+            min_display_for_i = min_conf_display[i]
+
+            for j, (t_max, t_min) in enumerate(
+                zip(max_conf_thumbnails, min_conf_thumbnails)
+            ):
+                # Set confidence labels
+                max_display_for_i.list_widget_conf_labels[j].setText(
+                    f"{t_max.confidence:.3f}"
+                )
+                min_display_for_i.list_widget_conf_labels[j].setText(
+                    f"{t_min.confidence:.3f}"
+                )
+
+                # Set thumbnail
+                max_display_for_i.list_widget_img_labels[j].setPixmap(
+                    QPixmap.fromImage(gray2qimage(t_max.img_crop))
+                )
+                min_display_for_i.list_widget_img_labels[j].setPixmap(
+                    QPixmap.fromImage(gray2qimage(t_min.img_crop))
+                )
+
+                # qs_max = self._get_qsize(*t_max.img_crop.shape)
+                # qs_min = self._get_qsize(*t_min.img_crop.shape)
+                # max_display_for_i.list_widget.item(j).setSizeHint(qs_max)
+                # min_display_for_i.list_widget.item(j).setSizeHint(qs_min)
+
+    def _get_qsize(self, h, w):
+        qs = QSize()
+        qs.setHeight(h)
+        qs.setWidth(w)
+        return qs
+
     def _set_color(self, lbl: QLabel, status: STATUS):
         lbl.setStyleSheet(f"background-color: {status.value}")
 
@@ -185,13 +256,13 @@ class LiveviewGUI(QMainWindow):
 
         self._load_infopanel_ui()
         self._load_liveview_ui()
-        # self._load_thumbnail_ui()
+        self._load_thumbnail_ui()
         self._load_metadata_ui()
 
         # Set up tabs
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.liveview_widget, "Liveviewer")
-        # self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnails")
+        self.tab_widget.addTab(self.thumbnail_widget, "Parasite Thumbnails")
         self.tab_widget.addTab(self.metadata_widget, "Experiment metadata")
 
         # Populate window
@@ -326,27 +397,117 @@ class LiveviewGUI(QMainWindow):
         self.thumbnail_widget.setLayout(self.thumbnail_layout)
 
         # Populate thumbnail tab
-        self.ring_lbl = QLabel("Ring")
-        self.troph_lbl = QLabel("Troph")
-        self.schizont_lbl = QLabel("Schizont")
-        self.ring_img = QLabel()
-        self.troph_img = QLabel()
-        self.schizont_img = QLabel()
+        class_labels = [QLabel(c.capitalize()) for c in CLASSES_TO_DISPLAY]
+        [label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft) for label in class_labels]
 
-        self.ring_lbl.setAlignment(Qt.AlignHCenter)
-        self.troph_lbl.setAlignment(Qt.AlignHCenter)
-        self.schizont_lbl.setAlignment(Qt.AlignHCenter)
+        self.max_and_min_conf_thumbnail_displays: Dict[str, List[ThumbnailDisplay]] = {
+            "max_conf": [],
+            "min_conf": [],
+        }
+        for k in self.max_and_min_conf_thumbnail_displays.keys():
+            thumbnail_lists: List[ThumbnailDisplay] = []
+            for i, c in enumerate(CLASSES_TO_DISPLAY):
+                class_id = CLASS_IDS[i]
+                class_name = c
+                conf_labels: List[QLabel] = []
+                img_labels: List[QLabel] = []
 
-        self.ring_img.setScaledContents(True)
-        self.troph_img.setScaledContents(True)
-        self.schizont_img.setScaledContents(True)
+                list_widget = QListWidget()
+                list_widget.setFlow(QListView.LeftToRight)
+                list_widget.setContentsMargins(0, 0, 0, 0)
 
-        self.thumbnail_layout.addWidget(self.ring_lbl, 0, 0)
-        self.thumbnail_layout.addWidget(self.troph_lbl, 0, 1)
-        self.thumbnail_layout.addWidget(self.schizont_lbl, 0, 2)
-        self.thumbnail_layout.addWidget(self.ring_img, 1, 0)
-        self.thumbnail_layout.addWidget(self.troph_img, 1, 1)
-        self.thumbnail_layout.addWidget(self.schizont_img, 1, 2)
+                for i in range(MAX_THUMBNAILS):
+                    w = QWidget()
+                    layout = QVBoxLayout()
+                    layout.setSpacing(0)
+                    layout.setContentsMargins(
+                        THUMBNAIL_SPACING, 0, THUMBNAIL_SPACING, 0
+                    )
+
+                    conf_label = QLabel()
+                    conf_label.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
+
+                    img_label = QLabel()
+                    conf_labels.append(conf_label)
+                    img_labels.append(img_label)
+
+                    layout.addWidget(conf_label)
+                    layout.addWidget(img_label)
+                    layout.setAlignment(Qt.AlignVCenter)
+                    w.setLayout(layout)
+
+                    v = QListWidgetItem()
+                    v.setFlags(Qt.NoItemFlags)
+                    qs = QSize()
+                    qs.setHeight(MIN_THUMBNAIL_DISPLAY_SIZE)
+                    qs.setWidth(MIN_THUMBNAIL_DISPLAY_SIZE)
+                    v.setSizeHint(qs)
+                    list_widget.addItem(v)
+                    list_widget.setItemWidget(v, w)
+
+                thumbnail_lists.append(
+                    ThumbnailDisplay(
+                        class_name=class_name,
+                        class_id=class_id,
+                        list_widget=list_widget,
+                        list_widget_conf_labels=conf_labels,
+                        list_widget_img_labels=img_labels,
+                    )
+                )
+                self.max_and_min_conf_thumbnail_displays[k] = thumbnail_lists
+
+        self.refresh_thumbnails = QPushButton("Click to refresh\nthumbnails")
+        self.toggle_confs = QPushButton("Click to display min confidence thumbnails")
+        self.toggle_confs.setCheckable(True)
+        self.toggle_confs.clicked.connect(self.toggle_thumbnails)
+
+        self.thumbnail_layout.addWidget(self.refresh_thumbnails, 0, 0)
+        self.thumbnail_layout.addWidget(self.toggle_confs, 0, 1)
+
+        # Class labels
+        [
+            self.thumbnail_layout.addWidget(label, i + 1, 0)
+            for i, label in enumerate(class_labels)
+        ]
+
+        for k in self.max_and_min_conf_thumbnail_displays.keys():
+            thumbnail_lists = self.max_and_min_conf_thumbnail_displays[k]
+            for i, x in enumerate(thumbnail_lists):
+                if k == "min_conf":
+                    x.list_widget.setVisible(False)
+                self.thumbnail_layout.addWidget(x.list_widget, i + 1, 1)
+
+            # Synchronize scrollbars
+            sbars = [x.list_widget.horizontalScrollBar() for x in thumbnail_lists]
+
+            for i, x in enumerate(thumbnail_lists):
+                [
+                    x.list_widget.horizontalScrollBar().valueChanged.connect(
+                        partial(self.move_scrollbar, s)
+                    )
+                    for j, s in enumerate(sbars)
+                    if j != i
+                ]
+            [x.list_widget.horizontalScrollBar().hide() for x in thumbnail_lists[1:]]
+
+        # self.thumbnail_layout.addWidget(self.toggle_confs, len(CLASSES_TO_DISPLAY), 1)
+
+    def move_scrollbar(self, vs, value):
+        vs.setValue(value)
+
+    def toggle_thumbnails(self):
+        if not self.toggle_confs.isChecked():
+            self.toggle_confs.setText("Click to display min confidence thumbnails")
+            for x in self.max_and_min_conf_thumbnail_displays["min_conf"]:
+                x.list_widget.setVisible(False)
+            for x in self.max_and_min_conf_thumbnail_displays["max_conf"]:
+                x.list_widget.setVisible(True)
+        else:
+            self.toggle_confs.setText("Click to display max confidence thumbnails")
+            for x in self.max_and_min_conf_thumbnail_displays["min_conf"]:
+                x.list_widget.setVisible(True)
+            for x in self.max_and_min_conf_thumbnail_displays["max_conf"]:
+                x.list_widget.setVisible(False)
 
     def _load_metadata_ui(self):
         # Set up metadata layout + widget
@@ -412,4 +573,5 @@ if __name__ == "__main__":
     gui.update_tcp("Sample address here")
 
     gui.showMaximized()
+    gui.exit_btn.clicked.connect(gui.close)
     sys.exit(app.exec_())
