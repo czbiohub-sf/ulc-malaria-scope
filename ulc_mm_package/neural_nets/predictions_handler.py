@@ -7,6 +7,7 @@ import zarr
 
 import ulc_mm_package.neural_nets.utils as nn_utils
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.scope_constants import CAMERA_SELECTION
 from ulc_mm_package.QtGUI.gui_constants import MAX_THUMBNAILS
 from ulc_mm_package.neural_nets.neural_network_constants import (
@@ -202,7 +203,7 @@ class PredictionsHandler:
             for obj in confs[c]:
                 img_id = obj.parsed[0].astype(np.uint32)
                 tlx, tly, brx, bry = obj.parsed[1:5].astype(np.uint32)
-                img_crop = zarr_store[:, :, img_id][tly:bry, tlx:brx]
+                img_crop = YOGO.crop_img(zarr_store[:, :, img_id])[tly:bry, tlx:brx]
                 thumbnails[c].append(
                     Thumbnail(
                         img_crop=img_crop,
