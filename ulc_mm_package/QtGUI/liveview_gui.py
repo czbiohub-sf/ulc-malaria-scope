@@ -301,8 +301,8 @@ class LiveviewGUI(QMainWindow):
         self.schizont_count_lbl = QLabel("Schizont:")
         self.healthy_count_val = QLabel("-")
         self.ring_count_val = QLabel("-")
-        self.schizont_count_val = QLabel("-")
         self.troph_count_val = QLabel("-")
+        self.schizont_count_val = QLabel("-")
 
         # Populate infopanel with routine results
         self.focus_title = QLabel("FOCUS ERROR (motor steps)")
@@ -335,14 +335,14 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
         self.infopanel_layout.addWidget(self.cell_count_title, 4, 1, 1, 2)
-        self.infopanel_layout.addWidget(self.ring_count_lbl, 6, 1)
-        self.infopanel_layout.addWidget(self.ring_count_val, 6, 2)
         self.infopanel_layout.addWidget(self.healthy_count_lbl, 5, 1)
         self.infopanel_layout.addWidget(self.healthy_count_val, 5, 2)
-        self.infopanel_layout.addWidget(self.schizont_count_lbl, 7, 1)
-        self.infopanel_layout.addWidget(self.schizont_count_val, 7, 2)
-        self.infopanel_layout.addWidget(self.troph_count_lbl, 8, 1)
-        self.infopanel_layout.addWidget(self.troph_count_val, 8, 2)
+        self.infopanel_layout.addWidget(self.ring_count_lbl, 6, 1)
+        self.infopanel_layout.addWidget(self.ring_count_val, 6, 2)
+        self.infopanel_layout.addWidget(self.troph_count_lbl, 7, 1)
+        self.infopanel_layout.addWidget(self.troph_count_val, 7, 2)
+        self.infopanel_layout.addWidget(self.schizont_count_lbl, 8, 1)
+        self.infopanel_layout.addWidget(self.schizont_count_val, 8, 2)
 
         self.infopanel_layout.addWidget(self.focus_title, 10, 1, 1, 2)
         self.infopanel_layout.addWidget(self.focus_lbl, 11, 2)
