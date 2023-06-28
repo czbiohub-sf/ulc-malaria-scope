@@ -32,7 +32,7 @@ BLANK_INFOPANEL_VAL = "---"
 
 # ================ Thumbnail preview ================ #
 MAX_THUMBNAILS = 10
-CLASSES_TO_DISPLAY = ["healthy", "ring", "troph", "schizont"]
+CLASSES_TO_DISPLAY = ["healthy", "ring", "trophozoite", "schizont"]
 CLASS_IDS = [YOGO_CLASS_IDX_MAP[class_name] for class_name in CLASSES_TO_DISPLAY]
 MIN_THUMBNAIL_DISPLAY_SIZE = 55
 THUMBNAIL_SPACING = 5

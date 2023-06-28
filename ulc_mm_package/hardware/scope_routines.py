@@ -169,7 +169,7 @@ class Routines:
         mscope: MalariaScope,
         img: np.ndarray,
         counts: Optional[Sequence[int]] = None,
-    ) -> List[Tuple[int, Tuple[float, ...]]]:
+    ) -> List[AsyncInferenceResult]:
         results = mscope.cell_diagnosis_model.get_asyn_results()
         mscope.cell_diagnosis_model(img, counts)
         return results
@@ -179,19 +179,9 @@ class Routines:
         self,
         mscope: MalariaScope,
     ) -> Generator[List[AsyncInferenceResult], Tuple[np.ndarray, Optional[int]], None,]:
-        counter = 0
-
         while True:
-            counter += 1
-            if counter >= nn_constants.YOGO_PERIOD_NUM:
-                counter = 0
-                img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
-                mscope.cell_diagnosis_model(img, counts)
-            else:
-                (
-                    _,
-                    _,
-                ) = yield []
+            img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
+            mscope.cell_diagnosis_model(img, counts)
 
     @init_generator
     def flow_control_routine(

@@ -14,17 +14,25 @@ AF_BATCH_SIZE = 10
 AF_THRESHOLD = 1
 AF_QSIZE = 10  # For AF_PERIOD_S = 0.5, we have a max delay of 5 sec
 
-AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files/valiant-disco-119.xml")
+AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files" / "valiant-disco-119.xml")
 
 # ================ YOGO constants ================ #
-YOGO_PRED_THRESHOLD = 0.3
-YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files/glowing-sunset-342.xml")
+YOGO_PRED_THRESHOLD = 0.5
+YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / "brisk-sweep-9.xml")
 
-YOGO_CLASS_LIST: Tuple[str, ...] = ("healthy", "ring", "schizont", "troph")
+YOGO_CLASS_LIST: Tuple[str, ...] = (
+    "healthy",
+    "ring",
+    "trophozoite",
+    "schizont",
+    "gametocyte",
+    "wbc",
+    "misc",
+)
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
 
-YOGO_PERIOD_S = 0.1
-YOGO_PERIOD_NUM = int(YOGO_PERIOD_S * ACQUISITION_FPS)
+# best way to find this number is to look for input shape in the model definition xml file
+YOGO_CROP_HEIGHT_PX: int = 193
 
 # ================ Image size constants ================ #
 IMG_RESIZED_DIMS = (400, 300)

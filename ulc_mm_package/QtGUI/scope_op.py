@@ -9,7 +9,7 @@ import cv2
 import logging
 import numpy as np
 
-from typing import Any, List
+from typing import Any
 from time import sleep, perf_counter
 from transitions import Machine, State
 
@@ -48,14 +48,9 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorBusy,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
-from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.neural_nets.YOGOInference import (
-    ClassCountResult,
-)
+from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
-    YOGO_PERIOD_NUM,
-    YOGO_CLASS_IDX_MAP,
     AF_BATCH_SIZE,
 )
 
@@ -450,10 +445,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.density_routine = self.routines.cell_density_routine()
 
-        self.count_parasitemia_routine = (
-            self.routines.count_parasitemia_periodic_wrapper(self.mscope)
-        )
-
         self.set_period.emit(LIVEVIEW_PERIOD)
 
         self.start_time = perf_counter()
@@ -720,17 +711,19 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
         t0 = perf_counter()
-        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
-        prev_yogo_results: List[
-            AsyncInferenceResult
-        ] = self.count_parasitemia_routine.send((resized_img, self.frame_count))
-
+        prev_yogo_results = self.routines.count_parasitemia(
+            self.mscope, YOGO.crop_img(img), self.frame_count
+        )
         t1 = perf_counter()
+
         self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
 
-        t0 = perf_counter()
-        # we can use this for cell counts in the future, and also density in the now
+        self._update_metadata_if_verbose(
+            "yogo_qsize",
+            self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
+        )
 
+        t0 = perf_counter()
         for result in prev_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
 
@@ -738,16 +731,11 @@ class ScopeOp(QObject, NamedMachine):
                 self.mscope.predictions_handler.parsed_tensor
             )
 
-            # very rough interpolation: ~30 FPS * period between YOGO calls * counts
-            class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
-                class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
+            class_counts = nn_utils.get_class_counts(
+                self.mscope.predictions_handler.parsed_tensor
             )
-            self.cell_counts += class_counts
 
-            self._update_metadata_if_verbose(
-                "yogo_qsize",
-                self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
-            )
+            self.cell_counts += class_counts
 
             try:
                 self.density_routine.send(class_counts)
@@ -767,6 +755,7 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
         t0 = perf_counter()
+        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         try:
             (
                 raw_focus_err,

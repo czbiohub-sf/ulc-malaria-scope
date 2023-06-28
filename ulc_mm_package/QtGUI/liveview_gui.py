@@ -126,10 +126,11 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(ClassCountResult)
     def update_cell_count(self, cell_count: ClassCountResult):
+        # TODO add the rest of the cell types (can probably ignore misc?)
         healthy_cell_count = cell_count[YOGO_CLASS_IDX_MAP["healthy"]]
         ring_cell_count = cell_count[YOGO_CLASS_IDX_MAP["ring"]]
+        troph_cell_count = cell_count[YOGO_CLASS_IDX_MAP["trophozoite"]]
         schiz_cell_count = cell_count[YOGO_CLASS_IDX_MAP["schizont"]]
-        troph_cell_count = cell_count[YOGO_CLASS_IDX_MAP["troph"]]
 
         # 'x or y' syntax means 'x if x is "truthy" else y'
         # x is "truthy" if bool(x) == True
@@ -137,13 +138,13 @@ class LiveviewGUI(QMainWindow):
         # so we get string '---'
         healthy_count_str = f"{healthy_cell_count or '---'}"
         ring_count_str = f"{ring_cell_count or '---'}"
-        schiz_count_str = f"{schiz_cell_count or '---'}"
         troph_count_str = f"{troph_cell_count or '---'}"
+        schiz_count_str = f"{schiz_cell_count or '---'}"
 
         self.healthy_count_val.setText(healthy_count_str)
         self.ring_count_val.setText(ring_count_str)
-        self.schizont_count_val.setText(schiz_count_str)
         self.troph_count_val.setText(troph_count_str)
+        self.schizont_count_val.setText(schiz_count_str)
 
     @pyqtSlot(str)
     def update_msg(self, msg):
@@ -205,29 +206,23 @@ class LiveviewGUI(QMainWindow):
             ]  # row corresponding to this class id
             min_display_for_i = min_conf_display[i]
 
-            for j, (t_max, t_min) in enumerate(
-                zip(max_conf_thumbnails, min_conf_thumbnails)
-            ):
-                # Set confidence labels
+            # High confidence thumbnails
+            for j, t_max in enumerate(max_conf_thumbnails):
                 max_display_for_i.list_widget_conf_labels[j].setText(
                     f"{t_max.confidence:.3f}"
                 )
-                min_display_for_i.list_widget_conf_labels[j].setText(
-                    f"{t_min.confidence:.3f}"
-                )
-
-                # Set thumbnail
                 max_display_for_i.list_widget_img_labels[j].setPixmap(
                     QPixmap.fromImage(gray2qimage(t_max.img_crop))
+                )
+
+            # Low confidence thumbnails
+            for j, t_min in enumerate(min_conf_thumbnails):
+                min_display_for_i.list_widget_conf_labels[j].setText(
+                    f"{t_min.confidence:.3f}"
                 )
                 min_display_for_i.list_widget_img_labels[j].setPixmap(
                     QPixmap.fromImage(gray2qimage(t_min.img_crop))
                 )
-
-                # qs_max = self._get_qsize(*t_max.img_crop.shape)
-                # qs_min = self._get_qsize(*t_min.img_crop.shape)
-                # max_display_for_i.list_widget.item(j).setSizeHint(qs_max)
-                # min_display_for_i.list_widget.item(j).setSizeHint(qs_min)
 
     def _get_qsize(self, h, w):
         qs = QSize()
@@ -296,12 +291,12 @@ class LiveviewGUI(QMainWindow):
         self.cell_count_title = QLabel("CELL COUNTS")
         self.healthy_count_lbl = QLabel("Healthy:")
         self.ring_count_lbl = QLabel("Ring:")
-        self.schizont_count_lbl = QLabel("Schizont:")
         self.troph_count_lbl = QLabel("Troph:")
+        self.schizont_count_lbl = QLabel("Schizont:")
         self.healthy_count_val = QLabel("-")
         self.ring_count_val = QLabel("-")
-        self.schizont_count_val = QLabel("-")
         self.troph_count_val = QLabel("-")
+        self.schizont_count_val = QLabel("-")
 
         # Populate infopanel with routine results
         self.focus_title = QLabel("FOCUS ERROR (motor steps)")
@@ -334,14 +329,14 @@ class LiveviewGUI(QMainWindow):
         self.infopanel_layout.addWidget(self.tcp_lbl, 15, 1, 1, 2)
 
         self.infopanel_layout.addWidget(self.cell_count_title, 4, 1, 1, 2)
-        self.infopanel_layout.addWidget(self.ring_count_lbl, 6, 1)
-        self.infopanel_layout.addWidget(self.ring_count_val, 6, 2)
         self.infopanel_layout.addWidget(self.healthy_count_lbl, 5, 1)
         self.infopanel_layout.addWidget(self.healthy_count_val, 5, 2)
-        self.infopanel_layout.addWidget(self.schizont_count_lbl, 7, 1)
-        self.infopanel_layout.addWidget(self.schizont_count_val, 7, 2)
-        self.infopanel_layout.addWidget(self.troph_count_lbl, 8, 1)
-        self.infopanel_layout.addWidget(self.troph_count_val, 8, 2)
+        self.infopanel_layout.addWidget(self.ring_count_lbl, 6, 1)
+        self.infopanel_layout.addWidget(self.ring_count_val, 6, 2)
+        self.infopanel_layout.addWidget(self.troph_count_lbl, 7, 1)
+        self.infopanel_layout.addWidget(self.troph_count_val, 7, 2)
+        self.infopanel_layout.addWidget(self.schizont_count_lbl, 8, 1)
+        self.infopanel_layout.addWidget(self.schizont_count_val, 8, 2)
 
         self.infopanel_layout.addWidget(self.focus_title, 10, 1, 1, 2)
         self.infopanel_layout.addWidget(self.focus_lbl, 11, 2)
@@ -489,8 +484,6 @@ class LiveviewGUI(QMainWindow):
                     if j != i
                 ]
             [x.list_widget.horizontalScrollBar().hide() for x in thumbnail_lists[1:]]
-
-        # self.thumbnail_layout.addWidget(self.toggle_confs, len(CLASSES_TO_DISPLAY), 1)
 
     def move_scrollbar(self, vs, value):
         vs.setValue(value)
