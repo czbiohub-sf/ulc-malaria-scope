@@ -99,7 +99,8 @@ def _parse_prediction_tensor(
     bry = np.rint(yc + pred_half_height).astype(DTYPE)
 
     objectness = filtered_pred[4, :].astype(DTYPE)
-    pred_labels = np.argmax(filtered_pred[5:, :], axis=0).astype(np.uint8)
+    all_confs = filtered_pred[5:, :].astype(DTYPE)
+    pred_labels = np.argmax(all_confs, axis=0).astype(np.uint8)
 
     # Get peak prediction probabilities
     # Manually looping through because numba only supports
@@ -113,7 +114,6 @@ def _parse_prediction_tensor(
     # )
     s = int(filtered_pred.shape[1])
     pred_probs = np.zeros(s)
-    all_confs = filtered_pred[5:, :].astype(DTYPE)
     for i in range(s):
         l = pred_labels[i]
         pred_probs[i] = all_confs[l, i]
@@ -157,6 +157,7 @@ def parse_prediction_tensor(
             All the confidence values (the peak prediction confidence is repeated) for each class
     """
 
+    prediction_tensor = prediction_tensor.astype(np.float32)
     return np.vstack(_parse_prediction_tensor(img_id, prediction_tensor, img_h, img_w))
 
 

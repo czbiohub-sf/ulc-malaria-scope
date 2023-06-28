@@ -63,7 +63,7 @@ class PredictionsHandler:
         self.curr_max_of_min_confs_by_class = {x: HIGH_CONF_THRESH for x in class_ids}
 
         # Run funcs below once on mock-data, numba compiles the function on first run (which is a little slow)
-        mock_pre_parsed_data = np.random.rand(1, 12, 3225)
+        mock_pre_parsed_data = np.random.rand(1, 12, 3225).astype(np.float32)
         mock_parsed_data = np.random.rand(8 + NUM_CLASSES, 30).astype(np.float32)
 
         print("⚡ Hold tight, compiling hot path functions to machine code...")
