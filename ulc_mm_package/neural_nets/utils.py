@@ -35,7 +35,7 @@ class SinglePredictedObject(NamedTuple):
         return f"img_id: {self.parsed[0]} - conf: {self.conf}\n"
 
 
-@njit
+@njit(cache=True)
 def _parse_prediction_tensor(
     img_id: int,
     prediction_tensor: np.ndarray,
@@ -479,7 +479,7 @@ def get_class_counts(
     return [id_and_counts.get(i, 0) for i in range(num_classes)]
 
 
-@njit
+@njit(cache=True)
 def nms(parsed_prediction_tensor: npt.NDArray, thresh: float) -> List[int]:
     """
     Fast R-CNN
