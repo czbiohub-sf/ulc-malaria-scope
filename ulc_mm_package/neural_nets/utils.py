@@ -36,14 +36,101 @@ class SinglePredictedObject(NamedTuple):
         return f"img_id: {self.parsed[0]} - conf: {self.conf}\n"
 
 
+@njit
+def _parse_prediction_tensor(
+    img_id: int,
+    prediction_tensor: np.ndarray,
+    img_h: int = DEFAULT_H,
+    img_w: int = DEFAULT_W,
+    DTYPE=np.float32,
+) -> Tuple[
+    npt.NDArray,
+    npt.NDArray,
+    npt.NDArray,
+    npt.NDArray,
+    npt.NDArray,
+    npt.NDArray,
+    npt.NDArray,
+    npt.NDArray,
+]:
+    """Function to parse a prediction tensor.
+
+    This function is called internally (the user only needs to call `parse_prediction_tensor`).
+
+    `parse_prediction_tensor` takes the outputs of this function (a bunch of numpy arrays, representing
+    rows of the final parsed predictions tensor), and stacks them using `np.vstack`.
+
+    The reason this function has been separated is because as of when I'm writing this,
+    numba does not support np.vstack with arguments of different shapes/types. All
+    the returned numpy arrays are single rows _except_ for `all_confs`, which has NUM_CLASSES rows.
+
+    Parameters
+    ----------
+    prediction_tensor: np.ndarray
+        The direct output tensor from a call to the YOGO model (1 * (5+NUM_CLASSES) * (Sx*Sy))
+    img_h: int
+    img_w: int
+
+    Returns
+    -------
+    npt.NDArray: img_ids (1 x N)
+    npt.NDArray: tlx (1 x N)
+    npt.NDArray: tly (1 x N)
+    npt.NDArray: brx (1 x N)
+    npt.NDArray: bry (1 x N)
+    npt.NDArray: objectness (1 x N)
+    npt.NDArray: pred_labels (1 x N)
+    npt.NDArray: pred_probs (1 x N)
+    npt.NDArray: pred_probs (NUM_CLASSES x N)
+    """
+
+    mask = (prediction_tensor[:, 4:5, :] > 0.5).flatten()
+    filtered_pred = prediction_tensor[:, :, mask][0, :, :]
+
+    img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
+    xc = filtered_pred[0, :] * img_w
+    yc = filtered_pred[1, :] * img_h
+    pred_half_width = filtered_pred[2] / 2 * img_w
+    pred_half_height = filtered_pred[3] / 2 * img_h
+
+    tlx = np.rint(xc - pred_half_width).astype(DTYPE)
+    tly = np.rint(yc - pred_half_height).astype(DTYPE)
+    brx = np.rint(xc + pred_half_width).astype(DTYPE)
+    bry = np.rint(yc + pred_half_height).astype(DTYPE)
+
+    objectness = filtered_pred[4, :].astype(DTYPE)
+    pred_labels = np.argmax(filtered_pred[5:, :], axis=0).astype(np.uint8)
+
+    # Get peak prediction probabilities
+    # Manually looping through because numba only supports
+    # one advanced indexing operation at a time
+    # (
+    # otherwise we could do
+    #   pred_probs = filtered_pred[5:, ]
+    #      [
+    #           pred_labels, np.arange(filtered_preds.shape[1])]
+    #      ]
+    # )
+    s = int(filtered_pred.shape[1])
+    pred_probs = np.zeros(s)
+    all_confs = filtered_pred[5:, :].astype(DTYPE)
+    for i in range(s):
+        l = pred_labels[i]
+        pred_probs[i] = all_confs[l, i]
+
+    pred_labels = pred_labels.astype(DTYPE)
+    pred_probs = pred_probs.astype(DTYPE)
+
+    return img_ids, tlx, tly, brx, bry, objectness, pred_labels, pred_probs, all_confs
+
+
 def parse_prediction_tensor(
     img_id: int,
-    prediction_tensor: npt.NDArray,
+    prediction_tensor: np.ndarray,
     img_h: int = DEFAULT_H,
     img_w: int = DEFAULT_W,
 ) -> npt.NDArray:
-    """Function to parse a prediction tensor.
-
+    """
     Parameters
     ----------
     prediction_tensor: np.ndarray
@@ -70,30 +157,7 @@ def parse_prediction_tensor(
             All the confidence values (the peak prediction confidence is repeated) for each class
     """
 
-    filtered_pred = YOGO.filter_res(prediction_tensor).squeeze(
-        axis=0
-    )  # (5+NUM_CLASSES) x N
-    img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
-    xc = filtered_pred[0, :] * img_w
-    yc = filtered_pred[1, :] * img_h
-    pred_half_width = filtered_pred[2] / 2 * img_w
-    pred_half_height = filtered_pred[3] / 2 * img_h
-
-    tlx = np.rint(xc - pred_half_width).astype(DTYPE)
-    tly = np.rint(yc - pred_half_height).astype(DTYPE)
-    brx = np.rint(xc + pred_half_width).astype(DTYPE)
-    bry = np.rint(yc + pred_half_height).astype(DTYPE)
-
-    objectness = filtered_pred[4, :].astype(DTYPE)
-    pred_labels = np.argmax(filtered_pred[5:, :], axis=0).astype(np.uint8)
-    pred_probs = filtered_pred[5:, :][
-        pred_labels, np.arange(filtered_pred.shape[1])
-    ].astype(DTYPE)
-    all_confs = filtered_pred[5:, :]
-
-    return np.vstack(
-        [img_ids, tlx, tly, brx, bry, objectness, pred_labels, pred_probs, all_confs]
-    )
+    return np.vstack(_parse_prediction_tensor(img_id, prediction_tensor, img_h, img_w))
 
 
 def get_specific_class_from_parsed_tensor(

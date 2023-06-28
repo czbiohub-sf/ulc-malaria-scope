@@ -62,9 +62,13 @@ class PredictionsHandler:
         }
         self.curr_max_of_min_confs_by_class = {x: HIGH_CONF_THRESH for x in class_ids}
 
-        # Run nms once on mock-data, numba compiles the function on first run (which is a little slow)
-        mock_data = np.random.rand(8 + NUM_CLASSES, 20).astype(np.float32)
-        nn_utils.nms(mock_data, IOU_THRESH)
+        # Run funcs below once on mock-data, numba compiles the function on first run (which is a little slow)
+        mock_pre_parsed_data = np.random.rand(1, 12, 3225)
+        mock_parsed_data = np.random.rand(8 + NUM_CLASSES, 30).astype(np.float32)
+
+        print("⚡ Hold tight, compiling hot path functions to machine code...")
+        nn_utils.parse_prediction_tensor(0, mock_pre_parsed_data, IMG_H, IMG_W)
+        nn_utils.nms(mock_parsed_data, IOU_THRESH)
 
     def _add_pred_tensor_to_store(
         self, img_id: int, prediction_tensor: npt.NDArray
