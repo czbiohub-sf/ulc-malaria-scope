@@ -5,7 +5,6 @@ import numpy as np
 import numpy.typing as npt
 from numba import njit
 
-from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     YOGO_CLASS_LIST,
@@ -116,8 +115,8 @@ def _parse_prediction_tensor(
     s = int(filtered_pred.shape[1])
     pred_probs = np.zeros(s)
     for i in range(s):
-        l = pred_labels[i]
-        pred_probs[i] = all_confs[l, i]
+        label = pred_labels[i]
+        pred_probs[i] = all_confs[label, i]
 
     pred_labels = pred_labels.astype(DTYPE)
     pred_probs = pred_probs.astype(DTYPE)
