@@ -16,9 +16,9 @@ sudo apt upgrade
 ### Install numba first, separately
 This section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
 ```
-sudo apt install llvm-9
-LLVM_CONFIG=llvm-config-9 pip install llvmlite==0.33.0 --no-cache
-pip install numba==0.50.1
+sudo apt install llvm-11
+LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
+LLVM_CONFIG=llvm-config-11 pip install numba==0.56.0
 ```
 
 ### Install ulc-malaria-scope
