@@ -45,6 +45,7 @@ setup(
         "tqdm==4.63.0",
         "transitions==0.8.11",
         "pyngrok==5.1.0",
+        "numba==0.50.1",
     ],
     extras_require={
         "dev": [
