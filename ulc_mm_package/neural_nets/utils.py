@@ -52,6 +52,7 @@ def _parse_prediction_tensor(
     npt.NDArray,
     npt.NDArray,
     npt.NDArray,
+    npt.NDArray,
 ]:
     """Function to parse a prediction tensor.
 
