@@ -3,6 +3,7 @@ from typing import NamedTuple, List, Tuple, no_type_check
 from typing_extensions import TypeAlias
 import numpy as np
 import numpy.typing as npt
+from numba import njit
 
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.neural_network_constants import (
@@ -413,6 +414,7 @@ def get_class_counts(
     return [id_and_counts.get(i, 0) for i in range(num_classes)]
 
 
+@njit
 def nms(parsed_prediction_tensor: npt.NDArray, thresh: float) -> List[int]:
     """
     Fast R-CNN
