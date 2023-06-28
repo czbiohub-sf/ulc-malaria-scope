@@ -14,6 +14,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_CLASS_IDX_MAP,
     YOGO_CROP_HEIGHT_PX,
+    IOU_THRESH,
 )
 
 NUM_CLASSES = len(YOGO_CLASS_LIST)
@@ -61,6 +62,10 @@ class PredictionsHandler:
         }
         self.curr_max_of_min_confs_by_class = {x: HIGH_CONF_THRESH for x in class_ids}
 
+        # Run nms once on mock-data, numba compiles the function on first run (which is a little slow)
+        mock_data = np.random.rand(8 + NUM_CLASSES, 20).astype(np.float32)
+        nn_utils.nms(mock_data, IOU_THRESH)
+
     def _add_pred_tensor_to_store(
         self, img_id: int, prediction_tensor: npt.NDArray
     ) -> Tuple[int, int]:
@@ -82,6 +87,9 @@ class PredictionsHandler:
         parsed_tensor = nn_utils.parse_prediction_tensor(
             img_id, prediction_tensor, img_h=IMG_H, img_w=IMG_W
         )
+
+        # Non-maximum suppression
+        parsed_tensor = parsed_tensor[:, nn_utils.nms(parsed_tensor, IOU_THRESH)]
 
         # Scale the bounding box locations so they can be used with
         # the original sized images (note this function scales the array in-place)
