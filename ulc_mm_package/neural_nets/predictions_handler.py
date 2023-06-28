@@ -18,6 +18,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 
 NUM_CLASSES = len(YOGO_CLASS_LIST)
 IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, YOGO_CROP_HEIGHT_PX
+HIGH_CONF_THRESH = 0.7
 MAX_POSSIBLE_PREDICTIONS = 1_500_000
 
 
@@ -51,12 +52,14 @@ class PredictionsHandler:
         self.max_confs: Dict[int, List[nn_utils.SinglePredictedObject]] = {
             x: [] for x in class_ids
         }
-        self.curr_min_of_max_confs_by_class = {x: 0 for x in class_ids}
+        self.curr_min_of_max_confs_by_class = {
+            x: HIGH_CONF_THRESH - 1e-6 for x in class_ids
+        }
 
         self.min_confs: Dict[int, List[nn_utils.SinglePredictedObject]] = {
             x: [] for x in class_ids
         }
-        self.curr_max_of_min_confs_by_class = {x: 1.0 for x in class_ids}
+        self.curr_max_of_min_confs_by_class = {x: HIGH_CONF_THRESH for x in class_ids}
 
     def _add_pred_tensor_to_store(
         self, img_id: int, prediction_tensor: npt.NDArray
@@ -95,23 +98,19 @@ class PredictionsHandler:
 
         return (start, self.new_pred_pointer)
 
-    def add_yogo_pred(self, res: AsyncInferenceResult) -> None:
-        """Store the parsed YOGO prediction tensor and update the min/max confidence objects for each class.
+    def _update_max_conf_min_conf_thumbnails(self, parsed_tensor: npt.NDArray):
+        """
+        Update the min/max priority queues for thumbnails.
 
         Parameters
         ----------
-        res: AsyncInferenceResult
+        prediction_tensor: (1 * (5+NUM_CLASSES) * (Sx*Sy))
         """
-
-        img_id = int(res.id)
-        pred_tensor = res.result
-        start, end = self._add_pred_tensor_to_store(img_id, pred_tensor)
-        self.parsed_tensor = self.pred_tensors[:, start:end]
 
         for x in self.class_ids:
             max_conf_col_ids = (
                 nn_utils.get_col_ids_for_matching_class_and_above_conf_thresh(
-                    self.parsed_tensor, x, self.curr_min_of_max_confs_by_class[x]
+                    parsed_tensor, x, self.curr_min_of_max_confs_by_class[x]
                 )
             )
 
@@ -122,7 +121,7 @@ class PredictionsHandler:
                     *list(
                         sorted(
                             zip(
-                                list(self.parsed_tensor[7, max_conf_col_ids][0]),
+                                list(parsed_tensor[7, max_conf_col_ids][0]),
                                 list(max_conf_col_ids[0]),
                             ),
                             key=lambda y: y[0],
@@ -130,26 +129,31 @@ class PredictionsHandler:
                     )[-MAX_THUMBNAILS:]
                 )
 
+                num_thumbnails = len(self.max_confs[x])
                 [
                     hq.heappushpop(self.max_confs[x], i)  # type: ignore
-                    if len(self.max_confs[x]) >= MAX_THUMBNAILS
+                    if num_thumbnails >= MAX_THUMBNAILS
                     else hq.heappush(self.max_confs[x], i)  # type: ignore
                     for i in nn_utils.get_individual_prediction_objs_from_parsed_tensor(
-                        self.parsed_tensor, max_conf_col_ids
+                        parsed_tensor, max_conf_col_ids
                     )
                 ]
-                lowest_max_conf = self.max_confs[x][0].conf
-                self.curr_min_of_max_confs_by_class[x] = lowest_max_conf
 
-                # This is for the very first iteration so that we don't get
-                # duplicate entries in both the max conf and min conf lists
-                if self.curr_max_of_min_confs_by_class[x] == 1.0:
-                    self.curr_max_of_min_confs_by_class[x] = lowest_max_conf
+                # Update the lowest max conf threshold once we've displayed MAX_THUMBNAILS
+                # i.e we want to first display MAX_THUMBNAILS to the user before
+                # adjusting the conf threshold
+                lowest_max_conf = self.max_confs[x][0].conf
+                curr_min_of_max = self.curr_min_of_max_confs_by_class[x]
+                self.curr_min_of_max_confs_by_class[x] = (
+                    lowest_max_conf
+                    if (len(self.max_confs[0]) > MAX_THUMBNAILS)
+                    else curr_min_of_max
+                )
 
             # Repeat the above for minimum confidences
             min_conf_col_ids = (
                 nn_utils.get_col_ids_for_matching_class_and_below_conf_thresh(
-                    self.parsed_tensor, x, self.curr_max_of_min_confs_by_class[x]
+                    parsed_tensor, x, self.curr_max_of_min_confs_by_class[x]
                 )
             )
             if len(min_conf_col_ids[0] > 0):
@@ -157,7 +161,7 @@ class PredictionsHandler:
                     *list(
                         sorted(
                             zip(
-                                list(self.parsed_tensor[7, min_conf_col_ids][0]),
+                                list(parsed_tensor[7, min_conf_col_ids][0]),
                                 list(min_conf_col_ids[0]),
                             ),
                             key=lambda y: y[0],
@@ -170,11 +174,30 @@ class PredictionsHandler:
                     if len(self.min_confs[x]) >= MAX_THUMBNAILS
                     else hq.heappush(self.min_confs[x], i)  # type: ignore
                     for i in nn_utils.get_individual_prediction_objs_from_parsed_tensor(
-                        self.parsed_tensor, min_conf_col_ids, flip_conf_sign=True
+                        parsed_tensor, min_conf_col_ids, flip_conf_sign=True
                     )
                 ]
                 highest_min_conf = self.min_confs[x][0].conf
-                self.curr_max_of_min_confs_by_class[x] = highest_min_conf
+                curr_max_of_min = self.curr_max_of_min_confs_by_class[x]
+                self.curr_max_of_min_confs_by_class[x] = (
+                    highest_min_conf
+                    if len(self.min_confs[x]) > MAX_THUMBNAILS
+                    else curr_max_of_min
+                )
+
+    def add_yogo_pred(self, res: AsyncInferenceResult) -> None:
+        """Store the parsed YOGO prediction tensor and update the min/max confidence objects for each class.
+
+        Parameters
+        ----------
+        res: AsyncInferenceResult
+        """
+
+        img_id = int(res.id)
+        pred_tensor = res.result
+        start, end = self._add_pred_tensor_to_store(img_id, pred_tensor)
+        self.parsed_tensor = self.pred_tensors[:, start:end]
+        self._update_max_conf_min_conf_thumbnails(self.parsed_tensor)
 
     def _get_thumbnails(
         self,

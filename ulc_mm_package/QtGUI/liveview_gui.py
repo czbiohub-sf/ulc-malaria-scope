@@ -206,29 +206,23 @@ class LiveviewGUI(QMainWindow):
             ]  # row corresponding to this class id
             min_display_for_i = min_conf_display[i]
 
-            for j, (t_max, t_min) in enumerate(
-                zip(max_conf_thumbnails, min_conf_thumbnails)
-            ):
-                # Set confidence labels
+            # High confidence thumbnails
+            for j, t_max in enumerate(max_conf_thumbnails):
                 max_display_for_i.list_widget_conf_labels[j].setText(
                     f"{t_max.confidence:.3f}"
                 )
-                min_display_for_i.list_widget_conf_labels[j].setText(
-                    f"{t_min.confidence:.3f}"
-                )
-
-                # Set thumbnail
                 max_display_for_i.list_widget_img_labels[j].setPixmap(
                     QPixmap.fromImage(gray2qimage(t_max.img_crop))
+                )
+
+            # Low confidence thumbnails
+            for j, t_min in enumerate(min_conf_thumbnails):
+                min_display_for_i.list_widget_conf_labels[j].setText(
+                    f"{t_min.confidence:.3f}"
                 )
                 min_display_for_i.list_widget_img_labels[j].setPixmap(
                     QPixmap.fromImage(gray2qimage(t_min.img_crop))
                 )
-
-                # qs_max = self._get_qsize(*t_max.img_crop.shape)
-                # qs_min = self._get_qsize(*t_min.img_crop.shape)
-                # max_display_for_i.list_widget.item(j).setSizeHint(qs_max)
-                # min_display_for_i.list_widget.item(j).setSizeHint(qs_min)
 
     def _get_qsize(self, h, w):
         qs = QSize()
@@ -490,8 +484,6 @@ class LiveviewGUI(QMainWindow):
                     if j != i
                 ]
             [x.list_widget.horizontalScrollBar().hide() for x in thumbnail_lists[1:]]
-
-        # self.thumbnail_layout.addWidget(self.toggle_confs, len(CLASSES_TO_DISPLAY), 1)
 
     def move_scrollbar(self, vs, value):
         vs.setValue(value)
