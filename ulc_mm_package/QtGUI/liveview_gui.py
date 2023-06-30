@@ -226,7 +226,7 @@ class LiveviewGUI(QMainWindow):
             min_display_for_i = min_conf_display[i]
 
             # High confidence thumbnails
-            for j, t_max in enumerate(max_conf_thumbnails[:MAX_THUMBNAILS]):
+            for j, t_max in enumerate(max_conf_thumbnails):
                 max_display_for_i.list_widget_conf_labels[j].setText(
                     f"{t_max.confidence:.3f}"
                 )
@@ -235,7 +235,7 @@ class LiveviewGUI(QMainWindow):
                 )
 
             # Low confidence thumbnails
-            for j, t_min in enumerate(min_conf_thumbnails[:MAX_THUMBNAILS]):
+            for j, t_min in enumerate(min_conf_thumbnails):
                 min_display_for_i.list_widget_conf_labels[j].setText(
                     f"{t_min.confidence:.3f}"
                 )
