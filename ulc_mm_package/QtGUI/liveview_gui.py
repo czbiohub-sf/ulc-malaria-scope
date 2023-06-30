@@ -185,6 +185,25 @@ class LiveviewGUI(QMainWindow):
         else:
             self._set_color(self.flowrate_val, STATUS.DEFAULT)
 
+    def clear_thumbnails(self):
+        max_conf_display = self.max_and_min_conf_thumbnail_displays["max_conf"]
+        min_conf_display = self.max_and_min_conf_thumbnail_displays["min_conf"]
+
+        for i in CLASS_IDS:
+            max_display_for_i = max_conf_display[i]
+            min_display_for_i = min_conf_display[i]
+
+            for max_img_label, min_img_label, max_conf_label, min_conf_label in zip(
+                max_display_for_i.list_widget_img_labels,
+                min_display_for_i.list_widget_img_labels,
+                max_display_for_i.list_widget_conf_labels,
+                min_display_for_i.list_widget_conf_labels,
+            ):
+                max_img_label.clear()
+                max_conf_label.clear()
+                min_img_label.clear()
+                min_conf_label.clear()
+
     @pyqtSlot(object)
     def update_thumbnails(
         self,
