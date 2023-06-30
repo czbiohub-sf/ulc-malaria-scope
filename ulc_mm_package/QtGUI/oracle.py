@@ -558,6 +558,7 @@ class Oracle(Machine):
         self.form_metadata = self.form_window.get_form_input()
         self.form_window.reset_parameters()
         self.liveview_window.update_experiment(self.form_metadata)
+        self.liveview_window.clear_thumbnails()
 
         for key in self.form_metadata:
             self.experiment_metadata[key] = self.form_metadata[key]
