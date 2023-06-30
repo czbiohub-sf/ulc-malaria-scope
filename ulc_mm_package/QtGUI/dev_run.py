@@ -803,7 +803,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
                 _,
             ) = self.acquisitionThread.mscope.ht_sensor.get_temp_and_humidity()
         except Exception as e:
-            print(f"Unable to ambient temperature sensor value: {e}")
+            print(f"Unable to get ambient temperature sensor value: {e}")
 
         self.lblTemperatures.setText(
             f"C: {cam_temp:.2f} CPU: {cpu.temperature:.2f} A: {sens_temp:.2f} (C)"
