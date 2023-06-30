@@ -141,10 +141,9 @@ class PredictionsHandler:
                     )[-MAX_THUMBNAILS:]
                 )
 
-                num_thumbnails = len(self.max_confs[x])
                 [
                     hq.heappushpop(self.max_confs[x], i)  # type: ignore
-                    if num_thumbnails >= MAX_THUMBNAILS
+                    if len(self.max_confs[x]) >= MAX_THUMBNAILS
                     else hq.heappush(self.max_confs[x], i)  # type: ignore
                     for i in nn_utils.get_individual_prediction_objs_from_parsed_tensor(
                         parsed_tensor, max_conf_col_ids
