@@ -8,6 +8,8 @@ from numba import njit
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     YOGO_CLASS_LIST,
+    OBJECTNESS_THRESH,
+    ASPECT_RATIO_THRESH,
 )
 
 NUM_CLASSES = len(YOGO_CLASS_LIST)
@@ -84,8 +86,13 @@ def _parse_prediction_tensor(
     npt.NDArray: pred_probs (NUM_CLASSES x N)
     """
 
-    mask = (prediction_tensor[:, 4:5, :] > 0.5).flatten()
-    filtered_pred = prediction_tensor[:, :, mask][0, :, :]
+    objectness_mask = (prediction_tensor[:, 4:5, :] > OBJECTNESS_THRESH).flatten()
+    aspect_ratios = prediction_tensor[:, :, 2] / prediction_tensor[:, :, 3]
+    aspect_ratio_mask = np.logical_and(
+        1 / ASPECT_RATIO_THRESH <= aspect_ratios, aspect_ratios <= ASPECT_RATIO_THRESH
+    )
+    object_and_aspect_mask = np.logical_and(objectness_mask, aspect_ratio_mask)
+    filtered_pred = prediction_tensor[:, :, object_and_aspect_mask][0, :, :]
 
     img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
     xc = filtered_pred[0, :] * img_w

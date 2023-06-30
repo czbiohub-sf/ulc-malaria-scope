@@ -38,5 +38,8 @@ YOGO_CROP_HEIGHT_PX: int = 193
 IMG_RESIZED_DIMS = (400, 300)
 
 # ================ Prediction filtering constants ================ #
+# TODO (axel) fine-tune these. will be model dependent
 IOU_THRESH = 0.5
+OBJECTNESS_THRESH = 0.5
+ASPECT_RATIO_THRESH = 2
 # add constant for min size filtering (by class?)
