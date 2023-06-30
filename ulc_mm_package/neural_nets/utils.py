@@ -93,10 +93,10 @@ def _parse_prediction_tensor(
     pred_half_width = filtered_pred[2] / 2 * img_w
     pred_half_height = filtered_pred[3] / 2 * img_h
 
-    tlx = np.clip(np.rint(xc - pred_half_width).astype(DTYPE), 0)
-    tly = np.clip(np.rint(yc - pred_half_height).astype(DTYPE), 0)
-    brx = np.clip(np.rint(xc + pred_half_width).astype(DTYPE), img_w)
-    bry = np.clip(np.rint(yc + pred_half_height).astype(DTYPE), img_h)
+    tlx = np.clip(np.rint(xc - pred_half_width).astype(DTYPE), 0, img_w)
+    tly = np.clip(np.rint(yc - pred_half_height).astype(DTYPE), 0, img_h)
+    brx = np.clip(np.rint(xc + pred_half_width).astype(DTYPE), 0, img_w)
+    bry = np.clip(np.rint(yc + pred_half_height).astype(DTYPE), 0, img_h)
 
     objectness = filtered_pred[4, :].astype(DTYPE)
     all_confs = filtered_pred[5:, :].astype(DTYPE)
