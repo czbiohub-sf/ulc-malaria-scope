@@ -87,7 +87,9 @@ def _parse_prediction_tensor(
     """
 
     objectness_mask = (prediction_tensor[:, 4:5, :] > OBJECTNESS_THRESH).flatten()
-    aspect_ratios = prediction_tensor[:, 2, :] * img_w / (prediction_tensor[:, 3, :] * img_h)
+    aspect_ratios = (
+        prediction_tensor[:, 2, :] * img_w / (prediction_tensor[:, 3, :] * img_h)
+    )
     aspect_ratio_mask = np.logical_and(
         1 / ASPECT_RATIO_THRESH <= aspect_ratios, aspect_ratios <= ASPECT_RATIO_THRESH
     )
