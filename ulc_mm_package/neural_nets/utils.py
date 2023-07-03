@@ -86,14 +86,17 @@ def _parse_prediction_tensor(
     npt.NDArray: pred_probs (NUM_CLASSES x N)
     """
 
-    objectness_mask = (prediction_tensor[:, 4:5, :] > OBJECTNESS_THRESH).flatten()
+    objectness_mask = (
+        prediction_tensor[:, 4:5, :] > OBJECTNESS_THRESH
+    ).flatten()  # .flatten to convert from (1, N) -> (N,)
     aspect_ratios = (
-        prediction_tensor[:, 2, :] * img_w / (prediction_tensor[:, 3, :] * img_h)
+        (prediction_tensor[:, 2, :] * img_w) / (prediction_tensor[:, 3, :] * img_h)
+    ).flatten()  # [:, 2, :] is width of bbox as % of img_w, [:, 3, :] is height of bbox as % of img_h
+    width_over_height_mask = aspect_ratios <= ASPECT_RATIO_THRESH
+    height_over_width_mask = 1 / ASPECT_RATIO_THRESH <= aspect_ratios
+    object_and_aspect_mask = np.logical_and(
+        objectness_mask, width_over_height_mask, height_over_width_mask
     )
-    aspect_ratio_mask = np.logical_and(
-        1 / ASPECT_RATIO_THRESH <= aspect_ratios, aspect_ratios <= ASPECT_RATIO_THRESH
-    )
-    object_and_aspect_mask = np.logical_and(objectness_mask, aspect_ratio_mask)
     filtered_pred = prediction_tensor[:, :, object_and_aspect_mask][0, :, :]
 
     img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
