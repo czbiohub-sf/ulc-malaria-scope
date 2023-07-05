@@ -9,7 +9,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     YOGO_CLASS_LIST,
     OBJECTNESS_THRESH,
-    ASPECT_RATIO_THRESH,
 )
 
 NUM_CLASSES = len(YOGO_CLASS_LIST)
@@ -35,6 +34,19 @@ class SinglePredictedObject(NamedTuple):
     def __repr__(self):
         """Print object, helpful for debugging"""
         return f"img_id: {self.parsed[0]} - conf: {self.conf}\n"
+
+
+def per_class_aspect_mask(formatted_preds: npt.NDArray, img_w: int, img_h: int):
+    """
+    formatted_preds is of shape (N, pred_dim)
+    classes are argmax(preds[:, 5:])
+
+    aspect ratios:
+        healthy, ring, schizont, troph: 2
+        gametocyte: 4
+        wbc: 2
+        misc: 4
+    """
 
 
 @njit(cache=True)
@@ -89,11 +101,20 @@ def _parse_prediction_tensor(
     objectness_mask = (
         prediction_tensor[:, 4:5, :] > OBJECTNESS_THRESH
     ).flatten()  # .flatten to convert from (1, N) -> (N,)
+
     aspect_ratios = (
         (prediction_tensor[:, 2, :] * img_w) / (prediction_tensor[:, 3, :] * img_h)
     ).flatten()  # [:, 2, :] is width of bbox as % of img_w, [:, 3, :] is height of bbox as % of img_h
-    width_over_height_mask = aspect_ratios <= ASPECT_RATIO_THRESH
-    height_over_width_mask = 1 / ASPECT_RATIO_THRESH <= aspect_ratios
+
+    classes = np.argmax(prediction_tensor[:, 5:, :], axis=0).flatten()
+    aspect_ratio_thresh = np.where(classes < 4, 2, classes)
+    aspect_ratio_thresh = np.where(aspect_ratio_thresh == 4, 4, aspect_ratio_thresh)
+    aspect_ratio_thresh = np.where(aspect_ratio_thresh == 5, 2, aspect_ratio_thresh)
+    aspect_ratio_thresh = np.where(aspect_ratio_thresh == 6, 4, aspect_ratio_thresh)
+
+    width_over_height_mask = aspect_ratios <= aspect_ratio_thresh
+    height_over_width_mask = 1 / aspect_ratio_thresh <= aspect_ratios
+
     object_and_aspect_mask = np.logical_and(
         objectness_mask, width_over_height_mask, height_over_width_mask
     )
