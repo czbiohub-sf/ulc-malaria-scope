@@ -264,7 +264,8 @@ def save_parasite_thumbnails_to_disk(
     thumbnail_path = dataset_dir / "thumbnails"
     Path.mkdir(thumbnail_path, exist_ok=True)
     paths = [thumbnail_path / yogo_id_to_str[x] for x in parasite_class_ids]
-    [Path.mkdir(path, exist_ok=True) for path in paths]
+    for path in paths:
+        Path.mkdir(path, exist_ok=True)
 
     parasite_class_tensors = [
         get_specific_class_from_parsed_tensor(parsed_prediction_tensor, x)
