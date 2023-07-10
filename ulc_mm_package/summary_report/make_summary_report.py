@@ -4,8 +4,6 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
 
-from ulc_mm_package.neural_nets.utils import Thumbnail
-
 
 def make_html_report(
     experiment_metadata: Dict[str, str],
