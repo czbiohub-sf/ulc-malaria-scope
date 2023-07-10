@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Remoscope / {{ dataset_name }}</title>
+        <link href="minimal-table.css" rel="stylesheet" type="text/css">
+    </head>
+
+    <h1>Dataset {{ dataset_name }} </h1>
+    <body>
+        <h2>Statistics summary and thumbnails</h2>
+
+        {# Experiment metadata #}
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="2">Experiment metadata</th>
+                </tr>
+            </thead>
+            <tr>
+                <td>Operator ID</td>
+                <td>{{ operator_id }}</td>
+            </tr>
+            <tr>
+                <td>Participant ID</td>
+                <td>{{ participant_id }}</td>
+            </tr>
+            <tr>
+                <td>Notes</td>
+                <td>{{ notes }}</td>
+            </tr>
+            <tr>
+                <td>Flowcell ID</td>
+                <td>{{ flowcell_id }}</td>    
+            </tr>
+
+            {# Cell counts #}
+            <thead>
+                <tr>
+                    <th colspan="2">Cell counts</th>
+                </tr>
+            </thead>
+            {% for key in cell_counts %}
+            <tr>
+                <td>{{key}}</td>
+                <td>{{cell_counts[key]}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+
+        {# Thumbnails #}
+        <h3>Parasite thumbnails</h3>
+        {% for key in all_thumbnails %}
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="10">{{key}}</th>
+                </tr>
+            </thead>
+            {% for row in all_thumbnails[key]|batch(10) %}
+            <tr>
+                {% for col in row %}
+                <td>
+                    <img src="{{ col }}">
+                    <p>{{".".join(col.split("_")[-1].split(".")[:2])}}</p>
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        {% endfor %}
+    </body>
+</html>
