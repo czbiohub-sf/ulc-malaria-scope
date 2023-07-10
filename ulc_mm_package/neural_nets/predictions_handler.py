@@ -1,5 +1,5 @@
 import heapq as hq
-from typing import Dict, List, NamedTuple, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import numpy.typing as npt
