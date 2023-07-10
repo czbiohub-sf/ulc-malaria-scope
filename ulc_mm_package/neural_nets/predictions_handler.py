@@ -6,6 +6,7 @@ import numpy.typing as npt
 import zarr
 
 import ulc_mm_package.neural_nets.utils as nn_utils
+from ulc_mm_package.neural_nets.utils import Thumbnail
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.scope_constants import CAMERA_SELECTION
@@ -21,11 +22,6 @@ NUM_CLASSES = len(YOGO_CLASS_LIST)
 IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, YOGO_CROP_HEIGHT_PX
 HIGH_CONF_THRESH = 0.7
 MAX_POSSIBLE_PREDICTIONS = 1_500_000
-
-
-class Thumbnail(NamedTuple):
-    img_crop: npt.NDArray  # n x m array (different for every thumbnail)
-    confidence: float  # value between [0-1]
 
 
 class PredictionsHandler:

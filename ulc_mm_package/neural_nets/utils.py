@@ -1,18 +1,31 @@
 from __future__ import annotations
+from pathlib import Path
 from typing import NamedTuple, List, Tuple, no_type_check
 from typing_extensions import TypeAlias
+
+import cv2
+import zarr
 import numpy as np
 import numpy.typing as npt
 from numba import njit
 
+
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
+    PARASITE_CLASS_IDS,
+    YOGO_CLASS_IDX_MAP,
     YOGO_CLASS_LIST,
 )
+from ulc_mm_package.neural_nets.YOGOInference import YOGO
 
 NUM_CLASSES = len(YOGO_CLASS_LIST)
 DEFAULT_W, DEFAULT_H = IMG_RESIZED_DIMS
 DTYPE: TypeAlias = np.float32
+
+
+class Thumbnail(NamedTuple):
+    img_crop: npt.NDArray  # n x m array (different for every thumbnail)
+    confidence: float  # value between [0-1]
 
 
 class SinglePredictedObject(NamedTuple):
@@ -193,6 +206,75 @@ def get_specific_class_from_parsed_tensor(
 
     mask = parsed_prediction_tensor[6, :] == class_id
     return parsed_prediction_tensor[:, mask]
+
+
+def _get_img_crop(
+    zarr_store: zarr.core.Array, prediction_col: npt.NDArray
+) -> npt.NDArray:
+    img_id = prediction_col[0].astype(np.uint32)
+    tlx, tly, brx, bry = prediction_col[1:5].astype(np.uint32)
+
+    return YOGO.crop_img(zarr_store[:, :, img_id])[tly:bry, tlx:brx]
+
+
+def _save_thumbnails_to_disk(
+    zarr_store: zarr.core.Array,
+    parsed_prediction_tensor: npt.NDArray,
+    save_dir: Path,
+):
+    """Save all the predictions in the given prediction tensor to the disk.
+    Thumbnails will be saved in descending order of confidence.
+
+    Filenames have the following format:
+
+    {number}_class_{class_number}_frame_{frame_id}_conf_{conf value}.png
+
+    Parameters
+    ----------
+    zarr_store: zarr.core.Array
+        Storage containing the images
+    parsed_prediction_tensor: npt.NDArray
+        Array of (5 + NUM_CLASSES) * N predictions
+    save_dir: Path
+        Where to save the thumbnails
+    text: str
+
+    """
+
+    sort_by_confs = parsed_prediction_tensor[7, :].argsort()
+    sorted_arr = parsed_prediction_tensor[:, sort_by_confs][:, ::-1]  # descending order
+    for i in range(sorted_arr.shape[1]):
+        img_id = int(sorted_arr[0, i])
+        class_id = int(sorted_arr[6, i])
+        img_crop = _get_img_crop(zarr_store, sorted_arr[:, i])
+        conf = f"{sorted_arr[7, i]:.5f}"
+        filename = f"{i:04}_class_{class_id:02}_frame_{img_id:05}_conf_{conf}.png"
+        save_loc = str(save_dir / filename)
+        cv2.imwrite(save_loc, img_crop)
+
+
+def save_parasite_thumbnails_to_disk(
+    zarr_store: zarr.core.Array,
+    parsed_prediction_tensor: npt.NDArray,
+    dataset_dir: Path,
+    parasite_class_ids: List[int] = PARASITE_CLASS_IDS,
+):
+    # Create folders for thumbnails
+    yogo_id_to_str = {v: k for k, v in YOGO_CLASS_IDX_MAP.items()}
+    thumbnail_path = dataset_dir / "thumbnails"
+    Path.mkdir(thumbnail_path, exist_ok=True)
+    paths = [thumbnail_path / yogo_id_to_str[x] for x in parasite_class_ids]
+    [Path.mkdir(path, exist_ok=True) for path in paths]
+
+    parasite_class_tensors = [
+        get_specific_class_from_parsed_tensor(parsed_prediction_tensor, x)
+        for x in parasite_class_ids
+    ]
+
+    parasite_tensors_and_save_paths = zip(parasite_class_tensors, paths)
+
+    for parasite_tensor, path in parasite_tensors_and_save_paths:
+        _save_thumbnails_to_disk(zarr_store, parasite_tensor, path)
 
 
 def scale_bbox_vals(
