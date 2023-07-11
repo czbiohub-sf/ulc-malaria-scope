@@ -8,7 +8,8 @@ curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
 
 # ================ Autofocus constants ================ #
 AF_PERIOD_S = 0.5
-AF_PERIOD_NUM = int(AF_PERIOD_S * ACQUISITION_FPS)
+# AF_PERIOD_NUM = int(AF_PERIOD_S * ACQUISITION_FPS)
+AF_PERIOD_NUM = 1
 AF_BATCH_SIZE = 10
 
 AF_THRESHOLD = 1
