@@ -126,7 +126,7 @@ class Routines:
             if throttle_counter >= nn_constants.AF_PERIOD_NUM:
                 img_counter += 1
                 img = yield steps_from_focus, filtered_error, adjusted
-                adjusted = None
+                adjusted = False
 
                 # if mscope.autofocus_model._executor._work_queue.full(), this will block
                 # until an element is removed from the queue
