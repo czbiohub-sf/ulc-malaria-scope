@@ -19,10 +19,9 @@ from ulc_mm_package.image_processing.processing_constants import (
     NUM_SUBSEQUENCES,
     SUBSEQUENCE_LENGTH,
 )
-
 from ulc_mm_package.neural_nets.utils import save_parasite_thumbnails_to_disk
-
 from ulc_mm_package.scope_constants import MAX_FRAMES
+from ulc_mm_package.summary_report.make_summary_report import make_html_report, save_html_report, create_pdf_from_html
 
 
 class DataStorageError(Exception):
@@ -66,7 +65,7 @@ class DataStorage:
         ext_dir: str,
         custom_experiment_name: str,
         datetime_str: str,
-        experiment_initialization_metdata: Dict,
+        experiment_initialization_metadata: Dict,
         per_image_metadata_keys: list,
     ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
@@ -93,6 +92,9 @@ class DataStorage:
         self.time_str = datetime.now().strftime(DATETIME_FORMAT)
         self.experiment_folder = self.time_str + f"_{custom_experiment_name}"
 
+        # Keep experiment metadata
+        self.experiment_level_metadata = experiment_initialization_metadata
+
         try:
             (self.main_dir / self.experiment_folder).mkdir()
         except Exception as e:
@@ -117,10 +119,10 @@ class DataStorage:
         )
         with open(f"{exp_run_md_file}", "w") as f:
             writer = csv.DictWriter(
-                f, fieldnames=list(experiment_initialization_metdata.keys())
+                f, fieldnames=list(experiment_initialization_metadata.keys())
             )
             writer.writeheader()
-            writer.writerow(experiment_initialization_metdata)
+            writer.writerow(experiment_initialization_metadata)
 
         # Create Zarr Storage
         filename = (
@@ -177,7 +179,7 @@ class DataStorage:
         cv2.imwrite(str(filename), image)
 
     def close(
-        self, pred_tensors: Optional[List[npt.NDArray]] = None
+        self, pred_tensors: Optional[List[npt.NDArray]] = None, class_counts: Optional[Dict[str, int]]
     ) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
@@ -208,9 +210,26 @@ class DataStorage:
             self.save_parsed_prediction_tensors(pred_tensors)
 
             self.logger.info("> Saving parasite thumbnails...")
-            save_parasite_thumbnails_to_disk(
+            class_to_thumbnails_path: Dict[str, Path] = save_parasite_thumbnails_to_disk(
                 self.zw.array, pred_tensors, self.get_experiment_path()
             )
+
+            # Get a mapping of the class string to all its individual thumbnail files
+            class_to_all_thumbnails: Dict[str, List[Path]] = {x: list(class_to_thumbnails_path[x].rglob("*.png")) for x in class_to_thumbnails_path.keys()}
+
+            if class_counts is not None:
+                html_save_loc = self.get_experiment_path() / f"{self.time_str}_summary.html"
+                pdf_save_loc = self.get_experiment_path() / f"{self.time_str}_summary.pdf"
+                html_report = make_html_report(
+                    self.experiment_level_metadata,
+                    class_counts,
+                    class_to_all_thumbnails
+                )
+                save_html_report(html_report, html_save_loc)
+                create_pdf_from_html(html_save_loc, pdf_save_loc)
+            else:
+                self.logger.warning("Did not receive class_counts, not saving html/pdf summary reports.")
+
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:

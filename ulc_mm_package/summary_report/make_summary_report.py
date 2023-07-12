@@ -20,12 +20,9 @@ def make_html_report(
         A mapping from type of cell (e.g "Healthy") to
         its cell count
     thumbnails: Dict[str, List[Path]]
-        A mapping between class name (e.g "Healthy", "Ring", etc.)
+        A mapping between class name (e.g "Ring", "Trophozoite", etc.)
         to a list of thumbnail filepaths of the form described in
         `neural_nets/utils.py, _save_thumbnails_to_disk.
-
-        That is, the filepaths should have the form:
-        {blah blah blah}_{confidence_value}.
 
     Returns
     -------
@@ -67,16 +64,16 @@ def save_html_report(content: str, save_path: Path) -> None:
         raise IOError(f"Error when writing html report to: {save_path}. Error: {e}")
 
 
-def create_pdf_from_html(dataset_name: str, path_to_html: Path) -> None:
+def create_pdf_from_html(path_to_html: Path, save_path: Path) -> None:
     """Create a .pdf file from a .html file
 
     Parameters
     ----------
-    dataset_name: str
     path_to_html: Path
+    save_path: Path
     """
 
-    with open(f"{dataset_name}.pdf", "w+b") as f:
+    with open(save_path, "w+b") as f:
         with open(path_to_html, "r") as f2:
             pisa.CreatePDF(f2, f)
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import NamedTuple, List, Tuple, no_type_check
+from typing import NamedTuple, List, Tuple, no_type_check, Dict
 from typing_extensions import TypeAlias
 
 import cv2
@@ -258,13 +258,35 @@ def save_parasite_thumbnails_to_disk(
     parsed_prediction_tensor: npt.NDArray,
     dataset_dir: Path,
     parasite_class_ids: List[int] = PARASITE_CLASS_IDS,
-):
+) -> Dict[str, Path]:
+    """Save thumbnails to disk
+
+    Parameters
+    ----------
+    zarr_store: zarr.core.Array
+        Where the images are stored
+    parsed_prediction_tensor: npt.NDArray
+    dataset_dir: Path
+        Where the experiment is stored (sets where the thumbnails folders will be saved)
+    parasite_class_ids: List[int]
+        List of class IDs of the parasites, only these classes' thumbnails will be saved
+
+    Returns
+    -------
+    Dict[str, Path]
+        Mapping of class name to where its thumbnails are saved, e.g "Ring: "/example/thumbnails/rings". The caller should
+        then call `os.listdir()` or something similar to get the list of all files within that folder.
+    """
+
     # Create folders for thumbnails
     yogo_id_to_str = {v: k for k, v in YOGO_CLASS_IDX_MAP.items()}
     thumbnail_path = dataset_dir / "thumbnails"
     Path.mkdir(thumbnail_path, exist_ok=True)
-    paths = [thumbnail_path / yogo_id_to_str[x] for x in parasite_class_ids]
-    for path in paths:
+    class_name_to_path = {
+        yogo_id_to_str[x]: thumbnail_path / yogo_id_to_str[x]
+        for x in parasite_class_ids
+    }
+    for path in class_name_to_path.values():
         Path.mkdir(path, exist_ok=True)
 
     parasite_class_tensors = [
@@ -272,10 +294,14 @@ def save_parasite_thumbnails_to_disk(
         for x in parasite_class_ids
     ]
 
-    parasite_tensors_and_save_paths = zip(parasite_class_tensors, paths)
+    parasite_tensors_and_save_paths = zip(
+        parasite_class_tensors, class_name_to_path.values()
+    )
 
     for parasite_tensor, path in parasite_tensors_and_save_paths:
         _save_thumbnails_to_disk(zarr_store, parasite_tensor, path)
+
+    return class_name_to_path
 
 
 def scale_bbox_vals(

@@ -9,7 +9,7 @@ import cv2
 import logging
 import numpy as np
 
-from typing import Any
+from typing import Any, Optional, Dict
 from time import sleep, perf_counter
 from transitions import Machine, State
 
@@ -460,6 +460,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
         pred_counter = self.mscope.predictions_handler.new_pred_pointer
+        class_counts_as_dict: Optional[Dict[str, int]] = None
         if pred_counter != 0:
             nonzero_preds = (
                 self.mscope.predictions_handler.get_prediction_tensors()
@@ -476,7 +477,11 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.logger.info(stats_string)
 
-        self.mscope.reset_for_end_experiment()
+            class_counts_as_dict = {
+                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, class_counts)
+            }
+
+        self.mscope.reset_for_end_experiment(class_counts_as_dict)
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)
@@ -726,10 +731,6 @@ class ScopeOp(QObject, NamedMachine):
         t0 = perf_counter()
         for result in prev_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
-
-            class_counts = nn_utils.get_class_counts(
-                self.mscope.predictions_handler.parsed_tensor
-            )
 
             class_counts = nn_utils.get_class_counts(
                 self.mscope.predictions_handler.parsed_tensor
