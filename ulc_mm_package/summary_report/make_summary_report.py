@@ -30,8 +30,10 @@ def make_html_report(
         HTML string
     """
 
-    env = Environment(loader=FileSystemLoader("./"))
-    template = env.get_template("summary_template.html")
+    curr_dir = Path(__file__).parent.resolve()
+    template_file = curr_dir / "summary_template.html"
+    env = Environment(loader=FileSystemLoader(curr_dir))
+    template = env.get_template(str(template_file))
     context = {
         "dataset_name": "2023-07-06-000000",
         "operator_id": experiment_metadata["operator_id"],
