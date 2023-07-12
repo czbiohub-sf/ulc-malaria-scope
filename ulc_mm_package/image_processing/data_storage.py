@@ -20,6 +20,8 @@ from ulc_mm_package.image_processing.processing_constants import (
     SUBSEQUENCE_LENGTH,
 )
 
+from ulc_mm_package.neural_nets.utils import save_parasite_thumbnails_to_disk
+
 from ulc_mm_package.scope_constants import MAX_FRAMES
 
 
@@ -174,7 +176,9 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self, pred_tensors: List[npt.NDArray] = None) -> Optional[Future]:
+    def close(
+        self, pred_tensors: Optional[List[npt.NDArray]] = None
+    ) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
         Parameters
@@ -190,14 +194,25 @@ class DataStorage:
         """
 
         self.logger.info("Closing data storage.")
-        if pred_tensors is not None:
-            self.save_parsed_prediction_tensors(pred_tensors)
+
+        self.logger.info("> Saving subsample images...")
         self.save_uniform_sample()
 
+        self.logger.info("> Closing metadata file...")
         if self.metadata_file is not None:
             self.metadata_file.close()
             self.metadata_file = None
 
+        if pred_tensors is not None:
+            self.logger.info("> Saving prediction tensors...")
+            self.save_parsed_prediction_tensors(pred_tensors)
+
+            self.logger.info("> Saving parasite thumbnails...")
+            save_parasite_thumbnails_to_disk(
+                self.zw.array, pred_tensors, self.get_experiment_path()
+            )
+
+        self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
             self.zw.writable = False
             future = self.zw.threadedCloseFile()
