@@ -70,15 +70,15 @@ class Routines:
         """
 
         ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
-        steps_from_focus = -round(np.mean(ssaf_steps_from_focus))
+        steps_to_move = -round(np.mean(ssaf_steps_from_focus))
 
         try:
-            dir = Direction.CW if steps_from_focus > 0 else Direction.CCW
-            mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_from_focus))
+            dir = Direction.CW if steps_to_move > 0 else Direction.CCW
+            mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_to_move))
         except MotorControllerError as e:
             raise e
 
-        return steps_from_focus
+        return steps_to_move
 
     @init_generator
     def periodicAutofocusWrapper(
@@ -130,16 +130,16 @@ class Routines:
 
                 # if mscope.autofocus_model._executor._work_queue.full(), this will block
                 # until an element is removed from the queue
-                # TODO watch performance, if blocking a lot then we must subclass ThreadPoolExecutor
-                # and change https://github.com/python/cpython/blob/a712c5f42d5904e1a1cdaf11bd1f05852cfdd830/Lib/concurrent/futures/thread.py#L175
-                # to put_nowait```
+                # TODO watch performance, if blocking a lot then we must subclass ThreadPoolExecutor and change
+                # https://github.com/python/cpython/blob/a712c5f42d5904e1a1cdaf11bd1f05852cfdd830/Lib/concurrent/futures/thread.py#L175
+                # to `put_nowait`
                 mscope.autofocus_model.asyn(img, img_counter)
                 results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
 
                 for res in sorted(results, key=lambda res: res.id):
                     move_counter += 1
 
-                    steps_from_focus = -res.result.item()
+                    steps_from_focus = res.result.item()
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
                 throttle_counter = 0
@@ -148,16 +148,17 @@ class Routines:
                     move_counter >= ssaf_period_num
                     and abs(filtered_error) > nn_constants.AF_THRESHOLD
                 ):
+                    steps_to_move = -round(filtered_error)
                     self.logger.info(
-                        f"Adjusted focus by {-filtered_error:.2f} steps after {move_counter} measurements"
+                        f"Adjusted focus by {steps_to_move:.2f} steps after {move_counter} measurements"
                     )
                     move_counter = 0
                     adjusted = True
 
                     try:
-                        dir = Direction.CW if filtered_error > 0 else Direction.CCW
+                        dir = Direction.CW if steps_to_move > 0 else Direction.CCW
                         mscope.motor.threaded_move_rel(
-                            dir=dir, steps=abs(filtered_error)
+                            dir=dir, steps=abs(steps_to_move)
                         )
                     except MotorControllerError as e:
                         raise e
