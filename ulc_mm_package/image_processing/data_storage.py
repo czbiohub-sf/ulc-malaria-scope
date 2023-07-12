@@ -174,7 +174,7 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self, pred_tensors: List[npt.NDArray]) -> Optional[Future]:
+    def close(self, pred_tensors: List[npt.NDArray] = None) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
         Parameters
@@ -190,7 +190,8 @@ class DataStorage:
         """
 
         self.logger.info("Closing data storage.")
-        self.save_parsed_prediction_tensors(pred_tensors)
+        if pred_tensors is not None:
+            self.save_parsed_prediction_tensors(pred_tensors)
         self.save_uniform_sample()
 
         if self.metadata_file is not None:
