@@ -183,7 +183,7 @@ class DataStorage:
 
         Parameters
         ----------
-        pred_tensors: List[npt.NDArray]
+        pred_tensors: Optional[List[npt.NDArray]]
             Parsed predictions tensors from PredictionsHandler()
 
         Returns
