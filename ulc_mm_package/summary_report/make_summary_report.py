@@ -137,4 +137,4 @@ if __name__ == "__main__":
     with open("test.html", "w") as f:
         f.write(content)
 
-    create_pdf_from_html("test", Path("test.html"))
+    create_pdf_from_html(Path("test"), Path("test.html"))
