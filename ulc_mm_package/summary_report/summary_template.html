@@ -17,20 +17,20 @@
                 </tr>
             </thead>
             <tr>
-                <td><p>Operator ID</p></td>
-                <td><p>{{ operator_id }}</p></td>
+                <td>Operator ID</td>
+                <td>{{ operator_id }}</td>
             </tr>
             <tr>
-                <td><p>Participant ID</p></td>
-                <td><p>{{ participant_id }}</p></td>
+                <td>Participant ID</td>
+                <td>{{ participant_id }}</td>
             </tr>
             <tr>
-                <td><p>Notes</p></td>
-                <td><p>{{ notes }}</p></td>
+                <td>Notes</td>
+                <td>{{ notes }}</td>
             </tr>
             <tr>
-                <td><p>Flowcell ID</p></td>
-                <td><p>{{ flowcell_id }}</p></td>    
+                <td>Flowcell ID</td>
+                <td>{{ flowcell_id }}</td>
             </tr>
 
             {# Cell counts #}
@@ -60,7 +60,7 @@
                 {% for row in all_thumbnails[key]|batch(10, "") %}
                 <tr>
                     {% for filename in row %}
-                    <td style="min-width:30px">
+                    <td>
                         {% if filename | length > 0 %}
                             <img src="{{ filename }}">
                             <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>

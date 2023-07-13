@@ -39,13 +39,32 @@ def make_html_report(
     template_file = "summary_template.html"
     env = Environment(loader=FileSystemLoader(str(curr_dir)))
     template = env.get_template(template_file)
+
+    # Explicitly specify "-" otherwise the PDF's table formatting ends up weird
+    operator = (
+        experiment_metadata["operator_id"]
+        if experiment_metadata["operator_id"]
+        else "-"
+    )
+    participant = (
+        experiment_metadata["participant_id"]
+        if experiment_metadata["participant_id"]
+        else "-"
+    )
+    notes = experiment_metadata["notes"] if experiment_metadata["notes"] else "-"
+    fc_id = (
+        experiment_metadata["flowcell_id"]
+        if experiment_metadata["flowcell_id"]
+        else "-"
+    )
+
     context = {
         "css_file": css_path,
         "dataset_name": "2023-07-06-000000",
-        "operator_id": experiment_metadata["operator_id"],
-        "participant_id": experiment_metadata["participant_id"],
-        "notes": experiment_metadata["notes"],
-        "flowcell_id": experiment_metadata["flowcell_id"],
+        "operator_id": operator,
+        "participant_id": participant,
+        "notes": notes,
+        "flowcell_id": fc_id,
         "cell_counts": cell_counts,
         "all_thumbnails": thumbnails,
     }
