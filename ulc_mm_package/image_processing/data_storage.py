@@ -242,6 +242,7 @@ class DataStorage:
                     class_counts,
                     class_to_all_thumbnails,
                 )
+
                 shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
                 save_html_report(html_report, html_save_loc)
                 create_pdf_from_html(html_save_loc, pdf_save_loc)
