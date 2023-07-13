@@ -263,6 +263,7 @@ class DataStorage:
 
                 # HTML w/ relative paths
                 html_report = make_html_report(
+                    self.time_str,
                     self.experiment_level_metadata,
                     class_counts,
                     class_to_all_thumbnails,
@@ -271,6 +272,7 @@ class DataStorage:
                 # HTML w/ absolute path
                 abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
                 html_report_with_abs_path = make_html_report(
+                    self.time_str,
                     self.experiment_level_metadata,
                     class_counts,
                     class_to_all_thumbnails_abs_path,

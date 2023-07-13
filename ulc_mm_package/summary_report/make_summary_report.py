@@ -8,6 +8,7 @@ from ulc_mm_package.scope_constants import CSS_FILE_NAME
 
 
 def make_html_report(
+    dataset_name: str,
     experiment_metadata: Dict[str, str],
     cell_counts: Dict[str, int],
     thumbnails: Dict[str, List[str]],
@@ -60,7 +61,7 @@ def make_html_report(
 
     context = {
         "css_file": css_path,
-        "dataset_name": "2023-07-06-000000",
+        "dataset_name": dataset_name,
         "operator_id": operator,
         "participant_id": participant,
         "notes": notes,
