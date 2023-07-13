@@ -124,12 +124,13 @@ if __name__ == "__main__":
             for x in sorted(os.listdir(parasite_folders[2]))
         ],
         "Gametocyte": [
-            os.path.join(parasite_folders[2], x)
-            for x in sorted(os.listdir(parasite_folders[2]))
+            os.path.join(parasite_folders[3], x)
+            for x in sorted(os.listdir(parasite_folders[3]))
         ],
     }
 
     context = {
+        "css_file": "minimal-table.css",
         "dataset_name": "2023-07-06-000000",
         "operator_id": "IJ",
         "participant_id": "Also IJ",

@@ -42,7 +42,7 @@
             {% for key in cell_counts %}
             <tr>
                 <td>{{key}}</td>
-                <td style="min-width:30px">{{cell_counts[key]}}</td>
+                <td style="min-width:100px">{{cell_counts[key]}}</td>
             </tr>
             {% endfor %}
         </table>
@@ -50,26 +50,26 @@
 
         {# Thumbnails #}
         <h3>Parasite thumbnails</h3>
-        {% for key in all_thumbnails %}
         <table>
-            <thead>
+            {% for key in all_thumbnails %}
+                <thead>
+                    <tr>
+                        <th colspan="10">{{key}}</th>
+                    </tr>
+                </thead>
+                {% for row in all_thumbnails[key]|batch(10, "") %}
                 <tr>
-                    <th colspan="10">{{key}}</th>
+                    {% for filename in row %}
+                    <td style="min-width:30px">
+                        {% if filename | length > 0 %}
+                            <img src="{{ filename }}">
+                            <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
                 </tr>
-            </thead>
-            {% for row in all_thumbnails[key]|batch(10, "") %}
-            <tr>
-                {% for filename in row %}
-                <td style="min-width:30px">
-                    {% if filename | length > 0 %}
-                        <img src="{{ filename }}">
-                        <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>
-                    {% endif %}
-                </td>
                 {% endfor %}
-            </tr>
             {% endfor %}
         </table>
-        {% endfor %}
     </body>
 </html>
