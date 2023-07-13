@@ -20,7 +20,11 @@ from ulc_mm_package.image_processing.processing_constants import (
     SUBSEQUENCE_LENGTH,
 )
 from ulc_mm_package.neural_nets.utils import save_parasite_thumbnails_to_disk
-from ulc_mm_package.scope_constants import MAX_FRAMES, SUMMARY_REPORT_CSS_FILE
+from ulc_mm_package.scope_constants import (
+    MAX_FRAMES,
+    SUMMARY_REPORT_CSS_FILE,
+    DESKTOP_SUMMARY_DIR,
+)
 from ulc_mm_package.summary_report.make_summary_report import (
     make_html_report,
     save_html_report,
@@ -222,15 +226,19 @@ class DataStorage:
                 self.zw.array, pred_tensors, self.get_experiment_path()
             )
 
-            # Get a mapping of the class string to all its individual thumbnail files
-            class_to_all_thumbnails: Dict[str, List[Path]] = {
-                x: list(class_to_thumbnails_path[x].rglob("*.png"))
-                for x in class_to_thumbnails_path.keys()
-            }
-
             if class_counts is not None:
                 summary_report_dir = self.get_experiment_path() / "summary_report"
                 Path.mkdir(summary_report_dir, exist_ok=True)
+
+                # Get a mapping of the class string to all its individual thumbnail files
+                class_to_all_thumbnails: Dict[str, List[str]] = {
+                    x: [
+                        str(y.relative_to(summary_report_dir))
+                        for y in list(class_to_thumbnails_path[x].rglob("*.png"))
+                    ]
+                    for x in class_to_thumbnails_path.keys()
+                }
+
                 html_save_loc = summary_report_dir / f"{self.time_str}_summary.html"
                 pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
                 html_report = make_html_report(
@@ -238,9 +246,11 @@ class DataStorage:
                     class_counts,
                     class_to_all_thumbnails,
                 )
+
                 shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
                 save_html_report(html_report, html_save_loc)
                 create_pdf_from_html(html_save_loc, pdf_save_loc)
+                shutil.copy(pdf_save_loc, DESKTOP_SUMMARY_DIR)
             else:
                 self.logger.warning(
                     "Did not receive class_counts, not saving html/pdf summary reports."
