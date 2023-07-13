@@ -54,7 +54,7 @@
             {% for key in all_thumbnails %}
                 <thead>
                     <tr>
-                        <th colspan="10">{{key}}</th>
+                        <th colspan="10">{{key.upper()}}</th>
                     </tr>
                 </thead>
                 {% for row in all_thumbnails[key]|batch(10, "") %}
