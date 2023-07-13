@@ -10,7 +10,7 @@
         <h2>Statistics summary and thumbnails</h2>
 
         {# Experiment metadata #}
-        <table>
+        <table style="table-layout: fixed;">
             <thead>
                 <tr>
                     <th colspan="2">Experiment metadata</th>
@@ -42,7 +42,7 @@
             {% for key in cell_counts %}
             <tr>
                 <td>{{key}}</td>
-                <td style="min-width:100px">{{cell_counts[key]}}</td>
+                <td>{{cell_counts[key]}}</td>
             </tr>
             {% endfor %}
         </table>
