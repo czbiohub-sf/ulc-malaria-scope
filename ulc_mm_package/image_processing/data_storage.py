@@ -276,7 +276,6 @@ class DataStorage:
 
                 # Copy the CSS file to the summary directory
                 shutil.copyfile(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
-                sleep(0.5)
 
                 # Save the temporary HTML file w/ absolute path so we can properly generate the PDF
                 save_html_report(html_report_with_abs_path, html_abs_path_temp_loc)
