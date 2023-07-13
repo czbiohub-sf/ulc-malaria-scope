@@ -32,7 +32,7 @@ def make_html_report(
 
     curr_dir = Path(__file__).parent.resolve()
     template_file = curr_dir / "summary_template.html"
-    env = Environment(loader=FileSystemLoader(curr_dir))
+    env = Environment(loader=FileSystemLoader(str(curr_dir)))
     template = env.get_template(str(template_file))
     context = {
         "dataset_name": "2023-07-06-000000",
