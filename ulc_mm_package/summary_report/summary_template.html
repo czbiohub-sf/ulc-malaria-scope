@@ -59,10 +59,10 @@
             </thead>
             {% for row in all_thumbnails[key]|batch(10) %}
             <tr>
-                {% for col in row %}
+                {% for str(filename) in row %}
                 <td>
-                    <img src="{{ col }}">
-                    <p>{{".".join(col.split("_")[-1].split(".")[:2])}}</p>
+                    <img src="{{ filename }}">
+                    <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>
                 </td>
                 {% endfor %}
             </tr>
