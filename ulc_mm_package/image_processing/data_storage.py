@@ -20,7 +20,7 @@ from ulc_mm_package.image_processing.processing_constants import (
     SUBSEQUENCE_LENGTH,
 )
 from ulc_mm_package.neural_nets.utils import save_parasite_thumbnails_to_disk
-from ulc_mm_package.scope_constants import MAX_FRAMES
+from ulc_mm_package.scope_constants import MAX_FRAMES, SUMMARY_REPORT_CSS_FILE
 from ulc_mm_package.summary_report.make_summary_report import (
     make_html_report,
     save_html_report,
@@ -229,17 +229,16 @@ class DataStorage:
             }
 
             if class_counts is not None:
-                html_save_loc = (
-                    self.get_experiment_path() / f"{self.time_str}_summary.html"
-                )
-                pdf_save_loc = (
-                    self.get_experiment_path() / f"{self.time_str}_summary.pdf"
-                )
+                summary_report_dir = self.get_experiment_path() / "summary_report"
+                Path.mkdir(summary_report_dir, exist_ok=True)
+                html_save_loc = summary_report_dir / f"{self.time_str}_summary.html"
+                pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
                 html_report = make_html_report(
                     self.experiment_level_metadata,
                     class_counts,
                     class_to_all_thumbnails,
                 )
+                shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
                 save_html_report(html_report, html_save_loc)
                 create_pdf_from_html(html_save_loc, pdf_save_loc)
             else:
