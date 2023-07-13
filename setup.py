@@ -47,7 +47,7 @@ setup(
         "pyngrok==5.1.0",
         "llvmlite==0.37.0",
         "numba==0.56.0",
-        "Jinja==3.1.2",
+        "Jinja2==3.1.2",
         "xhtml2pdf==0.2.11",
     ],
     extras_require={
