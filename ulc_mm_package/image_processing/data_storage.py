@@ -3,6 +3,7 @@ import csv
 import shutil
 import logging
 from os.path import relpath
+from os import remove
 from pathlib import Path
 from time import perf_counter
 from datetime import datetime
@@ -231,6 +232,11 @@ class DataStorage:
                 summary_report_dir = self.get_experiment_path() / "summary_report"
                 Path.mkdir(summary_report_dir, exist_ok=True)
 
+                ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
+                # But, we do want to have a copy of the `html` file which uses relative paths so that we can move the file and thumbnails folders
+                # and still view them properly (e.g if we `scp` over the html file and thumbnails/ folder, we want the HTML to still render properly on our
+                # local computers)
+
                 # Get a mapping of the class string to all its individual thumbnail files
                 class_to_all_thumbnails: Dict[str, List[str]] = {
                     x: [
@@ -240,18 +246,49 @@ class DataStorage:
                     for x in class_to_thumbnails_path.keys()
                 }
 
+                class_to_all_thumbnails_abs_path: Dict[str, List[str]] = {
+                    x: [
+                        str(y.resolve())
+                        for y in list(class_to_thumbnails_path[x].rglob("*.png"))
+                    ]
+                    for x in class_to_thumbnails_path.keys()
+                }
+
                 html_save_loc = summary_report_dir / f"{self.time_str}_summary.html"
+                html_abs_path_temp_loc = (
+                    summary_report_dir / f"{self.time_str}_temp_summary.html"
+                )
                 pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
+
+                # HTML w/ relative paths
                 html_report = make_html_report(
                     self.experiment_level_metadata,
                     class_counts,
                     class_to_all_thumbnails,
                 )
 
+                # HTML w/ absolute path
+                html_report_with_abs_path = make_html_report(
+                    self.experiment_level_metadata,
+                    class_counts,
+                    class_to_all_thumbnails_abs_path,
+                )
+
+                # Copy the CSS file to the summary directory
                 shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
-                save_html_report(html_report, html_save_loc)
-                create_pdf_from_html(html_save_loc, pdf_save_loc)
+
+                # Save the temporary HTML file w/ absolute path so we can properly generate the PDF
+                save_html_report(html_report_with_abs_path, html_abs_path_temp_loc)
+                create_pdf_from_html(html_abs_path_temp_loc, pdf_save_loc)
+
+                # Make a copy of the summary PDF to the Desktop
                 shutil.copy(pdf_save_loc, DESKTOP_SUMMARY_DIR)
+
+                # Remove the temporary html file
+                remove(html_abs_path_temp_loc)
+
+                # Save the HTML file w/ relative paths to thumbnails
+                save_html_report(html_report, html_save_loc)
             else:
                 self.logger.warning(
                     "Did not receive class_counts, not saving html/pdf summary reports."
