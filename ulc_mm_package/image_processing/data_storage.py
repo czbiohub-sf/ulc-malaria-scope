@@ -20,7 +20,11 @@ from ulc_mm_package.image_processing.processing_constants import (
     SUBSEQUENCE_LENGTH,
 )
 from ulc_mm_package.neural_nets.utils import save_parasite_thumbnails_to_disk
-from ulc_mm_package.scope_constants import MAX_FRAMES, SUMMARY_REPORT_CSS_FILE
+from ulc_mm_package.scope_constants import (
+    MAX_FRAMES,
+    SUMMARY_REPORT_CSS_FILE,
+    DESKTOP_SUMMARY_DIR,
+)
 from ulc_mm_package.summary_report.make_summary_report import (
     make_html_report,
     save_html_report,
@@ -241,6 +245,7 @@ class DataStorage:
                 shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
                 save_html_report(html_report, html_save_loc)
                 create_pdf_from_html(html_save_loc, pdf_save_loc)
+                shutil.copy(pdf_save_loc, DESKTOP_SUMMARY_DIR)
             else:
                 self.logger.warning(
                     "Did not receive class_counts, not saving html/pdf summary reports."
