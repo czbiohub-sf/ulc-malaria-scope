@@ -1,8 +1,12 @@
 from typing import Dict, List
 from pathlib import Path
+import logging
 
 from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
+
+log = logging.getLogger("xhtml2pdf")
+log.setLevel(logging.ERROR)
 
 
 def make_html_report(
@@ -137,4 +141,4 @@ if __name__ == "__main__":
     with open("test.html", "w") as f:
         f.write(content)
 
-    create_pdf_from_html(Path("test"), Path("test.html"))
+    create_pdf_from_html(Path("test.html"), Path("test.pdf"))
