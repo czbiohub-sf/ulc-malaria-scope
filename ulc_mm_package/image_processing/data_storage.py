@@ -27,6 +27,7 @@ from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
+    CSS_FILE_NAME,
 )
 from ulc_mm_package.summary_report.make_summary_report import (
     make_html_report,
@@ -269,10 +270,12 @@ class DataStorage:
                 )
 
                 # HTML w/ absolute path
+                abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
                 html_report_with_abs_path = make_html_report(
                     self.experiment_level_metadata,
                     class_counts,
                     class_to_all_thumbnails_abs_path,
+                    css_path=abs_css_file_path,
                 )
 
                 # Copy the CSS file to the summary directory

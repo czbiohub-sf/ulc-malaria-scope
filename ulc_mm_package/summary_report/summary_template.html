@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <title>Remoscope / {{ dataset_name }}</title>
-        <link href="minimal-table.css" rel="stylesheet" type="text/css">
+        <link href="{{ css_file }}" rel="stylesheet" type="text/css">
     </head>
 
     <h1>Dataset {{ dataset_name }} </h1>
@@ -42,7 +42,7 @@
             {% for key in cell_counts %}
             <tr>
                 <td>{{key}}</td>
-                <td>{{cell_counts[key]}}</td>
+                <td style="min-width:30px">{{cell_counts[key]}}</td>
             </tr>
             {% endfor %}
         </table>
@@ -60,7 +60,7 @@
             {% for row in all_thumbnails[key]|batch(10, "") %}
             <tr>
                 {% for filename in row %}
-                <td>
+                <td style="min-width:30px">
                     {% if filename | length > 0 %}
                         <img src="{{ filename }}">
                         <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>

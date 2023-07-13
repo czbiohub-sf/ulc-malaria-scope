@@ -1,14 +1,17 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
+
+from ulc_mm_package.scope_constants import CSS_FILE_NAME
 
 
 def make_html_report(
     experiment_metadata: Dict[str, str],
     cell_counts: Dict[str, int],
     thumbnails: Dict[str, List[str]],
+    css_path: Optional[str] = CSS_FILE_NAME,
 ) -> str:
     """Generate an html report.
 
@@ -23,6 +26,8 @@ def make_html_report(
         A mapping between class name (e.g "Ring", "Trophozoite", etc.)
         to a list of thumbnail filepaths (as strings) of the form described in
         `neural_nets/utils.py, _save_thumbnails_to_disk.
+    css_path: Optional[str] = CSS_FILE_NAME
+        Optionally specify where the CSS file lives
 
     Returns
     -------
@@ -35,6 +40,7 @@ def make_html_report(
     env = Environment(loader=FileSystemLoader(str(curr_dir)))
     template = env.get_template(template_file)
     context = {
+        "css_file": css_path,
         "dataset_name": "2023-07-06-000000",
         "operator_id": experiment_metadata["operator_id"],
         "participant_id": experiment_metadata["participant_id"],
