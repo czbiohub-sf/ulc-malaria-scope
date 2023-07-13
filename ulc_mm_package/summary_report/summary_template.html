@@ -61,8 +61,8 @@
             <tr>
                 {% for filename in row %}
                 <td>
-                    <img src="{{ filename }}">
                     {% if filename | length > 0 %}
+                        <img src="{{ filename }}">
                         <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>
                     {% endif %}
                 </td>

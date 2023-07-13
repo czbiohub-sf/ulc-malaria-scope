@@ -1,12 +1,8 @@
 from typing import Dict, List
 from pathlib import Path
-import logging
 
 from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
-
-log = logging.getLogger("xhtml2pdf")
-log.setLevel(logging.ERROR)
 
 
 def make_html_report(
