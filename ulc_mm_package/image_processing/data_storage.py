@@ -228,7 +228,10 @@ class DataStorage:
 
             # Get a mapping of the class string to all its individual thumbnail files
             class_to_all_thumbnails: Dict[str, List[Path]] = {
-                x: list(class_to_thumbnails_path[x].rglob("*.png"))
+                x: [
+                    str(y.resolve())
+                    for y in list(class_to_thumbnails_path[x].rglob("*.png"))
+                ]
                 for x in class_to_thumbnails_path.keys()
             }
 

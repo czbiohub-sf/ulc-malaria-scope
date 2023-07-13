@@ -8,7 +8,7 @@ from xhtml2pdf import pisa
 def make_html_report(
     experiment_metadata: Dict[str, str],
     cell_counts: Dict[str, int],
-    thumbnails: Dict[str, List[Path]],
+    thumbnails: Dict[str, List[str]],
 ) -> str:
     """Generate an html report.
 
@@ -19,9 +19,9 @@ def make_html_report(
     cell_counts: Dict[str, int]
         A mapping from type of cell (e.g "Healthy") to
         its cell count
-    thumbnails: Dict[str, List[Path]]
+    thumbnails: Dict[str, List[str]]
         A mapping between class name (e.g "Ring", "Trophozoite", etc.)
-        to a list of thumbnail filepaths of the form described in
+        to a list of thumbnail filepaths (as strings) of the form described in
         `neural_nets/utils.py, _save_thumbnails_to_disk.
 
     Returns

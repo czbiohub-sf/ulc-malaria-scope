@@ -59,7 +59,7 @@
             </thead>
             {% for row in all_thumbnails[key]|batch(10) %}
             <tr>
-                {% for str(filename) in row %}
+                {% for filename in row %}
                 <td>
                     <img src="{{ filename }}">
                     <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>
