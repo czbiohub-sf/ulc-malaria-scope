@@ -53,7 +53,7 @@ setup(
     extras_require={
         "dev": [
             "AllanTools",
-            "black",
+            "black==23.1.0",
             "mypy==1.0.1",
             "mypy-extensions==1.0.0",
             "PyQt5-stubs",
