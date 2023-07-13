@@ -2,6 +2,7 @@ import io
 import csv
 import shutil
 import logging
+from os.path import relpath
 from pathlib import Path
 from time import perf_counter
 from datetime import datetime
@@ -205,7 +206,7 @@ class DataStorage:
             (future.done())
         """
 
-        self.logger.info("Closing data storage.")
+        self.logger.info(f"{'='*10}Closing data storage.{'='*10}")
 
         self.logger.info("> Saving subsample images...")
         self.save_uniform_sample()
@@ -233,7 +234,7 @@ class DataStorage:
                 # Get a mapping of the class string to all its individual thumbnail files
                 class_to_all_thumbnails: Dict[str, List[str]] = {
                     x: [
-                        str(y.relative_to(summary_report_dir))
+                        str(relpath(y, summary_report_dir))
                         for y in list(class_to_thumbnails_path[x].rglob("*.png"))
                     ]
                     for x in class_to_thumbnails_path.keys()
