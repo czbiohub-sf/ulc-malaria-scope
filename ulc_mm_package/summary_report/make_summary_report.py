@@ -18,6 +18,8 @@ def make_html_report(
 
     Parameters
     ----------
+    dataset_name: str
+        Typically the timestamp of the dataset
     experiment_metadata: Dict[str, str]
         Experiment metadata dict
     cell_counts: Dict[str, int]
