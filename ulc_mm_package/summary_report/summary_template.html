@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <title>Remoscope / {{ dataset_name }}</title>
-        <link href="minimal-table.css" rel="stylesheet" type="text/css">
+        <link href="{{ css_file }}" rel="stylesheet" type="text/css">
     </head>
 
     <h1>Dataset {{ dataset_name }} </h1>
@@ -10,7 +10,7 @@
         <h2>Statistics summary and thumbnails</h2>
 
         {# Experiment metadata #}
-        <table>
+        <table style="table-layout: fixed;">
             <thead>
                 <tr>
                     <th colspan="2">Experiment metadata</th>
@@ -30,7 +30,7 @@
             </tr>
             <tr>
                 <td>Flowcell ID</td>
-                <td>{{ flowcell_id }}</td>    
+                <td>{{ flowcell_id }}</td>
             </tr>
 
             {# Cell counts #}
@@ -50,26 +50,26 @@
 
         {# Thumbnails #}
         <h3>Parasite thumbnails</h3>
-        {% for key in all_thumbnails %}
         <table>
-            <thead>
+            {% for key in all_thumbnails %}
+                <thead>
+                    <tr>
+                        <th colspan="10">{{key.upper()}}</th>
+                    </tr>
+                </thead>
+                {% for row in all_thumbnails[key]|batch(10, "") %}
                 <tr>
-                    <th colspan="10">{{key}}</th>
+                    {% for filename in row %}
+                    <td>
+                        {% if filename | length > 0 %}
+                            <img src="{{ filename }}">
+                            <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
                 </tr>
-            </thead>
-            {% for row in all_thumbnails[key]|batch(10, "") %}
-            <tr>
-                {% for filename in row %}
-                <td>
-                    {% if filename | length > 0 %}
-                        <img src="{{ filename }}">
-                        <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>
-                    {% endif %}
-                </td>
                 {% endfor %}
-            </tr>
             {% endfor %}
         </table>
-        {% endfor %}
     </body>
 </html>

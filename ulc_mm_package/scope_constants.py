@@ -39,7 +39,8 @@ if SIMULATION:
 CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
 
 # ================ Summary PDF constants ================ #
-SUMMARY_REPORT_CSS_FILE = curr_dir / "summary_report" / "minimal-table.css"
+CSS_FILE_NAME = "minimal-table.css"
+SUMMARY_REPORT_CSS_FILE = curr_dir / "summary_report" / CSS_FILE_NAME
 DESKTOP_SUMMARY_DIR = Path.home() / "Desktop/Remoscope_Summary_Reports"
 if not Path(DESKTOP_SUMMARY_DIR).exists():
     Path(DESKTOP_SUMMARY_DIR).mkdir()

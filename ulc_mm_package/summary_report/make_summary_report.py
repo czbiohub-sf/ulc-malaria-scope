@@ -1,19 +1,25 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
 
+from ulc_mm_package.scope_constants import CSS_FILE_NAME
+
 
 def make_html_report(
+    dataset_name: str,
     experiment_metadata: Dict[str, str],
     cell_counts: Dict[str, int],
     thumbnails: Dict[str, List[str]],
+    css_path: Optional[str] = CSS_FILE_NAME,
 ) -> str:
     """Generate an html report.
 
     Parameters
     ----------
+    dataset_name: str
+        Typically the timestamp of the dataset
     experiment_metadata: Dict[str, str]
         Experiment metadata dict
     cell_counts: Dict[str, int]
@@ -23,6 +29,8 @@ def make_html_report(
         A mapping between class name (e.g "Ring", "Trophozoite", etc.)
         to a list of thumbnail filepaths (as strings) of the form described in
         `neural_nets/utils.py, _save_thumbnails_to_disk.
+    css_path: Optional[str] = CSS_FILE_NAME
+        Optionally specify where the CSS file lives
 
     Returns
     -------
@@ -34,12 +42,32 @@ def make_html_report(
     template_file = "summary_template.html"
     env = Environment(loader=FileSystemLoader(str(curr_dir)))
     template = env.get_template(template_file)
+
+    # Explicitly specify "-" otherwise the PDF's table formatting ends up weird
+    operator = (
+        experiment_metadata["operator_id"]
+        if experiment_metadata["operator_id"]
+        else "-"
+    )
+    participant = (
+        experiment_metadata["participant_id"]
+        if experiment_metadata["participant_id"]
+        else "-"
+    )
+    notes = experiment_metadata["notes"] if experiment_metadata["notes"] else "-"
+    fc_id = (
+        experiment_metadata["flowcell_id"]
+        if experiment_metadata["flowcell_id"]
+        else "-"
+    )
+
     context = {
-        "dataset_name": "2023-07-06-000000",
-        "operator_id": experiment_metadata["operator_id"],
-        "participant_id": experiment_metadata["participant_id"],
-        "notes": experiment_metadata["notes"],
-        "flowcell_id": experiment_metadata["flowcell_id"],
+        "css_file": css_path,
+        "dataset_name": dataset_name,
+        "operator_id": operator,
+        "participant_id": participant,
+        "notes": notes,
+        "flowcell_id": fc_id,
         "cell_counts": cell_counts,
         "all_thumbnails": thumbnails,
     }
@@ -118,12 +146,13 @@ if __name__ == "__main__":
             for x in sorted(os.listdir(parasite_folders[2]))
         ],
         "Gametocyte": [
-            os.path.join(parasite_folders[2], x)
-            for x in sorted(os.listdir(parasite_folders[2]))
+            os.path.join(parasite_folders[3], x)
+            for x in sorted(os.listdir(parasite_folders[3]))
         ],
     }
 
     context = {
+        "css_file": "minimal-table.css",
         "dataset_name": "2023-07-06-000000",
         "operator_id": "IJ",
         "participant_id": "Also IJ",
