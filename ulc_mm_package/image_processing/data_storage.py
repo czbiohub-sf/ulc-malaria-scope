@@ -2,6 +2,8 @@ import io
 import csv
 import shutil
 import logging
+from os.path import relpath
+from os import remove
 from pathlib import Path
 from time import perf_counter
 from datetime import datetime
@@ -19,8 +21,18 @@ from ulc_mm_package.image_processing.processing_constants import (
     NUM_SUBSEQUENCES,
     SUBSEQUENCE_LENGTH,
 )
-
-from ulc_mm_package.scope_constants import MAX_FRAMES
+from ulc_mm_package.neural_nets.utils import save_parasite_thumbnails_to_disk
+from ulc_mm_package.scope_constants import (
+    MAX_FRAMES,
+    SUMMARY_REPORT_CSS_FILE,
+    DESKTOP_SUMMARY_DIR,
+    CSS_FILE_NAME,
+)
+from ulc_mm_package.summary_report.make_summary_report import (
+    make_html_report,
+    save_html_report,
+    create_pdf_from_html,
+)
 
 
 class DataStorageError(Exception):
@@ -64,7 +76,7 @@ class DataStorage:
         ext_dir: str,
         custom_experiment_name: str,
         datetime_str: str,
-        experiment_initialization_metdata: Dict,
+        experiment_initialization_metadata: Dict,
         per_image_metadata_keys: list,
     ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
@@ -91,6 +103,9 @@ class DataStorage:
         self.time_str = datetime.now().strftime(DATETIME_FORMAT)
         self.experiment_folder = self.time_str + f"_{custom_experiment_name}"
 
+        # Keep experiment metadata
+        self.experiment_level_metadata = experiment_initialization_metadata
+
         try:
             (self.main_dir / self.experiment_folder).mkdir()
         except Exception as e:
@@ -115,10 +130,10 @@ class DataStorage:
         )
         with open(f"{exp_run_md_file}", "w") as f:
             writer = csv.DictWriter(
-                f, fieldnames=list(experiment_initialization_metdata.keys())
+                f, fieldnames=list(experiment_initialization_metadata.keys())
             )
             writer.writeheader()
-            writer.writerow(experiment_initialization_metdata)
+            writer.writerow(experiment_initialization_metadata)
 
         # Create Zarr Storage
         filename = (
@@ -174,12 +189,16 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self, pred_tensors: List[npt.NDArray]) -> Optional[Future]:
+    def close(
+        self,
+        pred_tensors: Optional[List[npt.NDArray]] = None,
+        class_counts: Optional[Dict[str, int]] = None,
+    ) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
         Parameters
         ----------
-        pred_tensors: List[npt.NDArray]
+        pred_tensors: Optional[List[npt.NDArray]]
             Parsed predictions tensors from PredictionsHandler()
 
         Returns
@@ -189,14 +208,98 @@ class DataStorage:
             (future.done())
         """
 
-        self.logger.info("Closing data storage.")
-        self.save_parsed_prediction_tensors(pred_tensors)
+        self.logger.info(f"{'='*10}Closing data storage.{'='*10}")
+
+        self.logger.info("> Saving subsample images...")
         self.save_uniform_sample()
 
+        self.logger.info("> Closing metadata file...")
         if self.metadata_file is not None:
             self.metadata_file.close()
             self.metadata_file = None
 
+        if pred_tensors is not None:
+            self.logger.info("> Saving prediction tensors...")
+            self.save_parsed_prediction_tensors(pred_tensors)
+
+            self.logger.info("> Saving parasite thumbnails...")
+            class_to_thumbnails_path: Dict[
+                str, Path
+            ] = save_parasite_thumbnails_to_disk(
+                self.zw.array, pred_tensors, self.get_experiment_path()
+            )
+
+            if class_counts is not None:
+                summary_report_dir = self.get_experiment_path() / "summary_report"
+                Path.mkdir(summary_report_dir, exist_ok=True)
+
+                ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
+                # But, we do want to have a copy of the `html` file which uses relative paths so that we can move the file and thumbnails folders
+                # and still view them properly (e.g if we `scp` over the html file and thumbnails/ folder, we want the HTML to still render properly on our
+                # local computers)
+
+                # Get a mapping of the class string to all its individual thumbnail files
+                class_to_all_thumbnails: Dict[str, List[str]] = {
+                    x: [
+                        str(relpath(y, summary_report_dir))
+                        for y in list(class_to_thumbnails_path[x].rglob("*.png"))
+                    ]
+                    for x in class_to_thumbnails_path.keys()
+                }
+
+                class_to_all_thumbnails_abs_path: Dict[str, List[str]] = {
+                    x: [
+                        str(y.resolve())
+                        for y in list(class_to_thumbnails_path[x].rglob("*.png"))
+                    ]
+                    for x in class_to_thumbnails_path.keys()
+                }
+
+                html_save_loc = summary_report_dir / f"{self.time_str}_summary.html"
+                html_abs_path_temp_loc = (
+                    summary_report_dir / f"{self.time_str}_temp_summary.html"
+                )
+                pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
+
+                # HTML w/ relative paths
+                html_report = make_html_report(
+                    self.time_str,
+                    self.experiment_level_metadata,
+                    class_counts,
+                    class_to_all_thumbnails,
+                )
+
+                # HTML w/ absolute path
+                abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
+                html_report_with_abs_path = make_html_report(
+                    self.time_str,
+                    self.experiment_level_metadata,
+                    class_counts,
+                    class_to_all_thumbnails_abs_path,
+                    css_path=abs_css_file_path,
+                )
+
+                # Copy the CSS file to the summary directory
+                shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
+
+                # Save the temporary HTML file w/ absolute path so we can properly generate the PDF
+                save_html_report(html_report_with_abs_path, html_abs_path_temp_loc)
+                create_pdf_from_html(html_abs_path_temp_loc, pdf_save_loc)
+
+                # Make a copy of the summary PDF to the Desktop
+                shutil.copy(pdf_save_loc, DESKTOP_SUMMARY_DIR)
+
+                # Remove the temporary html file
+                remove(html_abs_path_temp_loc)
+
+                # Save the HTML file w/ relative paths to thumbnails
+                save_html_report(html_report, html_save_loc)
+            else:
+                self.logger.warning(
+                    "Did not receive class_counts, not saving html/pdf summary reports."
+                )
+
+        self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
             self.zw.writable = False
             future = self.zw.threadedCloseFile()
