@@ -156,7 +156,7 @@ if __name__ == "__main__":
         "dataset_name": "2023-07-06-000000",
         "operator_id": "IJ",
         "participant_id": "Also IJ",
-        "notes": "blood looks gorgeous",
+        "notes": "blood looks gorgeous. This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory!",
         "flowcell_id": "0123-A2",
         "cell_counts": cell_counts,
         "all_thumbnails": thumbnails,
