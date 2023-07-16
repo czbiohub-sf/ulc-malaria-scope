@@ -39,6 +39,7 @@ from ulc_mm_package.scope_constants import (
 from ulc_mm_package.summary_report.make_summary_report import (
     make_html_report,
     make_per_image_metadata_plots,
+    make_cell_count_plot,
     make_yogo_conf_plots,
     make_yogo_objectness_plots,
     save_html_report,
@@ -262,9 +263,9 @@ class DataStorage:
             )
 
             # Prediction counts over time/confidence/objectness plots
-            counts_plot_loc = summary_report_dir / "counts.jpg"
-            conf_plot_loc = summary_report_dir / "confs.jpg"
-            objectness_plot_loc = summary_report_dir / "objectness.jpg"
+            counts_plot_loc = str(summary_report_dir / "counts.jpg")
+            conf_plot_loc = str(summary_report_dir / "confs.jpg")
+            objectness_plot_loc = str(summary_report_dir / "objectness.jpg")
             make_cell_count_plot(pred_tensors, counts_plot_loc)
             make_yogo_conf_plots(pred_tensors, conf_plot_loc)
             make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
