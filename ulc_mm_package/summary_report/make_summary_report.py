@@ -86,7 +86,7 @@ def make_cell_count_plot(preds: npt.NDArray, save_loc: str) -> None:
     plt.savefig(f"{str(save_loc)}")
 
 
-def make_yogo_conf_plots(preds: npt.NDArray, save_loc: Path) -> None:
+def make_yogo_conf_plots(preds: npt.NDArray, save_loc: str) -> None:
     """Create histograms for confidences by class.
 
     Parameters
