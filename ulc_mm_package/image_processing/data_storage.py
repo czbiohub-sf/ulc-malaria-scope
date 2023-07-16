@@ -255,7 +255,7 @@ class DataStorage:
             pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
 
             # Create per-image metadata plot
-            per_image_metadata_plot_save_loc = (
+            per_image_metadata_plot_save_loc = str(
                 summary_report_dir / f"{self.time_str}_per_image_metadata_plot.jpg"
             )
             make_per_image_metadata_plots(
