@@ -93,7 +93,7 @@ def _parse_prediction_tensor(
     npt.NDArray: bry (1 x N)
     npt.NDArray: objectness (1 x N)
     npt.NDArray: pred_labels (1 x N)
-    npt.NDArray: pred_probs (1 x N)
+    npt.NDArray: peak pred_probs (1 x N)
     npt.NDArray: pred_probs (NUM_CLASSES x N)
     """
 
@@ -166,7 +166,9 @@ def parse_prediction_tensor(
             [0 - 1]
         idx 6 (predictions)
             Class id with the highest confidence value, number from 0 to M, where M is the number of classes - 1)
-        idx (7 - NUM_CLASSES)
+        idx 7 (peak prediction confidence)
+            The highest predicted confidence value (yes, this is technically redundant so you could get the argmax from idxs 8-NUM_CLASSES, but this makes life more convenient for later analysis.)
+        idx (8 - NUM_CLASSES)
             All the confidence values (the peak prediction confidence is repeated) for each class
     """
 
@@ -199,7 +201,7 @@ def get_specific_class_from_parsed_tensor(
             4 - bounding box bottom right y
             5 - objectness (0 - 1)
             6 - class ID (all columns will have the same class ID as the one you passed into this function)
-            7 - probability / confidence (0 - 1)
+            7 - peak probability / confidence (0 - 1)
             8 - NUM_CLASSES
 
     """

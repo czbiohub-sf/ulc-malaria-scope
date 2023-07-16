@@ -481,7 +481,7 @@ class ScopeOp(QObject, NamedMachine):
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, class_counts)
             }
 
-        self.mscope.reset_for_end_experiment(class_counts_as_dict)
+        self.mscope.reset_for_end_experiment()
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)

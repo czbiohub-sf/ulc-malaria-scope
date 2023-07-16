@@ -45,8 +45,11 @@
                 <td>{{cell_counts[key]}}</td>
             </tr>
             {% endfor %}
+            <tr>
+                <td>% Parasitemia<br><strong>(NOT FOR CLINICAL USE)</strong></td>
+                <td>{{perc_parasitemia}}%</td>
+            </tr>
         </table>
-
 
         {# Thumbnails #}
         <h3>Parasite thumbnails</h3>
@@ -71,5 +74,21 @@
                 {% endfor %}
             {% endfor %}
         </table>
+
+        {# Metadata plots #}
+        <h3>Per-Image Metadata Plot</h3>
+        <img src = "{{per_image_metadata_plot_filename}}">
+
+        {# YOGO Performance Plots #}
+        <h3>YOGO Performance Plots</h3>
+        <h4>Cell counts over time</h4>
+        <img src = "{{cell_count_plot_filename}}">
+        <br>
+        <h4>Confidence histograms</h4>
+        <aside>Model confidences <strong>DO NOT</strong> correspond to an actual probability distribution.</aside>
+        <img src = "{{confidence_hists_filename}}">
+        <br>
+        <h4>Objectness histograms</h4>
+        <img src = "{{objectness_hists_filename}}">
     </body>
 </html>

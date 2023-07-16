@@ -21,7 +21,15 @@ from ulc_mm_package.image_processing.processing_constants import (
     NUM_SUBSEQUENCES,
     SUBSEQUENCE_LENGTH,
 )
-from ulc_mm_package.neural_nets.utils import save_parasite_thumbnails_to_disk
+from ulc_mm_package.neural_nets.utils import (
+    get_class_counts,
+    save_parasite_thumbnails_to_disk,
+)
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    YOGO_CLASS_LIST,
+    PARASITE_CLASS_IDS,
+)
+
 from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     SUMMARY_REPORT_CSS_FILE,
@@ -30,6 +38,9 @@ from ulc_mm_package.scope_constants import (
 )
 from ulc_mm_package.summary_report.make_summary_report import (
     make_html_report,
+    make_per_image_metadata_plots,
+    make_yogo_conf_plots,
+    make_yogo_objectness_plots,
     save_html_report,
     create_pdf_from_html,
 )
@@ -116,7 +127,8 @@ class DataStorage:
             / self.experiment_folder
             / f"{self.time_str}perimage_{custom_experiment_name}_metadata.csv"
         )
-        self.metadata_file = open(str(filename), "w")
+        self.per_img_metadata_filename = filename
+        self.metadata_file = open(str(self.per_img_metadata_filename), "w")
         self.md_writer = csv.DictWriter(
             self.metadata_file, fieldnames=per_image_metadata_keys
         )
@@ -189,16 +201,12 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(
-        self,
-        pred_tensors: Optional[List[npt.NDArray]] = None,
-        class_counts: Optional[Dict[str, int]] = None,
-    ) -> Optional[Future]:
+    def close(self, pred_tensors: Optional[npt.NDArray] = None) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
         Parameters
         ----------
-        pred_tensors: Optional[List[npt.NDArray]]
+        pred_tensors: Optional[npt.NDArray]
             Parsed predictions tensors from PredictionsHandler()
 
         Returns
@@ -213,11 +221,6 @@ class DataStorage:
         self.logger.info("> Saving subsample images...")
         self.save_uniform_sample()
 
-        self.logger.info("> Closing metadata file...")
-        if self.metadata_file is not None:
-            self.metadata_file.close()
-            self.metadata_file = None
-
         if pred_tensors is not None:
             self.logger.info("> Saving prediction tensors...")
             self.save_parsed_prediction_tensors(pred_tensors)
@@ -229,75 +232,88 @@ class DataStorage:
                 self.zw.array, pred_tensors, self.get_experiment_path()
             )
 
-            if class_counts is not None:
-                summary_report_dir = self.get_experiment_path() / "summary_report"
-                Path.mkdir(summary_report_dir, exist_ok=True)
+            ### Create summary report
 
-                ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
-                # But, we do want to have a copy of the `html` file which uses relative paths so that we can move the file and thumbnails folders
-                # and still view them properly (e.g if we `scp` over the html file and thumbnails/ folder, we want the HTML to still render properly on our
-                # local computers)
+            summary_report_dir = self.get_experiment_path() / "summary_report"
+            Path.mkdir(summary_report_dir, exist_ok=True)
 
-                # Get a mapping of the class string to all its individual thumbnail files
-                class_to_all_thumbnails: Dict[str, List[str]] = {
-                    x: [
-                        str(relpath(y, summary_report_dir))
-                        for y in list(class_to_thumbnails_path[x].rglob("*.png"))
-                    ]
-                    for x in class_to_thumbnails_path.keys()
-                }
+            ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
+            ### so provide absolute filepaths only. Note this means that the html file will be broken if viewed from anywhere other than the Pi.
 
-                class_to_all_thumbnails_abs_path: Dict[str, List[str]] = {
-                    x: [
-                        str(y.resolve())
-                        for y in list(class_to_thumbnails_path[x].rglob("*.png"))
-                    ]
-                    for x in class_to_thumbnails_path.keys()
-                }
+            class_to_all_thumbnails_abs_path: Dict[str, List[str]] = {
+                x: [
+                    str(y.resolve())
+                    for y in list(class_to_thumbnails_path[x].rglob("*.png"))
+                ]
+                for x in class_to_thumbnails_path.keys()
+            }
 
-                html_save_loc = summary_report_dir / f"{self.time_str}_summary.html"
-                html_abs_path_temp_loc = (
-                    summary_report_dir / f"{self.time_str}_temp_summary.html"
-                )
-                pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
+            html_abs_path_temp_loc = (
+                summary_report_dir / f"{self.time_str}_temp_summary.html"
+            )
+            pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
 
-                # HTML w/ relative paths
-                html_report = make_html_report(
-                    self.time_str,
-                    self.experiment_level_metadata,
-                    class_counts,
-                    class_to_all_thumbnails,
-                )
+            # Create per-image metadata plot
+            per_image_metadata_plot_save_loc = (
+                summary_report_dir / f"{self.time_str}_per_image_metadata_plot.jpg"
+            )
+            make_per_image_metadata_plots(
+                self.metadata_file, per_image_metadata_plot_save_loc
+            )
 
-                # HTML w/ absolute path
-                abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
-                html_report_with_abs_path = make_html_report(
-                    self.time_str,
-                    self.experiment_level_metadata,
-                    class_counts,
-                    class_to_all_thumbnails_abs_path,
-                    css_path=abs_css_file_path,
-                )
+            # Prediction counts over time/confidence/objectness plots
+            counts_plot_loc = summary_report_dir / "counts.jpg"
+            conf_plot_loc = summary_report_dir / "confs.jpg"
+            objectness_plot_loc = summary_report_dir / "objectness.jpg"
+            make_cell_count_plot(pred_tensors, counts_plot_loc)
+            make_yogo_conf_plots(pred_tensors, conf_plot_loc)
+            make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
 
-                # Copy the CSS file to the summary directory
-                shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
+            # Get cell counts and % parasitemia
+            cell_counts = get_class_counts(pred_tensors)
+            class_name_to_cell_count = {
+                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
+            }
+            num_parasites = sum([cell_counts[i] for i in PARASITE_CLASS_IDS])
+            perc_parasitemia = (
+                f"{100 * num_parasites / (cell_counts[0] + num_parasites):.5f}"
+            )
 
-                # Save the temporary HTML file w/ absolute path so we can properly generate the PDF
-                save_html_report(html_report_with_abs_path, html_abs_path_temp_loc)
-                create_pdf_from_html(html_abs_path_temp_loc, pdf_save_loc)
+            # HTML w/ absolute path
+            abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
+            html_report_with_abs_path = make_html_report(
+                self.time_str,
+                self.experiment_level_metadata,
+                class_name_to_cell_count,
+                perc_parasitemia,
+                class_to_all_thumbnails_abs_path,
+                counts_plot_loc,
+                conf_plot_loc,
+                objectness_plot_loc,
+                css_path=abs_css_file_path,
+            )
 
-                # Make a copy of the summary PDF to the Desktop
-                shutil.copy(pdf_save_loc, DESKTOP_SUMMARY_DIR)
+            # Copy the CSS file to the summary directory
+            shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
 
-                # Remove the temporary html file
-                remove(html_abs_path_temp_loc)
+            # Save the temporary HTML file w/ absolute path so we can properly generate the PDF
+            save_html_report(html_report_with_abs_path, html_abs_path_temp_loc)
+            create_pdf_from_html(html_abs_path_temp_loc, pdf_save_loc)
 
-                # Save the HTML file w/ relative paths to thumbnails
-                save_html_report(html_report, html_save_loc)
-            else:
-                self.logger.warning(
-                    "Did not receive class_counts, not saving html/pdf summary reports."
-                )
+            # Make a copy of the summary PDF to the Desktop
+            shutil.copy(pdf_save_loc, DESKTOP_SUMMARY_DIR)
+
+            # Remove intermediate files
+            remove(html_abs_path_temp_loc)
+            remove(summary_report_dir / CSS_FILE_NAME)
+            remove(per_image_metadata_plot_save_loc)
+            remove(conf_plot_loc)
+            remove(objectness_plot_loc)
+
+        self.logger.info("> Closing metadata file...")
+        if self.metadata_file is not None:
+            self.metadata_file.close()
+            self.metadata_file = None
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
