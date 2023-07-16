@@ -9,7 +9,7 @@ import cv2
 import logging
 import numpy as np
 
-from typing import Any, Optional, Dict
+from typing import Any
 from time import sleep, perf_counter
 from transitions import Machine, State
 
@@ -475,10 +475,6 @@ class ScopeOp(QObject, NamedMachine):
                 class_counts, unsorted_confidences, sorted_confidences
             )
             self.logger.info(stats_string)
-
-            class_counts_as_dict = {
-                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, class_counts)
-            }
 
         self.mscope.reset_for_end_experiment()
 

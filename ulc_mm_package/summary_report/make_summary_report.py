@@ -71,7 +71,9 @@ def make_cell_count_plot(preds: npt.NDArray, save_loc: str) -> None:
     num_frames = len(np.unique(preds[0, :]))
     x_vals = np.linspace(0, num_frames, num_frames)
     m, b = np.polyfit(x_vals, vals, deg=1)
-    f = lambda x: m * x + b
+
+    def f(x):
+        return m * x + b
 
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.plot(vals, "o", c=COLORS[0], markersize=2, label="Raw vals")
