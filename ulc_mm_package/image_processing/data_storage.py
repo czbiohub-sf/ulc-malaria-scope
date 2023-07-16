@@ -285,6 +285,7 @@ class DataStorage:
             html_report_with_abs_path = make_html_report(
                 self.time_str,
                 self.experiment_level_metadata,
+                per_image_metadata_plot_save_loc,
                 class_name_to_cell_count,
                 perc_parasitemia,
                 class_to_all_thumbnails_abs_path,
