@@ -16,7 +16,7 @@ COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7
 
 
 def make_per_image_metadata_plots(
-    per_image_metadata_file: TextIOWrapper, save_loc: Path
+    per_image_metadata_file: TextIOWrapper, save_loc: str
 ) -> None:
     """Create and save per-image metadata plots to the summary report directory.
 
@@ -63,7 +63,7 @@ def make_per_image_metadata_plots(
     plt.savefig(f"{str(save_loc)}")
 
 
-def make_cell_count_plot(preds: npt.NDArray, save_loc: Path) -> None:
+def make_cell_count_plot(preds: npt.NDArray, save_loc: str) -> None:
     vals = np.cumsum(np.unique(preds[0, :], return_counts=True)[1])
     num_frames = len(np.unique(preds[0, :]))
     x_vals = np.linspace(0, num_frames, num_frames)
@@ -175,7 +175,7 @@ def make_yogo_conf_plots(preds: npt.NDArray, save_loc: Path) -> None:
     plt.savefig(f"{str(save_loc)}")
 
 
-def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: Path) -> None:
+def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: str) -> None:
     """Create histograms for objectness by class.
 
     Parameters
