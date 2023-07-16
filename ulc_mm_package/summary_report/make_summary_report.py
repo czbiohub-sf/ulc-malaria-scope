@@ -16,7 +16,7 @@ COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7
 
 
 def make_per_image_metadata_plots(
-    per_image_metadata_file: TextIOWrapper, save_loc: str
+    per_image_metadata_file: Optional[TextIOWrapper], save_loc: str
 ) -> None:
     """Create and save per-image metadata plots to the summary report directory.
 
@@ -26,6 +26,9 @@ def make_per_image_metadata_plots(
         The opened (i.e open("filename", "r")) per-image metadata csv file.
     save_loc: Path
     """
+
+    if per_image_metadata_file is None:
+        raise ValueError("Per image metadata can't be none.")
 
     reader = DictReader(per_image_metadata_file)
     rows = list(reader)
