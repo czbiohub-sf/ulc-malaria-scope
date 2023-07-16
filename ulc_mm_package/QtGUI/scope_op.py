@@ -460,7 +460,6 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
         pred_counter = self.mscope.predictions_handler.new_pred_pointer
-        class_counts_as_dict: Optional[Dict[str, int]] = None
         if pred_counter != 0:
             nonzero_preds = (
                 self.mscope.predictions_handler.get_prediction_tensors()
