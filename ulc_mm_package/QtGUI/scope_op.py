@@ -240,7 +240,9 @@ class ScopeOp(QObject, NamedMachine):
         if self.state != "standby":
             self.update_msg.emit(f"{state_name.capitalize()} in progress...")
 
-        self.logger.info(f"Changing state to {self.state} (field of view: {self.frame_count}/{MAX_FRAMES}).")
+        self.logger.info(
+            f"Changing state to {self.state} (field of view: {self.frame_count}/{MAX_FRAMES})."
+        )
         self.update_state.emit(state_name)
 
     def _get_experiment_runtime(self) -> float:
