@@ -10,7 +10,7 @@ from xhtml2pdf import pisa
 import numpy as np
 import numpy.typing as npt
 
-from ulc_mm_package.scope_constants import CSS_FILE_NAME
+from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT
 
 COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7b6d2"]
 
@@ -344,6 +344,7 @@ def make_html_report(
         "cell_counts": class_name_to_cell_count,
         "perc_parasitemia": perc_parasitemia,
         "all_thumbnails": thumbnails,
+        "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
         "per_image_metadata_plot_filename": per_image_metadata_plot_path,
         "cell_count_plot_filename": counts_plot_loc,
         "confidence_hists_filename": conf_plot_loc,
