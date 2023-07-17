@@ -19,7 +19,10 @@ AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files" / "valiant-disco-11
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_MODEL_DIR = str(
-    curr_dir / "yogo_model_files" / "grateful-smoke" / "grateful-smoke-1582.xml"
+    curr_dir
+    / "yogo_model_files"
+    / "graceful-smoke"
+    / "graceful-smoke-1582-quarter-with-border.xml"
 )
 
 YOGO_CLASS_LIST: Tuple[str, ...] = (
