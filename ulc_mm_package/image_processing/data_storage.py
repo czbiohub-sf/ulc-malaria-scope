@@ -128,7 +128,7 @@ class DataStorage:
             / f"{self.time_str}perimage_{custom_experiment_name}_metadata.csv"
         )
         self.per_img_metadata_filename = filename
-        self.metadata_file = open(str(self.per_img_metadata_filename), "w")
+        self.metadata_file = open(str(self.per_img_metadata_filename), "w+")
         self.md_writer = csv.DictWriter(
             self.metadata_file, fieldnames=per_image_metadata_keys
         )
