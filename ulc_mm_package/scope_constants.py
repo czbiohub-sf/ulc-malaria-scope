@@ -8,6 +8,9 @@ from collections import namedtuple
 
 curr_dir = Path(__file__).parent.resolve()  # Get full path
 
+# RESEARCH USE ONLY DISCLAIMER
+RESEARCH_USE_ONLY = "For Research Use Only. Not for use in diagnostic procedures"
+
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
 SIMULATION = MS_SIMULATE_FLAG > 0
@@ -34,6 +37,13 @@ if SIMULATION:
 
 
 CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
+
+# ================ Summary PDF constants ================ #
+CSS_FILE_NAME = "minimal-table.css"
+SUMMARY_REPORT_CSS_FILE = curr_dir / "summary_report" / CSS_FILE_NAME
+DESKTOP_SUMMARY_DIR = Path.home() / "Desktop/Remoscope_Summary_Reports"
+if not Path(DESKTOP_SUMMARY_DIR).exists():
+    Path(DESKTOP_SUMMARY_DIR).mkdir()
 
 
 class MissingCameraError(Exception):

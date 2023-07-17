@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Remoscope / {{ dataset_name }}</title>
+        <link href="{{ css_file }}" rel="stylesheet" type="text/css">
+    </head>
+
+    <h1>Dataset {{ dataset_name }} </h1>
+    <body>
+        <h2>Statistics summary and thumbnails</h2>
+
+        {# Experiment metadata #}
+        <table style="table-layout: fixed;">
+            <thead>
+                <tr>
+                    <th colspan="2">Experiment metadata</th>
+                </tr>
+            </thead>
+            <tr>
+                <td>Operator ID</td>
+                <td>{{ operator_id }}</td>
+            </tr>
+            <tr>
+                <td>Participant ID</td>
+                <td>{{ participant_id }}</td>
+            </tr>
+            <tr>
+                <td>Notes</td>
+                <td><p style="word-wrap: break-word; -pdf-word-wrap: CJK;">{{ notes }}</p></td>
+            </tr>
+            <tr>
+                <td>Flowcell ID</td>
+                <td>{{ flowcell_id }}</td>
+            </tr>
+
+            {# Cell counts #}
+            <thead>
+                <tr>
+                    <th colspan="2">Cell counts</th>
+                </tr>
+            </thead>
+            {% for key in cell_counts %}
+            <tr>
+                <td>{{key}}</td>
+                <td>{{cell_counts[key]}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+
+        {# Thumbnails #}
+        <h3>Parasite thumbnails</h3>
+        <table>
+            {% for key in all_thumbnails %}
+                <thead>
+                    <tr>
+                        <th colspan="10">{{key.upper()}}</th>
+                    </tr>
+                </thead>
+                {% for row in all_thumbnails[key]|batch(10, "") %}
+                <tr>
+                    {% for filename in row %}
+                    <td>
+                        {% if filename | length > 0 %}
+                            <img src="{{ filename }}">
+                            <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            {% endfor %}
+        </table>
+    </body>
+</html>

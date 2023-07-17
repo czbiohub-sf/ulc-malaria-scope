@@ -122,15 +122,23 @@ class MalariaScope:
         # Resetting flow_controller parameters
         self.flow_controller.reset()
 
-    def reset_for_end_experiment(self) -> None:
-        """Reset syringe, turn LED off, reset flow control, and close data storage."""
+    def reset_for_end_experiment(
+        self, class_counts: Optional[Dict[str, int]] = None
+    ) -> None:
+        """Reset syringe, turn LED off, reset flow control, and close data storage.
+
+        Parameters
+        ----------
+        class_counts: Optional[Dict[str, int]]
+            A mapping from class name to its count, e.g "Healthy": 143230
+        """
 
         # Reset syringe to top, turn LED off, reset flow control variables
         self.reset_pneumatic_and_led_and_flow_control()
 
         # Close data storage
         closing_file_future = self.data_storage.close(
-            self.predictions_handler.get_prediction_tensors()
+            self.predictions_handler.get_prediction_tensors(), class_counts
         )
         if closing_file_future is not None:
             while not closing_file_future.done():

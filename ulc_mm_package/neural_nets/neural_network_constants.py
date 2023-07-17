@@ -1,5 +1,5 @@
 import pathlib
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
 from ulc_mm_package.scope_constants import ACQUISITION_FPS
 
@@ -37,6 +37,12 @@ YOGO_CLASS_LIST: Tuple[str, ...] = (
     "misc",
 )
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
+PARASITE_CLASS_IDS: List[int] = [
+    YOGO_CLASS_IDX_MAP["ring"],
+    YOGO_CLASS_IDX_MAP["trophozoite"],
+    YOGO_CLASS_IDX_MAP["schizont"],
+    YOGO_CLASS_IDX_MAP["gametocyte"],
+]
 
 # best way to find this number is to look for input shape in the model definition xml file
 YOGO_CROP_HEIGHT_PX: int = 193
