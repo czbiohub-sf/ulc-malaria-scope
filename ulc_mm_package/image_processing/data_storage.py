@@ -128,7 +128,7 @@ class DataStorage:
             / f"{self.time_str}perimage_{custom_experiment_name}_metadata.csv"
         )
         self.per_img_metadata_filename = filename
-        self.metadata_file = open(str(self.per_img_metadata_filename), "w+")
+        self.metadata_file = open(str(self.per_img_metadata_filename), "w")
         self.md_writer = csv.DictWriter(
             self.metadata_file, fieldnames=per_image_metadata_keys
         )
@@ -221,6 +221,11 @@ class DataStorage:
         self.logger.info("> Saving subsample images...")
         self.save_uniform_sample()
 
+        self.logger.info("> Closing metadata file...")
+        if self.metadata_file is not None:
+            self.metadata_file.close()
+            self.metadata_file = None
+
         if pred_tensors is not None:
             self.logger.info("> Saving prediction tensors...")
             self.save_parsed_prediction_tensors(pred_tensors)
@@ -257,8 +262,10 @@ class DataStorage:
             per_image_metadata_plot_save_loc = str(
                 summary_report_dir / f"{self.time_str}_per_image_metadata_plot.jpg"
             )
+
+            per_img_metadata_file = open(self.per_img_metadata_filename, "r")
             make_per_image_metadata_plots(
-                self.metadata_file, per_image_metadata_plot_save_loc
+                per_img_metadata_file, per_image_metadata_plot_save_loc
             )
 
             # Prediction counts over time/confidence/objectness plots
@@ -310,11 +317,6 @@ class DataStorage:
             remove(per_image_metadata_plot_save_loc)
             remove(conf_plot_loc)
             remove(objectness_plot_loc)
-
-        self.logger.info("> Closing metadata file...")
-        if self.metadata_file is not None:
-            self.metadata_file.close()
-            self.metadata_file = None
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
