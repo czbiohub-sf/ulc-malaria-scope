@@ -123,10 +123,11 @@ class Oracle(Machine):
             mkdir(log_dir)
 
         # Setup logger
+        log_file = path.join(log_dir, f"{self.datetime_str}.log")
         fileConfig(
             fname="../logger.config",
             defaults={
-                "filename": path.join(log_dir, f"{self.datetime_str}.log"),
+                "filename": log_file,
                 "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO",
             },
         )
@@ -706,6 +707,8 @@ class Oracle(Machine):
         self.logger.info("Successfully terminated acquisition and liveview timer.")
 
         # Shut off hardware
+        # TODO do we need a try except here? (eg. if data storage initialization fails)
+        experiment_dir = self.scopeop.mscope.data_storage.get_experiment_path()
         self.scopeop.mscope.shutoff()
 
         try:
@@ -732,6 +735,11 @@ class Oracle(Machine):
         self.logger.info("Closed liveview window.")
 
         self.logger.info("ORACLE SHUT OFF SUCCESSFUL.")
+
+        if os.path.exists(log_file) and os.path.exists(experiment_dir):
+            # TODO all os.paths need to be changed to Path!
+            Path(log_file).rename(experiment_dir / Path(log_file).stem)
+
         self.shutoff_done = True
 
     def emergency_shutoff(self):
