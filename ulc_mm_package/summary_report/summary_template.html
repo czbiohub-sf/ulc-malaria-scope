@@ -2,10 +2,11 @@
 <html lang="en">
     <head>
         <title>Remoscope / {{ dataset_name }}</title>
+        <h1 style="text-align: center;">RESEARCH USE ONLY - <strong>NOT FOR CLINICAL USE</strong></h1>
         <link href="{{ css_file }}" rel="stylesheet" type="text/css">
     </head>
 
-    <h1>Dataset {{ dataset_name }} </h1>
+    <h1>Remoscope / Dataset {{ dataset_name }} </h1>
     <body>
         <h2>Statistics summary and thumbnails</h2>
 
@@ -21,7 +22,7 @@
                 <td>{{ operator_id }}</td>
             </tr>
             <tr>
-                <td>Participant ID</td>
+                <td>Non-identifying participant ID</td>
                 <td>{{ participant_id }}</td>
             </tr>
             <tr>
@@ -45,8 +46,11 @@
                 <td>{{cell_counts[key]}}</td>
             </tr>
             {% endfor %}
+            <tr>
+                <td>% Parasitemia<br><strong>(NOT FOR CLINICAL USE)</strong></td>
+                <td>{{perc_parasitemia}}%</td>
+            </tr>
         </table>
-
 
         {# Thumbnails #}
         <h3>Parasite thumbnails</h3>
@@ -71,5 +75,24 @@
                 {% endfor %}
             {% endfor %}
         </table>
+        
+        {# OPTIONAL PLOTS FOR INTERNAL USE #}
+        {% if DEBUG_SUMMARY_REPORT %}
+            {# Metadata plots #}
+            <h3>Per-Image Metadata Plot</h3>
+            <img src = "{{per_image_metadata_plot_filename}}">
+
+            {# YOGO Performance Plots #}
+            <h3>YOGO Performance Plots</h3>
+            <h4>Cell counts over time</h4>
+            <img src = "{{cell_count_plot_filename}}">
+            <br>
+            <h4>Confidence histograms</h4>
+            <aside>Model confidences <strong>DO NOT</strong> correspond to an actual probability distribution.</aside>
+            <img src = "{{confidence_hists_filename}}">
+            <br>
+            <h4>Objectness histograms</h4>
+            <img src = "{{objectness_hists_filename}}">
+        {% endif %}
     </body>
 </html>

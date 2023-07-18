@@ -39,6 +39,9 @@ if SIMULATION:
 CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
 
 # ================ Summary PDF constants ================ #
+DEBUG_REPORT = int(
+    os.environ.get("DEBUG_REPORT", 0)
+)  # Flag to add optional plots (metadata / YOGO histograms) to the summary report
 CSS_FILE_NAME = "minimal-table.css"
 SUMMARY_REPORT_CSS_FILE = curr_dir / "summary_report" / CSS_FILE_NAME
 DESKTOP_SUMMARY_DIR = Path.home() / "Desktop/Remoscope_Summary_Reports"
