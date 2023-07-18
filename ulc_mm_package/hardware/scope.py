@@ -87,6 +87,7 @@ class MalariaScope:
         self.predictions_handler_enabled = False
 
         # Initialize Components
+        self._init_TPU()
         self._init_motor()
         self._init_camera()
         self._init_pneumatic_module()
@@ -95,7 +96,6 @@ class MalariaScope:
         self._init_humidity_temp_sensor()
         self._init_data_storage()
         self._init_flow_controller()
-        self._init_TPU()
         self._init_predictions_handler()
 
         self.logger.info("Initialized scope hardware.")
