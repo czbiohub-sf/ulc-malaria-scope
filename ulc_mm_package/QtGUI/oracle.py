@@ -745,6 +745,8 @@ class Oracle(Machine):
     def emergency_shutoff(self):
         self.logger.warning("Starting emergency oracle shut off.")
 
+        experiment_dir = self.scopeop.mscope.data_storage.get_experiment_path()
+
         if not self.shutoff_done:
             # Close data storage if it's not already closed
             if self.scopeop.mscope.data_storage.zw.writable:
@@ -769,6 +771,8 @@ class Oracle(Machine):
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
+            if os.path.exists(log_file) and os.path.exists(experiment_dir):
+                Path(log_file).rename(experiment_dir / Path(log_file).stem)
 
 if __name__ == "__main__":
     app = ShutoffApplication(sys.argv)
