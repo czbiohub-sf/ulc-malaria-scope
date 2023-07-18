@@ -176,6 +176,7 @@ class MalariaScope:
     def _init_motor(self):
         # Create motor w/ default pins/settings (full step)
         try:
+            self.logger.info("Initializing motor...")
             self.motor = DRV8825Nema()
             self.motor.homeToLimitSwitches()
             self.motor_enabled = True
@@ -184,6 +185,7 @@ class MalariaScope:
 
     def _init_camera(self):
         try:
+            self.logger.info("Initializing camera...")
             if CAMERA_SELECTION == CameraOptions.BASLER:
                 self.camera = BaslerCamera()
                 self.camera_enabled = True
@@ -213,6 +215,7 @@ class MalariaScope:
     def _init_pneumatic_module(self):
         # Create pressure controller (sensor + servo)
         try:
+            self.logger.info("Initializing PneumaticModule...")
             self.pneumatic_module = PneumaticModule()
 
             # Check to see if the pressure sensor was successfully instantiated
@@ -234,6 +237,7 @@ class MalariaScope:
     def _init_led(self):
         # Create the LED
         try:
+            self.logger.info("Initializing LED...")
             self.led = LED_TPS5420TDDCT()
             self.led.turnOn()
             self.led.setDutyCycle(0)
@@ -244,6 +248,7 @@ class MalariaScope:
     def _init_fan(self):
         # Create and turn on the fans
         try:
+            self.logger.info("Initializing fans...")
             self.fan = Fan()
             self.fan.turn_on_all()
             self.fan_enabled = True
@@ -252,6 +257,7 @@ class MalariaScope:
 
     def _init_encoder(self):
         if self.motor_enabled:
+            self.logger.info("Initializing encoder...")
 
             def manualFocusWithEncoder(increment: int):
                 try:
@@ -278,6 +284,7 @@ class MalariaScope:
 
     def _init_humidity_temp_sensor(self):
         try:
+            self.logger.info("Initializing temp/humidity sensor...")
             self.ht_sensor = SHT3X()
             self.ht_sensor_enabled = True
         except Exception as e:
@@ -285,6 +292,7 @@ class MalariaScope:
 
     def _init_data_storage(self, fps_lim: Optional[float] = None):
         try:
+            self.logger.info("Initializing DataStorage...")
             self.data_storage = DataStorage(default_fps=fps_lim)
             self.data_storage_enabled = True
         except DataStorageError as e:
@@ -292,6 +300,7 @@ class MalariaScope:
 
     def _init_TPU(self):
         try:
+            self.logger.info("Initializing TPU...")
             self.autofocus_model = AutoFocus()
             self.cell_diagnosis_model = YOGO()
             self.tpu_enabled = True
@@ -300,6 +309,7 @@ class MalariaScope:
 
     def _init_flow_controller(self):
         try:
+            self.logger.info("Initializing FlowController...")
             self.flow_controller = FlowController(
                 self.pneumatic_module,
                 CAMERA_SELECTION.IMG_HEIGHT,
@@ -311,6 +321,7 @@ class MalariaScope:
 
     def _init_predictions_handler(self):
         try:
+            self.logger.info("Initializing PredictionsHandler...")
             self.predictions_handler = PredictionsHandler()
             self.predictions_handler_enabled = True
         except Exception as e:

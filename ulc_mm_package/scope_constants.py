@@ -9,7 +9,7 @@ from collections import namedtuple
 curr_dir = Path(__file__).parent.resolve()  # Get full path
 
 # RESEARCH USE ONLY DISCLAIMER
-RESEARCH_USE_ONLY = "For Research Use Only. Not for use in diagnostic procedures"
+RESEARCH_USE_ONLY = "For Research Use Only. Not for use in diagnostic procedures.\nClick OK to acknowledge that this device is for RESEARCH USE ONLY."
 
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
