@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 
 class EWMAFiltering:
@@ -55,6 +56,33 @@ class EWMAFiltering:
         self.prev_val = init_val
 
     @staticmethod
+    @njit(cache=True)
+    def _ewma_update_step_arr(
+        prev_val: npt.NDArray, new_val: npt.NDArray, alpha: float
+    ) -> npt.NDArray:
+        """EWMA calculation step for arrays, using numba's nopython mode.
+
+        For simple cases (i.e ewma updating a single float), the overhead of the numba call is not worth it
+        but for array operations, numba comes out ahead.
+
+        Benchmarking on the Pi, the difference between the njit'd function and a regular numpy operation for a (12,513, ) array is
+        184us (njit'd) vs. 526us (numpy).
+
+        Note: setting @njit(parallel=True) can provide some more performance gains, however it is not supported on 32-bit OS.
+
+        Parameters
+        ----------
+        prev_val: npt.NDArray
+        new_val: npt.NDArray (both input arrays should have the same shape)
+
+        Returns
+        -------
+        np.ndarray
+        """
+
+        return prev_val * (1 - alpha) + new_val * alpha
+
+    @staticmethod
     def _ewma_update_step(prev_val: float, new_val: float, alpha: float) -> float:
         """EWMA calculation step
 
@@ -79,6 +107,25 @@ class EWMAFiltering:
             self.prev_val, new_measurement, self.alpha
         )
         return self.prev_val
+
+    def update_and_get_val_arr(self, new_measurement: npt.NDArray) -> npt.NDArray:
+        """EWMA calculation step for arrays (uses an njit'd function under the hood, so is
+        slightly more performant than the regular `update_and_get_val()` call). However,
+        if using a single float value, this function is less performant than `update_and_get_val()`
+
+        Parameters
+        ----------
+        new_measurement: npt.NDArray
+
+        Returns
+        -------
+        npt.NDArray
+            The updated filter value.
+        """
+
+        self.prev_val = self._ewma_update_step_arr(
+            self.prev_val, new_measurement, self.alpha
+        )
 
     @staticmethod
     def get_halflife_from_smoothing_factor(alpha: float) -> float:
