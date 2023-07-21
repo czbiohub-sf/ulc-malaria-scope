@@ -50,6 +50,9 @@ class Routines:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
+    def round_towards_0(self, f: float) -> int:
+        return int(f) if f >= 0 else int(f) + 1
+
     def singleShotAutofocusRoutine(
         self, mscope: MalariaScope, img_arr: List[np.ndarray]
     ) -> int:
@@ -70,7 +73,7 @@ class Routines:
         """
 
         ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
-        steps_to_move = -round(np.mean(ssaf_steps_from_focus))
+        steps_to_move = -self.round_towards_0(np.mean(ssaf_steps_from_focus))
 
         try:
             dir = Direction.CW if steps_to_move > 0 else Direction.CCW
@@ -148,7 +151,7 @@ class Routines:
                     move_counter >= ssaf_period_num
                     and abs(filtered_error) > nn_constants.AF_THRESHOLD
                 ):
-                    steps_to_move = -round(filtered_error)
+                    steps_to_move = -self.round_towards_0(filtered_error)
                     self.logger.info(
                         f"Adjusted focus by {steps_to_move:.2f} steps after {move_counter} measurements"
                     )
