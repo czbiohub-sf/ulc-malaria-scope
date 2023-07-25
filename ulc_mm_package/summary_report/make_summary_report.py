@@ -269,6 +269,8 @@ def make_html_report(
         Mapping from class name (e.g "Healthy") to number of cells
     perc_parasitemia: str
         Formatted string of the estimated parasitemia (e.g "0.0123")
+    parasites_per_ul: str
+        Formatted string of the # of parasites per microlitre
     thumbnails: Dict[str, List[str]]
         A mapping between class name (e.g "Ring", "Trophozoite", etc.)
         to a list of thumbnail filepaths (as strings) of the form described in
