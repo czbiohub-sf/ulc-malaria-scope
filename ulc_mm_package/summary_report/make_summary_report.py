@@ -67,6 +67,15 @@ def make_per_image_metadata_plots(
 
 
 def make_cell_count_plot(preds: npt.NDArray, save_loc: str) -> None:
+    """Create cell counts plot.
+
+    Parameters
+    ----------
+    preds: npt.NDArray
+        Parsed predictions, (5 + N classes x NUM_PREDS)
+    save_loc: str
+        Where to save the plot
+    """
     vals = np.cumsum(np.unique(preds[0, :], return_counts=True)[1])
     num_frames = len(np.unique(preds[0, :]))
     x_vals = np.linspace(0, num_frames, num_frames)
