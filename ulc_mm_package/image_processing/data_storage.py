@@ -31,6 +31,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 
 from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
+    RBCS_PER_UL,
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
     CSS_FILE_NAME,
@@ -291,9 +292,11 @@ class DataStorage:
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
             }
             num_parasites = sum([cell_counts[i] for i in PARASITE_CLASS_IDS])
-            perc_parasitemia = (
-                f"{100 * num_parasites / (cell_counts[0] + num_parasites):.5f}"
-            )
+            total_rbcs = cell_counts[0] + num_parasites
+            perc_parasitemia = f"{(100 * num_parasites / total_rbcs):.5f}"
+
+            # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
+            parasites_per_ul = f"{RBCS_PER_UL*(cell_counts[1] / total_rbcs):.5f}"
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
@@ -303,6 +306,7 @@ class DataStorage:
                 per_image_metadata_plot_save_loc,
                 class_name_to_cell_count,
                 perc_parasitemia,
+                parasites_per_ul,
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,
