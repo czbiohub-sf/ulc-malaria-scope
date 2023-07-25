@@ -272,9 +272,18 @@ class DataStorage:
             counts_plot_loc = str(summary_report_dir / "counts.jpg")
             conf_plot_loc = str(summary_report_dir / "confs.jpg")
             objectness_plot_loc = str(summary_report_dir / "objectness.jpg")
-            make_cell_count_plot(pred_tensors, counts_plot_loc)
-            make_yogo_conf_plots(pred_tensors, conf_plot_loc)
-            make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
+            try:
+                make_cell_count_plot(pred_tensors, counts_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make cell count plot - {e}")
+            try:
+                make_yogo_conf_plots(pred_tensors, conf_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make yogo confidence plots - {e}")
+            try:
+                make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make yogo objectness plots - {e}")
 
             # Get cell counts and % parasitemia
             cell_counts = get_class_counts(pred_tensors)
