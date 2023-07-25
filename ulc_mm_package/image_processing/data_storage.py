@@ -226,7 +226,7 @@ class DataStorage:
             self.metadata_file.close()
             self.metadata_file = None
 
-        if pred_tensors is not None:
+        if pred_tensors is not None and pred_tensors.size > 0:
             self.logger.info("> Saving prediction tensors...")
             self.save_parsed_prediction_tensors(pred_tensors)
 
@@ -292,7 +292,9 @@ class DataStorage:
             }
             num_parasites = sum([cell_counts[i] for i in PARASITE_CLASS_IDS])
             perc_parasitemia = (
-                f"{100 * num_parasites / (cell_counts[0] + num_parasites):.5f}"
+                "0.00000"
+                if (cell_counts[0] + num_parasites) == 0
+                else f"{100 * num_parasites / (cell_counts[0] + num_parasites):.5f}"
             )
 
             # HTML w/ absolute path
