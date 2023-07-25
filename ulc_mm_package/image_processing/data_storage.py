@@ -226,7 +226,7 @@ class DataStorage:
             self.metadata_file.close()
             self.metadata_file = None
 
-        if pred_tensors is not None:
+        if pred_tensors is not None and pred_tensors.size > 0:
             self.logger.info("> Saving prediction tensors...")
             self.save_parsed_prediction_tensors(pred_tensors)
 
