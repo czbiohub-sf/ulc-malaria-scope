@@ -248,6 +248,7 @@ def make_html_report(
     dataset_name: str,
     experiment_metadata: Dict[str, str],
     per_image_metadata_plot_path: str,
+    total_rbcs: int,
     class_name_to_cell_count: Dict[str, int],
     perc_parasitemia: str,
     parasites_per_ul: str,
@@ -265,6 +266,7 @@ def make_html_report(
         Typically the timestamp of the dataset
     experiment_metadata: Dict[str, str]
         Experiment metadata dict
+    total_rbcs: int
     class_name_to_cell_counts: Dict[str, int]
         Mapping from class name (e.g "Healthy") to number of cells
     perc_parasitemia: str
@@ -318,6 +320,7 @@ def make_html_report(
         "participant_id": participant,
         "notes": notes,
         "flowcell_id": fc_id,
+        "total_rbcs": total_rbcs,
         "cell_counts": class_name_to_cell_count,
         "perc_parasitemia": perc_parasitemia,
         "parasites_per_ul": parasites_per_ul,
@@ -378,12 +381,14 @@ if __name__ == "__main__":
     cell_counts = {
         "Healthy": int(1e6),
         "WBC": int(1e6 / 600),
-        "Ring": 0,
+        "Ring": 123,
         "Trophozoite": 0,
         "Schizont": 0,
         "Gametocyte": 0,
     }
-
+    total_rbcs = sum(cell_counts.values())
+    perc_parasitemia = f"{(sum([cell_counts['Ring'], cell_counts['Trophozoite'], cell_counts['Schizont']]) / total_rbcs * 100):.4f}"
+    parasites_per_ul = f"{cell_counts['Ring'] / total_rbcs * 5e6:.4f}"
     parasite_folders = [
         "dataset_dir/thumbnails/" + x
         for x in ["ring", "trophozoite", "schizont", "gametocyte"]
@@ -410,7 +415,7 @@ if __name__ == "__main__":
 
     exp_metadata = {
         "operator_id": "IJ",
-        "participant_id": "Also IJ",
+        "participant_id": "Definitely not IJ since this is an anonymized field!!!",
         "notes": "blood looks gorgeous. This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory!",
         "flowcell_id": "0123-A2",
     }
@@ -438,9 +443,10 @@ if __name__ == "__main__":
         dataset_name="2023-07-06-000000",
         experiment_metadata=exp_metadata,
         per_image_metadata_plot_path=per_img_metadata_plot_path,
+        total_rbcs=total_rbcs,
         class_name_to_cell_count=cell_counts,
-        perc_parasitemia="0.000",
-        parasites_per_ul="0.000",
+        perc_parasitemia=perc_parasitemia,
+        parasites_per_ul=parasites_per_ul,
         thumbnails=thumbnails,
         counts_plot_loc=counts,
         conf_plot_loc=yogo_conf,
