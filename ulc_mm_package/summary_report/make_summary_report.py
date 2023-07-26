@@ -388,7 +388,7 @@ if __name__ == "__main__":
     }
     total_rbcs = sum(cell_counts.values())
     perc_parasitemia = f"{(sum([cell_counts['Ring'], cell_counts['Trophozoite'], cell_counts['Schizont']]) / total_rbcs * 100):.4f}"
-    parasites_per_ul = f"{cell_counts['Ring'] / total_rbcs * 5e6:.4f}"
+    parasites_per_ul = f"{cell_counts['Ring'] / total_rbcs * 5e6:.1f}"
     parasite_folders = [
         "dataset_dir/thumbnails/" + x
         for x in ["ring", "trophozoite", "schizont", "gametocyte"]
