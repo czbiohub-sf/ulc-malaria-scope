@@ -227,7 +227,7 @@ class DataStorage:
             self.metadata_file.close()
             self.metadata_file = None
 
-        if pred_tensors is not None:
+        if pred_tensors is not None and pred_tensors.size > 0:
             self.logger.info("> Saving prediction tensors...")
             self.save_parsed_prediction_tensors(pred_tensors)
 
@@ -293,8 +293,11 @@ class DataStorage:
             }
             num_parasites = sum([cell_counts[i] for i in PARASITE_CLASS_IDS])
             total_rbcs = cell_counts[0] + num_parasites
-            perc_parasitemia = f"{(100 * num_parasites / total_rbcs):.5f}"
-
+            perc_parasitemia = (
+                "0.00000"
+                if (cell_counts[0] + num_parasites) == 0
+                else f"{(100 * num_parasites / total_rbcs):.5f}"
+            )
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
             parasites_per_ul = f"{RBCS_PER_UL*(cell_counts[1] / total_rbcs):.5f}"
 
