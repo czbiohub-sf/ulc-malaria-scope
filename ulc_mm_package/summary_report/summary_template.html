@@ -43,12 +43,16 @@
             {% for key in cell_counts %}
             <tr>
                 <td>{{key}}</td>
-                <td>{{cell_counts[key]}}</td>
+                <td>{{cell_counts[key]}} ({{'{0:.3f}'.format(100*cell_counts[key] / total_rbcs)}}%)</td>
             </tr>
             {% endfor %}
             <tr>
-                <td>% Parasitemia<br><strong>(NOT FOR CLINICAL USE)</strong></td>
+                <td>% Parasitemia (asexual stages only)<br><strong>(NOT FOR CLINICAL USE)</strong></td>
                 <td>{{perc_parasitemia}}%</td>
+            </tr>
+            <tr>
+                <td>Parasites / uL <br><strong>(NOT FOR CLINICAL USE)</strong></td>
+                <td>{{parasites_per_ul}}</td>
             </tr>
         </table>
 

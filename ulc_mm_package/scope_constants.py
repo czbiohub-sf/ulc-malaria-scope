@@ -47,6 +47,7 @@ SUMMARY_REPORT_CSS_FILE = curr_dir / "summary_report" / CSS_FILE_NAME
 DESKTOP_SUMMARY_DIR = Path.home() / "Desktop/Remoscope_Summary_Reports"
 if not Path(DESKTOP_SUMMARY_DIR).exists():
     Path(DESKTOP_SUMMARY_DIR).mkdir()
+RBCS_PER_UL = 5e6
 
 
 class MissingCameraError(Exception):
