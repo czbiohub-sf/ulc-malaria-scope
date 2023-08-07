@@ -387,8 +387,11 @@ if __name__ == "__main__":
         "Gametocyte": 0,
     }
     total_rbcs = sum(cell_counts.values())
-    perc_parasitemia = f"{(sum([cell_counts['Ring'], cell_counts['Trophozoite'], cell_counts['Schizont']]) / total_rbcs * 100):.4f}"
-    parasites_per_ul = f"{cell_counts['Ring'] / total_rbcs * 5e6:.1f}"
+    num_parasites = sum(
+        [cell_counts["Ring"], cell_counts["Trophozoite"], cell_counts["Schizont"]]
+    )
+    perc_parasitemia = f"{(num_parasites / total_rbcs * 100):.4f}"
+    parasites_per_ul = f"{num_parasites / total_rbcs * 5e6:.1f}"
     parasite_folders = [
         "dataset_dir/thumbnails/" + x
         for x in ["ring", "trophozoite", "schizont", "gametocyte"]
@@ -416,7 +419,7 @@ if __name__ == "__main__":
     exp_metadata = {
         "operator_id": "IJ",
         "participant_id": "Definitely not IJ since this is an anonymized field!!!",
-        "notes": "blood looks gorgeous. This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory!",
+        "notes": "blood looks gorgeous. This is a comprehensive note with lots of important details, details which you must commit to memory!",
         "flowcell_id": "0123-A2",
     }
 
