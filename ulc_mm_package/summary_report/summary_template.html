@@ -11,6 +11,10 @@
                 @frame content_frame {          /* Content Frame */
                     left: 50pt; width: 512pt; top: 90pt; height: 732pt;
                 }
+                @frame footer_frame {           /* Another Static Frame */
+                    -pdf-frame-content: footer_content;
+                    left: 50pt; width: 512pt; top: 792pt; height: 40pt;
+                }
             }
         </style>
         <title>Remoscope / {{ dataset_name }}</title>
@@ -19,9 +23,17 @@
 
     <h1 style="text-align: center">Remoscope / Dataset {{ dataset_name }} </h1>
     <body>
+
+        <!-- Content for Static Frame 'header_frame' -->
         <div id="header_content">
             <h1 style="text-align: center; color: red">RESEARCH USE ONLY - <strong>NOT FOR CLINICAL USE</strong></h1>
         </div>
+        <div id="footer_content">
+            <p style="text-align: right; font-size: smaller;">
+                <pdf:pagenumber>/<pdf:pagecount>
+            </p>
+        </div>
+
         <h2>Statistics summary and thumbnails</h2>
 
         {# Experiment metadata #}
@@ -100,17 +112,27 @@
         {# OPTIONAL PLOTS FOR INTERNAL USE #}
         {% if DEBUG_SUMMARY_REPORT %}
             {# Metadata plots #}
+            <div>
+                <pdf:nextpage /> 
+            </div>
             <h3>Per-Image Metadata Plot</h3>
             <img src = "{{per_image_metadata_plot_filename}}">
 
             {# YOGO Performance Plots #}
-            <h3>YOGO Performance Plots</h3>
             <h4>Cell counts over time</h4>
             <img src = "{{cell_count_plot_filename}}">
             <br>
+
+            <div>
+                <pdf:nextpage /> 
+            </div>
             <h4>Confidence histograms</h4>
             <img src = "{{confidence_hists_filename}}">
             <br>
+
+            <div>
+                <pdf:nextpage /> 
+            </div>
             <h4>Objectness histograms</h4>
             <img src = "{{objectness_hists_filename}}">
         {% endif %}
