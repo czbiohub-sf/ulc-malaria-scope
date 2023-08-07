@@ -10,7 +10,7 @@ from xhtml2pdf import pisa
 import numpy as np
 import numpy.typing as npt
 
-from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT
+from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT, RBCS_PER_UL
 from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PRED_THRESHOLD
 
 COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7b6d2"]
@@ -324,6 +324,7 @@ def make_html_report(
         "cell_counts": class_name_to_cell_count,
         "perc_parasitemia": perc_parasitemia,
         "parasites_per_ul": parasites_per_ul,
+        "parasites_per_ul_scaling_factor": f"{RBCS_PER_UL:.0E}",
         "all_thumbnails": thumbnails,
         "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
         "per_image_metadata_plot_filename": per_image_metadata_plot_path,
