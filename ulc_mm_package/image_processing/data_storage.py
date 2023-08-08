@@ -302,7 +302,7 @@ class DataStorage:
             parasites_per_ul = (
                 "0.0"
                 if total_rbcs == 0
-                else f"{RBCS_PER_UL*(cell_counts[1] / total_rbcs):.1f}"
+                else f"{RBCS_PER_UL*(num_parasites / total_rbcs):.1f}"
             )
 
             # HTML w/ absolute path

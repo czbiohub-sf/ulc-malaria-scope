@@ -10,7 +10,7 @@ from xhtml2pdf import pisa
 import numpy as np
 import numpy.typing as npt
 
-from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT
+from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT, RBCS_PER_UL
 from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PRED_THRESHOLD
 
 COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7b6d2"]
@@ -324,6 +324,7 @@ def make_html_report(
         "cell_counts": class_name_to_cell_count,
         "perc_parasitemia": perc_parasitemia,
         "parasites_per_ul": parasites_per_ul,
+        "parasites_per_ul_scaling_factor": f"{RBCS_PER_UL:.0E}",
         "all_thumbnails": thumbnails,
         "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
         "per_image_metadata_plot_filename": per_image_metadata_plot_path,
@@ -387,8 +388,11 @@ if __name__ == "__main__":
         "Gametocyte": 0,
     }
     total_rbcs = sum(cell_counts.values())
-    perc_parasitemia = f"{(sum([cell_counts['Ring'], cell_counts['Trophozoite'], cell_counts['Schizont']]) / total_rbcs * 100):.4f}"
-    parasites_per_ul = f"{cell_counts['Ring'] / total_rbcs * 5e6:.1f}"
+    num_parasites = sum(
+        [cell_counts["Ring"], cell_counts["Trophozoite"], cell_counts["Schizont"]]
+    )
+    perc_parasitemia = f"{(num_parasites / total_rbcs * 100):.4f}"
+    parasites_per_ul = f"{num_parasites / total_rbcs * 5e6:.1f}"
     parasite_folders = [
         "dataset_dir/thumbnails/" + x
         for x in ["ring", "trophozoite", "schizont", "gametocyte"]
@@ -416,7 +420,7 @@ if __name__ == "__main__":
     exp_metadata = {
         "operator_id": "IJ",
         "participant_id": "Definitely not IJ since this is an anonymized field!!!",
-        "notes": "blood looks gorgeous. This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory!",
+        "notes": "blood looks gorgeous. This is a comprehensive note with lots of important details, details which you must commit to memory!",
         "flowcell_id": "0123-A2",
     }
 
