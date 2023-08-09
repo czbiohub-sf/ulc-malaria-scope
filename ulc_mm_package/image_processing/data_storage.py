@@ -434,13 +434,13 @@ class DataStorage:
             )
             return
 
-        def write_img(idx: int):
-            img = self.zw.array[..., idx]
+        def write_img(img: np.ndarray, idx: int):
             filepath = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
             cv2.imwrite(str(filepath), img)
 
         with mp.Pool() as pool:
-            pool.map(write_img, [i for i in indices])
+            imgs_and_indices = [(self.zw.array[..., idx], idx) for idx in indices]
+            pool.starmap(write_img, imgs_and_indices)
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
