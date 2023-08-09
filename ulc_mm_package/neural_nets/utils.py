@@ -247,7 +247,7 @@ def _save_thumbnails_to_disk(
         class_id = int(preds[6, idx])
         img_crop = _get_img_crop(zarr_store, preds[:, idx])
         conf = f"{preds[7, idx]:.5f}"
-        filename = f"{i:04}_class_{class_id:02}_frame_{img_id:05}_conf_{conf}.png"
+        filename = f"{idx:04}_class_{class_id:02}_frame_{img_id:05}_conf_{conf}.png"
         save_loc = str(save_dir / filename)
 
         cv2.imwrite(save_loc, img_crop)
