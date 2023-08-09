@@ -231,7 +231,7 @@ class DataStorage:
             self.logger.info("> Saving prediction tensors...")
             self.save_parsed_prediction_tensors(pred_tensors)
 
-            self.logger.info("> Saving parasite thumbnails...")
+            self.logger.info("> Saving subset of parasite thumbnails to disk...")
             class_to_thumbnails_path: Dict[
                 str, Path
             ] = save_parasite_thumbnails_to_disk(
@@ -335,6 +335,7 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
+            remove(counts_plot_loc)
             remove(per_image_metadata_plot_save_loc)
             remove(conf_plot_loc)
             remove(objectness_plot_loc)
