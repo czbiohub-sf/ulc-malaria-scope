@@ -52,6 +52,16 @@ class DataStorageError(Exception):
     pass
 
 
+def write_img(img: np.ndarray, filepath: Path):
+    """Write an image to disk
+
+    img: np.ndarray
+    filepath: Path
+    """
+
+    cv2.imwrite(str(filepath), img)
+
+
 class DataStorage:
     def __init__(self, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
@@ -434,10 +444,6 @@ class DataStorage:
             )
             return
 
-        def write_img(img: np.ndarray, idx: int):
-            filepath = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
-            cv2.imwrite(str(filepath), img)
-
         with mp.Pool() as pool:
             args = [
                 (
@@ -447,15 +453,6 @@ class DataStorage:
                 for idx in indices
             ]
             pool.starmap(write_img, args)
-
-    def write_img(img: np.ndarray, filepath: Path):
-        """Write an image to disk
-
-        img: np.ndarray
-        filepath: Path
-        """
-
-        cv2.imwrite(str(filepath), img)
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
