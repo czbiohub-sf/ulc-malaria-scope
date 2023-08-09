@@ -253,7 +253,7 @@ def _save_thumbnails_to_disk(
         cv2.imwrite(save_loc, img_crop)
 
     with mp.Pool() as pool:
-        pool.map(write_img, [i for i in range(sorted_arr.shape[1])])
+        pool.map(write_img, [i for i in range(preds.shape[1])])
 
 
 def save_parasite_thumbnails_to_disk(

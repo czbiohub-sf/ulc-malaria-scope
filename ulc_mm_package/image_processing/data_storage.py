@@ -2,6 +2,7 @@ import io
 import csv
 import shutil
 import logging
+import multiprocessing as mp
 from os import remove
 from pathlib import Path
 from time import perf_counter
@@ -433,10 +434,13 @@ class DataStorage:
             )
             return
 
-        for idx in indices:
+        def write_img(idx: int):
             img = self.zw.array[..., idx]
             filepath = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
             cv2.imwrite(str(filepath), img)
+
+        with mp.Pool() as pool:
+            pool.map(write_img, [i for i in indices])
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
