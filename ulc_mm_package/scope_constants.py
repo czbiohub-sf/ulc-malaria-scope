@@ -48,6 +48,7 @@ DESKTOP_SUMMARY_DIR = Path.home() / "Desktop/Remoscope_Summary_Reports"
 if not Path(DESKTOP_SUMMARY_DIR).exists():
     Path(DESKTOP_SUMMARY_DIR).mkdir()
 RBCS_PER_UL = 5e6
+MAX_THUMBNAILS_SAVED_PER_CLASS = 200
 
 
 class MissingCameraError(Exception):
