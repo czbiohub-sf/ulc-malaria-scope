@@ -177,6 +177,22 @@ def parse_prediction_tensor(
     return np.vstack(_parse_prediction_tensor(img_id, prediction_tensor, img_h, img_w))
 
 
+def _write_thumbnail_from_pred_tensor(
+    zarr_store: zarr.core.Array,
+    preds: np.ndarray,
+    idx: int,
+    save_dir: Path,
+):
+    img_id = int(preds[0, idx])
+    class_id = int(preds[6, idx])
+    img_crop = _get_img_crop(zarr_store, preds[:, idx])
+    conf = f"{preds[7, idx]:.5f}"
+    filename = f"{idx:04}_class_{class_id:02}_frame_{img_id:05}_conf_{conf}.png"
+    save_loc = str(save_dir / filename)
+
+    cv2.imwrite(save_loc, img_crop)
+
+
 def get_specific_class_from_parsed_tensor(
     parsed_prediction_tensor: npt.NDArray, class_id: int
 ) -> npt.NDArray:
@@ -242,18 +258,11 @@ def _save_thumbnails_to_disk(
     text: str
     """
 
-    def write_img(idx: int):
-        img_id = int(preds[0, idx])
-        class_id = int(preds[6, idx])
-        img_crop = _get_img_crop(zarr_store, preds[:, idx])
-        conf = f"{preds[7, idx]:.5f}"
-        filename = f"{idx:04}_class_{class_id:02}_frame_{img_id:05}_conf_{conf}.png"
-        save_loc = str(save_dir / filename)
-
-        cv2.imwrite(save_loc, img_crop)
-
     with mp.Pool() as pool:
-        pool.map(write_img, [i for i in range(preds.shape[1])])
+        args = [
+            (zarr_store, preds, i, save_dir) for i in range(preds.shape[1])
+        ]
+        pool.starmap(_write_thumbnail_from_pred_tensor, args)
 
 
 def save_parasite_thumbnails_to_disk(

@@ -439,8 +439,23 @@ class DataStorage:
             cv2.imwrite(str(filepath), img)
 
         with mp.Pool() as pool:
-            imgs_and_indices = [(self.zw.array[..., idx], idx) for idx in indices]
-            pool.starmap(write_img, imgs_and_indices)
+            args = [
+                (
+                    self.zw.array[..., idx],
+                    Path(sub_seq_path) / f"{idx:0{self.digits}d}.png",
+                )
+                for idx in indices
+            ]
+            pool.starmap(write_img, args)
+
+    def write_img(img: np.ndarray, filepath: Path):
+        """Write an image to disk
+
+        img: np.ndarray
+        filepath: Path
+        """
+
+        cv2.imwrite(str(filepath), img)
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
