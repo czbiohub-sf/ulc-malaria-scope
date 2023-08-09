@@ -1,4 +1,5 @@
 from __future__ import annotations
+import multiprocessing as mp
 from pathlib import Path
 from typing import NamedTuple, List, Tuple, no_type_check, Dict
 from typing_extensions import TypeAlias
@@ -9,7 +10,7 @@ import numpy as np
 import numpy.typing as npt
 from numba import njit
 
-
+from ulc_mm_package.scope_constants import MAX_THUMBNAILS_SAVED_PER_CLASS
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     PARASITE_CLASS_IDS,
@@ -176,6 +177,22 @@ def parse_prediction_tensor(
     return np.vstack(_parse_prediction_tensor(img_id, prediction_tensor, img_h, img_w))
 
 
+def _write_thumbnail_from_pred_tensor(
+    zarr_store: zarr.core.Array,
+    preds: np.ndarray,
+    idx: int,
+    save_dir: Path,
+):
+    img_id = int(preds[0, idx])
+    class_id = int(preds[6, idx])
+    img_crop = _get_img_crop(zarr_store, preds[:, idx])
+    conf = f"{preds[7, idx]:.5f}"
+    filename = f"{idx:04}_class_{class_id:02}_frame_{img_id:05}_conf_{conf}.png"
+    save_loc = str(save_dir / filename)
+
+    cv2.imwrite(save_loc, img_crop)
+
+
 def get_specific_class_from_parsed_tensor(
     parsed_prediction_tensor: npt.NDArray, class_id: int
 ) -> npt.NDArray:
@@ -221,11 +238,10 @@ def _get_img_crop(
 
 def _save_thumbnails_to_disk(
     zarr_store: zarr.core.Array,
-    parsed_prediction_tensor: npt.NDArray,
+    preds: npt.NDArray,
     save_dir: Path,
 ):
     """Save all the predictions in the given prediction tensor to the disk.
-    Thumbnails will be saved in descending order of confidence.
 
     Filenames have the following format:
 
@@ -240,19 +256,11 @@ def _save_thumbnails_to_disk(
     save_dir: Path
         Where to save the thumbnails
     text: str
-
     """
 
-    sort_by_confs = parsed_prediction_tensor[7, :].argsort()
-    sorted_arr = parsed_prediction_tensor[:, sort_by_confs][:, ::-1]  # descending order
-    for i in range(sorted_arr.shape[1]):
-        img_id = int(sorted_arr[0, i])
-        class_id = int(sorted_arr[6, i])
-        img_crop = _get_img_crop(zarr_store, sorted_arr[:, i])
-        conf = f"{sorted_arr[7, i]:.5f}"
-        filename = f"{i:04}_class_{class_id:02}_frame_{img_id:05}_conf_{conf}.png"
-        save_loc = str(save_dir / filename)
-        cv2.imwrite(save_loc, img_crop)
+    with mp.Pool() as pool:
+        args = [(zarr_store, preds, i, save_dir) for i in range(preds.shape[1])]
+        pool.starmap(_write_thumbnail_from_pred_tensor, args)
 
 
 def save_parasite_thumbnails_to_disk(
@@ -301,7 +309,13 @@ def save_parasite_thumbnails_to_disk(
     )
 
     for parasite_tensor, path in parasite_tensors_and_save_paths:
-        _save_thumbnails_to_disk(zarr_store, parasite_tensor, path)
+        # Sort by descending confidence
+        sort_by_confs = parasite_tensor[7, :].argsort()
+        descending_confs = parasite_tensor[:, sort_by_confs][:, ::-1]
+
+        # Limit the number of thumbnails save for each class
+        descending_confs_trunc = descending_confs[:, :MAX_THUMBNAILS_SAVED_PER_CLASS]
+        _save_thumbnails_to_disk(zarr_store, descending_confs_trunc, path)
 
     return class_name_to_path
 

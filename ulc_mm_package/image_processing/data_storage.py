@@ -2,6 +2,7 @@ import io
 import csv
 import shutil
 import logging
+import multiprocessing as mp
 from os import remove
 from pathlib import Path
 from time import perf_counter
@@ -49,6 +50,16 @@ from ulc_mm_package.summary_report.make_summary_report import (
 
 class DataStorageError(Exception):
     pass
+
+
+def write_img(img: np.ndarray, filepath: Path):
+    """Write an image to disk
+
+    img: np.ndarray
+    filepath: Path
+    """
+
+    cv2.imwrite(str(filepath), img)
 
 
 class DataStorage:
@@ -231,7 +242,7 @@ class DataStorage:
             self.logger.info("> Saving prediction tensors...")
             self.save_parsed_prediction_tensors(pred_tensors)
 
-            self.logger.info("> Saving parasite thumbnails...")
+            self.logger.info("> Saving subset of parasite thumbnails to disk...")
             class_to_thumbnails_path: Dict[
                 str, Path
             ] = save_parasite_thumbnails_to_disk(
@@ -335,6 +346,7 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
+            remove(counts_plot_loc)
             remove(per_image_metadata_plot_save_loc)
             remove(conf_plot_loc)
             remove(objectness_plot_loc)
@@ -432,10 +444,15 @@ class DataStorage:
             )
             return
 
-        for idx in indices:
-            img = self.zw.array[..., idx]
-            filepath = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
-            cv2.imwrite(str(filepath), img)
+        with mp.Pool() as pool:
+            args = [
+                (
+                    self.zw.array[..., idx],
+                    Path(sub_seq_path) / f"{idx:0{self.digits}d}.png",
+                )
+                for idx in indices
+            ]
+            pool.starmap(write_img, args)
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
