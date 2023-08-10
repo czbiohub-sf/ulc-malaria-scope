@@ -738,6 +738,9 @@ class Oracle(Machine):
         self.logger.warning("Starting emergency oracle shut off.")
 
         if not self.shutoff_done:
+            # Shut off hardware
+            self.scopeop.mscope.shutoff()
+
             # Close data storage if it's not already closed
             if self.scopeop.mscope.data_storage.zw.writable:
                 self.scopeop.mscope.data_storage.close(
@@ -747,9 +750,6 @@ class Oracle(Machine):
                 self.logger.info(
                     "Since data storage is already closed, no data storage operations were needed."
                 )
-
-            # Shut off hardware
-            self.scopeop.mscope.shutoff()
 
             try:
                 os.remove(LOCKFILE)
