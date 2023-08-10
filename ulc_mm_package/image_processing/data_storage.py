@@ -250,7 +250,7 @@ class DataStorage:
             )
 
             ### Create summary report
-
+            self.logger.info("> Creating summary report...")
             summary_report_dir = self.get_experiment_path() / "summary_report"
             Path.mkdir(summary_report_dir, exist_ok=True)
 

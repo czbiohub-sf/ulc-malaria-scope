@@ -455,6 +455,9 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
+        # Turn off camera
+        self.mscope.camera.stopAcquisition()
+
         runtime = self._get_experiment_runtime()
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
@@ -477,6 +480,9 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
+
+        # Turn camera back on
+        self.mscope.camera.startAcquisition()
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)
