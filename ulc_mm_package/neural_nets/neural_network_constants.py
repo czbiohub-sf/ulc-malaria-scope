@@ -19,7 +19,7 @@ AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files" / "valiant-disco-11
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_MODEL_DIR = str(
-    curr_dir / "yogo_model_files" / "grateful-smoke" / "grateful-smoke-1582.xml"
+    curr_dir / "yogo_model_files" / "graceful-smoke" / "graceful-smoke-1582-quarter.xml"
 )
 
 YOGO_CLASS_LIST: Tuple[str, ...] = (
@@ -32,6 +32,11 @@ YOGO_CLASS_LIST: Tuple[str, ...] = (
     "misc",
 )
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
+ASEXUAL_PARASITE_CLASS_IDS: List[int] = [
+    YOGO_CLASS_IDX_MAP["ring"],
+    YOGO_CLASS_IDX_MAP["trophozoite"],
+    YOGO_CLASS_IDX_MAP["schizont"],
+]
 PARASITE_CLASS_IDS: List[int] = [
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],

@@ -290,7 +290,7 @@ class AcquisitionThread(QThread):
                 self.external_dir,
                 custom_experiment_name=f"{self.custom_image_prefix}",
                 datetime_str=datetime.now().strftime(DATETIME_FORMAT),
-                experiment_initialization_metdata={},
+                experiment_initialization_metadata={},
                 per_image_metadata_keys=self.getMetadata().keys(),
             )
 

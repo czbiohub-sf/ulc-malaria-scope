@@ -9,7 +9,7 @@ from collections import namedtuple
 curr_dir = Path(__file__).parent.resolve()  # Get full path
 
 # RESEARCH USE ONLY DISCLAIMER
-RESEARCH_USE_ONLY = "For Research Use Only. Not for use in diagnostic procedures"
+RESEARCH_USE_ONLY = "For Research Use Only. Not for use in diagnostic procedures.\nClick OK to acknowledge that this device is for RESEARCH USE ONLY."
 
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
@@ -39,11 +39,16 @@ if SIMULATION:
 CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
 
 # ================ Summary PDF constants ================ #
+DEBUG_REPORT = int(
+    os.environ.get("DEBUG_REPORT", 0)
+)  # Flag to add optional plots (metadata / YOGO histograms) to the summary report
 CSS_FILE_NAME = "minimal-table.css"
 SUMMARY_REPORT_CSS_FILE = curr_dir / "summary_report" / CSS_FILE_NAME
 DESKTOP_SUMMARY_DIR = Path.home() / "Desktop/Remoscope_Summary_Reports"
 if not Path(DESKTOP_SUMMARY_DIR).exists():
     Path(DESKTOP_SUMMARY_DIR).mkdir()
+RBCS_PER_UL = 5e6
+MAX_THUMBNAILS_SAVED_PER_CLASS = 200
 
 
 class MissingCameraError(Exception):

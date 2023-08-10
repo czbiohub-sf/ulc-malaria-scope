@@ -41,6 +41,7 @@ from ulc_mm_package.scope_constants import (
     VERBOSE,
     SIMULATION,
     SSD_NAME,
+    RESEARCH_USE_ONLY,
 )
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.data_storage import DataStorage
@@ -532,6 +533,12 @@ class Oracle(Machine):
 
     def _start_setup(self, *args):
         self.lid_handler_enabled = False
+        self.display_message(
+            QMessageBox.Icon.Warning,
+            "DISCLAIMER: RESEARCH USE ONLY",
+            f"{RESEARCH_USE_ONLY}",
+            buttons=Buttons.OK,
+        )
         self.display_message(
             QMessageBox.Icon.Information,
             "Initializing hardware",
