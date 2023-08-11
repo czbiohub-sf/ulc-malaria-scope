@@ -262,6 +262,7 @@ def _save_thumbnails_to_disk(
         args = [(zarr_store, preds, i, save_dir) for i in range(preds.shape[1])]
         pool.starmap(_write_thumbnail_from_pred_tensor, args)
         pool.close()
+        pool.join()
 
 
 def save_parasite_thumbnails_to_disk(
