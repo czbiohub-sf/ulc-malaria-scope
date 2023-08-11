@@ -1,5 +1,5 @@
 from __future__ import annotations
-import multiprocessing as mp
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import NamedTuple, List, Tuple, no_type_check, Dict
 from typing_extensions import TypeAlias
@@ -258,9 +258,11 @@ def _save_thumbnails_to_disk(
     text: str
     """
 
-    with mp.Pool() as pool:
-        args = [(zarr_store, preds, i, save_dir) for i in range(preds.shape[1])]
-        pool.starmap(_write_thumbnail_from_pred_tensor, args)
+    with ThreadPoolExecutor() as pool:
+        for i in range(preds.shape[1]):
+            pool.submit(
+                _write_thumbnail_from_pred_tensor, zarr_store, preds, i, save_dir
+            )
 
 
 def save_parasite_thumbnails_to_disk(
