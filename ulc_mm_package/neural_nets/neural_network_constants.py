@@ -14,7 +14,9 @@ AF_BATCH_SIZE = 10
 AF_THRESHOLD = 2
 AF_QSIZE = 10  # For AF_PERIOD_S = 0.5, we have a max delay of 5 sec
 
-AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files" / "polished-dragon-468/best.xml")
+AUTOFOCUS_MODEL_DIR = str(
+    curr_dir / "autofocus_model_files" / "polished-dragon-468/best.xml"
+)
 
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.5
