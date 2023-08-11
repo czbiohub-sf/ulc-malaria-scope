@@ -453,6 +453,8 @@ class DataStorage:
                 for idx in indices
             ]
             pool.starmap(write_img, args)
+            pool.close()
+            pool.join()
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
