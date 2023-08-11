@@ -65,6 +65,7 @@ def make_per_image_metadata_plots(
     ax[1].spines["right"].set_visible(False)
 
     plt.savefig(f"{str(save_loc)}")
+    plt.close()
 
 
 def make_cell_count_plot(preds: npt.NDArray, save_loc: str) -> None:
@@ -96,6 +97,7 @@ def make_cell_count_plot(preds: npt.NDArray, save_loc: str) -> None:
     plt.legend()
 
     plt.savefig(f"{str(save_loc)}")
+    plt.close()
 
 
 def make_yogo_conf_plots(preds: npt.NDArray, save_loc: str) -> None:
@@ -173,6 +175,7 @@ def make_yogo_conf_plots(preds: npt.NDArray, save_loc: str) -> None:
     plt.tight_layout()
     plt.subplots_adjust(top=0.9)
     plt.savefig(f"{str(save_loc)}")
+    plt.close()
 
 
 def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: str) -> None:
@@ -242,6 +245,7 @@ def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: str) -> None:
     plt.tight_layout()
     plt.subplots_adjust(top=0.9)
     plt.savefig(f"{str(save_loc)}")
+    plt.close()
 
 
 def make_html_report(
