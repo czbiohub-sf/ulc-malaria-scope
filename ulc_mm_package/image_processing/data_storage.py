@@ -2,7 +2,6 @@ import io
 import csv
 import shutil
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from os import remove
 from pathlib import Path
 from time import perf_counter
@@ -444,17 +443,10 @@ class DataStorage:
             )
             return
 
-        with ThreadPoolExecutor() as pool:
-            imgs, paths = zip(
-                *[
-                    (
-                        self.zw.array[..., idx],
-                        Path(sub_seq_path) / f"{idx:0{self.digits}d}.png",
-                    )
-                    for idx in indices
-                ]
-            )
-            pool.map(write_img, imgs, paths)
+        for idx in indices:
+            img = self.zw.array[..., idx]
+            img_path = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
+            write_img(img, img_path)
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
