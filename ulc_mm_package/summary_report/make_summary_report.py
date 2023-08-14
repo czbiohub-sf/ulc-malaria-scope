@@ -138,7 +138,8 @@ def make_yogo_conf_plots(preds: npt.NDArray, save_loc: str) -> None:
 
     ax1.set_title("Healthy confidences")
     ax1.set_ylabel("Counts (log scale)")
-    ax1.set_yscale("log")
+    if len(preds[7, preds[6, :] == 0] > 0):
+        ax1.set_yscale("log")
     ax1.hist(
         preds[7, preds[6, :] == 0], bins=num_bins, color=COLORS[0], edgecolor="black"
     )
@@ -169,7 +170,8 @@ def make_yogo_conf_plots(preds: npt.NDArray, save_loc: str) -> None:
 
     ax6.set_title("WBC confidences")
     ax6.set_ylabel("Count (log scale)")
-    ax6.set_yscale("log")
+    if len(preds[7, preds[6, :] == 5]) > 0:
+        ax6.set_yscale("log")
     ax6.hist(
         preds[7, preds[6, :] == 5], bins=num_bins, color=COLORS[5], edgecolor="black"
     )
