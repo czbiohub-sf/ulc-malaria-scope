@@ -62,7 +62,6 @@ class PredictionsHandler:
         mock_pre_parsed_data = np.random.rand(1, 12, 3225).astype(np.float32)
         mock_parsed_data = np.random.rand(8 + NUM_CLASSES, 30).astype(np.float32)
 
-        print("⚡ Hold tight, compiling hot path functions to machine code...")
         nn_utils.parse_prediction_tensor(0, mock_pre_parsed_data, IMG_H, IMG_W)
         nn_utils.nms(mock_parsed_data, IOU_THRESH)
 
