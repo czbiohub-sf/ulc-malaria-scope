@@ -348,6 +348,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_pause(self, *args):
         self.running = False
+        self.flowrate_error_raised = False
 
         # Account for case when pause is entered during the initial setup
         if self.start_time is not None:
