@@ -3,6 +3,7 @@ from csv import DictReader
 from typing import Dict, List, Optional
 from pathlib import Path
 
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from jinja2 import Environment, FileSystemLoader
@@ -14,6 +15,13 @@ from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT, RBCS_PER
 from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PRED_THRESHOLD
 
 COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7b6d2"]
+
+# Non-interactive backend meant for writing files only
+# Adding this here to silence matplotlib's warning about opening figures
+# in threads other than the main one.
+# This warning is raised whenever we're generating and saving plots to the disk
+# for use in the end-of-run summary report.
+matplotlib.use("agg")
 
 
 def make_per_image_metadata_plots(
