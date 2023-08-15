@@ -218,6 +218,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.flowrate = None
         self.target_flowrate = None
+        self.flowrate_error_raised = False
 
         self.frame_count = 0
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
@@ -347,6 +348,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_pause(self, *args):
         self.running = False
+        self.flowrate_error_raised = False
 
         # Account for case when pause is entered during the initial setup
         if self.start_time is not None:
@@ -793,8 +795,10 @@ class ScopeOp(QObject, NamedMachine):
 
         t0 = perf_counter()
         try:
-            self.flowrate = self.flowcontrol_routine.send((img, timestamp))
+            if not self.flowrate_error_raised:
+                self.flowrate = self.flowcontrol_routine.send((img, timestamp))
         except CantReachTargetFlowrate as e:
+            self.flowrate_error_raised = True
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
             )
@@ -803,6 +807,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.mscope, self.target_flowrate
             )
         except LowConfidenceCorrelations as e:
+            self.flowrate_error_raised = True
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
             )
