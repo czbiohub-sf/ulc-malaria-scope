@@ -172,16 +172,20 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(float)
     def update_flowrate(self, val):
+        val = "INACTIVE" if val == -1 else val
         self.flowrate_val.setText(
             f"Actual = {val:.2f}" if isinstance(val, float) else f"Actual = {val}"
         )
 
         # Set color based on status
-        if (self.target_flowrate is not None) and isinstance(val, (float, int)):
-            if get_flow_error(self.target_flowrate, val) == 0:
-                self._set_color(self.flowrate_val, STATUS.GOOD)
-            else:
+        if self.target_flowrate is not None:
+            if isinstance(val, str):
                 self._set_color(self.flowrate_val, STATUS.BAD)
+            if isinstance(val, (float, int)):
+                if get_flow_error(self.target_flowrate, val) == 0:
+                    self._set_color(self.flowrate_val, STATUS.GOOD)
+                else:
+                    self._set_color(self.flowrate_val, STATUS.BAD)
         else:
             self._set_color(self.flowrate_val, STATUS.DEFAULT)
 

@@ -802,7 +802,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
             )
-            self.flowrate = None
+            self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
             )
@@ -811,7 +811,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
             )
-            self.flowrate = None
+            self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
             )
