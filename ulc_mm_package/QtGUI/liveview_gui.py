@@ -177,10 +177,13 @@ class LiveviewGUI(QMainWindow):
         )
 
         # Set color based on status
-        if (self.target_flowrate is not None) and isinstance(val, (float, int)):
-            if get_flow_error(self.target_flowrate, val) == 0:
-                self._set_color(self.flowrate_val, STATUS.GOOD)
-            else:
+        if self.target_flowrate is not None:
+            if isinstance(val, (float, int)):
+                if get_flow_error(self.target_flowrate, val) == 0:
+                    self._set_color(self.flowrate_val, STATUS.GOOD)
+                else:
+                    self._set_color(self.flowrate_val, STATUS.BAD)
+            if isinstance(val, str):
                 self._set_color(self.flowrate_val, STATUS.BAD)
         else:
             self._set_color(self.flowrate_val, STATUS.DEFAULT)
