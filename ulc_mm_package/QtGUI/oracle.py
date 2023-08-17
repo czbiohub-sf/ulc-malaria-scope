@@ -178,7 +178,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Warning,
                 "SSH email failed",
-                self.logger.info("STARTING ORACLE.")(
+                (
                     "Could not automatically email SSH tunnel address. "
                     "If SSH is needed, please use the address printed in the liveviewer or terminal. "
                     '\n\nClick "OK" to continue running.'
@@ -186,10 +186,6 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
             self.logger.warning(f"SSH address could not be emailed - {e}")
-        except Exception as e:
-            self.logger.warning(
-                f"Unexpected error when trying to create ngrok address and send email: {e}"
-            )
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):
