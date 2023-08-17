@@ -186,6 +186,10 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
             self.logger.warning(f"SSH address could not be emailed - {e}")
+        except Exception as e:
+            self.logger.warning(
+                f"Unexpected error when trying to create ngrok address and send email: {e}"
+            )
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):
