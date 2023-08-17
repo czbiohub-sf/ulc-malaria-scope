@@ -94,7 +94,10 @@ def send_ngrok_email(
         f"ngrok address : {ngrok_addr}\n"
         f"{_load_saga()}"
     )
-    send_email(sender, receiver, subject, msg)
+    try:
+        send_email(sender, receiver, subject, msg)
+    except:
+        raise
 
 
 def _get_pw() -> str:
