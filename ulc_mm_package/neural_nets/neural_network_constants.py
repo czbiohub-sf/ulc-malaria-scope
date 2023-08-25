@@ -11,10 +11,12 @@ AF_PERIOD_S = 0.5
 AF_PERIOD_NUM = int(AF_PERIOD_S * ACQUISITION_FPS)
 AF_BATCH_SIZE = 10
 
-AF_THRESHOLD = 1
+AF_THRESHOLD = 2
 AF_QSIZE = 10  # For AF_PERIOD_S = 0.5, we have a max delay of 5 sec
 
-AUTOFOCUS_MODEL_DIR = str(curr_dir / "autofocus_model_files" / "valiant-disco-119.xml")
+AUTOFOCUS_MODEL_DIR = str(
+    curr_dir / "autofocus_model_files" / "polished-dragon-468/best.xml"
+)
 
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.5
@@ -32,6 +34,11 @@ YOGO_CLASS_LIST: Tuple[str, ...] = (
     "misc",
 )
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
+ASEXUAL_PARASITE_CLASS_IDS: List[int] = [
+    YOGO_CLASS_IDX_MAP["ring"],
+    YOGO_CLASS_IDX_MAP["trophozoite"],
+    YOGO_CLASS_IDX_MAP["schizont"],
+]
 PARASITE_CLASS_IDS: List[int] = [
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],

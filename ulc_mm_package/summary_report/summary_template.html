@@ -1,13 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <style>
+            @page {
+                size: a4 portrait;
+                @frame header_frame {           /* Static Frame */
+                    -pdf-frame-content: header_content;
+                    left: 50pt; width: 512pt; top: 50pt; height: 40pt;
+                }
+                @frame content_frame {          /* Content Frame */
+                    left: 50pt; width: 512pt; top: 90pt; height: 732pt;
+                }
+                @frame footer_frame {           /* Another Static Frame */
+                    -pdf-frame-content: footer_content;
+                    left: 50pt; width: 512pt; top: 792pt; height: 40pt;
+                }
+            }
+        </style>
         <title>Remoscope / {{ dataset_name }}</title>
-        <h1 style="text-align: center;">RESEARCH USE ONLY - <strong>NOT FOR CLINICAL USE</strong></h1>
         <link href="{{ css_file }}" rel="stylesheet" type="text/css">
     </head>
 
-    <h1>Remoscope / Dataset {{ dataset_name }} </h1>
+    <h1 style="text-align: center">Remoscope / Dataset {{ dataset_name }} </h1>
     <body>
+
+        <!-- Content for Static Frame 'header_frame' -->
+        <div id="header_content">
+            <h1 style="text-align: center; color: red">RESEARCH USE ONLY - <strong>NOT FOR CLINICAL USE</strong></h1>
+        </div>
+        <div id="footer_content">
+            <p style="text-align: right; font-size: smaller;">
+                <pdf:pagenumber>/<pdf:pagecount>
+            </p>
+        </div>
+
         <h2>Statistics summary and thumbnails</h2>
 
         {# Experiment metadata #}
@@ -43,16 +69,23 @@
             {% for key in cell_counts %}
             <tr>
                 <td>{{key}}</td>
-                <td>{{cell_counts[key]}}</td>
+                <td>{{cell_counts[key]}} ({{'{0:.3f}'.format(100*cell_counts[key] / total_rbcs)}}%)</td>
             </tr>
             {% endfor %}
             <tr>
-                <td>% Parasitemia<br><strong>(NOT FOR CLINICAL USE)</strong></td>
+                <td>% Parasitemia (asexual stages only)</td>
                 <td>{{perc_parasitemia}}%</td>
+            </tr>
+            <tr>
+                <td>Parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
+                <td>{{parasites_per_ul}}</td>
             </tr>
         </table>
 
         {# Thumbnails #}
+        <div>
+            <pdf:nextpage /> 
+        </div> 
         <h3>Parasite thumbnails</h3>
         <table>
             {% for key in all_thumbnails %}
@@ -79,18 +112,27 @@
         {# OPTIONAL PLOTS FOR INTERNAL USE #}
         {% if DEBUG_SUMMARY_REPORT %}
             {# Metadata plots #}
+            <div>
+                <pdf:nextpage /> 
+            </div>
             <h3>Per-Image Metadata Plot</h3>
             <img src = "{{per_image_metadata_plot_filename}}">
 
             {# YOGO Performance Plots #}
-            <h3>YOGO Performance Plots</h3>
             <h4>Cell counts over time</h4>
             <img src = "{{cell_count_plot_filename}}">
             <br>
+
+            <div>
+                <pdf:nextpage /> 
+            </div>
             <h4>Confidence histograms</h4>
-            <aside>Model confidences <strong>DO NOT</strong> correspond to an actual probability distribution.</aside>
             <img src = "{{confidence_hists_filename}}">
             <br>
+
+            <div>
+                <pdf:nextpage /> 
+            </div>
             <h4>Objectness histograms</h4>
             <img src = "{{objectness_hists_filename}}">
         {% endif %}

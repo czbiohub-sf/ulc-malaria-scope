@@ -179,7 +179,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Warning,
                 "SSH email failed",
-                self.logger.info("STARTING ORACLE.")(
+                (
                     "Could not automatically email SSH tunnel address. "
                     "If SSH is needed, please use the address printed in the liveviewer or terminal. "
                     '\n\nClick "OK" to continue running.'
@@ -748,6 +748,9 @@ class Oracle(Machine):
         experiment_dir = self.scopeop.mscope.data_storage.get_experiment_path()
 
         if not self.shutoff_done:
+            # Shut off hardware
+            self.scopeop.mscope.shutoff()
+
             # Close data storage if it's not already closed
             if self.scopeop.mscope.data_storage.zw.writable:
                 self.scopeop.mscope.data_storage.close(
@@ -757,9 +760,6 @@ class Oracle(Machine):
                 self.logger.info(
                     "Since data storage is already closed, no data storage operations were needed."
                 )
-
-            # Shut off hardware
-            self.scopeop.mscope.shutoff()
 
             try:
                 os.remove(LOCKFILE)

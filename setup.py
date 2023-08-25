@@ -45,7 +45,7 @@ setup(
         "tqdm==4.63.0",
         "transitions==0.8.11",
         "pyngrok==5.1.0",
-        "llvmlite==0.37.0",
+        "llvmlite==0.39.0",
         "numba==0.56.0",
         "Jinja2==3.1.2",
         "xhtml2pdf==0.2.11",

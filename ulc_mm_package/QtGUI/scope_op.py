@@ -218,6 +218,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.flowrate = None
         self.target_flowrate = None
+        self.flowrate_error_raised = False
 
         self.frame_count = 0
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
@@ -240,7 +241,9 @@ class ScopeOp(QObject, NamedMachine):
         if self.state != "standby":
             self.update_msg.emit(f"{state_name.capitalize()} in progress...")
 
-        self.logger.info(f"Changing state to {self.state}.")
+        self.logger.info(
+            f"Changing state to {self.state} (field of view: {self.frame_count}/{MAX_FRAMES})."
+        )
         self.update_state.emit(state_name)
 
     def _get_experiment_runtime(self) -> float:
@@ -345,6 +348,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_pause(self, *args):
         self.running = False
+        self.flowrate_error_raised = False
 
         # Account for case when pause is entered during the initial setup
         if self.start_time is not None:
@@ -455,6 +459,9 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
+        # Turn off camera
+        self.mscope.camera.stopAcquisition()
+
         runtime = self._get_experiment_runtime()
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
@@ -477,6 +484,9 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
+
+        # Turn camera back on
+        self.mscope.camera.startAcquisition()
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)
@@ -785,20 +795,23 @@ class ScopeOp(QObject, NamedMachine):
 
         t0 = perf_counter()
         try:
-            self.flowrate = self.flowcontrol_routine.send((img, timestamp))
+            if not self.flowrate_error_raised:
+                self.flowrate = self.flowcontrol_routine.send((img, timestamp))
         except CantReachTargetFlowrate as e:
+            self.flowrate_error_raised = True
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
             )
-            self.flowrate = None
+            self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
             )
         except LowConfidenceCorrelations as e:
+            self.flowrate_error_raised = True
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
             )
-            self.flowrate = None
+            self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
             )

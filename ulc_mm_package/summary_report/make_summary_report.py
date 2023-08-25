@@ -3,6 +3,7 @@ from csv import DictReader
 from typing import Dict, List, Optional
 from pathlib import Path
 
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from jinja2 import Environment, FileSystemLoader
@@ -10,9 +11,17 @@ from xhtml2pdf import pisa
 import numpy as np
 import numpy.typing as npt
 
-from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT
+from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT, RBCS_PER_UL
+from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PRED_THRESHOLD
 
 COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7b6d2"]
+
+# Non-interactive backend meant for writing files only
+# Adding this here to silence matplotlib's warning about opening figures
+# in threads other than the main one.
+# This warning is raised whenever we're generating and saving plots to the disk
+# for use in the end-of-run summary report.
+matplotlib.use("agg")
 
 
 def make_per_image_metadata_plots(
@@ -64,9 +73,19 @@ def make_per_image_metadata_plots(
     ax[1].spines["right"].set_visible(False)
 
     plt.savefig(f"{str(save_loc)}")
+    plt.close()
 
 
 def make_cell_count_plot(preds: npt.NDArray, save_loc: str) -> None:
+    """Create cell counts plot.
+
+    Parameters
+    ----------
+    preds: npt.NDArray
+        Parsed predictions, (5 + N classes x NUM_PREDS)
+    save_loc: str
+        Where to save the plot
+    """
     vals = np.cumsum(np.unique(preds[0, :], return_counts=True)[1])
     num_frames = len(np.unique(preds[0, :]))
     x_vals = np.linspace(0, num_frames, num_frames)
@@ -86,6 +105,7 @@ def make_cell_count_plot(preds: npt.NDArray, save_loc: str) -> None:
     plt.legend()
 
     plt.savefig(f"{str(save_loc)}")
+    plt.close()
 
 
 def make_yogo_conf_plots(preds: npt.NDArray, save_loc: str) -> None:
@@ -107,70 +127,57 @@ def make_yogo_conf_plots(preds: npt.NDArray, save_loc: str) -> None:
     ax5 = plt.subplot(gs[2, 0:2])
     ax6 = plt.subplot(gs[2, 2:])
     ax7 = plt.subplot(gs[3, 1:3])
-
+    axes = [ax1, ax2, ax3, ax4, ax5, ax6, ax7]
     num_bins = 50
+
+    # Common formatting
+    [ax.spines["top"].set_visible(False) for ax in axes]
+    [ax.spines["right"].set_visible(False) for ax in axes]
+    [ax.set_xlabel("Confidence value") for ax in axes]
+    [ax.set_xlim(0, 1) for ax in axes]
 
     ax1.set_title("Healthy confidences")
     ax1.set_ylabel("Counts (log scale)")
-    ax1.set_xlabel("Confidence value")
-    ax1.set_yscale("log")
-    ax1.spines["top"].set_visible(False)
-    ax1.spines["right"].set_visible(False)
+    if len(preds[7, preds[6, :] == 0] > 0):
+        ax1.set_yscale("log")
     ax1.hist(
         preds[7, preds[6, :] == 0], bins=num_bins, color=COLORS[0], edgecolor="black"
     )
 
     ax2.set_title("Ring confidences")
     ax2.set_ylabel("Count")
-    ax2.set_xlabel("Confidence value")
-    ax2.spines["top"].set_visible(False)
-    ax2.spines["right"].set_visible(False)
     ax2.hist(
         preds[7, preds[6, :] == 1], bins=num_bins, color=COLORS[1], edgecolor="black"
     )
 
     ax3.set_title("Troph confidences")
     ax3.set_ylabel("Count")
-    ax3.set_xlabel("Confidence value")
-    ax3.spines["top"].set_visible(False)
-    ax3.spines["right"].set_visible(False)
     ax3.hist(
         preds[7, preds[6, :] == 2], bins=num_bins, color=COLORS[2], edgecolor="black"
     )
 
     ax4.set_title("Schizont confidences")
     ax4.set_ylabel("Count")
-    ax4.set_xlabel("Confidence value")
-    ax4.spines["top"].set_visible(False)
-    ax4.spines["right"].set_visible(False)
     ax4.hist(
         preds[7, preds[6, :] == 3], bins=num_bins, color=COLORS[3], edgecolor="black"
     )
 
     ax5.set_title("Gametocyte confidences")
     ax5.set_ylabel("Count")
-    ax5.set_xlabel("Confidence value")
-    ax5.spines["top"].set_visible(False)
-    ax5.spines["right"].set_visible(False)
     ax5.hist(
         preds[7, preds[6, :] == 4], bins=num_bins, color=COLORS[4], edgecolor="black"
     )
 
     ax6.set_title("WBC confidences")
     ax6.set_ylabel("Count (log scale)")
-    ax6.set_xlabel("Confidence value")
-    ax6.set_yscale("log")
-    ax6.spines["top"].set_visible(False)
-    ax6.spines["right"].set_visible(False)
+    if len(preds[7, preds[6, :] == 5]) > 0:
+        ax6.set_yscale("log")
     ax6.hist(
         preds[7, preds[6, :] == 5], bins=num_bins, color=COLORS[5], edgecolor="black"
     )
 
     ax7.set_title("Misc confidences")
     ax7.set_ylabel("Count")
-    ax7.set_xlabel("Confidence value")
-    ax7.spines["top"].set_visible(False)
-    ax7.spines["right"].set_visible(False)
     ax7.hist(
         preds[7, preds[6, :] == 6], bins=num_bins, color=COLORS[6], edgecolor="black"
     )
@@ -178,6 +185,7 @@ def make_yogo_conf_plots(preds: npt.NDArray, save_loc: str) -> None:
     plt.tight_layout()
     plt.subplots_adjust(top=0.9)
     plt.savefig(f"{str(save_loc)}")
+    plt.close()
 
 
 def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: str) -> None:
@@ -199,68 +207,47 @@ def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: str) -> None:
     ax5 = plt.subplot(gs[2, 0:2])
     ax6 = plt.subplot(gs[2, 2:])
     ax7 = plt.subplot(gs[3, 1:3])
-
+    axes = [ax1, ax2, ax3, ax4, ax5, ax6, ax7]
     num_bins = 50
 
+    # Common formatting
+    [ax.spines["top"].set_visible(False) for ax in axes]
+    [ax.spines["right"].set_visible(False) for ax in axes]
+    [ax.set_xlabel("Objectness value") for ax in axes]
+    [ax.set_xlim(YOGO_PRED_THRESHOLD, 1) for ax in axes]
+    [ax.set_ylabel("Count") for ax in axes]
+
     ax1.set_title("Healthy objectness values")
-    ax1.set_ylabel("Counts")
-    ax1.set_xlabel("Objectness value")
-    ax1.spines["top"].set_visible(False)
-    ax1.spines["right"].set_visible(False)
     ax1.hist(
         preds[5, preds[6, :] == 0], bins=num_bins, color=COLORS[0], edgecolor="black"
     )
 
     ax2.set_title("Ring objectness values")
-    ax2.set_ylabel("Count")
-    ax2.set_xlabel("Objectness value")
-    ax2.spines["top"].set_visible(False)
-    ax2.spines["right"].set_visible(False)
     ax2.hist(
         preds[5, preds[6, :] == 1], bins=num_bins, color=COLORS[1], edgecolor="black"
     )
 
     ax3.set_title("Troph objectness values")
-    ax3.set_ylabel("Count")
-    ax3.set_xlabel("Objectness value")
-    ax3.spines["top"].set_visible(False)
-    ax3.spines["right"].set_visible(False)
     ax3.hist(
         preds[5, preds[6, :] == 2], bins=num_bins, color=COLORS[2], edgecolor="black"
     )
 
     ax4.set_title("Schizont objectness values")
-    ax4.set_ylabel("Count")
-    ax4.set_xlabel("Objectness value")
-    ax4.spines["top"].set_visible(False)
-    ax4.spines["right"].set_visible(False)
     ax4.hist(
         preds[5, preds[6, :] == 3], bins=num_bins, color=COLORS[3], edgecolor="black"
     )
 
     ax5.set_title("Gametocyte objectness values")
-    ax5.set_ylabel("Count")
-    ax5.set_xlabel("Objectness value")
-    ax5.spines["top"].set_visible(False)
-    ax5.spines["right"].set_visible(False)
     ax5.hist(
         preds[5, preds[6, :] == 4], bins=num_bins, color=COLORS[4], edgecolor="black"
     )
 
     ax6.set_title("WBC objectness values")
-    ax6.set_ylabel("Count")
-    ax6.set_xlabel("Objectness value")
-    ax6.spines["top"].set_visible(False)
-    ax6.spines["right"].set_visible(False)
     ax6.hist(
         preds[5, preds[6, :] == 5], bins=num_bins, color=COLORS[5], edgecolor="black"
     )
 
     ax7.set_title("Misc objectness values")
-    ax7.set_ylabel("Count")
-    ax7.set_xlabel("Objectness value")
-    ax7.spines["top"].set_visible(False)
-    ax7.spines["right"].set_visible(False)
     ax7.hist(
         preds[5, preds[6, :] == 6], bins=num_bins, color=COLORS[6], edgecolor="black"
     )
@@ -268,14 +255,17 @@ def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: str) -> None:
     plt.tight_layout()
     plt.subplots_adjust(top=0.9)
     plt.savefig(f"{str(save_loc)}")
+    plt.close()
 
 
 def make_html_report(
     dataset_name: str,
     experiment_metadata: Dict[str, str],
     per_image_metadata_plot_path: str,
+    total_rbcs: int,
     class_name_to_cell_count: Dict[str, int],
     perc_parasitemia: str,
+    parasites_per_ul: str,
     thumbnails: Dict[str, List[str]],
     counts_plot_loc: str,
     conf_plot_loc: str,
@@ -290,10 +280,13 @@ def make_html_report(
         Typically the timestamp of the dataset
     experiment_metadata: Dict[str, str]
         Experiment metadata dict
+    total_rbcs: int
     class_name_to_cell_counts: Dict[str, int]
         Mapping from class name (e.g "Healthy") to number of cells
     perc_parasitemia: str
         Formatted string of the estimated parasitemia (e.g "0.0123")
+    parasites_per_ul: str
+        Formatted string of the # of parasites per microlitre
     thumbnails: Dict[str, List[str]]
         A mapping between class name (e.g "Ring", "Trophozoite", etc.)
         to a list of thumbnail filepaths (as strings) of the form described in
@@ -341,8 +334,11 @@ def make_html_report(
         "participant_id": participant,
         "notes": notes,
         "flowcell_id": fc_id,
+        "total_rbcs": total_rbcs,
         "cell_counts": class_name_to_cell_count,
         "perc_parasitemia": perc_parasitemia,
+        "parasites_per_ul": parasites_per_ul,
+        "parasites_per_ul_scaling_factor": f"{RBCS_PER_UL:.0E}",
         "all_thumbnails": thumbnails,
         "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
         "per_image_metadata_plot_filename": per_image_metadata_plot_path,
@@ -400,12 +396,17 @@ if __name__ == "__main__":
     cell_counts = {
         "Healthy": int(1e6),
         "WBC": int(1e6 / 600),
-        "Ring": 0,
+        "Ring": 123,
         "Trophozoite": 0,
         "Schizont": 0,
         "Gametocyte": 0,
     }
-
+    total_rbcs = sum(cell_counts.values())
+    num_parasites = sum(
+        [cell_counts["Ring"], cell_counts["Trophozoite"], cell_counts["Schizont"]]
+    )
+    perc_parasitemia = f"{(num_parasites / total_rbcs * 100):.4f}"
+    parasites_per_ul = f"{num_parasites / total_rbcs * 5e6:.1f}"
     parasite_folders = [
         "dataset_dir/thumbnails/" + x
         for x in ["ring", "trophozoite", "schizont", "gametocyte"]
@@ -432,8 +433,8 @@ if __name__ == "__main__":
 
     exp_metadata = {
         "operator_id": "IJ",
-        "participant_id": "Also IJ",
-        "notes": "blood looks gorgeous. This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory! This is a comprehensive note with lots of important details, details which you must commit to memory!",
+        "participant_id": "Definitely not IJ since this is an anonymized field!!!",
+        "notes": "blood looks gorgeous. This is a comprehensive note with lots of important details, details which you must commit to memory!",
         "flowcell_id": "0123-A2",
     }
 
@@ -457,16 +458,18 @@ if __name__ == "__main__":
     make_yogo_objectness_plots(pred_tensor, yogo_objectness)
 
     content = make_html_report(
-        "2023-07-06-000000",
-        exp_metadata,
-        per_img_metadata_plot_path,
-        cell_counts,
-        "0.000",
-        thumbnails,
-        counts,
-        yogo_conf,
-        yogo_objectness,
-        "minimal-table.css",
+        dataset_name="2023-07-06-000000",
+        experiment_metadata=exp_metadata,
+        per_image_metadata_plot_path=per_img_metadata_plot_path,
+        total_rbcs=total_rbcs,
+        class_name_to_cell_count=cell_counts,
+        perc_parasitemia=perc_parasitemia,
+        parasites_per_ul=parasites_per_ul,
+        thumbnails=thumbnails,
+        counts_plot_loc=counts,
+        conf_plot_loc=yogo_conf,
+        objectness_plot_loc=yogo_objectness,
+        css_path="minimal-table.css",
     )
 
     with open("test.html", "w") as f:

@@ -25,12 +25,13 @@ from ulc_mm_package.neural_nets.utils import (
     save_parasite_thumbnails_to_disk,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
+    ASEXUAL_PARASITE_CLASS_IDS,
     YOGO_CLASS_LIST,
-    PARASITE_CLASS_IDS,
 )
 
 from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
+    RBCS_PER_UL,
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
     CSS_FILE_NAME,
@@ -48,6 +49,16 @@ from ulc_mm_package.summary_report.make_summary_report import (
 
 class DataStorageError(Exception):
     pass
+
+
+def write_img(img: np.ndarray, filepath: Path):
+    """Write an image to disk
+
+    img: np.ndarray
+    filepath: Path
+    """
+
+    cv2.imwrite(str(filepath), img)
 
 
 class DataStorage:
@@ -226,11 +237,11 @@ class DataStorage:
             self.metadata_file.close()
             self.metadata_file = None
 
-        if pred_tensors is not None:
+        if pred_tensors is not None and pred_tensors.size > 0:
             self.logger.info("> Saving prediction tensors...")
             self.save_parsed_prediction_tensors(pred_tensors)
 
-            self.logger.info("> Saving parasite thumbnails...")
+            self.logger.info("> Saving subset of parasite thumbnails to disk...")
             class_to_thumbnails_path: Dict[
                 str, Path
             ] = save_parasite_thumbnails_to_disk(
@@ -238,7 +249,7 @@ class DataStorage:
             )
 
             ### Create summary report
-
+            self.logger.info("> Creating summary report...")
             summary_report_dir = self.get_experiment_path() / "summary_report"
             Path.mkdir(summary_report_dir, exist_ok=True)
 
@@ -272,18 +283,36 @@ class DataStorage:
             counts_plot_loc = str(summary_report_dir / "counts.jpg")
             conf_plot_loc = str(summary_report_dir / "confs.jpg")
             objectness_plot_loc = str(summary_report_dir / "objectness.jpg")
-            make_cell_count_plot(pred_tensors, counts_plot_loc)
-            make_yogo_conf_plots(pred_tensors, conf_plot_loc)
-            make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
+            try:
+                make_cell_count_plot(pred_tensors, counts_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make cell count plot - {e}")
+            try:
+                make_yogo_conf_plots(pred_tensors, conf_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make yogo confidence plots - {e}")
+            try:
+                make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make yogo objectness plots - {e}")
 
             # Get cell counts and % parasitemia
             cell_counts = get_class_counts(pred_tensors)
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
             }
-            num_parasites = sum([cell_counts[i] for i in PARASITE_CLASS_IDS])
+            num_parasites = sum([cell_counts[i] for i in ASEXUAL_PARASITE_CLASS_IDS])
+            total_rbcs = cell_counts[0] + num_parasites
             perc_parasitemia = (
-                f"{100 * num_parasites / (cell_counts[0] + num_parasites):.5f}"
+                "0.0000"
+                if total_rbcs == 0
+                else f"{(100 * num_parasites / total_rbcs):.4f}"
+            )
+            # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
+            parasites_per_ul = (
+                "0.0"
+                if total_rbcs == 0
+                else f"{RBCS_PER_UL*(num_parasites / total_rbcs):.1f}"
             )
 
             # HTML w/ absolute path
@@ -292,8 +321,10 @@ class DataStorage:
                 self.time_str,
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
+                total_rbcs,
                 class_name_to_cell_count,
                 perc_parasitemia,
+                parasites_per_ul,
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,
@@ -314,6 +345,7 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
+            remove(counts_plot_loc)
             remove(per_image_metadata_plot_save_loc)
             remove(conf_plot_loc)
             remove(objectness_plot_loc)
@@ -413,8 +445,8 @@ class DataStorage:
 
         for idx in indices:
             img = self.zw.array[..., idx]
-            filepath = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
-            cv2.imwrite(str(filepath), img)
+            img_path = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
+            write_img(img, img_path)
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
