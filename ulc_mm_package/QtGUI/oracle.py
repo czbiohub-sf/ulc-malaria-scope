@@ -774,6 +774,7 @@ class Oracle(Machine):
             if os.path.exists(log_file) and os.path.exists(experiment_dir):
                 Path(log_file).rename(experiment_dir / Path(log_file).stem)
 
+
 if __name__ == "__main__":
     app = ShutoffApplication(sys.argv)
     oracle = Oracle()
