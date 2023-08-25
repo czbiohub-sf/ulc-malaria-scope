@@ -123,11 +123,11 @@ class Oracle(Machine):
             mkdir(log_dir)
 
         # Setup logger
-        log_file = path.join(log_dir, f"{self.datetime_str}.log")
+        self.log_file = path.join(log_dir, f"{self.datetime_str}.log")
         fileConfig(
             fname="../logger.config",
             defaults={
-                "filename": log_file,
+                "filename": self.log_file,
                 "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO",
             },
         )
@@ -736,9 +736,9 @@ class Oracle(Machine):
 
         self.logger.info("ORACLE SHUT OFF SUCCESSFUL.")
 
-        if os.path.exists(log_file) and os.path.exists(experiment_dir):
+        if os.path.exists(self.log_file) and os.path.exists(experiment_dir):
             # TODO all os.paths need to be changed to Path!
-            Path(log_file).rename(experiment_dir / Path(log_file).stem)
+            Path(self.log_file).rename(experiment_dir / Path(self.log_file).stem)
 
         self.shutoff_done = True
 
@@ -771,8 +771,8 @@ class Oracle(Machine):
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
-            if os.path.exists(log_file) and os.path.exists(experiment_dir):
-                Path(log_file).rename(experiment_dir / Path(log_file).stem)
+            if os.path.exists(self.log_file) and os.path.exists(experiment_dir):
+                Path(self.log_file).rename(experiment_dir / Path(self.log_file).stem)
 
 
 if __name__ == "__main__":
