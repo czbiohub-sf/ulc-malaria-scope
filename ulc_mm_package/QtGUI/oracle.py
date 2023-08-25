@@ -738,7 +738,9 @@ class Oracle(Machine):
 
         if os.path.exists(self.log_file) and os.path.exists(experiment_dir):
             # TODO all os.paths need to be changed to Path!
-            Path(self.log_file).rename(experiment_dir / Path(self.log_file).stem)
+            Path(self.log_file).rename(
+                experiment_dir / Path(str(Path(self.log_file).stem) + ".log")
+            )
 
         self.shutoff_done = True
 
