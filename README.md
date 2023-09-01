@@ -69,7 +69,7 @@ ngrok authtoken {TOKEN HERE}
 ./ngrok tcp 22
 ```
 
-#### Repository reference
+#### Related malaria scope repositories reference
 1. Main: https://github.com/czbiohub/ulc-malaria-scope
 2. Object detection - YOGO: https://github.com/czbiohub-sf/yogo
 3. Autoofcus - SSAF: https://github.com/czbiohub-sf/ulc-malaria-autofocus
