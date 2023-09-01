@@ -68,3 +68,11 @@ ngrok authtoken {TOKEN HERE}
 ```
 ./ngrok tcp 22
 ```
+
+#### Repository reference
+1. Main: https://github.com/czbiohub/ulc-malaria-scope
+2. Object detection - YOGO: https://github.com/czbiohub-sf/yogo
+3. Autoofcus - SSAF: https://github.com/czbiohub-sf/ulc-malaria-autofocus
+4. Data processing utilities / model evaluations: https://github.com/czbiohub-sf/lfm-data-utilities/
+5. Dataset definitions (sets of files defining which datasets to use for training/testing, etc.): https://github.com/czbiohub-sf/lfm-dataset-definitions/tree/main
+6. Thumbnail labels (stored on flexo, backed up to this repository): https://github.com/czbiohub-sf/lfm-human-labels
