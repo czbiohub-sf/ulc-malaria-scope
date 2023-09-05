@@ -20,8 +20,8 @@ setup(
     description="Instrument control software for the malaria microscope project",
     long_description=readme(),
     url="https://github.com/czbiohub/ulc-malaria-scope",
-    author="Ilakkiyan Jeyakumar",
-    author_email="ilakkiyan.jeyakumar@czbiohub.org",
+    author="Bioengineering | CZ Biohub SF",
+    author_email="paul.lebel@czbiohub.org",
     license="MIT",
     packages=find_packages(),
     install_requires=[
@@ -45,11 +45,15 @@ setup(
         "tqdm==4.63.0",
         "transitions==0.8.11",
         "pyngrok==5.1.0",
+        "llvmlite==0.39.0",
+        "numba==0.56.0",
+        "Jinja2==3.1.2",
+        "xhtml2pdf==0.2.11",
     ],
     extras_require={
         "dev": [
             "AllanTools",
-            "black",
+            "black==23.1.0",
             "mypy==1.0.1",
             "mypy-extensions==1.0.0",
             "PyQt5-stubs",

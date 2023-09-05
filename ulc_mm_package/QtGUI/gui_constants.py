@@ -1,6 +1,7 @@
 import enum
 
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
+from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_MAP
 
 
 # ================ Status colors ================ #
@@ -28,6 +29,13 @@ TOOLBAR_OFFSET = 80
 
 # ================ Infopanel values ================ #
 BLANK_INFOPANEL_VAL = "---"
+
+# ================ Thumbnail preview ================ #
+MAX_THUMBNAILS = 10
+CLASSES_TO_DISPLAY = ["healthy", "ring", "trophozoite", "schizont"]
+CLASS_IDS = [YOGO_CLASS_IDX_MAP[class_name] for class_name in CLASSES_TO_DISPLAY]
+MIN_THUMBNAIL_DISPLAY_SIZE = 55
+THUMBNAIL_SPACING = 5
 
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]

@@ -11,7 +11,7 @@ jobs:
         with:
           python-version: '3.7'
           architecture: x64
-      - uses: psf/black@stable
+      - uses: psf/black@23.1.0
         with:
           options: "--check"
           src: "./ulc_mm_package"

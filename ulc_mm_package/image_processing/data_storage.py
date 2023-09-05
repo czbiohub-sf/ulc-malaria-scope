@@ -2,7 +2,7 @@ import io
 import csv
 import shutil
 import logging
-
+from os import remove
 from pathlib import Path
 from time import perf_counter
 from datetime import datetime
@@ -10,6 +10,7 @@ from concurrent.futures import Future
 from typing import Dict, List, Optional
 
 import numpy as np
+import numpy.typing as npt
 import cv2
 
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
@@ -19,12 +20,45 @@ from ulc_mm_package.image_processing.processing_constants import (
     NUM_SUBSEQUENCES,
     SUBSEQUENCE_LENGTH,
 )
+from ulc_mm_package.neural_nets.utils import (
+    get_class_counts,
+    save_parasite_thumbnails_to_disk,
+)
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    ASEXUAL_PARASITE_CLASS_IDS,
+    YOGO_CLASS_LIST,
+)
 
-from ulc_mm_package.scope_constants import MAX_FRAMES
+from ulc_mm_package.scope_constants import (
+    MAX_FRAMES,
+    RBCS_PER_UL,
+    SUMMARY_REPORT_CSS_FILE,
+    DESKTOP_SUMMARY_DIR,
+    CSS_FILE_NAME,
+)
+from ulc_mm_package.summary_report.make_summary_report import (
+    make_html_report,
+    make_per_image_metadata_plots,
+    make_cell_count_plot,
+    make_yogo_conf_plots,
+    make_yogo_objectness_plots,
+    save_html_report,
+    create_pdf_from_html,
+)
 
 
 class DataStorageError(Exception):
     pass
+
+
+def write_img(img: np.ndarray, filepath: Path):
+    """Write an image to disk
+
+    img: np.ndarray
+    filepath: Path
+    """
+
+    cv2.imwrite(str(filepath), img)
 
 
 class DataStorage:
@@ -64,7 +98,7 @@ class DataStorage:
         ext_dir: str,
         custom_experiment_name: str,
         datetime_str: str,
-        experiment_initialization_metdata: Dict,
+        experiment_initialization_metadata: Dict,
         per_image_metadata_keys: list,
     ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
@@ -88,8 +122,11 @@ class DataStorage:
         assert self.main_dir is not None
 
         # Create per-image metadata file
-        time_str = datetime.now().strftime(DATETIME_FORMAT)
-        self.experiment_folder = time_str + f"_{custom_experiment_name}"
+        self.time_str = datetime.now().strftime(DATETIME_FORMAT)
+        self.experiment_folder = self.time_str + f"_{custom_experiment_name}"
+
+        # Keep experiment metadata
+        self.experiment_level_metadata = experiment_initialization_metadata
 
         try:
             (self.main_dir / self.experiment_folder).mkdir()
@@ -99,9 +136,10 @@ class DataStorage:
         filename = (
             self.main_dir
             / self.experiment_folder
-            / f"{time_str}perimage_{custom_experiment_name}_metadata.csv"
+            / f"{self.time_str}perimage_{custom_experiment_name}_metadata.csv"
         )
-        self.metadata_file = open(str(filename), "w")
+        self.per_img_metadata_filename = filename
+        self.metadata_file = open(str(self.per_img_metadata_filename), "w")
         self.md_writer = csv.DictWriter(
             self.metadata_file, fieldnames=per_image_metadata_keys
         )
@@ -111,20 +149,20 @@ class DataStorage:
         exp_run_md_file = (
             self.main_dir
             / self.experiment_folder
-            / f"{time_str}exp_{custom_experiment_name}_metadata.csv"
+            / f"{self.time_str}exp_{custom_experiment_name}_metadata.csv"
         )
         with open(f"{exp_run_md_file}", "w") as f:
             writer = csv.DictWriter(
-                f, fieldnames=list(experiment_initialization_metdata.keys())
+                f, fieldnames=list(experiment_initialization_metadata.keys())
             )
             writer.writeheader()
-            writer.writerow(experiment_initialization_metdata)
+            writer.writerow(experiment_initialization_metadata)
 
         # Create Zarr Storage
         filename = (
             self.main_dir
             / self.experiment_folder
-            / f"{time_str}_{custom_experiment_name}"
+            / f"{self.time_str}_{custom_experiment_name}"
         )
         self.zw.createNewFile(str(filename))
 
@@ -174,8 +212,13 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self) -> Optional[Future]:
+    def close(self, pred_tensors: Optional[npt.NDArray] = None) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
+
+        Parameters
+        ----------
+        pred_tensors: Optional[npt.NDArray]
+            Parsed predictions tensors from PredictionsHandler()
 
         Returns
         -------
@@ -184,13 +227,130 @@ class DataStorage:
             (future.done())
         """
 
-        self.logger.info("Closing data storage.")
+        self.logger.info(f"{'='*10}Closing data storage.{'='*10}")
+
+        self.logger.info("> Saving subsample images...")
         self.save_uniform_sample()
 
+        self.logger.info("> Closing metadata file...")
         if self.metadata_file is not None:
             self.metadata_file.close()
             self.metadata_file = None
 
+        if pred_tensors is not None and pred_tensors.size > 0:
+            self.logger.info("> Saving prediction tensors...")
+            self.save_parsed_prediction_tensors(pred_tensors)
+
+            self.logger.info("> Saving subset of parasite thumbnails to disk...")
+            class_to_thumbnails_path: Dict[
+                str, Path
+            ] = save_parasite_thumbnails_to_disk(
+                self.zw.array, pred_tensors, self.get_experiment_path()
+            )
+
+            ### Create summary report
+            self.logger.info("> Creating summary report...")
+            summary_report_dir = self.get_experiment_path() / "summary_report"
+            Path.mkdir(summary_report_dir, exist_ok=True)
+
+            ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
+            ### so provide absolute filepaths only. Note this means that the html file will be broken if viewed from anywhere other than the Pi.
+
+            class_to_all_thumbnails_abs_path: Dict[str, List[str]] = {
+                x: [
+                    str(y.resolve())
+                    for y in list(class_to_thumbnails_path[x].rglob("*.png"))
+                ]
+                for x in class_to_thumbnails_path.keys()
+            }
+
+            html_abs_path_temp_loc = (
+                summary_report_dir / f"{self.time_str}_temp_summary.html"
+            )
+            pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
+
+            # Create per-image metadata plot
+            per_image_metadata_plot_save_loc = str(
+                summary_report_dir / f"{self.time_str}_per_image_metadata_plot.jpg"
+            )
+
+            per_img_metadata_file = open(self.per_img_metadata_filename, "r")
+            make_per_image_metadata_plots(
+                per_img_metadata_file, per_image_metadata_plot_save_loc
+            )
+
+            # Prediction counts over time/confidence/objectness plots
+            counts_plot_loc = str(summary_report_dir / "counts.jpg")
+            conf_plot_loc = str(summary_report_dir / "confs.jpg")
+            objectness_plot_loc = str(summary_report_dir / "objectness.jpg")
+            try:
+                make_cell_count_plot(pred_tensors, counts_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make cell count plot - {e}")
+            try:
+                make_yogo_conf_plots(pred_tensors, conf_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make yogo confidence plots - {e}")
+            try:
+                make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make yogo objectness plots - {e}")
+
+            # Get cell counts and % parasitemia
+            cell_counts = get_class_counts(pred_tensors)
+            class_name_to_cell_count = {
+                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
+            }
+            num_parasites = sum([cell_counts[i] for i in ASEXUAL_PARASITE_CLASS_IDS])
+            total_rbcs = cell_counts[0] + num_parasites
+            perc_parasitemia = (
+                "0.0000"
+                if total_rbcs == 0
+                else f"{(100 * num_parasites / total_rbcs):.4f}"
+            )
+            # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
+            parasites_per_ul = (
+                "0.0"
+                if total_rbcs == 0
+                else f"{RBCS_PER_UL*(num_parasites / total_rbcs):.1f}"
+            )
+
+            # HTML w/ absolute path
+            abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
+            html_report_with_abs_path = make_html_report(
+                self.time_str,
+                self.experiment_level_metadata,
+                per_image_metadata_plot_save_loc,
+                total_rbcs,
+                class_name_to_cell_count,
+                perc_parasitemia,
+                parasites_per_ul,
+                class_to_all_thumbnails_abs_path,
+                counts_plot_loc,
+                conf_plot_loc,
+                objectness_plot_loc,
+                css_path=abs_css_file_path,
+            )
+
+            # Copy the CSS file to the summary directory
+            shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
+
+            # Save the temporary HTML file w/ absolute path so we can properly generate the PDF
+            save_html_report(html_report_with_abs_path, html_abs_path_temp_loc)
+            create_pdf_from_html(html_abs_path_temp_loc, pdf_save_loc)
+
+            # Make a copy of the summary PDF to the Desktop
+            shutil.copy(pdf_save_loc, DESKTOP_SUMMARY_DIR)
+
+            # Remove intermediate files
+            remove(html_abs_path_temp_loc)
+            remove(summary_report_dir / CSS_FILE_NAME)
+            remove(counts_plot_loc)
+            remove(per_image_metadata_plot_save_loc)
+            remove(conf_plot_loc)
+            remove(objectness_plot_loc)
+
+        self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
             self.zw.writable = False
             future = self.zw.threadedCloseFile()
@@ -231,6 +391,32 @@ class DataStorage:
         storage_remaining_gb = cls._get_remaining_storage_size_GB(ssd_dir)
         return storage_remaining_gb > MIN_GB_REQUIRED
 
+    def save_parsed_prediction_tensors(self, pred_tensors: npt.NDArray) -> None:
+        """Save the predictions tensor (np.ndarray) containing
+        the parsed prediction tensors for each image.
+
+        The shape of this tensor is (8+NUM_CLASSES) x TOTAL_NUM_PREDICTIONS, for example if there
+        are 4 classes that YOGO predicts, this array would be (12 x N).
+
+        For details on what the indices correspond to, see `parse_prediction_tensor` in `neural_nets/utils.py`
+
+        Parameters
+        ----------
+        pred_tensors: List[npt.NDArray]
+            The list of parsed prediction tensors from PredictionsHandler()
+        """
+
+        assert self.main_dir is not None, "DataStorage has not been initialized"
+        try:
+            filename = (
+                self.main_dir
+                / self.experiment_folder
+                / f"{self.time_str}_parsed_prediction_tensors"
+            )
+            np.save(filename, pred_tensors.astype(np.float32))
+        except Exception as e:
+            self.logger.error(f"Error saving prediction tensors. {e}")
+
     def save_uniform_sample(self) -> None:
         """Extract and save a uniform random sample of images from the currently active Zarr store.
 
@@ -259,8 +445,8 @@ class DataStorage:
 
         for idx in indices:
             img = self.zw.array[..., idx]
-            filepath = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
-            cv2.imwrite(str(filepath), img)
+            img_path = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
+            write_img(img, img_path)
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
@@ -277,10 +463,34 @@ class DataStorage:
                 dir_path.mkdir()
                 return str(dir_path)
             except Exception as e:
-                self.logger.error("Could not create the subsample directory: {e}")
+                self.logger.error(f"Could not create the subsample directory: {e}")
                 raise e
         else:
             raise
+
+    def get_experiment_path(self) -> Path:
+        """
+        Return path to experiment folder
+        """
+        assert self.main_dir is not None, "DataStorage has not been initialized"
+        assert self.experiment_folder is not None, "Experiment has not been initialized"
+        try:
+            experiment_path = self.main_dir / self.experiment_folder
+            return experiment_path
+        except Exception as e:
+            self.logger.error(f"Could not get experiment path: {e}")
+            raise e
+
+    def get_summary_filename(self) -> Path:
+        """
+        Return filename for saving statistics summary
+        """
+        try:
+            filename = self.get_experiment_path() / f"{self.time_str}_summary.pdf"
+            return filename
+        except Exception as e:
+            self.logger.error(f"Could not get statistics filename: {e}")
+            raise e
 
     @staticmethod
     def _unif_subsequence_distribution(

@@ -77,7 +77,7 @@ class FormGUI(QDialog):
 
         # Labels
         self.operator_lbl = QLabel("Operator ID")
-        self.participant_lbl = QLabel("Participant ID")
+        self.participant_lbl = QLabel("Non-identifying participant ID")
         self.flowcell_lbl = QLabel("Flowcell ID")
         self.notes_lbl = QLabel("Other notes")
         self.flowrate_lbl = QLabel("Flowrate")

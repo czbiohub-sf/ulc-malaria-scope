@@ -21,8 +21,7 @@ from typing import (
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
-from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION
-from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
+
 
 from openvino.preprocess import PrePostProcessor
 from openvino.runtime import (
@@ -66,16 +65,14 @@ class NCSModel:
     def __init__(
         self,
         model_path: str,
-        camera_selection: CameraOptions = CAMERA_SELECTION,
     ):
         """
         params:
             model_path: path to the 'xml' file
-            camera_selection: the camera that is used for inference. Just used for img dims
         """
         self.connected = False
         self.device_name = "MYRIAD"
-        self.model = self._compile_model(model_path, camera_selection)
+        self.model = self._compile_model(model_path)
 
         self.asyn_result_lock = threading.Lock()
 
@@ -92,7 +89,6 @@ class NCSModel:
     def _compile_model(
         self,
         model_path: str,
-        camera_selection: CameraOptions,
     ):
         if self.connected:
             raise RuntimeError(f"model {self} already compiled")
@@ -107,7 +103,7 @@ class NCSModel:
         ppp = PrePostProcessor(model)
         ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
         ppp.input().model().set_layout(Layout("NCHW"))
-        ppp.output().tensor().set_element_type(Type.f32)
+        ppp.output().tensor().set_element_type(Type.f16)
         model = ppp.build()
 
         err_msg = ""
@@ -176,13 +172,6 @@ class NCSModel:
 
         To get results, call 'get_asyn_results'
         """
-        w, h = IMG_RESIZED_DIMS
-        img_h, img_w = input_img.shape
-        if img_h != h or img_w != w:
-            raise ValueError(
-                f"input_img must have shape ({h}, {w}), but has shape ({img_h}, {img_w})"
-            )
-
         input_tensor = self._format_image_to_tensor(input_img)
 
         self._executor.submit(
@@ -237,7 +226,20 @@ class NCSModel:
         return [maybe_list]
 
     def _format_image_to_tensor(self, img: npt.NDArray) -> npt.NDArray:
-        return np.expand_dims(img, (0, 3))
+        dims = img.shape
+        if len(dims) == 2:
+            return np.expand_dims(img, (0, 3))
+        elif len(dims) == 3 and dims[0] == 1:
+            return np.expand_dims(img, 3)
+        elif len(dims) == 3 and dims[-1] == 1:
+            return np.expand_dims(img, 0)
+        elif len(dims) == 4 and dims[0] == dims[-1] == 1:
+            return img
+        else:
+            raise ValueError(
+                f"Invalid shape for img; got {dims}, but need\n"
+                "\t(h, w), (1, h, w), (h, w, 1), or (1, h, w, 1)"
+            )
 
     def shutdown(self):
         self._executor.shutdown(wait=True)

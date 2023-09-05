@@ -9,7 +9,7 @@ import cv2
 import logging
 import numpy as np
 
-from typing import Any, List
+from typing import Any
 from time import sleep, perf_counter
 from transitions import Machine, State
 
@@ -48,20 +48,24 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorBusy,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
-from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
-    YOGO_PERIOD_NUM,
-    YOGO_CLASS_IDX_MAP,
     AF_BATCH_SIZE,
 )
+
+import ulc_mm_package.neural_nets.utils as nn_utils
+
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
 )
-from ulc_mm_package.scope_constants import ACQUISITION_PERIOD, LIVEVIEW_PERIOD
+from ulc_mm_package.scope_constants import (
+    ACQUISITION_PERIOD,
+    LIVEVIEW_PERIOD,
+)
+from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
 
 # TODO populate info?
 
@@ -107,6 +111,8 @@ class ScopeOp(QObject, NamedMachine):
 
     update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(float)
+
+    update_thumbnails_signal = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -212,8 +218,9 @@ class ScopeOp(QObject, NamedMachine):
 
         self.flowrate = None
         self.target_flowrate = None
+        self.flowrate_error_raised = False
 
-        self.count = 0
+        self.frame_count = 0
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.start_time = None
@@ -234,7 +241,9 @@ class ScopeOp(QObject, NamedMachine):
         if self.state != "standby":
             self.update_msg.emit(f"{state_name.capitalize()} in progress...")
 
-        self.logger.info(f"Changing state to {self.state}.")
+        self.logger.info(
+            f"Changing state to {self.state} (field of view: {self.frame_count}/{MAX_FRAMES})."
+        )
         self.update_state.emit(state_name)
 
     def _get_experiment_runtime(self) -> float:
@@ -252,10 +261,25 @@ class ScopeOp(QObject, NamedMachine):
             if self.filtered_focus_err is not None:
                 self.update_focus.emit(self.filtered_focus_err)
 
+    def update_thumbnails(self):
+        # Update thumbnails
+        if self.state == "experiment":
+            self.update_thumbnails_signal.emit(
+                (
+                    self.mscope.predictions_handler.get_max_conf_thumbnails(
+                        self.mscope.data_storage.zw.array
+                    ),
+                    self.mscope.predictions_handler.get_min_conf_thumbnails(
+                        self.mscope.data_storage.zw.array
+                    ),
+                )
+            )
+
     def setup(self):
         self.create_timers.emit()
 
         self.mscope = MalariaScope()
+
         self.yield_mscope.emit(self.mscope)
         if not SIMULATION:
             self.lid_opened = self.mscope.read_lim_sw()
@@ -324,6 +348,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_pause(self, *args):
         self.running = False
+        self.flowrate_error_raised = False
 
         # Account for case when pause is entered during the initial setup
         if self.start_time is not None:
@@ -424,10 +449,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.density_routine = self.routines.cell_density_routine()
 
-        self.count_parasitemia_routine = (
-            self.routines.count_parasitemia_periodic_wrapper(self.mscope)
-        )
-
         self.set_period.emit(LIVEVIEW_PERIOD)
 
         self.start_time = perf_counter()
@@ -438,11 +459,34 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
+        # Turn off camera
+        self.mscope.camera.stopAcquisition()
+
         runtime = self._get_experiment_runtime()
         if runtime != 0:
-            self.logger.info(f"Net FPS is {self.count/runtime}")
+            self.logger.info(f"Net FPS is {self.frame_count/runtime}")
+
+        pred_counter = self.mscope.predictions_handler.new_pred_pointer
+        if pred_counter != 0:
+            nonzero_preds = (
+                self.mscope.predictions_handler.get_prediction_tensors()
+            )  # (8+NUM_CLASSES) x N
+
+            class_counts = nn_utils.get_class_counts(nonzero_preds)
+            sorted_confidences = (
+                nn_utils.get_all_argmax_class_confidences_for_all_classes(nonzero_preds)
+            )
+            unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
+
+            stats_string = get_all_stats_str(
+                class_counts, unsorted_confidences, sorted_confidences
+            )
+            self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
+
+        # Turn camera back on
+        self.mscope.camera.startAcquisition()
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)
@@ -653,7 +697,7 @@ class ScopeOp(QObject, NamedMachine):
             # A race condition has triggered a non-experiment state
             return
 
-        if self.count >= MAX_FRAMES:
+        if self.frame_count >= MAX_FRAMES:
             if self.state == "experiment":
                 self.to_intermission(
                     "Ending experiment since data collection is complete."
@@ -669,42 +713,38 @@ class ScopeOp(QObject, NamedMachine):
 
         # Record timestamp before running routines
         self.img_metadata["timestamp"] = timestamp
-        self.img_metadata["im_counter"] = f"{self.count:0{self.digits}d}"
+        self.img_metadata["im_counter"] = f"{self.frame_count:0{self.digits}d}"
 
         t0 = perf_counter()
-        self.update_img_count.emit(self.count)
+        self.update_img_count.emit(self.frame_count)
         t1 = perf_counter()
         self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
         t0 = perf_counter()
-        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
-        prev_yogo_results: List[
-            AsyncInferenceResult
-        ] = self.count_parasitemia_routine.send((resized_img, self.count))
-
+        prev_yogo_results = self.routines.count_parasitemia(
+            self.mscope, YOGO.crop_img(img), self.frame_count
+        )
         t1 = perf_counter()
+
         self._update_metadata_if_verbose("count_parasitemia", t1 - t0)
 
+        self._update_metadata_if_verbose(
+            "yogo_qsize",
+            self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
+        )
+
         t0 = perf_counter()
-        # we can use this for cell counts in the future, and also density in the now
-
         for result in prev_yogo_results:
-            filtered_prediction = YOGO.filter_res(result.result)
+            self.mscope.predictions_handler.add_yogo_pred(result)
 
-            class_counts = YOGO.class_instance_count(filtered_prediction)
-            # very rough interpolation: ~30 FPS * period between YOGO calls * counts
-            class_counts[YOGO_CLASS_IDX_MAP["healthy"]] = int(
-                class_counts[YOGO_CLASS_IDX_MAP["healthy"]] * YOGO_PERIOD_NUM
+            class_counts = nn_utils.get_class_counts(
+                self.mscope.predictions_handler.parsed_tensor
             )
+
             self.cell_counts += class_counts
 
-            self._update_metadata_if_verbose(
-                "yogo_qsize",
-                self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
-            )
-
             try:
-                self.density_routine.send(filtered_prediction)
+                self.density_routine.send(class_counts)
             except LowDensity:
                 self.logger.warning("Cell density is too low.")
                 self.reload_pause.emit(
@@ -721,6 +761,7 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
         t0 = perf_counter()
+        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         try:
             (
                 raw_focus_err,
@@ -754,20 +795,23 @@ class ScopeOp(QObject, NamedMachine):
 
         t0 = perf_counter()
         try:
-            self.flowrate = self.flowcontrol_routine.send((img, timestamp))
+            if not self.flowrate_error_raised:
+                self.flowrate = self.flowcontrol_routine.send((img, timestamp))
         except CantReachTargetFlowrate as e:
+            self.flowrate_error_raised = True
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
             )
-            self.flowrate = None
+            self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
             )
         except LowConfidenceCorrelations as e:
+            self.flowrate_error_raised = True
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
             )
-            self.flowrate = None
+            self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
             )
@@ -797,7 +841,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment
 
-        if self.count % TH_PERIOD_NUM == 0:
+        if self.frame_count % TH_PERIOD_NUM == 0:
             try:
                 (
                     temperature,
@@ -829,8 +873,8 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("img_metadata", t1 - t0)
 
         t0 = perf_counter()
-        self.mscope.data_storage.writeData(img, self.img_metadata, self.count)
-        self.count += 1
+        self.mscope.data_storage.writeData(img, self.img_metadata, self.frame_count)
+        self.frame_count += 1
         t1 = perf_counter()
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
 

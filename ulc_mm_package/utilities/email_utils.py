@@ -46,8 +46,11 @@ def send_email(sender: str, receiver: str, subject: str, payload: str) -> None:
     msg.set_content(payload)
 
     # creates SMTP session, start TLS
-    s = smtplib.SMTP("smtp.gmail.com", 587)
-    s.starttls()
+    try:
+        s = smtplib.SMTP("smtp.gmail.com", 587)
+        s.starttls()
+    except Exception as e:
+        raise EmailError(f"Errored when trying to start tls - {e}")
 
     # Authentication
     try:
@@ -91,7 +94,10 @@ def send_ngrok_email(
         f"ngrok address : {ngrok_addr}\n"
         f"{_load_saga()}"
     )
-    send_email(sender, receiver, subject, msg)
+    try:
+        send_email(sender, receiver, subject, msg)
+    except:
+        raise
 
 
 def _get_pw() -> str:

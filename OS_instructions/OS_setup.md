@@ -13,6 +13,14 @@ sudp apt update
 sudo apt upgrade
 ```
 
+### Install numba first, separately
+This section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
+```
+sudo apt install llvm-11
+LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
+LLVM_CONFIG=llvm-config-11 pip install numba==0.56.0
+```
+
 ### Install ulc-malaria-scope
 ```console
 mkdir Documents && cd Documents
@@ -159,6 +167,7 @@ Tldr:
 
 
 **For ext4, the process is a little more involved**
+**Warning - formatting as ext4 means it'll be a pain to try to read the SSD on your Mac computer. The performance gains (if any) are dubious, so this section should be ignored. Likely better to just use exFAT and skip all the headache**
 I outline the procedure here for MacOS, but the high-level steps are similar for Windows (it may just involve different tools)
 
 1. Connect the SSD and use e2fsprogs to format:

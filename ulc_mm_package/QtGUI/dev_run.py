@@ -290,7 +290,7 @@ class AcquisitionThread(QThread):
                 self.external_dir,
                 custom_experiment_name=f"{self.custom_image_prefix}",
                 datetime_str=datetime.now().strftime(DATETIME_FORMAT),
-                experiment_initialization_metdata={},
+                experiment_initialization_metadata={},
                 per_image_metadata_keys=self.getMetadata().keys(),
             )
 
@@ -462,10 +462,10 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         if SIMULATION:
             print("---------------------\n|  SIMULATION MODE  |\n---------------------")
 
-            if not path.exists(VIDEO_PATH):
+            if not VIDEO_PATH.exists():
                 print(
                     "Error - no sample video exists. To add your own video, save it under "
-                    + VIDEO_PATH
+                    + str(VIDEO_PATH)
                     + "\nRecommended video: "
                     + VIDEO_REC
                 )
@@ -795,7 +795,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             cam_temp = self.acquisitionThread.mscope.camera._getTemperature()
         except Exception as e:
             print(f"Unable to get camera temperature: {e}")
-        sens_temp, _ = self.acquisitionThread.mscope.ht_sensor.get_temp_and_humidity()
+
+        sens_temp = -1
+        try:
+            (
+                sens_temp,
+                _,
+            ) = self.acquisitionThread.mscope.ht_sensor.get_temp_and_humidity()
+        except Exception as e:
+            print(f"Unable to get ambient temperature sensor value: {e}")
 
         self.lblTemperatures.setText(
             f"C: {cam_temp:.2f} CPU: {cpu.temperature:.2f} A: {sens_temp:.2f} (C)"

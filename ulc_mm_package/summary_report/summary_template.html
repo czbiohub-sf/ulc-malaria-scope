@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <style>
+            @page {
+                size: a4 portrait;
+                @frame header_frame {           /* Static Frame */
+                    -pdf-frame-content: header_content;
+                    left: 50pt; width: 512pt; top: 50pt; height: 40pt;
+                }
+                @frame content_frame {          /* Content Frame */
+                    left: 50pt; width: 512pt; top: 90pt; height: 732pt;
+                }
+                @frame footer_frame {           /* Another Static Frame */
+                    -pdf-frame-content: footer_content;
+                    left: 50pt; width: 512pt; top: 792pt; height: 40pt;
+                }
+            }
+        </style>
+        <title>Remoscope / {{ dataset_name }}</title>
+        <link href="{{ css_file }}" rel="stylesheet" type="text/css">
+    </head>
+
+    <h1 style="text-align: center">Remoscope / Dataset {{ dataset_name }} </h1>
+    <body>
+
+        <!-- Content for Static Frame 'header_frame' -->
+        <div id="header_content">
+            <h1 style="text-align: center; color: red">RESEARCH USE ONLY - <strong>NOT FOR CLINICAL USE</strong></h1>
+        </div>
+        <div id="footer_content">
+            <p style="text-align: right; font-size: smaller;">
+                <pdf:pagenumber>/<pdf:pagecount>
+            </p>
+        </div>
+
+        <h2>Statistics summary and thumbnails</h2>
+
+        {# Experiment metadata #}
+        <table style="table-layout: fixed;">
+            <thead>
+                <tr>
+                    <th colspan="2">Experiment metadata</th>
+                </tr>
+            </thead>
+            <tr>
+                <td>Operator ID</td>
+                <td>{{ operator_id }}</td>
+            </tr>
+            <tr>
+                <td>Non-identifying participant ID</td>
+                <td>{{ participant_id }}</td>
+            </tr>
+            <tr>
+                <td>Notes</td>
+                <td><p style="word-wrap: break-word; -pdf-word-wrap: CJK;">{{ notes }}</p></td>
+            </tr>
+            <tr>
+                <td>Flowcell ID</td>
+                <td>{{ flowcell_id }}</td>
+            </tr>
+
+            {# Cell counts #}
+            <thead>
+                <tr>
+                    <th colspan="2">Cell counts</th>
+                </tr>
+            </thead>
+            {% for key in cell_counts %}
+            <tr>
+                <td>{{key}}</td>
+                <td>{{cell_counts[key]}} ({{'{0:.3f}'.format(100*cell_counts[key] / total_rbcs)}}%)</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td>% Parasitemia (asexual stages only)</td>
+                <td>{{perc_parasitemia}}%</td>
+            </tr>
+            <tr>
+                <td>Parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
+                <td>{{parasites_per_ul}}</td>
+            </tr>
+        </table>
+
+        {# Thumbnails #}
+        <div>
+            <pdf:nextpage /> 
+        </div> 
+        <h3>Parasite thumbnails</h3>
+        <table>
+            {% for key in all_thumbnails %}
+                <thead>
+                    <tr>
+                        <th colspan="10">{{key.upper()}}</th>
+                    </tr>
+                </thead>
+                {% for row in all_thumbnails[key]|batch(10, "") %}
+                <tr>
+                    {% for filename in row %}
+                    <td>
+                        {% if filename | length > 0 %}
+                            <img src="{{ filename }}">
+                            <p>{{".".join(filename.split("_")[-1].split(".")[:2])}}</p>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            {% endfor %}
+        </table>
+        
+        {# OPTIONAL PLOTS FOR INTERNAL USE #}
+        {% if DEBUG_SUMMARY_REPORT %}
+            {# Metadata plots #}
+            <div>
+                <pdf:nextpage /> 
+            </div>
+            <h3>Per-Image Metadata Plot</h3>
+            <img src = "{{per_image_metadata_plot_filename}}">
+
+            {# YOGO Performance Plots #}
+            <h4>Cell counts over time</h4>
+            <img src = "{{cell_count_plot_filename}}">
+            <br>
+
+            <div>
+                <pdf:nextpage /> 
+            </div>
+            <h4>Confidence histograms</h4>
+            <img src = "{{confidence_hists_filename}}">
+            <br>
+
+            <div>
+                <pdf:nextpage /> 
+            </div>
+            <h4>Objectness histograms</h4>
+            <img src = "{{objectness_hists_filename}}">
+        {% endif %}
+    </body>
+</html>

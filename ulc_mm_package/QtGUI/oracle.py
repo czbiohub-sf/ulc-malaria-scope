@@ -22,6 +22,7 @@ from transitions.core import MachineError
 from time import sleep
 from logging.config import fileConfig
 from datetime import datetime
+from pathlib import Path
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -40,6 +41,7 @@ from ulc_mm_package.scope_constants import (
     VERBOSE,
     SIMULATION,
     SSD_NAME,
+    RESEARCH_USE_ONLY,
 )
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.data_storage import DataStorage
@@ -52,7 +54,10 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
 )
-
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    AUTOFOCUS_MODEL_DIR,
+    YOGO_MODEL_DIR,
+)
 from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
@@ -173,7 +178,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Warning,
                 "SSH email failed",
-                self.logger.info("STARTING ORACLE.")(
+                (
                     "Could not automatically email SSH tunnel address. "
                     "If SSH is needed, please use the address printed in the liveviewer or terminal. "
                     '\n\nClick "OK" to continue running.'
@@ -272,6 +277,14 @@ class Oracle(Machine):
         self.liveview_window.pause_btn.clicked.connect(self.general_pause_handler)
         self.liveview_window.exit_btn.clicked.connect(self.liveview_exit_handler)
         self.liveview_window.close_event.connect(self.close_handler)
+
+        # Thumbnail display signals
+        self.liveview_window.refresh_thumbnails.clicked.connect(
+            self.scopeop.update_thumbnails
+        )
+        self.scopeop.update_thumbnails_signal.connect(
+            self.liveview_window.update_thumbnails
+        )
 
         # Connect scopeop signals and slots
         self.scopeop.setup_done.connect(self.to_form)
@@ -521,6 +534,12 @@ class Oracle(Machine):
     def _start_setup(self, *args):
         self.lid_handler_enabled = False
         self.display_message(
+            QMessageBox.Icon.Warning,
+            "DISCLAIMER: RESEARCH USE ONLY",
+            f"{RESEARCH_USE_ONLY}",
+            buttons=Buttons.OK,
+        )
+        self.display_message(
             QMessageBox.Icon.Information,
             "Initializing hardware",
             (
@@ -546,6 +565,7 @@ class Oracle(Machine):
         self.form_metadata = self.form_window.get_form_input()
         self.form_window.reset_parameters()
         self.liveview_window.update_experiment(self.form_metadata)
+        self.liveview_window.clear_thumbnails()
 
         for key in self.form_metadata:
             self.experiment_metadata[key] = self.form_metadata[key]
@@ -561,6 +581,8 @@ class Oracle(Machine):
             "exposure"
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
+        self.experiment_metadata["autofocus_model"] = Path(AUTOFOCUS_MODEL_DIR).stem
+        self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).stem
 
         # TODO try a cleaner solution than nested try-excepts?
         # On Git branch
@@ -716,16 +738,18 @@ class Oracle(Machine):
         self.logger.warning("Starting emergency oracle shut off.")
 
         if not self.shutoff_done:
+            # Shut off hardware
+            self.scopeop.mscope.shutoff()
+
             # Close data storage if it's not already closed
             if self.scopeop.mscope.data_storage.zw.writable:
-                self.scopeop.mscope.data_storage.close()
+                self.scopeop.mscope.data_storage.close(
+                    self.scopeop.mscope.predictions_handler.get_prediction_tensors()
+                )
             else:
                 self.logger.info(
                     "Since data storage is already closed, no data storage operations were needed."
                 )
-
-            # Shut off hardware
-            self.scopeop.mscope.shutoff()
 
             try:
                 os.remove(LOCKFILE)

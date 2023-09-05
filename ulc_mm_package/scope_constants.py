@@ -1,12 +1,15 @@
 import os
 import usb
-import pathlib
 import socket
 
+from pathlib import Path
 from enum import auto, Enum
 from collections import namedtuple
 
-curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
+curr_dir = Path(__file__).parent.resolve()  # Get full path
+
+# RESEARCH USE ONLY DISCLAIMER
+RESEARCH_USE_ONLY = "For Research Use Only. Not for use in diagnostic procedures.\nClick OK to acknowledge that this device is for RESEARCH USE ONLY."
 
 # ================ Simulation constants ================ #
 MS_SIMULATE_FLAG = int(os.environ.get("MS_SIMULATE", 0))
@@ -21,19 +24,31 @@ VIDEO_PATH = None
 
 if SIMULATION:
     _viable_videos = (
-        "../QtGUI/sim_media/avt-sample.mp4",
-        "../QtGUI/sim_media/sample.avi",
-        "../QtGUI/sim_media/sample.mp4",
+        curr_dir / "QtGUI/sim_media/avt-sample.mp4",
+        curr_dir / "QtGUI/sim_media/sample.avi",
+        curr_dir / "QtGUI/sim_media/sample.mp4",
     )
     VIDEO_PATH = next((vid for vid in _viable_videos if os.path.exists(vid)), None)
     if VIDEO_PATH is None:
         raise RuntimeError(
             "Sample video for simulation mode could not be found. "
-            f"Download a video from {VIDEO_REC} and save as {_viable_videos[0]} or {_viable_videos[1]}"
+            f"Download a video from {VIDEO_REC} and save as {[str(v) for v in _viable_videos]}"
         )
 
 
 CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
+
+# ================ Summary PDF constants ================ #
+DEBUG_REPORT = int(
+    os.environ.get("DEBUG_REPORT", 0)
+)  # Flag to add optional plots (metadata / YOGO histograms) to the summary report
+CSS_FILE_NAME = "minimal-table.css"
+SUMMARY_REPORT_CSS_FILE = curr_dir / "summary_report" / CSS_FILE_NAME
+DESKTOP_SUMMARY_DIR = Path.home() / "Desktop/Remoscope_Summary_Reports"
+if not Path(DESKTOP_SUMMARY_DIR).exists():
+    Path(DESKTOP_SUMMARY_DIR).mkdir()
+RBCS_PER_UL = 5e6
+MAX_THUMBNAILS_SAVED_PER_CLASS = 200
 
 
 class MissingCameraError(Exception):
@@ -47,6 +62,7 @@ class CameraOptions(Enum):
     AVT = auto()
     BASLER = auto()
     SIMULATED = auto()
+    NONE = auto()
 
     def img_dims(self) -> ImageDims:
         if self == CameraOptions.AVT:
@@ -57,15 +73,16 @@ class CameraOptions(Enum):
             # FIXME: if 'avt' in videopath, assume it is an avt vid
             # a bit hacky, but workable for just sim mode
             assert VIDEO_PATH is not None
-            if "avt" in VIDEO_PATH:
+            if "avt" in str(VIDEO_PATH):
                 return ImageDims(height=772, width=1032)
             return ImageDims(height=600, width=800)
-        raise ValueError("this is impossible because this class is an enum")
-
-        raise ValueError(
-            f"CameraOptions somehow gained an enum type {self}. "
-            "Please report this strange bug!"
-        )
+        elif self == CameraOptions.NONE:
+            # Make these 1 just to be finite
+            return ImageDims(height=1, width=1)
+        else:
+            raise ValueError(
+                f"CameraOptions should be one of the following CameraOptions: {[e.value for e in CameraOptions]}"
+            )
 
     @property
     def IMG_WIDTH(self) -> int:
@@ -111,9 +128,8 @@ try:
         elif _basler_dev is not None:
             CAMERA_SELECTION = CameraOptions.BASLER
         else:
-            raise MissingCameraError(
-                "There is no camera found on the device and we are not simulating: "
-            )
+            CAMERA_SELECTION = CameraOptions.NONE
+
 except usb.core.NoBackendError:
     CAMERA_SELECTION = CameraOptions.SIMULATED
 
@@ -132,6 +148,8 @@ EXPERIMENT_METADATA_KEYS = [
     "target_brightness",
     "git_branch",
     "git_commit",
+    "autofocus_model",
+    "yogo_model",
 ]
 
 PER_IMAGE_METADATA_KEYS = [
