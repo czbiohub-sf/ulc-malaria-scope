@@ -186,6 +186,8 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
             self.logger.warning(f"SSH address could not be emailed - {e}")
+        except Exception as e:
+            self.logger.warning(f"Unexpected error while setting up TCP: {e}")
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):
