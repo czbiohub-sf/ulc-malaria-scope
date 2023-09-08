@@ -581,7 +581,7 @@ def get_all_confs_for_all_classes(
 
 
 def get_class_counts(
-    prediction_tensor: npt.NDArray, num_classes: int = NUM_CLASSES
+    prediction_tensor: npt.NDArray, num_classes: int = NUM_CLASSES, conf_thresh: float=0.9,
 ) -> List[int]:
     """Get the number of occurrences for each class.
 
@@ -590,6 +590,10 @@ def get_class_counts(
     prediction_tensor: npt.NDArray
         Array containing all the predictions (note filter out for non-zero predictions first)
         since the array is preallocated to (8+NUM_CLASSES x SOME_MAX_NUM).
+    num_classes: int
+        Defaults to NUM_CLASSES
+    conf_thresh: float
+        Defaults to 0.9
 
     Returns
     -------
@@ -597,7 +601,9 @@ def get_class_counts(
         The index in the list corresponds to the class id (i.e output[0] would have the counts for all the healthy cells)
     """
 
-    ids, counts = np.unique(prediction_tensor[6, :], return_counts=True)
+
+    conf_filtered = prediction_tensor[:, prediction_tensor[7, :] > conf_thresh]
+    ids, counts = np.unique(conf_filtered[6, :], return_counts=True)
     id_and_counts = dict(zip(ids, counts))
     return [id_and_counts.get(i, 0) for i in range(num_classes)]
 
