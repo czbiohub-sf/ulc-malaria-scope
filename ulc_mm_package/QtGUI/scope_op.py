@@ -832,6 +832,7 @@ class ScopeOp(QObject, NamedMachine):
             ## TODO???
             self.logger.info(f"Stale pressure sensor value - {e}")
 
+        self.img_metadata["led_pwm_val"] = self.mscope.led.pwm_duty_cycle
         self.img_metadata[
             "syringe_pos"
         ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
