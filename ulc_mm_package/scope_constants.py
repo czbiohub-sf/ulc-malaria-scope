@@ -166,6 +166,7 @@ PER_IMAGE_METADATA_KEYS = [
     "focus_adjustment",
     "cell_count_cumulative",
     "temperature",
+    "camera_temperature",
     "humidity",
     "looptime",
     "runtime",
