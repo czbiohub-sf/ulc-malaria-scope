@@ -861,15 +861,11 @@ class ScopeOp(QObject, NamedMachine):
                 )
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
-                self.img_metadata[
-                    "camera_temperature"
-                ] = None
+                self.img_metadata["camera_temperature"] = None
         else:
             self.img_metadata["humidity"] = None
             self.img_metadata["temperature"] = None
-            self.img_metadata[
-                "camera_temperature"
-            ] = None
+            self.img_metadata["camera_temperature"] = None
 
         zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
         self.img_metadata["zarrwriter_qsize"] = zarr_qsize
