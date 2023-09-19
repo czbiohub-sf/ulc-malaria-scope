@@ -850,6 +850,9 @@ class ScopeOp(QObject, NamedMachine):
                 ) = self.mscope.ht_sensor.get_temp_and_humidity()
                 self.img_metadata["humidity"] = humidity
                 self.img_metadata["temperature"] = temperature
+                self.img_metadata[
+                    "camera_temperature"
+                ] = self.mscope.camera._getTemperature()
             except Exception as e:
                 # some error has occurred, but the TH sensor isn't critical, so just warn
                 # and move on
@@ -858,9 +861,11 @@ class ScopeOp(QObject, NamedMachine):
                 )
                 self.img_metadata["humidity"] = None
                 self.img_metadata["temperature"] = None
+                self.img_metadata["camera_temperature"] = None
         else:
             self.img_metadata["humidity"] = None
             self.img_metadata["temperature"] = None
+            self.img_metadata["camera_temperature"] = None
 
         zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
         self.img_metadata["zarrwriter_qsize"] = zarr_qsize
