@@ -466,6 +466,22 @@ class ScopeOp(QObject, NamedMachine):
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
+        def _save_yogo_results():
+            for result in self.mscope.cell_diagnosis_model.get_asyn_results():
+                self.mscope.predictions_handler.add_yogo_pred(result)
+
+        # the ThreadPoolExecutor work queue may be really big - so as the NCS
+        # is chugging along, lets do some work by adding it's results to the
+        # prediction handler
+        while self.mscope.cell_diagnosis_model.work_queue_size() > 0:
+            _save_yogo_results()
+
+        # once the ThreadPoolExecutor work queue is done, the NCS is still
+        # processing images (up to 4 images). Lets wait for them, and then
+        # process them in the same way.
+        self.mscope.cell_diagnosis_model.wait_all()
+        _save_yogo_results()
+
         pred_counter = self.mscope.predictions_handler.new_pred_pointer
         if pred_counter != 0:
             nonzero_preds = (
