@@ -473,6 +473,13 @@ class ScopeOp(QObject, NamedMachine):
         # the ThreadPoolExecutor work queue may be really big - so as the NCS
         # is chugging along, lets do some work by adding it's results to the
         # prediction handler
+        num_images_leftover = self.mscope.cell_diagnosis_model.work_queue_size()
+        self.logger.info(
+            f"Waiting for {num_images_leftover} images to be processed by the NCS"
+        )
+
+        t0 = perf_counter()
+
         while self.mscope.cell_diagnosis_model.work_queue_size() > 0:
             _save_yogo_results()
 
@@ -481,6 +488,12 @@ class ScopeOp(QObject, NamedMachine):
         # process them in the same way.
         self.mscope.cell_diagnosis_model.wait_all()
         _save_yogo_results()
+
+        t1 = perf_counter()
+
+        self.logger.info(
+            f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
+        )
 
         pred_counter = self.mscope.predictions_handler.new_pred_pointer
         if pred_counter != 0:
