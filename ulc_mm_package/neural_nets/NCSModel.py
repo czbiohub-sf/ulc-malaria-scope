@@ -204,6 +204,9 @@ class NCSModel:
         """wait for all pending InferRequests to resolve"""
         self.asyn_infer_queue.wait_all()
 
+    def work_queue_size(self) -> int:
+        return self._executor._work_queue.qsize()
+
     def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
         r = AsyncInferenceResult(
             id=userdata, result=infer_request.output_tensors[0].data.copy()

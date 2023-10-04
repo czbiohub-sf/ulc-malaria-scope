@@ -730,7 +730,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self._update_metadata_if_verbose(
             "yogo_qsize",
-            self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
+            self.mscope.cell_diagnosis_model.work_queue_size(),
         )
 
         t0 = perf_counter()
@@ -870,7 +870,7 @@ class ScopeOp(QObject, NamedMachine):
         zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
         self.img_metadata["zarrwriter_qsize"] = zarr_qsize
 
-        ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
+        ssaf_qsize = self.mscope.autofocus_model.work_queue_size()
         self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)
 
         self.img_metadata["runtime"] = perf_counter() - current_time
