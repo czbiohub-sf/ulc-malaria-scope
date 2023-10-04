@@ -201,8 +201,13 @@ class NCSModel:
         return res
 
     def wait_all(self) -> None:
-        """wait for all pending InferRequests to resolve"""
+        """wait for all pending InferRequests to finish"""
+        # very rough wait for rest of the queue to finish
+        while self.work_queue_size() > 0:
+            time.sleep(0.01)
+
         self.asyn_infer_queue.wait_all()
+        self._temp_infer_queue.wait_all()
 
     def work_queue_size(self) -> int:
         return self._executor._work_queue.qsize()
@@ -245,4 +250,5 @@ class NCSModel:
             )
 
     def shutdown(self):
+        self.wait_all()
         self._executor.shutdown(wait=True)
