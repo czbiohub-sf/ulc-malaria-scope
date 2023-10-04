@@ -182,17 +182,17 @@ class NCSModel:
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
-    ) -> Optional[List[AsyncInferenceResult]]:
+    ) -> List[AsyncInferenceResult]:
         """
-        Maybe return some asyn_results. Will return None if it can not get the lock
+        Maybe return some asyn_results. Will return an empty list if it can not get the lock
         on results within `timeout`. To disable timeout (i.e. just block indefinitely),
-        set timeout to None
+        set `timeout` to None
         """
         # openvino sets timeout to indefinite on timeout < 0, not timeout == None
         if timeout is None:
             timeout = -1
 
-        res = None
+        res = []
 
         with lock_timeout(self.asyn_result_lock, timeout=timeout):
             res = copy(self._asyn_results)
