@@ -182,17 +182,17 @@ class NCSModel:
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
-    ) -> Optional[List[AsyncInferenceResult]]:
+    ) -> List[AsyncInferenceResult]:
         """
-        Maybe return some asyn_results. Will return None if it can not get the lock
+        Maybe return some asyn_results. Will return an empty list if it can not get the lock
         on results within `timeout`. To disable timeout (i.e. just block indefinitely),
-        set timeout to None
+        set `timeout` to None
         """
         # openvino sets timeout to indefinite on timeout < 0, not timeout == None
         if timeout is None:
             timeout = -1
 
-        res = None
+        res = []
 
         with lock_timeout(self.asyn_result_lock, timeout=timeout):
             res = copy(self._asyn_results)
@@ -201,8 +201,16 @@ class NCSModel:
         return res
 
     def wait_all(self) -> None:
-        """wait for all pending InferRequests to resolve"""
+        """wait for all pending InferRequests to finish"""
+        # very rough wait for rest of the queue to finish
+        while self.work_queue_size() > 0:
+            time.sleep(0.01)
+
         self.asyn_infer_queue.wait_all()
+        self._temp_infer_queue.wait_all()
+
+    def work_queue_size(self) -> int:
+        return self._executor._work_queue.qsize()
 
     def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
         r = AsyncInferenceResult(
@@ -242,4 +250,5 @@ class NCSModel:
             )
 
     def shutdown(self):
+        self.wait_all()
         self._executor.shutdown(wait=True)

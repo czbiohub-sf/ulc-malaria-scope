@@ -466,6 +466,35 @@ class ScopeOp(QObject, NamedMachine):
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
+        def _save_yogo_results():
+            for result in self.mscope.cell_diagnosis_model.get_asyn_results():
+                self.mscope.predictions_handler.add_yogo_pred(result)
+
+        # the ThreadPoolExecutor work queue may be really big - so as the NCS
+        # is chugging along, lets do some work by adding it's results to the
+        # prediction handler
+        num_images_leftover = self.mscope.cell_diagnosis_model.work_queue_size()
+        self.logger.info(
+            f"Waiting for {num_images_leftover} images to be processed by the NCS"
+        )
+
+        t0 = perf_counter()
+
+        while self.mscope.cell_diagnosis_model.work_queue_size() > 0:
+            _save_yogo_results()
+
+        # once the ThreadPoolExecutor work queue is done, the NCS is still
+        # processing images (up to 4 images). Lets wait for them, and then
+        # process them in the same way.
+        self.mscope.cell_diagnosis_model.wait_all()
+        _save_yogo_results()
+
+        t1 = perf_counter()
+
+        self.logger.info(
+            f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
+        )
+
         pred_counter = self.mscope.predictions_handler.new_pred_pointer
         if pred_counter != 0:
             nonzero_preds = (
@@ -730,7 +759,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self._update_metadata_if_verbose(
             "yogo_qsize",
-            self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
+            self.mscope.cell_diagnosis_model.work_queue_size(),
         )
 
         t0 = perf_counter()
@@ -870,7 +899,7 @@ class ScopeOp(QObject, NamedMachine):
         zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
         self.img_metadata["zarrwriter_qsize"] = zarr_qsize
 
-        ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
+        ssaf_qsize = self.mscope.autofocus_model.work_queue_size()
         self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)
 
         self.img_metadata["runtime"] = perf_counter() - current_time
