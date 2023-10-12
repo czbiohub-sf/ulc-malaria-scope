@@ -35,7 +35,7 @@ from ulc_mm_package.scope_constants import (
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
     CSS_FILE_NAME,
-    DEBUG_REPORT
+    DEBUG_REPORT,
 )
 from ulc_mm_package.summary_report.make_summary_report import (
     make_html_report,
