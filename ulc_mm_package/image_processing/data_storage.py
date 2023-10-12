@@ -348,10 +348,12 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
-            remove(counts_plot_loc)
-            remove(per_image_metadata_plot_save_loc)
-            remove(conf_plot_loc)
-            remove(objectness_plot_loc)
+
+            if DEBUG_REPORT:
+                remove(counts_plot_loc)
+                remove(per_image_metadata_plot_save_loc)
+                remove(conf_plot_loc)
+                remove(objectness_plot_loc)
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
