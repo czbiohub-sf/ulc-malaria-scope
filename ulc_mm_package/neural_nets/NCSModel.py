@@ -36,7 +36,7 @@ from openvino.runtime import (
 T = TypeVar("T", covariant=True)
 
 
-class TPUError(Exception):
+class GPUError(Exception):
     pass
 
 
@@ -126,7 +126,7 @@ class NCSModel:
                         f"attempts: {4 - connection_attempts}. Retrying..."
                     )
                 err_msg = str(e)
-        raise TPUError(f"Failed to connect to NCS: {err_msg}")
+        raise GPUError(f"Failed to connect to NCS: {err_msg}")
 
     def syn(
         self, input_imgs: Union[npt.NDArray, List[npt.NDArray]], sort: bool = False

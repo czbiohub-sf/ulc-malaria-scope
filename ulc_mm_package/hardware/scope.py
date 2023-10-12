@@ -45,7 +45,7 @@ from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorag
 from ulc_mm_package.image_processing.flow_control import FlowController
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
-from ulc_mm_package.neural_nets.NCSModel import TPUError
+from ulc_mm_package.neural_nets.NCSModel import GPUError
 from ulc_mm_package.neural_nets.predictions_handler import PredictionsHandler
 
 
@@ -66,7 +66,7 @@ class Components(Enum):
     HT_SENSOR = auto()
     DATA_STORAGE = auto()
     FLOW_CONTROLLER = auto()
-    TPU = auto()
+    GPU = auto()
     PREDICTIONS_HANDLER = auto()
 
 
@@ -83,7 +83,7 @@ class MalariaScope:
         self.ht_sensor_enabled = False
         self.data_storage_enabled = False
         self.flow_controller_enabled = False
-        self.tpu_enabled = False
+        self.gpu_enabled = False
         self.predictions_handler_enabled = False
 
         # Initialize Components
@@ -95,7 +95,7 @@ class MalariaScope:
         self._init_humidity_temp_sensor()
         self._init_data_storage()
         self._init_flow_controller()
-        self._init_TPU()
+        self._init_GPU()
         self._init_predictions_handler()
 
         self.logger.info("Initialized scope hardware.")
@@ -169,7 +169,7 @@ class MalariaScope:
             Components.HT_SENSOR: self.ht_sensor_enabled,
             Components.DATA_STORAGE: self.data_storage_enabled,
             Components.FLOW_CONTROLLER: self.flow_controller_enabled,
-            Components.TPU: self.tpu_enabled,
+            Components.GPU: self.gpu_enabled,
             Components.PREDICTIONS_HANDLER: self.predictions_handler_enabled,
         }
 
@@ -298,14 +298,14 @@ class MalariaScope:
         except DataStorageError as e:
             self.logger.error(f"Data storage initialization failed. {e}")
 
-    def _init_TPU(self):
+    def _init_GPU(self):
         try:
-            self.logger.info("Initializing TPU...")
+            self.logger.info("Initializing GPU...")
             self.autofocus_model = AutoFocus()
             self.cell_diagnosis_model = YOGO()
-            self.tpu_enabled = True
-        except TPUError as e:
-            self.logger.error(f"TPU initialization failed. {e}")
+            self.gpu_enabled = True
+        except GPUError as e:
+            self.logger.error(f"GPU initialization failed. {e}")
 
     def _init_flow_controller(self):
         try:
