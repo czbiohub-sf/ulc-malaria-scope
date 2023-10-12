@@ -35,6 +35,7 @@ from ulc_mm_package.scope_constants import (
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
     CSS_FILE_NAME,
+    DEBUG_REPORT,
 )
 from ulc_mm_package.summary_report.make_summary_report import (
     make_html_report,
@@ -275,26 +276,28 @@ class DataStorage:
             )
 
             per_img_metadata_file = open(self.per_img_metadata_filename, "r")
-            make_per_image_metadata_plots(
-                per_img_metadata_file, per_image_metadata_plot_save_loc
-            )
-
-            # Prediction counts over time/confidence/objectness plots
             counts_plot_loc = str(summary_report_dir / "counts.jpg")
             conf_plot_loc = str(summary_report_dir / "confs.jpg")
             objectness_plot_loc = str(summary_report_dir / "objectness.jpg")
-            try:
-                make_cell_count_plot(pred_tensors, counts_plot_loc)
-            except Exception as e:
-                self.logger.error(f"Failed to make cell count plot - {e}")
-            try:
-                make_yogo_conf_plots(pred_tensors, conf_plot_loc)
-            except Exception as e:
-                self.logger.error(f"Failed to make yogo confidence plots - {e}")
-            try:
-                make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
-            except Exception as e:
-                self.logger.error(f"Failed to make yogo objectness plots - {e}")
+
+            # Only generate additional plots if DEBUG_REPORT environment variable is set to True
+            if DEBUG_REPORT:
+                make_per_image_metadata_plots(
+                    per_img_metadata_file, per_image_metadata_plot_save_loc
+                )
+
+                try:
+                    make_cell_count_plot(pred_tensors, counts_plot_loc)
+                except Exception as e:
+                    self.logger.error(f"Failed to make cell count plot - {e}")
+                try:
+                    make_yogo_conf_plots(pred_tensors, conf_plot_loc)
+                except Exception as e:
+                    self.logger.error(f"Failed to make yogo confidence plots - {e}")
+                try:
+                    make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
+                except Exception as e:
+                    self.logger.error(f"Failed to make yogo objectness plots - {e}")
 
             # Get cell counts and % parasitemia
             cell_counts = get_class_counts(pred_tensors)
@@ -345,10 +348,12 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
-            remove(counts_plot_loc)
-            remove(per_image_metadata_plot_save_loc)
-            remove(conf_plot_loc)
-            remove(objectness_plot_loc)
+
+            if DEBUG_REPORT:
+                remove(counts_plot_loc)
+                remove(per_image_metadata_plot_save_loc)
+                remove(conf_plot_loc)
+                remove(objectness_plot_loc)
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
