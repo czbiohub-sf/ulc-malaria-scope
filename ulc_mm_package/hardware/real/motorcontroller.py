@@ -198,6 +198,7 @@ class DRV8825Nema:
 
         # Move the motor until it hits the CCW limit switch
         try:
+            self.homed = False
             self.move_rel(dir=Direction.CCW, steps=1e6, timeout_s=homing_timeout)
         except MotorMoveTimeout:
             raise HomingError(
