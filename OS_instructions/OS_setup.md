@@ -4,7 +4,7 @@ These are instructions for creating a fresh OS image from scratch. 99% of the ti
 
 ## Full Installation Instructions
 
-Install Raspbian GNU/Linux 11 (bullseye) on a fresh 64GB SD card. Make sure to update the OS
+Install Raspbian GNU/Linux 11 (Bullseye) on a fresh 64GB SD card. Make sure to update the OS
 hostname and wifi/password by pressing shift-ctrl-x. After it is flashed, pop it into a Pi and
 follow the commands below.
 
@@ -14,7 +14,8 @@ sudo apt upgrade
 ```
 
 ### Install numba first, separately
-This section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
+Note: this section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
+
 ```
 sudo apt install llvm-11
 LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
@@ -29,7 +30,7 @@ cd ulc-malaria-scope
 pip3 install -e .
 ```
 
-### Install cmake and some req'd libraries
+### Install cmake and some required libraries
 ```console
 sudo apt install -y cmake
 sudo apt install libusb-1.0-0-dev
