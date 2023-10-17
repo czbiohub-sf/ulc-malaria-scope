@@ -1,73 +1,54 @@
-# Ultra-Low Cost (ULC) malaria scope
+# Remoscope: an automated, low-cost, and fast malaria diagnostic system
+![An artistic rendition of the Remoscope](icon.png)
 
-Welcome to the ULC Malaria Scope! We are developing a barebones optical microscope with embedded computing hardware capable of diagnosing malaria in fresh, whole blood with no fixation, staining, or preparation steps. No highly trained technicians will be required to perform time-consuming sample preparation or manual scoring of parasites under the microscope. The target BOM cost is $250.
+[TODO] - Add figure showing workflow once finalized
+
+## Introduction
+TODO [Add reference to paper once uploaded]
+
+This repository houses the machine learning models and instrument control software for the Remoscope, an automated and low-cost malaria diagnostic system, requiring minimal user training. The Remoscope was developed by the Bioengineering team at the Chan Zuckerberg Biohub San Francisco (CZBSF). The Remoscope images unstained fresh whole blood in liquid form and can screen up to two million red blood cells for _Plasmodium falciparum_ parasites.
+
+The Remoscope runs off a Raspberry Pi 4 Model B 8GB and an Intel Neural Compute Stick 2 (no longer available) to accelerate on-device neural network inferencing. The instrument control software is written in Python 3.7.3.
+
+## User guide
+[TODO] - Verify that the user guide is publicly accessible (https://docs.google.com/document/d/11vunMRfG9IbehD3opIatyN18aQXaa78SdT_b89pUGIs/edit#)
+
+## Mechanical model
+[TODO] - Add Onshape link, rotating gif of onshape model here
+
+## Repository structure
+```
+├── ulc_mm_package
+│   ├── utilities
+│   ├── summary_report
+│   ├── neural_nets
+│   ├── image_processing
+│   ├── hardware
+│   ├── configs
+│   ├── QtGUI
+│   ├── scope_constants.py
+├── OS_instructions
+│   ├── OS_setup.md
+│   └── OS_flash.md
+├── architecture_description
+├── setup.py
+└── README.md
+```
+
+For a more detailed description of each folder and its scripts, see the `architecture_description/` folder.
+
+## Installation and use
+### Option 1: Clone the image
+1. Flash a pre-existing image to an SD card (must be at least 32GB), see `OS_flash.md`
+
+### Option 2: Manual install
+1. Follow the instructions under `OS_instructions`.
 
 ## Operation
 
 To start the software, navigate to ulc_mm_package/QtGUI and run `python3 oracle.py`.
 
-To debug using developer mode, navigate to ulc_mm_package/QtGUI and run `python3 dev_run.py`. This opens a GUI with manual hardware control for debugging purposes.
-
-
-## Instrument specifications
-
-### Optics
-
-### Realtime malaria detection
-
-### Hardware
-
-### Flow cell
-
-#### Flexure-based autofocus
-
-
-## Software development
-
-Before commiting, make sure to run `black .` in the root of this project. This will autoformat your files for you.
-
-### Installing dependencies
-
-In the root folder, run `pip install -e .` to install all pip dependencies.
-
-To develop, run `pip install -e .[dev]`
-
-### Using simulation mode
-
-To run any of these scripts using simulated hardware (eg. to test code without a scope), set `MS_SIMULATE=1` (either for the single command, like `MS_SIMULATE=1 python3 oracle.py`, or until you restart your shell, like `export MS_SIMULATE=1`
-
-You will also need to have a video saved locally, which will replace the camera input. By default, the video should be saved under ulc_mm_package/QtGUI/sim_media/sample.avi, but you can change the filename and location by editing the constant `VIDEO_PATH` under ulc_mm_package/hardware/hardware_constants.py. It can be an `avi` or `mp4` file.
-
-#### SSH Development
-
-You can do the required development on the Pi through SSH. You have two options.
-
-##### Rendering "offscreen"
-This can be done by setting the environment variable `QT_QPA_PLATFORM=offscreen`.
-
-##### X11 forwarding
-
-On Mac, you have to setup [XQuartz](https://www.xquartz.org/). To use X11 forwarding in XQuartz, `ssh` into your pi with the `-Y` option (safe X11 forwarding). You should then be able to run any command with a GUI, and one should pop up on screen.
-
-On Windows, you have to install [XMing](https://sourceforge.net/projects/xming/). Start the X Server and open an SSH session using PuTTY. In PuTTY, make sure you have the following settings configured:
-* Under `Connection/SSH/X11` make sure "Enable X11 forwarding" is checked 
-* Under `Connection` set "Seconds between keepalives" to 0.
-
-#### Remote SSH using `ngrok`
-1. Set up `ngrok` on a new device by:
-
-```
-wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-arm.zip
-unzip ngrok-stable-linux-arm.zip
-ngrok authtoken {TOKEN HERE}
-```
-
-2. `cd` to the directory where `ngrok` is downloaded.
-
-3. Run `ngrok` with:
-```
-./ngrok tcp 22
-```
+To use developer mode, navigate to ulc_mm_package/QtGUI and run `python3 dev_run.py`. This opens a GUI with manual hardware control for debugging purposes.
 
 #### Related malaria scope repositories reference
 1. Main: https://github.com/czbiohub/ulc-malaria-scope
