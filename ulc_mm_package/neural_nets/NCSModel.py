@@ -252,3 +252,12 @@ class NCSModel:
     def shutdown(self):
         self.wait_all()
         self._executor.shutdown(wait=True)
+
+    def restart(self):
+        """
+        wait for the NCS's AsyncInferQueue to finish, then restart
+        the ThreadPoolExecutor. Note that this will not drop the
+        reference to the NCS.
+        """
+        self.shutdown()
+        self._executor = ThreadPoolExecutor(max_workers=1)

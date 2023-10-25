@@ -123,7 +123,10 @@ class MalariaScope:
         self.flow_controller.reset()
 
     def reset_for_end_experiment(self) -> None:
-        """Reset syringe, turn LED off, reset flow control, and close data storage."""
+        """
+        Reset syringe, turn LED off, reset flow control, reset YOGO / Autofoucs,
+        and close data storage.
+        """
 
         # Reset syringe to top, turn LED off, reset flow control variables
         self.reset_pneumatic_and_led_and_flow_control()
@@ -136,6 +139,13 @@ class MalariaScope:
             while not closing_file_future.done():
                 sleep(1)
 
+        # reset autofocus / yogo
+        # note that this waits for their queues to drain, and then
+        # resets their threadpool executor; it does not drop their
+        # references to the NCS (which would then require reconnecting)
+        self.autofocus_model.reset()
+        self.cell_diagnosis_model.reset()
+
         # Reset predictions handler
         self.predictions_handler: PredictionsHandler = PredictionsHandler()
 
@@ -145,6 +155,9 @@ class MalariaScope:
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.ht_sensor.stop()
         self.flow_controller.stop()
+        self.autofocus_model.shutdown()
+        self.cell_diagnosis_model.shutdown()
+
         if self.camera._isActivated:
             self.camera.deactivateCamera()
             self.logger.info("Deactivated camera.")
