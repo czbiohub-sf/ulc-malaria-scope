@@ -65,7 +65,7 @@ from ulc_mm_package.scope_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
 )
-from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
+from ulc_mm_package.utilities.statistics_utils import StatsUtils
 
 # TODO populate info?
 
@@ -126,6 +126,8 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
+
+        self.stats_utils = StatsUtils()
 
         self._set_exp_variables()
 
@@ -507,7 +509,7 @@ class ScopeOp(QObject, NamedMachine):
             )
             unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
 
-            stats_string = get_all_stats_str(
+            stats_string = self.stats_utils.get_all_stats_str(
                 class_counts, unsorted_confidences, sorted_confidences
             )
             self.logger.info(stats_string)
