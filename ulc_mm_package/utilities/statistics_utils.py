@@ -7,9 +7,17 @@ from math import sqrt
 from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_MAP
 
 
+import pandas as pd
+
 class StatsUtils():
     def init(self):
-        pass
+        # Load csv
+        raw_cmatrix = np.reshape(pd.read_csv('confusion_matrix.csv')['nPredictions'].to_numpy(), (7, 7))
+        norm_cmatrix = raw_cmatrix / raw_cmatrix.sum(axis=1).reshape(-1, 1)
+        inv_cmatrix = np.linalg.inv(norm_cmatrix)
+
+        # MULTIPLY 
+        # np.matmul(pred, inv_cmatrix)
 
     def calc_total_perc_err(self, confidences: npt.NDArray) -> str:
         """
