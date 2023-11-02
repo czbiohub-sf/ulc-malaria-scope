@@ -16,11 +16,16 @@ class StatsUtils():
         norm_cmatrix = raw_cmatrix / raw_cmatrix.sum(axis=1).reshape(-1, 1)
         self.inv_cmatrix = np.linalg.inv(norm_cmatrix)
 
-        # TODO Load confusion matrix variances
+        # TODO Load confusion matrix variances and use these for uncertainty calc
 
     def cmatrix_correction(self, pred_cell_counts: List[int]) -> List[float]:
-        # TODO add floor for negative values
-        return np.matmul(pred_cell_counts, self.inv_cmatrix).tolist()
+        """
+        Return list of corrected cell counts that are whole number integers (ie. no negative vals)
+        """
+        corrected_floats = np.matmul(pred_cell_counts, self.inv_cmatrix).tolist()
+        corrected_ints = [round(val) for val in corrected_floats]
+        corrected_whole = [0 for val in corrected_ints if val < 0]
+        return corrected_whole
 
 @staticmethod
 def calc_total_perc_err(self, count: int) -> str:
