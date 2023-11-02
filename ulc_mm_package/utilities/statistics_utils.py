@@ -23,16 +23,14 @@ class StatsUtils():
         return np.matmul(pred_cell_counts, self.inv_cmatrix).tolist()
 
 @staticmethod
-def calc_total_perc_err(self, confidences: npt.NDArray) -> str:
+def calc_total_perc_err(self, count: int) -> str:
     """
     Return percent error based on model confidences and Poisson statistics
     """
-    num_confidences = len(confidences)
-
-    if num_confidences == 0:
+    if count == 0:
         return np.nan
 
-    poisson_rel_err = calc_poisson_rel_err(num_confidences)
+    poisson_rel_err = calc_poisson_rel_err(count)
     total_perc_err = poisson_rel_err * 100
 
     return f"{total_perc_err:.3g}%%"
@@ -64,9 +62,7 @@ def calc_rms(self, arr: Union[npt.NDArray, List]) -> float:
 def get_class_stats_str(
     self,
     name: str,
-    count: npt.NDArray,
-    all_confidences_by_class: npt.NDArray,
-    peak_confidences_by_class: npt.NDArray,
+    count: npt.NDArray
 ) -> str:
     """
     Return results string with statistics for individual class
@@ -83,14 +79,12 @@ def get_class_stats_str(
         else np.std(peak_confidences_by_class)
     )
 
-    return f"\t{name.upper()}: {int(count)} | {int(np.sum(all_confidences_by_class))} ({calc_total_perc_err(peak_confidences_by_class)} | {conf_mean:.3g} | {conf_sd:.3g})\n"
+    return f"\t{name.upper()}: {int(count)} ({calc_total_perc_err(count)})\n"
 
 @staticmethod
 def get_all_stats_str(
     self,
     counts: npt.NDArray,
-    all_confidences_by_class: List[npt.NDArray],
-    peak_confidences_by_class: List[npt.NDArray],
 ) -> str:
     """
     Parameters
@@ -108,13 +102,11 @@ def get_all_stats_str(
     str
         Results string with statistics for all classes
     """
-    template_string = "Class results: Unscaled cell count | expectation value (percent uncertainty | confidence mean | confidence std)\n"
+    template_string = "Class results: Count (%% uncertainty)\n"
     class_strings = [
         get_class_stats_str(
             class_name,
-            counts[class_idx],
-            all_confidences_by_class[class_idx],
-            peak_confidences_by_class[class_idx],
+            counts[class_idx]
         )
         for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
     ]

@@ -71,8 +71,9 @@ class Components(Enum):
 
 
 class MalariaScope:
-    def __init__(self):
+    def __init__(self, stats_utils):
         self.logger = logging.getLogger(__name__)
+        self.stats_utils = stats_utils
 
         self.motor_enabled = False
         self.camera_enabled = False
@@ -306,7 +307,7 @@ class MalariaScope:
     def _init_data_storage(self, fps_lim: Optional[float] = None):
         try:
             self.logger.info("Initializing DataStorage...")
-            self.data_storage = DataStorage(default_fps=fps_lim)
+            self.data_storage = DataStorage(self.stats_utils, default_fps=fps_lim)
             self.data_storage_enabled = True
         except DataStorageError as e:
             self.logger.error(f"Data storage initialization failed. {e}")

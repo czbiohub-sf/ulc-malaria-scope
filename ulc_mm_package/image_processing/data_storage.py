@@ -47,6 +47,8 @@ from ulc_mm_package.summary_report.make_summary_report import (
     create_pdf_from_html,
 )
 
+from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
+
 
 class DataStorageError(Exception):
     pass
@@ -63,8 +65,9 @@ def write_img(img: np.ndarray, filepath: Path):
 
 
 class DataStorage:
-    def __init__(self, default_fps: Optional[float] = None):
+    def __init__(self, stats_utils, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
+        self.stats_utils = stats_utils
         self.zw = ZarrWriter()
         self.md_writer: Optional[csv.DictWriter] = None
         self.metadata_file: Optional[io.TextIOWrapper] = None
@@ -299,8 +302,11 @@ class DataStorage:
                 except Exception as e:
                     self.logger.error(f"Failed to make yogo objectness plots - {e}")
 
-            # Get cell counts and % parasitemia
-            cell_counts = get_class_counts(pred_tensors)
+            # Get cell counts
+            raw_cell_counts = get_class_counts(pred_tensors)
+            # Apply confusion matrix correction
+            cell_counts = self.stats_utils.cmatrix_correction(raw_cell_counts)
+            # Calculate % parasitemia
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
             }
@@ -354,6 +360,9 @@ class DataStorage:
                 remove(per_image_metadata_plot_save_loc)
                 remove(conf_plot_loc)
                 remove(objectness_plot_loc)
+
+        stats_str = get_all_stats_str()
+        self.logger.info(stats_str)
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:

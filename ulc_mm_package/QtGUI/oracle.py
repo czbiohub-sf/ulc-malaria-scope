@@ -60,6 +60,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 )
 from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
+from ulc_mm_package.utilities.statistics_utils import StatsUtils
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.form_gui import FormGUI
@@ -133,9 +134,12 @@ class Oracle(Machine):
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
 
+        # Instantiate stats utils
+        self.stats_utils = StatsUtils()
+
         # Instantiate GUI windows
         self.form_window = FormGUI()
-        self.liveview_window = LiveviewGUI()
+        self.liveview_window = LiveviewGUI(self.stats_utils)
 
         # Check lock and tcp tunnel
         self._init_tcp()
@@ -223,7 +227,7 @@ class Oracle(Machine):
 
     def _init_threads(self):
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp()
+        self.scopeop = ScopeOp(self.stats_utils)
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
