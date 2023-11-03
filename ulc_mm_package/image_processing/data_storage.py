@@ -355,6 +355,12 @@ class DataStorage:
                 remove(conf_plot_loc)
                 remove(objectness_plot_loc)
 
+            # Write to a separate csv with just cell counts for each class
+            with open(f"{self.time_str}.csv", "r") as f:
+                writer = csv.writer(f)
+                writer.writerow(class_name_to_cell_count.keys())
+                writer.writerow(class_name_to_cell_count.values())
+
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
             self.zw.writable = False
