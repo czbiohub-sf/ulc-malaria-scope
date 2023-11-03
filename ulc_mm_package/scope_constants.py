@@ -45,8 +45,15 @@ DEBUG_REPORT = int(
 CSS_FILE_NAME = "minimal-table.css"
 SUMMARY_REPORT_CSS_FILE = curr_dir / "summary_report" / CSS_FILE_NAME
 DESKTOP_SUMMARY_DIR = Path.home() / "Desktop/Remoscope_Summary_Reports"
-if not Path(DESKTOP_SUMMARY_DIR).exists():
-    Path(DESKTOP_SUMMARY_DIR).mkdir()
+DESKTOP_CELL_COUNT_DIR = Path.home() / "Desktop/Remoscope_Cell_Counts"
+
+# Create the folders if they don't exist already
+[
+    Path(x).mkdir()
+    for x in [DESKTOP_SUMMARY_DIR, DESKTOP_CELL_COUNT_CSV_DIR]
+    if not x.exists()
+]
+
 RBCS_PER_UL = 5e6
 MAX_THUMBNAILS_SAVED_PER_CLASS = 200
 

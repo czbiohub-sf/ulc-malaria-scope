@@ -34,6 +34,7 @@ from ulc_mm_package.scope_constants import (
     RBCS_PER_UL,
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
+    DESKTOP_CELL_COUNT_DIR,
     CSS_FILE_NAME,
     DEBUG_REPORT,
 )
@@ -356,10 +357,15 @@ class DataStorage:
                 remove(objectness_plot_loc)
 
             # Write to a separate csv with just cell counts for each class
-            with open(f"{self.time_str}.csv", "r") as f:
+            self.logger.info("Writing cell counts to csv...")
+            cell_count_loc = (
+                self.get_experiment_path() / f"{self.time_str}_cell_counts.csv"
+            )
+            with open(f"{cell_count_loc}", "w") as f:
                 writer = csv.writer(f)
                 writer.writerow(class_name_to_cell_count.keys())
                 writer.writerow(class_name_to_cell_count.values())
+            shutil.copy(cell_count_loc, DESKTOP_CELL_COUNT_DIR)
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
