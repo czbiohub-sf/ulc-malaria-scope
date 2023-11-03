@@ -49,8 +49,7 @@ DESKTOP_CELL_COUNT_DIR = Path.home() / "Desktop/Remoscope_Cell_Counts"
 
 # Create the folders if they don't exist already
 for x in [DESKTOP_SUMMARY_DIR, DESKTOP_CELL_COUNT_DIR]:
-    if not x.exists():
-        Path(x).mkdir()
+    Path(x).mkdir(exist_ok=True)
 
 RBCS_PER_UL = 5e6
 MAX_THUMBNAILS_SAVED_PER_CLASS = 200
