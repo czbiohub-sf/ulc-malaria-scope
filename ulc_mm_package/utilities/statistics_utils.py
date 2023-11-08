@@ -11,13 +11,34 @@ import pandas as pd
 
 class StatsUtils():
     def init(self):
-        # Load csv
+        # TODO request normalized matrices from Axel (esp. std matrix!)
+
+        # Load confusion matrix
         raw_cmatrix = np.reshape(pd.read_csv('confusion_matrix.csv')['nPredictions'].to_numpy(), (7, 7))
         norm_cmatrix = raw_cmatrix / raw_cmatrix.sum(axis=1).reshape(-1, 1)
-        inv_cmatrix = np.linalg.inv(norm_cmatrix)
+        self.inv_cmatrix = np.linalg.inv(norm_cmatrix)
 
-        # MULTIPLY 
-        # np.matmul(pred, inv_cmatrix)
+        # Load standard deviation matrix
+        norm_cmatrix_std = np.random.rand(7, 7) * 0.2 + 0.1    # temporarily generate vals between 0.1-0.3
+        self.inv_cmatrix_std = self.calc_inv_cmatrix_err(norm_cmatrix_std)
+
+
+    def calc_inv_cmatrix_err(self, norm_cmatrix_std):
+        matrix_dim, _ = np.shape(self.inv_cmatrix)
+        iter_arr = range(0, matrix_dim)
+
+        squared_inv_cmatrix = np.square(self.inv_cmatrix)
+        squared_norm_cmatrix_std = np.square(norm_cmatrix_std)
+
+        inv_cmatrix_std = np.zeros((matrix_dim, matrix_dim))
+
+        for i in iter_arr:
+            for j in iter_arr:
+                calc = np.matmul(squared_inv_cmatrix[i, :], squared_norm_cmatrix_std)
+                inv_cmatrix_std[i, j] = np.matmul(calc, squared_inv_cmatrix[:, j])                
+
+        return inv_cmatrix_std
+
 
     def calc_total_perc_err(self, confidences: npt.NDArray) -> str:
         """
@@ -39,22 +60,6 @@ class StatsUtils():
         Return relative error based on Poisson statistics
         """
         return 1 / sqrt(count)
-
-
-    def calc_confidence_rel_err(self, confidences: npt.NDArray) -> float:
-        """
-        Return relative error based on model confidences
-        """
-        # TODO: Is it better to calculate standard dev of predictions using 1-np.mean(confidences)
-        # TODO: Is 1-confidence equivalent to percent error/standard deviation or variance?
-        return this.calc_rms(1 - confidences)
-
-
-    def calc_rms(self, arr: Union[npt.NDArray, List]) -> float:
-        """
-        Calculate RMS of array
-        """
-        return np.sqrt(np.mean(np.square(np.array(arr))))
 
 
     def get_class_stats_str(
