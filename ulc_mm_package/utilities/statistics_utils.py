@@ -58,33 +58,11 @@ def calc_total_perc_err(self, count: int) -> str:
     if count == 0:
         return np.nan
 
-    poisson_rel_err = calc_poisson_rel_err(count)
+    poisson_rel_err = 1 / sqrt(count)
     total_perc_err = poisson_rel_err * 100
 
     return f"{total_perc_err:.3g}%%"
 
-@staticmethod
-def calc_poisson_rel_err(self, count: int) -> float:
-    """
-    Return relative error based on Poisson statistics
-    """
-    return 1 / sqrt(count)
-
-@staticmethod
-def calc_confidence_rel_err(self, confidences: npt.NDArray) -> float:
-    """
-    Return relative error based on model confidences
-    """
-    # TODO: Is it better to calculate standard dev of predictions using 1-np.mean(confidences)
-    # TODO: Is 1-confidence equivalent to percent error/standard deviation or variance?
-    return calc_rms(1 - confidences)
-
-@staticmethod
-def calc_rms(self, arr: Union[npt.NDArray, List]) -> float:
-    """
-    Calculate RMS of array
-    """
-    return np.sqrt(np.mean(np.square(np.array(arr))))
 
 @staticmethod
 def get_class_stats_str(
@@ -108,6 +86,7 @@ def get_class_stats_str(
     )
 
     return f"\t{name.upper()}: {int(count)} ({calc_total_perc_err(count)})\n"
+
 
 @staticmethod
 def get_all_stats_str(
