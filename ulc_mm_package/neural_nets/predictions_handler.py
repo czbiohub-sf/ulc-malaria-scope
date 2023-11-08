@@ -16,7 +16,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_IDX_MAP,
     YOGO_CROP_HEIGHT_PX,
     IOU_THRESH,
-    YOGO_MODEL_DIR
+    YOGO_MODEL_DIR,
 )
 
 NUM_CLASSES = len(YOGO_CLASS_LIST)
@@ -61,7 +61,7 @@ class PredictionsHandler:
 
         # Run funcs below once on mock-data, numba compiles the function on first run (which is a little slow)
         sx, sy = get_output_layer_dims_from_xml(YOGO_MODEL_DIR)
-        mock_pre_parsed_data = np.random.rand(1, 12, sx*sy).astype(np.float32)
+        mock_pre_parsed_data = np.random.rand(1, 12, sx * sy).astype(np.float32)
         mock_parsed_data = np.random.rand(8 + NUM_CLASSES, 30).astype(np.float32)
 
         nn_utils.parse_prediction_tensor(0, mock_pre_parsed_data, IMG_H, IMG_W)
