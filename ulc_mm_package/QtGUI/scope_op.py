@@ -65,7 +65,6 @@ from ulc_mm_package.scope_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
 )
-from ulc_mm_package.utilities.statistics_utils import StatsUtils
 
 # TODO populate info?
 
@@ -114,7 +113,7 @@ class ScopeOp(QObject, NamedMachine):
 
     update_thumbnails_signal = pyqtSignal(object)
 
-    def __init__(self):
+    def __init__(self, stats_utils):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
@@ -123,11 +122,10 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal = self.acquisition.update_scopeop
 
         self.routines = Routines()
+        self.stats_utils = stats_utils
 
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
-
-        self.stats_utils = StatsUtils()
 
         self._set_exp_variables()
 
@@ -280,7 +278,7 @@ class ScopeOp(QObject, NamedMachine):
     def setup(self):
         self.create_timers.emit()
 
-        self.mscope = MalariaScope()
+        self.mscope = MalariaScope(self.stats_utils)
 
         self.yield_mscope.emit(self.mscope)
         if not SIMULATION:
@@ -508,11 +506,6 @@ class ScopeOp(QObject, NamedMachine):
                 nn_utils.get_all_argmax_class_confidences_for_all_classes(nonzero_preds)
             )
             unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
-
-            stats_string = self.stats_utils.get_all_stats_str(
-                class_counts, unsorted_confidences, sorted_confidences
-            )
-            self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
 
@@ -868,7 +861,7 @@ class ScopeOp(QObject, NamedMachine):
             "syringe_pos"
         ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
         self.img_metadata["flowrate"] = self.flowrate
-        self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
+        self.img_metadata["unskewed_healthy_count"] = self.cell_counts[0]
         self.img_metadata["focus_error"] = raw_focus_err
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment
