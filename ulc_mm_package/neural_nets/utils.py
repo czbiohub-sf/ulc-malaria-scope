@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import NamedTuple, List, Tuple, no_type_check, Dict
 from typing_extensions import TypeAlias
+import xml.etree.ElementTree as ET
 
 import cv2
 import zarr
@@ -46,6 +47,31 @@ class SinglePredictedObject(NamedTuple):
     def __repr__(self):
         """Print object, helpful for debugging"""
         return f"img_id: {self.parsed[0]} - conf: {self.conf}\n"
+
+
+def get_output_layer_dims_from_xml(xml_path: Path) -> Tuple[int, int]:
+    """Get the output layer dimensions from the model's xml file.
+
+    Note: I am unsure how reliably formatted the generated `.xml` file format is,
+    however it works for the n=2 files I tried (graceful-smoke and fine-voice).
+
+    Parameters
+    ----------
+    xml_path: Path
+
+    Returns
+    -------
+    Tuple[int, int]
+        Sx, sy dimensions of the YOGO output
+    """
+
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    sx = int(root[0][-1][0][0][-1].text)
+    sy = int(root[0][-1][0][0][-2].text)
+
+    return (sx, sy)
 
 
 @njit(cache=True)
