@@ -68,8 +68,8 @@ def get_output_layer_dims_from_xml(xml_path: Path) -> Tuple[int, int]:
     tree = ET.parse(xml_path)
     root = tree.getroot()
 
-    sx = int(root[0][-1][0][0][-1].text)
-    sy = int(root[0][-1][0][0][-2].text)
+    sx = int(root[0][-1][0][0][-1].text) # type: ignore
+    sy = int(root[0][-1][0][0][-2].text) # type: ignore
 
     return (sx, sy)
 
