@@ -71,16 +71,15 @@ class PredictionsHandler:
         # Setup heatmap masking
         self.heatmaps = np.zeros((sy * sx, len(YOGO_CLASS_LIST)))
 
-    def add_raw_pred_to_heatmap(self, prediction_tensor: npt.NDArray) -> None:
+    def add_raw_pred_to_heatmap(self, yogo_res: AsyncInferenceResult) -> None:
         """Add the raw YOGO prediction to the heatmap.
 
         Parameters
         ----------
-        prediction_tensor: npt.NDArray
-            In the shape (1 * (5+NUM_CLASSES) * (Sx*Sy))
+        yogo_res: AsyncInferenceResult
         """
 
-        class_preds = prediction_tensor[0, 5:, :]
+        class_preds = yogo_res.result[0, 5:, :]
         class_preds[class_preds < YOGO_CONF_THRESHOLD] = 0
         self.heatmaps += class_preds
 
