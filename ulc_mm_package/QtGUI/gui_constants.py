@@ -41,9 +41,13 @@ THUMBNAIL_SPACING = 5
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = ["Tororo, Uganda", "Biohub SF", "DeRisi Lab"]
 
-# ================ Experiment timeout period ================ #
+# ================ Experiment end conditions period ================ #
+# Timeout period
 TIMEOUT_PERIOD_M = 20  # minutes
 TIMEOUT_PERIOD_S = TIMEOUT_PERIOD_M * 60  # seconds
+
+# Early termination due to high parasitemia
+PARASITEMIA_UNCERTAINTY_THRESHOLD = 0.05
 
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"

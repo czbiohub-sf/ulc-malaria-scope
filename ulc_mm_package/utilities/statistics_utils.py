@@ -58,7 +58,7 @@ class StatsUtils():
             return deskewed_pos
 
             
-    def calc_parasitemia_rel_errs(self, rel_errs: npt.NDArray) -> npt.NDArray:
+    def calc_parasitemia_rel_errs(self, rel_errs: npt.NDArray) -> float:
         # Filter for parasite classes only
         parasite_classes = ["ring", "trophozoite", "schizont"]
         parasite_filter = [key in parasite_classes for key in YOGO_CLASS_IDX_MAP.keys()]

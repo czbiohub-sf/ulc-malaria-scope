@@ -126,8 +126,6 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(ClassCountResult)
     def update_cell_count(self, raw_cell_counts: ClassCountResult):
-        # Apply confusion matrix correction
-        cell_counts = self.stats_utils.cmatrix_correction(raw_cell_counts)
 
         # TODO add the rest of the cell types (can probably ignore misc?)
         healthy_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["healthy"]]
