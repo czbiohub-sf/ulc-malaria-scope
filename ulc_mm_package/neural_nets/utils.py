@@ -16,6 +16,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     PARASITE_CLASS_IDS,
     YOGO_CLASS_IDX_MAP,
     YOGO_CLASS_LIST,
+    YOGO_CONF_THRESHOLD,
 )
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 
@@ -609,7 +610,7 @@ def get_all_confs_for_all_classes(
 def get_class_counts(
     prediction_tensor: npt.NDArray,
     num_classes: int = NUM_CLASSES,
-    conf_thresh: float = 0.9,
+    conf_thresh: float = YOGO_CONF_THRESHOLD,
 ) -> List[int]:
     """Get the number of occurrences for each class.
 
@@ -621,7 +622,7 @@ def get_class_counts(
     num_classes: int
         Defaults to NUM_CLASSES
     conf_thresh: float
-        Defaults to 0.9
+        Defaults to YOGO_CONF_THRESHOLD
 
     Returns
     -------

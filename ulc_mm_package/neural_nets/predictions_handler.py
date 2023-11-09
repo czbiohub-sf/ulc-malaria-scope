@@ -17,6 +17,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CROP_HEIGHT_PX,
     IOU_THRESH,
     YOGO_MODEL_DIR,
+    YOGO_CONF_THRESHOLD,
 )
 
 NUM_CLASSES = len(YOGO_CLASS_LIST)
@@ -66,6 +67,22 @@ class PredictionsHandler:
 
         nn_utils.parse_prediction_tensor(0, mock_pre_parsed_data, IMG_H, IMG_W)
         nn_utils.nms(mock_parsed_data, IOU_THRESH)
+
+        # Setup heatmap masking
+        self.heatmaps = np.zeros((sy * sx, len(YOGO_CLASS_LIST)))
+
+    def add_raw_pred_to_heatmap(self, prediction_tensor: npt.NDArray) -> None:
+        """Add the raw YOGO prediction to the heatmap.
+
+        Parameters
+        ----------
+        prediction_tensor: npt.NDArray
+            In the shape (1 * (5+NUM_CLASSES) * (Sx*Sy))
+        """
+
+        class_preds = prediction_tensor[0, 5:, :]
+        class_preds[class_preds < YOGO_CONF_THRESHOLD] = 0
+        self.heatmaps += class_preds
 
     def _add_pred_tensor_to_store(
         self, img_id: int, prediction_tensor: npt.NDArray
