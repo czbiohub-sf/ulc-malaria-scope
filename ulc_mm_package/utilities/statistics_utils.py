@@ -29,6 +29,9 @@ class StatsUtils():
 
 
     def calc_inv_cmatrix_std(self, norm_cmatrix_std : npt.NDArray):
+        """
+        Returns standard deviations corresponding to the inverse of a matrix, given standard deviations of the initial matrix
+        """
         squared_inv_cmatrix = np.square(self.inv_cmatrix)
         squared_norm_cmatrix_std = np.square(norm_cmatrix_std)
 
@@ -58,7 +61,10 @@ class StatsUtils():
             return deskewed_pos
 
             
-    def calc_parasitemia_rel_errs(self, rel_errs: npt.NDArray) -> float:
+    def calc_parasitemia_rel_err(self, rel_errs: npt.NDArray) -> float:
+        """
+        Return relative uncertainty of total parasitemia count
+        """
         # Filter for parasite classes only
         parasite_classes = ["ring", "trophozoite", "schizont"]
         parasite_filter = [key in parasite_classes for key in YOGO_CLASS_IDX_MAP.keys()]
@@ -69,7 +75,7 @@ class StatsUtils():
 
     def calc_total_rel_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
-        Return percent error based on model confidences and Poisson statistics
+        Return relative uncertainty of each class count based on deskewing and Poisson statistics
         """
         if count == 0:
             return np.nan
@@ -81,10 +87,16 @@ class StatsUtils():
 
     
     def calc_poisson_rel_errs(self, deskewed_counts: npt.NDArray) -> npt.NDArray:
+        """
+        Return relative uncertainty of each class count based on Poisson statistics only
+        """
         return 1 / np.sqrt(deskewed_counts)
 
     
     def calc_deskew_rel_errs(self, raw_counts: npt.NDArray) -> npt.NDArray:
+        """
+        Return relative uncertainty of each class count based on deskewing only
+        """
         squared_raw_counts = np.square(raw_counts)
         squared_inv_cmatrix_std = np.square(self.inv_cmatrix_std)
 
@@ -110,13 +122,7 @@ class StatsUtils():
         """
         Parameters
         ----------
-        counts: npt.NDArray
-        all_cnofidences_by_class: List[npt.NDArray]
-            List of length NUM_CLASSES, ndarray of size 1 x N (N for however many objects detected in total)
-            This has all the confidences for a given class (including confidences where that class was not the most likely predicted class for a given prediction)
-        peak_confidences_by_class: List[npt.NDArray]
-            List of length NUM_CLASSES, ndarray of size 1 x M (M variable for each class, depends on how many of those class instances were detected)
-            This has all the confidences for objects which were predicted to be a particular class
+        raw_counts: npt.NDArray
 
         Returns
         -------
