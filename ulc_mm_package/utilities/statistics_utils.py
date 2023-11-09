@@ -28,7 +28,7 @@ class StatsUtils():
         self.inv_cmatrix_std = self.calc_inv_cmatrix_std(norm_cmatrix_std)
 
 
-    def calc_inv_cmatrix_std(self, norm_cmatrix_std):
+    def calc_inv_cmatrix_std(self, norm_cmatrix_std : npt.NDArray):
         squared_inv_cmatrix = np.square(self.inv_cmatrix)
         squared_norm_cmatrix_std = np.square(norm_cmatrix_std)
 
@@ -42,7 +42,7 @@ class StatsUtils():
         return inv_cmatrix_std
 
 
-    def calc_deskewed_counts(self, raw_counts: List[int], int_out : bool = True) -> List[float]:
+    def calc_deskewed_counts(self, raw_counts: npt.NDArray, int_out: bool = True) -> npt.NDArray:
         """
         Deskew raw counts using inverse confusion matrix. Optional parameters
         
@@ -57,8 +57,12 @@ class StatsUtils():
         else:
             return deskewed_pos
 
+            
+    # def calc_parasitemia(self, deskewed_counts: npt.NDArray, total_rel_err: npt.NDArray) -> npt.NDArray:
 
-    def calc_total_rel_err(self, raw_counts: int, deskewed_counts: float) -> str:
+
+
+    def calc_total_rel_err(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return percent error based on model confidences and Poisson statistics
         """
@@ -71,11 +75,11 @@ class StatsUtils():
         return sqrt(np.square(poisson_rel_err) + np.square(deskew_rel_err))
 
     
-    def calc_poisson_rel_err(self, deskewed_counts: float) -> float:
+    def calc_poisson_rel_err(self, deskewed_counts: npt.NDArray) -> npt.NDArray:
         return 1 / np.sqrt(deskewed_counts)
 
     
-    def calc_deskew_rel_err(self, raw_counts : int) -> float:
+    def calc_deskew_rel_err(self, raw_counts: npt.NDArray) -> npt.NDArray:
         squared_err = 0
 
         squared_raw_counts = np.square(raw_counts)
@@ -87,7 +91,7 @@ class StatsUtils():
     def get_class_stats_str(
         self,
         name: str,
-        deskewed_count: int,
+        deskewed_count: float,
         percent_err: float,
     ) -> str:
         """
