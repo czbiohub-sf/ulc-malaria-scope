@@ -58,30 +58,33 @@ class StatsUtils():
             return deskewed_pos
 
             
-    # def calc_parasitemia(self, deskewed_counts: npt.NDArray, total_rel_err: npt.NDArray) -> npt.NDArray:
+    def calc_parasitemia_rel_errs(self, rel_errs: npt.NDArray) -> npt.NDArray:
+        # Filter for parasite classes only
+        parasite_classes = ["ring", "trophozoite", "schizont"]
+        parasite_filter = [key in parasite_classes for key in YOGO_CLASS_IDX_MAP.keys()]
+        parasite_rel_errs = rel_errs[parasite_filter]
+
+        return sqrt(np.sum(np.square(parasite_rel_errs)))
 
 
-
-    def calc_total_rel_err(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
+    def calc_total_rel_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return percent error based on model confidences and Poisson statistics
         """
         if count == 0:
             return np.nan
 
-        poisson_rel_err = self.calc_poisson_rel_err(deskewed_counts)
-        deskew_rel_err = self.calc_deskew_rel_err(raw_counts)
+        poisson_rel_errs = self.calc_poisson_rel_errs(deskewed_counts)
+        deskew_rel_errs = self.calc_deskew_rel_errs(raw_counts)
 
-        return sqrt(np.square(poisson_rel_err) + np.square(deskew_rel_err))
+        return sqrt(np.square(poisson_rel_errs) + np.square(deskew_rel_errs))
 
     
-    def calc_poisson_rel_err(self, deskewed_counts: npt.NDArray) -> npt.NDArray:
+    def calc_poisson_rel_errs(self, deskewed_counts: npt.NDArray) -> npt.NDArray:
         return 1 / np.sqrt(deskewed_counts)
 
     
-    def calc_deskew_rel_err(self, raw_counts: npt.NDArray) -> npt.NDArray:
-        squared_err = 0
-
+    def calc_deskew_rel_errs(self, raw_counts: npt.NDArray) -> npt.NDArray:
         squared_raw_counts = np.square(raw_counts)
         squared_inv_cmatrix_std = np.square(self.inv_cmatrix_std)
 
@@ -125,15 +128,15 @@ class StatsUtils():
         deskewed_counts = self.calc_deskewed_counts(raw_counts, int_out=False)
         
         # Get uncertainty
-        rel_err = self.calc_total_rel_err(raw_counts)
-        percent_err = np.multiply(rel_err, 100)
+        rel_errs = self.calc_total_rel_errs(raw_counts)
+        percent_errs = np.multiply(rel_errs, 100)
 
         template_string = "Class results: Count (%% uncertainty)\n"
         class_strings = [
             self.get_class_stats_str(
                 class_name,
                 deskewed_count[class_idx],
-                percent_err[class_idx],
+                percent_errs[class_idx],
             )
             for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
         ]
