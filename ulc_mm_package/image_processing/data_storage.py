@@ -214,7 +214,11 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self, pred_tensors: Optional[npt.NDArray] = None, heatmap: Optional[npt.NDArray] = None) -> Optional[Future]:
+    def close(
+        self,
+        pred_tensors: Optional[npt.NDArray] = None,
+        heatmap: Optional[npt.NDArray] = None,
+    ) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
         Parameters
@@ -415,7 +419,7 @@ class DataStorage:
         return storage_remaining_gb > MIN_GB_REQUIRED
 
     def save_npy_arr(self, filename: str, arr: npt.NDArray) -> None:
-        """Save the given numpy array with the given filename. 
+        """Save the given numpy array with the given filename.
         The datetime string will be prepended automatically to the filename.
 
         Parameters
@@ -428,9 +432,7 @@ class DataStorage:
         assert self.main_dir is not None, "DataStorage has not been initialized"
         try:
             filename = (
-                self.main_dir
-                / self.experiment_folder
-                / f"{self.time_str}_{filename}"
+                self.main_dir / self.experiment_folder / f"{self.time_str}_{filename}"
             )
             np.save(filename, arr.astype(np.float32))
         except Exception as e:
