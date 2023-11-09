@@ -418,7 +418,7 @@ class DataStorage:
         storage_remaining_gb = cls._get_remaining_storage_size_GB(ssd_dir)
         return storage_remaining_gb > MIN_GB_REQUIRED
 
-    def save_npy_arr(self, filename: str, arr: npt.NDArray) -> None:
+    def save_npy_arr(self, fn: str, arr: npt.NDArray) -> None:
         """Save the given numpy array with the given filename.
         The datetime string will be prepended automatically to the filename.
 
@@ -432,7 +432,7 @@ class DataStorage:
         assert self.main_dir is not None, "DataStorage has not been initialized"
         try:
             filename = (
-                self.main_dir / self.experiment_folder / f"{self.time_str}_{filename}"
+                self.main_dir / self.experiment_folder / f"{self.time_str}_{fn}"
             )
             np.save(filename, arr.astype(np.float32))
         except Exception as e:
