@@ -431,9 +431,7 @@ class DataStorage:
 
         assert self.main_dir is not None, "DataStorage has not been initialized"
         try:
-            filename = (
-                self.main_dir / self.experiment_folder / f"{self.time_str}_{fn}"
-            )
+            filename = self.main_dir / self.experiment_folder / f"{self.time_str}_{fn}"
             np.save(filename, arr.astype(np.float32))
         except Exception as e:
             self.logger.error(f"Error saving {filename}: {e}")
