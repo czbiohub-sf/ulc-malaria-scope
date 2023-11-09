@@ -69,7 +69,7 @@ class PredictionsHandler:
         nn_utils.nms(mock_parsed_data, IOU_THRESH)
 
         # Setup heatmap masking
-        self.heatmaps = np.zeros((sy * sx, len(YOGO_CLASS_LIST)))
+        self.heatmaps = np.zeros((len(YOGO_CLASS_LIST, sy * sx)))
 
     def add_raw_pred_to_heatmap(self, yogo_res: AsyncInferenceResult) -> None:
         """Add the raw YOGO prediction to the heatmap.
