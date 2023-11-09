@@ -47,8 +47,6 @@ from ulc_mm_package.summary_report.make_summary_report import (
     create_pdf_from_html,
 )
 
-from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
-
 
 class DataStorageError(Exception):
     pass
@@ -361,7 +359,7 @@ class DataStorage:
                 remove(conf_plot_loc)
                 remove(objectness_plot_loc)
 
-        stats_str = get_all_stats_str(cell_counts)
+        stats_str = self.stats_utils.get_all_stats_str(cell_counts)
         self.logger.info(stats_str)
 
         self.logger.info("> Closing zarr image store...")
