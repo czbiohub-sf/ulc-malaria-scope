@@ -125,7 +125,7 @@ class LiveviewGUI(QMainWindow):
         self.img_count_val.setText(f"{img_count} / {MAX_FRAMES}")
 
     @pyqtSlot(ClassCountResult)
-    def update_cell_count(self, raw_cell_counts: ClassCountResult):
+    def update_cell_count(self, cell_counts: ClassCountResult):
 
         # TODO add the rest of the cell types (can probably ignore misc?)
         healthy_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["healthy"]]
