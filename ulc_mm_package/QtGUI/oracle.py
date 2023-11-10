@@ -139,7 +139,7 @@ class Oracle(Machine):
 
         # Instantiate GUI windows
         self.form_window = FormGUI()
-        self.liveview_window = LiveviewGUI(self.stats_utils)
+        self.liveview_window = LiveviewGUI()
 
         # Check lock and tcp tunnel
         self._init_tcp()
