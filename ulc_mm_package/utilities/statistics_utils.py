@@ -10,7 +10,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_M
 import pandas as pd
 
 class StatsUtils():
-    def init(self):
+    def __init__(self):
         # TODO request normalized matrices from Axel (esp. std matrix!)
 
         self.matrix_dim = len(YOGO_CLASS_LIST)
