@@ -17,7 +17,7 @@ class StatsUtils():
 
         # Load confusion matrix
         raw_cmatrix = np.reshape(
-                        pd.read_csv('..utilities/confusion_matrix.csv')['nPredictions'].to_numpy(), # TODO turn dir into a constant
+                        pd.read_csv('../utilities/confusion_matrix.csv')['nPredictions'].to_numpy(), # TODO turn dir into a constant
                         (self.matrix_dim, self.matrix_dim)
                         )
         norm_cmatrix = raw_cmatrix / raw_cmatrix.sum(axis=1).reshape(-1, 1)
