@@ -23,7 +23,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 NUM_CLASSES = len(YOGO_CLASS_LIST)
 IMG_W, IMG_H = CAMERA_SELECTION.IMG_WIDTH, YOGO_CROP_HEIGHT_PX
 HIGH_CONF_THRESH = 0.7
-MAX_POSSIBLE_PREDICTIONS = 2_500_000
+MAX_POSSIBLE_PREDICTIONS = 3_500_000
 
 
 class PredictionsHandler:
