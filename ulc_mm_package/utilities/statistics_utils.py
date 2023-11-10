@@ -30,7 +30,8 @@ class StatsUtils():
 
     def calc_inv_cmatrix_std(self, norm_cmatrix_std : npt.NDArray):
         """
-        Returns standard deviations corresponding to the inverse of a matrix, given standard deviations of the initial matrix
+        Returns standard deviations corresponding to the inverse of a matrix, 
+        given standard deviations of the initial matrix (based on Lefebvre, 2000)
         """
         squared_inv_cmatrix = np.square(self.inv_cmatrix)
         squared_norm_cmatrix_std = np.square(norm_cmatrix_std)
@@ -77,9 +78,6 @@ class StatsUtils():
         """
         Return relative uncertainty of each class count based on deskewing and Poisson statistics
         """
-        if count == 0:
-            return np.nan
-
         poisson_rel_errs = self.calc_poisson_rel_errs(deskewed_counts)
         deskew_rel_errs = self.calc_deskew_rel_errs(raw_counts)
 
@@ -90,9 +88,14 @@ class StatsUtils():
         """
         Return relative uncertainty of each class count based on Poisson statistics only
         """
-        return 1 / np.sqrt(deskewed_counts)
+        poisson_rel_errs = np.zeros(self.matrix_dims)
+        for index, sqrt_count in enumerate(np.sqrt(deskewed_counts)):
+            if sqrt_count != 0:
+                poisson_rel_errs[index] = 1 / sqrt_count
 
-    
+        return poisson_rel_errs
+
+
     def calc_deskew_rel_errs(self, raw_counts: npt.NDArray) -> npt.NDArray:
         """
         Return relative uncertainty of each class count based on deskewing only
