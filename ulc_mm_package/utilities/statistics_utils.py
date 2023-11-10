@@ -88,7 +88,7 @@ class StatsUtils():
         """
         Return relative uncertainty of each class count based on Poisson statistics only
         """
-        poisson_rel_errs = np.zeros(self.matrix_dims)
+        poisson_rel_errs = np.zeros(self.matrix_dim)
         for index, sqrt_count in enumerate(np.sqrt(deskewed_counts)):
             if sqrt_count != 0:
                 poisson_rel_errs[index] = 1 / sqrt_count
