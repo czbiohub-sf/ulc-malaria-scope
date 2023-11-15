@@ -741,9 +741,9 @@ class ScopeOp(QObject, NamedMachine):
         # Check if parasitemia uncertainty is low enough to end experiment
         t0 = perf_counter()
         rel_errs = self.stats_utils.calc_total_rel_errs(self.raw_cell_count, self.deskewed_cell_count)
-        parasite_count = sum([self.deskewed_cell_count[id] for id in ASEXUAL_PARASITE_CLASS_IDS])
+        parasite_count = np.sum[self.deskewed_cell_count[ASEXUAL_PARASITE_CLASS_IDS])
         parasitemia_err = self.stats_utils.calc_parasitemia_rel_err(rel_errs)
-        if parasitemia_err < PARASITEMIA_UNCERTAINTY_THRESHOLD:
+        if parasite_count > 0 and parasitemia_err < PARASITEMIA_UNCERTAINTY_THRESHOLD:
             if self.state == "experiment":
                 self.to_intermission(
                     f"Ending experiment since parasitemia uncertainty has dropped below {int(PARASITEMIA_UNCERTAINTY_THRESHOLD*100)}% threshold."
