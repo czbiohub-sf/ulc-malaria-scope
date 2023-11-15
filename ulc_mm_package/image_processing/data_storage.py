@@ -359,8 +359,8 @@ class DataStorage:
                 remove(conf_plot_loc)
                 remove(objectness_plot_loc)
 
-        stats_str = self.stats_utils.get_all_stats_str(cell_counts)
-        self.logger.info(stats_str)
+            stats_str = self.stats_utils.get_all_stats_str(cell_counts)
+            self.logger.info(stats_str)
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:

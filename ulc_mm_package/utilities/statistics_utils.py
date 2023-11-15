@@ -81,9 +81,8 @@ class StatsUtils():
         poisson_rel_errs = self.calc_poisson_rel_errs(deskewed_counts)
         deskew_rel_errs = self.calc_deskew_rel_errs(raw_counts)
 
-        return sqrt(np.square(poisson_rel_errs) + np.square(deskew_rel_errs))
+        return np.sqrt(np.square(poisson_rel_errs) + np.square(deskew_rel_errs))
 
-    
     def calc_poisson_rel_errs(self, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return relative uncertainty of each class count based on Poisson statistics only
