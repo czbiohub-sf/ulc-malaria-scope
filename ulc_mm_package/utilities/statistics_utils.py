@@ -4,7 +4,11 @@ import numpy.typing as npt
 from typing import List, Union
 from math import sqrt
 
-from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_MAP, YOGO_CLASS_LIST
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    YOGO_CLASS_IDX_MAP,
+    YOGO_CLASS_LIST,
+    ASEXUAL_PARASITE_CLASS_IDS,
+)
 
 
 import pandas as pd
@@ -67,9 +71,7 @@ class StatsUtils():
         Return relative uncertainty of total parasitemia count
         """
         # Filter for parasite classes only
-        parasite_classes = ["ring", "trophozoite", "schizont"]
-        parasite_filter = [key in parasite_classes for key in YOGO_CLASS_IDX_MAP.keys()]
-        parasite_rel_errs = rel_errs[parasite_filter]
+        parasite_rel_errs = rel_errs[ASEXUAL_PARASITE_CLASS_IDS]
 
         return sqrt(np.sum(np.square(parasite_rel_errs)))
 

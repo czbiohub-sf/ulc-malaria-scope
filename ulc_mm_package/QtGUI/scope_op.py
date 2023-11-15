@@ -51,6 +51,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
+    ASEXUAL_PARASITE_CLASS_IDS,
     AF_BATCH_SIZE,
 )
 
@@ -740,11 +741,12 @@ class ScopeOp(QObject, NamedMachine):
         # Check if parasitemia uncertainty is low enough to end experiment
         t0 = perf_counter()
         rel_errs = self.stats_utils.calc_total_rel_errs(self.raw_cell_count, self.deskewed_cell_count)
+        parasite_count = sum([self.deskewed_cell_count[id] for id in ASEXUAL_PARASITE_CLASS_IDS])
         parasitemia_err = self.stats_utils.calc_parasitemia_rel_err(rel_errs)
         if parasitemia_err < PARASITEMIA_UNCERTAINTY_THRESHOLD:
             if self.state == "experiment":
                 self.to_intermission(
-                    f"Ending experiment since parasitemia uncertainty has dropped below {int(PARASITEMIA_UNCERTAINTY_THRESHOLD*100)}%% threshold."
+                    f"Ending experiment since parasitemia uncertainty has dropped below {int(PARASITEMIA_UNCERTAINTY_THRESHOLD*100)}% threshold."
                 )
             return
         t1 = perf_counter()
