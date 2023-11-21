@@ -56,13 +56,16 @@ class StatsUtils():
         
         Returns list of deskewed cell counts. that are whole number integers (ie. no negative vals)
         """
+
+        # Deskew
         deskewed_floats = np.matmul(raw_counts, self.inv_cmatrix).tolist()
-        deskewed_pos = [0 for val in deskewed_floats if val < 0]
+        # Round all negative values to 0
+        deskewed_floats[deskewed_floats < 0] = 0
 
         if int_out:
-            return np.array([round(val) for val in deskewed_pos])
+            return np.rint(deskewed_floats)
         else:
-            return np.array(deskewed_pos)
+            return deskewed_floats
 
             
     def calc_parasitemia_rel_err(self, rel_errs: npt.NDArray) -> float:
