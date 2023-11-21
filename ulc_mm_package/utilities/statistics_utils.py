@@ -58,12 +58,11 @@ class StatsUtils():
         """
         deskewed_floats = np.matmul(raw_counts, self.inv_cmatrix).tolist()
         deskewed_pos = [0 for val in deskewed_floats if val < 0]
-        deskewed_ints = [round(val) for val in deskewed_pos]
 
         if int_out:
-            return [round(val) for val in deskewed_pos]
+            return np.array([round(val) for val in deskewed_pos])
         else:
-            return deskewed_pos
+            return np.array(deskewed_pos)
 
             
     def calc_parasitemia_rel_err(self, rel_errs: npt.NDArray) -> float:

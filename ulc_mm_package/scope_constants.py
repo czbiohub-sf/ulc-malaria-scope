@@ -164,7 +164,7 @@ PER_IMAGE_METADATA_KEYS = [
     "focus_error",
     "filtered_focus_error",
     "focus_adjustment",
-    "unskewed_healthy_count",
+    "raw_healthy_count",
     "temperature",
     "camera_temperature",
     "humidity",
