@@ -137,10 +137,10 @@ class LiveviewGUI(QMainWindow):
         # x is "truthy" if bool(x) == True
         # so in this case, if the cell count == 0, bool(0) == False,
         # so we get string '---'
-        healthy_count_str = f"{healthy_cell_count or '---'}"
-        ring_count_str = f"{ring_cell_count or '---'}"
-        troph_count_str = f"{troph_cell_count or '---'}"
-        schiz_count_str = f"{schiz_cell_count or '---'}"
+        healthy_count_str = f"{int(healthy_cell_count) or '---'}"
+        ring_count_str = f"{int(ring_cell_count) or '---'}"
+        troph_count_str = f"{int(troph_cell_count) or '---'}"
+        schiz_count_str = f"{int)schiz_cell_count) or '---'}"
 
         self.healthy_count_val.setText(healthy_count_str)
         self.ring_count_val.setText(ring_count_str)
