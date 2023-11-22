@@ -28,7 +28,7 @@ class StatsUtils():
         self.inv_cmatrix = np.linalg.inv(norm_cmatrix)
 
         # Load standard deviation matrix
-        norm_cmatrix_std = np.random.rand(7, 7) * 0.2 + 0.1    # temporarily generate vals between 0.1-0.3
+        norm_cmatrix_std = np.random.rand(7, 7) * 0.1    # temporarily generate vals between 0.1-0.3
         self.inv_cmatrix_std = self.calc_inv_cmatrix_std(norm_cmatrix_std)
 
 
@@ -56,9 +56,7 @@ class StatsUtils():
         
         Returns list of deskewed cell counts. that are whole number integers (ie. no negative vals)
         """
-
-        # Deskew
-        deskewed_floats = np.matmul(raw_counts, self.inv_cmatrix).tolist()
+        deskewed_floats = np.matmul(raw_counts, self.inv_cmatrix)
         # Round all negative values to 0
         deskewed_floats[deskewed_floats < 0] = 0
 
@@ -105,6 +103,8 @@ class StatsUtils():
         """
         squared_raw_counts = np.square(raw_counts)
         squared_inv_cmatrix_std = np.square(self.inv_cmatrix_std)
+
+        print(self.inv_cmatrix_std)
 
         return np.matmul(squared_raw_counts, squared_inv_cmatrix_std)
 
