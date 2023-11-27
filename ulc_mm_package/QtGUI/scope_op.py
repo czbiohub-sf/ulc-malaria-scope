@@ -765,6 +765,7 @@ class ScopeOp(QObject, NamedMachine):
         t0 = perf_counter()
         for result in prev_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
+            self.mscope.predictions_handler.add_raw_pred_to_heatmap(result)
 
             class_counts = nn_utils.get_class_counts(
                 self.mscope.predictions_handler.parsed_tensor

@@ -22,6 +22,7 @@ AUTOFOCUS_MODEL_DIR = str(
 
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.5
+YOGO_CONF_THRESHOLD = 0.9
 YOGO_MODEL_DIR = str(
     curr_dir / "yogo_model_files" / "fine-voice-1816" / "fine-voice-1816-quarter.xml"
 )

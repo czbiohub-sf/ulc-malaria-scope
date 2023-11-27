@@ -214,13 +214,19 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self, pred_tensors: Optional[npt.NDArray] = None) -> Optional[Future]:
+    def close(
+        self,
+        pred_tensors: Optional[npt.NDArray] = None,
+        heatmap: Optional[npt.NDArray] = None,
+    ) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
         Parameters
         ----------
         pred_tensors: Optional[npt.NDArray]
             Parsed predictions tensors from PredictionsHandler()
+        heatmap: Optional[npt.NDArray]
+            Heatmap from PredictionsHandler()
 
         Returns
         -------
@@ -241,7 +247,11 @@ class DataStorage:
 
         if pred_tensors is not None and pred_tensors.size > 0:
             self.logger.info("> Saving prediction tensors...")
-            self.save_parsed_prediction_tensors(pred_tensors)
+            self.save_npy_arr("parsed_prediction_tensors", pred_tensors)
+
+            if heatmap is not None:
+                self.logger.info("> Saving heatmap array...")
+                self.save_npy_arr("heatmap", heatmap)
 
             self.logger.info("> Saving subset of parasite thumbnails to disk...")
             class_to_thumbnails_path: Dict[
@@ -408,31 +418,23 @@ class DataStorage:
         storage_remaining_gb = cls._get_remaining_storage_size_GB(ssd_dir)
         return storage_remaining_gb > MIN_GB_REQUIRED
 
-    def save_parsed_prediction_tensors(self, pred_tensors: npt.NDArray) -> None:
-        """Save the predictions tensor (np.ndarray) containing
-        the parsed prediction tensors for each image.
-
-        The shape of this tensor is (8+NUM_CLASSES) x TOTAL_NUM_PREDICTIONS, for example if there
-        are 4 classes that YOGO predicts, this array would be (12 x N).
-
-        For details on what the indices correspond to, see `parse_prediction_tensor` in `neural_nets/utils.py`
+    def save_npy_arr(self, fn: str, arr: npt.NDArray) -> None:
+        """Save the given numpy array with the given filename.
+        The datetime string will be prepended automatically to the filename.
 
         Parameters
         ----------
-        pred_tensors: List[npt.NDArray]
-            The list of parsed prediction tensors from PredictionsHandler()
+        filename: str
+        arr: npt.NDArray
+            The numpy array to save
         """
 
         assert self.main_dir is not None, "DataStorage has not been initialized"
         try:
-            filename = (
-                self.main_dir
-                / self.experiment_folder
-                / f"{self.time_str}_parsed_prediction_tensors"
-            )
-            np.save(filename, pred_tensors.astype(np.float32))
+            filename = self.main_dir / self.experiment_folder / f"{self.time_str}_{fn}"
+            np.save(filename, arr.astype(np.float32))
         except Exception as e:
-            self.logger.error(f"Error saving prediction tensors. {e}")
+            self.logger.error(f"Error saving {filename}: {e}")
 
     def save_uniform_sample(self) -> None:
         """Extract and save a uniform random sample of images from the currently active Zarr store.
