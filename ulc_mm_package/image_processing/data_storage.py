@@ -335,7 +335,7 @@ class DataStorage:
                 self.time_str,
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
-                total_rbcs,
+                max(1, total_rbcs),  # Account for potential div-by-zero
                 class_name_to_cell_count,
                 perc_parasitemia,
                 parasites_per_ul,
