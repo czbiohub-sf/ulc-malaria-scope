@@ -140,7 +140,7 @@ class LiveviewGUI(QMainWindow):
         healthy_count_str = f"{int(healthy_cell_count) or '---'}"
         ring_count_str = f"{int(ring_cell_count) or '---'}"
         troph_count_str = f"{int(troph_cell_count) or '---'}"
-        schiz_count_str = f"{int)schiz_cell_count) or '---'}"
+        schiz_count_str = f"{int(schiz_cell_count) or '---'}"
 
         self.healthy_count_val.setText(healthy_count_str)
         self.ring_count_val.setText(ring_count_str)
