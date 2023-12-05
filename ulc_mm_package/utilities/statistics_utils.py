@@ -80,25 +80,26 @@ class StatsUtils():
         """
         Return relative uncertainty of each class count based on deskewing and Poisson statistics
         """
-        poisson_errs = self.calc_poisson_errs(deskewed_counts)
-        deskew_errs = self.calc_deskew_errs(raw_counts)
+        squared_poisson_errs = self.calc_squared_poisson_errs(deskewed_counts)
+        squared_deskew_errs = self.calc_squared_deskew_errs(raw_counts)
 
-        rel_errs = np.sqrt(np.square(poisson_errs) + np.square(deskew_errs)) / deskewed_counts
+        print(f"RAW: {raw_counts}")
+        print(f"DESKEWED: {deskew_counts}")
 
-        print(f"POISSON: {poisson_errs}")
-        print(f"DESKEW: {deskew_errs}")
-        print(f"RELATIVE: {rel_errs}")
+        rel_errs = np.sqrt(squared_poisson_errs + squared_deskew_errs) / deskewed_counts
+
+        print(f"POISSON / DESKEW / REL: {squared_poisson_errs[0]} {squared_deskew_errs[0]} {rel_errs[0]}")
 
         return rel_errs
 
-    def calc_poisson_errs(self, deskewed_counts: npt.NDArray) -> npt.NDArray:
+    def calc_squared_poisson_errs(self, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return absolute uncertainty of each class count based on Poisson statistics only
         """
         return np.sqrt(deskewed_counts)
 
 
-    def calc_deskew_errs(self, raw_counts: npt.NDArray) -> npt.NDArray:
+    def calc_squared_deskew_errs(self, raw_counts: npt.NDArray) -> npt.NDArray:
         """
         Return absolute uncertainty of each class count based on deskewing only
         """
