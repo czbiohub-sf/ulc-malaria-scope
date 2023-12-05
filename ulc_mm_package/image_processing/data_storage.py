@@ -303,7 +303,7 @@ class DataStorage:
             # Get cell counts
             raw_cell_counts = get_class_counts(pred_tensors)
             # Apply confusion matrix correction
-            cell_counts = self.stats_utils.cmatrix_correction(raw_cell_counts)
+            cell_counts = self.stats_utils.calc_deskewed_counts(raw_cell_counts)
             # Calculate % parasitemia
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
