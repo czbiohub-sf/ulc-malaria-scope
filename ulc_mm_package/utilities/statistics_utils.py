@@ -85,18 +85,17 @@ class StatsUtils():
 
         rel_errs = np.sqrt(np.square(poisson_errs) + np.square(deskew_errs)) / deskewed_counts
 
+        print("POISSON: {poisson_errs}")
+        print("DESKEW: {deskew_errs}")
+        print("RELATIVE: {rel_errs}")
+
         return rel_errs
 
     def calc_poisson_errs(self, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return absolute uncertainty of each class count based on Poisson statistics only
         """
-        poisson_errs = np.zeros(self.matrix_dim)
-        for index, sqrt_count in enumerate(np.sqrt(deskewed_counts)):
-            if sqrt_count != 0:
-                poisson_errs[index] = 1 / sqrt_count
-
-        return poisson_errs
+        return np.sqrt(deskewed_counts)
 
 
     def calc_deskew_errs(self, raw_counts: npt.NDArray) -> npt.NDArray:
@@ -108,7 +107,7 @@ class StatsUtils():
 
         print(self.inv_cmatrix_std)
 
-        return np.matmul(squared_raw_counts, squared_inv_cmatrix_std)
+        return np.sqrt(np.matmul(squared_raw_counts, squared_inv_cmatrix_std))
 
 
     def get_class_stats_str(
