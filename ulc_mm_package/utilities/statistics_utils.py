@@ -96,7 +96,7 @@ class StatsUtils():
         """
         Return absolute uncertainty of each class count based on Poisson statistics only
         """
-        return np.sqrt(deskewed_counts)
+        return deskewed_counts
 
 
     def calc_squared_deskew_errs(self, raw_counts: npt.NDArray) -> npt.NDArray:
@@ -106,7 +106,7 @@ class StatsUtils():
         squared_raw_counts = np.square(raw_counts)
         squared_inv_cmatrix_std = np.square(self.inv_cmatrix_std)
 
-        return np.sqrt(np.matmul(squared_raw_counts, squared_inv_cmatrix_std))
+        return np.matmul(squared_raw_counts, squared_inv_cmatrix_std)
 
 
     def get_class_stats_str(
