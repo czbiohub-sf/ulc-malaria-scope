@@ -75,7 +75,6 @@ class StatsUtils():
 
         return sqrt(np.sum(np.square(parasite_rel_errs)))
 
-
     def calc_total_rel_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return relative uncertainty of each class count based on deskewing and Poisson statistics
@@ -88,7 +87,7 @@ class StatsUtils():
 
         rel_errs = np.sqrt(squared_poisson_errs + squared_deskew_errs) / deskewed_counts
 
-        print(f"POISSON / DESKEW / REL: {squared_poisson_errs[0]} {squared_deskew_errs[0]} {rel_errs[0]}")
+        print(f"POISSON / DESKEW / REL: {squared_poisson_errs[0]} / {squared_deskew_errs[0]} / {rel_errs[0]}")
 
         return rel_errs
 
