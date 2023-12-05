@@ -85,9 +85,9 @@ class StatsUtils():
 
         rel_errs = np.sqrt(np.square(poisson_errs) + np.square(deskew_errs)) / deskewed_counts
 
-        print("POISSON: {poisson_errs}")
-        print("DESKEW: {deskew_errs}")
-        print("RELATIVE: {rel_errs}")
+        print(f"POISSON: {poisson_errs}")
+        print(f"DESKEW: {deskew_errs}")
+        print(f"RELATIVE: {rel_errs}")
 
         return rel_errs
 
@@ -104,8 +104,6 @@ class StatsUtils():
         """
         squared_raw_counts = np.square(raw_counts)
         squared_inv_cmatrix_std = np.square(self.inv_cmatrix_std)
-
-        print(self.inv_cmatrix_std)
 
         return np.sqrt(np.matmul(squared_raw_counts, squared_inv_cmatrix_std))
 
@@ -141,7 +139,7 @@ class StatsUtils():
         deskewed_counts = self.calc_deskewed_counts(raw_counts, int_out=False)
         
         # Get uncertainty
-        rel_errs = self.calc_total_rel_errs(raw_counts)
+        rel_errs = self.calc_total_rel_errs(raw_counts, deskewed_counts)
         percent_errs = np.multiply(rel_errs, 100)
 
         template_string = "Class results: Count (%% uncertainty)\n"
