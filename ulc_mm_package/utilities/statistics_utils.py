@@ -95,7 +95,14 @@ class StatsUtils():
         """
         Return absolute uncertainty of each class count based on Poisson statistics only
         """
-        return 1 / np.sqrt(deskewed_counts)
+        sqrt_counts = np.sqrt(deskewed_counts)
+
+        return np.divide(
+                            1, 
+                            sqrt_counts, 
+                            out=np.zeros(sqrt_counts.shape, dtype=deskewed_counts.dtype),
+                            where=~np.isclose(sqrt_counts, 0)
+                        )
 
 
     def calc_rel_deskew_errs(self, raw_counts: npt.NDArray) -> npt.NDArray:
