@@ -8,6 +8,8 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_IDX_MAP,
     YOGO_CLASS_LIST,
     ASEXUAL_PARASITE_CLASS_IDS,
+    YOGO_CMATRIX_MEAN_DIR,
+    YOGO_CMATRIX_STD_DIR,
 )
 
 import pandas as pd
@@ -21,16 +23,19 @@ class StatsUtils():
 
         self.matrix_dim = len(YOGO_CLASS_LIST)
 
-        # Load confusion matrix
-        raw_cmatrix = np.reshape(
-                        pd.read_csv('../utilities/confusion_matrix.csv')['nPredictions'].to_numpy(), # TODO turn dir into a constant
-                        (self.matrix_dim, self.matrix_dim)
-                        )
-        norm_cmatrix = raw_cmatrix / raw_cmatrix.sum(axis=1).reshape(-1, 1)
-        self.inv_cmatrix = np.linalg.inv(norm_cmatrix)
+        # Load confusion matrix data
+        norm_cmatrix = np.load(YOGO_CMATRIX_MEAN_DIR)
+        norm_cmatrix_std = np.load(YOGO_CMATRIX_STD_DIR)
+        # raw_cmatrix = np.reshape(
+        #                 pd.read_csv('../utilities/confusion_matrix.csv')['nPredictions'].to_numpy(), # TODO turn dir into a constant
+        #                 (self.matrix_dim, self.matrix_dim)
+        #                 )
+        # norm_cmatrix = raw_cmatrix / raw_cmatrix.sum(axis=1).reshape(-1, 1)
+        # norm_cmatrix_std = np.random.rand(7, 7) * 0.1    # temporarily generate vals between 0.1
 
-        # Load standard deviation matrix
-        norm_cmatrix_std = np.random.rand(7, 7) * 0.1    # temporarily generate vals between 0.1-0.3
+
+        # Compute inverses
+        self.inv_cmatrix = np.linalg.inv(norm_cmatrix)
         self.inv_cmatrix_std = self.calc_inv_cmatrix_std(norm_cmatrix_std)
 
 
@@ -125,7 +130,7 @@ class StatsUtils():
         class_ratios = np.outer(divided_deskewed_counts, raw_counts)
         product = np.matmul(np.square(class_ratios), np.square(self.inv_cmatrix_std))
 
-        return np.diagonal(product)
+        return np.sqrt(np.diagonal(product))
 
 
     def get_class_stats_str(
