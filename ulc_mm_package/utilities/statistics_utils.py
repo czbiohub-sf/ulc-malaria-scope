@@ -87,7 +87,7 @@ class StatsUtils():
         rel_deskew_errs = self.calc_rel_deskew_errs(raw_counts, deskewed_counts)
 
         print(f"RAW: {raw_counts[0]}")
-        print(f"DESKEWED: {deskew_counts[0]}")
+        print(f"DESKEWED: {deskewed_counts[0]}")
 
         rel_errs = np.sqrt(np.square(rel_poisson_errs) + np.square(rel_deskew_errs))
 
