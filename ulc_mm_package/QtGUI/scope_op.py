@@ -51,6 +51,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
+    ASEXUAL_PARASITE_CLASS_IDS,
     AF_BATCH_SIZE,
 )
 
@@ -59,13 +60,13 @@ import ulc_mm_package.neural_nets.utils as nn_utils
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
+    PARASITEMIA_UNCERTAINTY_THRESHOLD,
     ERROR_BEHAVIORS,
 )
 from ulc_mm_package.scope_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
 )
-from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
 
 # TODO populate info?
 
@@ -114,7 +115,7 @@ class ScopeOp(QObject, NamedMachine):
 
     update_thumbnails_signal = pyqtSignal(object)
 
-    def __init__(self):
+    def __init__(self, stats_utils):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
@@ -123,6 +124,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal = self.acquisition.update_scopeop
 
         self.routines = Routines()
+        self.stats_utils = stats_utils
 
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
@@ -221,7 +223,8 @@ class ScopeOp(QObject, NamedMachine):
         self.flowrate_error_raised = False
 
         self.frame_count = 0
-        self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
+        self.raw_cell_count = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
+        self.deskewed_cell_count = np.zeros(len(YOGO_CLASS_LIST), dtype=float)
 
         self.start_time = None
         self.accumulated_time = 0
@@ -254,7 +257,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def update_infopanel(self):
         if self.state == "experiment":
-            self.update_cell_count.emit(self.cell_counts)
+            self.update_cell_count.emit(self.deskewed_cell_count)
             self.update_runtime.emit(self._get_experiment_runtime())
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
@@ -278,7 +281,7 @@ class ScopeOp(QObject, NamedMachine):
     def setup(self):
         self.create_timers.emit()
 
-        self.mscope = MalariaScope()
+        self.mscope = MalariaScope(self.stats_utils)
 
         self.yield_mscope.emit(self.mscope)
         if not SIMULATION:
@@ -506,11 +509,6 @@ class ScopeOp(QObject, NamedMachine):
                 nn_utils.get_all_argmax_class_confidences_for_all_classes(nonzero_preds)
             )
             unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
-
-            stats_string = get_all_stats_str(
-                class_counts, unsorted_confidences, sorted_confidences
-            )
-            self.logger.info(stats_string)
 
         self.mscope.reset_for_end_experiment()
 
@@ -740,6 +738,20 @@ class ScopeOp(QObject, NamedMachine):
                 )
             return
 
+        # Check if parasitemia uncertainty is low enough to end experiment
+        t0 = perf_counter()
+        rel_errs = self.stats_utils.calc_total_rel_errs(self.raw_cell_count, self.deskewed_cell_count)
+        parasite_count = np.sum(self.deskewed_cell_count[ASEXUAL_PARASITE_CLASS_IDS])
+        parasitemia_err = self.stats_utils.calc_parasitemia_rel_err(rel_errs)
+        if parasite_count > 0 and parasitemia_err < PARASITEMIA_UNCERTAINTY_THRESHOLD:
+            if self.state == "experiment":
+                self.to_intermission(
+                    f"Ending experiment since parasitemia uncertainty has dropped below {int(PARASITEMIA_UNCERTAINTY_THRESHOLD*100)}% threshold."
+                )
+            return
+        t1 = perf_counter()
+        print(f"ERR: {parasitemia_err}, TIME: {t1-t0}") # TODO delete this
+
         # Record timestamp before running routines
         self.img_metadata["timestamp"] = timestamp
         self.img_metadata["im_counter"] = f"{self.frame_count:0{self.digits}d}"
@@ -771,7 +783,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.mscope.predictions_handler.parsed_tensor
             )
 
-            self.cell_counts += class_counts
+            self.raw_cell_count += class_counts
 
             try:
                 self.density_routine.send(class_counts)
@@ -786,6 +798,9 @@ class ScopeOp(QObject, NamedMachine):
                     ),
                 )
                 return
+
+        # Deskew results with confusion matrix correction
+        self.deskewed_cell_count = self.stats_utils.calc_deskewed_counts(self.raw_cell_count)
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
@@ -867,7 +882,7 @@ class ScopeOp(QObject, NamedMachine):
             "syringe_pos"
         ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
         self.img_metadata["flowrate"] = self.flowrate
-        self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
+        self.img_metadata["raw_healthy_count"] = self.raw_cell_count[0]
         self.img_metadata["focus_error"] = raw_focus_err
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment

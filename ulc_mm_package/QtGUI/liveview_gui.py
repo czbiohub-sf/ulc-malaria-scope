@@ -125,21 +125,22 @@ class LiveviewGUI(QMainWindow):
         self.img_count_val.setText(f"{img_count} / {MAX_FRAMES}")
 
     @pyqtSlot(ClassCountResult)
-    def update_cell_count(self, cell_count: ClassCountResult):
+    def update_cell_count(self, cell_counts: ClassCountResult):
+
         # TODO add the rest of the cell types (can probably ignore misc?)
-        healthy_cell_count = cell_count[YOGO_CLASS_IDX_MAP["healthy"]]
-        ring_cell_count = cell_count[YOGO_CLASS_IDX_MAP["ring"]]
-        troph_cell_count = cell_count[YOGO_CLASS_IDX_MAP["trophozoite"]]
-        schiz_cell_count = cell_count[YOGO_CLASS_IDX_MAP["schizont"]]
+        healthy_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["healthy"]]
+        ring_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["ring"]]
+        troph_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["trophozoite"]]
+        schiz_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["schizont"]]
 
         # 'x or y' syntax means 'x if x is "truthy" else y'
         # x is "truthy" if bool(x) == True
         # so in this case, if the cell count == 0, bool(0) == False,
         # so we get string '---'
-        healthy_count_str = f"{healthy_cell_count or '---'}"
-        ring_count_str = f"{ring_cell_count or '---'}"
-        troph_count_str = f"{troph_cell_count or '---'}"
-        schiz_count_str = f"{schiz_cell_count or '---'}"
+        healthy_count_str = f"{int(healthy_cell_count) or '---'}"
+        ring_count_str = f"{int(ring_cell_count) or '---'}"
+        troph_count_str = f"{int(troph_cell_count) or '---'}"
+        schiz_count_str = f"{int(schiz_cell_count) or '---'}"
 
         self.healthy_count_val.setText(healthy_count_str)
         self.ring_count_val.setText(ring_count_str)

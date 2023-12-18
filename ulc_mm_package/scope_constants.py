@@ -168,7 +168,7 @@ PER_IMAGE_METADATA_KEYS = [
     "focus_error",
     "filtered_focus_error",
     "focus_adjustment",
-    "cell_count_cumulative",
+    "raw_healthy_count",
     "temperature",
     "camera_temperature",
     "humidity",

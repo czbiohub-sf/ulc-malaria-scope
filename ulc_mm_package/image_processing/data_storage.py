@@ -64,8 +64,9 @@ def write_img(img: np.ndarray, filepath: Path):
 
 
 class DataStorage:
-    def __init__(self, default_fps: Optional[float] = None):
+    def __init__(self, stats_utils, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
+        self.stats_utils = stats_utils
         self.zw = ZarrWriter()
         self.md_writer: Optional[csv.DictWriter] = None
         self.metadata_file: Optional[io.TextIOWrapper] = None
@@ -310,8 +311,11 @@ class DataStorage:
                 except Exception as e:
                     self.logger.error(f"Failed to make yogo objectness plots - {e}")
 
-            # Get cell counts and % parasitemia
-            cell_counts = get_class_counts(pred_tensors)
+            # Get cell counts
+            raw_cell_counts = get_class_counts(pred_tensors)
+            # Apply confusion matrix correction
+            cell_counts = self.stats_utils.calc_deskewed_counts(raw_cell_counts)
+            # Calculate % parasitemia
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
             }
@@ -376,6 +380,10 @@ class DataStorage:
                 writer.writerow(class_name_to_cell_count.keys())
                 writer.writerow(class_name_to_cell_count.values())
             shutil.copy(cell_count_loc, DESKTOP_CELL_COUNT_DIR)
+            
+            # Print stats results
+            stats_str = self.stats_utils.get_all_stats_str(cell_counts)
+            self.logger.info(stats_str)
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
