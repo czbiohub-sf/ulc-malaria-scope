@@ -34,6 +34,7 @@ from ulc_mm_package.scope_constants import (
     RBCS_PER_UL,
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
+    DESKTOP_CELL_COUNT_DIR,
     CSS_FILE_NAME,
     DEBUG_REPORT,
 )
@@ -214,13 +215,19 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self, pred_tensors: Optional[npt.NDArray] = None) -> Optional[Future]:
+    def close(
+        self,
+        pred_tensors: Optional[npt.NDArray] = None,
+        heatmap: Optional[npt.NDArray] = None,
+    ) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
         Parameters
         ----------
         pred_tensors: Optional[npt.NDArray]
             Parsed predictions tensors from PredictionsHandler()
+        heatmap: Optional[npt.NDArray]
+            Heatmap from PredictionsHandler()
 
         Returns
         -------
@@ -241,7 +248,11 @@ class DataStorage:
 
         if pred_tensors is not None and pred_tensors.size > 0:
             self.logger.info("> Saving prediction tensors...")
-            self.save_parsed_prediction_tensors(pred_tensors)
+            self.save_npy_arr("parsed_prediction_tensors", pred_tensors)
+
+            if heatmap is not None:
+                self.logger.info("> Saving heatmap array...")
+                self.save_npy_arr("heatmap", heatmap)
 
             self.logger.info("> Saving subset of parasite thumbnails to disk...")
             class_to_thumbnails_path: Dict[
@@ -328,7 +339,7 @@ class DataStorage:
                 self.time_str,
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
-                total_rbcs,
+                max(1, total_rbcs),  # Account for potential div-by-zero
                 class_name_to_cell_count,
                 perc_parasitemia,
                 parasites_per_ul,
@@ -359,6 +370,18 @@ class DataStorage:
                 remove(conf_plot_loc)
                 remove(objectness_plot_loc)
 
+            # Write to a separate csv with just cell counts for each class
+            self.logger.info("Writing cell counts to csv...")
+            cell_count_loc = (
+                self.get_experiment_path() / f"{self.time_str}_cell_counts.csv"
+            )
+            with open(f"{cell_count_loc}", "w") as f:
+                writer = csv.writer(f)
+                writer.writerow(class_name_to_cell_count.keys())
+                writer.writerow(class_name_to_cell_count.values())
+            shutil.copy(cell_count_loc, DESKTOP_CELL_COUNT_DIR)
+            
+            # Print stats results
             stats_str = self.stats_utils.get_all_stats_str(cell_counts)
             self.logger.info(stats_str)
 
@@ -403,31 +426,23 @@ class DataStorage:
         storage_remaining_gb = cls._get_remaining_storage_size_GB(ssd_dir)
         return storage_remaining_gb > MIN_GB_REQUIRED
 
-    def save_parsed_prediction_tensors(self, pred_tensors: npt.NDArray) -> None:
-        """Save the predictions tensor (np.ndarray) containing
-        the parsed prediction tensors for each image.
-
-        The shape of this tensor is (8+NUM_CLASSES) x TOTAL_NUM_PREDICTIONS, for example if there
-        are 4 classes that YOGO predicts, this array would be (12 x N).
-
-        For details on what the indices correspond to, see `parse_prediction_tensor` in `neural_nets/utils.py`
+    def save_npy_arr(self, fn: str, arr: npt.NDArray) -> None:
+        """Save the given numpy array with the given filename.
+        The datetime string will be prepended automatically to the filename.
 
         Parameters
         ----------
-        pred_tensors: List[npt.NDArray]
-            The list of parsed prediction tensors from PredictionsHandler()
+        filename: str
+        arr: npt.NDArray
+            The numpy array to save
         """
 
         assert self.main_dir is not None, "DataStorage has not been initialized"
         try:
-            filename = (
-                self.main_dir
-                / self.experiment_folder
-                / f"{self.time_str}_parsed_prediction_tensors"
-            )
-            np.save(filename, pred_tensors.astype(np.float32))
+            filename = self.main_dir / self.experiment_folder / f"{self.time_str}_{fn}"
+            np.save(filename, arr.astype(np.float32))
         except Exception as e:
-            self.logger.error(f"Error saving prediction tensors. {e}")
+            self.logger.error(f"Error saving {filename}: {e}")
 
     def save_uniform_sample(self) -> None:
         """Extract and save a uniform random sample of images from the currently active Zarr store.
