@@ -18,8 +18,8 @@ Note: this section may become obsolete once we transition to a 64-bit OS. For no
 
 ```
 sudo apt install llvm-11
-LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
-LLVM_CONFIG=llvm-config-11 pip install numba==0.56.0
+export LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
+pip install numba==0.56.0
 ```
 
 ### Install ulc-malaria-scope
