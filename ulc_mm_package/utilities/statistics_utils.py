@@ -171,7 +171,7 @@ class StatsUtils():
         class_strings = [
             self.get_class_stats_str(
                 class_name,
-                deskewed_count[class_idx],
+                deskewed_counts[class_idx],
                 percent_errs[class_idx],
             )
             for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
