@@ -40,6 +40,12 @@ class StatsUtils():
         else:
             return deskewed_floats
 
+    def calc_parasitemia(self, deskewed_counts: npt.NDArray) -> float:
+        """
+        Return total parasitemia count
+        """
+        return np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS]) / deskewed_counts[0]
+
             
     def calc_parasitemia_rel_err(self, rel_errs: npt.NDArray, deskewed_counts: npt.NDArray) -> float:
         """
@@ -48,12 +54,9 @@ class StatsUtils():
         # Filter for parasite classes only
         parasite_rel_errs = rel_errs[ASEXUAL_PARASITE_CLASS_IDS]
 
-        # Compute parasitemia
-        parasitemia = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS]) / deskewed_counts[0]
-
         # Compute error
         parasitemia_abs_err = sqrt(np.sum(np.square(parasite_rel_errs)))
-        parasitemia_rel_err = parasitemia_abs_err / parasitemia
+        parasitemia_rel_err = parasitemia_abs_err / self.calc_parasitemia(deskewed_counts)
         return parasitemia_rel_err
 
 
