@@ -12,8 +12,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_INV_CMATRIX_STD_DIR,
 )
 
-# TODO dummy define above constants to run in ipython
-# TODO rewrite supplementary note in more detail
 
 class StatsUtils():
     def __init__(self):
