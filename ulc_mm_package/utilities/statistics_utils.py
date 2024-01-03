@@ -41,14 +41,20 @@ class StatsUtils():
             return deskewed_floats
 
             
-    def calc_parasitemia_rel_err(self, rel_errs: npt.NDArray) -> float:
+    def calc_parasitemia_rel_err(self, rel_errs: npt.NDArray, deskewed_counts: npt.NDArray) -> float:
         """
         Return relative uncertainty of total parasitemia count
         """
         # Filter for parasite classes only
         parasite_rel_errs = rel_errs[ASEXUAL_PARASITE_CLASS_IDS]
 
-        return sqrt(np.sum(np.square(parasite_rel_errs)))
+        # Compute parasitemia
+        parasitemia = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS]) / deskewed_counts[0]
+
+        # Compute error
+        parasitemia_abs_err = sqrt(np.sum(np.square(parasite_rel_errs)))
+        parasitemia_rel_err = parasitemia_abs_err / parasitemia
+        return parasitemia_rel_err
 
 
     def calc_total_rel_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
