@@ -27,10 +27,10 @@ YOGO_MODEL_DIR = str(
     curr_dir / "yogo_model_files" / "fine-voice-1816" / "fine-voice-1816-quarter.xml"
 )
 YOGO_CMATRIX_MEAN_DIR = str(
-    curr_dir / "yogo_model_files" / "fine-voice-1816" / "frightful-wendigo-1931-cmatrix-mean.npy"
+    curr_dir / "yogo_model_files" / "fine-voice-1816" / "classic-bird-1980-cmatrix-mean.npy.npy"
 )
-YOGO_CMATRIX_STD_DIR = str(
-    curr_dir / "yogo_model_files" / "fine-voice-1816" / "frightful-wendigo-1931-cmatrix-std.npy"
+YOGO_INV_CMATRIX_STD_DIR = str(
+    curr_dir / "yogo_model_files" / "fine-voice-1816" / "classic-bird-1980-inverse-cmatrix-std.npy.npy"
 )
 
 YOGO_CLASS_LIST: Tuple[str, ...] = (
