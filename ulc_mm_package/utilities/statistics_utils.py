@@ -44,7 +44,9 @@ class StatsUtils():
         """
         Return total parasitemia count
         """
-        return np.sum(deskewed_counts[[YOGO_CLASS_IDX_MAP["healthy"]] + ASEXUAL_PARASITE_CLASS_IDS]) / deskewed_counts[0]
+        parasites = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])
+        RBCs = np.sum(deskewed_counts[[YOGO_CLASS_IDX_MAP["healthy"]] + ASEXUAL_PARASITE_CLASS_IDS])
+        return parasites / RBCs
 
             
     def calc_parasitemia_rel_err(self, rel_errs: npt.NDArray, deskewed_counts: npt.NDArray) -> float:
