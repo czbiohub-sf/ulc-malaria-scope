@@ -83,27 +83,31 @@ class StatsUtils():
         """
         Return absolute uncertainty of each class count based on Poisson statistics only
         """
-        RBC_count = np.sum(deskewed_counts[RBC_CLASS_IDS])
+        sqrt_counts = np.sqrt(deskewed_counts)
 
-        if RBC_count < 1:
-            return 0
-        
-        return np.sqrt(deskewed_counts) / RBC_count
+        return np.divide(
+                    1, 
+                    sqrt_counts, 
+                    out=np.zeros(sqrt_counts.shape, dtype=deskewed_counts.dtype),
+                    where=~np.isclose(sqrt_counts, 0)
+                )
 
 
     def calc_rel_deskew_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return absolute uncertainty of each class count based on deskewing only
         """
-        RBC_count = np.sum(deskewed_counts[RBC_CLASS_IDS])
+        # Use ratio of class composition to avoid overflow 
+        divided_deskewed_counts = np.divide(
+                                1, 
+                                deskewed_counts, 
+                                out=np.zeros(deskewed_counts.shape, dtype=deskewed_counts.dtype),
+                                where=~np.isclose(deskewed_counts, 0)
+                            )
+        class_ratios = np.outer(divided_deskewed_counts, raw_counts)
 
-        # Use ratio of class composition to avoid overflow  
-        class_ratios = raw_counts / RBC_count
-
-        if RBC_count < 1:
-            return 0
-            
-        return np.matmul(np.square(class_ratios), np.square(self.inv_cmatrix_std))
+        product = np.matmul(np.square(class_ratios), np.square(self.inv_cmatrix_std))
+        return np.sqrt(np.diagonal(product))
 
 
     def get_class_stats_str(
