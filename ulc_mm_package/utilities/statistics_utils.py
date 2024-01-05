@@ -81,7 +81,7 @@ class StatsUtils():
 
     def calc_rel_poisson_errs(self, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
-        Return absolute uncertainty of each class count based on Poisson statistics only
+        Return relative uncertainty of each class count based on Poisson statistics only
         NOTE: Relative uncertainty is scaled by sum of parasite classes
         """
         parasite_count = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])
@@ -94,7 +94,7 @@ class StatsUtils():
 
     def calc_rel_deskew_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
-        Return absolute uncertainty of each class count based on deskewing only
+        Return relative uncertainty of each class count based on deskewing only
         NOTE: Relative uncertainty is scaled by sum of parasite classes
         """
         parasite_count = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])
