@@ -7,6 +7,7 @@ from math import sqrt
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_IDX_MAP,
     YOGO_CLASS_LIST,
+    RBC_CLASS_IDS,
     ASEXUAL_PARASITE_CLASS_IDS,
     YOGO_CMATRIX_MEAN_DIR,
     YOGO_INV_CMATRIX_STD_DIR,
@@ -45,7 +46,7 @@ class StatsUtils():
         Return total parasitemia count
         """
         parasites = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])
-        RBCs = np.sum(deskewed_counts[[YOGO_CLASS_IDX_MAP["healthy"]] + ASEXUAL_PARASITE_CLASS_IDS])
+        RBCs = np.sum(deskewed_counts[RBC_CLASS_IDS])
         return parasites / RBCs
 
             
@@ -62,7 +63,7 @@ class StatsUtils():
         return parasitemia_rel_err
 
 
-    def calc_total_rel_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
+    def calc_class_rel_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return relative uncertainty of each class count based on deskewing and Poisson statistics
         """
@@ -82,31 +83,27 @@ class StatsUtils():
         """
         Return absolute uncertainty of each class count based on Poisson statistics only
         """
-        sqrt_counts = np.sqrt(deskewed_counts)
+        RBC_count = np.sum(deskewed_counts[RBC_CLASS_IDS])
 
-        return np.divide(
-                    1, 
-                    sqrt_counts, 
-                    out=np.zeros(sqrt_counts.shape, dtype=deskewed_counts.dtype),
-                    where=~np.isclose(sqrt_counts, 0)
-                )
+        if RBC_count < 1:
+            return 0
+        
+        return np.sqrt(deskewed_counts) / RBC_count
 
 
     def calc_rel_deskew_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return absolute uncertainty of each class count based on deskewing only
         """
-        # Use ratio of class composition to avoid overflow 
-        divided_deskewed_counts = np.divide(
-                                1, 
-                                deskewed_counts, 
-                                out=np.zeros(deskewed_counts.shape, dtype=deskewed_counts.dtype),
-                                where=~np.isclose(deskewed_counts, 0)
-                            )
-        class_ratios = np.outer(divided_deskewed_counts, raw_counts)
+        RBC_count = np.sum(deskewed_counts[RBC_CLASS_IDS])
 
-        product = np.matmul(np.square(class_ratios), np.square(self.inv_cmatrix_std))
-        return np.sqrt(np.diagonal(product))
+        # Use ratio of class composition to avoid overflow  
+        class_ratios = raw_counts / RBC_count
+
+        if RBC_count < 1:
+            return 0
+            
+        return np.matmul(np.square(class_ratios), np.square(self.inv_cmatrix_std))
 
 
     def get_class_stats_str(
@@ -140,7 +137,7 @@ class StatsUtils():
         deskewed_counts = self.calc_deskewed_counts(raw_counts, int_out=False)
         
         # Get uncertainty
-        rel_errs = self.calc_total_rel_errs(raw_counts, deskewed_counts)
+        rel_errs = self.calc_class_rel_errs(raw_counts, deskewed_counts)
         percent_errs = np.multiply(rel_errs, 100)
 
         template_string = "Class results: Count (%% uncertainty)\n"
