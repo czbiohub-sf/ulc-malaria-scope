@@ -86,8 +86,8 @@ class StatsUtils():
         """
         parasite_count = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])
 
-        if parasite_count < 1:
-            return np.zeros(self.matrix_dim)
+        # if parasite_count < 1:
+        #     return np.zeros(self.matrix_dim)
 
         return np.sqrt(deskewed_counts) / parasite_count
 
@@ -98,14 +98,18 @@ class StatsUtils():
         NOTE: Relative uncertainty is scaled by sum of parasite classes
         """
         parasite_count = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])
+        RBC_count = np.sum(deskewed_counts[RBC_CLASS_IDS])
 
-        if parasite_count < 1:
-            return np.zeros(self.matrix_dim)
+        # if parasite_count < 0.001:
+        #     return np.zeros(self.matrix_dim)
 
-        # Use ratio of class composition to avoid overflow  
-        class_ratios = raw_counts / parasite_count
+        # Use ratio of class relative to RBC count to avoid overflow  
+        class_ratios = raw_counts / RBC_count
+        unscaled_err = np.matmul(np.square(class_ratios), np.square(self.inv_cmatrix_std))
 
-        return np.matmul(np.square(class_ratios), np.square(self.inv_cmatrix_std))
+        # TODO test this
+        # Replace scaling with parasite count instead of RBC count
+        return unscaled_err * RBC_count **2 / parasite_count **2
 
 
     def get_class_stats_str(
