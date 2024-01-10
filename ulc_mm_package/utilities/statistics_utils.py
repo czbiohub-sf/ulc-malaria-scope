@@ -49,37 +49,37 @@ class StatsUtils():
         return parasites / RBCs
 
             
-    def calc_parasitemia_rel_err(self, count_errs: npt.NDArray, deskewed_counts: npt.NDArray) -> float:
+    def calc_parasitemia_rel_err(self, count_vars: npt.NDArray, deskewed_counts: npt.NDArray) -> float:
         """
         Return relative uncertainty of total parasitemia count
         See remoscope manuscript for full derivation
         """
         # Filter for parasite classes only
-        parasite_count_errs = count_errs[ASEXUAL_PARASITE_CLASS_IDS]
+        parasite_count_vars = count_vars[ASEXUAL_PARASITE_CLASS_IDS]
         parasite_count = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])
 
         # Compute error
-        return np.sqrt(np.sum(np.square(parasite_count_errs))) / parasite_count
+        return np.sqrt(np.sum(parasite_count_vars)) / parasite_count
 
 
-    def calc_class_count_errs(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
+    def calc_class_count_vars(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
         """
         Return absolute uncertainty of each class count based on deskewing and Poisson statistics
         See remoscope manuscript for full derivation
         """
-        poisson_terms = self.calc_poisson_count_err_term(raw_counts)
-        deskew_terms = self.calc_deskew_count_err_terms(raw_counts)
+        poisson_terms = self.calc_poisson_count_var_terms(raw_counts)
+        deskew_terms = self.calc_deskew_count_var_terms(raw_counts)
 
-        errs = np.sqrt(poisson_errs + deskew_errs)
+        class_vars = poisson_errs + deskew_errs
 
         print(f"POISSON {poisson_terms[ASEXUAL_PARASITE_CLASS_IDS]}")
         print(f"DESKEW {deskew_terms[ASEXUAL_PARASITE_CLASS_IDS]}")
-        print(f"REL {errs[ASEXUAL_PARASITE_CLASS_IDS]}")
+        print(f"REL {class_vars[ASEXUAL_PARASITE_CLASS_IDS]}")
 
-        return errs
+        return class_vars
 
 
-    def calc_poisson_count_err_term(self, raw_counts: npt.NDArray) -> npt.NDArray:
+    def calc_poisson_count_var_terms(self, raw_counts: npt.NDArray) -> npt.NDArray:
         """
         Return absolute uncertainty term of each class count based on Poisson statistics
         See remoscope manuscript for full derivation
@@ -87,7 +87,7 @@ class StatsUtils():
         return np.matmul(raw_counts, np.square(self.inv_cmatrix))
 
 
-    def calc_deskew_count_err_terms(self, raw_counts: npt.NDArray) -> npt.NDArray:
+    def calc_deskew_count_var_terms(self, raw_counts: npt.NDArray) -> npt.NDArray:
         """
         Return absolute uncertainty term of each class count based on deskewing
         See remoscope manuscript for full derivation
@@ -136,8 +136,8 @@ class StatsUtils():
         deskewed_counts = self.calc_deskewed_counts(raw_counts, int_out=False)
         
         # Get uncertainty
-        rel_errs = self.calc_class_count_errs(raw_counts, deskewed_counts)
-        percent_errs = np.multiply(rel_errs, 100)
+        rel_vars = self.calc_class_count_vars(raw_counts, deskewed_counts)
+        percent_errs = np.multiply(np.sqrt(reL_vars), 100)
 
         template_string = "Class results: Count (%% uncertainty)\n"
         class_strings = [
