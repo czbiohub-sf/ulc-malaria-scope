@@ -2,7 +2,6 @@ import numpy as np
 import numpy.typing as npt
 
 from ulc_mm_package.neural_nets.neural_network_constants import (
-    YOGO_CLASS_IDX_MAP,
     YOGO_CLASS_LIST,
     RBC_CLASS_IDS,
     ASEXUAL_PARASITE_CLASS_IDS,
@@ -139,10 +138,10 @@ class StatsUtils:
         base_string = f"\n\tParasitemia: {parasitemia:.3g} ({parasitemia_unc:.3g}% uncertainty)\n\tCompensated class counts:\n"
         class_strings = [
             self.get_class_stats_str(
-                class_name,
+                YOGO_CLASS_LIST[class_idx],
                 deskewed_counts[class_idx],
                 percent_errs[class_idx],
             )
-            for class_name, class_idx in YOGO_CLASS_IDX_MAP[ASEXUAL_PARASITE_CLASS_IDS].items()
+            for class_idx in ASEXUAL_PARASITE_CLASS_IDS
         ]
         return base_string + "".join(class_strings)
