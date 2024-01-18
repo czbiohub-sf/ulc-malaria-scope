@@ -25,7 +25,7 @@ class StatsUtils():
         self.inv_cmatrix = np.linalg.inv(norm_cmatrix)
 
 
-    def calc_deskewed_counts(self, raw_counts: npt.NDArray, int_out: bool = True) -> npt.NDArray:
+    def calc_deskewed_counts(self, raw_counts: npt.NDArray) -> npt.NDArray:
         """
         Deskew raw counts using inverse confusion matrix. Optional parameters
         
@@ -49,11 +49,14 @@ class StatsUtils():
         return parasites / RBCs
 
             
-    def calc_parasitemia_rel_err(self, count_vars: npt.NDArray, deskewed_counts: npt.NDArray) -> float:
+    def calc_parasitemia_rel_err(self, raw_counts: npt.NDArray) -> float:
         """
         Return relative uncertainty of total parasitemia count
         See remoscope manuscript for full derivation
         """
+        deskewed_counts = self.calc_deskewed_counts(raw_counts)
+        count_vars = self.calc_class_count_vars(raw_counts, deskewed_counts)
+
         # Filter for parasite classes only
         parasite_count_vars = count_vars[ASEXUAL_PARASITE_CLASS_IDS]
         parasite_count = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])

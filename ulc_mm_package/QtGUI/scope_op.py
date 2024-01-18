@@ -257,7 +257,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def update_infopanel(self):
         if self.state == "experiment":
-            self.update_cell_count.emit(self.deskewed_cell_count)
+            self.update_cell_count.emit(self.raw_cell_count)
             self.update_runtime.emit(self._get_experiment_runtime())
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
@@ -740,10 +740,8 @@ class ScopeOp(QObject, NamedMachine):
 
         # Check if parasitemia uncertainty is low enough to end experiment
         t0 = perf_counter()
-        rel_vars = self.stats_utils.calc_class_count_vars(self.raw_cell_count, self.deskewed_cell_count)
-        parasite_count = np.sum(self.deskewed_cell_count[ASEXUAL_PARASITE_CLASS_IDS])
-        parasitemia_err = self.stats_utils.calc_parasitemia_rel_err(rel_vars, self.deskewed_cell_count)
-        if parasite_count > 0 and parasitemia_err < PARASITEMIA_UNCERTAINTY_THRESHOLD:
+        parasitemia_err = self.stats_utils.calc_parasitemia_rel_err(self.raw_cell_count)
+        if parasitemia_err < PARASITEMIA_UNCERTAINTY_THRESHOLD:
             if self.state == "experiment":
                 self.to_intermission(
                     f"Ending experiment since parasitemia uncertainty has dropped below {int(PARASITEMIA_UNCERTAINTY_THRESHOLD*100)}% threshold."
