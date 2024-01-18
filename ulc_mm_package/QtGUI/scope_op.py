@@ -738,18 +738,6 @@ class ScopeOp(QObject, NamedMachine):
                 )
             return
 
-        # Check if parasitemia uncertainty is low enough to end experiment
-        t0 = perf_counter()
-        parasitemia_err = self.stats_utils.calc_parasitemia_rel_err(self.raw_cell_count)
-        if parasitemia_err < PARASITEMIA_UNCERTAINTY_THRESHOLD:
-            if self.state == "experiment":
-                self.to_intermission(
-                    f"Ending experiment since parasitemia uncertainty has dropped below {int(PARASITEMIA_UNCERTAINTY_THRESHOLD*100)}% threshold."
-                )
-            return
-        t1 = perf_counter()
-        print(f"ERR: {parasitemia_err}, TIME: {t1-t0}") # TODO delete this
-
         # Record timestamp before running routines
         self.img_metadata["timestamp"] = timestamp
         self.img_metadata["im_counter"] = f"{self.frame_count:0{self.digits}d}"
