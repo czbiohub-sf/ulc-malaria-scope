@@ -13,7 +13,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 )
 
 
-class StatsUtils():
+class StatsUtils:
     def __init__(self):
         self.matrix_dim = len(YOGO_CLASS_LIST)
 
@@ -24,11 +24,10 @@ class StatsUtils():
         # Compute inverse
         self.inv_cmatrix = np.linalg.inv(norm_cmatrix)
 
-
     def calc_deskewed_counts(self, raw_counts: npt.NDArray) -> npt.NDArray:
         """
         Deskew raw counts using inverse confusion matrix. Optional parameters
-        
+
         Returns list of deskewed cell counts. that are whole number integers (ie. no negative vals)
         """
         deskewed_floats = np.matmul(raw_counts, self.inv_cmatrix)
@@ -48,7 +47,6 @@ class StatsUtils():
         RBCs = np.sum(deskewed_counts[RBC_CLASS_IDS])
         return parasites / RBCs
 
-            
     def calc_parasitemia_rel_err(self, raw_counts: npt.NDArray) -> float:
         """
         Return relative uncertainty of total parasitemia count
@@ -64,8 +62,9 @@ class StatsUtils():
         # Compute error
         return np.sqrt(np.sum(parasite_count_vars)) / parasite_count
 
-
-    def calc_class_count_vars(self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray) -> npt.NDArray:
+    def calc_class_count_vars(
+        self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray
+    ) -> npt.NDArray:
         """
         Return absolute uncertainty of each class count based on deskewing and Poisson statistics
         See remoscope manuscript for full derivation
@@ -81,14 +80,12 @@ class StatsUtils():
 
         return class_vars
 
-
     def calc_poisson_count_var_terms(self, raw_counts: npt.NDArray) -> npt.NDArray:
         """
         Return absolute uncertainty term of each class count based on Poisson statistics
         See remoscope manuscript for full derivation
         """
         return np.matmul(raw_counts, np.square(self.inv_cmatrix))
-
 
     def calc_deskew_count_var_terms(self, raw_counts: npt.NDArray) -> npt.NDArray:
         """
@@ -99,14 +96,13 @@ class StatsUtils():
         # # TODO does division by 0 cause error?
         # RBC_count = np.sum(raw_counts[RBC_CLASS_IDS])
 
-        # # Use ratio of class relative to RBC count to avoid overflow  
+        # # Use ratio of class relative to RBC count to avoid overflow
         # class_ratios = raw_counts / RBC_count
         # unscaled_err = np.matmul(np.square(class_ratios), np.square(self.inv_cmatrix_std))
 
-        # return unscaled_err * RBC_count **2 
+        # return unscaled_err * RBC_count **2
 
         return np.matmul(np.square(raw_counts), np.square(self.inv_cmatrix_std))
-
 
     def get_class_stats_str(
         self,
@@ -118,7 +114,6 @@ class StatsUtils():
         Return results string with statistics for individual class
         """
         return f"\t{name.upper()}: {int(deskewed_count)} ({percent_err:.3g}%% uncertainty)\n"
-
 
     def get_all_stats_str(
         self,
@@ -137,7 +132,7 @@ class StatsUtils():
 
         # Deskew
         deskewed_counts = self.calc_deskewed_counts(raw_counts)
-        
+
         # Get parasitemia results
         parasitemia = self.calc_parasitemia(deskewed_counts)
         parasitemia_unc = self.calc_parasitemia_rel_err(raw_counts)
