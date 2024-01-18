@@ -748,7 +748,7 @@ class ScopeOp(QObject, NamedMachine):
                 )
             return
         t1 = perf_counter()
-        print(f"ERR: {parasitemia_err}, TIME: {t1-t0}") # TODO delete this
+        print(f"ERR: {parasitemia_err}, TIME: {t1-t0}")  # TODO delete this
 
         # Record timestamp before running routines
         self.img_metadata["timestamp"] = timestamp
@@ -798,7 +798,9 @@ class ScopeOp(QObject, NamedMachine):
                 return
 
         # Deskew results with confusion matrix correction
-        self.deskewed_cell_count = self.stats_utils.calc_deskewed_counts(self.raw_cell_count)
+        self.deskewed_cell_count = self.stats_utils.calc_deskewed_counts(
+            self.raw_cell_count
+        )
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)

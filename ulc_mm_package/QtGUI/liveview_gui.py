@@ -126,7 +126,6 @@ class LiveviewGUI(QMainWindow):
 
     @pyqtSlot(ClassCountResult)
     def update_cell_count(self, cell_counts: ClassCountResult):
-
         # TODO add the rest of the cell types (can probably ignore misc?)
         healthy_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["healthy"]]
         ring_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["ring"]]

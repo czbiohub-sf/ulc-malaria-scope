@@ -380,7 +380,7 @@ class DataStorage:
                 writer.writerow(class_name_to_cell_count.keys())
                 writer.writerow(class_name_to_cell_count.values())
             shutil.copy(cell_count_loc, DESKTOP_CELL_COUNT_DIR)
-            
+
             # Print stats results
             stats_str = self.stats_utils.get_all_stats_str(cell_counts)
             self.logger.info(stats_str)
