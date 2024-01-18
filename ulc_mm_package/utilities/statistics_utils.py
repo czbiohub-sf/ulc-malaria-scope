@@ -107,7 +107,7 @@ class StatsUtils:
         """
         Return results string with statistics for individual class
         """
-        return f"\t{name.upper()}: {int(deskewed_count)} ({percent_err:.3g}% uncertainty)\n"
+        return f"\t\t{name.upper()}: {int(deskewed_count)} ({percent_err:.3g}% uncertainty)\n"
 
     def get_all_stats_str(
         self,
