@@ -34,10 +34,7 @@ class StatsUtils:
         # Round all negative values to 0
         deskewed_floats[deskewed_floats < 0] = 0
 
-        if int_out:
-            return np.rint(deskewed_floats)
-        else:
-            return deskewed_floats
+        return deskewed_floats
 
     def calc_parasitemia(self, deskewed_counts: npt.NDArray) -> float:
         """
@@ -72,7 +69,7 @@ class StatsUtils:
         poisson_terms = self.calc_poisson_count_var_terms(raw_counts)
         deskew_terms = self.calc_deskew_count_var_terms(raw_counts)
 
-        class_vars = poisson_errs + deskew_errs
+        class_vars = poisson_terms + deskew_terms
 
         print(f"POISSON {poisson_terms[ASEXUAL_PARASITE_CLASS_IDS]}")
         print(f"DESKEW {deskew_terms[ASEXUAL_PARASITE_CLASS_IDS]}")
@@ -139,7 +136,7 @@ class StatsUtils:
 
         # Get uncertainties
         rel_vars = self.calc_class_count_vars(raw_counts, deskewed_counts)
-        percent_errs = np.multiply(np.sqrt(reL_vars), 100)
+        percent_errs = np.multiply(np.sqrt(rel_vars), 100)
 
         base_string = f"Parasitemia: {parasitemia} ({parasitemia_unc}%% uncertainty)\nCompensated class counts:\n"
         class_strings = [
