@@ -51,7 +51,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
-    ASEXUAL_PARASITE_CLASS_IDS,
     AF_BATCH_SIZE,
 )
 
@@ -60,7 +59,6 @@ import ulc_mm_package.neural_nets.utils as nn_utils
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
-    PARASITEMIA_UNCERTAINTY_THRESHOLD,
     ERROR_BEHAVIORS,
 )
 from ulc_mm_package.scope_constants import (

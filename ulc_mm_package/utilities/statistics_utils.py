@@ -1,8 +1,6 @@
 import numpy as np
 import numpy.typing as npt
 
-from typing import List, Union
-
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_IDX_MAP,
     YOGO_CLASS_LIST,
