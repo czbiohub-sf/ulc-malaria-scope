@@ -117,7 +117,7 @@ class StatsUtils():
         """
         Return results string with statistics for individual class
         """
-        return f"\t{name.upper()}: {int(deskewed_count)} ({percent_err:.3g}%%)\n"
+        return f"\t{name.upper()}: {int(deskewed_count)} ({percent_err:.3g}%% uncertainty)\n"
 
 
     def get_all_stats_str(
@@ -136,13 +136,17 @@ class StatsUtils():
         """
 
         # Deskew
-        deskewed_counts = self.calc_deskewed_counts(raw_counts, int_out=False)
+        deskewed_counts = self.calc_deskewed_counts(raw_counts)
         
-        # Get uncertainty
+        # Get parasitemia results
+        parasitemia = self.calc_parasitemia(deskewed_counts)
+        parasitemia_unc = self.calc_parasitemia_rel_err(raw_counts)
+
+        # Get uncertainties
         rel_vars = self.calc_class_count_vars(raw_counts, deskewed_counts)
         percent_errs = np.multiply(np.sqrt(reL_vars), 100)
 
-        template_string = "Class results: Count (%% uncertainty)\n"
+        base_string = f"Parasitemia: {parasitemia} ({parasitemia_unc}%% uncertainty)\nCompensated class counts:\n"
         class_strings = [
             self.get_class_stats_str(
                 class_name,
@@ -151,4 +155,4 @@ class StatsUtils():
             )
             for class_name, class_idx in YOGO_CLASS_IDX_MAP.items()
         ]
-        return template_string + "".join(class_strings)
+        return base_string + "".join(class_strings)
