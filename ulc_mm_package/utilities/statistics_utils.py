@@ -68,10 +68,6 @@ class StatsUtils:
 
         class_vars = poisson_terms + deskew_terms
 
-        print(f"POISSON {poisson_terms[ASEXUAL_PARASITE_CLASS_IDS]}")
-        print(f"DESKEW {deskew_terms[ASEXUAL_PARASITE_CLASS_IDS]}")
-        print(f"REL {class_vars[ASEXUAL_PARASITE_CLASS_IDS]}")
-
         return class_vars
 
     def calc_poisson_count_var_terms(self, raw_counts: npt.NDArray) -> npt.NDArray:
@@ -142,6 +138,7 @@ class StatsUtils:
                 deskewed_counts[class_idx],
                 percent_errs[class_idx],
             )
+            #for class_idx in [0, 1, 2, 3, 4, 5, 6]
             for class_idx in ASEXUAL_PARASITE_CLASS_IDS
         ]
         return base_string + "".join(class_strings)
