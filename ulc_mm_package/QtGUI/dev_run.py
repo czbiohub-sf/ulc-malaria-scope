@@ -1193,8 +1193,6 @@ if __name__ == "__main__":
         text = input("Enter 'y' to continue anyway, or enter to exit: ")
         if text != "y":
             sys.exit(1)
-        else:
-            open(LOCKFILE, "w")
     else:
         open(LOCKFILE, "w")
 
