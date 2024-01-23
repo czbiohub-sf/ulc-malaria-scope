@@ -39,7 +39,7 @@ THUMBNAIL_SPACING = 5
 
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
-SITE_LIST = ["Tororo, Uganda", "Biohub SF", "DeRisi Lab"]
+SITE_LIST = ["Tororo, Uganda", "Masafu, Uganda", "Biohub SF", "DeRisi Lab"]
 
 # ================ Experiment timeout period ================ #
 TIMEOUT_PERIOD_M = 20  # minutes
