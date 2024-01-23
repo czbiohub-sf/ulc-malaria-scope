@@ -1,6 +1,8 @@
 import numpy as np
 import numpy.typing as npt
 
+from typing import List, Tuple
+
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     RBC_CLASS_IDS,
@@ -32,6 +34,26 @@ class StatsUtils:
         deskewed_floats[deskewed_floats < 0] = 0
 
         return deskewed_floats
+
+    def calc_parasitemia_95_conf_bounds(
+        self, count_vars: npt.NDArray, deskewed_counts: npt.NDArray
+    ) -> Tuple[float, List[float]]:
+        """
+        Return 95% confidence bound for parasitemia
+        See remoscope manuscript for full derivation
+        """
+        parasitemia = self.calc_parasitemia_rel_err(count_vars, deskewed_counts)
+
+        # Use rule of 3 if there are no parasites
+        if parasitemia == 0:
+            bounds = 3 / deskewed_counts[YOGO_CLASS_IDX_MAP["healthy"]]
+        else:
+            bounds = 3 * self.calc_parasitemia_rel_err(count_vars, deskewed_counts)
+
+        lower_bound = max(0, parasitemia - bounds)
+        upper_bound = min(1, parasitemia + bounds)
+
+        return parasitemia, [lower_bound, upper_bound]
 
     def calc_parasitemia(self, deskewed_counts: npt.NDArray) -> float:
         """
@@ -122,23 +144,22 @@ class StatsUtils:
 
         # Deskew
         deskewed_counts = self.calc_deskewed_counts(raw_counts)
-
-        # Get parasitemia results
-        parasitemia = self.calc_parasitemia(deskewed_counts)
-        parasitemia_unc = self.calc_parasitemia_rel_err(raw_counts)
-
+        
         # Get uncertainties
         rel_vars = self.calc_class_count_vars(raw_counts, deskewed_counts)
         percent_errs = np.multiply(np.sqrt(rel_vars), 100)
 
-        base_string = f"\n\tParasitemia: {parasitemia:.3g} ({parasitemia_unc:.3g}% uncertainty)\n\tCompensated class counts:\n"
+        # Get parasitemia results
+        parasitemia, conf_bounds = self.calc_parasitemia_95_conf_bounds(rel_vars, deskewed_counts)
+
+        parasitemia_string = f"\n\tParasitemia: {parasitemia*100:.3g} (95% confidence bound = {conf_bounds[0]*100:.3g}%-{conf_bounds[1]*100:.3g}%)\n"
+        template_string = f"\tCompensated class counts:\n"
         class_strings = [
             self.get_class_stats_str(
                 YOGO_CLASS_LIST[class_idx],
                 deskewed_counts[class_idx],
                 percent_errs[class_idx],
             )
-            #for class_idx in [0, 1, 2, 3, 4, 5, 6]
             for class_idx in ASEXUAL_PARASITE_CLASS_IDS
         ]
-        return base_string + "".join(class_strings)
+        return parasitemia_string + template_string + "".join(class_strings)
