@@ -1190,7 +1190,11 @@ if __name__ == "__main__":
         print(
             f"Terminating run. Lockfile ({LOCKFILE}) exists, so scope is locked while another run is in progress."
         )
-        sys.exit(1)
+        text = input("Enter 'y' to continue anyway, or enter to exit: ")
+        if text != "y":
+            sys.exit(1)
+        else:
+            open(LOCKFILE, "w")
     else:
         open(LOCKFILE, "w")
 
