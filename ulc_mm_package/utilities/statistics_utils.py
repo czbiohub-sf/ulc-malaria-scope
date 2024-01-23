@@ -48,7 +48,7 @@ class StatsUtils:
         if parasitemia == 0:
             bounds = 3 / deskewed_counts[YOGO_CLASS_IDX_MAP["healthy"]]
         else:
-            bounds = 3 * self.calc_parasitemia_rel_err(count_vars, deskewed_counts)
+            bounds = 1.69 * self.calc_parasitemia_rel_err(count_vars, deskewed_counts)
 
         lower_bound = max(0, parasitemia - bounds)
         upper_bound = min(1, parasitemia + bounds)
