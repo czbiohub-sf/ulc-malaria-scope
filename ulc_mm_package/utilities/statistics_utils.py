@@ -11,6 +11,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_INV_CMATRIX_STD_DIR,
 )
 
+# TODO rerun early termination
 
 class StatsUtils:
     def __init__(self):
@@ -61,7 +62,7 @@ class StatsUtils:
         """
         parasites = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])
         RBCs = np.sum(deskewed_counts[RBC_CLASS_IDS])
-        return parasites / RBCs
+        return 0 if RBCs == 0 else parasites / RBCs
 
     def calc_parasitemia_rel_err(self, raw_counts: npt.NDArray) -> float:
         """
@@ -76,7 +77,7 @@ class StatsUtils:
         parasite_count = np.sum(deskewed_counts[ASEXUAL_PARASITE_CLASS_IDS])
 
         # Compute error
-        return np.sqrt(np.sum(parasite_count_vars)) / parasite_count
+        return np.inf if parasite_count == 0 else np.sqrt(np.sum(parasite_count_vars)) / parasite_count
 
     def calc_class_count_vars(
         self, raw_counts: npt.NDArray, deskewed_counts: npt.NDArray

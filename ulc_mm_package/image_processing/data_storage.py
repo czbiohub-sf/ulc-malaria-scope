@@ -314,24 +314,17 @@ class DataStorage:
             # Get cell counts
             raw_cell_counts = get_class_counts(pred_tensors)
             # Apply confusion matrix correction
-            cell_counts = self.stats_utils.calc_deskewed_counts(raw_cell_counts)
-            # Calculate % parasitemia
+            deskewed_cell_counts = self.stats_utils.calc_deskewed_counts(raw_cell_counts)
+            count_vars = self.calc_class_count_vars(raw_cell_counts, deskewed_counts)
+            # Associate class with counts
             class_name_to_cell_count = {
-                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
+                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, deskewed_cell_counts)
             }
-            num_parasites = sum([cell_counts[i] for i in ASEXUAL_PARASITE_CLASS_IDS])
-            total_rbcs = cell_counts[0] + num_parasites
-            perc_parasitemia = (
-                "0.0000"
-                if total_rbcs == 0
-                else f"{(100 * num_parasites / total_rbcs):.4f}"
-            )
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            parasites_per_ul = (
-                "0.0"
-                if total_rbcs == 0
-                else f"{RBCS_PER_UL*(num_parasites / total_rbcs):.1f}"
-            )
+            frac_parasitemia, conf_bounds = stats_utils.calc_parasitemia_95_conf_bounds(count_vars, deskewed_cell_counts)
+            parasites_per_ul = (f"{RBCS_PER_UL*frac_parasitemia:.1f}")
+
+            # TODO add confidence bounds
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
@@ -341,7 +334,7 @@ class DataStorage:
                 per_image_metadata_plot_save_loc,
                 max(1, total_rbcs),  # Account for potential div-by-zero
                 class_name_to_cell_count,
-                perc_parasitemia,
+                frac_parasitemia*100,
                 parasites_per_ul,
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
@@ -382,7 +375,7 @@ class DataStorage:
             shutil.copy(cell_count_loc, DESKTOP_CELL_COUNT_DIR)
 
             # Print stats results
-            stats_str = self.stats_utils.get_all_stats_str(cell_counts)
+            stats_str = self.stats_utils.get_all_stats_str(deskewed_cell_counts)
             self.logger.info(stats_str)
 
         self.logger.info("> Closing zarr image store...")
