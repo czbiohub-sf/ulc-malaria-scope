@@ -74,11 +74,11 @@
             {% endfor %}
             <tr>
                 <td>% Parasitemia (asexual stages only)</td>
-                <td>{{perc_parasitemia}}%</td>
+                <td>{{perc_parasitemia}}% +/- {perc_parasitemia_err} to 95% confidence</td>
             </tr>
             <tr>
                 <td>Parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
-                <td>{{parasites_per_ul}}</td>
+                <td>{{parasites_per_ul}} +/- {parasites_per_ul_err} to 95% confidence</td>
             </tr>
         </table>
 

@@ -321,8 +321,11 @@ class DataStorage:
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, deskewed_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            frac_parasitemia, conf_bounds = stats_utils.calc_parasitemia_95_conf_bounds(count_vars, deskewed_cell_counts)
+            frac_parasitemia, conf_bound = stats_utils.calc_parasitemia_95_conf_err(count_vars, deskewed_cell_counts)
+            perc_parasitemia = (f"{100*frac_parasitemia:.1f}")
+            perc_parasitemia_err = (f"{100*conf_bound:.1f}")
             parasites_per_ul = (f"{RBCS_PER_UL*frac_parasitemia:.1f}")
+            parasites_per_ul_err = (f"{RBCS_PER_UL*conf_bound:.1f}")
 
             # TODO add confidence bounds
 
@@ -334,8 +337,10 @@ class DataStorage:
                 per_image_metadata_plot_save_loc,
                 max(1, total_rbcs),  # Account for potential div-by-zero
                 class_name_to_cell_count,
-                frac_parasitemia*100,
+                perc_parasitemia,
+                perc_parasitemia_err,
                 parasites_per_ul,
+                parasites_per_ul_err,
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,

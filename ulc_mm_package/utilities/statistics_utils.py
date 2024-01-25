@@ -36,7 +36,7 @@ class StatsUtils:
 
         return deskewed_floats
 
-    def calc_parasitemia_95_conf_bounds(
+    def calc_parasitemia_95_conf_err(
         self, count_vars: npt.NDArray, deskewed_counts: npt.NDArray
     ) -> Tuple[float, List[float]]:
         """
@@ -47,14 +47,16 @@ class StatsUtils:
 
         # Use rule of 3 if there are no parasites
         if parasitemia == 0:
-            bounds = 3 / deskewed_counts[YOGO_CLASS_IDX_MAP["healthy"]]
+            bound = 3 / deskewed_counts[YOGO_CLASS_IDX_MAP["healthy"]]
         else:
-            bounds = 1.69 * self.calc_parasitemia_rel_err(count_vars, deskewed_counts)
+            bound = 1.69 * self.calc_parasitemia_rel_err(count_vars, deskewed_counts)
 
-        lower_bound = max(0, parasitemia - bounds)
-        upper_bound = min(1, parasitemia + bounds)
+        return parasitemia, bound
 
-        return parasitemia, [lower_bound, upper_bound]
+        # lower_bound = max(0, parasitemia - bounds)
+        # upper_bound = min(1, parasitemia + bounds)
+
+        # return parasitemia, [lower_bound, upper_bound]
 
     def calc_parasitemia(self, deskewed_counts: npt.NDArray) -> float:
         """
@@ -151,7 +153,7 @@ class StatsUtils:
         percent_errs = np.multiply(np.sqrt(rel_vars), 100)
 
         # Get parasitemia results
-        parasitemia, conf_bounds = self.calc_parasitemia_95_conf_bounds(rel_vars, deskewed_counts)
+        parasitemia, conf_bounds = self.calc_parasitemia_95_conf_err(rel_vars, deskewed_counts)
 
         parasitemia_string = f"\n\tParasitemia: {parasitemia*100:.3g} (95% confidence bound = {conf_bounds[0]*100:.3g}%-{conf_bounds[1]*100:.3g}%)\n"
         template_string = f"\tCompensated class counts:\n"
