@@ -57,3 +57,4 @@ To use developer mode, navigate to ulc_mm_package/QtGUI and run `python3 dev_run
 4. Data processing utilities / model evaluations: https://github.com/czbiohub-sf/lfm-data-utilities/
 5. Dataset definitions (sets of files defining which datasets to use for training/testing, etc.): https://github.com/czbiohub-sf/lfm-dataset-definitions/tree/main
 6. Thumbnail labels (stored on flexo, backed up to this repository): https://github.com/czbiohub-sf/lfm-human-labels
+7. Statistics utilities: https://github.com/czbiohub-sf/remo-stats-utils
