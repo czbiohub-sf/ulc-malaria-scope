@@ -86,6 +86,7 @@ class NamedMachine(Machine):
 class ScopeOp(QObject, NamedMachine):
     setup_done = pyqtSignal()
     experiment_done = pyqtSignal(str)
+    show_completion_dialog = pyqtSignal()
     reset_done = pyqtSignal()
 
     yield_mscope = pyqtSignal(MalariaScope)
@@ -458,6 +459,9 @@ class ScopeOp(QObject, NamedMachine):
 
     def _end_experiment(self, *args):
         self.shutoff()
+
+        # Show user a completion dialog while processing is finished
+        self.show_completion_dialog.emit()
 
         # Turn off camera
         self.mscope.camera.stopAcquisition()

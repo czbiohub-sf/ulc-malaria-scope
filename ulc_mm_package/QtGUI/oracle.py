@@ -303,6 +303,7 @@ class Oracle(Machine):
 
         self.scopeop.reload_pause.connect(self.reload_pause_handler)
         self.scopeop.lid_open_pause.connect(self.lid_open_pause_handler)
+        self.scopeop.show_completion_dialog.connect(self.experiment_complete_handler)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -376,6 +377,14 @@ class Oracle(Machine):
         if self.scopeop.state not in NO_PAUSE_STATES:
             self.scopeop.to_pause()
             self.unpause()
+
+    def experiment_complete_handler(self):
+        self.display_message(
+            QMessageBox.ICon.Information,
+            "Experiment complete"
+            "Image acquisition complete. Please allow up to two minutes for processing to finish.",
+            buttons=Buttons.OK
+        )
 
     def general_pause_handler(
         self,
