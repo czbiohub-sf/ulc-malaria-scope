@@ -383,7 +383,7 @@ class Oracle(Machine):
             QMessageBox.ICon.Information,
             "Experiment complete"
             "Image acquisition complete. Please allow up to two minutes for processing to finish.",
-            buttons=Buttons.OK
+            buttons=Buttons.OK,
         )
 
     def general_pause_handler(
