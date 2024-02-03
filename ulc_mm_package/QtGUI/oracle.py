@@ -381,7 +381,7 @@ class Oracle(Machine):
     def experiment_complete_handler(self):
         self.display_message(
             icon=QMessageBox.Icon.Information,
-            title="Experiment complete"
+            title="Experiment complete",
             text="Image acquisition complete. Please allow up to two minutes for processing to finish.",
             buttons=Buttons.OK,
         )
