@@ -87,6 +87,7 @@ class ScopeOp(QObject, NamedMachine):
     setup_done = pyqtSignal()
     experiment_done = pyqtSignal(str)
     show_completion_dialog = pyqtSignal()
+    update_completion_progress = pyqtSignal(int)
     reset_done = pyqtSignal()
 
     yield_mscope = pyqtSignal(MalariaScope)
@@ -466,6 +467,8 @@ class ScopeOp(QObject, NamedMachine):
         # Turn off camera
         self.mscope.camera.stopAcquisition()
 
+        self.update_completion_progress(10)
+
         runtime = self._get_experiment_runtime()
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
@@ -473,6 +476,8 @@ class ScopeOp(QObject, NamedMachine):
         def _save_yogo_results():
             for result in self.mscope.cell_diagnosis_model.get_asyn_results():
                 self.mscope.predictions_handler.add_yogo_pred(result)
+
+        self.update_completion_progress(20)
 
         # the ThreadPoolExecutor work queue may be really big - so as the NCS
         # is chugging along, lets do some work by adding it's results to the
@@ -482,10 +487,14 @@ class ScopeOp(QObject, NamedMachine):
             f"Waiting for {num_images_leftover} images to be processed by the NCS"
         )
 
+        self.update_completion_progress(30)
+
         t0 = perf_counter()
 
         while self.mscope.cell_diagnosis_model.work_queue_size() > 0:
             _save_yogo_results()
+
+        self.update_completion_progress(40)
 
         # once the ThreadPoolExecutor work queue is done, the NCS is still
         # processing images (up to 4 images). Lets wait for them, and then
@@ -498,6 +507,8 @@ class ScopeOp(QObject, NamedMachine):
         self.logger.info(
             f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
         )
+
+        self.update_completion_progress(50)
 
         pred_counter = self.mscope.predictions_handler.new_pred_pointer
         if pred_counter != 0:
@@ -516,10 +527,14 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.logger.info(stats_string)
 
+        self.update_completion_progress(70)
+
         self.mscope.reset_for_end_experiment()
 
         # Turn camera back on
         self.mscope.camera.startAcquisition()
+
+        self.update_completion_progress(100)
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)

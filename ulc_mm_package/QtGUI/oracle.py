@@ -26,8 +26,11 @@ from pathlib import Path
 
 from PyQt5.QtWidgets import (
     QApplication,
-    QMessageBox,
+    QDialog,
     QLabel,
+    QMessageBox,
+    QProgressBar,
+    QVBoxLayout,
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
@@ -104,6 +107,30 @@ class NoCloseMessageBox(QMessageBox):
             event.accept()
 
 
+class NonblockingDialogBox(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.message_label = QLabel("")
+        layout = QVBoxLayout()
+        layout.addWidget(self.messageLabel)
+        self.setLayout(layout)
+
+        self.progressBar = QProgressBar()
+        self.progressBar.setMaximum(100)
+
+        # Disable [x] button (this doesn't work on all raspian images!)
+        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
+
+    # In case the [x] button can't be disabled, this prevents the window from closing when it's clicked
+    def closeEvent(self, event):
+        if event.spontaneous():
+            event.ignore()
+        else:
+            event.accept()
+
+
 class Oracle(Machine):
     def __init__(self):
         self.shutoff_done = False
@@ -113,6 +140,9 @@ class Oracle(Machine):
 
         # Instantiate message dialog
         self.message_window = NoCloseMessageBox()
+
+        # Instantiate nonblocking dialog box
+        self.nonblocking_dialog = NonblockingDialogBox()
 
         # Setup SSD
         self._init_ssd()
@@ -304,6 +334,9 @@ class Oracle(Machine):
         self.scopeop.reload_pause.connect(self.reload_pause_handler)
         self.scopeop.lid_open_pause.connect(self.lid_open_pause_handler)
         self.scopeop.show_completion_dialog.connect(self.experiment_complete_handler)
+        self.scopeop.update_completion_progress.connect(
+            self.update_nonblocking_display_progressbar
+        )
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -379,12 +412,7 @@ class Oracle(Machine):
             self.unpause()
 
     def experiment_complete_handler(self):
-        self.display_message(
-            icon=QMessageBox.Icon.Information,
-            title="Experiment complete",
-            text="Image acquisition complete. Please allow up to two minutes for processing to finish.",
-            buttons=Buttons.OK,
-        )
+        self.display_non_blocking_message()
 
     def general_pause_handler(
         self,
@@ -499,6 +527,34 @@ class Oracle(Machine):
             else:
                 if self.scopeop.state == "fastflow":
                     self.scopeop.next_state()
+
+    def display_non_blocking_message(
+        self,
+        title: str = "Image acquisition complete",
+        text="Image acquisition complete, please allow up to two minutes for processing to finish.",
+    ):
+        try:
+            self.nonblocking_dialog.close()
+        except Exception as e:
+            self.logger.warning(
+                f"Attempted to close nonblocking dialog box but ran into an error: {e}"
+            )
+
+        self.nonblocking_dialog = NonblockingDialogBox()
+        self.nonblocking_dialog.setWindowIcon(QIcon(ICON_PATH))
+        self.nonblocking_dialog.setWindowTitle(title)
+        self.nonblocking_dialog.message_label.setText(text)
+
+    def update_nonblocking_display_progressbar(self, val):
+        self.nonblocking_dialog.progressBar.setValue(val)
+
+        if val == 100:
+            try:
+                self.nonblocking_dialog.close()
+            except Exception as e:
+                self.logger.warning(
+                    f"Attempted to close nonblocking dialog box but ran into an error: {e}"
+                )
 
     def display_message(
         self,
