@@ -312,7 +312,7 @@ class LiveviewGUI(QMainWindow):
 
         self.end_of_run_progress_bar = QProgressBar()
         self.end_of_run_progress_bar.setTextVisible(True)
-        self.end_of_run_progress_bar.setFormat("Finishing analysis, please wait")
+        self.end_of_run_progress_bar.setFormat("Completing experiment, please wait")
         self.end_of_run_progress_bar.setValue(0)
 
         self.pause_btn = QPushButton("Pause")
