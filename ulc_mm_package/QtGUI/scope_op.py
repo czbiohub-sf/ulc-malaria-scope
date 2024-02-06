@@ -109,6 +109,8 @@ class ScopeOp(QObject, NamedMachine):
     update_state = pyqtSignal(str)
     update_msg = pyqtSignal(str)
 
+    finishing_experiment = pyqtSignal(int)
+
     update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(float)
 
@@ -459,6 +461,8 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
+        self.finishing_experiment.emit(5)
+
         # Turn off camera
         self.mscope.camera.stopAcquisition()
 
@@ -466,9 +470,13 @@ class ScopeOp(QObject, NamedMachine):
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
+        self.finishing_experiment.emit(10)
+
         def _save_yogo_results():
             for result in self.mscope.cell_diagnosis_model.get_asyn_results():
                 self.mscope.predictions_handler.add_yogo_pred(result)
+
+        self.finishing_experiment.emit(15)
 
         # the ThreadPoolExecutor work queue may be really big - so as the NCS
         # is chugging along, lets do some work by adding it's results to the
@@ -483,6 +491,8 @@ class ScopeOp(QObject, NamedMachine):
         while self.mscope.cell_diagnosis_model.work_queue_size() > 0:
             _save_yogo_results()
 
+        self.finishing_experiment.emit(20)
+
         # once the ThreadPoolExecutor work queue is done, the NCS is still
         # processing images (up to 4 images). Lets wait for them, and then
         # process them in the same way.
@@ -494,6 +504,8 @@ class ScopeOp(QObject, NamedMachine):
         self.logger.info(
             f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
         )
+
+        self.finishing_experiment.emit(25)
 
         pred_counter = self.mscope.predictions_handler.new_pred_pointer
         if pred_counter != 0:
@@ -512,10 +524,14 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.logger.info(stats_string)
 
+        self.finishing_experiment.emit(90)
+
         self.mscope.reset_for_end_experiment()
 
         # Turn camera back on
         self.mscope.camera.startAcquisition()
+
+        self.finishing_experiment.emit(100)
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)
