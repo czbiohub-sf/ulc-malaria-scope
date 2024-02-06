@@ -113,7 +113,7 @@ class NonblockingDialogBox(QDialog):
 
         self.message_label = QLabel("")
         layout = QVBoxLayout()
-        layout.addWidget(self.messageLabel)
+        layout.addWidget(self.message_label)
         self.setLayout(layout)
 
         self.progressBar = QProgressBar()
