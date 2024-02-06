@@ -356,6 +356,10 @@ class LiveviewGUI(QMainWindow):
         self.flowrate_title.setAlignment(Qt.AlignCenter)
         self.tcp_lbl.setAlignment(Qt.AlignCenter)
         self.end_of_run_progress_bar.setAlignment(Qt.AlignCenter)
+        self.end_of_run_progress_bar.setStyleSheet("QProgressBar::chunk "
+                          "{"
+                          "background-color: green;"
+                          "}")
 
         # Setup column size
         self.pause_btn.setFixedWidth(120)
