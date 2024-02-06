@@ -133,7 +133,7 @@ class LiveviewGUI(QMainWindow):
 
     def update_progress_bar(self, val: int):
         self.end_of_run_progress_bar.setValue(val)
-        
+
     @pyqtSlot(int)
     def update_img_count(self, img_count):
         self.img_count_val.setText(f"{img_count} / {MAX_FRAMES}")
@@ -356,10 +356,9 @@ class LiveviewGUI(QMainWindow):
         self.flowrate_title.setAlignment(Qt.AlignCenter)
         self.tcp_lbl.setAlignment(Qt.AlignCenter)
         self.end_of_run_progress_bar.setAlignment(Qt.AlignCenter)
-        self.end_of_run_progress_bar.setStyleSheet("QProgressBar::chunk "
-                          "{"
-                          "background-color: green;"
-                          "}")
+        self.end_of_run_progress_bar.setStyleSheet(
+            "QProgressBar::chunk " "{" "background-color: green;" "}"
+        )
 
         # Setup column size
         self.pause_btn.setFixedWidth(120)

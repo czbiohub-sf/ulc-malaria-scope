@@ -317,8 +317,10 @@ class Oracle(Machine):
         self.scopeop.update_flowrate.connect(self.liveview_window.update_flowrate)
         self.scopeop.update_focus.connect(self.liveview_window.update_focus)
 
-        self.scopeop.finishing_experiment.connect(self.liveview_window.hide_state_label_show_progress_bar)
-        
+        self.scopeop.finishing_experiment.connect(
+            self.liveview_window.hide_state_label_show_progress_bar
+        )
+
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition.update_infopanel.connect(self.scopeop.update_infopanel)
