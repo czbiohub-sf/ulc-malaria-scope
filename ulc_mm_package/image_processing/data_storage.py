@@ -22,7 +22,7 @@ from ulc_mm_package.image_processing.processing_constants import (
 )
 from ulc_mm_package.neural_nets.utils import (
     get_class_counts,
-    save_parasite_thumbnails_to_disk,
+    save_thumbnails_to_disk,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     ASEXUAL_PARASITE_CLASS_IDS,
@@ -253,10 +253,10 @@ class DataStorage:
                 self.logger.info("> Saving heatmap array...")
                 self.save_npy_arr("heatmap", heatmap)
 
-            self.logger.info("> Saving subset of parasite thumbnails to disk...")
-            class_to_thumbnails_path: Dict[
-                str, Path
-            ] = save_parasite_thumbnails_to_disk(
+            self.logger.info(
+                "> Saving subset of healthy and parasite thumbnails to disk..."
+            )
+            class_to_thumbnails_path: Dict[str, Path] = save_thumbnails_to_disk(
                 self.zw.array, pred_tensors, self.get_experiment_path()
             )
 
