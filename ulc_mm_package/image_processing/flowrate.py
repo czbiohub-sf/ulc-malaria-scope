@@ -256,8 +256,8 @@ def get_flowrate_with_cross_correlation(
     # If debug mode is on, run `plot_cc` which saves images of the cross-correlation calculation.
     if debug:
         plot_cc(
-            im1_ds,
-            im2_ds,
+            prev_img,
+            next_img,
             im1_ds_subregion,
             template_result,
             (x_offset[0], y_offset[0]),
