@@ -159,12 +159,6 @@ class FlowRateEstimator:
         self.multiproc_interface.stop()
 
 
-def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
-    """Downsamples an image by `scale_factor`"""
-    h, w = img.shape
-    return cv2.resize(img, (w // scale_factor, h // scale_factor))
-
-
 def get_template_region(
     img: np.ndarray,
     x1_perc: float = 0.05,
@@ -210,7 +204,6 @@ def get_template_region(
 def get_flowrate_with_cross_correlation(
     prev_img: np.ndarray,
     next_img: np.ndarray,
-    scale_factor: int = 10,
     temp_x1_perc: float = 0.05,
     temp_y1_perc: float = 0.05,
     temp_x2_perc: float = 0.85,
@@ -225,8 +218,6 @@ def get_flowrate_with_cross_correlation(
             First image
         next_img: np.ndarray
             Subsequent imag
-        scale_factor : int
-            Factor to use for downsampling the images
         temp_x1_perc : float
             What percentage of the image the start of the subregion should begin at.
             For example, x1_perc=0.05 of an input image with shape (600, 800) would mean the
@@ -247,17 +238,16 @@ def get_flowrate_with_cross_correlation(
         float:
             max_val: maximum value of the cross correlation
     """
-    im1_ds, im2_ds = downsample_image(prev_img, scale_factor), downsample_image(
-        next_img, scale_factor
-    )
 
     # Select the subregion within the first image by defining which quantiles to use
     im1_ds_subregion, x_offset, y_offset = get_template_region(
-        im1_ds, temp_x1_perc, temp_y1_perc, temp_x2_perc, temp_y2_perc
+        prev_img, temp_x1_perc, temp_y1_perc, temp_x2_perc, temp_y2_perc
     )
 
     # Run a normalized cross correlation between the image to search and subregion
-    template_result = cv2.matchTemplate(im2_ds, im1_ds_subregion, cv2.TM_CCOEFF_NORMED)
+    template_result = cv2.matchTemplate(
+        next_img, im1_ds_subregion, cv2.TM_CCOEFF_NORMED
+    )
 
     # Find the point with the maximum value (i.e highest match) and caclulate the displacement
     _, max_val, _, max_loc = cv2.minMaxLoc(template_result)

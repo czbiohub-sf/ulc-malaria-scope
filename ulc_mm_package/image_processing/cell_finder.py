@@ -4,6 +4,7 @@ import numpy as np
 from typing import List, Optional
 
 
+from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.image_processing.processing_constants import (
     RBC_THUMBNAIL_PATH,
     CELLS_FOUND_THRESHOLD,
@@ -11,13 +12,6 @@ from ulc_mm_package.image_processing.processing_constants import (
 )
 
 RBC_THUMBNAIL = cv2.imread(RBC_THUMBNAIL_PATH, 0)
-
-
-def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
-    """Downsamples an image by `scale_factor`"""
-
-    h, w = img.shape
-    return cv2.resize(img, (w // scale_factor, h // scale_factor))
 
 
 def get_correlation_map(

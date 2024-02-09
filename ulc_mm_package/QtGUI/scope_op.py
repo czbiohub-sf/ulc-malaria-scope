@@ -20,6 +20,7 @@ from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 from ulc_mm_package.hardware.scope_routines import Routines
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
+from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.scope_constants import (
     PER_IMAGE_METADATA_KEYS,
     SIMULATION,
@@ -840,9 +841,12 @@ class ScopeOp(QObject, NamedMachine):
             self.filtered_focus_err = filtered_focus_err
 
         t0 = perf_counter()
+
+        # Downsample image for use in flowrate + classic image focus metric
+        img_ds_10x = downsample_image(img, 10)
         try:
             if not self.flowrate_error_raised:
-                self.flowrate = self.flowcontrol_routine.send((img, timestamp))
+                self.flowrate = self.flowcontrol_routine.send((img_ds_10x, timestamp))
         except CantReachTargetFlowrate as e:
             self.flowrate_error_raised = True
             self.logger.warning(

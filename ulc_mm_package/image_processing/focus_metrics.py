@@ -3,6 +3,12 @@ import numpy as np
 import cv2
 
 
+def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
+    """Downsamples an image by `scale_factor`"""
+    h, w = img.shape
+    return cv2.resize(img, (w // scale_factor, h // scale_factor))
+
+
 def logPowerSpectrumRadialAverageSum(img):
     def radial_average(data):
         data = data / np.max(data)
