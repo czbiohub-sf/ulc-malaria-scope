@@ -41,7 +41,7 @@ class ClassicImageFocus:
 
         self.a = ewma_alpha
         self.cutoff_thresh = cutoff_thresh
-        self.EWMA = EWMAFiltering()
+        self.EWMA = EWMAFiltering(self.a)
 
         init_metric = custom_gradient_average(init_img)
         self.EWMA.set_init_val(init_metric)
