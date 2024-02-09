@@ -2,17 +2,25 @@ import numpy.typing as npt
 
 from ulc_mm_package.image_processing.focus_metrics import custom_gradient_average
 from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
-from ulc_mm_package.image_processing.processing_constants import CLASSIC_FOCUS_EWMA_ALPHA, METRIC_RATIO_CUTOFF
+from ulc_mm_package.image_processing.processing_constants import (
+    CLASSIC_FOCUS_EWMA_ALPHA,
+    METRIC_RATIO_CUTOFF,
+)
+
 
 class OOF(Exception):
     def __init__(self, curr_best: int, curr_metric: int):
-        msg = (
-            f"Image metric dropped from {curr_best:.3f} to {curr_metric:.3f} ({curr_metric/curr_best:.3f})%"
-        )
+        msg = f"Image metric dropped from {curr_best:.3f} to {curr_metric:.3f} ({curr_metric/curr_best:.3f})%"
         super().__init__(f"{msg}")
 
-class ClassicImageFocus():
-    def __init__(self, init_img: npt.NDArray, ewma_alpha: float = CLASSIC_FOCUS_EWMA_ALPHA, cutoff_thresh: float = METRIC_RATIO_CUTOFF):
+
+class ClassicImageFocus:
+    def __init__(
+        self,
+        init_img: npt.NDArray,
+        ewma_alpha: float = CLASSIC_FOCUS_EWMA_ALPHA,
+        cutoff_thresh: float = METRIC_RATIO_CUTOFF,
+    ):
         """Classic focus metric controller.
 
         This class takes in an image and calculates gradient average. It adds this to an EWMA filter
