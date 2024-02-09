@@ -162,21 +162,13 @@ class ScopeOp(QObject, NamedMachine):
                 "name": "autobrightness_postcells",
                 "display_name": "autobrightness (post-cells)",
                 "on_enter": [self._send_state, self._start_autobrightness],
-            },
-            {
-                "name": "post_cellfinder_init_classic_focus",
-                "display_name": "classic_focus (post-cellfinder)",
-                "on_enter": [self._send_state, self._init_classic_focus],
+                "on_exit": [self._init_classic_focus],
             },
             {
                 "name": "autofocus_preflow",
                 "display_name": "autofocus (pre-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
-            },
-            {
-                "name": "post_autofocus1_init_classic_focus",
-                "display_name": "classic_focus (post-autofocus1)",
-                "on_enter": [self._send_state, self._init_classic_focus],
+                "on_exit": [self._init_classic_focus],
             },
             {
                 "name": "fastflow",
@@ -187,11 +179,7 @@ class ScopeOp(QObject, NamedMachine):
                 "name": "autofocus_postflow",
                 "display_name": "autofocus (post-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
-            },
-            {
-                "name": "post_autofocus2_init_classic_focus",
-                "display_name": "init classic focus",
-                "on_enter": [self._send_state, self._init_classic_focus],
+                "on_exit": [self._init_classic_focus],
             },
             {
                 "name": "experiment",
@@ -233,6 +221,7 @@ class ScopeOp(QObject, NamedMachine):
     def _set_exp_variables(self):
         self.running = None
         self.lid_opened = None
+        self.autofocus_done = False
 
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
@@ -461,7 +450,18 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.connect(self.run_fastflow)
 
     def _init_classic_focus(self, *args):
-        self.img_signal.connect(self.init_classic_focus)
+        try:
+            if not hasattr(self, "classic_focus_routine"):
+                self.classic_focus_routine = self.routines.classic_focus_routine(
+                    downsample_image(self.last_img, 10)
+                )
+            else:
+                self.routines.classic_focus._check_and_update_metric(downsample_image(self.last_img, 10))
+        except Exception as e:
+            self.logger.error(
+                f"Iniitalizing ClassicFocus object failed: {e}. Critical error, exiting now."
+            )
+            raise
 
     def _start_experiment(self, *args):
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
@@ -574,6 +574,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}."
             )
+            self.last_img = img
             if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
                 self.next_state()
         except BrightnessTargetNotAchieved as e:
@@ -646,86 +647,66 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_signal.disconnect(self.run_autofocus)
 
-        if len(self.autofocus_batch) < AF_BATCH_SIZE:
-            resized_img = cv2.resize(
-                img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
-            )
-            self.autofocus_batch.append(resized_img)
-
-            if self.running:
-                self.img_signal.connect(self.run_autofocus)
-        else:
-            try:
-                if self.autofocus_results[0] is None:
-                    self.autofocus_results[
-                        0
-                    ] = self.routines.singleShotAutofocusRoutine(
-                        self.mscope, self.autofocus_batch
-                    )
-                    self.logger.info(
-                        f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
-                    )
-                    self.autofocus_batch = []
-
-                    # Wait for motor to stop moving
-                    while self.mscope.motor.is_locked():
-                        sleep(0.1)
-
-                    # Extra delay, to prevent any jitter from motor motion
-                    sleep(0.5)
-
-                    if self.running:
-                        self.img_signal.connect(self.run_autofocus)
-                else:
-                    self.autofocus_results[
-                        1
-                    ] = self.routines.singleShotAutofocusRoutine(
-                        self.mscope, self.autofocus_batch
-                    )
-                    self.logger.info(
-                        f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
-                    )
-                    self.autofocus_batch = []
-
-                    if self.state in {"autofocus_preflow", "autofocus_postflow"}:
-                        self.next_state()
-            except InvalidMove:
-                self.logger.error(
-                    "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
+        if not self.autofocus_done:
+            if len(self.autofocus_batch) < AF_BATCH_SIZE:
+                resized_img = cv2.resize(
+                    img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
                 )
-                self.default_error.emit(
-                    "Calibration failed",
-                    "Unable to achieve focus because the stage has reached its range of motion limit..",
-                    ERROR_BEHAVIORS.DEFAULT.value,
-                )
+                self.autofocus_batch.append(resized_img)
 
-    @pyqtSlot(np.ndarray, float)
-    def init_classic_focus(self, img, _):
-        if not self.running:
-            self.logger.info("Slot executed after experiment ended.")
-            return
-
-        self.img_signal.disconnect(self.init_classic_focus)
-
-        try:
-            if not hasattr(self, "classic_focus_routine"):
-                self.classic_focus_routine = self.routines.classic_focus_routine(
-                    downsample_image(img, 10)
-                )
+                if self.running:
+                    self.img_signal.connect(self.run_autofocus)
             else:
-                self.routines.classic_focus._check_and_update_metric(img)
-        except Exception as e:
-            self.logger.error(
-                f"Iniitalizing ClassicFocus object failed: {e}. Critical error, exiting now."
-            )
-            raise
+                try:
+                    if self.autofocus_results[0] is None:
+                        self.autofocus_results[
+                            0
+                        ] = self.routines.singleShotAutofocusRoutine(
+                            self.mscope, self.autofocus_batch
+                        )
+                        self.logger.info(
+                            f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
+                        )
+                        self.autofocus_batch = []
 
-        if self.state in {
-            "post_cellfinder_init_classic_focus",
-            "post_autofocus1_init_classic_focus",
-            "post_autofocus2_init_classic_focus",
-        }:
-            self.next_state()
+                        # Wait for motor to stop moving
+                        while self.mscope.motor.is_locked():
+                            sleep(0.1)
+
+                        # Extra delay, to prevent any jitter from motor motion
+                        sleep(0.5)
+
+                        if self.running:
+                            self.img_signal.connect(self.run_autofocus)
+                    else:
+                        self.autofocus_results[
+                            1
+                        ] = self.routines.singleShotAutofocusRoutine(
+                            self.mscope, self.autofocus_batch
+                        )
+                        self.logger.info(
+                            f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
+                        )
+                        self.autofocus_batch = []
+
+                        self.autofocus_done = True
+                        if self.running:
+                            self.img_signal.connect(self.run_autofocus)
+
+                except InvalidMove:
+                    self.logger.error(
+                        "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
+                    )
+                    self.default_error.emit(
+                        "Calibration failed",
+                        "Unable to achieve focus because the stage has reached its range of motion limit..",
+                        ERROR_BEHAVIORS.DEFAULT.value,
+                    )
+        else:
+            self.last_img = img
+            self.autofocus_done = False
+            if self.state in {"autofocus_preflow", "autofocus_postflow"}:
+                self.next_state()
 
     @pyqtSlot(np.ndarray, float)
     def run_fastflow(self, img, timestamp):
