@@ -37,6 +37,10 @@ DESIRED_FRAMES_PER_CELL = 2
 MS_PER_FRAME = 33
 TARGET_FLOWRATE = 1000 / (DESIRED_FRAMES_PER_CELL * MS_PER_FRAME)
 
+# ================ Classic image focus metric constants ================ #
+CLASSIC_FOCUS_EWMA_ALPHA = 0.1
+METRIC_RATIO_CUTOFF = 0.75
+
 # ================ Data storage constants ================ #
 if SIMULATION:
     MIN_GB_REQUIRED = 0.1  # 100 MB
