@@ -171,15 +171,15 @@ class Routines:
         self, init_img: np.ndarray
     ) -> Generator[float, np.ndarray, np.ndarray]:
         img_counter = 0
-        classic_focus = ClassicImageFocus(init_img)
+        self.classic_focus = ClassicImageFocus(init_img)
 
         while True:
-            img = yield classic_focus.curr_ratio
+            img = yield self.classic_focus.curr_ratio
             img_counter += 1
 
             if img_counter % processing_constants.CLASSIC_FOCUS_FRAME_THROTTLE == 0:
                 try:
-                    classic_focus.add_image(img)
+                    self.classic_focus.add_image(img)
                 except OOF:
                     raise
 

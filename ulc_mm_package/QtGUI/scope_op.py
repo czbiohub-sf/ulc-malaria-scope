@@ -164,9 +164,19 @@ class ScopeOp(QObject, NamedMachine):
                 "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
+                "name": "post_cellfinder_init_classic_focus",
+                "display_name": "classic_focus (post-cellfinder)",
+                "on_enter": [self._send_state, self._init_classic_focus],
+            },
+            {
                 "name": "autofocus_preflow",
                 "display_name": "autofocus (pre-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
+            },
+            {
+                "name": "post_autofocus1_init_classic_focus",
+                "display_name": "classic_focus (post-autofocus1)",
+                "on_enter": [self._send_state, self._init_classic_focus],
             },
             {
                 "name": "fastflow",
@@ -179,7 +189,7 @@ class ScopeOp(QObject, NamedMachine):
                 "on_enter": [self._send_state, self._start_autofocus],
             },
             {
-                "name": "init_classic_focus",
+                "name": "post_autofocus2_init_classic_focus",
                 "display_name": "init classic focus",
                 "on_enter": [self._send_state, self._init_classic_focus],
             },
@@ -698,16 +708,23 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.init_classic_focus)
 
         try:
-            self.classic_focus_routine = self.routines.classic_focus_routine(
-                downsample_image(img, 10)
-            )
+            if not hasattr(self, "classic_focus_routine"):
+                self.classic_focus_routine = self.routines.classic_focus_routine(
+                    downsample_image(img, 10)
+                )
+            else:
+                self.routines.classic_focus._check_and_update_metric(img)
         except Exception as e:
             self.logger.error(
                 f"Iniitalizing ClassicFocus object failed: {e}. Critical error, exiting now."
             )
             raise
 
-        if self.state == "init_classic_focus":
+        if self.state in {
+            "post_cellfinder_init_classic_focus",
+            "post_autofocus1_init_classic_focus",
+            "post_autofocus2_init_classic_focus",
+        }:
             self.next_state()
 
     @pyqtSlot(np.ndarray, float)
@@ -879,7 +896,7 @@ class ScopeOp(QObject, NamedMachine):
         # Downsample image for use in flowrate + classic image focus metric
         img_ds_10x = downsample_image(img, 10)
         try:
-            self.classic_focus_routine.add_image(img_ds_10x)
+            self.classic_focus_routine.send(img_ds_10x)
         except OOF:
             self.logger.warning(
                 "Strayed too far away from focus, transitioning to cell-finder."

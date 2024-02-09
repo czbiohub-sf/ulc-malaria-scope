@@ -61,3 +61,29 @@ class ClassicImageFocus:
 
         if self.curr_ratio < self.cutoff_thresh:
             raise OOF(self.curr_best, self.curr_metric)
+
+    def _check_and_update_metric(self, img: npt.NDArray):
+        """Only used during setup to avoid the possibility of ClassicImageFocus'
+        EWMA filtering being initialized with a poor value.
+
+        For example, imagine that cellfinder works poorly and finds cells, but places us well
+        away from focus. Then, we apply two rounds of SSAF (one before and one after fastflow).
+        If we initialized ClassicImageFocus after cellfinder, the inital focus metric will be low,
+        and therefore even if we really stray away from focus the ratio between the current metric
+        and the 'best seen' metric so far might still be above the cutoff threshold.
+
+        Now you might think, that's okay since we will feed in a couple more images once we run both autofocus both before and after fastflow,
+        and those will increase the "best seen focus metric so far". However, because we're EWMA filtering with, at the time of writing, an alpha=0.1,
+        this attenuates the contribution of those two other measurements.
+
+        So, we have this 'backdoor' function that allows us to reinitialize the EWMAFiltering with whichever of those three
+        (post-cellfinder, pre-fastflow autofocus, post-fastflow autofocus) is highest.
+        """
+
+        focus_metric = custom_gradient_average(img)
+        if focus_metric > self.curr_metric:
+            self.EWMA = EWMAFiltering(self.a)
+            self.EWMA.set_init_val(focus_metric)
+            self.curr_metric = self.EWMA.update_and_get_val(focus_metric)
+            self.curr_Ratio = 1.0
+            self._update()
