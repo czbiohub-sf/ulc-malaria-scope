@@ -38,7 +38,7 @@ def varianceOfLaplacian(img):
     return cv2.Laplacian(img, cv2.CV_64F).var()
 
 
-@njit
+@njit(cache=True)
 def get_diff(img: np.ndarray):
     img = np.asarray(img, dtype=np.float32)
     gx = np.zeros_like(img)
@@ -86,7 +86,7 @@ def get_diff(img: np.ndarray):
     return gy, gx
 
 
-@njit
+@njit(cache=True)
 def custom_gradient_average(img: np.ndarray):
     gx, gy = get_diff(img)
     img_max = np.max(img)
