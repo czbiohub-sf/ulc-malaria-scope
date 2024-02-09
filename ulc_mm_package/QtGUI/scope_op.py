@@ -456,7 +456,9 @@ class ScopeOp(QObject, NamedMachine):
                     downsample_image(self.last_img, 10)
                 )
             else:
-                self.routines.classic_focus._check_and_update_metric(downsample_image(self.last_img, 10))
+                self.routines.classic_focus._check_and_update_metric(
+                    downsample_image(self.last_img, 10)
+                )
         except Exception as e:
             self.logger.error(
                 f"Iniitalizing ClassicFocus object failed: {e}. Critical error, exiting now."
