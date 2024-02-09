@@ -20,6 +20,7 @@ from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 from ulc_mm_package.hardware.scope_routines import Routines
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
+from ulc_mm_package.image_processing.classic_focus import OOF
 from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.scope_constants import (
     PER_IMAGE_METADATA_KEYS,
@@ -178,6 +179,11 @@ class ScopeOp(QObject, NamedMachine):
                 "on_enter": [self._send_state, self._start_autofocus],
             },
             {
+                "name": "init_classic_focus",
+                "display_name": "init classic focus",
+                "on_enter": [self._send_state, self._init_classic_focus],
+            },
+            {
                 "name": "experiment",
                 "on_enter": [self._send_state, self._start_experiment],
             },
@@ -209,6 +215,9 @@ class ScopeOp(QObject, NamedMachine):
         )
         self.add_transition(
             trigger="unpause", source="pause", dest="autobrightness_precells"
+        )
+        self.add_transition(
+            trigger="oof_to_motor_sweep", source="experiment", dest="cellfinder"
         )
 
     def _set_exp_variables(self):
@@ -441,6 +450,9 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_signal.connect(self.run_fastflow)
 
+    def _init_classic_focus(self, *args):
+        self.img_signal.connect(self.init_classic_focus)
+
     def _start_experiment(self, *args):
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
 
@@ -664,6 +676,7 @@ class ScopeOp(QObject, NamedMachine):
                         f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
                     )
                     self.autofocus_batch = []
+
                     if self.state in {"autofocus_preflow", "autofocus_postflow"}:
                         self.next_state()
             except InvalidMove:
@@ -675,6 +688,27 @@ class ScopeOp(QObject, NamedMachine):
                     "Unable to achieve focus because the stage has reached its range of motion limit..",
                     ERROR_BEHAVIORS.DEFAULT.value,
                 )
+
+    @pyqtSlot(np.ndarray, float)
+    def init_classic_focus(self, img, _):
+        if not self.running:
+            self.logger.info("Slot executed after experiment ended.")
+            return
+
+        self.img_signal.disconnect(self.init_classic_focus)
+
+        try:
+            self.classic_focus_routine = self.routines.classic_focus_routine(
+                downsample_image(img, 10)
+            )
+        except Exception as e:
+            self.logger.error(
+                f"Iniitalizing ClassicFocus object failed: {e}. Critical error, exiting now."
+            )
+            raise
+
+        if self.state == "init_classic_focus":
+            self.next_state()
 
     @pyqtSlot(np.ndarray, float)
     def run_fastflow(self, img, timestamp):
@@ -844,6 +878,13 @@ class ScopeOp(QObject, NamedMachine):
 
         # Downsample image for use in flowrate + classic image focus metric
         img_ds_10x = downsample_image(img, 10)
+        try:
+            self.classic_focus_routine.add_image(img_ds_10x)
+        except OOF:
+            self.logger.warning(
+                "Strayed too far away from focus, transitioning to cell-finder."
+            )
+            self.oof_to_motor_sweep()
         try:
             if not self.flowrate_error_raised:
                 self.flowrate = self.flowcontrol_routine.send((img_ds_10x, timestamp))

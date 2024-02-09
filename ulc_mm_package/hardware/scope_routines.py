@@ -167,7 +167,9 @@ class Routines:
                 _ = yield None, None, None
 
     @init_generator
-    def classic_focus_routine(self, init_img: np.ndarray):
+    def classic_focus_routine(
+        self, init_img: np.ndarray
+    ) -> Generator[float, np.ndarray, np.ndarray]:
         img_counter = 0
         classic_focus = ClassicImageFocus(init_img)
 
