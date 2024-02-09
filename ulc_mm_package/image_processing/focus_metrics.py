@@ -84,3 +84,13 @@ def get_diff(img: np.ndarray):
             gy[i, j] = (img[i + 1, j] - img[i - 1, j]) / 2
 
     return gy, gx
+
+
+@njit
+def custom_gradient_average(img: np.ndarray):
+    gx, gy = get_diff(img)
+    img_max = np.max(img)
+    gx = gx / img_max
+    gy = gy / img_max
+
+    return np.mean(np.sqrt(gx**2 + gy**2))
