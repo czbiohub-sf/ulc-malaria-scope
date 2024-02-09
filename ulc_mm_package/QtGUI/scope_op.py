@@ -885,6 +885,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Strayed too far away from focus, transitioning to cell-finder."
             )
             self.oof_to_motor_sweep()
+            return
         try:
             if not self.flowrate_error_raised:
                 self.flowrate = self.flowcontrol_routine.send((img_ds_10x, timestamp))
