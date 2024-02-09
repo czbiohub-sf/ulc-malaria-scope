@@ -46,6 +46,8 @@ class ClassicImageFocus:
         init_metric = custom_gradient_average(init_img)
         self.EWMA.set_init_val(init_metric)
         self.curr_best = init_metric
+        self.curr_metric = init_metric
+        self.curr_ratio = 1.0
 
     def add_image(self, img: npt.NDArray):
         focus_metric = custom_gradient_average(img)

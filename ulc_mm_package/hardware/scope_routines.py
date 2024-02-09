@@ -26,6 +26,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     MIN_PRESSURE_DIFF,
     FOCUS_EWMA_ALPHA,
 )
+from ulc_mm_package.image_processing.classic_focus import OOF, ClassicImageFocus
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 
@@ -164,6 +165,21 @@ class Routines:
                         raise e
             else:
                 _ = yield None, None, None
+
+    @init_generator
+    def classic_focus_routine(self, init_img: np.ndarray):
+        img_counter = 0
+        classic_focus = ClassicImageFocus(init_img)
+
+        while True:
+            img = yield classic_focus.curr_ratio
+            img_counter += 1
+
+            if img_counter % processing_constants.CLASSIC_FOCUS_FRAME_THROTTLE == 0:
+                try:
+                    classic_focus.add_image(img)
+                except OOF:
+                    raise
 
     def count_parasitemia(
         self,
