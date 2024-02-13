@@ -8,10 +8,12 @@ from typing import Optional
 from ulc_mm_package.hardware import multiprocess_scope_routine as msr
 from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR
 
+
 class FlowRateEstimatorError(Exception):
     """Base class for catching all pressure control related errors."""
 
     pass
+
 
 class FlowRateEstimator:
     def __init__(
