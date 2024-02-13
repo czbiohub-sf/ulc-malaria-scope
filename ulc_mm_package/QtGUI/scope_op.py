@@ -453,7 +453,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def _init_classic_focus(self, *args):
         try:
-            if not self.classic_focus_routine is None:
+            if self.classic_focus_routine is None:
                 self.classic_focus_routine = self.routines.classic_focus_routine(
                     downsample_image(self.last_img, 10)
                 )
