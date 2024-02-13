@@ -17,8 +17,8 @@ class FlowRateEstimatorError(Exception):
 class FlowRateEstimator:
     def __init__(
         self,
-        img_height: int = 600,
-        img_width: int = 800,
+        img_height: int = 77,
+        img_width: int = 103,
         scale_factor: int = 10,
     ):
         """A class for estimating the flow rate of cells using a 2D cross-correlation.
@@ -44,9 +44,9 @@ class FlowRateEstimator:
 
         Parameters
         ----------
-        img_width : int=800 (default)
+        img_width : int=103 (default, 1032 // 10)
             x dimension of the images to be stored
-        img_height : int=600 (default)
+        img_height : int=77 (default, 772 // 10)
             y dimension of the images to be stored
         num_image_pairs: int=60 (default)
             The number of image pairs for which to calculate flow rate values - this number
