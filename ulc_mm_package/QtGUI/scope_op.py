@@ -227,6 +227,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.filtered_focus_err = None
+        self.classic_focus_routine = None
 
         self.flowrate = None
         self.target_flowrate = None
@@ -452,7 +453,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def _init_classic_focus(self, *args):
         try:
-            if not hasattr(self, "classic_focus_routine"):
+            if not self.classic_focus_routine is None:
                 self.classic_focus_routine = self.routines.classic_focus_routine(
                     downsample_image(self.last_img, 10)
                 )
