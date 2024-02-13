@@ -764,6 +764,14 @@ class ScopeOp(QObject, NamedMachine):
         if VERBOSE:
             self.img_metadata[key] = val
 
+    def oof_handler(self):
+        self.classic_focus_routine = None
+        self.set_period.emit(LIVEVIEW_PERIOD)
+        self.oof_to_motor_sweep()
+        if self.start_time is not None:
+            self.accumulated_time += perf_counter() - self.start_time
+            self.start_time = None
+
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp) -> None:
         if not self.running:
@@ -887,11 +895,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.warning(
                 f"Strayed too far away from focus, transitioning to cell-finder. {e}"
             )
-            self.classic_focus_routine = None
-            self.oof_to_motor_sweep()
-            if self.start_time is not None:
-                self.accumulated_time += perf_counter() - self.start_time
-                self.start_time = None
+            self.oof_handler()
             return
         try:
             if not self.flowrate_error_raised:
