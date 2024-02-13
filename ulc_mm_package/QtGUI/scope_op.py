@@ -882,10 +882,11 @@ class ScopeOp(QObject, NamedMachine):
         img_ds_10x = downsample_image(img, 10)
         try:
             self.classic_focus_routine.send(img_ds_10x)
-        except OOF:
+        except OOF as e:
             self.logger.warning(
-                "Strayed too far away from focus, transitioning to cell-finder."
+                f"Strayed too far away from focus, transitioning to cell-finder. {e}"
             )
+            self.classic_focus_routine = None
             self.oof_to_motor_sweep()
             return
         try:
