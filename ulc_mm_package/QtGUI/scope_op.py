@@ -23,6 +23,7 @@ from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.image_processing.classic_focus import OOF
 from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.scope_constants import (
+    DOWNSAMPLE_FACTOR,
     PER_IMAGE_METADATA_KEYS,
     SIMULATION,
     MAX_FRAMES,
@@ -719,7 +720,8 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            self.flowrate = self.fastflow_routine.send((img, timestamp))
+            img_ds_10x = downsample_image(img, DOWNSAMPLE_FACTOR)
+            self.flowrate = self.fastflow_routine.send((img_ds_10x, timestamp))
 
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
