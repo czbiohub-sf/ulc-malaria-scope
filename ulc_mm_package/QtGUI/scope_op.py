@@ -889,6 +889,9 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.classic_focus_routine = None
             self.oof_to_motor_sweep()
+            if self.start_time is not None:
+                self.accumulated_time += perf_counter() - self.start_time
+                self.start_time = None
             return
         try:
             if not self.flowrate_error_raised:
