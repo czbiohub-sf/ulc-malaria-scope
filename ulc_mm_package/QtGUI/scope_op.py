@@ -766,7 +766,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def oof_handler(self):
         self.classic_focus_routine = None
-        self.set_period.emit(LIVEVIEW_PERIOD)
+        self.set_period.emit(ACQUISITION_PERIOD)
         self.oof_to_motor_sweep()
         if self.start_time is not None:
             self.accumulated_time += perf_counter() - self.start_time
