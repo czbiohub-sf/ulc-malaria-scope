@@ -227,6 +227,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.filtered_focus_err = None
+        self.last_img = None  # Needed when initializing class image focus metric during set up steps
         self.classic_focus_routine = None
 
         self.flowrate = None
