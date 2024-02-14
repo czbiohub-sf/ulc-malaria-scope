@@ -216,7 +216,10 @@ class ScopeOp(QObject, NamedMachine):
             trigger="unpause", source="pause", dest="autobrightness_precells"
         )
         self.add_transition(
-            trigger="oof_to_motor_sweep", source="experiment", dest="cellfinder"
+            trigger="oof_to_motor_sweep",
+            source="experiment",
+            dest="cellfinder",
+            before=self._track_time,
         )
 
     def _set_exp_variables(self):
@@ -236,6 +239,8 @@ class ScopeOp(QObject, NamedMachine):
 
         self.frame_count = 0
         self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
+
+        self.first_setup_complete: bool = False
 
         self.start_time = None
         self.accumulated_time = 0
@@ -360,14 +365,17 @@ class ScopeOp(QObject, NamedMachine):
 
         self.stop_timers.emit()
 
-    def _start_pause(self, *args):
-        self.running = False
-        self.flowrate_error_raised = False
-
+    def _track_time(self):
         # Account for case when pause is entered during the initial setup
         if self.start_time is not None:
             self.accumulated_time += perf_counter() - self.start_time
             self.start_time = None
+
+    def _start_pause(self, *args):
+        self.running = False
+        self.flowrate_error_raised = False
+
+        self._track_time()
 
         try:
             self.img_signal.disconnect()
@@ -734,27 +742,29 @@ class ScopeOp(QObject, NamedMachine):
         except CantReachTargetFlowrate as e:
             self.fastflow_result = e.flowrate
             self.logger.error("Fastflow failed. Syringe already at max position.")
-            self.default_error.emit(
-                "Calibration issue",
-                "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
-                ERROR_BEHAVIORS.FLOWCONTROL.value,
-            )
+            if not self.first_setup_complete:
+                self.default_error.emit(
+                    "Calibration issue",
+                    "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
+                    ERROR_BEHAVIORS.FLOWCONTROL.value,
+                )
             self.update_flowrate.emit(self.fastflow_result)
         except LowConfidenceCorrelations:
             self.fastflow_result = -1
             self.logger.error(
                 "Fastflow failed. Too many recent low confidence xcorr calculations."
             )
-            self.default_error.emit(
-                "Calibration failed - flowrate calculation errors",
-                (
-                    "Flowrate ramp: The flow control system returned too many 'low confidence' measurements. "
-                    "You can continue with this run if the flow looks okay to you, "
-                    "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
-                    "Continue running anyway?"
-                ),
-                ERROR_BEHAVIORS.FLOWCONTROL.value,
-            )
+            if not self.first_setup_complete:
+                self.default_error.emit(
+                    "Calibration failed - flowrate calculation errors",
+                    (
+                        "Flowrate ramp: The flow control system returned too many 'low confidence' measurements. "
+                        "You can continue with this run if the flow looks okay to you, "
+                        "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
+                        "Continue running anyway?"
+                    ),
+                    ERROR_BEHAVIORS.FLOWCONTROL.value,
+                )
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
@@ -773,9 +783,6 @@ class ScopeOp(QObject, NamedMachine):
         self.classic_focus_routine = None
         self.set_period.emit(ACQUISITION_PERIOD)
         self.oof_to_motor_sweep()
-        if self.start_time is not None:
-            self.accumulated_time += perf_counter() - self.start_time
-            self.start_time = None
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp) -> None:
