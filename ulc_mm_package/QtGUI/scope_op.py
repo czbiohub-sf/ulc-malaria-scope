@@ -894,7 +894,9 @@ class ScopeOp(QObject, NamedMachine):
         # Downsample image for use in flowrate + classic image focus metric
         img_ds_10x = downsample_image(img, 10)
         try:
-            self.classic_focus_routine.send(img_ds_10x)
+            # Returns the ratio of the current sharpness metric over the best seen
+            # so far
+            sharpness_ratio_rel_peak = self.classic_focus_routine.send(img_ds_10x)
         except OOF as e:
             self.logger.warning(
                 f"Strayed too far away from focus, transitioning to cell-finder. {e}"
@@ -948,6 +950,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["focus_error"] = raw_focus_err
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment
+        self.img_metadata["classic_sharpness_ratio"] = sharpness_ratio_rel_peak
 
         if self.frame_count % TH_PERIOD_NUM == 0:
             try:

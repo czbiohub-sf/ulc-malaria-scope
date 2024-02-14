@@ -49,10 +49,23 @@ class ClassicImageFocus:
         self.curr_metric = init_metric
         self.curr_ratio = 1.0
 
-    def add_image(self, img: npt.NDArray):
+    def add_image(self, img: npt.NDArray) -> float:
+        """Add image to the EWMA filter
+
+        Parameters
+        ----------
+        img: np.ndarray
+
+        Returns
+        -------
+        float
+        """
+
         focus_metric = custom_gradient_average(img)
         self.curr_metric = self.EWMA.update_and_get_val(focus_metric)
         self._update()
+
+        return self.curr_metric
 
     def _update(self):
         if self.curr_metric > self.curr_best:
@@ -78,6 +91,10 @@ class ClassicImageFocus:
 
         So, we have this 'backdoor' function that allows us to reinitialize the EWMAFiltering with whichever of those three
         (post-cellfinder, pre-fastflow autofocus, post-fastflow autofocus) is highest.
+
+        Parameters
+        ----------
+        img: np.ndarray
         """
 
         focus_metric = custom_gradient_average(img)
