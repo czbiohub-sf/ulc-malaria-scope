@@ -3,6 +3,7 @@ import logging
 
 import numpy as np
 
+from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR
 from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 from ulc_mm_package.image_processing.processing_constants import (
     FLOW_CONTROL_EWMA_ALPHA,
@@ -83,8 +84,8 @@ class FlowController:
     def __init__(
         self,
         pneumatic_module: PneumaticModule,
-        h: int = 600,
-        w: int = 800,
+        h: int = CAMERA_SELECTION.IMG_HEIGHT // DOWNSAMPLE_FACTOR,
+        w: int = CAMERA_SELECTION.IMG_WIDTH // DOWNSAMPLE_FACTOR,
     ):
         """Flow controller class.
 

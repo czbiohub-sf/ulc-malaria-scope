@@ -20,7 +20,7 @@ class FlowRateEstimator:
         self,
         img_height: int = CAMERA_SELECTION.IMG_HEIGHT // DOWNSAMPLE_FACTOR,
         img_width: int = CAMERA_SELECTION.IMG_WIDTH // DOWNSAMPLE_FACTOR,
-        scale_factor: int = 10,
+        scale_factor: int = DOWNSAMPLE_FACTOR,
     ):
         """A class for estimating the flow rate of cells using a 2D cross-correlation.
         The class holds two images at a time in `frame_a` and `frame_b`. To use this class,
@@ -74,7 +74,6 @@ class FlowRateEstimator:
         self.frame_a, self.frame_b = self.multiproc_interface._input_ctypes
 
         self._prev_img: Optional[np.ndarray] = None
-        self.scale_factor = scale_factor
 
     def reset(self) -> None:
         """Reset initialization booleans."""
@@ -117,9 +116,9 @@ class FlowRateEstimator:
 
     @staticmethod
     def _convert_to_screen_dim_per_unit_time(
-        displacement: float, tdiff: float, scale_factor: float, img_dim: int
+        displacement: float, tdiff: float, img_dim: int
     ) -> float:
-        return (displacement / tdiff) / (img_dim / scale_factor)
+        return (displacement / tdiff) / img_dim
 
     def _calculate_pair_displacement(self) -> Tuple[float, float, float]:
         """Return dx, dy displacement in px and the cross correlation coefficient ('confidence')"""
@@ -147,12 +146,8 @@ class FlowRateEstimator:
         dx, dy, confidence = self._calculate_pair_displacement()
 
         tdiff = self.timestamps[1] - self.timestamps[0]
-        dx = self._convert_to_screen_dim_per_unit_time(
-            dx, tdiff, self.scale_factor, self.img_width
-        )
-        dy = self._convert_to_screen_dim_per_unit_time(
-            dy, tdiff, self.scale_factor, self.img_height
-        )
+        dx = self._convert_to_screen_dim_per_unit_time(dx, tdiff, self.img_width)
+        dy = self._convert_to_screen_dim_per_unit_time(dy, tdiff, self.img_height)
 
         return dx, dy, confidence
 
