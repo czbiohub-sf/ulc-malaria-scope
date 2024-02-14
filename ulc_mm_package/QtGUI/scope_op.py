@@ -740,20 +740,22 @@ class ScopeOp(QObject, NamedMachine):
         except CantReachTargetFlowrate as e:
             self.fastflow_result = e.flowrate
             self.logger.error("Fastflow failed. Syringe already at max position.")
-            self.first_setup_complete = True
+            self.update_flowrate.emit(self.fastflow_result)
             if not self.first_setup_complete:
                 self.default_error.emit(
                     "Calibration issue",
                     "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                     ERROR_BEHAVIORS.FLOWCONTROL.value,
                 )
-            self.update_flowrate.emit(self.fastflow_result)
+                self.first_setup_complete = True
+            else:
+                if self.state == "fastflow":
+                    self.next_state()
         except LowConfidenceCorrelations:
             self.fastflow_result = -1
             self.logger.error(
                 "Fastflow failed. Too many recent low confidence xcorr calculations."
             )
-            self.first_setup_complete = True
             if not self.first_setup_complete:
                 self.default_error.emit(
                     "Calibration failed - flowrate calculation errors",
@@ -765,6 +767,12 @@ class ScopeOp(QObject, NamedMachine):
                     ),
                     ERROR_BEHAVIORS.FLOWCONTROL.value,
                 )
+                self.first_setup_complete = True
+            else:
+                if self.state == "fastflow":
+                    self.next_state()
+
+            self.first_setup_complete = True
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
