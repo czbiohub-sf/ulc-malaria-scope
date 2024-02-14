@@ -427,6 +427,10 @@ class ScopeOp(QObject, NamedMachine):
                 f"Moving motor to focus position at {self.cellfinder_result} steps."
             )
             self.logger.info(f"Moving motor to {self.cellfinder_result}.")
+
+            # Wait for motor to stop moving
+            while self.mscope.motor.is_locked():
+                sleep(0.1)
             self.mscope.motor.move_abs(self.cellfinder_result)
 
     def _start_autofocus(self, *args):
