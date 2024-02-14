@@ -137,7 +137,7 @@ class ScopeOp(QObject, NamedMachine):
         states = [
             {
                 "name": "pause",
-                "on_enter": [self._send_state, self._start_pause],
+                "on_enter": [self._send_state, self._track_time, self._start_pause],
                 "on_exit": [self._end_pause],
             },
             {
@@ -219,7 +219,7 @@ class ScopeOp(QObject, NamedMachine):
             trigger="oof_to_motor_sweep",
             source="experiment",
             dest="cellfinder",
-            before=self._track_time,
+            before=[self._track_time, self._oof_handler],
         )
 
     def _set_exp_variables(self):
@@ -374,8 +374,6 @@ class ScopeOp(QObject, NamedMachine):
     def _start_pause(self, *args):
         self.running = False
         self.flowrate_error_raised = False
-
-        self._track_time()
 
         try:
             self.img_signal.disconnect()
@@ -779,10 +777,9 @@ class ScopeOp(QObject, NamedMachine):
         if VERBOSE:
             self.img_metadata[key] = val
 
-    def oof_handler(self):
+    def _oof_handler(self):
         self.classic_focus_routine = None
         self.set_period.emit(ACQUISITION_PERIOD)
-        self.oof_to_motor_sweep()
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp) -> None:
@@ -909,7 +906,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.warning(
                 f"Strayed too far away from focus, transitioning to cell-finder. {e}"
             )
-            self.oof_handler()
+            self.oof_to_motor_sweep()
             return
         try:
             if not self.flowrate_error_raised:
