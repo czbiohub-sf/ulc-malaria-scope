@@ -32,7 +32,6 @@ from ulc_mm_package.scope_constants import (
 
 from ulc_mm_package.image_processing.flow_control import (
     CantReachTargetFlowrate,
-    LowConfidenceCorrelations,
 )
 from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
@@ -521,12 +520,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.finishing_experiment.emit(10)
 
-        def _save_yogo_results():
-            for result in self.mscope.cell_diagnosis_model.get_asyn_results():
-                self.mscope.predictions_handler.add_yogo_pred(result)
-
-        self.finishing_experiment.emit(15)
-
         # the ThreadPoolExecutor work queue may be really big - so as the NCS
         # is chugging along, lets do some work by adding it's results to the
         # prediction handler
@@ -537,16 +530,12 @@ class ScopeOp(QObject, NamedMachine):
 
         t0 = perf_counter()
 
-        while self.mscope.cell_diagnosis_model.work_queue_size() > 0:
-            _save_yogo_results()
+        final_yogo_results = self.mscope.cell_diagnosis_model.reset(wait_for_jobs=True)
 
-        self.finishing_experiment.emit(20)
+        self.finishing_experiment.emit(15)
 
-        # once the ThreadPoolExecutor work queue is done, the NCS is still
-        # processing images (up to 4 images). Lets wait for them, and then
-        # process them in the same way.
-        self.mscope.cell_diagnosis_model.wait_all()
-        _save_yogo_results()
+        for result in final_yogo_results:
+            self.mscope.predictions_handler.add_yogo_pred(result)
 
         t1 = perf_counter()
 
@@ -762,28 +751,6 @@ class ScopeOp(QObject, NamedMachine):
             else:
                 if self.state == "fastflow":
                     self.next_state()
-        except LowConfidenceCorrelations:
-            self.fastflow_result = -1
-            self.logger.error(
-                "Fastflow failed. Too many recent low confidence xcorr calculations."
-            )
-            if not self.first_setup_complete:
-                self.default_error.emit(
-                    "Calibration failed - flowrate calculation errors",
-                    (
-                        "Flowrate ramp: The flow control system returned too many 'low confidence' measurements. "
-                        "You can continue with this run if the flow looks okay to you, "
-                        "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
-                        "Continue running anyway?"
-                    ),
-                    ERROR_BEHAVIORS.FLOWCONTROL.value,
-                )
-                self.first_setup_complete = True
-            else:
-                if self.state == "fastflow":
-                    self.next_state()
-
-            self.first_setup_complete = True
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
@@ -934,15 +901,6 @@ class ScopeOp(QObject, NamedMachine):
             if not self.flowrate_error_raised:
                 self.flowrate = self.flowcontrol_routine.send((img_ds_10x, timestamp))
         except CantReachTargetFlowrate as e:
-            self.flowrate_error_raised = True
-            self.logger.warning(
-                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-            )
-            self.flowrate = -1
-            self.flowcontrol_routine = self.routines.flow_control_routine(
-                self.mscope, self.target_flowrate
-            )
-        except LowConfidenceCorrelations as e:
             self.flowrate_error_raised = True
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
