@@ -8,11 +8,8 @@ from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 from ulc_mm_package.image_processing.processing_constants import (
     FLOW_CONTROL_EWMA_ALPHA,
     TOL_PERC,
-    FAILED_CORR_PERC_TOLERANCE,
-    MIN_NUM_XCORR_FACTOR,
 )
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
-from ulc_mm_package.image_processing.processing_constants import CORRELATION_THRESH
 
 from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
 
