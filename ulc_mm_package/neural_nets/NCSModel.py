@@ -244,7 +244,9 @@ class NCSModel:
     def wait_all(self) -> None:
         """wait for all pending InferRequests to finish"""
         # very rough wait for rest of the ThreadPoolExecutor to finish
-        while self.work_queue_size() > 0:
+        # if the executor shutdown, it's queue size will be 1!
+        # https://github.com/python/cpython/blob/ae460d450ab854ca66d509ef6971cfe1b6312405/Lib/concurrent/futures/thread.py#L108
+        while (not self._executor._shutdown) and self.work_queue_size() > 1:
             time.sleep(0.01)
 
         self.asyn_infer_queue.wait_all()
@@ -273,10 +275,8 @@ class NCSModel:
                 if work_item is not None:
                     work_item.future.cancel()
 
-        self._executor.shutdown()
+        self._executor.shutdown(wait=wait)
 
-        # this waits for the ThreadPoolExecutor (now empty, so it'll be very fast),
-        # and then for the AsyncInferQueues
         self.wait_all()
 
         # this is the official way of restarting a ThreadPoolExecutor
