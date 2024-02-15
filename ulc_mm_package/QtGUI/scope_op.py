@@ -7,6 +7,7 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 import cv2
 import logging
+import threading
 import numpy as np
 
 from typing import Any
@@ -125,7 +126,8 @@ class ScopeOp(QObject, NamedMachine):
         self.logger = logging.getLogger(__name__)
 
         self.acquisition = Acquisition()
-        self.img_signal = self.acquisition.update_scopeop
+        self._img_signal = self.acquisition.update_scopeop
+        self._img_signal_lock = threading.Lock()
 
         self.routines = Routines()
 
@@ -221,6 +223,14 @@ class ScopeOp(QObject, NamedMachine):
             dest="cellfinder",
             before=[self._track_time, self._oof_handler],
         )
+
+    def image_signal_connect(self, func):
+        with self._img_signal_lock():
+            self._img_signal.connect(func)
+
+    def image_signal_disconnect(self):
+        with self._img_signal_lock():
+            self._img_signal.disconnect()
 
     def _set_exp_variables(self):
         self.running = None
@@ -356,7 +366,7 @@ class ScopeOp(QObject, NamedMachine):
         self.running = False
 
         try:
-            self.img_signal.disconnect()
+            self.image_signal_disconnect()
             self.logger.info("Disconnected img_signal.")
         except TypeError:
             self.logger.info(
@@ -376,7 +386,7 @@ class ScopeOp(QObject, NamedMachine):
         self.flowrate_error_raised = False
 
         try:
-            self.img_signal.disconnect()
+            self.image_signal_disconnect()
         except TypeError:
             self.logger.info(
                 "Since img_signal is already disconnected, no signal/slot changes were made."
@@ -394,7 +404,7 @@ class ScopeOp(QObject, NamedMachine):
         self.autobrightness_result = None
         self.autobrightness_routine = self.routines.autobrightnessRoutine(self.mscope)
 
-        self.img_signal.connect(self.run_autobrightness)
+        self.image_signal_connect(self.run_autobrightness)
 
     def _check_pressure_seal(self, *args):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
@@ -426,7 +436,7 @@ class ScopeOp(QObject, NamedMachine):
         self.cellfinder_result = None
         self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
 
-        self.img_signal.connect(self.run_cellfinder)
+        self.image_signal_connect(self.run_cellfinder)
 
     def _end_cellfinder(self, *args):
         if self.cellfinder_result is not None:
@@ -443,7 +453,7 @@ class ScopeOp(QObject, NamedMachine):
     def _start_autofocus(self, *args):
         self.autofocus_batch = []
         self.autofocus_results = [None, None]
-        self.img_signal.connect(self.run_autofocus)
+        self.image_signal_connect(self.run_autofocus)
 
     def _start_fastflow(self, *args):
         if SIMULATION:
@@ -460,7 +470,7 @@ class ScopeOp(QObject, NamedMachine):
             fast_flow=True,
         )
 
-        self.img_signal.connect(self.run_fastflow)
+        self.image_signal_connect(self.run_fastflow)
 
     def _init_classic_focus(self, *args):
         try:
@@ -494,7 +504,7 @@ class ScopeOp(QObject, NamedMachine):
         self.start_time = perf_counter()
         self.last_time = perf_counter()
 
-        self.img_signal.connect(self.run_experiment)
+        self.image_signal_connect(self.run_experiment)
 
     def _end_experiment(self, *args):
         self.shutoff()
@@ -580,7 +590,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended.")
             return
 
-        self.img_signal.disconnect(self.run_autobrightness)
+        self.image_signal_disconnect(self.run_autobrightness)
 
         try:
             self.autobrightness_routine.send(img)
@@ -624,7 +634,7 @@ class ScopeOp(QObject, NamedMachine):
                     self.next_state()
         else:
             if self.running:
-                self.img_signal.connect(self.run_autobrightness)
+                self.image_signal_connect(self.run_autobrightness)
 
     @pyqtSlot(np.ndarray, float)
     def run_cellfinder(self, img, _timestamp):
@@ -632,7 +642,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended")
             return
 
-        self.img_signal.disconnect(self.run_cellfinder)
+        self.image_signal_disconnect(self.run_cellfinder)
 
         try:
             self.cellfinder_routine.send(img)
@@ -652,7 +662,7 @@ class ScopeOp(QObject, NamedMachine):
             )
         else:
             if self.running:
-                self.img_signal.connect(self.run_cellfinder)
+                self.image_signal_connect(self.run_cellfinder)
 
     @pyqtSlot(np.ndarray, float)
     def run_autofocus(self, img, _timestamp):
@@ -660,7 +670,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended.")
             return
 
-        self.img_signal.disconnect(self.run_autofocus)
+        self.image_signal_disconnect(self.run_autofocus)
 
         if not self.autofocus_done:
             if len(self.autofocus_batch) < AF_BATCH_SIZE:
@@ -670,7 +680,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.autofocus_batch.append(resized_img)
 
                 if self.running:
-                    self.img_signal.connect(self.run_autofocus)
+                    self.image_signal_connect(self.run_autofocus)
             else:
                 try:
                     if self.autofocus_results[0] is None:
@@ -692,7 +702,7 @@ class ScopeOp(QObject, NamedMachine):
                         sleep(0.5)
 
                         if self.running:
-                            self.img_signal.connect(self.run_autofocus)
+                            self.image_signal_connect(self.run_autofocus)
                     else:
                         self.autofocus_results[
                             1
@@ -706,7 +716,7 @@ class ScopeOp(QObject, NamedMachine):
 
                         self.autofocus_done = True
                         if self.running:
-                            self.img_signal.connect(self.run_autofocus)
+                            self.image_signal_connect(self.run_autofocus)
 
                 except InvalidMove:
                     self.logger.error(
@@ -729,7 +739,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended.")
             return
 
-        self.img_signal.disconnect(self.run_fastflow)
+        self.image_signal_disconnect(self.run_fastflow)
 
         try:
             img_ds_10x = downsample_image(img, DOWNSAMPLE_FACTOR)
@@ -782,7 +792,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.next_state()
         else:
             if self.running:
-                self.img_signal.connect(self.run_fastflow)
+                self.image_signal_connect(self.run_fastflow)
 
     def _update_metadata_if_verbose(self, key: str, val: Any):
         if VERBOSE:
@@ -798,7 +808,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended.")
             return
 
-        self.img_signal.disconnect(self.run_experiment)
+        self.image_signal_disconnect(self.run_experiment)
 
         current_time = perf_counter()
         self.img_metadata["looptime"] = current_time - self.last_time
@@ -1011,4 +1021,4 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
 
         if self.running:
-            self.img_signal.connect(self.run_experiment)
+            self.image_signal_connect(self.run_experiment)
