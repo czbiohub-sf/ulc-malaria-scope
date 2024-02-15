@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import time
+import queue
 import threading
 import numpy as np
 import operator as op
@@ -260,8 +261,19 @@ class NCSModel:
         in this case, you *will* be dropping jobs. In either case, the NCSModel will
         be reset after this call.
         """
-        # this short-cuts waiting for the jobs in the ThreadPoolExecutor if wait=False
-        self._executor.shutdown(wait=wait)
+        if wait is False:
+            # this code is copied from ThreadPoolExecutor.shutdown()
+            # https://github.com/python/cpython/blob/e74fa294c9b0c67bfcbefdda5a069f0a7648f524/Lib/concurrent/futures/thread.py#L219-L239
+            # The option to cancel futures was added in python 3.9, but we roll 3.7
+            while True:
+                try:
+                    work_item = self._executor._work_queue.get_nowait()
+                except queue.Empty:
+                    break
+                if work_item is not None:
+                    work_item.future.cancel()
+
+        self._executor.shutdown()
 
         # this waits for the ThreadPoolExecutor (now empty, so it'll be very fast),
         # and then for the AsyncInferQueues
