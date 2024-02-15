@@ -38,6 +38,9 @@ if SIMULATION:
 
 CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
 
+# ================ For flowcontrol and classc image focus ================ #
+DOWNSAMPLE_FACTOR = 10
+
 # ================ Summary PDF constants ================ #
 DEBUG_REPORT = int(
     os.environ.get("DEBUG_REPORT", 0)
@@ -168,6 +171,7 @@ PER_IMAGE_METADATA_KEYS = [
     "focus_error",
     "filtered_focus_error",
     "focus_adjustment",
+    "classic_sharpness_ratio",
     "cell_count_cumulative",
     "temperature",
     "camera_temperature",
