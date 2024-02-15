@@ -13,6 +13,51 @@ sudp apt update
 sudo apt upgrade
 ```
 
+## Optional but very nice things (axel would deeply appreciate it)
+
+```console
+sudo apt install tmux
+cat << EOF > ~/.vimrc
+set ai
+set ruler
+set hlsearch
+set showmatch
+set incsearch
+set expandtab
+set lazyredraw
+set noswapfile
+set splitbelow
+set splitright
+set ignorecase
+set smartcase
+set wildmenu
+set number relativenumber
+
+set mouse=a
+set laststatus=2
+
+set tabstop=2
+set scrolloff=2
+set shiftwidth=2
+set softtabstop=2
+set encoding=utf-8
+set backspace=indent,eol,start
+
+set signcolumn=yes:1
+set fillchars+=vert:\|
+
+set updatetime=250
+set timeoutlen=300 ttimeoutlen=0
+
+filetype plugin indent on
+map <C-J> <C-W><C-J>
+map <C-K> <C-W><C-K>
+map <C-L> <C-W><C-L>
+map <C-H> <C-W><C-H>
+highlight clear SignColumn
+EOF
+```
+
 ### Install numba first, separately
 Note: this section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
 
