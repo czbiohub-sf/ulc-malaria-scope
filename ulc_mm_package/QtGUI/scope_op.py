@@ -7,14 +7,13 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 import cv2
 import logging
-import threading
 import numpy as np
 
 from typing import Any
 from time import sleep, perf_counter
 from transitions import Machine, State
 
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QMutex
 
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 
@@ -127,7 +126,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.acquisition = Acquisition()
         self._img_signal = self.acquisition.update_scopeop
-        self._img_signal_lock = threading.Lock()
+        self._img_signal_lock = QMutex()
 
         self.routines = Routines()
 
@@ -225,12 +224,14 @@ class ScopeOp(QObject, NamedMachine):
         )
 
     def image_signal_connect(self, func):
-        with self._img_signal_lock():
-            self._img_signal.connect(func)
+        self._img_signal.lock()
+        self._img_signal.connect(func)
+        self._img_signal.unlock()
 
     def image_signal_disconnect(self):
-        with self._img_signal_lock():
-            self._img_signal.disconnect()
+        self._img_signal.lock()
+        self._img_signal.disconnect()
+        self._img_signal.unlock()
 
     def _set_exp_variables(self):
         self.running = None
