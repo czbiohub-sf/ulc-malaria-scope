@@ -252,18 +252,18 @@ class NCSModel:
         self.asyn_infer_queue.wait_all()
         self._temp_infer_queue.wait_all()
 
-    def reset(self, wait: bool = True) -> List[AsyncInferenceResult]:
+    def reset(self, wait_for_jobs: bool = True) -> List[AsyncInferenceResult]:
         """
         wait for the NCS's AsyncInferQueue to finish, then reset the
         ThreadPoolExecutor. Note that this will not drop the reference to the NCS.
 
-        If wait is True, this will wait until every image in the queue is finished
+        If wait_for_jobs is True, this will wait until every image in the queue is finished
         and then will return the results. Otherwise, it purges the queues and returns
         whatever images were in self._asyn_results or the asyn_infer_queues. Note that
         in this case, you *will* be dropping jobs. In either case, the NCSModel will
         be reset after this call.
         """
-        if wait is False:
+        if wait_for_jobs is False:
             # this code is copied from ThreadPoolExecutor.shutdown()
             # https://github.com/python/cpython/blob/e74fa294c9b0c67bfcbefdda5a069f0a7648f524/Lib/concurrent/futures/thread.py#L219-L239
             # The option to cancel futures was added in python 3.9, but we roll 3.7
@@ -275,7 +275,7 @@ class NCSModel:
                 if work_item is not None:
                     work_item.future.cancel()
 
-        self._executor.shutdown(wait=wait)
+        self._executor.shutdown(wait=wait_for_jobs)
 
         self.wait_all()
 

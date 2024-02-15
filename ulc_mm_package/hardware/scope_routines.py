@@ -116,7 +116,7 @@ class Routines:
 
         # reset the autofocus in case we got here fm. classic focus restarting us to this point.
         # we want to make sure we don't pollute the new PSSAF w/ old data
-        mscope.autofocus_model.reset(wait=False)
+        mscope.autofocus_model.reset(wait_for_jobs=False)
 
         ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
         ssaf_filter.set_init_val(0)

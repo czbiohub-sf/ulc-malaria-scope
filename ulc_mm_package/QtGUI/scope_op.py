@@ -520,7 +520,7 @@ class ScopeOp(QObject, NamedMachine):
 
         t0 = perf_counter()
 
-        final_yogo_results = self.mscope.cell_diagnosis_model.reset(wait=True)
+        final_yogo_results = self.mscope.cell_diagnosis_model.reset(wait_for_jobs=True)
 
         self.finishing_experiment.emit(15)
 

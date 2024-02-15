@@ -149,8 +149,8 @@ class MalariaScope:
         # note that this waits for their queues to drain, and then
         # resets their threadpool executor; it does not drop their
         # references to the NCS (which would then require reconnecting)
-        self.autofocus_model.reset(wait=False)
-        self.cell_diagnosis_model.reset(wait=False)
+        self.autofocus_model.reset(wait_for_jobs=False)
+        self.cell_diagnosis_model.reset(wait_for_jobs=False)
 
         # Reset predictions handler
         self.predictions_handler: PredictionsHandler = PredictionsHandler()
@@ -161,8 +161,8 @@ class MalariaScope:
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.ht_sensor.stop()
         self.flow_controller.stop()
-        self.autofocus_model.reset(wait=False)
-        self.cell_diagnosis_model.reset(wait=False)
+        self.autofocus_model.reset(wait_for_jobs=False)
+        self.cell_diagnosis_model.reset(wait_for_jobs=False)
 
         if self.camera._isActivated:
             self.camera.deactivateCamera()
