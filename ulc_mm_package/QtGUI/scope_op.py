@@ -32,7 +32,6 @@ from ulc_mm_package.scope_constants import (
 
 from ulc_mm_package.image_processing.flow_control import (
     CantReachTargetFlowrate,
-    LowConfidenceCorrelations,
 )
 from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
@@ -741,28 +740,6 @@ class ScopeOp(QObject, NamedMachine):
             else:
                 if self.state == "fastflow":
                     self.next_state()
-        except LowConfidenceCorrelations:
-            self.fastflow_result = -1
-            self.logger.error(
-                "Fastflow failed. Too many recent low confidence xcorr calculations."
-            )
-            if not self.first_setup_complete:
-                self.default_error.emit(
-                    "Calibration failed - flowrate calculation errors",
-                    (
-                        "Flowrate ramp: The flow control system returned too many 'low confidence' measurements. "
-                        "You can continue with this run if the flow looks okay to you, "
-                        "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
-                        "Continue running anyway?"
-                    ),
-                    ERROR_BEHAVIORS.FLOWCONTROL.value,
-                )
-                self.first_setup_complete = True
-            else:
-                if self.state == "fastflow":
-                    self.next_state()
-
-            self.first_setup_complete = True
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
@@ -913,15 +890,6 @@ class ScopeOp(QObject, NamedMachine):
             if not self.flowrate_error_raised:
                 self.flowrate = self.flowcontrol_routine.send((img_ds_10x, timestamp))
         except CantReachTargetFlowrate as e:
-            self.flowrate_error_raised = True
-            self.logger.warning(
-                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-            )
-            self.flowrate = -1
-            self.flowcontrol_routine = self.routines.flow_control_routine(
-                self.mscope, self.target_flowrate
-            )
-        except LowConfidenceCorrelations as e:
             self.flowrate_error_raised = True
             self.logger.warning(
                 f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
