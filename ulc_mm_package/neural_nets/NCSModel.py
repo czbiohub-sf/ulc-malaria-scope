@@ -249,27 +249,25 @@ class NCSModel:
         self.asyn_infer_queue.wait_all()
         self._temp_infer_queue.wait_all()
 
-    def shutdown(self, wait: bool = True):
+    def reset(self, wait: bool = True) -> List[AsyncInferenceResult]:
+        """
+        wait for the NCS's AsyncInferQueue to finish, then reset the
+        ThreadPoolExecutor. Note that this will not drop the reference to the NCS.
+
+        If wait is True, this will wait until every image in the queue is finished
+        and then will return the results. Otherwise, it purges the queues and returns
+        whatever images were in self._asyn_results or the asyn_infer_queues. Note that
+        in this case, you *will* be dropping jobs. In either case, the NCSModel will
+        be reset after this call.
+        """
         # this short-cuts waiting for the jobs in the ThreadPoolExecutor if wait=False
         self._executor.shutdown(wait=wait)
+
         # this waits for the ThreadPoolExecutor (now empty, so it'll be very fast),
         # and then for the AsyncInferQueues
         self.wait_all()
 
-    def restart(self, wait: bool = True) -> List[AsyncInferenceResult]:
-        """
-        wait for the NCS's AsyncInferQueue to finish, then restart
-        the ThreadPoolExecutor. Note that this will not drop the
-        reference to the NCS.
-
-        if wait is True, this will wait until every image in the queue is finished
-        and then will return the results. Otherwise, it purges the queues and returns
-        whatever images were in self._asyn_results or the asyn_infer_queues. In either
-        case, the NCSModel will be reset after this call.
-        """
-        # The ThreadPoolExecutor is restarted by just creating
-        # a new instance (check!)
-        self.shutdown(wait=wait)
+        # this is the official way of restarting a ThreadPoolExecutor
         self._executor = ThreadPoolExecutor(max_workers=1)
 
         # resets self._asyn_results and returns a list of AsyncInferenceResults

@@ -527,8 +527,6 @@ class ScopeOp(QObject, NamedMachine):
         for result in final_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
 
-        self.finishing_experiment.emit(20)
-
         t1 = perf_counter()
 
         self.logger.info(
