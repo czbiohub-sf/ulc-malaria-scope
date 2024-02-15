@@ -200,15 +200,6 @@ class NCSModel:
 
         return res
 
-    def wait_all(self) -> None:
-        """wait for all pending InferRequests to finish"""
-        # very rough wait for rest of the queue to finish
-        while self.work_queue_size() > 0:
-            time.sleep(0.01)
-
-        self.asyn_infer_queue.wait_all()
-        self._temp_infer_queue.wait_all()
-
     def work_queue_size(self) -> int:
         return self._executor._work_queue.qsize()
 
@@ -249,15 +240,37 @@ class NCSModel:
                 "\t(h, w), (1, h, w), (h, w, 1), or (1, h, w, 1)"
             )
 
-    def shutdown(self):
-        self.wait_all()
-        self._executor.shutdown(wait=True)
+    def wait_all(self) -> None:
+        """wait for all pending InferRequests to finish"""
+        # very rough wait for rest of the ThreadPoolExecutor to finish
+        while self.work_queue_size() > 0:
+            time.sleep(0.01)
 
-    def restart(self):
+        self.asyn_infer_queue.wait_all()
+        self._temp_infer_queue.wait_all()
+
+    def shutdown(self, wait: bool = True):
+        # this short-cuts waiting for the jobs in the ThreadPoolExecutor if wait=False
+        self._executor.shutdown(wait=wait)
+        # this waits for the ThreadPoolExecutor (now empty, so it'll be very fast),
+        # and then for the AsyncInferQueues
+        self.wait_all()
+
+    def restart(self, wait: bool = True) -> List[AsyncInferenceResult]:
         """
         wait for the NCS's AsyncInferQueue to finish, then restart
         the ThreadPoolExecutor. Note that this will not drop the
         reference to the NCS.
+
+        if wait is True, this will wait until every image in the queue is finished
+        and then will return the results. Otherwise, it purges the queues and returns
+        whatever images were in self._asyn_results or the asyn_infer_queues. In either
+        case, the NCSModel will be reset after this call.
         """
-        self.shutdown()
+        # The ThreadPoolExecutor is restarted by just creating
+        # a new instance (check!)
+        self.shutdown(wait=wait)
         self._executor = ThreadPoolExecutor(max_workers=1)
+
+        # resets self._asyn_results and returns a list of AsyncInferenceResults
+        return self.get_asyn_results()
