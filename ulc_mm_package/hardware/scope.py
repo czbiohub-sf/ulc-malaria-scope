@@ -149,8 +149,8 @@ class MalariaScope:
         # note that this waits for their queues to drain, and then
         # resets their threadpool executor; it does not drop their
         # references to the NCS (which would then require reconnecting)
-        self.autofocus_model.reset()
-        self.cell_diagnosis_model.reset()
+        self.autofocus_model.reset(wait=False)
+        self.cell_diagnosis_model.reset(wait=False)
 
         # Reset predictions handler
         self.predictions_handler: PredictionsHandler = PredictionsHandler()
