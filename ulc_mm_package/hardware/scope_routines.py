@@ -229,9 +229,6 @@ class Routines:
         CantReachTargetFlowrate:
             Raised when the syringe is already at its maximally extended position but the flowrate
             is still outside the tolerance band.
-
-        LowConfidenceCorrelations:
-            Raised if the percentage of failed correlations exceeds FAILED_CORR_PERC_TOLERANCE of all measurements.
         """
 
         flow_val: Optional[float] = None

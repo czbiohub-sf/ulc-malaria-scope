@@ -38,7 +38,6 @@ from ulc_mm_package.image_processing.autobrightness import (
 from ulc_mm_package.image_processing.flow_control import (
     FlowController,
     CantReachTargetFlowrate,
-    LowConfidenceCorrelations,
 )
 from ulc_mm_package.image_processing.zstack import (
     full_sweep_image_collection,
@@ -400,12 +399,6 @@ class AcquisitionThread(QThread):
                 self.stopActiveFlowControl()
                 print(
                     f"Unable to reach target flowrate: {self.target_flowrate}. Disabling active flow control."
-                )
-                self.pressureLeakDetected.emit(1)
-            except LowConfidenceCorrelations:
-                self.stopActiveFlowControl()
-                print(
-                    "A number of recent xcorr calculations have failed. Disabling active flow control."
                 )
                 self.pressureLeakDetected.emit(1)
 
