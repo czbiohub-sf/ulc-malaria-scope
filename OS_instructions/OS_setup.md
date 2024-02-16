@@ -67,8 +67,12 @@ cd openvino
 git checkout tags/2022.1.1
 git submodule update --init --recursive
 mkdir build && cd build
+```
 
-# Takes a long time! Maybe ~4 hrs?
+### Building Openvino
+
+**32 bit os**
+```
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DENABLE_PYTHON=ON \
@@ -83,7 +87,21 @@ cmake \
   .. && make --jobs=$(nproc --all)
 ```
 
-If you are running a 64 bit OS, swap out `-DPYTHON_LIBRARY="/usr/lib/arm-linux-gnueabihf/libpython3.9.so"` with `-DPYTHON_LIBRARY="/usr/lib/aarch64-linux-gnu/libpython3.9.so"`.
+**64 bit os**
+```
+cmake \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_PYTHON=ON \
+  -DPYTHON_EXECUTABLE="/usr/bin/python3"  \
+  -DPYTHON_LIBRARY="/usr/lib/aarch64-linux-gnu/libpython3.11.so"  \
+  -DPYTHON_INCLUDE_DIR="/usr/include/python3.11"  \
+  -DCYTHON_EXECUTABLE="$(which python3)"  \
+  -DENABLE_OV_TF_FRONTEND_ENABLE=OFF  \
+  -DENABLE_OV_PDPD_FRONTEND_ENABLE=OFF  \
+  -DENABLE_SAMPLES=OFF  \
+  -DENABLE_HETERO=OFF  \
+  .. && make --jobs=$(nproc --all)
+```
 
 ### Add the openvino Python libraries to the `PYTHONPATH`
 
