@@ -1,5 +1,5 @@
+import csv
 import logging
-
 from functools import wraps
 from time import perf_counter, sleep
 from typing import Any, Callable, List, Tuple, Optional, Sequence, Generator
@@ -23,6 +23,7 @@ from ulc_mm_package.image_processing.cell_finder import (
 from ulc_mm_package.hardware.pneumatic_module import PressureLeak, PressureSensorBusy
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import (
+    DEFAULT_EXPOSURE_MS,
     MIN_PRESSURE_DIFF,
     FOCUS_EWMA_ALPHA,
 )
@@ -248,6 +249,53 @@ class Routines:
                 if flow_error is not None:
                     if flow_error == 0:
                         return flow_val
+
+    @init_generator
+    def flow_motion_blur(
+        self,
+        mscope: MalariaScope,
+        img: np.ndarray,
+    ):
+        syringe_pos = "no_pressure"
+        mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
+
+        # Half way down
+        # syringe_pos = "half_pressure"
+        # mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle()*0.5)
+
+        # Max
+        # syringe_pos = "full"
+        # mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
+
+        num_imgs_per_exposure = 3
+        exposures = np.linspace(
+            mscope.camera.self.minExposure_ms, 3 * mscope.camera.self.minExposure_ms, 3
+        )
+        autobrightness = Autobrightness(mscope.led)
+
+        # Create a CSV file to write the SD values
+        with open(f"{syringe_pos}_sd_values.csv", "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["Exposure", "Image", "SD"])  # Write header row
+
+            while True:
+                for exposure in exposures:
+                    mscope.camera.exposureTime_ms = exposure
+                    brightness_achieved = False
+
+                    print(f"Exposure: {exposure}")
+
+                    while not brightness_achieved:
+                        img = yield
+                        brightness_achieved = autobrightness.runAutobrightness(img)
+
+                    for i in range(num_imgs_per_exposure):
+                        img = yield
+                        sd = np.std(img)
+                        print(f"SD: {sd}")
+
+                        # Write the SD value to the CSV file
+                        writer.writerow([exposure, i, sd])
 
     @init_generator
     def autobrightnessRoutine(

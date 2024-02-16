@@ -453,11 +453,7 @@ class ScopeOp(QObject, NamedMachine):
             return
 
         self.fastflow_result = None
-        self.fastflow_routine = self.routines.flow_control_routine(
-            self.mscope,
-            target_flowrate=self.target_flowrate,
-            fast_flow=True,
-        )
+        self.fastflow_routine = self.routines.flow_motion_blur(self.mscope)
 
         self.img_signal.connect(self.run_fastflow)
 
@@ -722,34 +718,11 @@ class ScopeOp(QObject, NamedMachine):
 
         try:
             img_ds_10x = downsample_image(img, DOWNSAMPLE_FACTOR)
-            self.flowrate = self.fastflow_routine.send((img_ds_10x, timestamp))
+            self.fastflow_routine.send(img_ds_10x)
 
-            if self.flowrate is not None:
-                self.update_flowrate.emit(self.flowrate)
-        except CantReachTargetFlowrate as e:
-            self.fastflow_result = e.flowrate
-            self.logger.error("Fastflow failed. Syringe already at max position.")
-            self.update_flowrate.emit(self.fastflow_result)
-            if not self.first_setup_complete:
-                self.default_error.emit(
-                    "Calibration issue",
-                    "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
-                    ERROR_BEHAVIORS.FLOWCONTROL.value,
-                )
-                self.first_setup_complete = True
-            else:
-                if self.state == "fastflow":
-                    self.next_state()
         except StopIteration as e:
-            self.fastflow_result = e.value
-            self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
-            self.first_setup_complete = True
-            self.update_flowrate.emit(self.fastflow_result)
             if self.state == "fastflow":
                 self.next_state()
-        else:
-            if self.running:
-                self.img_signal.connect(self.run_fastflow)
 
     def _update_metadata_if_verbose(self, key: str, val: Any):
         if VERBOSE:
