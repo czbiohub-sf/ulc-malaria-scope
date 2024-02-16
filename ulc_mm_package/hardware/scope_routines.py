@@ -269,6 +269,7 @@ class Routines:
         exposures = np.linspace(
             mscope.camera.minExposure_ms*1.01, 3 * mscope.camera.minExposure_ms, 3
         )
+        autobrightness = Autobrightness(mscope.led, target_pixel_val=150)
 
         # Create a CSV file to write the SD values
         with open(f"{syringe_pos}_sd_values.csv", "w", newline="") as csvfile:
