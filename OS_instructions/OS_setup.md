@@ -13,73 +13,25 @@ sudp apt update
 sudo apt upgrade
 ```
 
-## Optional but very nice things (axel would deeply appreciate it)
-
-```console
-sudo apt install tmux
-sudo apt install vim
-
-cat << EOF > ~/.vimrc
-set ai
-set ruler
-set hlsearch
-set showmatch
-set incsearch
-set expandtab
-set lazyredraw
-set noswapfile
-set splitbelow
-set splitright
-set ignorecase
-set smartcase
-set wildmenu
-set number relativenumber
-
-set mouse=a
-set laststatus=2
-
-set tabstop=2
-set scrolloff=2
-set shiftwidth=2
-set softtabstop=2
-set encoding=utf-8
-set backspace=indent,eol,start
-
-set fillchars+=vert:\|
-
-set updatetime=250
-set timeoutlen=300 ttimeoutlen=0
-
-syntax on
-filetype plugin indent on
-
-map <C-J> <C-W><C-J>
-map <C-K> <C-W><C-K>
-map <C-L> <C-W><C-L>
-map <C-H> <C-W><C-H>
-
-highlight clear SignColumn
-EOF
-```
 
 ### Install numba first, separately
 Note: this section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
 
 **32 bit os**
-```
+```console
 sudo apt install llvm-11
 export LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
 pip install numba==0.56.0
 ```
 
 **64 bit os**
-```
+```console
 sudo apt install python3-numba
 ```
 
 ### Setup system-wide virtual environment
 
-```
+```console
 sudo apt install python3-venv python3-full
 python3 -m venv venv
 echo "source venv/bin/activate" >> .bashrc
@@ -260,4 +212,90 @@ I outline the procedure here for MacOS, but the high-level steps are similar for
 
 ### Congrats!
 
-You are done.
+You are done. Except...
+
+#### Optional, but very nice things, that axel would deeply appreciate
+
+```console
+sudo apt install tmux
+sudo apt install vim
+
+cat << EOF > ~/.vimrc
+set ai
+set ruler
+set hlsearch
+set showmatch
+set incsearch
+set expandtab
+set lazyredraw
+set noswapfile
+set splitbelow
+set splitright
+set ignorecase
+set smartcase
+set wildmenu
+set number relativenumber
+
+set mouse=a
+set laststatus=2
+
+set tabstop=2
+set scrolloff=2
+set shiftwidth=2
+set softtabstop=2
+set encoding=utf-8
+set backspace=indent,eol,start
+
+set fillchars+=vert:\|
+
+set updatetime=250
+set timeoutlen=300 ttimeoutlen=0
+
+syntax on
+filetype plugin indent on
+
+map <C-J> <C-W><C-J>
+map <C-K> <C-W><C-K>
+map <C-L> <C-W><C-L>
+map <C-H> <C-W><C-H>
+
+highlight clear SignColumn
+EOF
+
+cat << EOF > ~/.tmux.conf
+unbind C-b
+set -g prefix C-a
+bind-key C-a send-prefix
+
+set -g status-justify centre
+set -g status-position bottom
+set -g status-bg colour234
+set -g status-fg colour137
+set -g status-left ' [#S] '
+set -g status-right '#[fg=colour233,bg=colour241,bold] %m/%d #[fg=colour233,bg=colour245,bold] %H:%M:%S '
+set -g status-right-length 50
+set -g status-left-length 50
+set -g status-interval 1
+
+set -g mode-style "fg=green,bg=black"
+setw -g window-status-format ' #I#[fg=colour237]:#[fg=colour250]#W#[fg=colour244]#F '
+setw -g window-status-current-format ' #I#[fg=colour250]:#[fg=colour255]#W#[fg=colour50]#F '
+
+setw -g mouse on
+setw -g mode-keys vi
+
+# Start windows and panes at 1, not 0
+set -g base-index 1
+setw -g pane-base-index 1
+
+set-option -g history-limit 5000
+
+set-option -ga terminal-overrides ",xterm-termite:Tc"
+set -g default-terminal "screen-256color"
+
+# nvim suggestions
+set-option -sg escape-time 10
+set-option -g focus-events on
+set-option -sa terminal-overrides ',xterm-256color:RGB'
+EOF
+```
