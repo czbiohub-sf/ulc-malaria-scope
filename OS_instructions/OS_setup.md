@@ -9,7 +9,7 @@ hostname and wifi/password by pressing shift-ctrl-x. After it is flashed, pop it
 follow the commands below.
 
 ```console
-sudp apt update
+sudo apt update
 sudo apt upgrade
 ```
 
