@@ -259,7 +259,7 @@ class Routines:
 
         # Half way down
         # syringe_pos = "half_pressure"
-        # mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle()*0.5)
+        # mscope.pneumatic_module.setDutyCycle((mscope.pneumatic_module.getMaxDutyCycle() - mscope.pneumatic_module.getMinDutyCycle()) / 2)
 
         # Max
         # syringe_pos = "full"
@@ -267,7 +267,7 @@ class Routines:
 
         num_imgs_per_exposure = 3
         exposures = np.linspace(
-            mscope.camera.minExposure_ms*1.01, 3 * mscope.camera.minExposure_ms, 3
+            mscope.camera.minExposure_ms*1.01, 3 * mscope.camera.minExposure_ms, 5
         )
         autobrightness = Autobrightness(mscope.led, target_pixel_val=150)
 
