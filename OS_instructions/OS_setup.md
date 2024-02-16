@@ -32,10 +32,11 @@ sudo apt install python3-numba
 ### Setup system-wide virtual environment
 
 ```console
+cd ~
 sudo apt install python3-venv python3-full
 python3 -m venv venv
-echo "source venv/bin/activate" >> .bashrc
-source .bashrc
+echo "source ~/venv/bin/activate" >> .bashrc
+source ~/.bashrc
 ```
 
 ### Install ulc-malaria-scope
