@@ -1,6 +1,6 @@
 # Creating a fresh OS from scratch
 
-These are instructions for creating a fresh OS image from scratch. 99% of the time, you will most likely just want to flash one of our pre-made images - see `OS_fash.md`.
+These are instructions for creating a fresh OS image from scratch. 99% of the time, you will most likely just want to flash one of our pre-made images - see `OS_flash.md`.
 
 ## Full Installation Instructions
 
