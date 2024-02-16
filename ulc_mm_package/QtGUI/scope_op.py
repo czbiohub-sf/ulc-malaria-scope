@@ -719,6 +719,7 @@ class ScopeOp(QObject, NamedMachine):
         try:
             img_ds_10x = downsample_image(img, DOWNSAMPLE_FACTOR)
             self.fastflow_routine.send(img_ds_10x)
+            self.img_signal.connect(self.run_fastflow)
 
         except StopIteration as e:
             if self.state == "fastflow":
