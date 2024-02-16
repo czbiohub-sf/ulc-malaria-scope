@@ -17,6 +17,8 @@ sudo apt upgrade
 
 ```console
 sudo apt install tmux
+sudo apt install vim
+
 cat << EOF > ~/.vimrc
 set ai
 set ruler
@@ -43,17 +45,19 @@ set softtabstop=2
 set encoding=utf-8
 set backspace=indent,eol,start
 
-set signcolumn=yes:1
 set fillchars+=vert:\|
 
 set updatetime=250
 set timeoutlen=300 ttimeoutlen=0
 
+syntax on
 filetype plugin indent on
+
 map <C-J> <C-W><C-J>
 map <C-K> <C-W><C-K>
 map <C-L> <C-W><C-L>
 map <C-H> <C-W><C-H>
+
 highlight clear SignColumn
 EOF
 ```
@@ -61,15 +65,31 @@ EOF
 ### Install numba first, separately
 Note: this section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
 
+**32 bit os**
 ```
 sudo apt install llvm-11
 export LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
 pip install numba==0.56.0
 ```
 
+**64 bit os**
+```
+sudo apt install python3-numba
+```
+
+### Setup system-wide virtual environment
+
+```
+sudo apt install python3-venv python3-full
+python3 -m venv venv
+echo "source venv/bin/activate" >> .bashrc
+source .bashrc
+```
+
 ### Install ulc-malaria-scope
 ```console
-mkdir Documents && cd Documents
+mkdir Documents
+cd Documents
 git clone https://github.com/czbiohub/ulc-malaria-scope.git
 cd ulc-malaria-scope
 pip3 install -e .
