@@ -176,6 +176,7 @@ class Autobrightness:
         curr_brightness_enum, curr_mean_brightness_val = adjustBrightness(
             img, self.target_pixel_val, self.led, self.step_size_perc
         )
+        print(f"Current brightness val: {curr_mean_brightness_val}")
         if self.prev_brightness_enum is not None:
             if self.prev_brightness_enum != curr_brightness_enum:
                 self.step_size_perc /= 2
