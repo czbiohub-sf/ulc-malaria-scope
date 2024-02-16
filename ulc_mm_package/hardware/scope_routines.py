@@ -23,7 +23,6 @@ from ulc_mm_package.image_processing.cell_finder import (
 from ulc_mm_package.hardware.pneumatic_module import PressureLeak, PressureSensorBusy
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import (
-    DEFAULT_EXPOSURE_MS,
     MIN_PRESSURE_DIFF,
     FOCUS_EWMA_ALPHA,
 )
@@ -254,7 +253,6 @@ class Routines:
     def flow_motion_blur(
         self,
         mscope: MalariaScope,
-        img: np.ndarray,
     ):
         syringe_pos = "no_pressure"
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
