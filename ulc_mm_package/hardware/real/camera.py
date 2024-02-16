@@ -337,5 +337,5 @@ class AVTCamera(CameraBase):
         else:
             raise ValueError(
                 "value_ms out of range: must be in "
-                "[{self.minExposure_ms, self.maxExposure_ms}], but value_ms={value_ms}"
+                f"[{self.minExposure_ms, self.maxExposure_ms}], but value_ms={value_ms}"
             )
