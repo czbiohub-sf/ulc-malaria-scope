@@ -95,7 +95,7 @@ cmake \
   -DPYTHON_EXECUTABLE="/usr/bin/python3"  \
   -DPYTHON_LIBRARY="/usr/lib/aarch64-linux-gnu/libpython3.11.so"  \
   -DPYTHON_INCLUDE_DIR="/usr/include/python3.11"  \
-  -DCYTHON_EXECUTABLE="$(which python3)"  \
+  -DCYTHON_EXECUTABLE="$(which cython)"  \
   -DENABLE_OV_TF_FRONTEND_ENABLE=OFF  \
   -DENABLE_OV_PDPD_FRONTEND_ENABLE=OFF  \
   -DENABLE_SAMPLES=OFF  \
