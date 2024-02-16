@@ -72,7 +72,7 @@ mkdir build && cd build
 ### Building Openvino
 
 **32 bit os**
-```
+```console
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DENABLE_PYTHON=ON \
@@ -88,7 +88,7 @@ cmake \
 ```
 
 **64 bit os**
-```
+```console
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DENABLE_PYTHON=ON \
