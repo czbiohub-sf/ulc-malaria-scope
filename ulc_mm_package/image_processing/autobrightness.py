@@ -169,7 +169,7 @@ class Autobrightness:
         self.led = led
         self.step_size_perc = step_size_perc
         self.default_step_size_perc = step_size_perc
-        self.timeout_steps = 500
+        self.timeout_steps = 1000
         self.step_counter = 0
 
     def runAutobrightness(self, img: np.ndarray) -> bool:
