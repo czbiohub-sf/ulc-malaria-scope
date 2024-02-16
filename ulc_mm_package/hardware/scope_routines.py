@@ -267,7 +267,7 @@ class Routines:
 
         num_imgs_per_exposure = 3
         exposures = np.linspace(
-            mscope.camera.self.minExposure_ms, 3 * mscope.camera.self.minExposure_ms, 3
+            mscope.camera.minExposure_ms, 3 * mscope.camera.minExposure_ms, 3
         )
         autobrightness = Autobrightness(mscope.led)
 
