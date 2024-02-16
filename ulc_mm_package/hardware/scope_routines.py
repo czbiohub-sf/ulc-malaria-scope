@@ -295,6 +295,7 @@ class Routines:
 
                         # Write the SD value to the CSV file
                         writer.writerow([exposure, i, sd])
+                break
 
     @init_generator
     def autobrightnessRoutine(
