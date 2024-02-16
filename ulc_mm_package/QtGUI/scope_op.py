@@ -227,9 +227,9 @@ class ScopeOp(QObject, NamedMachine):
         self._img_signal.connect(func)
         self._img_signal_lock.unlock()
 
-    def image_signal_disconnect(self, func):
+    def image_signal_disconnect(self, *funcs):
         self._img_signal_lock.lock()
-        self._img_signal.disconnect(func)
+        self._img_signal.disconnect(*funcs)
         self._img_signal_lock.unlock()
 
     def _set_exp_variables(self):
