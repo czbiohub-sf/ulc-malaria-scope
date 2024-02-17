@@ -8,6 +8,7 @@ from time import perf_counter
 from datetime import datetime
 from concurrent.futures import Future
 from typing import Dict, List, Optional
+from stats_utils.compensator import CountCompensator
 
 import numpy as np
 import numpy.typing as npt
@@ -27,6 +28,7 @@ from ulc_mm_package.neural_nets.utils import (
 from ulc_mm_package.neural_nets.neural_network_constants import (
     ASEXUAL_PARASITE_CLASS_IDS,
     YOGO_CLASS_LIST,
+    YOGO_MODEL,
 )
 
 from ulc_mm_package.scope_constants import (
@@ -66,7 +68,7 @@ def write_img(img: np.ndarray, filepath: Path):
 class DataStorage:
     def __init__(self, stats_utils, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
-        self.stats_utils = stats_utils
+        self.stats_utils = None
         self.zw = ZarrWriter()
         self.md_writer: Optional[csv.DictWriter] = None
         self.metadata_file: Optional[io.TextIOWrapper] = None
@@ -81,6 +83,9 @@ class DataStorage:
 
         # Calculate max number of digits, to zeropad subsample img filenames
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
+
+    def initCountCompensator(self, clinical):
+        self.compensator = CountCompensator(YOGO_MODEL, clinical=clinical)
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
@@ -313,21 +318,18 @@ class DataStorage:
 
             # Get cell counts
             raw_cell_counts = get_class_counts(pred_tensors)
-            # Apply confusion matrix correction
-            deskewed_cell_counts = self.stats_utils.calc_deskewed_counts(raw_cell_counts)
-            count_vars = self.calc_class_count_vars(raw_cell_counts, deskewed_counts)
             # Associate class with counts
             class_name_to_cell_count = {
-                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, deskewed_cell_counts)
+                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            frac_parasitemia, conf_bound = stats_utils.calc_parasitemia_95_conf_err(count_vars, deskewed_cell_counts)
-            perc_parasitemia = (f"{100*frac_parasitemia:.1f}")
-            perc_parasitemia_err = (f"{100*conf_bound:.1f}")
-            parasites_per_ul = (f"{RBCS_PER_UL*frac_parasitemia:.1f}")
-            parasites_per_ul_err = (f"{RBCS_PER_UL*conf_bound:.1f}")
+            perc_parasitemia, perc_parasitemia_err = self.compensator.get_res_from_counts(raw_cell_counts)
 
-            # TODO add confidence bounds
+            perc_parasitemia = (f"{perc_parasitemia:.1f}")
+            perc_parasitemia_err = (f"{perc_parasitemia_err:.1f}")
+
+            parasites_per_ul = (f"{RBCS_PER_UL*perc_parasitemia:.1f}")
+            parasitemia_per_ul_err = (f"{RBCS_PER_UL*perc_parasitemia_err:.1f}")
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
@@ -378,10 +380,6 @@ class DataStorage:
                 writer.writerow(class_name_to_cell_count.keys())
                 writer.writerow(class_name_to_cell_count.values())
             shutil.copy(cell_count_loc, DESKTOP_CELL_COUNT_DIR)
-
-            # Print stats results
-            stats_str = self.stats_utils.get_all_stats_str(deskewed_cell_counts)
-            self.logger.info(stats_str)
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:

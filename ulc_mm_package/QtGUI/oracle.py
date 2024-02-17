@@ -31,7 +31,6 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
-from stats_utils.compensator import CountCompensator
 
 from ulc_mm_package.scope_constants import (
     LOCKFILE,
@@ -54,6 +53,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
+    CLINICAL_PARASITE_SITES,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -133,9 +133,6 @@ class Oracle(Machine):
         )
         self.logger = logging.root
         self.logger.info("STARTING ORACLE.")
-
-        # Instantiate stats utils
-        self.stats_utils = CountCompensator()
 
         # Instantiate GUI windows
         self.form_window = FormGUI()
@@ -227,7 +224,7 @@ class Oracle(Machine):
 
     def _init_threads(self):
         # Instantiate scope operator and thread
-        self.scopeop = ScopeOp(self.stats_utils)
+        self.scopeop = ScopeOp()
         self.scopeop_thread = QThread()
         self.scopeop.moveToThread(self.scopeop_thread)
 
@@ -633,6 +630,9 @@ class Oracle(Machine):
             PER_IMAGE_METADATA_KEYS,
         )
 
+        clinical = experiment_metadata["site"] in CLINICAL_PARASITE_SITES 
+        self.scopeop.mscope.data_storage.initCountCompensator(clinical)
+
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
 
@@ -644,6 +644,7 @@ class Oracle(Machine):
             self.scopeop.lid_opened = self.scopeop.mscope.read_lim_sw()
         else:
             self.scopeop.lid_opened = False
+
         self.form_window.close()
 
     def _start_liveview(self, *args):

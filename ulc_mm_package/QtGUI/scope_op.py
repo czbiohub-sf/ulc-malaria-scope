@@ -117,7 +117,7 @@ class ScopeOp(QObject, NamedMachine):
 
     update_thumbnails_signal = pyqtSignal(object)
 
-    def __init__(self, stats_utils):
+    def __init__(self):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
@@ -126,7 +126,6 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal = self.acquisition.update_scopeop
 
         self.routines = Routines()
-        self.stats_utils = stats_utils
 
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
@@ -296,7 +295,7 @@ class ScopeOp(QObject, NamedMachine):
     def setup(self):
         self.create_timers.emit()
 
-        self.mscope = MalariaScope(self.stats_utils)
+        self.mscope = MalariaScope()
 
         self.yield_mscope.emit(self.mscope)
         if not SIMULATION:

@@ -23,8 +23,9 @@ AUTOFOCUS_MODEL_DIR = str(
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_CONF_THRESHOLD = 0.9
+YOGO_MODEL_NAME = "frightful-wendigo-1931"
 YOGO_MODEL_DIR = str(
-    curr_dir / "yogo_model_files" / "frightful-wendigo-1931" / "best-quarter.xml"
+    curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best-quarter.xml"
 )
 
 YOGO_CLASS_LIST: Tuple[str, ...] = (
