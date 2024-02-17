@@ -238,7 +238,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.frame_count = 0
         self.raw_cell_count = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
-        self.deskewed_cell_count = np.zeros(len(YOGO_CLASS_LIST), dtype=float)
 
         self.first_setup_complete: bool = False
 
@@ -836,11 +835,6 @@ class ScopeOp(QObject, NamedMachine):
                     ),
                 )
                 return
-
-        # Deskew results with confusion matrix correction
-        self.deskewed_cell_count = self.stats_utils.calc_deskewed_counts(
-            self.raw_cell_count
-        )
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
