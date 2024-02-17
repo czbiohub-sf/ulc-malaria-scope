@@ -76,7 +76,7 @@ class Components(Enum):
 
 
 class MalariaScope:
-    def __init__(self, clinical):
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
 
         self.motor_enabled = False

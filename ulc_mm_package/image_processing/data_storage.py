@@ -28,7 +28,7 @@ from ulc_mm_package.neural_nets.utils import (
 from ulc_mm_package.neural_nets.neural_network_constants import (
     ASEXUAL_PARASITE_CLASS_IDS,
     YOGO_CLASS_LIST,
-    YOGO_MODEL,
+    _NAME,
 )
 
 from ulc_mm_package.scope_constants import (
@@ -66,7 +66,7 @@ def write_img(img: np.ndarray, filepath: Path):
 
 
 class DataStorage:
-    def __init__(self, stats_utils, default_fps: Optional[float] = None):
+    def __init__(self, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
         self.stats_utils = None
         self.zw = ZarrWriter()
@@ -85,7 +85,7 @@ class DataStorage:
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
     def initCountCompensator(self, clinical):
-        self.compensator = CountCompensator(YOGO_MODEL, clinical=clinical)
+        self.compensator = CountCompensator(YOGO_MODEL_NAME, clinical=clinical)
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
