@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (
     QListView,
     QListWidget,
     QListWidgetItem,
+    QProgressBar,
     QPlainTextEdit,
     QPushButton,
     QScrollBar,
@@ -119,6 +120,19 @@ class LiveviewGUI(QMainWindow):
             self._set_color(self.state_lbl, STATUS.GOOD)
         else:
             self._set_color(self.state_lbl, STATUS.IN_PROGRESS)
+
+    def hide_state_label_show_progress_bar(self, val: int):
+        self.state_lbl.hide()
+        self.end_of_run_progress_bar.setValue(val)
+        self.end_of_run_progress_bar.show()
+
+    def hide_progress_bar_show_state_label(self):
+        self.state_lbl.show()
+        self.end_of_run_progress_bar.setValue(0)
+        self.end_of_run_progress_bar.hide()
+
+    def update_progress_bar(self, val: int):
+        self.end_of_run_progress_bar.setValue(val)
 
     @pyqtSlot(int)
     def update_img_count(self, img_count):
@@ -295,6 +309,12 @@ class LiveviewGUI(QMainWindow):
 
         # Populate infopanel with general components
         self.state_lbl = QLabel("-")
+
+        self.end_of_run_progress_bar = QProgressBar()
+        self.end_of_run_progress_bar.setTextVisible(True)
+        self.end_of_run_progress_bar.setFormat("Completing experiment, please wait")
+        self.end_of_run_progress_bar.setValue(0)
+
         self.pause_btn = QPushButton("Pause")
         self.exit_btn = QPushButton("Exit")
         self.runtime_lbl = QLabel("Runtime:")
@@ -335,12 +355,19 @@ class LiveviewGUI(QMainWindow):
         self.focus_title.setAlignment(Qt.AlignCenter)
         self.flowrate_title.setAlignment(Qt.AlignCenter)
         self.tcp_lbl.setAlignment(Qt.AlignCenter)
+        self.end_of_run_progress_bar.setAlignment(Qt.AlignCenter)
+        self.end_of_run_progress_bar.setStyleSheet(
+            "QProgressBar::chunk " "{" "background-color: green;" "}"
+        )
 
         # Setup column size
         self.pause_btn.setFixedWidth(120)
         self.exit_btn.setFixedWidth(120)
 
         self.infopanel_layout.addWidget(self.state_lbl, 0, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.end_of_run_progress_bar, 0, 1, 1, 2)
+        self.end_of_run_progress_bar.hide()
+
         self.infopanel_layout.addWidget(self.pause_btn, 1, 1)
         self.infopanel_layout.addWidget(self.exit_btn, 1, 2)
         self.infopanel_layout.addWidget(self.runtime_lbl, 2, 1)

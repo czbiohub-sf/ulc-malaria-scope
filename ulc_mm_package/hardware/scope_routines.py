@@ -26,6 +26,7 @@ from ulc_mm_package.hardware.hardware_constants import (
     MIN_PRESSURE_DIFF,
     FOCUS_EWMA_ALPHA,
 )
+from ulc_mm_package.image_processing.classic_focus import OOF, ClassicImageFocus
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
 from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 
@@ -113,6 +114,10 @@ class Routines:
         adjusted = None
         steps_from_focus = None
 
+        # reset the autofocus in case we got here fm. classic focus restarting us to this point.
+        # we want to make sure we don't pollute the new PSSAF w/ old data
+        mscope.autofocus_model.reset(wait_for_jobs=False)
+
         ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
         ssaf_filter.set_init_val(0)
 
@@ -165,6 +170,23 @@ class Routines:
             else:
                 _ = yield None, None, None
 
+    @init_generator
+    def classic_focus_routine(
+        self, init_img: np.ndarray
+    ) -> Generator[float, np.ndarray, np.ndarray]:
+        img_counter = 0
+        self.classic_focus = ClassicImageFocus(init_img)
+
+        while True:
+            img = yield self.classic_focus.curr_ratio
+            img_counter += 1
+
+            if img_counter % processing_constants.CLASSIC_FOCUS_FRAME_THROTTLE == 0:
+                try:
+                    self.classic_focus.add_image(img)
+                except OOF:
+                    raise
+
     def count_parasitemia(
         self,
         mscope: MalariaScope,
@@ -207,9 +229,6 @@ class Routines:
         CantReachTargetFlowrate:
             Raised when the syringe is already at its maximally extended position but the flowrate
             is still outside the tolerance band.
-
-        LowConfidenceCorrelations:
-            Raised if the percentage of failed correlations exceeds FAILED_CORR_PERC_TOLERANCE of all measurements.
         """
 
         flow_val: Optional[float] = None

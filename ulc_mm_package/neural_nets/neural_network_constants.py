@@ -24,7 +24,7 @@ AUTOFOCUS_MODEL_DIR = str(
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_CONF_THRESHOLD = 0.9
 YOGO_MODEL_DIR = str(
-    curr_dir / "yogo_model_files" / "fine-voice-1816" / "fine-voice-1816-quarter.xml"
+    curr_dir / "yogo_model_files" / "frightful-wendigo-1931" / "best-quarter.xml"
 )
 YOGO_CMATRIX_MEAN_DIR = str(
     curr_dir
@@ -60,11 +60,13 @@ ASEXUAL_PARASITE_CLASS_IDS: List[int] = [
     YOGO_CLASS_IDX_MAP["trophozoite"],
     YOGO_CLASS_IDX_MAP["schizont"],
 ]
-PARASITE_CLASS_IDS: List[int] = [
+CLASS_IDS_FOR_THUMBNAILS: List[int] = [
+    YOGO_CLASS_IDX_MAP["healthy"],
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],
     YOGO_CLASS_IDX_MAP["schizont"],
     YOGO_CLASS_IDX_MAP["gametocyte"],
+    YOGO_CLASS_IDX_MAP["wbc"],
 ]
 
 # best way to find this number is to look for input shape in the model definition xml file

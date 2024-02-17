@@ -1,9 +1,9 @@
 import enum
 from typing import Tuple, Optional
 
-import cv2
 import numpy as np
 
+from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
     TOP_PERC,
@@ -59,13 +59,6 @@ class LEDNoPower(AutobrightnessError):
         )
 
         super().__init__(f"{msg}")
-
-
-def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
-    """Downsamples an image by `scale_factor`"""
-
-    h, w = img.shape
-    return cv2.resize(img, (w // scale_factor, h // scale_factor))
 
 
 def assessBrightness(

@@ -40,7 +40,12 @@ from ulc_mm_package.hardware.pneumatic_module import (
 )
 from ulc_mm_package.hardware.fan import Fan
 from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X
-from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
+from ulc_mm_package.scope_constants import (
+    SIMULATION,
+    CAMERA_SELECTION,
+    CameraOptions,
+    DOWNSAMPLE_FACTOR,
+)
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.image_processing.flow_control import FlowController
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
@@ -145,8 +150,8 @@ class MalariaScope:
         # note that this waits for their queues to drain, and then
         # resets their threadpool executor; it does not drop their
         # references to the NCS (which would then require reconnecting)
-        self.autofocus_model.restart()
-        self.cell_diagnosis_model.restart()
+        self.autofocus_model.reset(wait_for_jobs=False)
+        self.cell_diagnosis_model.reset(wait_for_jobs=False)
 
         # Reset predictions handler
         self.predictions_handler: PredictionsHandler = PredictionsHandler()
@@ -157,8 +162,8 @@ class MalariaScope:
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.ht_sensor.stop()
         self.flow_controller.stop()
-        self.autofocus_model.shutdown()
-        self.cell_diagnosis_model.shutdown()
+        self.autofocus_model.reset(wait_for_jobs=False)
+        self.cell_diagnosis_model.reset(wait_for_jobs=False)
 
         if self.camera._isActivated:
             self.camera.deactivateCamera()
@@ -327,8 +332,8 @@ class MalariaScope:
             self.logger.info("Initializing FlowController...")
             self.flow_controller = FlowController(
                 self.pneumatic_module,
-                CAMERA_SELECTION.IMG_HEIGHT,
-                CAMERA_SELECTION.IMG_WIDTH,
+                CAMERA_SELECTION.IMG_HEIGHT // DOWNSAMPLE_FACTOR,
+                CAMERA_SELECTION.IMG_WIDTH // DOWNSAMPLE_FACTOR,
             )
             self.flow_controller_enabled = True
         except Exception as e:

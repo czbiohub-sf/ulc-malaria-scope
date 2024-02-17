@@ -1,6 +1,6 @@
 # Creating a fresh OS from scratch
 
-These are instructions for creating a fresh OS image from scratch. 99% of the time, you will most likely just want to flash one of our pre-made images - see `OS_fash.md`.
+These are instructions for creating a fresh OS image from scratch. 99% of the time, you will most likely just want to flash one of our pre-made images - see `OS_flash.md`.
 
 ## Full Installation Instructions
 
@@ -9,8 +9,53 @@ hostname and wifi/password by pressing shift-ctrl-x. After it is flashed, pop it
 follow the commands below.
 
 ```console
-sudp apt update
+sudo apt update
 sudo apt upgrade
+```
+
+## Optional but very nice things (axel would deeply appreciate it)
+
+```console
+sudo apt install tmux
+cat << EOF > ~/.vimrc
+set ai
+set ruler
+set hlsearch
+set showmatch
+set incsearch
+set expandtab
+set lazyredraw
+set noswapfile
+set splitbelow
+set splitright
+set ignorecase
+set smartcase
+set wildmenu
+set number relativenumber
+
+set mouse=a
+set laststatus=2
+
+set tabstop=2
+set scrolloff=2
+set shiftwidth=2
+set softtabstop=2
+set encoding=utf-8
+set backspace=indent,eol,start
+
+set signcolumn=yes:1
+set fillchars+=vert:\|
+
+set updatetime=250
+set timeoutlen=300 ttimeoutlen=0
+
+filetype plugin indent on
+map <C-J> <C-W><C-J>
+map <C-K> <C-W><C-K>
+map <C-L> <C-W><C-L>
+map <C-H> <C-W><C-H>
+highlight clear SignColumn
+EOF
 ```
 
 ### Install numba first, separately

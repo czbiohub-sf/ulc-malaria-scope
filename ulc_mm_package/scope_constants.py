@@ -38,6 +38,9 @@ if SIMULATION:
 
 CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
 
+# ================ For flowcontrol and classc image focus ================ #
+DOWNSAMPLE_FACTOR = 10
+
 # ================ Summary PDF constants ================ #
 DEBUG_REPORT = int(
     os.environ.get("DEBUG_REPORT", 0)
@@ -52,7 +55,7 @@ for x in [DESKTOP_SUMMARY_DIR, DESKTOP_CELL_COUNT_DIR]:
     Path(x).mkdir(exist_ok=True)
 
 RBCS_PER_UL = 5e6
-MAX_THUMBNAILS_SAVED_PER_CLASS = 200
+MAX_THUMBNAILS_SAVED_PER_CLASS = 80
 
 
 class MissingCameraError(Exception):
@@ -168,7 +171,8 @@ PER_IMAGE_METADATA_KEYS = [
     "focus_error",
     "filtered_focus_error",
     "focus_adjustment",
-    "raw_healthy_count",
+    "classic_sharpness_ratio",
+    "cell_count_cumulative",
     "temperature",
     "camera_temperature",
     "humidity",

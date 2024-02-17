@@ -13,7 +13,7 @@ from numba import njit
 from ulc_mm_package.scope_constants import MAX_THUMBNAILS_SAVED_PER_CLASS
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
-    PARASITE_CLASS_IDS,
+    CLASS_IDS_FOR_THUMBNAILS,
     YOGO_CLASS_IDX_MAP,
     YOGO_CLASS_LIST,
     YOGO_CONF_THRESHOLD,
@@ -288,11 +288,11 @@ def _save_thumbnails_to_disk(
         _write_thumbnail_from_pred_tensor(zarr_store, preds, i, save_dir)
 
 
-def save_parasite_thumbnails_to_disk(
+def save_thumbnails_to_disk(
     zarr_store: zarr.core.Array,
     parsed_prediction_tensor: npt.NDArray,
     dataset_dir: Path,
-    parasite_class_ids: List[int] = PARASITE_CLASS_IDS,
+    desired_class_ids: List[int] = CLASS_IDS_FOR_THUMBNAILS,
 ) -> Dict[str, Path]:
     """Save thumbnails to disk
 
@@ -303,8 +303,8 @@ def save_parasite_thumbnails_to_disk(
     parsed_prediction_tensor: npt.NDArray
     dataset_dir: Path
         Where the experiment is stored (sets where the thumbnails folders will be saved)
-    parasite_class_ids: List[int]
-        List of class IDs of the parasites, only these classes' thumbnails will be saved
+    desired_class_ids: List[int]
+        List of class IDs that should be saved, only these classes' thumbnails will be saved
 
     Returns
     -------
@@ -318,27 +318,24 @@ def save_parasite_thumbnails_to_disk(
     thumbnail_path = dataset_dir / "thumbnails"
     Path.mkdir(thumbnail_path, exist_ok=True)
     class_name_to_path = {
-        yogo_id_to_str[x]: thumbnail_path / yogo_id_to_str[x]
-        for x in parasite_class_ids
+        yogo_id_to_str[x]: thumbnail_path / yogo_id_to_str[x] for x in desired_class_ids
     }
     for path in class_name_to_path.values():
         Path.mkdir(path, exist_ok=True)
 
-    parasite_class_tensors = [
+    class_tensors = [
         get_specific_class_from_parsed_tensor(parsed_prediction_tensor, x)
-        for x in parasite_class_ids
+        for x in desired_class_ids
     ]
 
-    parasite_tensors_and_save_paths = zip(
-        parasite_class_tensors, class_name_to_path.values()
-    )
+    parasite_tensors_and_save_paths = zip(class_tensors, class_name_to_path.values())
 
-    for parasite_tensor, path in parasite_tensors_and_save_paths:
+    for class_tensor, path in parasite_tensors_and_save_paths:
         # Sort by descending confidence
-        sort_by_confs = parasite_tensor[7, :].argsort()
-        descending_confs = parasite_tensor[:, sort_by_confs][:, ::-1]
+        sort_by_confs = class_tensor[7, :].argsort()
+        descending_confs = class_tensor[:, sort_by_confs][:, ::-1]
 
-        # Limit the number of thumbnails save for each class
+        # Limit the number of thumbnails saved for each class
         descending_confs_trunc = descending_confs[:, :MAX_THUMBNAILS_SAVED_PER_CLASS]
         _save_thumbnails_to_disk(zarr_store, descending_confs_trunc, path)
 
