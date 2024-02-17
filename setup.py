@@ -41,7 +41,7 @@ setup(
         "qimage2ndarray==1.9.0",
         "py_cameras @ git+https://github.com/czbiohub/pyCameras@master",
         "pymotors @ git+https://github.com/czbiohub/PyMotors@master",
-        "remo_stats_utils @ git+https://github.com/czbiohub-sf/remo-stats-utils@main"
+        "stats_utils @ git+https://github.com/czbiohub-sf/remo-stats-utils@main"
         "typer==0.4.1",
         "tqdm==4.63.0",
         "transitions==0.8.11",

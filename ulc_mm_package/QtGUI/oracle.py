@@ -31,6 +31,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
+from stats_utils.compensator import CountCompensator
 
 from ulc_mm_package.scope_constants import (
     LOCKFILE,
@@ -60,7 +61,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 )
 from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
 from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
-from ulc_mm_package.utilities.statistics_utils import StatsUtils
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.form_gui import FormGUI
@@ -135,7 +135,7 @@ class Oracle(Machine):
         self.logger.info("STARTING ORACLE.")
 
         # Instantiate stats utils
-        self.stats_utils = StatsUtils()
+        self.stats_utils = CountCompensator()
 
         # Instantiate GUI windows
         self.form_window = FormGUI()
