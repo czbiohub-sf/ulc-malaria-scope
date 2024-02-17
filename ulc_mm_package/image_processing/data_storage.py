@@ -323,9 +323,10 @@ class DataStorage:
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            perc_parasitemia, perc_parasitemia_err = (
-                self.compensator.get_res_from_counts(raw_cell_counts)
-            )
+            (
+                perc_parasitemia,
+                perc_parasitemia_err,
+            ) = self.compensator.get_res_from_counts(raw_cell_counts)
 
             perc_parasitemia = f"{perc_parasitemia:.1f}"
             perc_parasitemia_err = f"{perc_parasitemia_err:.1f}"

@@ -11,9 +11,11 @@ class dtoverlay_PWM:
             self._start()
             dtoverlay_PWM._started = True
 
-    def _atomic_write_to_file(self, file, write_content): ...
+    def _atomic_write_to_file(self, file, write_content):
+        ...
 
-    def _start(self): ...
+    def _start(self):
+        ...
 
     def setFreq(self, freq: int):
         """Sets the frequency of the PWM.
@@ -44,4 +46,5 @@ class dtoverlay_PWM:
             f"/sys/class/pwm/pwmchip0/pwm{self.channel}/duty_cycle", str(duty_cycle_val)
         )
 
-    def exit(self): ...
+    def exit(self):
+        ...

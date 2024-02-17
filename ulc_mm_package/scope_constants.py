@@ -58,7 +58,8 @@ RBCS_PER_UL = 5e6
 MAX_THUMBNAILS_SAVED_PER_CLASS = 80
 
 
-class MissingCameraError(Exception): ...
+class MissingCameraError(Exception):
+    ...
 
 
 ImageDims = namedtuple("ImageDims", ["width", "height"])

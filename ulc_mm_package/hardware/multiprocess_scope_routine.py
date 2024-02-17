@@ -145,7 +145,8 @@ def get_ctype_float_defn():
     return ctypeValueDefn("d")
 
 
-class SharedctypeLockTimeout(Exception): ...
+class SharedctypeLockTimeout(Exception):
+    ...
 
 
 class SharedctypeWrapper(abc.ABC):
@@ -280,10 +281,12 @@ class SharedctypeArray(SharedctypeWrapper):
         return self._np_wrapper.copy()
 
 
-class MultiProcFuncHalted(Exception): ...
+class MultiProcFuncHalted(Exception):
+    ...
 
 
-class MultiProcFuncTerminated(Exception): ...
+class MultiProcFuncTerminated(Exception):
+    ...
 
 
 class MultiProcFunc:

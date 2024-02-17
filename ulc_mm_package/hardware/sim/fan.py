@@ -11,4 +11,5 @@ Purpose: Dummy hardware object simulating fan.
 from ulc_mm_package.hardware.fan import FanBase
 
 
-class Fan(FanBase): ...
+class Fan(FanBase):
+    ...

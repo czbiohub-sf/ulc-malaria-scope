@@ -7,4 +7,5 @@ class SHT3X:
     def get_temp_and_humidity(self) -> Tuple[float, float]:
         return 25.0, 1.0
 
-    def stop(self): ...
+    def stop(self):
+        ...
