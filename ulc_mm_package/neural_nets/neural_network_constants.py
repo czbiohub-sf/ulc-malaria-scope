@@ -26,18 +26,6 @@ YOGO_CONF_THRESHOLD = 0.9
 YOGO_MODEL_DIR = str(
     curr_dir / "yogo_model_files" / "frightful-wendigo-1931" / "best-quarter.xml"
 )
-YOGO_CMATRIX_MEAN_DIR = str(
-    curr_dir
-    / "yogo_model_files"
-    / "fine-voice-1816"
-    / "frightful-wendigo-1931-cmatrix-mean.npy"
-)
-YOGO_INV_CMATRIX_STD_DIR = str(
-    curr_dir
-    / "yogo_model_files"
-    / "fine-voice-1816"
-    / "frightful-wendigo-1931-inverse-cmatrix-std.npy"
-)
 
 YOGO_CLASS_LIST: Tuple[str, ...] = (
     "healthy",
@@ -49,12 +37,6 @@ YOGO_CLASS_LIST: Tuple[str, ...] = (
     "misc",
 )
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
-RBC_CLASS_IDS: List[int] = [
-    YOGO_CLASS_IDX_MAP["healthy"],
-    YOGO_CLASS_IDX_MAP["ring"],
-    YOGO_CLASS_IDX_MAP["trophozoite"],
-    YOGO_CLASS_IDX_MAP["schizont"],
-]
 ASEXUAL_PARASITE_CLASS_IDS: List[int] = [
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],
