@@ -254,16 +254,7 @@ class Routines:
         self,
         mscope: MalariaScope,
     ):
-        syringe_pos = "no_pressure"
-        mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMaxDutyCycle())
-
-        # Half way down
-        # syringe_pos = "half_pressure"
-        # mscope.pneumatic_module.setDutyCycle((mscope.pneumatic_module.getMaxDutyCycle() - mscope.pneumatic_module.getMinDutyCycle()) / 2)
-
-        # Max
-        # syringe_pos = "full"
-        # mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
+        syringe_pos = "max"
 
         num_imgs_per_exposure = 3
         exposures = np.linspace(

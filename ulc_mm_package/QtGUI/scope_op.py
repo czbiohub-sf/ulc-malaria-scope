@@ -440,6 +440,10 @@ class ScopeOp(QObject, NamedMachine):
             self.mscope.motor.move_abs(self.cellfinder_result)
 
     def _start_autofocus(self, *args):
+        self.mscope.pneumatic_module.setDutyCycle(
+            self.mscope.pneumatic_module.getMinDutyCycle()
+        )
+
         self.autofocus_batch = []
         self.autofocus_results = [None, None]
         self.img_signal.connect(self.run_autofocus)
