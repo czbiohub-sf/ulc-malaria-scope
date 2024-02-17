@@ -12,13 +12,11 @@ class STATUS(enum.Enum):
     GOOD = "lightgreen"
     BAD = "lightsalmon"
 
-
 # ================ Oracle error options ================ #
 class ERROR_BEHAVIORS(enum.Enum):
     DEFAULT = 0
     PRECHECK = 1
     FLOWCONTROL = 2
-
 
 # ================ State machine verification ================ #
 NO_PAUSE_STATES = {"pause", "intermission"}
@@ -45,9 +43,6 @@ SITE_LIST = ["Tororo, Uganda", "Masafu, Uganda", "Biohub SF", "DeRisi Lab"]
 # Timeout period
 TIMEOUT_PERIOD_M = 20  # minutes
 TIMEOUT_PERIOD_S = TIMEOUT_PERIOD_M * 60  # seconds
-
-# Early termination due to high parasitemia
-PARASITEMIA_UNCERTAINTY_THRESHOLD = 0.05
 
 # ================ Media/links ================ #
 ICON_PATH = "gui_images/CZB-logo.png"
