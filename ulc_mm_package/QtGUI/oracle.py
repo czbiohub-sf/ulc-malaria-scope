@@ -584,9 +584,9 @@ class Oracle(Machine):
         # Assign other metadata parameters
         self.experiment_metadata["scope"] = socket.gethostname()
         self.experiment_metadata["camera"] = CAMERA_SELECTION.name
-        self.experiment_metadata[
-            "exposure"
-        ] = self.scopeop.mscope.camera.exposureTime_ms
+        self.experiment_metadata["exposure"] = (
+            self.scopeop.mscope.camera.exposureTime_ms
+        )
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
         self.experiment_metadata["autofocus_model"] = Path(AUTOFOCUS_MODEL_DIR).stem
         self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).stem
@@ -630,7 +630,7 @@ class Oracle(Machine):
             PER_IMAGE_METADATA_KEYS,
         )
 
-        clinical = experiment_metadata["site"] in CLINICAL_PARASITE_SITES 
+        clinical = experiment_metadata["site"] in CLINICAL_PARASITE_SITES
         self.scopeop.mscope.data_storage.initCountCompensator(clinical)
 
         # Update target flowrate in scopeop

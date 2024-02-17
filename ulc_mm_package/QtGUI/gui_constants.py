@@ -12,11 +12,13 @@ class STATUS(enum.Enum):
     GOOD = "lightgreen"
     BAD = "lightsalmon"
 
+
 # ================ Oracle error options ================ #
 class ERROR_BEHAVIORS(enum.Enum):
     DEFAULT = 0
     PRECHECK = 1
     FLOWCONTROL = 2
+
 
 # ================ State machine verification ================ #
 NO_PAUSE_STATES = {"pause", "intermission"}

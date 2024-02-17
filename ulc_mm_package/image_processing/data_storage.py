@@ -323,13 +323,15 @@ class DataStorage:
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            perc_parasitemia, perc_parasitemia_err = self.compensator.get_res_from_counts(raw_cell_counts)
+            perc_parasitemia, perc_parasitemia_err = (
+                self.compensator.get_res_from_counts(raw_cell_counts)
+            )
 
-            perc_parasitemia = (f"{perc_parasitemia:.1f}")
-            perc_parasitemia_err = (f"{perc_parasitemia_err:.1f}")
+            perc_parasitemia = f"{perc_parasitemia:.1f}"
+            perc_parasitemia_err = f"{perc_parasitemia_err:.1f}"
 
-            parasites_per_ul = (f"{RBCS_PER_UL*perc_parasitemia:.1f}")
-            parasitemia_per_ul_err = (f"{RBCS_PER_UL*perc_parasitemia_err:.1f}")
+            parasites_per_ul = f"{RBCS_PER_UL*perc_parasitemia:.1f}"
+            parasitemia_per_ul_err = f"{RBCS_PER_UL*perc_parasitemia_err:.1f}"
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
