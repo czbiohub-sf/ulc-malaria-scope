@@ -631,7 +631,10 @@ class Oracle(Machine):
         )
 
         clinical = experiment_metadata["site"] in CLINICAL_PARASITE_SITES
-        self.scopeop.mscope.data_storage.initCountCompensator(clinical)
+        try:
+            self.scopeop.mscope.data_storage.initCountCompensator(clinical)
+        except FileNotFoundError as e:
+            # TODO ERROR HANDLING
 
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
