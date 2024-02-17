@@ -64,15 +64,25 @@ Please note: I found that a *lot* of the documentation for the installation of O
 cd ~
 git clone https://github.com/openvinotoolkit/openvino.git
 cd openvino
+```
+
+**32 bit os**
+```console
 git checkout tags/2022.1.1
 git submodule update --init --recursive
-mkdir build && cd build
+```
+
+**64 bit os**
+```console
+git checkout tags/2023.3.0
+git submodule update --init --recursive
 ```
 
 ### Building Openvino
 
 **32 bit os**
 ```console
+mkdir build && cd build
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DENABLE_PYTHON=ON \
@@ -89,6 +99,7 @@ cmake \
 
 **64 bit os**
 ```console
+mkdir build && cd build
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DENABLE_PYTHON=ON \
