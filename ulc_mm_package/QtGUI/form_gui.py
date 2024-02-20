@@ -83,7 +83,7 @@ class FormGUI(QDialog):
         self.notes_lbl = QLabel("Other notes")
         self.flowrate_lbl = QLabel("Flowrate")
         self.site_lbl = QLabel("Site")
-        self.sample_lbl = Qlabel("Sample type")
+        self.sample_lbl = QLabel("Sample type")
         self.msg_lbl = QLabel("Hardware initializing, please wait to submit form...")
 
         # Text boxes
