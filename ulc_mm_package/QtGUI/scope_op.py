@@ -531,21 +531,7 @@ class ScopeOp(QObject, NamedMachine):
             f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
         )
 
-        self.finishing_experiment.emit(25)
-
-        pred_counter = self.mscope.predictions_handler.new_pred_pointer
-        if pred_counter != 0:
-            nonzero_preds = (
-                self.mscope.predictions_handler.get_prediction_tensors()
-            )  # (8+NUM_CLASSES) x N
-
-            class_counts = nn_utils.get_class_counts(nonzero_preds)
-            sorted_confidences = (
-                nn_utils.get_all_argmax_class_confidences_for_all_classes(nonzero_preds)
-            )
-            unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
-
-        self.finishing_experiment.emit(90)
+        self.finishing_experiment.emit(65)
 
         self.mscope.reset_for_end_experiment()
 
