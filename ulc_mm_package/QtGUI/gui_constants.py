@@ -41,8 +41,8 @@ THUMBNAIL_SPACING = 5
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = ["Tororo, Uganda", "Masafu, Uganda", "Biohub SF", "DeRisi Lab", "Filipa Lab"]
 
-CLINICAL_SAMPLE = "Clinical P. falciparum"
-SAMPLE_LIST = [CLINICAL_SAMPLE, "Cultured P. falciparum"]
+CLINICAL_SAMPLE = "clinical P. falciparum"
+SAMPLE_LIST = [CLINICAL_SAMPLE, "cultured P. falciparum"]
 
 # ================ Experiment end conditions period ================ #
 # Timeout period

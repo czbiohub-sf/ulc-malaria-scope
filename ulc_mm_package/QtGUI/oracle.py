@@ -630,11 +630,24 @@ class Oracle(Machine):
             PER_IMAGE_METADATA_KEYS,
         )
 
-        clinical = experiment_metadata["sample_type"] == CLINICAL_SAMPLE
+        sample_type = experiment_metadata["sample_type"]
+        clinical = sample_type == CLINICAL_SAMPLE
         try:
             self.scopeop.mscope.data_storage.initCountCompensator(clinical)
         except FileNotFoundError as e:
-            # TODO ERROR HANDLING
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "Compensation metrics missing",
+                (
+                    f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}."
+                    '\n\nClick "OK" to shutoff scope.'
+                ),
+                buttons=Buttons.OK,
+            )
+            self.logger.warning(
+                f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}.\ne"
+            )
+            self.shutoff()
 
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
