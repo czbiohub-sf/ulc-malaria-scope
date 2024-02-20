@@ -38,6 +38,12 @@ YOGO_CLASS_LIST: Tuple[str, ...] = (
     "misc",
 )
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
+RBC_CLASS_IDS: List[int] = [
+    YOGO_CLASS_IDX_MAP["healthy"],
+    YOGO_CLASS_IDX_MAP["ring"],
+    YOGO_CLASS_IDX_MAP["trophozoite"],
+    YOGO_CLASS_IDX_MAP["schizont"],    
+]
 ASEXUAL_PARASITE_CLASS_IDS: List[int] = [
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],
