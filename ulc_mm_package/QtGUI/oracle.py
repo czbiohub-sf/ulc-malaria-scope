@@ -630,7 +630,7 @@ class Oracle(Machine):
             PER_IMAGE_METADATA_KEYS,
         )
 
-        sample_type = experiment_metadata["sample_type"]
+        sample_type = self.experiment_metadata["sample_type"]
         clinical = sample_type == CLINICAL_SAMPLE
         try:
             self.scopeop.mscope.data_storage.initCountCompensator(clinical)
@@ -645,7 +645,7 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
             self.logger.warning(
-                f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}.\ne"
+                f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}.\n{e}"
             )
             self.shutoff()
 
