@@ -27,7 +27,6 @@ from ulc_mm_package.neural_nets.utils import (
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     RBC_CLASS_IDS,
-    ASEXUAL_PARASITE_CLASS_IDS,
     YOGO_CLASS_LIST,
     YOGO_MODEL_NAME,
 )
@@ -319,7 +318,7 @@ class DataStorage:
 
             # Get cell counts
             raw_cell_counts = get_class_counts(pred_tensors)
-            total_rbcs = sum(raw_cell_counts[RBC_CLASS_IDS])
+            total_rbcs = sum([raw_cell_counts[i] for i in RBC_CLASS_IDS])
             # Associate class with counts
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
