@@ -545,11 +545,6 @@ class ScopeOp(QObject, NamedMachine):
             )
             unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
 
-            stats_string = get_all_stats_str(
-                class_counts, unsorted_confidences, sorted_confidences
-            )
-            self.logger.info(stats_string)
-
         self.finishing_experiment.emit(90)
 
         self.mscope.reset_for_end_experiment()
