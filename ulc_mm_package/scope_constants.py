@@ -148,8 +148,7 @@ EXPERIMENT_METADATA_KEYS = [
     "flowcell_id",
     "target_flowrate",
     "site",
-    "sample_type"
-    "notes",
+    "sample_type" "notes",
     "scope",
     "camera",
     "exposure",

@@ -39,7 +39,13 @@ THUMBNAIL_SPACING = 5
 
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
-SITE_LIST = ["Tororo, Uganda", "Masafu, Uganda", "Biohub SF", "DeRisi Lab", "Filipa Lab"]
+SITE_LIST = [
+    "Tororo, Uganda",
+    "Masafu, Uganda",
+    "Biohub SF",
+    "DeRisi Lab",
+    "Filipa Lab",
+]
 
 CLINICAL_SAMPLE = "clinical P. falciparum"
 SAMPLE_LIST = [CLINICAL_SAMPLE, "cultured P. falciparum"]
