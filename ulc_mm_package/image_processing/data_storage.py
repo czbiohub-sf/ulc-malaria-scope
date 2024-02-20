@@ -323,11 +323,13 @@ class DataStorage:
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
+            raw_perc_parasitemia = self.compensator.calc_parasitemia(raw_cell_counts)
             (
-                perc_parasitemia,
-                perc_parasitemia_err,
+                comp_perc_parasitemia,
+                comp_perc_parasitemia_err,
             ) = self.compensator.get_res_from_counts(raw_cell_counts)
 
+            raw_perc_parasitemia = f"{raw_perc_parasitemia:.1f}"
             perc_parasitemia = f"{perc_parasitemia:.1f}"
             perc_parasitemia_err = f"{perc_parasitemia_err:.1f}"
 
@@ -342,10 +344,12 @@ class DataStorage:
                 per_image_metadata_plot_save_loc,
                 max(1, total_rbcs),  # Account for potential div-by-zero
                 class_name_to_cell_count,
-                perc_parasitemia,
-                perc_parasitemia_err,
-                parasites_per_ul,
-                parasites_per_ul_err,
+                f"{raw_perc_parasitemia:.1f}",
+                f"{comp_perc_parasitemia:.1f}",
+                f"{comp_perc_parasitemia_err:.1f}",
+                f"{RBCS_PER_UL*raw_perc_parasitemia:.1f}",
+                f"{RBCS_PER_UL*comp_perc_parasitemia:.1f}",
+                f"{RBCS_PER_UL*comp_perc_parasitemia_err:.1f}"
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,
