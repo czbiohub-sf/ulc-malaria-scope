@@ -349,7 +349,7 @@ class DataStorage:
                 f"{comp_perc_parasitemia_err:.1f}",
                 f"{RBCS_PER_UL*raw_perc_parasitemia:.1f}",
                 f"{RBCS_PER_UL*comp_perc_parasitemia:.1f}",
-                f"{RBCS_PER_UL*comp_perc_parasitemia_err:.1f}"
+                f"{RBCS_PER_UL*comp_perc_parasitemia_err:.1f}",
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,
