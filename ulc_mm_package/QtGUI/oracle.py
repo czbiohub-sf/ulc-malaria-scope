@@ -53,7 +53,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
-    CLINICAL_PARASITE_SITES,
+    CLINICAL_SAMPLE,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -630,7 +630,7 @@ class Oracle(Machine):
             PER_IMAGE_METADATA_KEYS,
         )
 
-        clinical = experiment_metadata["site"] in CLINICAL_PARASITE_SITES
+        clinical = experiment_metadata["sample_type"] == CLINICAL_SAMPLE
         try:
             self.scopeop.mscope.data_storage.initCountCompensator(clinical)
         except FileNotFoundError as e:
