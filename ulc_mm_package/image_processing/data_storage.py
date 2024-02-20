@@ -319,7 +319,7 @@ class DataStorage:
 
             # Get cell counts
             raw_cell_counts = get_class_counts(pred_tensors)
-            total_rbcs = np.sum(raw_cell_counts[RBC_CLASS_IDS])
+            total_rbcs = sum(raw_cell_counts[RBC_CLASS_IDS])
             # Associate class with counts
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
