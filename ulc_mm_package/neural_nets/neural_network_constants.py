@@ -42,7 +42,7 @@ RBC_CLASS_IDS: List[int] = [
     YOGO_CLASS_IDX_MAP["healthy"],
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],
-    YOGO_CLASS_IDX_MAP["schizont"],    
+    YOGO_CLASS_IDX_MAP["schizont"],
 ]
 ASEXUAL_PARASITE_CLASS_IDS: List[int] = [
     YOGO_CLASS_IDX_MAP["ring"],

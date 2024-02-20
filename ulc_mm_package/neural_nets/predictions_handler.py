@@ -157,7 +157,7 @@ class PredictionsHandler:
                 [
                     hq.heappushpop(self.max_confs[x], i)  # type: ignore
                     if len(self.max_confs[x]) >= MAX_THUMBNAILS
-                    else hq.heappush(self.max_confs[x], i) # type: ignore
+                    else hq.heappush(self.max_confs[x], i)  # type: ignore
                     for i in nn_utils.get_individual_prediction_objs_from_parsed_tensor(
                         parsed_tensor, max_conf_col_ids
                     )
@@ -196,7 +196,7 @@ class PredictionsHandler:
                 [
                     hq.heappushpop(self.min_confs[x], i)  # type: ignore
                     if len(self.min_confs[x]) >= MAX_THUMBNAILS
-                    else hq.heappush(self.min_confs[x], i) # type: ignore
+                    else hq.heappush(self.min_confs[x], i)  # type: ignore
                     for i in nn_utils.get_individual_prediction_objs_from_parsed_tensor(
                         parsed_tensor, min_conf_col_ids, flip_conf_sign=True
                     )
