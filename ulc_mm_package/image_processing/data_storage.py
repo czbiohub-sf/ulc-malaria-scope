@@ -329,13 +329,6 @@ class DataStorage:
                 comp_perc_parasitemia_err,
             ) = self.compensator.get_res_from_counts(raw_cell_counts)
 
-            raw_perc_parasitemia = f"{raw_perc_parasitemia:.1f}"
-            perc_parasitemia = f"{perc_parasitemia:.1f}"
-            perc_parasitemia_err = f"{perc_parasitemia_err:.1f}"
-
-            parasites_per_ul = f"{RBCS_PER_UL*perc_parasitemia:.1f}"
-            parasitemia_per_ul_err = f"{RBCS_PER_UL*perc_parasitemia_err:.1f}"
-
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
             html_report_with_abs_path = make_html_report(
