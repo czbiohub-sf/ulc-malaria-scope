@@ -100,6 +100,8 @@ cmake \
 **64 bit os**
 ```console
 mkdir build && cd build
+# it may be necessary to `pip3 install scons`, but I'm not sure...
+# if you get an error complaining about missing scons, run the cmd above
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DENABLE_PYTHON=ON \
