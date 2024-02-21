@@ -27,6 +27,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     FLOWRATE_LIST,
     SITE_LIST,
+    SAMPLE_LIST,
     TOOLBAR_OFFSET,
 )
 
@@ -82,6 +83,7 @@ class FormGUI(QDialog):
         self.notes_lbl = QLabel("Other notes")
         self.flowrate_lbl = QLabel("Flowrate")
         self.site_lbl = QLabel("Site")
+        self.sample_lbl = QLabel("Sample type")
         self.msg_lbl = QLabel("Hardware initializing, please wait to submit form...")
 
         # Text boxes
@@ -97,9 +99,11 @@ class FormGUI(QDialog):
         # Dropdown menus
         self.flowrate_val = QComboBox()
         self.site_val = QComboBox()
+        self.sample_val = QComboBox()
 
         self.flowrate_val.addItems(FLOWRATE_LIST)
         self.site_val.addItems(SITE_LIST)
+        self.sample_val.addItems(SAMPLE_LIST)
 
         # Set default flowrate to "Medium"
         self.flowrate_val.setCurrentIndex(1)
@@ -121,6 +125,7 @@ class FormGUI(QDialog):
         # Disable dropdown menus at startup
         self.flowrate_val.setDisabled(True)
         self.site_val.setDisabled(True)
+        self.sample_val.setDisabled(True)
 
         # Set tab behavior
         self.notes_val.setTabChangesFocus(True)
@@ -131,18 +136,20 @@ class FormGUI(QDialog):
         self.main_layout.addWidget(self.flowcell_lbl, 2, 0)
         self.main_layout.addWidget(self.flowrate_lbl, 3, 0)
         self.main_layout.addWidget(self.site_lbl, 4, 0)
-        self.main_layout.addWidget(self.notes_lbl, 5, 0)
-        self.main_layout.addWidget(self.exit_btn, 7, 0)
+        self.main_layout.addWidget(self.sample_lbl, 5, 0)
+        self.main_layout.addWidget(self.notes_lbl, 6, 0)
+        self.main_layout.addWidget(self.exit_btn, 8, 0)
 
         self.main_layout.addWidget(self.operator_val, 0, 1)
         self.main_layout.addWidget(self.participant_val, 1, 1)
         self.main_layout.addWidget(self.flowcell_val, 2, 1)
         self.main_layout.addWidget(self.flowrate_val, 3, 1)
         self.main_layout.addWidget(self.site_val, 4, 1)
-        self.main_layout.addWidget(self.notes_val, 5, 1)
-        self.main_layout.addWidget(self.start_btn, 7, 1)
+        self.main_layout.addWidget(self.sample_val, 5, 1)
+        self.main_layout.addWidget(self.notes_val, 6, 1)
+        self.main_layout.addWidget(self.start_btn, 8, 1)
 
-        self.main_layout.addWidget(self.msg_lbl, 6, 0, 1, 2)
+        self.main_layout.addWidget(self.msg_lbl, 7, 0, 1, 2)
 
         # Set the focus order
         self.operator_val.setFocus()
@@ -163,6 +170,7 @@ class FormGUI(QDialog):
         # Enable dropdown menus
         self.flowrate_val.setEnabled(True)
         self.site_val.setEnabled(True)
+        self.sample_val.setEnabled(True)
 
         # Enable text boxes
         self.operator_val.setEnabled(True)
@@ -180,6 +188,7 @@ class FormGUI(QDialog):
             "flowcell_id": self.flowcell_val.text(),
             "target_flowrate": (flowrate_name, FLOWRATE[flowrate_name.upper()].value),
             "site": self.site_val.currentText(),
+            "sample_type": self.sample_val.currentText(),
             "notes": self.notes_val.toPlainText(),
         }
 

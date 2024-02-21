@@ -8,6 +8,7 @@ from time import perf_counter
 from datetime import datetime
 from concurrent.futures import Future
 from typing import Dict, List, Optional
+from stats_utils.compensator import CountCompensator
 
 import numpy as np
 import numpy.typing as npt
@@ -25,8 +26,9 @@ from ulc_mm_package.neural_nets.utils import (
     save_thumbnails_to_disk,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
-    ASEXUAL_PARASITE_CLASS_IDS,
+    RBC_CLASS_IDS,
     YOGO_CLASS_LIST,
+    YOGO_MODEL_NAME,
 )
 
 from ulc_mm_package.scope_constants import (
@@ -66,6 +68,7 @@ def write_img(img: np.ndarray, filepath: Path):
 class DataStorage:
     def __init__(self, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
+        self.stats_utils = None
         self.zw = ZarrWriter()
         self.md_writer: Optional[csv.DictWriter] = None
         self.metadata_file: Optional[io.TextIOWrapper] = None
@@ -80,6 +83,9 @@ class DataStorage:
 
         # Calculate max number of digits, to zeropad subsample img filenames
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
+
+    def initCountCompensator(self, clinical):
+        self.compensator = CountCompensator(YOGO_MODEL_NAME, clinical=clinical)
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
@@ -310,24 +316,19 @@ class DataStorage:
                 except Exception as e:
                     self.logger.error(f"Failed to make yogo objectness plots - {e}")
 
-            # Get cell counts and % parasitemia
-            cell_counts = get_class_counts(pred_tensors)
+            # Get cell counts
+            raw_cell_counts = np.asarray(get_class_counts(pred_tensors))
+            total_rbcs = sum(raw_cell_counts[RBC_CLASS_IDS])
+            # Associate class with counts
             class_name_to_cell_count = {
-                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
+                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
-            num_parasites = sum([cell_counts[i] for i in ASEXUAL_PARASITE_CLASS_IDS])
-            total_rbcs = cell_counts[0] + num_parasites
-            perc_parasitemia = (
-                "0.0000"
-                if total_rbcs == 0
-                else f"{(100 * num_parasites / total_rbcs):.4f}"
-            )
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            parasites_per_ul = (
-                "0.0"
-                if total_rbcs == 0
-                else f"{RBCS_PER_UL*(num_parasites / total_rbcs):.1f}"
-            )
+            raw_perc_parasitemia = self.compensator.calc_parasitemia(raw_cell_counts)
+            (
+                comp_perc_parasitemia,
+                comp_perc_parasitemia_err,
+            ) = self.compensator.get_res_from_counts(raw_cell_counts)
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
@@ -337,8 +338,12 @@ class DataStorage:
                 per_image_metadata_plot_save_loc,
                 max(1, total_rbcs),  # Account for potential div-by-zero
                 class_name_to_cell_count,
-                perc_parasitemia,
-                parasites_per_ul,
+                f"{raw_perc_parasitemia:.1f}",
+                f"{comp_perc_parasitemia:.1f}",
+                f"{comp_perc_parasitemia_err:.1f}",
+                f"{RBCS_PER_UL*raw_perc_parasitemia:.1f}",
+                f"{RBCS_PER_UL*comp_perc_parasitemia:.1f}",
+                f"{RBCS_PER_UL*comp_perc_parasitemia_err:.1f}",
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,

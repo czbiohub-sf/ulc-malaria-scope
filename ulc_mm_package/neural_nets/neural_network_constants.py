@@ -23,8 +23,9 @@ AUTOFOCUS_MODEL_DIR = str(
 # ================ YOGO constants ================ #
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_CONF_THRESHOLD = 0.9
+YOGO_MODEL_NAME = "frightful-wendigo-1931"
 YOGO_MODEL_DIR = str(
-    curr_dir / "yogo_model_files" / "frightful-wendigo-1931" / "best-quarter.xml"
+    curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best-quarter.xml"
 )
 
 YOGO_CLASS_LIST: Tuple[str, ...] = (
@@ -37,6 +38,12 @@ YOGO_CLASS_LIST: Tuple[str, ...] = (
     "misc",
 )
 YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
+RBC_CLASS_IDS: List[int] = [
+    YOGO_CLASS_IDX_MAP["healthy"],
+    YOGO_CLASS_IDX_MAP["ring"],
+    YOGO_CLASS_IDX_MAP["trophozoite"],
+    YOGO_CLASS_IDX_MAP["schizont"],
+]
 ASEXUAL_PARASITE_CLASS_IDS: List[int] = [
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],

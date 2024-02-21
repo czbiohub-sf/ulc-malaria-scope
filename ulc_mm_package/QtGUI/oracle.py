@@ -53,6 +53,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
+    CLINICAL_SAMPLE,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -629,6 +630,27 @@ class Oracle(Machine):
             PER_IMAGE_METADATA_KEYS,
         )
 
+        sample_type = self.experiment_metadata["sample_type"]
+        clinical = sample_type == CLINICAL_SAMPLE
+        try:
+            self.scopeop.mscope.data_storage.initCountCompensator(clinical)
+        except FileNotFoundError as e:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "Compensation metrics missing",
+                (
+                    f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}."
+                    " Please check that remo-stats-utils repository is up to date."
+                    '\n\nClick "OK" to shutoff scope.'
+                ),
+                buttons=Buttons.OK,
+            )
+            self.logger.warning(
+                f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}.\n{e}"
+            )
+            self.shutoff()
+            return
+
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
 
@@ -640,6 +662,7 @@ class Oracle(Machine):
             self.scopeop.lid_opened = self.scopeop.mscope.read_lim_sw()
         else:
             self.scopeop.lid_opened = False
+
         self.form_window.close()
 
     def _start_liveview(self, *args):

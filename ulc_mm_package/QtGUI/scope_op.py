@@ -67,7 +67,6 @@ from ulc_mm_package.scope_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
 )
-from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
 
 # TODO populate info?
 
@@ -237,7 +236,7 @@ class ScopeOp(QObject, NamedMachine):
         self.flowrate_error_raised = False
 
         self.frame_count = 0
-        self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
+        self.raw_cell_count = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.first_setup_complete: bool = False
 
@@ -272,7 +271,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def update_infopanel(self):
         if self.state == "experiment":
-            self.update_cell_count.emit(self.cell_counts)
+            self.update_cell_count.emit(self.raw_cell_count)
             self.update_runtime.emit(self._get_experiment_runtime())
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
@@ -532,26 +531,7 @@ class ScopeOp(QObject, NamedMachine):
             f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
         )
 
-        self.finishing_experiment.emit(25)
-
-        pred_counter = self.mscope.predictions_handler.new_pred_pointer
-        if pred_counter != 0:
-            nonzero_preds = (
-                self.mscope.predictions_handler.get_prediction_tensors()
-            )  # (8+NUM_CLASSES) x N
-
-            class_counts = nn_utils.get_class_counts(nonzero_preds)
-            sorted_confidences = (
-                nn_utils.get_all_argmax_class_confidences_for_all_classes(nonzero_preds)
-            )
-            unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
-
-            stats_string = get_all_stats_str(
-                class_counts, unsorted_confidences, sorted_confidences
-            )
-            self.logger.info(stats_string)
-
-        self.finishing_experiment.emit(90)
+        self.finishing_experiment.emit(65)
 
         self.mscope.reset_for_end_experiment()
 
@@ -820,7 +800,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.mscope.predictions_handler.parsed_tensor
             )
 
-            self.cell_counts += class_counts
+            self.raw_cell_count += class_counts
 
             try:
                 self.density_routine.send(class_counts)
@@ -920,7 +900,6 @@ class ScopeOp(QObject, NamedMachine):
             "syringe_pos"
         ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
         self.img_metadata["flowrate"] = self.flowrate
-        self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
         self.img_metadata["focus_error"] = raw_focus_err
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment

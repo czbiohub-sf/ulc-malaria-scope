@@ -39,9 +39,19 @@ THUMBNAIL_SPACING = 5
 
 # ================ Dropdown menu options ================ #
 FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
-SITE_LIST = ["Tororo, Uganda", "Masafu, Uganda", "Biohub SF", "DeRisi Lab"]
+SITE_LIST = [
+    "Tororo, Uganda",
+    "Masafu, Uganda",
+    "Biohub SF",
+    "DeRisi Lab",
+    "Filipa Lab",
+]
 
-# ================ Experiment timeout period ================ #
+CLINICAL_SAMPLE = "Clinical P. falciparum"
+SAMPLE_LIST = [CLINICAL_SAMPLE, "Cultured P. falciparum"]
+
+# ================ Experiment end conditions period ================ #
+# Timeout period
 TIMEOUT_PERIOD_M = 20  # minutes
 TIMEOUT_PERIOD_S = TIMEOUT_PERIOD_M * 60  # seconds
 
