@@ -640,6 +640,7 @@ class Oracle(Machine):
                 "Compensation metrics missing",
                 (
                     f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}."
+                    " Please check that remo-stats-utils repository is up to date."
                     '\n\nClick "OK" to shutoff scope.'
                 ),
                 buttons=Buttons.OK,
@@ -648,6 +649,7 @@ class Oracle(Machine):
                 f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}.\n{e}"
             )
             self.shutoff()
+            return
 
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
