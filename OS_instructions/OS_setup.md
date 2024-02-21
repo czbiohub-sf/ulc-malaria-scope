@@ -64,18 +64,9 @@ Please note: I found that a *lot* of the documentation for the installation of O
 cd ~
 git clone https://github.com/openvinotoolkit/openvino.git
 cd openvino
-```
-
-**32 bit os**
-```console
-git checkout tags/2022.1.1
+git checkout tags/2022.1.0
 git submodule update --init --recursive
-```
-
-**64 bit os**
-```console
-git checkout tags/2023.3.0
-git submodule update --init --recursive
+pip3 install scons
 ```
 
 ### Building Openvino
@@ -100,8 +91,6 @@ cmake \
 **64 bit os**
 ```console
 mkdir build && cd build
-# it may be necessary to `pip3 install scons`, but I'm not sure...
-# if you get an error complaining about missing scons, run the cmd above
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DENABLE_PYTHON=ON \
@@ -125,7 +114,7 @@ echo "export PYTHONPATH=/home/pi/openvino/bin/armv7l/Release/lib/python_api/pyth
 
 and if you are running a 64 bit OS,
 ```console
-echo "export PYTHONPATH=/home/pi/openvino/bin/aarch64/Release/lib/python_api/python3.9:$PYTHONPATH" >> ~/.bashrc
+echo "export PYTHONPATH=/home/pi/openvino/bin/aarch64/Release/lib/python_api/python3.11:$PYTHONPATH" >> ~/.bashrc
 ```
 
 ### Manually update NCS2 udev rules
@@ -246,7 +235,7 @@ I outline the procedure here for MacOS, but the high-level steps are similar for
 
 You are done. Except...
 
-#### Optional, but very nice things, that axel would deeply appreciate
+#### Optional but very nice things that axel would deeply appreciate
 
 ```console
 sudo apt install tmux
