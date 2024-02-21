@@ -17,6 +17,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_IDX_MAP,
     YOGO_CLASS_LIST,
     YOGO_CONF_THRESHOLD,
+    YOGO_AREA_FILTER,
 )
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 
@@ -128,6 +129,15 @@ def _parse_prediction_tensor(
     filtered_pred = prediction_tensor[:, :, mask][0, :, :]
 
     img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
+
+    # Mask areas
+    pred_half_width = filtered_pred[2] / 2 * img_w
+    pred_half_height = filtered_pred[3] / 2 * img_h
+    areas = 4 * (pred_half_height * pred_half_width)
+    area_mask = areas > YOGO_AREA_FILTER
+
+    # Get coordinates
+    filtered_pred = filtered_pred[:, area_mask]
     xc = filtered_pred[0, :] * img_w
     yc = filtered_pred[1, :] * img_h
     pred_half_width = filtered_pred[2] / 2 * img_w
