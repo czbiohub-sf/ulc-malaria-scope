@@ -5,16 +5,56 @@ These are instructions for creating a fresh OS image from scratch. 99% of the ti
 ## Full Installation Instructions
 
 Install Raspbian GNU/Linux 11 (Bullseye) on a fresh 64GB SD card. Make sure to update the OS
-hostname and wifi/password by pressing shift-ctrl-x. After it is flashed, pop it into a Pi and
-follow the commands below.
+hostname and wifi/password by pressing shift-ctrl-x. After it is flashed, pop it into a Pi,
+`ssh` in, and follow the commands below.
 
 ```console
-sudp apt update
+# get rid of the template directories which just much stuff up
+rm -rf Bookshelf Desktop Downloads Music Pictures Public Templates Videos
+# update our installation software
+sudo apt update
 sudo apt upgrade
 ```
 
+**64 bit os only**
 
-### Install numba first, separately
+We need to change our Python version. Installing the base verison of Python gives us `Python 3.11.2`, which unfortunately is too advanced for Openvino.
+
+Here we install and setup `pyenv`, which is a great tool for managing Python versions:
+```console
+curl https://pyenv.run | bash
+cat << 'EOF' >> ~/.bashrc                                                                   
+export PYENV_ROOT="$HOME/.pyenv"                                                                           
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"                                              
+eval "$(pyenv init -)"
+EOF
+source ~/.bashrc
+```
+
+And here we install python 3.9.18:
+```console
+sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
+libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+xz-utils tk-dev libffi-dev liblzma-dev git libqt5gui5 libqt5core5a libqt5widgets5 \
+qttools5-dev-tools qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
+
+pyenv install 3.9.18  # takes a while!
+pyenv global 3.9.18
+# double check that the correct python version is set
+python3 --version
+# should be `Python 3.9.18`
+```
+
+### Setup system-wide virtual environment
+
+```console
+cd ~
+python3 -m venv venv
+echo "source ~/venv/bin/activate" >> .bashrc
+source ~/.bashrc
+```
+
+### Install numba first, separately, 32 bit only!
 Note: this section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
 
 **32 bit os**
@@ -24,24 +64,8 @@ export LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
 pip install numba==0.56.0
 ```
 
-**64 bit os**
-```console
-sudo apt install python3-numba
-```
-
-### Setup system-wide virtual environment
-
-```console
-cd ~
-sudo apt install python3-venv python3-full
-python3 -m venv venv
-echo "source ~/venv/bin/activate" >> .bashrc
-source ~/.bashrc
-```
-
 ### Install ulc-malaria-scope
 ```console
-mkdir Documents
 cd Documents
 git clone https://github.com/czbiohub/ulc-malaria-scope.git
 cd ulc-malaria-scope
@@ -238,8 +262,7 @@ You are done. Except...
 #### Optional but very nice things that axel would deeply appreciate
 
 ```console
-sudo apt install tmux
-sudo apt install vim
+sudo apt install vim tmux
 
 cat << EOF > ~/.vimrc
 set ai
