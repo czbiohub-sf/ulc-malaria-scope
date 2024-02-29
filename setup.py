@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Oct 1, 2021
-
-@author: i-jey
 """
 
 from setuptools import setup, find_packages
