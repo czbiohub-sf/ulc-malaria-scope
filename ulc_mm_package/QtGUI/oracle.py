@@ -726,6 +726,14 @@ class Oracle(Machine):
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")
 
+        try:
+            os.remove(LOCKFILE)
+            self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+        except FileNotFoundError:
+            self.logger.warning(
+                f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+            )
+
         # Wait for QTimers to shutoff
         self.logger.info("Waiting for acquisition and liveview timer to terminate.")
         while (
@@ -737,14 +745,6 @@ class Oracle(Machine):
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
-
-        try:
-            os.remove(LOCKFILE)
-            self.logger.info(f"Removed lockfile ({LOCKFILE}).")
-        except FileNotFoundError:
-            self.logger.warning(
-                f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
-            )
 
         # Shut off acquisition thread
         self.acquisition_thread.quit()
@@ -768,6 +768,15 @@ class Oracle(Machine):
         self.logger.warning("Starting emergency oracle shut off.")
 
         if not self.shutoff_done:
+
+            try:
+                os.remove(LOCKFILE)
+                self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+            except FileNotFoundError:
+                self.logger.warning(
+                    f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+                )
+
             # Shut off hardware
             self.scopeop.mscope.shutoff()
 
@@ -779,14 +788,6 @@ class Oracle(Machine):
             else:
                 self.logger.info(
                     "Since data storage is already closed, no data storage operations were needed."
-                )
-
-            try:
-                os.remove(LOCKFILE)
-                self.logger.info(f"Removed lockfile ({LOCKFILE}).")
-            except FileNotFoundError:
-                self.logger.warning(
-                    f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
                 )
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
