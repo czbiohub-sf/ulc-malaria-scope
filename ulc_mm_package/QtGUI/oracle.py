@@ -768,7 +768,6 @@ class Oracle(Machine):
         self.logger.warning("Starting emergency oracle shut off.")
 
         if not self.shutoff_done:
-
             try:
                 os.remove(LOCKFILE)
                 self.logger.info(f"Removed lockfile ({LOCKFILE}).")
