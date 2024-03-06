@@ -38,6 +38,12 @@ The Remoscope runs off a Raspberry Pi 4 Model B 8GB and an Intel Neural Compute 
 For a more detailed description of each folder and its scripts, see the `architecture_description/` folder.
 
 ## Installation and use
+
+NOTE: If you are using a version downstream of commit `283a823` on `develop` (2024-03-06), you will need to install the `stats_utils` module. To do so, in the root directory run
+```
+python3 -m pip install -e .
+```
+
 ### Option 1: Clone the image
 1. Flash a pre-existing image to an SD card (must be at least 32GB), see `OS_flash.md`
 
