@@ -84,7 +84,7 @@ class DataStorage:
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
     def initCountCompensator(self, clinical: Optional[bool] = None):
-        if clinical == None:
+        if clinical is None:
             self.compensator = CountCompensator(YOGO_MODEL_NAME, skip=True)
         else:
             self.compensator = CountCompensator(YOGO_MODEL_NAME, clinical=clinical)

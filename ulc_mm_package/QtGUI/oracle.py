@@ -630,7 +630,8 @@ class Oracle(Machine):
             PER_IMAGE_METADATA_KEYS,
         )
 
-        clinical = self.experiment_metadata["sample_type"] == CLINICAL_SAMPLE
+        sample_type = self.experiment_metadata["sample_type"]
+        clinical = sample_type == CLINICAL_SAMPLE
         try:
             self.scopeop.mscope.data_storage.initCountCompensator(clinical)
         except FileNotFoundError as e:
