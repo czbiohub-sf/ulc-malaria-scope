@@ -91,7 +91,9 @@ class DataStorage:
         clinical = sample_type == CLINICAL_SAMPLE
         skip = sample_type == OTHER_SAMPLE
 
-        self.compensator = CountCompensator(YOGO_MODEL_NAME, clinical=clinical, skip=skip)
+        self.compensator = CountCompensator(
+            YOGO_MODEL_NAME, clinical=clinical, skip=skip
+        )
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
