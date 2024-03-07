@@ -48,7 +48,8 @@ SITE_LIST = [
 ]
 
 CLINICAL_SAMPLE = "Clinical P. falciparum"
-SAMPLE_LIST = [CLINICAL_SAMPLE, "Cultured P. falciparum"]
+OTHER_SAMPLE = "Other"
+SAMPLE_LIST = [CLINICAL_SAMPLE, "Cultured P. falciparum", OTHER_SAMPLE]
 
 # ================ Experiment end conditions period ================ #
 # Timeout period

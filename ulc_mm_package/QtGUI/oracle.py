@@ -53,7 +53,6 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
-    CLINICAL_SAMPLE,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -631,9 +630,8 @@ class Oracle(Machine):
         )
 
         sample_type = self.experiment_metadata["sample_type"]
-        clinical = sample_type == CLINICAL_SAMPLE
         try:
-            self.scopeop.mscope.data_storage.initCountCompensator(clinical)
+            self.scopeop.mscope.data_storage.initCountCompensator(sample_type)
         except FileNotFoundError as e:
             self.display_message(
                 QMessageBox.Icon.Warning,
