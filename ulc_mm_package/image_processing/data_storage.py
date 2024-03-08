@@ -30,7 +30,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_MODEL_NAME,
 )
-
 from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     RBCS_PER_UL,
@@ -84,8 +83,11 @@ class DataStorage:
         # Calculate max number of digits, to zeropad subsample img filenames
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
-    def initCountCompensator(self, clinical):
-        self.compensator = CountCompensator(YOGO_MODEL_NAME, clinical=clinical)
+    def initCountCompensator(self, clinical: Optional[bool] = None):
+        if clinical is None:
+            self.compensator = CountCompensator(YOGO_MODEL_NAME, skip=True)
+        else:
+            self.compensator = CountCompensator(YOGO_MODEL_NAME, clinical=clinical)
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
