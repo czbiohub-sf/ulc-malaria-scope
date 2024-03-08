@@ -641,12 +641,12 @@ class Oracle(Machine):
                 (
                     f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}."
                     " Please check that remo-stats-utils repository is up to date."
-                    '\n\nClick "OK" to continue run with no compensation.'
+                    '\n\nClick "OK" to run experiment with no compensation.'
                 ),
                 buttons=Buttons.OK,
             )
             self.logger.warning(
-                f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}.\n{e}"
+                f"FileNotFoundError for {sample_type[0].lower() + sample_type[1:]} metrics.\n{e}"
             )
             self.scopeop.mscope.data_storage.initCountCompensator()
 
