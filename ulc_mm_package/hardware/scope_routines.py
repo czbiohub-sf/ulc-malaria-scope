@@ -207,6 +207,31 @@ class Routines:
             mscope.cell_diagnosis_model(img, counts)
 
     @init_generator
+    def sawtooth_flowrate_routine(self, mscope: MalariaScope):
+        num_syringe_steps = int(
+            (
+                mscope.pneumatic_module.getMaxDutyCycle()
+                - mscope.pneumatic_module.getMinDutyCycle()
+            )
+            / mscope.pneumatic_module.min_step_size
+        )
+        count = 0
+        inc_modulo = 2000 // num_syringe_steps
+
+        while True:
+            _, _ = yield -1
+
+            try:
+                if count % inc_modulo == 0:
+                    mscope.pneumatic_module.decreasDutyCycle()
+            except Exception:
+                print("Reached the end of the syringe's range. Setting back to max.")
+                mscope.pneumatic_module.setDutyCycle(
+                    mscope.pneumatic_module.getMaxDutyCycle()
+                )
+            count += 1
+
+    @init_generator
     def flow_control_routine(
         self, mscope: MalariaScope, target_flowrate: float, fast_flow: bool = False
     ) -> Generator[Optional[float], np.ndarray, Optional[float]]:

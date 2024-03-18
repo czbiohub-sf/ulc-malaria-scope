@@ -164,17 +164,6 @@ class ScopeOp(QObject, NamedMachine):
                 "on_exit": [self._init_classic_focus],
             },
             {
-                "name": "autofocus_preflow",
-                "display_name": "autofocus (pre-flow)",
-                "on_enter": [self._send_state, self._start_autofocus],
-                "on_exit": [self._init_classic_focus],
-            },
-            {
-                "name": "fastflow",
-                "display_name": "flow control",
-                "on_enter": [self._send_state, self._start_fastflow],
-            },
-            {
                 "name": "autofocus_postflow",
                 "display_name": "autofocus (post-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
@@ -479,11 +468,7 @@ class ScopeOp(QObject, NamedMachine):
     def _start_experiment(self, *args):
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
 
-        self.flowcontrol_routine = self.routines.flow_control_routine(
-            self.mscope,
-            self.target_flowrate,
-            fast_flow=False,
-        )
+        self.flowcontrol_routine = self.routines.sawtooth_flowrate_routine(self.mscope)
 
         self.density_routine = self.routines.cell_density_routine()
 
@@ -866,18 +851,7 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.oof_to_motor_sweep()
             return
-        try:
-            if not self.flowrate_error_raised:
-                self.flowrate = self.flowcontrol_routine.send((img_ds_10x, timestamp))
-        except CantReachTargetFlowrate as e:
-            self.flowrate_error_raised = True
-            self.logger.warning(
-                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-            )
-            self.flowrate = -1
-            self.flowcontrol_routine = self.routines.flow_control_routine(
-                self.mscope, self.target_flowrate
-            )
+        self.flowrate = self.flowcontrol_routine.send((img_ds_10x, timestamp))
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
