@@ -223,8 +223,9 @@ class Routines:
 
             try:
                 if count % inc_modulo == 0:
-                    mscope.pneumatic_module.decreasDutyCycle()
-            except Exception:
+                    mscope.pneumatic_module.decreaseDutyCycle()
+            except Exception as e:
+                print(e)
                 print("Reached the end of the syringe's range. Setting back to max.")
                 mscope.pneumatic_module.setDutyCycle(
                     mscope.pneumatic_module.getMaxDutyCycle()
