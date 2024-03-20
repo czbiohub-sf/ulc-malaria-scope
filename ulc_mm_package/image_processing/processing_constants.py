@@ -5,7 +5,7 @@ from ulc_mm_package.scope_constants import SIMULATION
 # ================ Flowrate options ================ #
 class FLOWRATE(enum.Enum):
     FAST = 15.15  # 2 frames per cell
-    MEDIUM = 7.58  # 4 frames per cell
+    MEDIUM = 6  # ~5 frames per cell
     SLOW = 3.79  # 8 frames per cell
 
 
