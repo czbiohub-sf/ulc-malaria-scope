@@ -216,7 +216,7 @@ class Routines:
             / mscope.pneumatic_module.min_step_size
         )
         count = 0
-        inc_modulo = 2000 // num_syringe_steps
+        inc_modulo = 4000 // num_syringe_steps
 
         while True:
             _, _ = yield -1
