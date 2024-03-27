@@ -47,8 +47,14 @@ SITE_LIST = [
     "Filipa Lab",
 ]
 
-CLINICAL_SAMPLE = "Clinical P. falciparum"
-SAMPLE_LIST = [CLINICAL_SAMPLE, "Cultured P. falciparum"]
+CLINICAL_SAMPLE = "Whole blood (clinical, P. falciparum endemic)"
+CULTURED_SAMPLE = "Lab cultured P. falciparum"
+SAMPLE_LIST = [
+    CLINICAL_SAMPLE,
+    "Whole blood (donated, non-endemic)",
+    CULTURED_SAMPLE,
+    "Other/unknown",
+]
 
 # ================ Experiment end conditions period ================ #
 # Timeout period

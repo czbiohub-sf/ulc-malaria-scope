@@ -54,6 +54,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
     CLINICAL_SAMPLE,
+    CULTURED_SAMPLE,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -632,8 +633,20 @@ class Oracle(Machine):
 
         sample_type = self.experiment_metadata["sample_type"]
         clinical = sample_type == CLINICAL_SAMPLE
+        skip = not clinical and not sample_type == CULTURED_SAMPLE
+        if skip:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "No compensation in-use",
+                (
+                    f"Compensation metrics are not in-use for {sample_type[0].lower() + sample_type[1:]} samples."
+                    " Final parasitemia estimate will be based on raw values only."
+                    '\n\nClick "OK" to run experiment with no compensation.'
+                ),
+                buttons=Buttons.OK,
+            )
         try:
-            self.scopeop.mscope.data_storage.initCountCompensator(clinical)
+            self.scopeop.mscope.data_storage.initCountCompensator(clinical, skip)
         except FileNotFoundError as e:
             self.display_message(
                 QMessageBox.Icon.Warning,
@@ -648,7 +661,7 @@ class Oracle(Machine):
             self.logger.warning(
                 f"FileNotFoundError for {sample_type[0].lower() + sample_type[1:]} metrics.\n{e}"
             )
-            self.scopeop.mscope.data_storage.initCountCompensator()
+            self.scopeop.mscope.data_storage.initCountCompensator(clinical, True)
 
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
