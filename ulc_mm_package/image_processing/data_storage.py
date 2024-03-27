@@ -84,7 +84,9 @@ class DataStorage:
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
     def initCountCompensator(self, clinical: bool, skip: bool):
-        self.compensator = CountCompensator(YOGO_MODEL_NAME, clinical=clinical, skip=skip)
+        self.compensator = CountCompensator(
+            YOGO_MODEL_NAME, clinical=clinical, skip=skip
+        )
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
