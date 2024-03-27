@@ -633,7 +633,7 @@ class Oracle(Machine):
 
         sample_type = self.experiment_metadata["sample_type"]
         clinical = sample_type == CLINICAL_SAMPLE
-        skip = clinical or sample_type == CULTURED_SAMPLE
+        skip = not clinical and not sample_type == CULTURED_SAMPLE
         if skip:
             self.display_message(
                 QMessageBox.Icon.Warning,
@@ -646,7 +646,7 @@ class Oracle(Machine):
                 buttons=Buttons.OK,
             )
         try:
-            self.scopeop.mscope.data_storage.initCountCompensator(clinical, skip=skip)
+            self.scopeop.mscope.data_storage.initCountCompensator(clinical, skip)
         except FileNotFoundError as e:
             self.display_message(
                 QMessageBox.Icon.Warning,
@@ -661,7 +661,7 @@ class Oracle(Machine):
             self.logger.warning(
                 f"FileNotFoundError for {sample_type[0].lower() + sample_type[1:]} metrics.\n{e}"
             )
-            self.scopeop.mscope.data_storage.initCountCompensator()
+            self.scopeop.mscope.data_storage.initCountCompensator(clinical, True)
 
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
