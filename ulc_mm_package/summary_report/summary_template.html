@@ -73,7 +73,7 @@
             </tr>
             {% endfor %}
             <tr>
-                <td>% Raw parasitemia</td>
+                <td>% Raw parasitemia (asexual stages only)</td>
                 <td>{{raw_perc_parasitemia}}%</td>
             </tr>
             <tr>
@@ -81,7 +81,7 @@
                 <td>{{raw_parasites_per_ul}}</td>
             </tr>
             <tr>
-                <td>% Compensated parasitemia</td>
+                <td>% Compensated parasitemia (asexual stages only)</td>
                 <td>{{comp_perc_parasitemia}}% +/- {{comp_perc_parasitemia_err}}</td>
             </tr>
             <tr>
@@ -90,9 +90,9 @@
             </tr>
         </table>
         <font size="-2">
-            <i>Parasitemia includes asexual stages only and uncertainties (see +/-) indicate 95% confidence bounds</i>
+            <i>Uncertainties (see +/-) indicate 95% confidence bounds</i>
         ></font>
-
+        
         {# Thumbnails #}
         <div>
             <pdf:nextpage /> 
