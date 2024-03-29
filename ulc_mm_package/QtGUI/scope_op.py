@@ -704,7 +704,7 @@ class ScopeOp(QObject, NamedMachine):
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
 
-            if not (syringe_can_move):
+            if (syringe_can_move is not None) and (not syringe_can_move):
                 self.fastflow_result = self.flowrate
                 self.logger.error("Fastflow failed. Syringe already at max position.")
                 self.update_flowrate.emit(self.fastflow_result)
