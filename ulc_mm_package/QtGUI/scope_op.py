@@ -30,9 +30,6 @@ from ulc_mm_package.scope_constants import (
     VERBOSE,
 )
 
-from ulc_mm_package.image_processing.flow_control import (
-    CantReachTargetFlowrate,
-)
 from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
     NoCellsFound,
