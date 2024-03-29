@@ -232,6 +232,7 @@ class Routines:
         """
 
         flow_val: Optional[float] = None
+        syringe_can_move: Optional[bool] = None
         mscope.flow_controller.reset()
         flow_controller = mscope.flow_controller
         flow_controller.set_target_flowrate(target_flowrate)
