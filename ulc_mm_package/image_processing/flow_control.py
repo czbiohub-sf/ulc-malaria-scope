@@ -181,6 +181,7 @@ class FlowController:
             )
 
         self._add_image_and_update_flowrate(img, timestamp)
+        syringe_successfully_adjusted = None
 
         # Adjust pressure using the pneumatic module based on the flow rate error
         if self.flowrate is not None:
