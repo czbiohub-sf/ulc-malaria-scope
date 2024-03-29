@@ -241,8 +241,14 @@ class Routines:
             )  # Double the alpha, ~halve the half life
 
         while True:
-            img, timestamp = yield flow_val
-            flow_val, flow_error = flow_controller.control_flow(img, timestamp)
+            img, timestamp = yield flow_val, syringe_can_move
+
+            # Get the flow value, difference from target flow, and whether the syringe can move
+            # If syringe_can_move is False, a CantReachTargetFlowrate exception was raised, meaning
+            # the syringe can't move further and the target flowrate has not been reached.
+            flow_val, flow_error, syringe_can_move = flow_controller.control_flow(
+                img, timestamp
+            )
 
             if fast_flow:
                 if flow_error is not None:

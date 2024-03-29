@@ -233,7 +233,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.flowrate = None
         self.target_flowrate = None
-        self.flowrate_error_raised = False
 
         self.frame_count = 0
         self.raw_cell_count = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
@@ -371,7 +370,6 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_pause(self, *args):
         self.running = False
-        self.flowrate_error_raised = False
 
         try:
             self.img_signal.disconnect()
@@ -702,21 +700,24 @@ class ScopeOp(QObject, NamedMachine):
 
         try:
             img_ds_10x = downsample_image(img, DOWNSAMPLE_FACTOR)
-            self.flowrate = self.fastflow_routine.send((img_ds_10x, timestamp))
+            self.flowrate, syringe_can_move = self.fastflow_routine.send(
+                (img_ds_10x, timestamp)
+            )
 
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
-        except CantReachTargetFlowrate as e:
-            self.fastflow_result = e.flowrate
-            self.logger.error("Fastflow failed. Syringe already at max position.")
-            self.update_flowrate.emit(self.fastflow_result)
-            if not self.first_setup_complete:
-                self.default_error.emit(
-                    "Calibration issue",
-                    "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
-                    ERROR_BEHAVIORS.FLOWCONTROL.value,
-                )
-                self.first_setup_complete = True
+
+            if not (syringe_can_move):
+                self.fastflow_result = self.flowrate
+                self.logger.error("Fastflow failed. Syringe already at max position.")
+                self.update_flowrate.emit(self.fastflow_result)
+                if not self.first_setup_complete:
+                    self.default_error.emit(
+                        "Calibration issue",
+                        "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
+                        ERROR_BEHAVIORS.FLOWCONTROL.value,
+                    )
+                    self.first_setup_complete = True
             else:
                 if self.state == "fastflow":
                     self.next_state()
@@ -727,6 +728,13 @@ class ScopeOp(QObject, NamedMachine):
             self.update_flowrate.emit(self.fastflow_result)
             if self.state == "fastflow":
                 self.next_state()
+        except Exception as e:
+            self.logger.error(f"Unexpected exception in fastflow - {e}")
+            self.default_error.emit(
+                "Flow control failed",
+                "Unexpected exception in flow control routine.",
+                ERROR_BEHAVIORS.DEFAULT.value,
+            )
         else:
             if self.running:
                 self.img_signal.connect(self.run_fastflow)
@@ -867,13 +875,9 @@ class ScopeOp(QObject, NamedMachine):
             self.oof_to_motor_sweep()
             return
         try:
-            if not self.flowrate_error_raised:
-                self.flowrate = self.flowcontrol_routine.send((img_ds_10x, timestamp))
-        except CantReachTargetFlowrate as e:
-            self.flowrate_error_raised = True
-            self.logger.warning(
-                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-            )
+            self.flowrate, _ = self.flowcontrol_routine.send((img_ds_10x, timestamp))
+        except Exception as e:
+            self.logger.warning(f"Unexpected flow control exception - {e}")
             self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate

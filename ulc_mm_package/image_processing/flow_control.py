@@ -145,7 +145,7 @@ class FlowController:
 
     def control_flow(
         self, img: np.ndarray, timestamp: int
-    ) -> Tuple[Optional[float], Optional[float]]:
+    ) -> Tuple[Optional[float], Optional[float], Optional[bool]]:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
         Periodically is defined as twice the half-life of the EWMA filter (based on its alpha value).
 
@@ -164,6 +164,8 @@ class FlowController:
             flow_val if a full window of measurements has been acquried by FlowRateEstimator
         int (None, None):
             Returned if a full window of measurements has not been acquired yet
+        bool:
+            True if the syringe move was successful, false if the syringe has reached the end of its range of motion
 
         Exceptions
         ----------
@@ -173,7 +175,6 @@ class FlowController:
             Raised if the target flowrate hasn't been reached and the syringe
             can't move any further in the necessary direction, this exception is raised
         """
-
         if self.target_flowrate is None:
             raise TargetFlowrateNotSet(
                 "Please set a target flowrate using `set_target_flowrate(target_value)' first. The value should be a float."
@@ -186,13 +187,22 @@ class FlowController:
             flow_error = get_flow_error(self.target_flowrate, self.flowrate)
             if self.counter >= self.prev_adjustment_stamp + self.feedback_delay_frames:
                 self.prev_adjustment_stamp = self.counter
-                self._adjustSyringe(flow_error)
+
+                try:
+                    self._adjustSyringe(flow_error)
+                    syringe_successfully_adjusted = True
+                except CantReachTargetFlowrate as e:
+                    self.logger.error(
+                        f"Can't reach target flowrate {e.flowrate}. Syringe at end of travel."
+                    )
+                    syringe_successfully_adjusted = False
+
                 self.logger.debug(
-                    f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
+                    f"Flow diff: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
                 )
-            return self.flowrate, flow_error
+            return self.flowrate, flow_error, syringe_succesfully_adjusted
         else:
-            return (None, None)
+            return (None, None, None)
 
     def _adjustSyringe(self, flow_error: float):
         """Adjusts the syringe based on the flow error.
