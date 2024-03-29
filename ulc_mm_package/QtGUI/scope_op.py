@@ -29,7 +29,7 @@ from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     VERBOSE,
 )
-
+from ulc_mm_package.image_processing.flow_control import CantReachTargetFlowrate
 from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
     NoCellsFound,
@@ -704,22 +704,17 @@ class ScopeOp(QObject, NamedMachine):
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
 
-                if (syringe_can_move is not None) and (not syringe_can_move):
-                    self.fastflow_result = self.flowrate
-                    self.logger.error(
-                        "Fastflow failed. Syringe already at max position."
-                    )
-                    self.update_flowrate.emit(self.fastflow_result)
-                    if not self.first_setup_complete:
-                        self.default_error.emit(
-                            "Calibration issue",
-                            "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
-                            ERROR_BEHAVIORS.FLOWCONTROL.value,
-                        )
-                        self.first_setup_complete = True
-                    else:
-                        if self.state == "fastflow":
-                            self.next_state()
+                if (
+                    (syringe_can_move is not None)
+                    and (not syringe_can_move)
+                    and (not self.first_setup_complete)
+                ):
+                    # Raise this exception only during the first fast flow set up.
+                    # The reason being, later on in the run if we re-enter this state (say due to a focus reset)
+                    raise CantReachTargetFlowrate(self.flowrate)
+                else:
+                    if self.state == "fastflow":
+                        self.next_state()
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
@@ -727,6 +722,17 @@ class ScopeOp(QObject, NamedMachine):
             self.update_flowrate.emit(self.fastflow_result)
             if self.state == "fastflow":
                 self.next_state()
+        except CantReachTargetFlowrate as e:
+            self.fastflow_result = self.flowrate
+            self.logger.error("Fastflow failed. Syringe already at max position.")
+            self.update_flowrate.emit(self.fastflow_result)
+            self.default_error.emit(
+                "Calibration issue",
+                "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
+                ERROR_BEHAVIORS.FLOWCONTROL.value,
+            )
+            self.first_setup_complete = True
+
         except Exception as e:
             self.logger.error(f"Unexpected exception in fastflow - {e}")
             self.default_error.emit(
