@@ -712,9 +712,6 @@ class ScopeOp(QObject, NamedMachine):
                     # Raise this exception only during the first fast flow set up.
                     # The reason being, later on in the run if we re-enter this state (say due to a focus reset)
                     raise CantReachTargetFlowrate(self.flowrate)
-                else:
-                    if self.state == "fastflow":
-                        self.next_state()
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
