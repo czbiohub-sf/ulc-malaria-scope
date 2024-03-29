@@ -704,20 +704,22 @@ class ScopeOp(QObject, NamedMachine):
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
 
-            if (syringe_can_move is not None) and (not syringe_can_move):
-                self.fastflow_result = self.flowrate
-                self.logger.error("Fastflow failed. Syringe already at max position.")
-                self.update_flowrate.emit(self.fastflow_result)
-                if not self.first_setup_complete:
-                    self.default_error.emit(
-                        "Calibration issue",
-                        "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
-                        ERROR_BEHAVIORS.FLOWCONTROL.value,
+                if (syringe_can_move is not None) and (not syringe_can_move):
+                    self.fastflow_result = self.flowrate
+                    self.logger.error(
+                        "Fastflow failed. Syringe already at max position."
                     )
-                    self.first_setup_complete = True
-            else:
-                if self.state == "fastflow":
-                    self.next_state()
+                    self.update_flowrate.emit(self.fastflow_result)
+                    if not self.first_setup_complete:
+                        self.default_error.emit(
+                            "Calibration issue",
+                            "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
+                            ERROR_BEHAVIORS.FLOWCONTROL.value,
+                        )
+                        self.first_setup_complete = True
+                    else:
+                        if self.state == "fastflow":
+                            self.next_state()
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
