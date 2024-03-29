@@ -200,7 +200,7 @@ class FlowController:
                 self.logger.debug(
                     f"Flow diff: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
                 )
-            return self.flowrate, flow_error, syringe_succesfully_adjusted
+            return self.flowrate, flow_error, syringe_successfully_adjusted
         else:
             return (None, None, None)
 
