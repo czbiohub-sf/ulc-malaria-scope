@@ -209,7 +209,7 @@ class Routines:
     @init_generator
     def flow_control_routine(
         self, mscope: MalariaScope, target_flowrate: float, fast_flow: bool = False
-    ) -> Generator[Optional[float], np.ndarray, Optional[float]]:
+    ) -> Generator[Tuple[Optional[float], Optional[bool]], np.ndarray, Optional[float]]:
         """Keep the flowrate steady by continuously calculating the flowrate and periodically
         adjusting the syringe position. Need to initially pass in the flowrate to maintain.
 
