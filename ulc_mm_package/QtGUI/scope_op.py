@@ -230,6 +230,7 @@ class ScopeOp(QObject, NamedMachine):
         self.filtered_focus_err = None
         self.last_img = None  # Needed when initializing class image focus metric during set up steps
         self.classic_focus_routine = None
+        self._oof_error = False
 
         self.flowrate = None
         self.target_flowrate = None
