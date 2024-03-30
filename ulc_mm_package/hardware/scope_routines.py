@@ -402,6 +402,7 @@ class Routines:
         mscope: MalariaScope,
         pull_time: float = 5,
         steps_per_image: int = 10,
+        skip_syringe_pull: bool = False,
     ) -> Generator[None, np.ndarray, Optional[int]]:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
@@ -426,7 +427,13 @@ class Routines:
         pull_time: float
             Sets how long the syringe should be pulled for (at its maximum pressure position) before assessing
             whether cells are present
-        img: np.ndarray
+        steps_per_image: int = 10
+            How far to move the motor between before collecting another image
+        skip_syringe_pull: bool
+            If True, the syringe will not be pulled before the motor sweep (useful when returning from an OOF exception and we want to keep the cells flowing as they are)
+
+        What to pass in send()
+            img: np.ndarray
 
         Returns
         -------
@@ -453,7 +460,7 @@ class Routines:
 
         while True:
             """
-            1. Pull syringe for 5 seconds
+            1. Pull syringe for 5 seconds (unless deliberately skipped)
             2. Sweep the motor through the full range of motion and take in images at each step
             3. Assess whether cells are present
             """
@@ -462,16 +469,17 @@ class Routines:
                 raise NoCellsFound()
 
             # Pull the syringe maximally for `pull_time` seconds
-            start = perf_counter()
-            mscope.pneumatic_module.setDutyCycle(
-                mscope.pneumatic_module.getMinDutyCycle()
-            )
+            if not (skip_syringe_pull):
+                start = perf_counter()
+                mscope.pneumatic_module.setDutyCycle(
+                    mscope.pneumatic_module.getMinDutyCycle()
+                )
 
-            while perf_counter() - start < pull_time:
-                img = yield
-            mscope.pneumatic_module.setDutyCycle(
-                mscope.pneumatic_module.getMaxDutyCycle()
-            )
+                while perf_counter() - start < pull_time:
+                    img = yield
+                mscope.pneumatic_module.setDutyCycle(
+                    mscope.pneumatic_module.getMaxDutyCycle()
+                )
 
             # Perform a full focal stack and get the cross-correlation value for each image
             for pos in range(0, mscope.motor.max_pos, steps_per_image):

@@ -216,6 +216,9 @@ class ScopeOp(QObject, NamedMachine):
             dest="cellfinder",
             before=[self._track_time, self._oof_handler],
         )
+        self.add_transition(
+            trigger="skip_flow_control", source="autofocus_preflow", dest="experiment"
+        )
 
     def _set_exp_variables(self):
         self.running = None
@@ -233,8 +236,6 @@ class ScopeOp(QObject, NamedMachine):
 
         self.frame_count = 0
         self.raw_cell_count = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
-
-        self.first_setup_complete: bool = False
 
         self.start_time = None
         self.accumulated_time = 0
@@ -417,7 +418,10 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_cellfinder(self, *args):
         self.cellfinder_result = None
-        self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
+        skip_syringe_pull = self._oof_error
+        self.cellfinder_routine = self.routines.find_cells_routine(
+            self.mscope, skip_syringe_pull=skip_syringe_pull
+        )
 
         self.img_signal.connect(self.run_cellfinder)
 
@@ -685,7 +689,12 @@ class ScopeOp(QObject, NamedMachine):
             self.last_img = img
             self.autofocus_done = False
             if self.state in {"autofocus_preflow", "autofocus_postflow"}:
-                self.next_state()
+                if self._oof_error:
+                    # Skip fast flow if we're transitioning back to experiment from an OOF error
+                    self._oof_error = False
+                    self.skip_flow_control()
+                else:
+                    self.next_state()
 
     @pyqtSlot(np.ndarray, float)
     def run_fastflow(self, img, timestamp):
@@ -704,18 +713,13 @@ class ScopeOp(QObject, NamedMachine):
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
 
-                if (
-                    (syringe_can_move is not None)
-                    and (not syringe_can_move)
-                    and (not self.first_setup_complete)
-                ):
+                if (syringe_can_move is not None) and (not syringe_can_move):
                     # Raise this exception only during the first fast flow set up.
                     # The reason being, later on in the run if we re-enter this state (say due to a focus reset)
                     raise CantReachTargetFlowrate(self.flowrate)
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
-            self.first_setup_complete = True
             self.update_flowrate.emit(self.fastflow_result)
             if self.state == "fastflow":
                 self.next_state()
@@ -728,8 +732,6 @@ class ScopeOp(QObject, NamedMachine):
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                 ERROR_BEHAVIORS.FLOWCONTROL.value,
             )
-            self.first_setup_complete = True
-
         except Exception as e:
             self.logger.error(f"Unexpected exception in fastflow - {e}")
             self.default_error.emit(
@@ -748,6 +750,7 @@ class ScopeOp(QObject, NamedMachine):
     def _oof_handler(self):
         self.classic_focus_routine = None
         self.set_period.emit(ACQUISITION_PERIOD)
+        self._oof_error = True
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp) -> None:
