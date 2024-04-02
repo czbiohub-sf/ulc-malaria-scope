@@ -54,6 +54,7 @@ SAMPLE_LIST = [
     "Whole blood (donated, non-endemic)",
     CULTURED_SAMPLE,
     "Other/unknown",
+    "Development (for testing use only)",
 ]
 
 # ================ Experiment end conditions period ================ #
