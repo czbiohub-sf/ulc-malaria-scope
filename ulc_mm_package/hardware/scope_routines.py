@@ -256,7 +256,7 @@ class Routines:
             ):
                 # This is here so that we don't flood the logger with the same message
                 self.logger.error(
-                    f"Can't reach target flowrate. Syringe at end of travel."
+                    "Can't reach target flowrate. Syringe at end of travel."
                 )
 
             if fast_flow:
