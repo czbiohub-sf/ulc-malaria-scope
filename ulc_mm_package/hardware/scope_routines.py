@@ -233,6 +233,7 @@ class Routines:
 
         flow_val: Optional[float] = None
         syringe_can_move: Optional[bool] = None
+        prev_can_move: bool = True
         mscope.flow_controller.reset()
         flow_controller = mscope.flow_controller
         flow_controller.set_target_flowrate(target_flowrate)
@@ -247,13 +248,13 @@ class Routines:
             # Get the flow value, difference from target flow, and whether the syringe can move
             # If syringe_can_move is False, a CantReachTargetFlowrate exception was raised, meaning
             # the syringe can't move further and the target flowrate has not been reached.
-            prev_can_move = syringe_can_move
+            prev_can_move = (
+                syringe_can_move if syringe_can_move is not None else prev_can_move
+            )
             flow_val, flow_error, syringe_can_move = flow_controller.control_flow(
                 img, timestamp
             )
-            if (prev_can_move is not None and prev_can_move is True) and (
-                syringe_can_move is False
-            ):
+            if (prev_can_move is True) and (syringe_can_move is False):
                 # This is here so that we don't flood the logger with the same message
                 self.logger.error(
                     "Can't reach target flowrate. Syringe at end of travel."
