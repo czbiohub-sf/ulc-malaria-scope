@@ -10,7 +10,7 @@ from ulc_mm_package.image_processing.processing_constants import (
 
 class OOF(Exception):
     def __init__(self, curr_best: int, curr_metric: int):
-        msg = f"Image metric dropped from {curr_best:.3f} to {curr_metric:.3f} ({curr_metric/curr_best:.3f})%"
+        msg = f"Image metric dropped from {curr_best:.3f} to {curr_metric:.3f} ({100*curr_metric/curr_best:.1f})%"
         super().__init__(f"{msg}")
 
 
