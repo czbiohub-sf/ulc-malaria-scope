@@ -83,11 +83,10 @@ class DataStorage:
         # Calculate max number of digits, to zeropad subsample img filenames
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
-    def initCountCompensator(self, clinical: Optional[bool] = None):
-        if clinical is None:
-            self.compensator = CountCompensator(YOGO_MODEL_NAME, skip=True)
-        else:
-            self.compensator = CountCompensator(YOGO_MODEL_NAME, clinical=clinical)
+    def initCountCompensator(self, clinical: bool, skip: bool):
+        self.compensator = CountCompensator(
+            YOGO_MODEL_NAME, clinical=clinical, skip=skip
+        )
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
@@ -340,12 +339,12 @@ class DataStorage:
                 per_image_metadata_plot_save_loc,
                 max(1, total_rbcs),  # Account for potential div-by-zero
                 class_name_to_cell_count,
-                f"{raw_perc_parasitemia:.1f}",
-                f"{comp_perc_parasitemia:.1f}",
-                f"{comp_perc_parasitemia_err:.1f}",
-                f"{RBCS_PER_UL*raw_perc_parasitemia:.1f}",
-                f"{RBCS_PER_UL*comp_perc_parasitemia:.1f}",
-                f"{RBCS_PER_UL*comp_perc_parasitemia_err:.1f}",
+                f"{raw_perc_parasitemia:.4f}",
+                f"{comp_perc_parasitemia:.4f}",
+                f"{comp_perc_parasitemia_err:.4f}",
+                f"{RBCS_PER_UL*raw_perc_parasitemia:.0f}",
+                f"{RBCS_PER_UL*comp_perc_parasitemia:.0f}",
+                f"{RBCS_PER_UL*comp_perc_parasitemia_err:.0f}",
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,

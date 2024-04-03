@@ -29,10 +29,7 @@ from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     VERBOSE,
 )
-
-from ulc_mm_package.image_processing.flow_control import (
-    CantReachTargetFlowrate,
-)
+from ulc_mm_package.image_processing.flow_control import CantReachTargetFlowrate
 from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
     NoCellsFound,
@@ -219,6 +216,9 @@ class ScopeOp(QObject, NamedMachine):
             dest="cellfinder",
             before=[self._track_time, self._oof_handler],
         )
+        self.add_transition(
+            trigger="skip_flow_control", source="autofocus_preflow", dest="experiment"
+        )
 
     def _set_exp_variables(self):
         self.running = None
@@ -230,15 +230,13 @@ class ScopeOp(QObject, NamedMachine):
         self.filtered_focus_err = None
         self.last_img = None  # Needed when initializing class image focus metric during set up steps
         self.classic_focus_routine = None
+        self._oof_error = False
 
         self.flowrate = None
         self.target_flowrate = None
-        self.flowrate_error_raised = False
 
         self.frame_count = 0
         self.raw_cell_count = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
-
-        self.first_setup_complete: bool = False
 
         self.start_time = None
         self.accumulated_time = 0
@@ -371,7 +369,6 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_pause(self, *args):
         self.running = False
-        self.flowrate_error_raised = False
 
         try:
             self.img_signal.disconnect()
@@ -422,7 +419,10 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_cellfinder(self, *args):
         self.cellfinder_result = None
-        self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
+        skip_syringe_pull = self._oof_error
+        self.cellfinder_routine = self.routines.find_cells_routine(
+            self.mscope, skip_syringe_pull=skip_syringe_pull
+        )
 
         self.img_signal.connect(self.run_cellfinder)
 
@@ -690,7 +690,12 @@ class ScopeOp(QObject, NamedMachine):
             self.last_img = img
             self.autofocus_done = False
             if self.state in {"autofocus_preflow", "autofocus_postflow"}:
-                self.next_state()
+                if self._oof_error:
+                    # Skip fast flow if we're transitioning back to experiment from an OOF error
+                    self._oof_error = False
+                    self.skip_flow_control()
+                else:
+                    self.next_state()
 
     @pyqtSlot(np.ndarray, float)
     def run_fastflow(self, img, timestamp):
@@ -702,31 +707,39 @@ class ScopeOp(QObject, NamedMachine):
 
         try:
             img_ds_10x = downsample_image(img, DOWNSAMPLE_FACTOR)
-            self.flowrate = self.fastflow_routine.send((img_ds_10x, timestamp))
+            self.flowrate, syringe_can_move = self.fastflow_routine.send(
+                (img_ds_10x, timestamp)
+            )
 
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
-        except CantReachTargetFlowrate as e:
-            self.fastflow_result = e.flowrate
-            self.logger.error("Fastflow failed. Syringe already at max position.")
-            self.update_flowrate.emit(self.fastflow_result)
-            if not self.first_setup_complete:
-                self.default_error.emit(
-                    "Calibration issue",
-                    "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
-                    ERROR_BEHAVIORS.FLOWCONTROL.value,
-                )
-                self.first_setup_complete = True
-            else:
-                if self.state == "fastflow":
-                    self.next_state()
+
+                if (syringe_can_move is not None) and (not syringe_can_move):
+                    # Raise this exception only during the first fast flow set up.
+                    # The reason being, later on in the run if we re-enter this state (say due to a focus reset)
+                    raise CantReachTargetFlowrate(self.flowrate)
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
-            self.first_setup_complete = True
             self.update_flowrate.emit(self.fastflow_result)
             if self.state == "fastflow":
                 self.next_state()
+        except CantReachTargetFlowrate:
+            self.fastflow_result = self.flowrate
+            self.logger.error("Fastflow failed. Syringe already at max position.")
+            self.update_flowrate.emit(self.fastflow_result)
+            self.default_error.emit(
+                "Calibration issue",
+                "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
+                ERROR_BEHAVIORS.FLOWCONTROL.value,
+            )
+        except Exception as e:
+            self.logger.error(f"Unexpected exception in fastflow - {e}")
+            self.default_error.emit(
+                "Flow control failed",
+                "Unexpected exception in flow control routine.",
+                ERROR_BEHAVIORS.DEFAULT.value,
+            )
         else:
             if self.running:
                 self.img_signal.connect(self.run_fastflow)
@@ -738,6 +751,7 @@ class ScopeOp(QObject, NamedMachine):
     def _oof_handler(self):
         self.classic_focus_routine = None
         self.set_period.emit(ACQUISITION_PERIOD)
+        self._oof_error = True
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp) -> None:
@@ -867,13 +881,9 @@ class ScopeOp(QObject, NamedMachine):
             self.oof_to_motor_sweep()
             return
         try:
-            if not self.flowrate_error_raised:
-                self.flowrate = self.flowcontrol_routine.send((img_ds_10x, timestamp))
-        except CantReachTargetFlowrate as e:
-            self.flowrate_error_raised = True
-            self.logger.warning(
-                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-            )
+            self.flowrate, _ = self.flowcontrol_routine.send((img_ds_10x, timestamp))
+        except Exception as e:
+            self.logger.warning(f"Unexpected flow control exception - {e}")
             self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
