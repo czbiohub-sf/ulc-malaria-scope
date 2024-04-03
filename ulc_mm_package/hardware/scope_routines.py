@@ -247,9 +247,17 @@ class Routines:
             # Get the flow value, difference from target flow, and whether the syringe can move
             # If syringe_can_move is False, a CantReachTargetFlowrate exception was raised, meaning
             # the syringe can't move further and the target flowrate has not been reached.
+            prev_can_move = syringe_can_move
             flow_val, flow_error, syringe_can_move = flow_controller.control_flow(
                 img, timestamp
             )
+            if (prev_can_move is not None and prev_can_move is True) and (
+                syringe_can_move is False
+            ):
+                # This is here so that we don't flood the logger with the same message
+                self.logger.error(
+                    f"Can't reach target flowrate. Syringe at end of travel."
+                )
 
             if fast_flow:
                 if flow_error is not None:

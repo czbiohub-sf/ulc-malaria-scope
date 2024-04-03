@@ -193,9 +193,6 @@ class FlowController:
                     self._adjustSyringe(flow_error)
                     syringe_successfully_adjusted = True
                 except CantReachTargetFlowrate as e:
-                    self.logger.error(
-                        f"Can't reach target flowrate {e.flowrate}. Syringe at end of travel."
-                    )
                     syringe_successfully_adjusted = False
 
                 self.logger.debug(
