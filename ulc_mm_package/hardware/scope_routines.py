@@ -209,7 +209,7 @@ class Routines:
     @init_generator
     def flow_control_routine(
         self, mscope: MalariaScope, target_flowrate: float, fast_flow: bool = False
-    ) -> Generator[Optional[float], np.ndarray, Optional[float]]:
+    ) -> Generator[Tuple[Optional[float], Optional[bool]], np.ndarray, Optional[float]]:
         """Keep the flowrate steady by continuously calculating the flowrate and periodically
         adjusting the syringe position. Need to initially pass in the flowrate to maintain.
 
@@ -232,6 +232,8 @@ class Routines:
         """
 
         flow_val: Optional[float] = None
+        syringe_can_move: Optional[bool] = None
+        prev_can_move: bool = True
         mscope.flow_controller.reset()
         flow_controller = mscope.flow_controller
         flow_controller.set_target_flowrate(target_flowrate)
@@ -241,8 +243,22 @@ class Routines:
             )  # Double the alpha, ~halve the half life
 
         while True:
-            img, timestamp = yield flow_val
-            flow_val, flow_error = flow_controller.control_flow(img, timestamp)
+            img, timestamp = yield flow_val, syringe_can_move
+
+            # Get the flow value, difference from target flow, and whether the syringe can move
+            # If syringe_can_move is False, a CantReachTargetFlowrate exception was raised, meaning
+            # the syringe can't move further and the target flowrate has not been reached.
+            prev_can_move = (
+                syringe_can_move if syringe_can_move is not None else prev_can_move
+            )
+            flow_val, flow_error, syringe_can_move = flow_controller.control_flow(
+                img, timestamp
+            )
+            if (prev_can_move is True) and (syringe_can_move is False):
+                # This is here so that we don't flood the logger with the same message
+                self.logger.error(
+                    "Can't reach target flowrate. Syringe at end of travel."
+                )
 
             if fast_flow:
                 if flow_error is not None:
@@ -395,6 +411,7 @@ class Routines:
         mscope: MalariaScope,
         pull_time: float = 5,
         steps_per_image: int = 10,
+        skip_syringe_pull: bool = False,
     ) -> Generator[None, np.ndarray, Optional[int]]:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
@@ -419,7 +436,13 @@ class Routines:
         pull_time: float
             Sets how long the syringe should be pulled for (at its maximum pressure position) before assessing
             whether cells are present
-        img: np.ndarray
+        steps_per_image: int = 10
+            How far to move the motor between before collecting another image
+        skip_syringe_pull: bool
+            If True, the syringe will not be pulled before the motor sweep (useful when returning from an OOF exception and we want to keep the cells flowing as they are)
+
+        What to pass in send()
+            img: np.ndarray
 
         Returns
         -------
@@ -446,7 +469,7 @@ class Routines:
 
         while True:
             """
-            1. Pull syringe for 5 seconds
+            1. Pull syringe for 5 seconds (unless deliberately skipped)
             2. Sweep the motor through the full range of motion and take in images at each step
             3. Assess whether cells are present
             """
@@ -455,16 +478,17 @@ class Routines:
                 raise NoCellsFound()
 
             # Pull the syringe maximally for `pull_time` seconds
-            start = perf_counter()
-            mscope.pneumatic_module.setDutyCycle(
-                mscope.pneumatic_module.getMinDutyCycle()
-            )
+            if not (skip_syringe_pull):
+                start = perf_counter()
+                mscope.pneumatic_module.setDutyCycle(
+                    mscope.pneumatic_module.getMinDutyCycle()
+                )
 
-            while perf_counter() - start < pull_time:
-                img = yield
-            mscope.pneumatic_module.setDutyCycle(
-                mscope.pneumatic_module.getMaxDutyCycle()
-            )
+                while perf_counter() - start < pull_time:
+                    img = yield
+                mscope.pneumatic_module.setDutyCycle(
+                    mscope.pneumatic_module.getMaxDutyCycle()
+                )
 
             # Perform a full focal stack and get the cross-correlation value for each image
             for pos in range(0, mscope.motor.max_pos, steps_per_image):
