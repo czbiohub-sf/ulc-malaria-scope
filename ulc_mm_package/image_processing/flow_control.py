@@ -192,7 +192,7 @@ class FlowController:
                 try:
                     self._adjustSyringe(flow_error)
                     syringe_successfully_adjusted = True
-                except CantReachTargetFlowrate as e:
+                except CantReachTargetFlowrate:
                     syringe_successfully_adjusted = False
 
                 self.logger.debug(
