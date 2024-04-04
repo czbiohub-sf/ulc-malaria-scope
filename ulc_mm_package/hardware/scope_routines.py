@@ -238,9 +238,9 @@ class Routines:
         flow_controller = mscope.flow_controller
         flow_controller.set_target_flowrate(target_flowrate)
         if fast_flow:
-            flow_controller.set_alpha(
-                processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
-            )  # Double the alpha, ~halve the half life
+            # Empirically chosen to trade off accuracy and speed.
+            # If this value is too small, then it will take fastflow a long while to reach the target flowrate.
+            flow_controller.set_alpha(0.1)
 
         while True:
             img, timestamp = yield flow_val, syringe_can_move
