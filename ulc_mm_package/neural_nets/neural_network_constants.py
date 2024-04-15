@@ -25,9 +25,7 @@ YOGO_AREA_FILTER = 200 / (772 * 1032)
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_CONF_THRESHOLD = 0.9
 YOGO_MODEL_NAME = "still-voice-4405"
-YOGO_MODEL_DIR = str(
-    curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best.xml"
-)
+YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best.xml")
 
 YOGO_CLASS_LIST: Tuple[str, ...] = (
     "healthy",
