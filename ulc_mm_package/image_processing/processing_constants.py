@@ -54,12 +54,12 @@ NUM_SUBSEQUENCES = 10
 SUBSEQUENCE_LENGTH = 10
 
 # ================ Cell detection constants ================ #
-RBC_THUMBNAIL_PATH = Path(__file__).parent.resolve() / "thumbnail.png"
-
-if not RBC_THUMBNAIL_PATH.exists():
+_RBC_THUMBNAIL_PATH = Path(__file__).parent.resolve() / "thumbnail.png"
+if not _RBC_THUMBNAIL_PATH.exists():
     raise FileNotFoundError(
         "RBC_THUMBNAIL_PATH (image_processing/thumbnail.png) does not exist"
     )
+RBC_THUMBNAIL_PATH = str(_RBC_THUMBNAIL_PATH)
 
 # This value was found empirically, looking at several focal stacks with and without cells
 CELLS_FOUND_THRESHOLD = 9001  # https://tinyurl.com/ykxu66zw

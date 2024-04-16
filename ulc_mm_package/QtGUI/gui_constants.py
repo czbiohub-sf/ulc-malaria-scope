@@ -67,14 +67,14 @@ TIMEOUT_PERIOD_S = TIMEOUT_PERIOD_M * 60  # seconds
 # ================ Media/links ================ #
 _gui_images_dir = Path(__file__).parent.resolve() / "gui_images"
 
-ICON_PATH = _gui_images_dir / "CZB-logo.png"
-IMAGE_INSERT_PATH = _gui_images_dir / "insert_infographic.png"
-IMAGE_REMOVE_PATH = _gui_images_dir / "remove_infographic.png"
-IMAGE_RELOAD_PATH = _gui_images_dir / "remove_infographic.png"
+ICON_PATH = str(_gui_images_dir / "CZB-logo.png")
+IMAGE_INSERT_PATH = str(_gui_images_dir / "insert_infographic.png")
+IMAGE_REMOVE_PATH = str(_gui_images_dir / "remove_infographic.png")
+IMAGE_RELOAD_PATH = str(_gui_images_dir / "remove_infographic.png")
 
 
 for image_path in (ICON_PATH, IMAGE_INSERT_PATH, IMAGE_REMOVE_PATH, IMAGE_RELOAD_PATH):
-    if not image_path.exists():
+    if not Path(image_path).exists():
         raise FileNotFoundError(f"Could not find image at {image_path}")
 
 
