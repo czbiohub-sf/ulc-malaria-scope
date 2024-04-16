@@ -1,5 +1,7 @@
 import enum
 
+from pathlib import Path
+
 from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_MAP
 
@@ -63,7 +65,18 @@ TIMEOUT_PERIOD_M = 20  # minutes
 TIMEOUT_PERIOD_S = TIMEOUT_PERIOD_M * 60  # seconds
 
 # ================ Media/links ================ #
-ICON_PATH = "gui_images/CZB-logo.png"
+_gui_images_dir = Path(__file__).parent.resolve() / "gui_images"
+
+ICON_PATH = _gui_images_dir / "CZB-logo.png"
+IMAGE_INSERT_PATH = _gui_images_dir / "insert_infographic.png"
+IMAGE_REMOVE_PATH = _gui_images_dir / "remove_infographic.png"
+IMAGE_RELOAD_PATH = _gui_images_dir / "remove_infographic.png"
+
+
+for image_path in (ICON_PATH, IMAGE_INSERT_PATH, IMAGE_REMOVE_PATH, IMAGE_RELOAD_PATH):
+    if not image_path.exists():
+        raise FileNotFoundError(f"Could not find image at {image_path}")
+
 
 FLOWCELL_QC_FORM_LINK = (
     "https://docs.google.com/forms/d/16pOE3TAvOMZG4Yuu3ef73knGYKRdZfXSxg5vZlsR-AM/edit"

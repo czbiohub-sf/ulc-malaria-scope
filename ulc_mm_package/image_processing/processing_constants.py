@@ -1,4 +1,7 @@
 import enum
+
+from pathlib import Path
+
 from ulc_mm_package.scope_constants import SIMULATION
 
 
@@ -51,9 +54,12 @@ NUM_SUBSEQUENCES = 10
 SUBSEQUENCE_LENGTH = 10
 
 # ================ Cell detection constants ================ #
-RBC_THUMBNAIL_PATH = (
-    "../image_processing/thumbnail.png"  # TODO better way to reference file?
-)
+RBC_THUMBNAIL_PATH = Path(__file__).parent.resolve() / "thumbnail.png"
+
+if not RBC_THUMBNAIL_PATH.exists():
+    raise FileNotFoundError(
+        "RBC_THUMBNAIL_PATH (image_processing/thumbnail.png) does not exist"
+    )
 
 # This value was found empirically, looking at several focal stacks with and without cells
 CELLS_FOUND_THRESHOLD = 9001  # https://tinyurl.com/ykxu66zw

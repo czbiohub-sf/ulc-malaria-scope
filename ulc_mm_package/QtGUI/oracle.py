@@ -55,6 +55,9 @@ from ulc_mm_package.QtGUI.gui_constants import (
     BLANK_INFOPANEL_VAL,
     CLINICAL_SAMPLE,
     CULTURED_SAMPLE,
+    IMAGE_INSERT_PATH,
+    IMAGE_REMOVE_PATH,
+    IMAGE_RELOAD_PATH,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -71,10 +74,6 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
 _ERROR_MSG = '\n\nClick "OK" to end this run.'
-
-_IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
-_IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
-_IMAGE_RELOAD_PATH = "gui_images/remove_infographic.png"
 
 
 class Buttons(enum.Enum):
@@ -417,7 +416,7 @@ class Oracle(Machine):
                 '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
             ),
             buttons=Buttons.OK,
-            image=_IMAGE_RELOAD_PATH,
+            image=IMAGE_RELOAD_PATH,
         )
         self.close_lid_display_message()
         self.unpause()
@@ -555,7 +554,7 @@ class Oracle(Machine):
                 '\n\nClick "OK" once it is removed.'
             ),
             buttons=Buttons.OK,
-            image=_IMAGE_REMOVE_PATH,
+            image=IMAGE_REMOVE_PATH,
         )
 
         self.scopeop_thread.start()
@@ -683,7 +682,7 @@ class Oracle(Machine):
             "Starting run",
             '1. Insert flow cell\n\n2. Put the CAP module back on\n\n3. Close the lid\n\nClick "OK" once it is closed.',
             buttons=Buttons.OK,
-            image=_IMAGE_INSERT_PATH,
+            image=IMAGE_INSERT_PATH,
         )
 
         while self.scopeop.lid_opened:
@@ -692,7 +691,7 @@ class Oracle(Machine):
                 "Starting run",
                 "The lid has not been closed. Please close the lid to proceed.",
                 buttons=Buttons.OK,
-                image=_IMAGE_INSERT_PATH,
+                image=IMAGE_INSERT_PATH,
             )
 
         self.lid_handler_enabled = True
@@ -712,7 +711,7 @@ class Oracle(Machine):
             "Run complete",
             f'{msg} Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
-            image=_IMAGE_REMOVE_PATH,
+            image=IMAGE_REMOVE_PATH,
         )
 
         message_result = self.display_message(
