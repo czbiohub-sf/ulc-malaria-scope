@@ -325,11 +325,16 @@ class DataStorage:
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            raw_perc_parasitemia = self.compensator.calc_parasitemia(raw_cell_counts)
+            raw_frac_parasitemia = self.compensator.calc_parasitemia(raw_cell_counts)
             (
-                comp_perc_parasitemia,
-                comp_perc_parasitemia_err,
+                comp_frac_parasitemia,
+                comp_frac_parasitemia_err,
             ) = self.compensator.get_res_from_counts(raw_cell_counts)
+
+            # Convert fractional percentages into normal percentages
+            raw_perc_parasitemia = raw_frac_parasitemia * 100
+            comp_perc_parasitemia = comp_frac_parasitemia * 100
+            comp_perc_parasitemia_err = comp_frac_parasitemia_err * 100
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
