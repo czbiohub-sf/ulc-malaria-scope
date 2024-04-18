@@ -1,9 +1,9 @@
-import pathlib
+from pathlib import Path
 from typing import Tuple, Dict, List
 
 from ulc_mm_package.scope_constants import ACQUISITION_FPS
 
-curr_dir = pathlib.Path(__file__).parent.resolve()  # Get full path
+curr_dir = Path(__file__).parent.resolve()  # Get full path
 
 
 # ================ Autofocus constants ================ #
@@ -20,12 +20,18 @@ AUTOFOCUS_MODEL_DIR = str(
     curr_dir / "autofocus_model_files" / "polished-dragon-468.xml"
 )
 
+if not Path(AUTOFOCUS_MODEL_DIR).exists():
+    raise FileNotFoundError("autofocus model not found")
+
 # ================ YOGO constants ================ #
 YOGO_AREA_FILTER = 200 / (772 * 1032)
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_CONF_THRESHOLD = 0.9
 YOGO_MODEL_NAME = "still-voice-4405"
 YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best.xml")
+
+if not Path(YOGO_MODEL_DIR).exists():
+    raise FileNotFoundError("yogo model not found")
 
 YOGO_CLASS_LIST: Tuple[str, ...] = (
     "healthy",
