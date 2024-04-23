@@ -2,6 +2,7 @@ import cv2
 
 from ulc_mm_package.QtGUI.gui_constants import FLOWCELL_QC_FORM_LINK
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.hardware.real.camera import BinningMode
 
 from ulc_mm_package.scope_constants import (
     LOCKFILE,
@@ -304,11 +305,11 @@ class AcquisitionThread(QThread):
         if self.camera.getBinning() == 2:
             print("Changing to 1x1 binning.")
             self.binning = 1
-            self.camera.setBinning(bin_factor=1, mode="Average")
+            self.camera.setBinning(bin_factor=1, mode=BinningMode.AVERAGE)
         else:
             print("Changing to 2x2 binning.")
             self.binning = 2
-            self.camera.setBinning(bin_factor=2, mode="Average")
+            self.camera.setBinning(bin_factor=2, mode=BinningMode.AVERAGE)
 
         self.camera_activated = True
 
