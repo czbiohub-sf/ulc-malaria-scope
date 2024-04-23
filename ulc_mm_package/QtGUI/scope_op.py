@@ -643,10 +643,10 @@ class ScopeOp(QObject, NamedMachine):
             else:
                 try:
                     if self.autofocus_results[0] is None:
-                        self.autofocus_results[
-                            0
-                        ] = self.routines.singleShotAutofocusRoutine(
-                            self.mscope, self.autofocus_batch
+                        self.autofocus_results[0] = (
+                            self.routines.singleShotAutofocusRoutine(
+                                self.mscope, self.autofocus_batch
+                            )
                         )
                         self.logger.info(
                             f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
@@ -663,10 +663,10 @@ class ScopeOp(QObject, NamedMachine):
                         if self.running:
                             self.img_signal.connect(self.run_autofocus)
                     else:
-                        self.autofocus_results[
-                            1
-                        ] = self.routines.singleShotAutofocusRoutine(
-                            self.mscope, self.autofocus_batch
+                        self.autofocus_results[1] = (
+                            self.routines.singleShotAutofocusRoutine(
+                                self.mscope, self.autofocus_batch
+                            )
                         )
                         self.logger.info(
                             f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
@@ -906,9 +906,9 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(f"Stale pressure sensor value - {e}")
 
         self.img_metadata["led_pwm_val"] = self.mscope.led.pwm_duty_cycle
-        self.img_metadata[
-            "syringe_pos"
-        ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
+        self.img_metadata["syringe_pos"] = (
+            self.mscope.pneumatic_module.getCurrentDutyCycle()
+        )
         self.img_metadata["flowrate"] = self.flowrate
         self.img_metadata["focus_error"] = raw_focus_err
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
@@ -923,9 +923,9 @@ class ScopeOp(QObject, NamedMachine):
                 ) = self.mscope.ht_sensor.get_temp_and_humidity()
                 self.img_metadata["humidity"] = humidity
                 self.img_metadata["temperature"] = temperature
-                self.img_metadata[
-                    "camera_temperature"
-                ] = self.mscope.camera._getTemperature()
+                self.img_metadata["camera_temperature"] = (
+                    self.mscope.camera._getTemperature()
+                )
             except Exception as e:
                 # some error has occurred, but the TH sensor isn't critical, so just warn
                 # and move on
