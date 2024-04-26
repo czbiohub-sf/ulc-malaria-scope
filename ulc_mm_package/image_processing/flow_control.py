@@ -3,7 +3,11 @@ import logging
 
 import numpy as np
 
-from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR
+from ulc_mm_package.scope_constants import (
+    ACQUISITION_FPS,
+    CAMERA_SELECTION,
+    DOWNSAMPLE_FACTOR,
+)
 from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 from ulc_mm_package.image_processing.processing_constants import (
     FLOW_CONTROL_EWMA_ALPHA,
@@ -120,17 +124,17 @@ class FlowController:
             Timestamp of when the image was received
         """
 
-        dx, dy, xcorr_coeff = self.fre.add_image_and_calculate_pair_displacement(
-            img, time
-        )
+        _, dy, _, tdiff = self.fre.add_image_and_calculate_pair_displacement(img, time)
 
         if self.fre.is_primed():
             if self.flowrate is None:
                 self.flowrate = dy
                 self.EWMA.set_init_val(self.flowrate)
+                self.counter += 1
             else:
-                self.flowrate = self.EWMA.update_and_get_val(dy)
-            self.counter += 1
+                if tdiff < 2 * ACQUISITION_FPS / 1000:
+                    self.flowrate = self.EWMA.update_and_get_val(dy)
+                    self.counter += 1
 
     def set_target_flowrate(self, target_flowrate: float):
         """Set the target flowrate.

@@ -20,7 +20,6 @@ class FlowRateEstimator:
         self,
         img_height: int = CAMERA_SELECTION.IMG_HEIGHT // DOWNSAMPLE_FACTOR,
         img_width: int = CAMERA_SELECTION.IMG_WIDTH // DOWNSAMPLE_FACTOR,
-        scale_factor: int = DOWNSAMPLE_FACTOR,
     ):
         """A class for estimating the flow rate of cells using a 2D cross-correlation.
         The class holds two images at a time in `frame_a` and `frame_b`. To use this class,
@@ -128,7 +127,7 @@ class FlowRateEstimator:
 
     def add_image_and_calculate_pair_displacement(
         self, img: np.ndarray, timestamp: float
-    ) -> Tuple[float, float, float]:
+    ) -> Tuple[float, float, float, float]:
         """A convenience function to add an image and perform a displacement calculation.
 
         Note: The very first measurement returned (after sending only a single image) should be ignored,
@@ -141,6 +140,11 @@ class FlowRateEstimator:
             Image to store
         timestamp : int
             Timestamp of when the image was taken (units left to the user)
+
+        Returns
+        -------
+        Tuple[float, float, float, float]: dx, dy, correlation coeff, time difference between images
+
         """
         self._add_image(img, timestamp)
         dx, dy, confidence = self._calculate_pair_displacement()
@@ -149,7 +153,7 @@ class FlowRateEstimator:
         dx = self._convert_to_screen_dim_per_unit_time(dx, tdiff, self.img_width)
         dy = self._convert_to_screen_dim_per_unit_time(dy, tdiff, self.img_height)
 
-        return dx, dy, confidence
+        return dx, dy, confidence, tdiff
 
     def stop(self):
         self.multiproc_interface.stop()
