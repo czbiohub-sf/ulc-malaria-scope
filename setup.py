@@ -41,7 +41,7 @@ setup(
         "pymotors @ git+https://github.com/czbiohub/PyMotors@master",
         "stats_utils @ git+https://github.com/czbiohub-sf/remo-stats-utils@v0.0.9",
         "typer==0.4.1",
-        "tqdm==4.63.0",
+        "tqdm==4.66.3",
         "transitions==0.8.11",
         "pyngrok==7.0.3",
         "numba==0.56.0",
