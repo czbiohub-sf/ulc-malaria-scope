@@ -29,6 +29,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     RBC_CLASS_IDS,
     YOGO_CLASS_LIST,
     YOGO_MODEL_NAME,
+    YOGO_CONF_THRESHOLD,
 )
 from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
@@ -85,7 +86,10 @@ class DataStorage:
 
     def initCountCompensator(self, clinical: bool, skip: bool):
         self.compensator = CountCompensator(
-            YOGO_MODEL_NAME, clinical=clinical, skip=skip
+            YOGO_MODEL_NAME,
+            clinical=clinical,
+            skip=skip,
+            conf_thresh=YOGO_CONF_THRESHOLD,
         )
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
