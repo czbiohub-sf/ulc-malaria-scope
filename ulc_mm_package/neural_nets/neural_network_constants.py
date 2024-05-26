@@ -13,7 +13,7 @@ AF_PERIOD_NUM = int(
 )  # Used for periodic (ie. EWMA) autofocus
 AF_BATCH_SIZE = 10  # Used for single shot autofocus
 
-AF_THRESHOLD = 2
+AF_THRESHOLD = 3
 AF_QSIZE = 10  # For AF_PERIOD_S = 0.5, we have a max delay of 5 sec
 
 AUTOFOCUS_MODEL_DIR = str(
