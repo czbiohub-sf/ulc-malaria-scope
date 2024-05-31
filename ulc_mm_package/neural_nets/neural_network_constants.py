@@ -16,8 +16,9 @@ AF_BATCH_SIZE = 10  # Used for single shot autofocus
 AF_THRESHOLD = 2
 AF_QSIZE = 10  # For AF_PERIOD_S = 0.5, we have a max delay of 5 sec
 
+AUTOFOCUS_MODEL_NAME = "cosmic-waterfall-550"
 AUTOFOCUS_MODEL_DIR = str(
-    curr_dir / "autofocus_model_files" / "polished-dragon-468.xml"
+    curr_dir / "autofocus_model_files" / AUTOFOCUS_MODEL_NAME / "best.xml"
 )
 
 if not Path(AUTOFOCUS_MODEL_DIR).exists():
