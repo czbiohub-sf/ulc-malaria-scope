@@ -564,14 +564,22 @@ class ScopeOp(QObject, NamedMachine):
                 f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}."
             )
             self.last_img = img
-            if self.state in {"autobrightness_precells", "autobrightness_preflow", "autobrightness_postflow"}:
+            if self.state in {
+                "autobrightness_precells",
+                "autobrightness_preflow",
+                "autobrightness_postflow",
+            }:
                 self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
             self.logger.warning(
                 f"Autobrightness target not achieved, but still ok. Mean pixel val = {self.autobrightness_result}."
             )
-            if self.state in {"autobrightness_precells", "autobrightness_preflow", "autobrightness_postflow"}:
+            if self.state in {
+                "autobrightness_precells",
+                "autobrightness_preflow",
+                "autobrightness_postflow",
+            }:
                 self.next_state()
         except BrightnessCriticallyLow as e:
             self.logger.error(
