@@ -88,7 +88,7 @@ def local_sweep_image_collection(
     start_point: int,
     num_steps: int = 20,
     steps_per_image: int = 1,
-    num_imgs_per_step: int = 30,
+    num_imgs_per_step: int = 60,
     save_loc: Optional[str] = None,
 ) -> Generator[None, np.ndarray, None]:
     """Sweep through a local vicinity (+/- num_steps from the start_point) and save images.
