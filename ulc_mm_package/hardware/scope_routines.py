@@ -409,7 +409,7 @@ class Routines:
     def find_cells_routine(
         self,
         mscope: MalariaScope,
-        pull_time: float = 5,
+        pull_time: float = 7,
         steps_per_image: int = 10,
         skip_syringe_pull: bool = False,
     ) -> Generator[None, np.ndarray, Optional[int]]:
@@ -469,7 +469,7 @@ class Routines:
 
         while True:
             """
-            1. Pull syringe for 5 seconds (unless deliberately skipped)
+            1. Pull syringe for pull_time seconds (unless deliberately skipped)
             2. Sweep the motor through the full range of motion and take in images at each step
             3. Assess whether cells are present
             """
