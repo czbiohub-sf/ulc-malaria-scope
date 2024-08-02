@@ -58,18 +58,12 @@
                 <td>{{ flowcell_id }}</td>
             </tr>
 
-            {# Cell counts #}
+            {# Estimated sample composition #}
             <thead>
                 <tr>
-                    <th colspan="2">Cell counts</th>
+                    <th colspan="2">Estimated sample composition</th>
                 </tr>
             </thead>
-            {% for key in cell_counts %}
-            <tr>
-                <td>{{key}}</td>
-                <td>{{cell_counts[key]}} ({{'{0:.3f}'.format(100*cell_counts[key] / total_rbcs)}}%)</td>
-            </tr>
-            {% endfor %}
             <tr>
                 <td>% Raw parasitemia</td>
                 <td>{{raw_perc_parasitemia}}%</td>
@@ -79,13 +73,19 @@
                 <td>{{raw_parasites_per_ul}}</td>
             </tr>
             <tr>
-                <td>% Compensated parasitemia</td>
+                <td>Estimated parasitemia (%)</td>
                 <td>{{comp_perc_parasitemia}}% +/- {{comp_perc_parasitemia_err}}%</td>
             </tr>
             <tr>
-                <td>Compensated parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
+                <td>Estimated parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
                 <td>{{comp_parasites_per_ul}} +/- {{comp_parasites_per_ul_err}}</td>
             </tr>
+            {% for key in cell_counts %}
+            <tr>
+                <td>{{key}}</td>
+                <td>{{cell_counts[key]}} ({{'{0:.3f}'.format(100*cell_counts[key] / total_rbcs)}}%)</td>
+            </tr>
+            {% endfor %}
         </table>
         <font size="-2">
             <i>Parasitemia includes asexual stages only. Uncertainties (see +/-) indicate 95% confidence bounds</i>
