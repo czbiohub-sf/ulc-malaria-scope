@@ -58,7 +58,7 @@
                 <td>{{ flowcell_id }}</td>
             </tr>
 
-            {# Estimated sample composition #}
+            {# Parasitemia #}
             <thead>
                 <tr>
                     <th colspan="2">Estimated sample composition</th>
@@ -67,19 +67,30 @@
             <tr>
                 <td>% Raw parasitemia</td>
                 <td>{{raw_perc_parasitemia}}%</td>
+                <td></td>
             </tr>
             <tr>
                 <td>Raw parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
                 <td>{{raw_parasites_per_ul}}</td>
+                <td></td>
             </tr>
             <tr>
                 <td>Estimated parasitemia (%)</td>
-                <td>{{comp_perc_parasitemia}}% +/- {{comp_perc_parasitemia_err}}%</td>
+                <td>{{comp_perc_parasitemia}}%</td>
+                <td></td>{{comp_perc_parasitemia_interval}}%</td>
             </tr>
             <tr>
                 <td>Estimated parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
-                <td>{{comp_parasites_per_ul}} +/- {{comp_parasites_per_ul_err}}</td>
+                <td>{{comp_parasites_per_ul}}</td>
+                <td>{{comp_parasites_per_ul_interval}}</td>
             </tr>
+
+            {# Estimated sample composition #}
+            <thead>
+                <tr>
+                    <th colspan="2">Estimated sample composition</th>
+                </tr>
+            </thead>
             {% for key in cell_counts %}
             <tr>
                 <td>{{key}}</td>

@@ -348,10 +348,16 @@ class DataStorage:
                 class_name_to_cell_count,
                 f"{raw_perc_parasitemia:.4f}",
                 f"{comp_perc_parasitemia:.4f}",
-                f"{comp_perc_parasitemia_err:.4f}",
+                (
+                    f"[{max(0, comp_perc_parasitemia-comp_perc_parasitemia_err):.4f}, "
+                    f"{(comp_perc_parasitemia+comp_perc_parasitemia_err):.4f}]"
+                ),
                 f"{RBCS_PER_UL/100*raw_perc_parasitemia:.0f}",
                 f"{RBCS_PER_UL/100*comp_perc_parasitemia:.0f}",
-                f"{RBCS_PER_UL/100*comp_perc_parasitemia_err:.0f}",
+                (
+                    f"[{max(0, RBCS_PER_UL/100*(comp_perc_parasitemia-comp_perc_parasitemia_err)):.4f}, "
+                    f"{(RBCS_PER_UL/100*(comp_perc_parasitemia+comp_perc_parasitemia_err)):.4f}]"
+                ),
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,
