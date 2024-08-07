@@ -349,8 +349,8 @@ class DataStorage:
                 f"{raw_perc_parasitemia:.4f}",
                 f"{comp_perc_parasitemia:.4f}",
                 (
-                    f"[{max(0, comp_perc_parasitemia-comp_perc_parasitemia_err):.4f}, "
-                    f"{(comp_perc_parasitemia+comp_perc_parasitemia_err):.4f}]"
+                    f"[{max(0, comp_perc_parasitemia-comp_perc_parasitemia_err):.4f}%, "
+                    f"{(comp_perc_parasitemia+comp_perc_parasitemia_err):.4f}%]"
                 ),
                 f"{RBCS_PER_UL/100*raw_perc_parasitemia:.0f}",
                 f"{RBCS_PER_UL/100*comp_perc_parasitemia:.0f}",
