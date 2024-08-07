@@ -13,7 +13,7 @@ class FLOWRATE(enum.Enum):
 
 
 # ================ Autobrightness constants ================ #
-TOP_PERC_TARGET_VAL = 240
+TOP_PERC_TARGET_VAL = 230
 TOP_PERC = 0.02
 TOL = 0.01
 MIN_ACCEPTABLE_MEAN_BRIGHTNESS = 200
