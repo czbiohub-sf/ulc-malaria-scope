@@ -477,6 +477,10 @@ class ScopeOp(QObject, NamedMachine):
             raise
 
     def _start_experiment(self, *args):
+        self.periodic_autobrightness_routine = (
+            self.routines.periodic_autobrightness_routine(self.mscope)
+        )
+
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
 
         self.flowcontrol_routine = self.routines.flow_control_routine(
@@ -834,6 +838,8 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
         t0 = perf_counter()
+
+        # Run periodic SSAF routine
         resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         try:
             (
@@ -865,6 +871,9 @@ class ScopeOp(QObject, NamedMachine):
 
         if filtered_focus_err is not None:
             self.filtered_focus_err = filtered_focus_err
+
+        # Run periodic autobrightness routine
+        self.periodic_autobrightness_routine.send(resized_img)
 
         t0 = perf_counter()
 
