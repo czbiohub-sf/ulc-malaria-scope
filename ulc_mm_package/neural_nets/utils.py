@@ -18,6 +18,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     YOGO_CONF_THRESHOLD,
     YOGO_AREA_FILTER,
+    YOGO_CROP_HEIGHT_PX,
 )
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 
@@ -128,11 +129,9 @@ def _parse_prediction_tensor(
     mask = (prediction_tensor[:, 4:5, :] > 0.5).flatten()
     filtered_pred = prediction_tensor[:, :, mask][0, :, :]
 
-    img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
-
     # Mask areas
     pred_half_width = filtered_pred[2] / 2 * img_w
-    pred_half_height = filtered_pred[3] / 2 * img_h
+    pred_half_height = filtered_pred[3] / 2 * YOGO_CROP_HEIGHT_PX
     areas = 4 * (pred_half_height * pred_half_width)
     area_mask = areas > YOGO_AREA_FILTER
 
@@ -170,6 +169,8 @@ def _parse_prediction_tensor(
 
     pred_labels = pred_labels.astype(DTYPE)
     pred_probs = pred_probs.astype(DTYPE)
+
+    img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
 
     return img_ids, tlx, tly, brx, bry, objectness, pred_labels, pred_probs, all_confs
 

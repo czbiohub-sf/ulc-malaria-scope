@@ -13,7 +13,7 @@ from ulc_mm_package.neural_nets.NCSModel import (
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_MODEL_DIR,
-    YOGO_AREA_FILTER,
+    YOGO_AREA_FILTER_NORMED,
     YOGO_PRED_THRESHOLD,
     YOGO_CROP_HEIGHT_PX,
 )
@@ -61,7 +61,7 @@ class YOGO(NCSModel):
     def filter_res(res: npt.NDArray, threshold=YOGO_PRED_THRESHOLD) -> npt.NDArray:
         mask = (res[:, 4:5, :] > threshold).flatten()
         areas = (res[:, 2:3, :] * res[:, 3:4, :]).flatten()
-        areas_mask = areas > YOGO_AREA_FILTER
+        areas_mask = areas > YOGO_AREA_FILTER_NORMED
         return res[:, :, mask & areas_mask]
 
     @staticmethod
