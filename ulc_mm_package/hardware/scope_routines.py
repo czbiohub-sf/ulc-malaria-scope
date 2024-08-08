@@ -355,6 +355,38 @@ class Routines:
         assert brightness is not None, "not possible"
         return brightness
 
+    @init_generator
+    def periodic_autobrightness_routine(
+        self, mscope: MalariaScope
+    ) -> Generator[None, np.ndarray, None]:
+        """
+        This routine is a wrapper around the autobrightness routine that will run at a set periodicity,
+        defined by the constant CONTINUOUS_AB_PERIOD_NUM, during an acquisition.
+
+        Parameters
+        ----------
+        mscope: MalariaScope
+        """
+
+        autobrightness = Autobrightness(mscope.led)
+
+        counter = 0
+        while True:
+            img = yield
+            counter += 1
+            if counter >= processing_constants.PERIODIC_AB_PERIOD_NUM_FRAMES:
+                img = yield
+                target_achieved = autobrightness.runAutobrightness(img)
+                if target_achieved:
+                    # Resets the step counter and step size to their default values
+                    autobrightness.reset()
+
+                # The normal autobrightness routine has a max number of steps
+                # before it raises an exception. This routine will run indefinitely,
+                # so we reset the step_counter to 0
+                autobrightness.step_counter = 0
+                counter = 0
+
     def checkPressureDifference(self, mscope: MalariaScope) -> float:
         """Check the pressure differential. Raises an exception if difference is insufficent
         or if the pressure sensor cannot be read.

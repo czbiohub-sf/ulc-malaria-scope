@@ -477,6 +477,10 @@ class ScopeOp(QObject, NamedMachine):
             raise
 
     def _start_experiment(self, *args):
+        self.periodic_autobrightness_routine = (
+            self.routines.periodic_autobrightness_routine(self.mscope)
+        )
+
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
 
         self.flowcontrol_routine = self.routines.flow_control_routine(
@@ -891,6 +895,9 @@ class ScopeOp(QObject, NamedMachine):
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
+
+        # Run periodic autobrightness routine
+        self.periodic_autobrightness_routine.send(resized_img)
 
         t0 = perf_counter()
         # Update remaining metadata
