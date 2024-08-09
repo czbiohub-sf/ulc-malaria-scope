@@ -1,5 +1,4 @@
 import enum
-import pickle
 from typing import Tuple, Optional
 
 import numpy as np
