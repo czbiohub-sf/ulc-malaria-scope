@@ -359,7 +359,7 @@ class Routines:
     @init_generator
     def periodic_autobrightness_routine(
         self, mscope: MalariaScope
-    ) -> Generator[None, np.ndarray, None]:
+    ) -> Generator[Optional[float], np.ndarray, None]:
         """
         This routine is a wrapper around the autobrightness routine that will run at a set periodicity,
         defined by the constant CONTINUOUS_AB_PERIOD_NUM, during an acquisition.
@@ -379,7 +379,6 @@ class Routines:
             if counter >= processing_constants.PERIODIC_AB_PERIOD_NUM_FRAMES:
                 autobrightness.autobrightness_pid_control(img)
                 curr_img_brightness = autobrightness.prev_mean_img_brightness
-
 
     def checkPressureDifference(self, mscope: MalariaScope) -> float:
         """Check the pressure differential. Raises an exception if difference is insufficent

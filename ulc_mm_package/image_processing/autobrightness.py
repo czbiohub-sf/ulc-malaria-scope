@@ -1,4 +1,5 @@
 import enum
+import pickle
 from typing import Tuple, Optional
 
 import numpy as np
@@ -162,6 +163,9 @@ class Autobrightness:
         led: LED_TPS5420TDDCT,
         target_pixel_val: int = TOP_PERC_TARGET_VAL,
         step_size_perc: float = 0.01,
+        kp: float = 0.001,
+        ki: float = 0.01,
+        kd: float = 0.01,
     ):
         self.prev_brightness_enum: Optional[AB] = None
         self.prev_mean_img_brightness: Optional[float] = None
@@ -172,10 +176,19 @@ class Autobrightness:
         self.timeout_steps = 200
         self.step_counter = 0
 
+        # PID constants
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+
+        self.prev_error = None
+        self.intergral_error = 0
+
     def runAutobrightness(self, img: np.ndarray) -> bool:
         curr_brightness_enum, curr_mean_brightness_val = adjustBrightness(
             img, self.target_pixel_val, self.led, self.step_size_perc
         )
+
         if self.prev_brightness_enum is not None:
             if self.prev_brightness_enum != curr_brightness_enum:
                 self.step_size_perc /= 2
@@ -195,7 +208,38 @@ class Autobrightness:
         else:
             return False
 
+    def autobrightness_pid_control(self, img: np.ndarray):
+        img_brightness = assessBrightness(img, TOP_PERC)
+        self.prev_mean_img_brightness = img_brightness
+        error = self.target_pixel_val - img_brightness
+
+        self.intergral_error += error
+
+        if self.prev_error is None:
+            self.prev_error = error
+            derivative_error = 0
+        else:
+            # Implicit dt = 1
+            derivative_error = error - self.prev_error
+        self.prev_error = error
+
+        correction = (
+            self.kp
+            * error
+            # + (self.ki * self.intergral_error)
+            # + (self.kd * derivative_error)
+        )
+
+        current_led_pwm_perc = self.led.pwm_duty_cycle
+        new_led_pwm_perc = current_led_pwm_perc + correction
+        new_led_pwm_perc = new_led_pwm_perc if new_led_pwm_perc <= 1.0 else 1.0
+        new_led_pwm_perc = new_led_pwm_perc if new_led_pwm_perc >= 0.0 else 0.0
+        self.led.setDutyCycle(new_led_pwm_perc)
+
     def reset(self):
         self.prev_brightness_enum = None
         self.step_size_perc = self.default_step_size_perc
         self.step_counter = 0
+
+        self.prev_error = None
+        self.intergral_error = 0
