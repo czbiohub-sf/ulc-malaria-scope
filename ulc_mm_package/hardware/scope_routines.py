@@ -352,6 +352,7 @@ class Routines:
         # Since brightness was achieved, we know that this is now a float
         # instead of an Optional[float].
         brightness = autobrightness.prev_mean_img_brightness
+
         assert brightness is not None, "not possible"
         return brightness
 
@@ -369,23 +370,16 @@ class Routines:
         """
 
         autobrightness = Autobrightness(mscope.led)
+        curr_img_brightness: Optional[float] = None
 
         counter = 0
         while True:
-            img = yield
+            img = yield curr_img_brightness
             counter += 1
             if counter >= processing_constants.PERIODIC_AB_PERIOD_NUM_FRAMES:
-                img = yield
-                target_achieved = autobrightness.runAutobrightness(img)
-                if target_achieved:
-                    # Resets the step counter and step size to their default values
-                    autobrightness.reset()
+                autobrightness.autobrightness_pid_control(img)
+                curr_img_brightness = autobrightness.prev_mean_img_brightness
 
-                # The normal autobrightness routine has a max number of steps
-                # before it raises an exception. This routine will run indefinitely,
-                # so we reset the step_counter to 0
-                autobrightness.step_counter = 0
-                counter = 0
 
     def checkPressureDifference(self, mscope: MalariaScope) -> float:
         """Check the pressure differential. Raises an exception if difference is insufficent

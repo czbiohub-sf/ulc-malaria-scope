@@ -173,6 +173,7 @@ PER_IMAGE_METADATA_KEYS = [
     "filtered_focus_error",
     "focus_adjustment",
     "classic_sharpness_ratio",
+    "mean_pixel_val",
     "cell_count_cumulative",
     "temperature",
     "camera_temperature",

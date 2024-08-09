@@ -897,7 +897,7 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
         # Run periodic autobrightness routine
-        self.periodic_autobrightness_routine.send(resized_img)
+        curr_mean_pixel_val = self.periodic_autobrightness_routine.send(resized_img)
 
         t0 = perf_counter()
         # Update remaining metadata
@@ -921,6 +921,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment
         self.img_metadata["classic_sharpness_ratio"] = sharpness_ratio_rel_peak
+        self.img_metadata["mean_pixel_val"] = curr_mean_pixel_val
 
         if self.frame_count % TH_PERIOD_NUM == 0:
             try:
