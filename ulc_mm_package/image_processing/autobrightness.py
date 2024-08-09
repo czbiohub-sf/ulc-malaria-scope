@@ -164,8 +164,8 @@ class Autobrightness:
         target_pixel_val: int = TOP_PERC_TARGET_VAL,
         step_size_perc: float = 0.01,
         kp: float = 0.001,
-        ki: float = 0.01,
-        kd: float = 0.01,
+        ki: float = 0.0,
+        kd: float = 0.0,
     ):
         self.prev_brightness_enum: Optional[AB] = None
         self.prev_mean_img_brightness: Optional[float] = None
@@ -224,10 +224,9 @@ class Autobrightness:
         self.prev_error = error
 
         correction = (
-            self.kp
-            * error
-            # + (self.ki * self.intergral_error)
-            # + (self.kd * derivative_error)
+            self.kp * error
+            + (self.ki * self.intergral_error)
+            + (self.kd * derivative_error)
         )
 
         current_led_pwm_perc = self.led.pwm_duty_cycle
