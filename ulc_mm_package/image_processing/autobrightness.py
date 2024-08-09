@@ -217,7 +217,7 @@ class Autobrightness:
 
         if self.prev_error is None:
             self.prev_error = error
-            derivative_error = 0
+            derivative_error = 0.0
         else:
             # Implicit dt = 1
             derivative_error = error - self.prev_error
