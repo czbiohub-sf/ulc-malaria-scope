@@ -4,12 +4,8 @@ from typing import Tuple, Optional
 import numpy as np
 
 from ulc_mm_package.image_processing.focus_metrics import downsample_image
-from ulc_mm_package.image_processing.processing_constants import (
-    TOP_PERC_TARGET_VAL,
-    TOP_PERC,
-    TOL,
-    MIN_ACCEPTABLE_MEAN_BRIGHTNESS,
-)
+
+import ulc_mm_package.image_processing.processing_constants as pc
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
 
 
@@ -34,7 +30,7 @@ class BrightnessTargetNotAchieved(AutobrightnessError):
             f"Unable to achieve the target brightness. The exposure may be too low (and the target pixel value too high) "
             f"or there may be an issue with the LED. Final mean pixel value: {brightness_val}. "
             f"The brightness value is still above the minimum acceptable value "
-            f"of ({MIN_ACCEPTABLE_MEAN_BRIGHTNESS})."
+            f"of ({pc.MIN_ACCEPTABLE_MEAN_BRIGHTNESS})."
         )
         self.value = brightness_val
         super().__init__(f"{msg}")
@@ -97,9 +93,9 @@ def adjustBrightness(
         Mean image-pixel value
     """
     current_led_pwm_perc = led.pwm_duty_cycle
-    current_brightness = assessBrightness(img, TOP_PERC)
+    current_brightness = assessBrightness(img, pc.TOP_PERC)
     diff = target_pixel_val - current_brightness
-    diff = diff if abs(diff / np.iinfo(str(img.dtype)).max) >= TOL else 0
+    diff = diff if abs(diff / np.iinfo(str(img.dtype)).max) >= pc.TOL else 0
 
     led.turnOn()
     if diff > 0:
@@ -160,11 +156,11 @@ class Autobrightness:
     def __init__(
         self,
         led: LED_TPS5420TDDCT,
-        target_pixel_val: int = TOP_PERC_TARGET_VAL,
+        target_pixel_val: int = pc.TOP_PERC_TARGET_VAL,
         step_size_perc: float = 0.01,
-        kp: float = 0.001,
-        ki: float = 0.0,
-        kd: float = 0.0,
+        kp: float = pc.AB_PID_KP,
+        ki: float = pc.AB_PID_KI,
+        kd: float = pc.AB_PID_KD,
     ):
         self.prev_brightness_enum: Optional[AB] = None
         self.prev_mean_img_brightness: Optional[float] = None
@@ -181,7 +177,7 @@ class Autobrightness:
         self.kd = kd
 
         self.prev_error: Optional[float] = None
-        self.intergral_error = 0.0
+        self.integral_error = 0.0
 
     def runAutobrightness(self, img: np.ndarray) -> bool:
         curr_brightness_enum, curr_mean_brightness_val = adjustBrightness(
@@ -197,7 +193,7 @@ class Autobrightness:
         self.step_counter += 1
 
         if self.step_counter >= self.timeout_steps:
-            if self.prev_mean_img_brightness >= MIN_ACCEPTABLE_MEAN_BRIGHTNESS:
+            if self.prev_mean_img_brightness >= pc.MIN_ACCEPTABLE_MEAN_BRIGHTNESS:
                 raise BrightnessTargetNotAchieved(self.prev_mean_img_brightness)
             else:
                 raise BrightnessCriticallyLow(self.prev_mean_img_brightness)
@@ -208,11 +204,18 @@ class Autobrightness:
             return False
 
     def autobrightness_pid_control(self, img: np.ndarray):
-        img_brightness = assessBrightness(img, TOP_PERC)
+        img_brightness = assessBrightness(img, pc.TOP_PERC)
         self.prev_mean_img_brightness = img_brightness
         error = self.target_pixel_val - img_brightness
 
-        self.intergral_error += error
+        self.integral_error += error
+
+        # integral windup guard
+        self.integral_error = (
+            np.sign(self.integral_error) * pc.INTEGRAL_WINDUP_BOUND
+            if abs(self.integral_error) > pc.INTEGRAL_WINDUP_BOUND
+            else self.integral_error
+        )
 
         if self.prev_error is None:
             self.prev_error = error
@@ -224,7 +227,7 @@ class Autobrightness:
 
         correction = (
             self.kp * error
-            + (self.ki * self.intergral_error)
+            + (self.ki * self.integral_error)
             + (self.kd * derivative_error)
         )
 
@@ -240,4 +243,4 @@ class Autobrightness:
         self.step_counter = 0
 
         self.prev_error = None
-        self.intergral_error = 0
+        self.integral_error = 0
