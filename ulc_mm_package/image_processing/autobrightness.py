@@ -181,8 +181,8 @@ class Autobrightness:
         self.ki = ki
         self.kd = kd
 
-        self.prev_error = None
-        self.intergral_error = 0
+        self.prev_error: Optional[float] = None
+        self.intergral_error = 0.0
 
     def runAutobrightness(self, img: np.ndarray) -> bool:
         curr_brightness_enum, curr_mean_brightness_val = adjustBrightness(
