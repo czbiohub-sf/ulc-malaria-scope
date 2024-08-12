@@ -13,10 +13,17 @@ class FLOWRATE(enum.Enum):
 
 
 # ================ Autobrightness constants ================ #
-TOP_PERC_TARGET_VAL = 245
+TOP_PERC_TARGET_VAL = 235
 TOP_PERC = 0.03
 TOL = 0.01
 MIN_ACCEPTABLE_MEAN_BRIGHTNESS = 200
+PERIODIC_AB_PERIOD_NUM_FRAMES = 30  # At 30 frames, that's roughly once per second
+
+# Autobrightness PID constants
+AB_PID_KP = 0.001
+AB_PID_KI = 0.0
+AB_PID_KD = 0.0001
+INTEGRAL_WINDUP_BOUND = 10
 
 # ================ Background subtraction constants ================ #
 INSIDE_BBOX_FLAG = 0
