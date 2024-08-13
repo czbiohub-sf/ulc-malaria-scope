@@ -482,6 +482,10 @@ class ScopeOp(QObject, NamedMachine):
             raise
 
     def _start_experiment(self, *args):
+        self.periodic_autobrightness_routine = (
+            self.routines.periodic_autobrightness_routine(self.mscope)
+        )
+
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
 
         self.flowcontrol_routine = self.routines.flow_control_routine(
@@ -906,6 +910,9 @@ class ScopeOp(QObject, NamedMachine):
         t1 = perf_counter()
         self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
+        # Run periodic autobrightness routine
+        curr_mean_pixel_val = self.periodic_autobrightness_routine.send(resized_img)
+
         t0 = perf_counter()
         # Update remaining metadata
         self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
@@ -928,6 +935,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment
         self.img_metadata["classic_sharpness_ratio"] = sharpness_ratio_rel_peak
+        self.img_metadata["mean_pixel_val"] = curr_mean_pixel_val
 
         if self.frame_count % TH_PERIOD_NUM == 0:
             try:

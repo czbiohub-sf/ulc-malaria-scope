@@ -2,6 +2,9 @@
 <html lang="en">
     <head>
         <style>
+            body {
+                font-size: 16 px;
+            }
             @page {
                 size: a4 portrait;
                 @frame header_frame {           /* Static Frame */
@@ -21,7 +24,7 @@
         <link href="{{ css_file }}" rel="stylesheet" type="text/css">
     </head>
 
-    <h1 style="text-align: center">Remoscope / Dataset {{ dataset_name }} </h1>
+    <h1 style="text-align: center">Remoscope experiment report: {{ dataset_name }} </h1>
     <body>
 
         <!-- Content for Static Frame 'header_frame' -->
@@ -33,8 +36,6 @@
                 <pdf:pagenumber>/<pdf:pagecount>
             </p>
         </div>
-
-        <h2>Statistics summary and thumbnails</h2>
 
         {# Experiment metadata #}
         <table style="table-layout: fixed;">
@@ -60,18 +61,20 @@
                 <td>{{ flowcell_id }}</td>
             </tr>
 
-            {# Cell counts #}
+            {# Parasitemia #}
             <thead>
                 <tr>
-                    <th colspan="2">Cell counts</th>
+                    <th colspan="2">Parasitemia</th>
                 </tr>
             </thead>
-            {% for key in cell_counts %}
             <tr>
-                <td>{{key}}</td>
-                <td>{{cell_counts[key]}} ({{'{0:.3f}'.format(100*cell_counts[key] / total_rbcs)}}%)</td>
+                <td>Estimated parasitemia (%)</td>
+                <td>{{comp_perc_parasitemia}}% {{comp_perc_parasitemia_interval}}</td>
             </tr>
-            {% endfor %}
+            <tr>
+                <td>Estimated parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
+                <td>{{comp_parasites_per_ul}} {{comp_parasites_per_ul_interval}}</td>
+            </tr>
             <tr>
                 <td>% Raw parasitemia</td>
                 <td>{{raw_perc_parasitemia}}%</td>
@@ -80,17 +83,23 @@
                 <td>Raw parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
                 <td>{{raw_parasites_per_ul}}</td>
             </tr>
+
+
+            {# Estimated sample composition #}
+            <thead>
+                <tr>
+                    <th colspan="2">Estimated sample composition</th>
+                </tr>
+            </thead>
+            {% for key in cell_counts %}
             <tr>
-                <td>% Compensated parasitemia</td>
-                <td>{{comp_perc_parasitemia}}% +/- {{comp_perc_parasitemia_err}}%</td>
+                <td>{{key}}</td>
+                <td>{{cell_counts[key]}} ({{'{0:.3f}'.format(100*cell_counts[key] / total_rbcs)}}%)</td>
             </tr>
-            <tr>
-                <td>Compensated parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
-                <td>{{comp_parasites_per_ul}} +/- {{comp_parasites_per_ul_err}}</td>
-            </tr>
+            {% endfor %}
         </table>
-        <font size="-2">
-            <i>Parasitemia includes asexual stages only. Uncertainties (see +/-) indicate 95% confidence bounds</i>
+        <font size="-1">
+            <i>Parasitemia includes asexual stages only. Square brackets indicate 95% confidence interval</i>
         </font>
         
         {# Thumbnails #}

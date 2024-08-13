@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Tuple, Dict, List
 
-from ulc_mm_package.scope_constants import ACQUISITION_FPS
+from ulc_mm_package.scope_constants import ACQUISITION_FPS, CAMERA_SELECTION
 
 curr_dir = Path(__file__).parent.resolve()  # Get full path
 
@@ -25,7 +25,10 @@ if not Path(AUTOFOCUS_MODEL_DIR).exists():
     raise FileNotFoundError("autofocus model not found")
 
 # ================ YOGO constants ================ #
-YOGO_AREA_FILTER = 1200 / (772 * 1032)
+YOGO_AREA_FILTER = 1200
+YOGO_AREA_FILTER_NORMED = YOGO_AREA_FILTER / (
+    CAMERA_SELECTION.IMG_HEIGHT * CAMERA_SELECTION.IMG_WIDTH
+)
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_CONF_THRESHOLD = 0.9
 YOGO_MODEL_NAME = "still-voice-4405"
