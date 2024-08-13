@@ -155,8 +155,8 @@ class ScopeOp(QObject, NamedMachine):
                 "on_exit": [self._end_cellfinder],
             },
             {
-                "name": "autobrightness_postcells",
-                "display_name": "autobrightness (post-cells)",
+                "name": "autobrightness_preflow",
+                "display_name": "autobrightness (pre-flow)",
                 "on_enter": [self._send_state, self._start_autobrightness],
                 "on_exit": [self._init_classic_focus],
             },
@@ -176,6 +176,11 @@ class ScopeOp(QObject, NamedMachine):
                 "display_name": "autofocus (post-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
                 "on_exit": [self._init_classic_focus],
+            },
+            {
+                "name": "autobrightness_postflow",
+                "display_name": "autobrightness (post-flow)",
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "experiment",
@@ -563,14 +568,22 @@ class ScopeOp(QObject, NamedMachine):
                 f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}."
             )
             self.last_img = img
-            if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
+            if self.state in {
+                "autobrightness_precells",
+                "autobrightness_preflow",
+                "autobrightness_postflow",
+            }:
                 self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
             self.logger.warning(
                 f"Autobrightness target not achieved, but still ok. Mean pixel val = {self.autobrightness_result}."
             )
-            if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
+            if self.state in {
+                "autobrightness_precells",
+                "autobrightness_preflow",
+                "autobrightness_postflow",
+            }:
                 self.next_state()
         except BrightnessCriticallyLow as e:
             self.logger.error(
@@ -592,7 +605,8 @@ class ScopeOp(QObject, NamedMachine):
             else:
                 if self.state in {
                     "autobrightness_precells",
-                    "autobrightness_postcells",
+                    "autobrightness_preflow",
+                    "autobrightness_postflow",
                 }:
                     self.next_state()
         else:
