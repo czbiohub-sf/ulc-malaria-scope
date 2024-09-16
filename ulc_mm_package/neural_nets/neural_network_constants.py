@@ -31,7 +31,7 @@ YOGO_AREA_FILTER_NORMED = YOGO_AREA_FILTER / (
 )
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_CONF_THRESHOLD = 0.9
-YOGO_MODEL_NAME = "still-voice-4405"
+YOGO_MODEL_NAME = "elated-smoke-4492"
 YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best.xml")
 
 if not Path(YOGO_MODEL_DIR).exists():
