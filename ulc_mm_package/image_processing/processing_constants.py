@@ -17,7 +17,7 @@ TOP_PERC_TARGET_VAL = 235
 TOP_PERC = 0.03
 TOL = 0.01
 MIN_ACCEPTABLE_MEAN_BRIGHTNESS = 200
-PERIODIC_AB_PERIOD_NUM_FRAMES = 30  # At 30 frames, that's roughly once per second
+PERIODIC_AB_PERIOD_NUM_FRAMES = 60  # At 60 frames, that's roughly once per 2 seconds
 
 # Autobrightness PID constants
 AB_PID_KP = 0.001
