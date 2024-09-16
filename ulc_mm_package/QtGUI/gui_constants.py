@@ -47,6 +47,8 @@ SITE_LIST = [
     "Biohub SF",
     "DeRisi Lab",
     "Filipa Lab",
+    "Goodlife Kigali",
+    "Goodlife Musanze",
 ]
 
 CLINICAL_SAMPLE = "Whole blood (clinical, P. falciparum endemic)"
