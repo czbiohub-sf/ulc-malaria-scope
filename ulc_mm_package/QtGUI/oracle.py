@@ -53,6 +53,11 @@ from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
     ERROR_BEHAVIORS,
     BLANK_INFOPANEL_VAL,
+    CLINICAL_SAMPLE,
+    CULTURED_SAMPLE,
+    IMAGE_INSERT_PATH,
+    IMAGE_REMOVE_PATH,
+    IMAGE_RELOAD_PATH,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -69,10 +74,6 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
 _ERROR_MSG = '\n\nClick "OK" to end this run.'
-
-_IMAGE_INSERT_PATH = "gui_images/insert_infographic.png"
-_IMAGE_REMOVE_PATH = "gui_images/remove_infographic.png"
-_IMAGE_RELOAD_PATH = "gui_images/remove_infographic.png"
 
 
 class Buttons(enum.Enum):
@@ -317,6 +318,10 @@ class Oracle(Machine):
         self.scopeop.update_flowrate.connect(self.liveview_window.update_flowrate)
         self.scopeop.update_focus.connect(self.liveview_window.update_focus)
 
+        self.scopeop.finishing_experiment.connect(
+            self.liveview_window.hide_state_label_show_progress_bar
+        )
+
         # Connect acquisition signals and slots
         self.acquisition.update_liveview.connect(self.liveview_window.update_img)
         self.acquisition.update_infopanel.connect(self.scopeop.update_infopanel)
@@ -411,7 +416,7 @@ class Oracle(Machine):
                 '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
             ),
             buttons=Buttons.OK,
-            image=_IMAGE_RELOAD_PATH,
+            image=IMAGE_RELOAD_PATH,
         )
         self.close_lid_display_message()
         self.unpause()
@@ -549,7 +554,7 @@ class Oracle(Machine):
                 '\n\nClick "OK" once it is removed.'
             ),
             buttons=Buttons.OK,
-            image=_IMAGE_REMOVE_PATH,
+            image=IMAGE_REMOVE_PATH,
         )
 
         self.scopeop_thread.start()
@@ -625,9 +630,42 @@ class Oracle(Machine):
             PER_IMAGE_METADATA_KEYS,
         )
 
+        sample_type = self.experiment_metadata["sample_type"]
+        clinical = sample_type == CLINICAL_SAMPLE
+        skip = not clinical and not sample_type == CULTURED_SAMPLE
+        if skip:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "No compensation in-use",
+                (
+                    f"Compensation metrics are not in-use for {sample_type[0].lower() + sample_type[1:]} samples."
+                    " Final parasitemia estimate will be based on raw values only."
+                    '\n\nClick "OK" to run experiment with no compensation.'
+                ),
+                buttons=Buttons.OK,
+            )
+        try:
+            self.scopeop.mscope.data_storage.initCountCompensator(clinical, skip)
+        except FileNotFoundError as e:
+            self.display_message(
+                QMessageBox.Icon.Warning,
+                "Compensation metrics missing",
+                (
+                    f"Compensation metrics could not be found for {sample_type[0].lower() + sample_type[1:]}."
+                    " Please check that remo-stats-utils repository is up to date."
+                    '\n\nClick "OK" to run experiment with no compensation.'
+                ),
+                buttons=Buttons.OK,
+            )
+            self.logger.warning(
+                f"FileNotFoundError for {sample_type[0].lower() + sample_type[1:]} metrics.\n{e}"
+            )
+            self.scopeop.mscope.data_storage.initCountCompensator(clinical, True)
+
         # Update target flowrate in scopeop
         self.scopeop.target_flowrate = self.form_metadata["target_flowrate"][1]
 
+        self.liveview_window.hide_progress_bar_show_state_label()
         self.to_liveview()
 
     def _end_form(self, *args):
@@ -635,6 +673,7 @@ class Oracle(Machine):
             self.scopeop.lid_opened = self.scopeop.mscope.read_lim_sw()
         else:
             self.scopeop.lid_opened = False
+
         self.form_window.close()
 
     def _start_liveview(self, *args):
@@ -643,7 +682,7 @@ class Oracle(Machine):
             "Starting run",
             '1. Insert flow cell\n\n2. Put the CAP module back on\n\n3. Close the lid\n\nClick "OK" once it is closed.',
             buttons=Buttons.OK,
-            image=_IMAGE_INSERT_PATH,
+            image=IMAGE_INSERT_PATH,
         )
 
         while self.scopeop.lid_opened:
@@ -652,7 +691,7 @@ class Oracle(Machine):
                 "Starting run",
                 "The lid has not been closed. Please close the lid to proceed.",
                 buttons=Buttons.OK,
-                image=_IMAGE_INSERT_PATH,
+                image=IMAGE_INSERT_PATH,
             )
 
         self.lid_handler_enabled = True
@@ -672,7 +711,7 @@ class Oracle(Machine):
             "Run complete",
             f'{msg} Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
-            image=_IMAGE_REMOVE_PATH,
+            image=IMAGE_REMOVE_PATH,
         )
 
         message_result = self.display_message(
@@ -698,6 +737,14 @@ class Oracle(Machine):
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")
 
+        try:
+            os.remove(LOCKFILE)
+            self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+        except FileNotFoundError:
+            self.logger.warning(
+                f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+            )
+
         # Wait for QTimers to shutoff
         self.logger.info("Waiting for acquisition and liveview timer to terminate.")
         while (
@@ -709,14 +756,6 @@ class Oracle(Machine):
 
         # Shut off hardware
         self.scopeop.mscope.shutoff()
-
-        try:
-            os.remove(LOCKFILE)
-            self.logger.info(f"Removed lockfile ({LOCKFILE}).")
-        except FileNotFoundError:
-            self.logger.warning(
-                f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
-            )
 
         # Shut off acquisition thread
         self.acquisition_thread.quit()
@@ -740,6 +779,14 @@ class Oracle(Machine):
         self.logger.warning("Starting emergency oracle shut off.")
 
         if not self.shutoff_done:
+            try:
+                os.remove(LOCKFILE)
+                self.logger.info(f"Removed lockfile ({LOCKFILE}).")
+            except FileNotFoundError:
+                self.logger.warning(
+                    f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
+                )
+
             # Shut off hardware
             self.scopeop.mscope.shutoff()
 
@@ -751,14 +798,6 @@ class Oracle(Machine):
             else:
                 self.logger.info(
                     "Since data storage is already closed, no data storage operations were needed."
-                )
-
-            try:
-                os.remove(LOCKFILE)
-                self.logger.info(f"Removed lockfile ({LOCKFILE}).")
-            except FileNotFoundError:
-                self.logger.warning(
-                    f"Lockfile ({LOCKFILE}) does not exist and could not be deleted."
                 )
 
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")

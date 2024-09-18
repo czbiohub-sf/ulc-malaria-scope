@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (
     QListView,
     QListWidget,
     QListWidgetItem,
+    QProgressBar,
     QPlainTextEdit,
     QPushButton,
     QScrollBar,
@@ -120,26 +121,39 @@ class LiveviewGUI(QMainWindow):
         else:
             self._set_color(self.state_lbl, STATUS.IN_PROGRESS)
 
+    def hide_state_label_show_progress_bar(self, val: int):
+        self.state_lbl.hide()
+        self.end_of_run_progress_bar.setValue(val)
+        self.end_of_run_progress_bar.show()
+
+    def hide_progress_bar_show_state_label(self):
+        self.state_lbl.show()
+        self.end_of_run_progress_bar.setValue(0)
+        self.end_of_run_progress_bar.hide()
+
+    def update_progress_bar(self, val: int):
+        self.end_of_run_progress_bar.setValue(val)
+
     @pyqtSlot(int)
     def update_img_count(self, img_count):
         self.img_count_val.setText(f"{img_count} / {MAX_FRAMES}")
 
     @pyqtSlot(ClassCountResult)
-    def update_cell_count(self, cell_count: ClassCountResult):
+    def update_cell_count(self, cell_counts: ClassCountResult):
         # TODO add the rest of the cell types (can probably ignore misc?)
-        healthy_cell_count = cell_count[YOGO_CLASS_IDX_MAP["healthy"]]
-        ring_cell_count = cell_count[YOGO_CLASS_IDX_MAP["ring"]]
-        troph_cell_count = cell_count[YOGO_CLASS_IDX_MAP["trophozoite"]]
-        schiz_cell_count = cell_count[YOGO_CLASS_IDX_MAP["schizont"]]
+        healthy_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["healthy"]]
+        ring_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["ring"]]
+        troph_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["trophozoite"]]
+        schiz_cell_count = cell_counts[YOGO_CLASS_IDX_MAP["schizont"]]
 
         # 'x or y' syntax means 'x if x is "truthy" else y'
         # x is "truthy" if bool(x) == True
         # so in this case, if the cell count == 0, bool(0) == False,
         # so we get string '---'
-        healthy_count_str = f"{healthy_cell_count or '---'}"
-        ring_count_str = f"{ring_cell_count or '---'}"
-        troph_count_str = f"{troph_cell_count or '---'}"
-        schiz_count_str = f"{schiz_cell_count or '---'}"
+        healthy_count_str = f"{int(healthy_cell_count) or '---'}"
+        ring_count_str = f"{int(ring_cell_count) or '---'}"
+        troph_count_str = f"{int(troph_cell_count) or '---'}"
+        schiz_count_str = f"{int(schiz_cell_count) or '---'}"
 
         self.healthy_count_val.setText(healthy_count_str)
         self.ring_count_val.setText(ring_count_str)
@@ -295,6 +309,12 @@ class LiveviewGUI(QMainWindow):
 
         # Populate infopanel with general components
         self.state_lbl = QLabel("-")
+
+        self.end_of_run_progress_bar = QProgressBar()
+        self.end_of_run_progress_bar.setTextVisible(True)
+        self.end_of_run_progress_bar.setFormat("Completing experiment, please wait")
+        self.end_of_run_progress_bar.setValue(0)
+
         self.pause_btn = QPushButton("Pause")
         self.exit_btn = QPushButton("Exit")
         self.runtime_lbl = QLabel("Runtime:")
@@ -335,12 +355,19 @@ class LiveviewGUI(QMainWindow):
         self.focus_title.setAlignment(Qt.AlignCenter)
         self.flowrate_title.setAlignment(Qt.AlignCenter)
         self.tcp_lbl.setAlignment(Qt.AlignCenter)
+        self.end_of_run_progress_bar.setAlignment(Qt.AlignCenter)
+        self.end_of_run_progress_bar.setStyleSheet(
+            "QProgressBar::chunk " "{" "background-color: green;" "}"
+        )
 
         # Setup column size
         self.pause_btn.setFixedWidth(120)
         self.exit_btn.setFixedWidth(120)
 
         self.infopanel_layout.addWidget(self.state_lbl, 0, 1, 1, 2)
+        self.infopanel_layout.addWidget(self.end_of_run_progress_bar, 0, 1, 1, 2)
+        self.end_of_run_progress_bar.hide()
+
         self.infopanel_layout.addWidget(self.pause_btn, 1, 1)
         self.infopanel_layout.addWidget(self.exit_btn, 1, 2)
         self.infopanel_layout.addWidget(self.runtime_lbl, 2, 1)

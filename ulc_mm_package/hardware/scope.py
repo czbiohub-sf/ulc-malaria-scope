@@ -40,12 +40,17 @@ from ulc_mm_package.hardware.pneumatic_module import (
 )
 from ulc_mm_package.hardware.fan import Fan
 from ulc_mm_package.hardware.sht31d_temphumiditysensor import SHT3X
-from ulc_mm_package.scope_constants import SIMULATION, CAMERA_SELECTION, CameraOptions
+from ulc_mm_package.scope_constants import (
+    SIMULATION,
+    CAMERA_SELECTION,
+    CameraOptions,
+    DOWNSAMPLE_FACTOR,
+)
 from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorageError
 from ulc_mm_package.image_processing.flow_control import FlowController
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
-from ulc_mm_package.neural_nets.NCSModel import TPUError
+from ulc_mm_package.neural_nets.NCSModel import GPUError
 from ulc_mm_package.neural_nets.predictions_handler import PredictionsHandler
 
 
@@ -66,7 +71,7 @@ class Components(Enum):
     HT_SENSOR = auto()
     DATA_STORAGE = auto()
     FLOW_CONTROLLER = auto()
-    TPU = auto()
+    GPU = auto()
     PREDICTIONS_HANDLER = auto()
 
 
@@ -83,7 +88,7 @@ class MalariaScope:
         self.ht_sensor_enabled = False
         self.data_storage_enabled = False
         self.flow_controller_enabled = False
-        self.tpu_enabled = False
+        self.gpu_enabled = False
         self.predictions_handler_enabled = False
 
         # Initialize Components
@@ -95,7 +100,7 @@ class MalariaScope:
         self._init_humidity_temp_sensor()
         self._init_data_storage()
         self._init_flow_controller()
-        self._init_TPU()
+        self._init_GPU()
         self._init_predictions_handler()
 
         self.logger.info("Initialized scope hardware.")
@@ -123,18 +128,29 @@ class MalariaScope:
         self.flow_controller.reset()
 
     def reset_for_end_experiment(self) -> None:
-        """Reset syringe, turn LED off, reset flow control, and close data storage."""
+        """
+        Reset syringe, turn LED off, reset flow control, reset YOGO / Autofoucs,
+        and close data storage.
+        """
 
         # Reset syringe to top, turn LED off, reset flow control variables
         self.reset_pneumatic_and_led_and_flow_control()
 
         # Close data storage
         closing_file_future = self.data_storage.close(
-            self.predictions_handler.get_prediction_tensors()
+            self.predictions_handler.get_prediction_tensors(),
+            self.predictions_handler.heatmaps,
         )
         if closing_file_future is not None:
             while not closing_file_future.done():
                 sleep(1)
+
+        # reset autofocus / yogo
+        # note that this waits for their queues to drain, and then
+        # resets their threadpool executor; it does not drop their
+        # references to the NCS (which would then require reconnecting)
+        self.autofocus_model.reset(wait_for_jobs=False)
+        self.cell_diagnosis_model.reset(wait_for_jobs=False)
 
         # Reset predictions handler
         self.predictions_handler: PredictionsHandler = PredictionsHandler()
@@ -145,6 +161,9 @@ class MalariaScope:
         self.pneumatic_module.setDutyCycle(self.pneumatic_module.getMaxDutyCycle())
         self.ht_sensor.stop()
         self.flow_controller.stop()
+        self.autofocus_model.reset(wait_for_jobs=False)
+        self.cell_diagnosis_model.reset(wait_for_jobs=False)
+
         if self.camera._isActivated:
             self.camera.deactivateCamera()
             self.logger.info("Deactivated camera.")
@@ -169,7 +188,7 @@ class MalariaScope:
             Components.HT_SENSOR: self.ht_sensor_enabled,
             Components.DATA_STORAGE: self.data_storage_enabled,
             Components.FLOW_CONTROLLER: self.flow_controller_enabled,
-            Components.TPU: self.tpu_enabled,
+            Components.GPU: self.gpu_enabled,
             Components.PREDICTIONS_HANDLER: self.predictions_handler_enabled,
         }
 
@@ -298,22 +317,22 @@ class MalariaScope:
         except DataStorageError as e:
             self.logger.error(f"Data storage initialization failed. {e}")
 
-    def _init_TPU(self):
+    def _init_GPU(self):
         try:
-            self.logger.info("Initializing TPU...")
+            self.logger.info("Initializing GPU...")
             self.autofocus_model = AutoFocus()
             self.cell_diagnosis_model = YOGO()
-            self.tpu_enabled = True
-        except TPUError as e:
-            self.logger.error(f"TPU initialization failed. {e}")
+            self.gpu_enabled = True
+        except GPUError as e:
+            self.logger.error(f"GPU initialization failed. {e}")
 
     def _init_flow_controller(self):
         try:
             self.logger.info("Initializing FlowController...")
             self.flow_controller = FlowController(
                 self.pneumatic_module,
-                CAMERA_SELECTION.IMG_HEIGHT,
-                CAMERA_SELECTION.IMG_WIDTH,
+                CAMERA_SELECTION.IMG_HEIGHT // DOWNSAMPLE_FACTOR,
+                CAMERA_SELECTION.IMG_WIDTH // DOWNSAMPLE_FACTOR,
             )
             self.flow_controller_enabled = True
         except Exception as e:

@@ -264,8 +264,12 @@ def make_html_report(
     per_image_metadata_plot_path: str,
     total_rbcs: int,
     class_name_to_cell_count: Dict[str, int],
-    perc_parasitemia: str,
-    parasites_per_ul: str,
+    raw_perc_parasitemia: str,
+    comp_perc_parasitemia: str,
+    comp_perc_parasitemia_interval: str,
+    raw_parasites_per_ul: str,
+    comp_parasites_per_ul: str,
+    comp_parasites_per_ul_interval: str,
     thumbnails: Dict[str, List[str]],
     counts_plot_loc: str,
     conf_plot_loc: str,
@@ -336,8 +340,12 @@ def make_html_report(
         "flowcell_id": fc_id,
         "total_rbcs": total_rbcs,
         "cell_counts": class_name_to_cell_count,
-        "perc_parasitemia": perc_parasitemia,
-        "parasites_per_ul": parasites_per_ul,
+        "raw_perc_parasitemia": raw_perc_parasitemia,
+        "comp_perc_parasitemia": comp_perc_parasitemia,
+        "comp_perc_parasitemia_interval": comp_perc_parasitemia_interval,
+        "raw_parasites_per_ul": raw_parasites_per_ul,
+        "comp_parasites_per_ul": comp_parasites_per_ul,
+        "comp_parasites_per_ul_interval": comp_parasites_per_ul_interval,
         "parasites_per_ul_scaling_factor": f"{RBCS_PER_UL:.0E}",
         "all_thumbnails": thumbnails,
         "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
@@ -381,98 +389,3 @@ def create_pdf_from_html(path_to_html: Path, save_path: Path) -> None:
     with open(save_path, "w+b") as f:
         with open(path_to_html, "r") as f2:
             pisa.CreatePDF(f2, f)
-
-
-if __name__ == "__main__":
-    import os
-
-    def debug(text):
-        print(text)
-
-    env = Environment(loader=FileSystemLoader("./"))
-    env.filters["debug"] = debug
-    template = env.get_template("summary_template.html")
-
-    cell_counts = {
-        "Healthy": int(1e6),
-        "WBC": int(1e6 / 600),
-        "Ring": 123,
-        "Trophozoite": 0,
-        "Schizont": 0,
-        "Gametocyte": 0,
-    }
-    total_rbcs = sum(cell_counts.values())
-    num_parasites = sum(
-        [cell_counts["Ring"], cell_counts["Trophozoite"], cell_counts["Schizont"]]
-    )
-    perc_parasitemia = f"{(num_parasites / total_rbcs * 100):.4f}"
-    parasites_per_ul = f"{num_parasites / total_rbcs * 5e6:.1f}"
-    parasite_folders = [
-        "dataset_dir/thumbnails/" + x
-        for x in ["ring", "trophozoite", "schizont", "gametocyte"]
-    ]
-
-    thumbnails = {
-        "Rings": [
-            os.path.join(parasite_folders[0], x)
-            for x in sorted(os.listdir(parasite_folders[0]))
-        ],
-        "Trophozoite": [
-            os.path.join(parasite_folders[1], x)
-            for x in sorted(os.listdir(parasite_folders[1]))
-        ],
-        "Schizont": [
-            os.path.join(parasite_folders[2], x)
-            for x in sorted(os.listdir(parasite_folders[2]))
-        ],
-        "Gametocyte": [
-            os.path.join(parasite_folders[3], x)
-            for x in sorted(os.listdir(parasite_folders[3]))
-        ],
-    }
-
-    exp_metadata = {
-        "operator_id": "IJ",
-        "participant_id": "Definitely not IJ since this is an anonymized field!!!",
-        "notes": "blood looks gorgeous. This is a comprehensive note with lots of important details, details which you must commit to memory!",
-        "flowcell_id": "0123-A2",
-    }
-
-    per_img_metadata_plot_path = "per_img_metadata_plt.jpg"
-    make_per_image_metadata_plots(
-        open(
-            "/Users/ilakkiyan.jeyakumar/Documents/ulc-malaria-scope/ulc-malaria-scope/experiments_personal/stuck_cells/2023-06-26-181243/2023-06-26-181305_/2023-06-26-181305perimage__metadata.csv",
-            "r",
-        ),
-        per_img_metadata_plot_path,
-    )
-
-    pred_tensor = np.load(
-        "/Users/ilakkiyan.jeyakumar/Documents/ulc-malaria-scope/ulc-malaria-scope/experiments_personal/high_hemat/2023-07-13-150543/2023-07-13-150641_/2023-07-13-150641_parsed_prediction_tensors.npy"
-    )
-    counts = "counts.jpg"
-    yogo_conf = "yogo_confs.jpg"
-    yogo_objectness = "yogo_objectness.jpg"
-    make_cell_count_plot(pred_tensor, counts)
-    make_yogo_conf_plots(pred_tensor, yogo_conf)
-    make_yogo_objectness_plots(pred_tensor, yogo_objectness)
-
-    content = make_html_report(
-        dataset_name="2023-07-06-000000",
-        experiment_metadata=exp_metadata,
-        per_image_metadata_plot_path=per_img_metadata_plot_path,
-        total_rbcs=total_rbcs,
-        class_name_to_cell_count=cell_counts,
-        perc_parasitemia=perc_parasitemia,
-        parasites_per_ul=parasites_per_ul,
-        thumbnails=thumbnails,
-        counts_plot_loc=counts,
-        conf_plot_loc=yogo_conf,
-        objectness_plot_loc=yogo_objectness,
-        css_path="minimal-table.css",
-    )
-
-    with open("test.html", "w") as f:
-        f.write(content)
-
-    create_pdf_from_html(Path("test.html"), Path("test.pdf"))

@@ -3,15 +3,13 @@ import logging
 
 import numpy as np
 
+from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR
 from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 from ulc_mm_package.image_processing.processing_constants import (
     FLOW_CONTROL_EWMA_ALPHA,
     TOL_PERC,
-    FAILED_CORR_PERC_TOLERANCE,
-    MIN_NUM_XCORR_FACTOR,
 )
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
-from ulc_mm_package.image_processing.processing_constants import CORRELATION_THRESH
 
 from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
 
@@ -29,30 +27,6 @@ class CantReachTargetFlowrate(FlowControlError):
 
 class TargetFlowrateNotSet(FlowControlError):
     """Raised when `control_flow` is called without previously setting a target_flowrate"""
-
-
-class LowConfidenceCorrelations(FlowControlError):
-    """Raised when the number of recent low confidence measurements is too high.
-
-    Normally, an exception is raised if the desired flow rate cannot be achieved and the syringe is already at its maximum position.
-    In cases where measurements are invalid (i.e due to low confidence), there may be some other underlying issue.
-
-    This exception, LowConfidenceCorrelations, is to be raised after some threshold number of failed correlations have occurred (a % of total measurements made),
-    allowing flow control to terminate early.
-
-    Examples where correlations may fail:
-        - RBCs flowing at different rates (e.g a sample with a mix of regular cells and reticulocytes might exhibit this)
-        - Air bubbles deflecting flow
-        - Large toner blobs
-        - etc.
-    """
-
-    def __init__(self, num_failed_corrs: int, total_pairs: int):
-        msg = (
-            f"Too many recent xcorr calculations have yielded poor confidence. "
-            f"The number of recent low-confidence correlations is = {num_failed_corrs} ({100*num_failed_corrs / total_pairs:.2f}% of measurements (threshold to cause error: {100*FAILED_CORR_PERC_TOLERANCE:.2f}%))) "
-        )
-        super().__init__(f"{msg}")
 
 
 def get_flow_error(target_flowrate: float, curr_flowrate: float):
@@ -83,8 +57,8 @@ class FlowController:
     def __init__(
         self,
         pneumatic_module: PneumaticModule,
-        h: int = 600,
-        w: int = 800,
+        h: int = CAMERA_SELECTION.IMG_HEIGHT // DOWNSAMPLE_FACTOR,
+        w: int = CAMERA_SELECTION.IMG_WIDTH // DOWNSAMPLE_FACTOR,
     ):
         """Flow controller class.
 
@@ -112,7 +86,6 @@ class FlowController:
         self.EWMA = EWMAFiltering(self.alpha)
         self.counter: int = 0
         self.prev_adjustment_stamp: int = 0
-        self.failed_corr_counter: int = 0
         self.feedback_delay_frames = self.EWMA.get_adjustment_period_ewma()
         self.fre: FlowRateEstimator = FlowRateEstimator(h, w)
 
@@ -125,7 +98,6 @@ class FlowController:
         self.flowrate: Optional[float] = None
         self.counter: int = 0
         self.prev_adjustment_stamp: int = 0
-        self.failed_corr_counter: int = 0
         self.target_flowrate: Optional[float] = None
 
     def set_alpha(self, alpha: float) -> None:
@@ -146,11 +118,6 @@ class FlowController:
         img: np.ndarray
         time: float
             Timestamp of when the image was received
-
-        Exceptions
-        ----------
-        LowConfidenceCorrelations:
-            Raised if the number of low confidence correlations exceeds some percentage threshold of all flowrate measurements.
         """
 
         dx, dy, xcorr_coeff = self.fre.add_image_and_calculate_pair_displacement(
@@ -165,42 +132,6 @@ class FlowController:
                 self.flowrate = self.EWMA.update_and_get_val(dy)
             self.counter += 1
 
-            if xcorr_coeff < CORRELATION_THRESH:
-                self.failed_corr_counter += 1
-                if self.too_many_failed_xcorrs():
-                    num_failed = self.failed_corr_counter
-                    self.failed_corr_counter = 0
-                    raise LowConfidenceCorrelations(
-                        num_failed,
-                        self.feedback_delay_frames * MIN_NUM_XCORR_FACTOR,
-                    )
-
-    def too_many_failed_xcorrs(self) -> bool:
-        """Check if there have been too many recent failed xcorr measurements.
-
-        Returns whether there have been more than a threshold percentage of failed cross correlations
-        in the "recent" window.
-
-        "Recent" is defined as the past MIN_NUM_XCORR_FACTOR * num feedback delay frames,
-        i.e a multiple of the number of frames that need to elapse before a syringe adjustment is made.
-
-        Returns
-        -------
-        bool:
-            True if the number of failed xcorrs since the last syringe adjustment exceeds some threshold.
-            False if that many frames have yet to elapse since the last adjustment, or if there was < threshold percentage
-            of failed xcorrs.
-        """
-        failed_xcorr_window_size = MIN_NUM_XCORR_FACTOR * self.feedback_delay_frames
-        if self.counter % failed_xcorr_window_size == 0:
-            too_many_bad_xcorrs: bool = (
-                self.failed_corr_counter / failed_xcorr_window_size
-                > FAILED_CORR_PERC_TOLERANCE
-            )
-            return too_many_bad_xcorrs
-        else:
-            return False
-
     def set_target_flowrate(self, target_flowrate: float):
         """Set the target flowrate.
 
@@ -214,7 +145,7 @@ class FlowController:
 
     def control_flow(
         self, img: np.ndarray, timestamp: int
-    ) -> Tuple[Optional[float], Optional[float]]:
+    ) -> Tuple[Optional[float], Optional[float], Optional[bool]]:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
         Periodically is defined as twice the half-life of the EWMA filter (based on its alpha value).
 
@@ -233,6 +164,8 @@ class FlowController:
             flow_val if a full window of measurements has been acquried by FlowRateEstimator
         int (None, None):
             Returned if a full window of measurements has not been acquired yet
+        bool:
+            True if the syringe move was successful, false if the syringe has reached the end of its range of motion
 
         Exceptions
         ----------
@@ -241,29 +174,33 @@ class FlowController:
         CantReachTargetFlowrate:
             Raised if the target flowrate hasn't been reached and the syringe
             can't move any further in the necessary direction, this exception is raised
-        LowConfidenceCorrelations:
-            Raised if the number of low confidence correlations exceeds some percentage threshold of all flowrate measurements.
         """
-
         if self.target_flowrate is None:
             raise TargetFlowrateNotSet(
                 "Please set a target flowrate using `set_target_flowrate(target_value)' first. The value should be a float."
             )
 
         self._add_image_and_update_flowrate(img, timestamp)
+        syringe_successfully_adjusted = None
 
         # Adjust pressure using the pneumatic module based on the flow rate error
         if self.flowrate is not None:
             flow_error = get_flow_error(self.target_flowrate, self.flowrate)
             if self.counter >= self.prev_adjustment_stamp + self.feedback_delay_frames:
                 self.prev_adjustment_stamp = self.counter
-                self._adjustSyringe(flow_error)
+
+                try:
+                    self._adjustSyringe(flow_error)
+                    syringe_successfully_adjusted = True
+                except CantReachTargetFlowrate:
+                    syringe_successfully_adjusted = False
+
                 self.logger.debug(
-                    f"Flow error: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
+                    f"Flow diff: {flow_error}, syringe pos: {self.pneumatic_module.getCurrentDutyCycle()}"
                 )
-            return self.flowrate, flow_error
+            return self.flowrate, flow_error, syringe_successfully_adjusted
         else:
-            return (None, None)
+            return (None, None, None)
 
     def _adjustSyringe(self, flow_error: float):
         """Adjusts the syringe based on the flow error.

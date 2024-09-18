@@ -6,6 +6,7 @@ import numpy as np
 from typing import Optional
 
 from ulc_mm_package.hardware import multiprocess_scope_routine as msr
+from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR
 
 
 class FlowRateEstimatorError(Exception):
@@ -17,9 +18,9 @@ class FlowRateEstimatorError(Exception):
 class FlowRateEstimator:
     def __init__(
         self,
-        img_height: int = 600,
-        img_width: int = 800,
-        scale_factor: int = 10,
+        img_height: int = CAMERA_SELECTION.IMG_HEIGHT // DOWNSAMPLE_FACTOR,
+        img_width: int = CAMERA_SELECTION.IMG_WIDTH // DOWNSAMPLE_FACTOR,
+        scale_factor: int = DOWNSAMPLE_FACTOR,
     ):
         """A class for estimating the flow rate of cells using a 2D cross-correlation.
         The class holds two images at a time in `frame_a` and `frame_b`. To use this class,
@@ -44,9 +45,9 @@ class FlowRateEstimator:
 
         Parameters
         ----------
-        img_width : int=800 (default)
+        img_width : int=103 (default, 1032 // 10)
             x dimension of the images to be stored
-        img_height : int=600 (default)
+        img_height : int=77 (default, 772 // 10)
             y dimension of the images to be stored
         num_image_pairs: int=60 (default)
             The number of image pairs for which to calculate flow rate values - this number
@@ -73,7 +74,6 @@ class FlowRateEstimator:
         self.frame_a, self.frame_b = self.multiproc_interface._input_ctypes
 
         self._prev_img: Optional[np.ndarray] = None
-        self.scale_factor = scale_factor
 
     def reset(self) -> None:
         """Reset initialization booleans."""
@@ -116,9 +116,9 @@ class FlowRateEstimator:
 
     @staticmethod
     def _convert_to_screen_dim_per_unit_time(
-        displacement: float, tdiff: float, scale_factor: float, img_dim: int
+        displacement: float, tdiff: float, img_dim: int
     ) -> float:
-        return (displacement / tdiff) / (img_dim / scale_factor)
+        return (displacement / tdiff) / img_dim
 
     def _calculate_pair_displacement(self) -> Tuple[float, float, float]:
         """Return dx, dy displacement in px and the cross correlation coefficient ('confidence')"""
@@ -146,23 +146,13 @@ class FlowRateEstimator:
         dx, dy, confidence = self._calculate_pair_displacement()
 
         tdiff = self.timestamps[1] - self.timestamps[0]
-        dx = self._convert_to_screen_dim_per_unit_time(
-            dx, tdiff, self.scale_factor, self.img_width
-        )
-        dy = self._convert_to_screen_dim_per_unit_time(
-            dy, tdiff, self.scale_factor, self.img_height
-        )
+        dx = self._convert_to_screen_dim_per_unit_time(dx, tdiff, self.img_width)
+        dy = self._convert_to_screen_dim_per_unit_time(dy, tdiff, self.img_height)
 
         return dx, dy, confidence
 
     def stop(self):
         self.multiproc_interface.stop()
-
-
-def downsample_image(img: np.ndarray, scale_factor: int) -> np.ndarray:
-    """Downsamples an image by `scale_factor`"""
-    h, w = img.shape
-    return cv2.resize(img, (w // scale_factor, h // scale_factor))
 
 
 def get_template_region(
@@ -210,7 +200,6 @@ def get_template_region(
 def get_flowrate_with_cross_correlation(
     prev_img: np.ndarray,
     next_img: np.ndarray,
-    scale_factor: int = 10,
     temp_x1_perc: float = 0.05,
     temp_y1_perc: float = 0.05,
     temp_x2_perc: float = 0.85,
@@ -225,8 +214,6 @@ def get_flowrate_with_cross_correlation(
             First image
         next_img: np.ndarray
             Subsequent imag
-        scale_factor : int
-            Factor to use for downsampling the images
         temp_x1_perc : float
             What percentage of the image the start of the subregion should begin at.
             For example, x1_perc=0.05 of an input image with shape (600, 800) would mean the
@@ -247,17 +234,16 @@ def get_flowrate_with_cross_correlation(
         float:
             max_val: maximum value of the cross correlation
     """
-    im1_ds, im2_ds = downsample_image(prev_img, scale_factor), downsample_image(
-        next_img, scale_factor
-    )
 
     # Select the subregion within the first image by defining which quantiles to use
     im1_ds_subregion, x_offset, y_offset = get_template_region(
-        im1_ds, temp_x1_perc, temp_y1_perc, temp_x2_perc, temp_y2_perc
+        prev_img, temp_x1_perc, temp_y1_perc, temp_x2_perc, temp_y2_perc
     )
 
     # Run a normalized cross correlation between the image to search and subregion
-    template_result = cv2.matchTemplate(im2_ds, im1_ds_subregion, cv2.TM_CCOEFF_NORMED)
+    template_result = cv2.matchTemplate(
+        next_img, im1_ds_subregion, cv2.TM_CCOEFF_NORMED
+    )
 
     # Find the point with the maximum value (i.e highest match) and caclulate the displacement
     _, max_val, _, max_loc = cv2.minMaxLoc(template_result)
@@ -266,8 +252,8 @@ def get_flowrate_with_cross_correlation(
     # If debug mode is on, run `plot_cc` which saves images of the cross-correlation calculation.
     if debug:
         plot_cc(
-            im1_ds,
-            im2_ds,
+            prev_img,
+            next_img,
             im1_ds_subregion,
             template_result,
             (x_offset[0], y_offset[0]),

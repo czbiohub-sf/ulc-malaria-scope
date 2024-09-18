@@ -38,6 +38,9 @@ if SIMULATION:
 
 CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
 
+# ================ For flowcontrol and classc image focus ================ #
+DOWNSAMPLE_FACTOR = 10
+
 # ================ Summary PDF constants ================ #
 DEBUG_REPORT = int(
     os.environ.get("DEBUG_REPORT", 0)
@@ -45,10 +48,14 @@ DEBUG_REPORT = int(
 CSS_FILE_NAME = "minimal-table.css"
 SUMMARY_REPORT_CSS_FILE = curr_dir / "summary_report" / CSS_FILE_NAME
 DESKTOP_SUMMARY_DIR = Path.home() / "Desktop/Remoscope_Summary_Reports"
-if not Path(DESKTOP_SUMMARY_DIR).exists():
-    Path(DESKTOP_SUMMARY_DIR).mkdir()
+DESKTOP_CELL_COUNT_DIR = Path.home() / "Desktop/Remoscope_Cell_Counts"
+
+# Create the folders if they don't exist already
+for x in [DESKTOP_SUMMARY_DIR, DESKTOP_CELL_COUNT_DIR]:
+    Path(x).mkdir(exist_ok=True)
+
 RBCS_PER_UL = 5e6
-MAX_THUMBNAILS_SAVED_PER_CLASS = 200
+MAX_THUMBNAILS_SAVED_PER_CLASS = 80
 
 
 class MissingCameraError(Exception):
@@ -141,6 +148,7 @@ EXPERIMENT_METADATA_KEYS = [
     "flowcell_id",
     "target_flowrate",
     "site",
+    "sample_type",
     "notes",
     "scope",
     "camera",
@@ -164,6 +172,8 @@ PER_IMAGE_METADATA_KEYS = [
     "focus_error",
     "filtered_focus_error",
     "focus_adjustment",
+    "classic_sharpness_ratio",
+    "mean_pixel_val",
     "cell_count_cumulative",
     "temperature",
     "humidity",

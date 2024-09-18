@@ -20,17 +20,16 @@ from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 from ulc_mm_package.hardware.scope_routines import Routines
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
+from ulc_mm_package.image_processing.classic_focus import OOF
+from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.scope_constants import (
+    DOWNSAMPLE_FACTOR,
     PER_IMAGE_METADATA_KEYS,
     SIMULATION,
     MAX_FRAMES,
     VERBOSE,
 )
-
-from ulc_mm_package.image_processing.flow_control import (
-    CantReachTargetFlowrate,
-    LowConfidenceCorrelations,
-)
+from ulc_mm_package.image_processing.flow_control import CantReachTargetFlowrate
 from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
     NoCellsFound,
@@ -65,7 +64,6 @@ from ulc_mm_package.scope_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
 )
-from ulc_mm_package.utilities.statistics_utils import get_all_stats_str
 
 # TODO populate info?
 
@@ -109,6 +107,8 @@ class ScopeOp(QObject, NamedMachine):
     update_state = pyqtSignal(str)
     update_msg = pyqtSignal(str)
 
+    finishing_experiment = pyqtSignal(int)
+
     update_flowrate = pyqtSignal(float)
     update_focus = pyqtSignal(float)
 
@@ -132,7 +132,7 @@ class ScopeOp(QObject, NamedMachine):
         states = [
             {
                 "name": "pause",
-                "on_enter": [self._send_state, self._start_pause],
+                "on_enter": [self._send_state, self._track_time, self._start_pause],
                 "on_exit": [self._end_pause],
             },
             {
@@ -155,14 +155,16 @@ class ScopeOp(QObject, NamedMachine):
                 "on_exit": [self._end_cellfinder],
             },
             {
-                "name": "autobrightness_postcells",
-                "display_name": "autobrightness (post-cells)",
+                "name": "autobrightness_preflow",
+                "display_name": "autobrightness (pre-flow)",
                 "on_enter": [self._send_state, self._start_autobrightness],
+                "on_exit": [self._init_classic_focus],
             },
             {
                 "name": "autofocus_preflow",
                 "display_name": "autofocus (pre-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
+                "on_exit": [self._init_classic_focus],
             },
             {
                 "name": "fastflow",
@@ -173,6 +175,12 @@ class ScopeOp(QObject, NamedMachine):
                 "name": "autofocus_postflow",
                 "display_name": "autofocus (post-flow)",
                 "on_enter": [self._send_state, self._start_autofocus],
+                "on_exit": [self._init_classic_focus],
+            },
+            {
+                "name": "autobrightness_postflow",
+                "display_name": "autobrightness (post-flow)",
+                "on_enter": [self._send_state, self._start_autobrightness],
             },
             {
                 "name": "experiment",
@@ -207,21 +215,33 @@ class ScopeOp(QObject, NamedMachine):
         self.add_transition(
             trigger="unpause", source="pause", dest="autobrightness_precells"
         )
+        self.add_transition(
+            trigger="oof_to_motor_sweep",
+            source="experiment",
+            dest="cellfinder",
+            before=[self._track_time, self._oof_handler],
+        )
+        self.add_transition(
+            trigger="skip_flow_control", source="autofocus_preflow", dest="experiment"
+        )
 
     def _set_exp_variables(self):
         self.running = None
         self.lid_opened = None
+        self.autofocus_done = False
 
         self.img_metadata = {key: None for key in PER_IMAGE_METADATA_KEYS}
 
         self.filtered_focus_err = None
+        self.last_img = None  # Needed when initializing class image focus metric during set up steps
+        self.classic_focus_routine = None
+        self._oof_error = False
 
         self.flowrate = None
         self.target_flowrate = None
-        self.flowrate_error_raised = False
 
         self.frame_count = 0
-        self.cell_counts = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
+        self.raw_cell_count = np.zeros(len(YOGO_CLASS_LIST), dtype=int)
 
         self.start_time = None
         self.accumulated_time = 0
@@ -254,7 +274,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def update_infopanel(self):
         if self.state == "experiment":
-            self.update_cell_count.emit(self.cell_counts)
+            self.update_cell_count.emit(self.raw_cell_count)
             self.update_runtime.emit(self._get_experiment_runtime())
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
@@ -346,14 +366,14 @@ class ScopeOp(QObject, NamedMachine):
 
         self.stop_timers.emit()
 
-    def _start_pause(self, *args):
-        self.running = False
-        self.flowrate_error_raised = False
-
+    def _track_time(self):
         # Account for case when pause is entered during the initial setup
         if self.start_time is not None:
             self.accumulated_time += perf_counter() - self.start_time
             self.start_time = None
+
+    def _start_pause(self, *args):
+        self.running = False
 
         try:
             self.img_signal.disconnect()
@@ -404,7 +424,10 @@ class ScopeOp(QObject, NamedMachine):
 
     def _start_cellfinder(self, *args):
         self.cellfinder_result = None
-        self.cellfinder_routine = self.routines.find_cells_routine(self.mscope)
+        skip_syringe_pull = self._oof_error
+        self.cellfinder_routine = self.routines.find_cells_routine(
+            self.mscope, skip_syringe_pull=skip_syringe_pull
+        )
 
         self.img_signal.connect(self.run_cellfinder)
 
@@ -414,6 +437,10 @@ class ScopeOp(QObject, NamedMachine):
                 f"Moving motor to focus position at {self.cellfinder_result} steps."
             )
             self.logger.info(f"Moving motor to {self.cellfinder_result}.")
+
+            # Wait for motor to stop moving
+            while self.mscope.motor.is_locked():
+                sleep(0.1)
             self.mscope.motor.move_abs(self.cellfinder_result)
 
     def _start_autofocus(self, *args):
@@ -438,7 +465,27 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_signal.connect(self.run_fastflow)
 
+    def _init_classic_focus(self, *args):
+        try:
+            if self.classic_focus_routine is None:
+                self.classic_focus_routine = self.routines.classic_focus_routine(
+                    downsample_image(self.last_img, 10)
+                )
+            else:
+                self.routines.classic_focus._check_and_update_metric(
+                    downsample_image(self.last_img, 10)
+                )
+        except Exception as e:
+            self.logger.error(
+                f"Iniitalizing ClassicFocus object failed: {e}. Critical error, exiting now."
+            )
+            raise
+
     def _start_experiment(self, *args):
+        self.periodic_autobrightness_routine = (
+            self.routines.periodic_autobrightness_routine(self.mscope)
+        )
+
         self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
 
         self.flowcontrol_routine = self.routines.flow_control_routine(
@@ -459,6 +506,8 @@ class ScopeOp(QObject, NamedMachine):
     def _end_experiment(self, *args):
         self.shutoff()
 
+        self.finishing_experiment.emit(5)
+
         # Turn off camera
         self.mscope.camera.stopAcquisition()
 
@@ -466,27 +515,39 @@ class ScopeOp(QObject, NamedMachine):
         if runtime != 0:
             self.logger.info(f"Net FPS is {self.frame_count/runtime}")
 
-        pred_counter = self.mscope.predictions_handler.new_pred_pointer
-        if pred_counter != 0:
-            nonzero_preds = (
-                self.mscope.predictions_handler.get_prediction_tensors()
-            )  # (8+NUM_CLASSES) x N
+        self.finishing_experiment.emit(10)
 
-            class_counts = nn_utils.get_class_counts(nonzero_preds)
-            sorted_confidences = (
-                nn_utils.get_all_argmax_class_confidences_for_all_classes(nonzero_preds)
-            )
-            unsorted_confidences = nn_utils.get_all_confs_for_all_classes(nonzero_preds)
+        # the ThreadPoolExecutor work queue may be really big - so as the NCS
+        # is chugging along, lets do some work by adding it's results to the
+        # prediction handler
+        num_images_leftover = self.mscope.cell_diagnosis_model.work_queue_size()
+        self.logger.info(
+            f"Waiting for {num_images_leftover} images to be processed by the NCS"
+        )
 
-            stats_string = get_all_stats_str(
-                class_counts, unsorted_confidences, sorted_confidences
-            )
-            self.logger.info(stats_string)
+        t0 = perf_counter()
+
+        final_yogo_results = self.mscope.cell_diagnosis_model.reset(wait_for_jobs=True)
+
+        self.finishing_experiment.emit(15)
+
+        for result in final_yogo_results:
+            self.mscope.predictions_handler.add_yogo_pred(result)
+
+        t1 = perf_counter()
+
+        self.logger.info(
+            f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
+        )
+
+        self.finishing_experiment.emit(65)
 
         self.mscope.reset_for_end_experiment()
 
         # Turn camera back on
         self.mscope.camera.startAcquisition()
+
+        self.finishing_experiment.emit(100)
 
     def _start_intermission(self, msg):
         self.experiment_done.emit(msg)
@@ -506,14 +567,23 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info(
                 f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}."
             )
-            if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
+            self.last_img = img
+            if self.state in {
+                "autobrightness_precells",
+                "autobrightness_preflow",
+                "autobrightness_postflow",
+            }:
                 self.next_state()
         except BrightnessTargetNotAchieved as e:
             self.autobrightness_result = e.value
             self.logger.warning(
                 f"Autobrightness target not achieved, but still ok. Mean pixel val = {self.autobrightness_result}."
             )
-            if self.state in {"autobrightness_precells", "autobrightness_postcells"}:
+            if self.state in {
+                "autobrightness_precells",
+                "autobrightness_preflow",
+                "autobrightness_postflow",
+            }:
                 self.next_state()
         except BrightnessCriticallyLow as e:
             self.logger.error(
@@ -535,7 +605,8 @@ class ScopeOp(QObject, NamedMachine):
             else:
                 if self.state in {
                     "autobrightness_precells",
-                    "autobrightness_postcells",
+                    "autobrightness_preflow",
+                    "autobrightness_postflow",
                 }:
                     self.next_state()
         else:
@@ -578,57 +649,71 @@ class ScopeOp(QObject, NamedMachine):
 
         self.img_signal.disconnect(self.run_autofocus)
 
-        if len(self.autofocus_batch) < AF_BATCH_SIZE:
-            resized_img = cv2.resize(
-                img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
-            )
-            self.autofocus_batch.append(resized_img)
+        if not self.autofocus_done:
+            if len(self.autofocus_batch) < AF_BATCH_SIZE:
+                resized_img = cv2.resize(
+                    img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
+                )
+                self.autofocus_batch.append(resized_img)
 
-            if self.running:
-                self.img_signal.connect(self.run_autofocus)
+                if self.running:
+                    self.img_signal.connect(self.run_autofocus)
+            else:
+                try:
+                    if self.autofocus_results[0] is None:
+                        self.autofocus_results[
+                            0
+                        ] = self.routines.singleShotAutofocusRoutine(
+                            self.mscope, self.autofocus_batch
+                        )
+                        self.logger.info(
+                            f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
+                        )
+                        self.autofocus_batch = []
+
+                        # Wait for motor to stop moving
+                        while self.mscope.motor.is_locked():
+                            sleep(0.1)
+
+                        # Extra delay, to prevent any jitter from motor motion
+                        sleep(0.5)
+
+                        if self.running:
+                            self.img_signal.connect(self.run_autofocus)
+                    else:
+                        self.autofocus_results[
+                            1
+                        ] = self.routines.singleShotAutofocusRoutine(
+                            self.mscope, self.autofocus_batch
+                        )
+                        self.logger.info(
+                            f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
+                        )
+                        self.autofocus_batch = []
+
+                        self.autofocus_done = True
+                        if self.running:
+                            self.img_signal.connect(self.run_autofocus)
+
+                except InvalidMove:
+                    self.logger.error(
+                        "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
+                    )
+                    self.default_error.emit(
+                        "Calibration failed",
+                        "Unable to achieve focus because the stage has reached its range of motion limit..",
+                        ERROR_BEHAVIORS.DEFAULT.value,
+                    )
         else:
-            try:
-                if self.autofocus_results[0] is None:
-                    self.autofocus_results[
-                        0
-                    ] = self.routines.singleShotAutofocusRoutine(
-                        self.mscope, self.autofocus_batch
-                    )
-                    self.logger.info(
-                        f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
-                    )
-                    self.autofocus_batch = []
-
-                    # Wait for motor to stop moving
-                    while self.mscope.motor.is_locked():
-                        sleep(0.1)
-
-                    # Extra delay, to prevent any jitter from motor motion
-                    sleep(0.5)
-
-                    if self.running:
-                        self.img_signal.connect(self.run_autofocus)
+            self.last_img = img
+            self.autofocus_done = False
+            if self.state in {"autofocus_preflow", "autofocus_postflow"}:
+                if self._oof_error:
+                    # Skip fast flow if we're transitioning back to experiment from an OOF error
+                    self._oof_error = False
+                    self.skip_flow_control()
                 else:
-                    self.autofocus_results[
-                        1
-                    ] = self.routines.singleShotAutofocusRoutine(
-                        self.mscope, self.autofocus_batch
-                    )
-                    self.logger.info(
-                        f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."
-                    )
-                    self.autofocus_batch = []
-                    if self.state in {"autofocus_preflow", "autofocus_postflow"}:
-                        self.next_state()
-            except InvalidMove:
-                self.logger.error(
-                    "Autofocus failed. Can't achieve focus because the stage has reached its range of motion limit."
-                )
-                self.default_error.emit(
-                    "Calibration failed",
-                    "Unable to achieve focus because the stage has reached its range of motion limit..",
-                    ERROR_BEHAVIORS.DEFAULT.value,
-                )
+                    self.next_state()
 
     @pyqtSlot(np.ndarray, float)
     def run_fastflow(self, img, timestamp):
@@ -639,40 +724,40 @@ class ScopeOp(QObject, NamedMachine):
         self.img_signal.disconnect(self.run_fastflow)
 
         try:
-            self.flowrate = self.fastflow_routine.send((img, timestamp))
+            img_ds_10x = downsample_image(img, DOWNSAMPLE_FACTOR)
+            self.flowrate, syringe_can_move = self.fastflow_routine.send(
+                (img_ds_10x, timestamp)
+            )
 
             if self.flowrate is not None:
                 self.update_flowrate.emit(self.flowrate)
-        except CantReachTargetFlowrate as e:
-            self.fastflow_result = e.flowrate
-            self.logger.error("Fastflow failed. Syringe already at max position.")
-            self.default_error.emit(
-                "Calibration issue",
-                "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
-                ERROR_BEHAVIORS.FLOWCONTROL.value,
-            )
-            self.update_flowrate.emit(self.fastflow_result)
-        except LowConfidenceCorrelations:
-            self.fastflow_result = -1
-            self.logger.error(
-                "Fastflow failed. Too many recent low confidence xcorr calculations."
-            )
-            self.default_error.emit(
-                "Calibration failed - flowrate calculation errors",
-                (
-                    "Flowrate ramp: The flow control system returned too many 'low confidence' measurements. "
-                    "You can continue with this run if the flow looks okay to you, "
-                    "or restart this run with the same flow cell, or discard this flow cell and use a new one with fresh sample.\n"
-                    "Continue running anyway?"
-                ),
-                ERROR_BEHAVIORS.FLOWCONTROL.value,
-            )
+
+                if (syringe_can_move is not None) and (not syringe_can_move):
+                    # Raise this exception only during the first fast flow set up.
+                    # The reason being, later on in the run if we re-enter this state (say due to a focus reset)
+                    raise CantReachTargetFlowrate(self.flowrate)
         except StopIteration as e:
             self.fastflow_result = e.value
             self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
             self.update_flowrate.emit(self.fastflow_result)
             if self.state == "fastflow":
                 self.next_state()
+        except CantReachTargetFlowrate:
+            self.fastflow_result = self.flowrate
+            self.logger.error("Fastflow failed. Syringe already at max position.")
+            self.update_flowrate.emit(self.fastflow_result)
+            self.default_error.emit(
+                "Calibration issue",
+                "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
+                ERROR_BEHAVIORS.FLOWCONTROL.value,
+            )
+        except Exception as e:
+            self.logger.error(f"Unexpected exception in fastflow - {e}")
+            self.default_error.emit(
+                "Flow control failed",
+                "Unexpected exception in flow control routine.",
+                ERROR_BEHAVIORS.DEFAULT.value,
+            )
         else:
             if self.running:
                 self.img_signal.connect(self.run_fastflow)
@@ -680,6 +765,11 @@ class ScopeOp(QObject, NamedMachine):
     def _update_metadata_if_verbose(self, key: str, val: Any):
         if VERBOSE:
             self.img_metadata[key] = val
+
+    def _oof_handler(self):
+        self.classic_focus_routine = None
+        self.set_period.emit(ACQUISITION_PERIOD)
+        self._oof_error = True
 
     @pyqtSlot(np.ndarray, float)
     def run_experiment(self, img, timestamp) -> None:
@@ -730,18 +820,19 @@ class ScopeOp(QObject, NamedMachine):
 
         self._update_metadata_if_verbose(
             "yogo_qsize",
-            self.mscope.cell_diagnosis_model._executor._work_queue.qsize(),
+            self.mscope.cell_diagnosis_model.work_queue_size(),
         )
 
         t0 = perf_counter()
         for result in prev_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
+            self.mscope.predictions_handler.add_raw_pred_to_heatmap(result)
 
             class_counts = nn_utils.get_class_counts(
                 self.mscope.predictions_handler.parsed_tensor
             )
 
-            self.cell_counts += class_counts
+            self.raw_cell_count += class_counts
 
             try:
                 self.density_routine.send(class_counts)
@@ -794,23 +885,23 @@ class ScopeOp(QObject, NamedMachine):
             self.filtered_focus_err = filtered_focus_err
 
         t0 = perf_counter()
+
+        # Downsample image for use in flowrate + classic image focus metric
+        img_ds_10x = downsample_image(img, 10)
         try:
-            if not self.flowrate_error_raised:
-                self.flowrate = self.flowcontrol_routine.send((img, timestamp))
-        except CantReachTargetFlowrate as e:
-            self.flowrate_error_raised = True
+            # Returns the ratio of the current sharpness metric over the best seen
+            # so far
+            sharpness_ratio_rel_peak = self.classic_focus_routine.send(img_ds_10x)
+        except OOF as e:
             self.logger.warning(
-                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
+                f"Strayed too far away from focus, transitioning to cell-finder. {e}"
             )
-            self.flowrate = -1
-            self.flowcontrol_routine = self.routines.flow_control_routine(
-                self.mscope, self.target_flowrate
-            )
-        except LowConfidenceCorrelations as e:
-            self.flowrate_error_raised = True
-            self.logger.warning(
-                f"Ignoring flowcontrol exception and attempting to maintain flowrate - {e}"
-            )
+            self.oof_to_motor_sweep()
+            return
+        try:
+            self.flowrate, _ = self.flowcontrol_routine.send((img_ds_10x, timestamp))
+        except Exception as e:
+            self.logger.warning(f"Unexpected flow control exception - {e}")
             self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
@@ -818,6 +909,9 @@ class ScopeOp(QObject, NamedMachine):
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
+
+        # Run periodic autobrightness routine
+        curr_mean_pixel_val = self.periodic_autobrightness_routine.send(resized_img)
 
         t0 = perf_counter()
         # Update remaining metadata
@@ -837,10 +931,11 @@ class ScopeOp(QObject, NamedMachine):
             "syringe_pos"
         ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
         self.img_metadata["flowrate"] = self.flowrate
-        self.img_metadata["cell_count_cumulative"] = self.cell_counts[0]
         self.img_metadata["focus_error"] = raw_focus_err
         self.img_metadata["filtered_focus_error"] = filtered_focus_err
         self.img_metadata["focus_adjustment"] = focus_adjustment
+        self.img_metadata["classic_sharpness_ratio"] = sharpness_ratio_rel_peak
+        self.img_metadata["mean_pixel_val"] = curr_mean_pixel_val
 
         if self.frame_count % TH_PERIOD_NUM == 0:
             try:
@@ -865,7 +960,7 @@ class ScopeOp(QObject, NamedMachine):
         zarr_qsize = self.mscope.data_storage.zw.executor._work_queue.qsize()
         self.img_metadata["zarrwriter_qsize"] = zarr_qsize
 
-        ssaf_qsize = self.mscope.autofocus_model._executor._work_queue.qsize()
+        ssaf_qsize = self.mscope.autofocus_model.work_queue_size()
         self._update_metadata_if_verbose("ssaf_qsize", ssaf_qsize)
 
         self.img_metadata["runtime"] = perf_counter() - current_time

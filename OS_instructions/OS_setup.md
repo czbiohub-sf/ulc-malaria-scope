@@ -1,24 +1,70 @@
 # Creating a fresh OS from scratch
 
-These are instructions for creating a fresh OS image from scratch. 99% of the time, you will most likely just want to flash one of our pre-made images - see `OS_fash.md`.
+These are instructions for creating a fresh OS image from scratch. 99% of the time, you will most likely just want to flash one of our pre-made images - see `OS_flash.md`.
 
 ## Full Installation Instructions
 
-Install Raspbian GNU/Linux 11 (bullseye) on a fresh 64GB SD card. Make sure to update the OS
+Install Raspbian GNU/Linux 11 (Bullseye) on a fresh 64GB SD card. Make sure to update the OS
 hostname and wifi/password by pressing shift-ctrl-x. After it is flashed, pop it into a Pi and
 follow the commands below.
 
 ```console
-sudp apt update
+sudo apt update
 sudo apt upgrade
 ```
 
+## Optional but very nice things (axel would deeply appreciate it)
+
+```console
+sudo apt install tmux
+cat << EOF > ~/.vimrc
+set ai
+set ruler
+set hlsearch
+set showmatch
+set incsearch
+set expandtab
+set lazyredraw
+set noswapfile
+set splitbelow
+set splitright
+set ignorecase
+set smartcase
+set wildmenu
+set number relativenumber
+
+set mouse=a
+set laststatus=2
+
+set tabstop=2
+set scrolloff=2
+set shiftwidth=2
+set softtabstop=2
+set encoding=utf-8
+set backspace=indent,eol,start
+
+set signcolumn=yes:1
+set fillchars+=vert:\|
+
+set updatetime=250
+set timeoutlen=300 ttimeoutlen=0
+
+filetype plugin indent on
+map <C-J> <C-W><C-J>
+map <C-K> <C-W><C-K>
+map <C-L> <C-W><C-L>
+map <C-H> <C-W><C-H>
+highlight clear SignColumn
+EOF
+```
+
 ### Install numba first, separately
-This section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
+Note: this section may become obsolete once we transition to a 64-bit OS. For now, these are the steps to get numba working on Raspbian 32-bit.
+
 ```
 sudo apt install llvm-11
-LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
-LLVM_CONFIG=llvm-config-11 pip install numba==0.56.0
+export LLVM_CONFIG=llvm-config-11 pip install llvmlite==0.37.0 --no-cache
+pip install numba==0.56.0
 ```
 
 ### Install ulc-malaria-scope
@@ -29,7 +75,7 @@ cd ulc-malaria-scope
 pip3 install -e .
 ```
 
-### Install cmake and some req'd libraries
+### Install cmake and some required libraries
 ```console
 sudo apt install -y cmake
 sudo apt install libusb-1.0-0-dev

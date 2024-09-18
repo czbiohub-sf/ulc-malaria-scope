@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import NamedTuple, List, Tuple, no_type_check, Dict
 from typing_extensions import TypeAlias
+import xml.etree.ElementTree as ET
 
 import cv2
 import zarr
@@ -12,9 +13,12 @@ from numba import njit
 from ulc_mm_package.scope_constants import MAX_THUMBNAILS_SAVED_PER_CLASS
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
-    PARASITE_CLASS_IDS,
+    CLASS_IDS_FOR_THUMBNAILS,
     YOGO_CLASS_IDX_MAP,
     YOGO_CLASS_LIST,
+    YOGO_CONF_THRESHOLD,
+    YOGO_AREA_FILTER,
+    YOGO_CROP_HEIGHT_PX,
 )
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 
@@ -46,6 +50,31 @@ class SinglePredictedObject(NamedTuple):
     def __repr__(self):
         """Print object, helpful for debugging"""
         return f"img_id: {self.parsed[0]} - conf: {self.conf}\n"
+
+
+def get_output_layer_dims_from_xml(xml_path: Path) -> Tuple[int, int]:
+    """Get the output layer dimensions from the model's xml file.
+
+    Note: I am unsure how reliably formatted the generated `.xml` file format is,
+    however it works for the n=2 files I tried (graceful-smoke and fine-voice).
+
+    Parameters
+    ----------
+    xml_path: Path
+
+    Returns
+    -------
+    Tuple[int, int]
+        Sx, sy dimensions of the YOGO output
+    """
+
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    sx = int(root[0][-1][0][0][-1].text)  # type: ignore
+    sy = int(root[0][-1][0][0][-2].text)  # type: ignore
+
+    return (sx, sy)
 
 
 @njit(cache=True)
@@ -100,7 +129,14 @@ def _parse_prediction_tensor(
     mask = (prediction_tensor[:, 4:5, :] > 0.5).flatten()
     filtered_pred = prediction_tensor[:, :, mask][0, :, :]
 
-    img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
+    # Mask areas
+    pred_half_width = filtered_pred[2] / 2 * img_w
+    pred_half_height = filtered_pred[3] / 2 * YOGO_CROP_HEIGHT_PX
+    areas = 4 * (pred_half_height * pred_half_width)
+    area_mask = areas > YOGO_AREA_FILTER
+
+    # Get coordinates
+    filtered_pred = filtered_pred[:, area_mask]
     xc = filtered_pred[0, :] * img_w
     yc = filtered_pred[1, :] * img_h
     pred_half_width = filtered_pred[2] / 2 * img_w
@@ -133,6 +169,8 @@ def _parse_prediction_tensor(
 
     pred_labels = pred_labels.astype(DTYPE)
     pred_probs = pred_probs.astype(DTYPE)
+
+    img_ids = np.ones(filtered_pred.shape[1]).astype(DTYPE) * img_id
 
     return img_ids, tlx, tly, brx, bry, objectness, pred_labels, pred_probs, all_confs
 
@@ -261,11 +299,11 @@ def _save_thumbnails_to_disk(
         _write_thumbnail_from_pred_tensor(zarr_store, preds, i, save_dir)
 
 
-def save_parasite_thumbnails_to_disk(
+def save_thumbnails_to_disk(
     zarr_store: zarr.core.Array,
     parsed_prediction_tensor: npt.NDArray,
     dataset_dir: Path,
-    parasite_class_ids: List[int] = PARASITE_CLASS_IDS,
+    desired_class_ids: List[int] = CLASS_IDS_FOR_THUMBNAILS,
 ) -> Dict[str, Path]:
     """Save thumbnails to disk
 
@@ -276,8 +314,8 @@ def save_parasite_thumbnails_to_disk(
     parsed_prediction_tensor: npt.NDArray
     dataset_dir: Path
         Where the experiment is stored (sets where the thumbnails folders will be saved)
-    parasite_class_ids: List[int]
-        List of class IDs of the parasites, only these classes' thumbnails will be saved
+    desired_class_ids: List[int]
+        List of class IDs that should be saved, only these classes' thumbnails will be saved
 
     Returns
     -------
@@ -291,27 +329,24 @@ def save_parasite_thumbnails_to_disk(
     thumbnail_path = dataset_dir / "thumbnails"
     Path.mkdir(thumbnail_path, exist_ok=True)
     class_name_to_path = {
-        yogo_id_to_str[x]: thumbnail_path / yogo_id_to_str[x]
-        for x in parasite_class_ids
+        yogo_id_to_str[x]: thumbnail_path / yogo_id_to_str[x] for x in desired_class_ids
     }
     for path in class_name_to_path.values():
         Path.mkdir(path, exist_ok=True)
 
-    parasite_class_tensors = [
+    class_tensors = [
         get_specific_class_from_parsed_tensor(parsed_prediction_tensor, x)
-        for x in parasite_class_ids
+        for x in desired_class_ids
     ]
 
-    parasite_tensors_and_save_paths = zip(
-        parasite_class_tensors, class_name_to_path.values()
-    )
+    parasite_tensors_and_save_paths = zip(class_tensors, class_name_to_path.values())
 
-    for parasite_tensor, path in parasite_tensors_and_save_paths:
+    for class_tensor, path in parasite_tensors_and_save_paths:
         # Sort by descending confidence
-        sort_by_confs = parasite_tensor[7, :].argsort()
-        descending_confs = parasite_tensor[:, sort_by_confs][:, ::-1]
+        sort_by_confs = class_tensor[7, :].argsort()
+        descending_confs = class_tensor[:, sort_by_confs][:, ::-1]
 
-        # Limit the number of thumbnails save for each class
+        # Limit the number of thumbnails saved for each class
         descending_confs_trunc = descending_confs[:, :MAX_THUMBNAILS_SAVED_PER_CLASS]
         _save_thumbnails_to_disk(zarr_store, descending_confs_trunc, path)
 
@@ -583,7 +618,7 @@ def get_all_confs_for_all_classes(
 def get_class_counts(
     prediction_tensor: npt.NDArray,
     num_classes: int = NUM_CLASSES,
-    conf_thresh: float = 0.9,
+    conf_thresh: float = YOGO_CONF_THRESHOLD,
 ) -> List[int]:
     """Get the number of occurrences for each class.
 
@@ -595,7 +630,7 @@ def get_class_counts(
     num_classes: int
         Defaults to NUM_CLASSES
     conf_thresh: float
-        Defaults to 0.9
+        Defaults to YOGO_CONF_THRESHOLD
 
     Returns
     -------

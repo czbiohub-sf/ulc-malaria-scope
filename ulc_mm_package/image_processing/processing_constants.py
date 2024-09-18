@@ -1,4 +1,7 @@
 import enum
+
+from pathlib import Path
+
 from ulc_mm_package.scope_constants import SIMULATION
 
 
@@ -10,10 +13,17 @@ class FLOWRATE(enum.Enum):
 
 
 # ================ Autobrightness constants ================ #
-TOP_PERC_TARGET_VAL = 245
+TOP_PERC_TARGET_VAL = 235
 TOP_PERC = 0.03
 TOL = 0.01
 MIN_ACCEPTABLE_MEAN_BRIGHTNESS = 200
+PERIODIC_AB_PERIOD_NUM_FRAMES = 60  # At 30 fps, this is roughly once per 2 seconds
+
+# Autobrightness PID constants
+AB_PID_KP = 0.001
+AB_PID_KI = 0.0
+AB_PID_KD = 0.0001
+INTEGRAL_WINDUP_BOUND = 10
 
 # ================ Background subtraction constants ================ #
 INSIDE_BBOX_FLAG = 0
@@ -32,10 +42,15 @@ CORRELATION_THRESH = 0.3
 
 # You'd work backwards here...how many images do you want of the same cells?
 # Let's say 2 frames/fov of cells. At 33ms/frame, we want each cell to pass
-# through IMG_HEIGHT pixels in 66ms. So IMG_HEIGHT / 66s * 1000ms / 1s = 15.15 heights/second
+# through IMG_HEIGHT pixels in 66ms. So 1000ms / 66ms * (full frame / 1s) = 15.15 full frame heights per second
 DESIRED_FRAMES_PER_CELL = 2
 MS_PER_FRAME = 33
 TARGET_FLOWRATE = 1000 / (DESIRED_FRAMES_PER_CELL * MS_PER_FRAME)
+
+# ================ Classic image focus metric constants ================ #
+CLASSIC_FOCUS_EWMA_ALPHA = 0.1
+METRIC_RATIO_CUTOFF = 0.75
+CLASSIC_FOCUS_FRAME_THROTTLE = 15
 
 # ================ Data storage constants ================ #
 if SIMULATION:
@@ -46,9 +61,12 @@ NUM_SUBSEQUENCES = 10
 SUBSEQUENCE_LENGTH = 10
 
 # ================ Cell detection constants ================ #
-RBC_THUMBNAIL_PATH = (
-    "../image_processing/thumbnail.png"  # TODO better way to reference file?
-)
+_RBC_THUMBNAIL_PATH = Path(__file__).parent.resolve() / "thumbnail.png"
+if not _RBC_THUMBNAIL_PATH.exists():
+    raise FileNotFoundError(
+        "RBC_THUMBNAIL_PATH (image_processing/thumbnail.png) does not exist"
+    )
+RBC_THUMBNAIL_PATH = str(_RBC_THUMBNAIL_PATH)
 
 # This value was found empirically, looking at several focal stacks with and without cells
 CELLS_FOUND_THRESHOLD = 9001  # https://tinyurl.com/ykxu66zw

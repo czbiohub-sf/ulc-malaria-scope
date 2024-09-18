@@ -8,6 +8,7 @@ from time import perf_counter
 from datetime import datetime
 from concurrent.futures import Future
 from typing import Dict, List, Optional
+from stats_utils.compensator import CountCompensator
 
 import numpy as np
 import numpy.typing as npt
@@ -22,19 +23,22 @@ from ulc_mm_package.image_processing.processing_constants import (
 )
 from ulc_mm_package.neural_nets.utils import (
     get_class_counts,
-    save_parasite_thumbnails_to_disk,
+    save_thumbnails_to_disk,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
-    ASEXUAL_PARASITE_CLASS_IDS,
+    RBC_CLASS_IDS,
     YOGO_CLASS_LIST,
+    YOGO_MODEL_NAME,
+    YOGO_CONF_THRESHOLD,
 )
-
 from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
     RBCS_PER_UL,
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
+    DESKTOP_CELL_COUNT_DIR,
     CSS_FILE_NAME,
+    DEBUG_REPORT,
 )
 from ulc_mm_package.summary_report.make_summary_report import (
     make_html_report,
@@ -64,6 +68,7 @@ def write_img(img: np.ndarray, filepath: Path):
 class DataStorage:
     def __init__(self, default_fps: Optional[float] = None):
         self.logger = logging.getLogger(__name__)
+        self.stats_utils = None
         self.zw = ZarrWriter()
         self.md_writer: Optional[csv.DictWriter] = None
         self.metadata_file: Optional[io.TextIOWrapper] = None
@@ -78,6 +83,14 @@ class DataStorage:
 
         # Calculate max number of digits, to zeropad subsample img filenames
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
+
+    def initCountCompensator(self, clinical: bool, skip: bool):
+        self.compensator = CountCompensator(
+            YOGO_MODEL_NAME,
+            clinical=clinical,
+            skip=skip,
+            conf_thresh=YOGO_CONF_THRESHOLD,
+        )
 
     def createTopLevelFolder(self, external_dir: str, datetime_str: str):
         # Create top-level directory for this program run.
@@ -212,13 +225,19 @@ class DataStorage:
         )
         cv2.imwrite(str(filename), image)
 
-    def close(self, pred_tensors: Optional[npt.NDArray] = None) -> Optional[Future]:
+    def close(
+        self,
+        pred_tensors: Optional[npt.NDArray] = None,
+        heatmap: Optional[npt.NDArray] = None,
+    ) -> Optional[Future]:
         """Close the per-image metadata .csv file and Zarr image store
 
         Parameters
         ----------
         pred_tensors: Optional[npt.NDArray]
             Parsed predictions tensors from PredictionsHandler()
+        heatmap: Optional[npt.NDArray]
+            Heatmap from PredictionsHandler()
 
         Returns
         -------
@@ -239,12 +258,16 @@ class DataStorage:
 
         if pred_tensors is not None and pred_tensors.size > 0:
             self.logger.info("> Saving prediction tensors...")
-            self.save_parsed_prediction_tensors(pred_tensors)
+            self.save_npy_arr("parsed_prediction_tensors", pred_tensors)
 
-            self.logger.info("> Saving subset of parasite thumbnails to disk...")
-            class_to_thumbnails_path: Dict[
-                str, Path
-            ] = save_parasite_thumbnails_to_disk(
+            if heatmap is not None:
+                self.logger.info("> Saving heatmap array...")
+                self.save_npy_arr("heatmap", heatmap)
+
+            self.logger.info(
+                "> Saving subset of healthy and parasite thumbnails to disk..."
+            )
+            class_to_thumbnails_path: Dict[str, Path] = save_thumbnails_to_disk(
                 self.zw.array, pred_tensors, self.get_experiment_path()
             )
 
@@ -275,45 +298,45 @@ class DataStorage:
             )
 
             per_img_metadata_file = open(self.per_img_metadata_filename, "r")
-            make_per_image_metadata_plots(
-                per_img_metadata_file, per_image_metadata_plot_save_loc
-            )
-
-            # Prediction counts over time/confidence/objectness plots
             counts_plot_loc = str(summary_report_dir / "counts.jpg")
             conf_plot_loc = str(summary_report_dir / "confs.jpg")
             objectness_plot_loc = str(summary_report_dir / "objectness.jpg")
-            try:
-                make_cell_count_plot(pred_tensors, counts_plot_loc)
-            except Exception as e:
-                self.logger.error(f"Failed to make cell count plot - {e}")
-            try:
-                make_yogo_conf_plots(pred_tensors, conf_plot_loc)
-            except Exception as e:
-                self.logger.error(f"Failed to make yogo confidence plots - {e}")
-            try:
-                make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
-            except Exception as e:
-                self.logger.error(f"Failed to make yogo objectness plots - {e}")
 
-            # Get cell counts and % parasitemia
-            cell_counts = get_class_counts(pred_tensors)
+            # Only generate additional plots if DEBUG_REPORT environment variable is set to True
+            if DEBUG_REPORT:
+                make_per_image_metadata_plots(
+                    per_img_metadata_file, per_image_metadata_plot_save_loc
+                )
+
+                try:
+                    make_cell_count_plot(pred_tensors, counts_plot_loc)
+                except Exception as e:
+                    self.logger.error(f"Failed to make cell count plot - {e}")
+                try:
+                    make_yogo_conf_plots(pred_tensors, conf_plot_loc)
+                except Exception as e:
+                    self.logger.error(f"Failed to make yogo confidence plots - {e}")
+                try:
+                    make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
+                except Exception as e:
+                    self.logger.error(f"Failed to make yogo objectness plots - {e}")
+
+            # Get cell counts
+            raw_cell_counts = np.asarray(get_class_counts(pred_tensors))
+            total_rbcs = sum(raw_cell_counts[RBC_CLASS_IDS])
+            # Associate class with counts
             class_name_to_cell_count = {
-                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, cell_counts)
+                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
-            num_parasites = sum([cell_counts[i] for i in ASEXUAL_PARASITE_CLASS_IDS])
-            total_rbcs = cell_counts[0] + num_parasites
-            perc_parasitemia = (
-                "0.0000"
-                if total_rbcs == 0
-                else f"{(100 * num_parasites / total_rbcs):.4f}"
-            )
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            parasites_per_ul = (
-                "0.0"
-                if total_rbcs == 0
-                else f"{RBCS_PER_UL*(num_parasites / total_rbcs):.1f}"
-            )
+            raw_frac_parasitemia = self.compensator.calc_parasitemia(raw_cell_counts)
+            (
+                comp_perc_parasitemia,
+                comp_perc_parasitemia_err,
+            ) = self.compensator.get_res_from_counts(raw_cell_counts)
+
+            # Convert fractional percentages into normal percentages
+            raw_perc_parasitemia = raw_frac_parasitemia * 100
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
@@ -321,10 +344,20 @@ class DataStorage:
                 self.time_str,
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
-                total_rbcs,
+                max(1, total_rbcs),  # Account for potential div-by-zero
                 class_name_to_cell_count,
-                perc_parasitemia,
-                parasites_per_ul,
+                f"{raw_perc_parasitemia:.4f}",
+                f"{comp_perc_parasitemia:.4f}",
+                (
+                    f"[{max(0, comp_perc_parasitemia-comp_perc_parasitemia_err):.4f}%, "
+                    f"{(comp_perc_parasitemia+comp_perc_parasitemia_err):.4f}%]"
+                ),
+                f"{RBCS_PER_UL/100*raw_perc_parasitemia:.0f}",
+                f"{RBCS_PER_UL/100*comp_perc_parasitemia:.0f}",
+                (
+                    f"[{max(0, RBCS_PER_UL/100*(comp_perc_parasitemia-comp_perc_parasitemia_err)):.0f}, "
+                    f"{(RBCS_PER_UL/100*(comp_perc_parasitemia+comp_perc_parasitemia_err)):.0f}]"
+                ),
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,
@@ -345,10 +378,23 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
-            remove(counts_plot_loc)
-            remove(per_image_metadata_plot_save_loc)
-            remove(conf_plot_loc)
-            remove(objectness_plot_loc)
+
+            if DEBUG_REPORT:
+                remove(counts_plot_loc)
+                remove(per_image_metadata_plot_save_loc)
+                remove(conf_plot_loc)
+                remove(objectness_plot_loc)
+
+            # Write to a separate csv with just cell counts for each class
+            self.logger.info("Writing cell counts to csv...")
+            cell_count_loc = (
+                self.get_experiment_path() / f"{self.time_str}_cell_counts.csv"
+            )
+            with open(f"{cell_count_loc}", "w") as f:
+                writer = csv.writer(f)
+                writer.writerow(class_name_to_cell_count.keys())
+                writer.writerow(class_name_to_cell_count.values())
+            shutil.copy(cell_count_loc, DESKTOP_CELL_COUNT_DIR)
 
         self.logger.info("> Closing zarr image store...")
         if self.zw.writable:
@@ -391,31 +437,23 @@ class DataStorage:
         storage_remaining_gb = cls._get_remaining_storage_size_GB(ssd_dir)
         return storage_remaining_gb > MIN_GB_REQUIRED
 
-    def save_parsed_prediction_tensors(self, pred_tensors: npt.NDArray) -> None:
-        """Save the predictions tensor (np.ndarray) containing
-        the parsed prediction tensors for each image.
-
-        The shape of this tensor is (8+NUM_CLASSES) x TOTAL_NUM_PREDICTIONS, for example if there
-        are 4 classes that YOGO predicts, this array would be (12 x N).
-
-        For details on what the indices correspond to, see `parse_prediction_tensor` in `neural_nets/utils.py`
+    def save_npy_arr(self, fn: str, arr: npt.NDArray) -> None:
+        """Save the given numpy array with the given filename.
+        The datetime string will be prepended automatically to the filename.
 
         Parameters
         ----------
-        pred_tensors: List[npt.NDArray]
-            The list of parsed prediction tensors from PredictionsHandler()
+        filename: str
+        arr: npt.NDArray
+            The numpy array to save
         """
 
         assert self.main_dir is not None, "DataStorage has not been initialized"
         try:
-            filename = (
-                self.main_dir
-                / self.experiment_folder
-                / f"{self.time_str}_parsed_prediction_tensors"
-            )
-            np.save(filename, pred_tensors.astype(np.float32))
+            filename = self.main_dir / self.experiment_folder / f"{self.time_str}_{fn}"
+            np.save(filename, arr.astype(np.float32))
         except Exception as e:
-            self.logger.error(f"Error saving prediction tensors. {e}")
+            self.logger.error(f"Error saving {filename}: {e}")
 
     def save_uniform_sample(self) -> None:
         """Extract and save a uniform random sample of images from the currently active Zarr store.

@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Oct 1, 2021
-
-@author: i-jey
 """
 
 from setuptools import setup, find_packages
@@ -41,13 +39,13 @@ setup(
         "qimage2ndarray==1.9.0",
         "py_cameras @ git+https://github.com/czbiohub/pyCameras@master",
         "pymotors @ git+https://github.com/czbiohub/PyMotors@master",
+        "stats_utils @ git+https://github.com/czbiohub-sf/remo-stats-utils@v0.0.10",
         "typer==0.4.1",
         "tqdm==4.63.0",
         "transitions==0.8.11",
-        "pyngrok==5.1.0",
-        "llvmlite==0.39.0",
+        "pyngrok==7.0.3",
         "numba==0.56.0",
-        "Jinja2==3.1.2",
+        "Jinja2==3.1.3",
         "xhtml2pdf==0.2.11",
     ],
     extras_require={
