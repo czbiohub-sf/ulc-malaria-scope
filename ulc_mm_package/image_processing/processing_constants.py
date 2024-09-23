@@ -4,14 +4,6 @@ from pathlib import Path
 
 from ulc_mm_package.scope_constants import SIMULATION
 
-
-# ================ Flowrate options ================ #
-class FLOWRATE(enum.Enum):
-    FAST = 15.15  # 2 frames per cell
-    MEDIUM = 7.58  # 4 frames per cell
-    SLOW = 3.79  # 8 frames per cell
-
-
 # ================ Autobrightness constants ================ #
 TOP_PERC_TARGET_VAL = 235
 TOP_PERC = 0.03
@@ -39,6 +31,7 @@ MIN_NUM_XCORR_FACTOR = 10
 
 # ================ Flow rate constants ================ #
 CORRELATION_THRESH = 0.3
+MEDIUM_FLOWRATE = 7.58  # 4 frames per cell
 
 # You'd work backwards here...how many images do you want of the same cells?
 # Let's say 2 frames/fov of cells. At 33ms/frame, we want each cell to pass

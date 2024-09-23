@@ -40,7 +40,6 @@ MIN_THUMBNAIL_DISPLAY_SIZE = 55
 THUMBNAIL_SPACING = 5
 
 # ================ Dropdown menu options ================ #
-FLOWRATE_LIST = [e.name.capitalize() for e in FLOWRATE]
 SITE_LIST = [
     "Tororo, Uganda",
     "Masafu, Uganda",
