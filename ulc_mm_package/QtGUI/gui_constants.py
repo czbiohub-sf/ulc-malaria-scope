@@ -2,7 +2,6 @@ import enum
 
 from pathlib import Path
 
-from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_MAP
 
 
