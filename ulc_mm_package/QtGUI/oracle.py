@@ -334,14 +334,14 @@ class Oracle(Machine):
             samsung_ext_dir
         ):
             self.ext_dir = samsung_ext_dir + "/"
-            self.logger.info(f"Saving data to {self.ext_dir}")
+            print(f"Saving data to {self.ext_dir}")
         else:
             if not path.exists(samsung_ext_dir):
-                self.logger.warning(
+                print(
                     f"'Couldn't find {SSD_NAME}' in {SSD_DIR}. Searching for other folders in this directory."
                 )
             elif not DataStorage.is_there_sufficient_storage(samsung_ext_dir):
-                self.logger.warning(
+                print(
                     f"'{SSD_NAME}' in {SSD_DIR} is out of storage. Searching for other folders in this directory."
                 )
 
@@ -355,10 +355,10 @@ class Oracle(Machine):
                     if candidate_path != samsung_ext_dir and path.isdir(candidate_path):
                         if DataStorage.is_there_sufficient_storage(candidate_path):
                             self.ext_dir = candidate_path + "/"
-                            self.logger.info(f"Saving data to {self.ext_dir}")
+                            print(f"Saving data to {self.ext_dir}")
                             break
             except (FileNotFoundError, IndexError):
-                self.logger.warning(
+                print(
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
                 )
                 self.display_message(
