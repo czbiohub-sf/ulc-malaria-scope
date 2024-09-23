@@ -31,14 +31,7 @@ MIN_NUM_XCORR_FACTOR = 10
 
 # ================ Flow rate constants ================ #
 CORRELATION_THRESH = 0.3
-MEDIUM_FLOWRATE = 7.58  # 4 frames per cell
-
-# You'd work backwards here...how many images do you want of the same cells?
-# Let's say 2 frames/fov of cells. At 33ms/frame, we want each cell to pass
-# through IMG_HEIGHT pixels in 66ms. So 1000ms / 66ms * (full frame / 1s) = 15.15 full frame heights per second
-DESIRED_FRAMES_PER_CELL = 2
-MS_PER_FRAME = 33
-TARGET_FLOWRATE = 1000 / (DESIRED_FRAMES_PER_CELL * MS_PER_FRAME)
+TARGET_FLOWRATE = 7.58  # 4 frames per cell
 
 # ================ Classic image focus metric constants ================ #
 CLASSIC_FOCUS_EWMA_ALPHA = 0.1
