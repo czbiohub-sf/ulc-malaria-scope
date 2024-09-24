@@ -172,7 +172,7 @@ class FormGUI(QDialog):
             "operator_id": self.operator_val.text(),
             "participant_id": self.participant_val.text(),
             "flowcell_id": self.flowcell_val.text(),
-            "target_flowrate": TARGET_FLOWRATE,  # fixed flowrate
+            "target_flowrate": (TARGET_FLOWRATE.name, TARGET_FLOWRATE.value),  # fixed flowrate
             "site": self.site_val.currentText(),
             "sample_type": self.sample_val.currentText(),
             "notes": self.notes_val.toPlainText(),
