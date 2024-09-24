@@ -39,7 +39,7 @@ MIN_NUM_XCORR_FACTOR = 10
 
 # ================ Flow rate constants ================ #
 CORRELATION_THRESH = 0.3
-TARGET_FLOWRATE = FLOWRATE.MEDIUM.value
+TARGET_FLOWRATE = FLOWRATE.MEDIUM
 
 # ================ Classic image focus metric constants ================ #
 CLASSIC_FOCUS_EWMA_ALPHA = 0.1

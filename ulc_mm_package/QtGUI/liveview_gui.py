@@ -93,7 +93,7 @@ class LiveviewGUI(QMainWindow):
         self.operator_val.setText(f"{metadata['operator_id']}")
         self.participant_val.setText(f"{metadata['participant_id']}")
         self.flowcell_val.setText(f"{metadata['flowcell_id']}")
-        self.target_flowrate_val.setText(f"{metadata['target_flowrate']}")
+        self.target_flowrate_val.setText(f"{metadata['target_flowrate'][0]}")
         self.site_val.setText(f"{metadata['site']}")
         self.notes_val.setPlainText(f"{metadata['notes']}")
 
