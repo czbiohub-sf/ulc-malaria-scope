@@ -25,10 +25,11 @@ def plot_parasitemia(parasitemia, bounds):
     colors = [(0, "green"), (0.2, "yellow"), (0.8, "orange"), (1,"red")]
     cmap = LinearSegmentedColormap.from_list("custom_gradient", colors)
 
-    gradient = np.hstack((np.ones( int(1000/6)), np.linspace(2, 10, 1000)))
+    gradient_len = 1000
+    gradient = np.hstack((np.ones( int(gradient_len/6)), np.linspace(2, 10, gradient_len)))
     gradient = np.vstack((gradient, gradient))
 
-    ax0.imshow(gradient, aspect='auto', extent=(0, 1, -4.25, 6.25), cmap=cmap)
+    ax0.imshow(gradient, aspect='auto', extent=(0, 1, -4.25, 6.25), cmap=cmap) # extent manually selected to fit
 
     # Foreground (box plot)
     ax1 = ax0.twiny()
@@ -49,21 +50,24 @@ def plot_parasitemia(parasitemia, bounds):
             med=parasitemia,
             q1=bounds[0],
             q3=bounds[1],
-            whislo=bounds[0],
-            whishi=bounds[1],
+            whislo=parasitemia,
+            whishi=parasitemia,
             fliers=[]
         )
     ]
     bxp = ax1.bxp(
         stats, 
-        medianprops=dict(color='black', linewidth=2),
-        boxprops=dict(linewidth=3),
+        medianprops=dict(color='black', linewidth=5),
+        boxprops=dict(linewidth=3, alpha=0.5),
+        whiskerprops=dict(alpha=0),
         vert=False,
         widths=10,
     )
 
     # Display numbers above plot
-    ax1.text(parasitemia, 10, f'{parasitemia}', ha='center', va='bottom', fontweight='bold')
+    ax1.text(parasitemia, 10, parasitemia, ha='center', va='bottom', fontweight='bold')
+    for bound in bounds:
+        ax1.text(bound, 7, bound, ha='center', va='bottom', alpha=0.7)
 
     # Set background plot to match dims of foreground plot
     ax0.set_ylim(ax1.get_ylim())
@@ -91,13 +95,14 @@ def plot_parasitemia(parasitemia, bounds):
     trans = ax1.get_xaxis_transform()
     ax1.annotate('0', xy=(0.085, 0.5), ha="center", va="center", xycoords=trans)
 
+    fig.tight_layout()
     return fig
 
 if __name__ == "__main__":
-    parasitemia = 10
-    bounds = [0, 150]
+    parasitemia = 12
+    bounds = [10, 150]
 
     plot_parasitemia(parasitemia, bounds)
 
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.show()
