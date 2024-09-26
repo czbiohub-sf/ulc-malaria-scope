@@ -6,18 +6,16 @@ import matplotlib.patches as patches
 from matplotlib.ticker import LogLocator, FixedLocator
 
 
-from brokenaxes import brokenaxes
+XLIM = [0.3, 1e6]
+BOUND0 = XLIM[0] + 0.003
+CENTER0 = BOUND0 # The x-value centered in the 0 zone
 
 
-XLIM = [0.1, 1e6]
-CENTER0 = 0.28 # The x-value centered in the 0 zone
-
-# Function to filter ticks
 def filter_ticks(ticks, min_val, max_val):
+    # Filter tick marks
     return [tick for tick in ticks if tick <= min_val or tick >= max_val]
 
 def format_input(parasitemia, bounds):
-
     # Make sure all values are rounded
     parasitemia_raw = round(parasitemia)
     bounds_raw = [round(bounds[0]), round(bounds[1])]
@@ -26,12 +24,11 @@ def format_input(parasitemia, bounds):
     parasitemia_plot = CENTER0 if parasitemia_raw==0 else parasitemia_raw
     
     # Reformat bound position based on XLIM zone
-    bounds_plot = [XLIM[0]+0.003, bounds[1]] if bounds_raw[0]==0 else bounds_raw
+    bounds_plot = [BOUND0, bounds[1]] if bounds_raw[0]==0 else bounds_raw
 
     return parasitemia_raw, bounds_raw, parasitemia_plot, bounds_plot
 
 def plot_parasitemia(parasitemia, bounds):
-
     # Format values for plotting
     parasitemia_raw, bounds_raw, parasitemia_plot, bounds_plot = format_input(parasitemia, bounds)
 
@@ -44,12 +41,12 @@ def plot_parasitemia(parasitemia, bounds):
     cmap = LinearSegmentedColormap.from_list("custom_gradient", colors)
 
     gradient_len = 1000
-    gradient = np.hstack((np.ones(int(gradient_len/6)), np.linspace(2, 10, gradient_len)))
+    gradient = np.hstack((np.ones(int(gradient_len/14)), np.linspace(2, 10, gradient_len)))
     gradient = np.vstack((gradient, gradient))
 
     ax0.imshow(gradient, aspect='auto', extent=(0, 1, -4.25, 6.25), cmap=cmap) # extent manually selected to fit
 
-    # Foreground (box plot)
+    # Midground (axes)
     ax1 = ax0.twiny()
 
     ax1.set_xscale('log')
@@ -61,6 +58,8 @@ def plot_parasitemia(parasitemia, bounds):
 
     ax1.set_yticklabels([])
     ax1.tick_params(axis='y', left=False)
+
+    # Foreground (box plot)
 
     # Configure box plot based on parasitemia and 95% conf bounds
     stats = [
@@ -94,6 +93,12 @@ def plot_parasitemia(parasitemia, bounds):
     rect = patches.Rectangle((0.8, -5), 0.2, 80, linewidth=1, edgecolor='none', facecolor='white')
     ax1.add_patch(rect)
 
+    # Annotate zero zone
+    ax1.text(parasitemia_plot, -7, 0, ha='center', va='top')
+    # fig.subplots_adjust(left=0.8)
+    # trans = ax1.get_xaxis_transform()
+    # ax1.annotate('0', xy=(CENTER0, 0), ha="center", va="center", xycoords=trans)
+
     # Get and filter major ticks
     major_locator = LogLocator(base=10.0, numticks=100)
     major_ticks = major_locator.tick_values(0.1, 1e6)
@@ -108,17 +113,12 @@ def plot_parasitemia(parasitemia, bounds):
     ax1.xaxis.set_major_locator(FixedLocator(filtered_major_ticks))
     ax1.xaxis.set_minor_locator(FixedLocator(filtered_minor_ticks))
 
-    # Annotate zero zone
-    fig.subplots_adjust(left=0.8)
-    trans = ax1.get_xaxis_transform()
-    ax1.annotate('0', xy=(0.085, 0.5), ha="center", va="center", xycoords=trans)
-
     fig.tight_layout()
     return fig
 
 if __name__ == "__main__":
     parasitemia = 0
-    bounds = [0, 1e6]
+    bounds = [0, 25]
 
     plot_parasitemia(parasitemia, bounds)
 
