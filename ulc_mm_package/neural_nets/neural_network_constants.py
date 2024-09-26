@@ -30,7 +30,9 @@ YOGO_AREA_FILTER_NORMED = YOGO_AREA_FILTER / (
     CAMERA_SELECTION.IMG_HEIGHT * CAMERA_SELECTION.IMG_WIDTH
 )
 YOGO_PRED_THRESHOLD = 0.5
-YOGO_CONF_THRESHOLD = 0.9
+YOGO_CONF_THRESHOLD = (
+    0.99  # TODO: adaptive confidence threshold based on clinical or cultured use case
+)
 YOGO_MODEL_NAME = "elated-smoke-4492"
 YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best.xml")
 
