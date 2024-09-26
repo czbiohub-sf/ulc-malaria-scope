@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.patches as patches
 
+from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.ticker import LogLocator, FixedLocator
 
 
 XLIM = [0.3, 1e6]
-BOUND0 = XLIM[0] + 0.003
+BOUND0 = XLIM[0] + 0.002
 CENTER0 = BOUND0 # The x-value centered in the 0 zone
 
 
@@ -59,7 +59,12 @@ def plot_parasitemia(parasitemia, bounds):
     ax1.set_yticklabels([])
     ax1.tick_params(axis='y', left=False)
 
-    # Foreground (box plot)
+    # # Foreground (box plot)
+    # ax1 = ax0.twiny()
+    
+    # ax1.axis('off')
+    # ax1.set_xlim(ax1.get_xlim())
+    # ax1.set_xscale('log')
 
     # Configure box plot based on parasitemia and 95% conf bounds
     stats = [
@@ -81,23 +86,27 @@ def plot_parasitemia(parasitemia, bounds):
         widths=10,
     )
 
+    # Set background plot to match dims of foreground plot
+    ax0.set_ylim(ax1.get_ylim())
+
     # Display numbers above plot
     ax1.text(parasitemia_plot, 10, parasitemia_raw, ha='center', va='bottom', fontweight='bold')
     for bound_raw, bound_plot in zip(bounds_raw, bounds_plot):
         ax1.text(bound_plot, 7, bound_raw, ha='center', va='bottom', alpha=0.7)
 
-    # Set background plot to match dims of foreground plot
-    ax0.set_ylim(ax1.get_ylim())
+    # Block axis
+    # ax1.scatter(0.9, -4, s=100, color='white', marker='s')
+    for spine in ax1.spines.values():
+        spine.set_zorder(0)
+    for spine in ax1.spines.values():
+        spine.set_visible(False)
 
     # White out axis break
-    rect = patches.Rectangle((0.8, -5), 0.2, 80, linewidth=1, edgecolor='none', facecolor='white')
+    rect = patches.Rectangle((0.8, -5), 0.2, 80, linewidth=1, edgecolor='none', facecolor='white', zorder=1)
     ax1.add_patch(rect)
 
     # Annotate zero zone
-    ax1.text(parasitemia_plot, -7, 0, ha='center', va='top')
-    # fig.subplots_adjust(left=0.8)
-    # trans = ax1.get_xaxis_transform()
-    # ax1.annotate('0', xy=(CENTER0, 0), ha="center", va="center", xycoords=trans)
+    ax1.text(BOUND0, -7, 0, ha='center', va='top')
 
     # Get and filter major ticks
     major_locator = LogLocator(base=10.0, numticks=100)
@@ -117,8 +126,8 @@ def plot_parasitemia(parasitemia, bounds):
     return fig
 
 if __name__ == "__main__":
-    parasitemia = 0
-    bounds = [0, 25]
+    parasitemia = 15
+    bounds = [2, 25]
 
     plot_parasitemia(parasitemia, bounds)
 
