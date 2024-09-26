@@ -17,8 +17,8 @@ def filter_ticks(ticks, min_val, max_val):
 if __name__ == "__main__":
     fig, ax0 = plt.subplots(figsize=(10,1.5))
 
-    parasitemia = 45
-    bounds = [1, 150]
+    parasitemia = 10
+    bounds = [0, 150]
     lims = [1, 200]
 
     colors = [(0, "green"), (0.2, "yellow"), (0.8, "orange"), (1,"red")]
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     ax1.xaxis.set_major_locator(FixedLocator(filtered_major_ticks))
     ax1.xaxis.set_minor_locator(FixedLocator(filtered_minor_ticks))
 
-
+    # ax1.hlines(y=-4, xmin=1, xmax=10)
 
     # # Get current tick locations on the x-axis
     # xticks = ax1.get_xticks()
@@ -121,6 +121,12 @@ if __name__ == "__main__":
 
     # # Set the new ticks (removing those in the specified range)
     # ax1.set_xticks(new_xticks)
+    fig.subplots_adjust(bottom=0.8)  # Adjust this value based on your specific needs
+
+    trans = ax1.get_xaxis_transform()
+    ax1.annotate('0', xy=(0.28, -.15), ha="center", va="top", xycoords=trans)
+    # ax1.plot([0.1, 0.75],[-.1,-.1], color="k", transform=trans, clip_on=False)
+
 
     plt.tight_layout()
     plt.show()
