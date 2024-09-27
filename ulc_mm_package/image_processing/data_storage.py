@@ -341,14 +341,6 @@ class DataStorage:
             except Exception as e:
                 self.logger.error(f"Failed to make parasitemia plot - {e}")
 
-            self.display_message(
-                QMessageBox.Icon.Information,
-                "Results",
-                'Estimated parasitemia is indicated by central bar below, with 95%% confidence interval outlined by box.',
-                buttons=Buttons.OK,
-                image=parasitemia_plot_loc,
-            )
-
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
             html_report_with_abs_path = make_html_report(
