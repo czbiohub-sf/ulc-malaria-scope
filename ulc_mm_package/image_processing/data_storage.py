@@ -26,14 +26,12 @@ from ulc_mm_package.neural_nets.utils import (
     save_thumbnails_to_disk,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
-    RBC_CLASS_IDS,
     YOGO_CLASS_LIST,
     YOGO_MODEL_NAME,
     YOGO_CONF_THRESHOLD,
 )
 from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
-    RBCS_PER_UL,
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
     DESKTOP_CELL_COUNT_DIR,
