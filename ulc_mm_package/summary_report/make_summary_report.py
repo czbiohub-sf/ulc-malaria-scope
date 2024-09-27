@@ -13,7 +13,13 @@ import numpy.typing as npt
 import argparse
 
 from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT, RBCS_PER_UL
-from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PRED_THRESHOLD, YOGO_CLASS_LIST
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    YOGO_PRED_THRESHOLD,
+    YOGO_CLASS_LIST,
+    CLASS_IDS_FOR_THUMBNAILS,
+    ASEXUAL_PARASITE_CLASS_IDS,
+)
+
 
 from stats_utils.compensator import CountCompensator
 
@@ -25,6 +31,24 @@ COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7
 # This warning is raised whenever we're generating and saving plots to the disk
 # for use in the end-of-run summary report.
 matplotlib.use("agg")
+
+
+def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
+    # Express parasite classes as percent of total parasites
+    total_parasites = np.sum(cell_counts[ASEXUAL_PARASITE_CLASS_IDS])
+    str_cell_counts = [
+        f'{ct} ({ct / total_parasites * 100.0:.3f}% of parasites)' if i in ASEXUAL_PARASITE_CLASS_IDS else f'{ct}'
+        for i, ct in enumerate(
+            [ct if i in CLASS_IDS_FOR_THUMBNAILS else 0 for i, ct in enumerate(cell_counts)
+        ])
+    ]
+
+    # Add class name
+    class_name_to_cell_count = {
+        YOGO_CLASS_LIST[i].capitalize(): ct for (i, ct) in enumerate(str_cell_counts)
+    }
+
+    return class_name_to_cell_count
 
 
 def make_per_image_metadata_plots(
@@ -265,7 +289,7 @@ def make_html_report(
     dataset_name: str,
     experiment_metadata: Dict[str, str],
     per_image_metadata_plot_path: str,
-    class_name_to_cell_count: Dict[str, int],
+    cell_counts: npt.NDArray,
     comp_perc_parasitemia: float,
     comp_perc_parasitemia_err: float,
     thumbnails: Dict[str, List[str]],
@@ -330,6 +354,7 @@ def make_html_report(
     )
 
     # TODO compute number of parasites
+    format_cell_counts(cell_counts)
 
     context = {
         "css_file": css_path,
@@ -338,7 +363,7 @@ def make_html_report(
         "participant_id": participant,
         "notes": notes,
         "flowcell_id": fc_id,
-        "cell_counts": class_name_to_cell_count,
+        "class_name_to_cell_count": format_cell_counts(cell_counts),
         "comp_parasites_per_ul": f"{RBCS_PER_UL/100*comp_perc_parasitemia:.0f}",
         "comp_parasites_per_ul_interval": 
             [
@@ -408,10 +433,7 @@ if __name__ == "__main__":
         'notes': 'sample only',
         'flowcell_id': 'A5',
     }
-    counts = np.array([148293, 123, 12, 3, 1, 523, 472])
-    class_name_to_cell_count = {
-        x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, counts)
-    }
+    cell_counts = np.array([148293, 123, 12, 3, 1, 523, 472])
 
     # Compensator
     compensator = CountCompensator(
@@ -423,14 +445,14 @@ if __name__ == "__main__":
     (
         comp_perc_parasitemia,
         comp_perc_parasitemia_err,
-    ) = compensator.get_res_from_counts(counts)
+    ) = compensator.get_res_from_counts(cell_counts)
 
 
     content = make_html_report(
         'Dummy test',
         exp_metadata,
         '',
-        class_name_to_cell_count,
+        cell_counts,
         comp_perc_parasitemia,
         comp_perc_parasitemia_err,
         {},

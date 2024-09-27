@@ -339,7 +339,7 @@ class DataStorage:
                 self.time_str,
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
-                class_name_to_cell_count,
+                raw_cell_counts,
                 comp_perc_parasitemia,
                 comp_perc_parasitemia_err,
                 class_to_all_thumbnails_abs_path,
