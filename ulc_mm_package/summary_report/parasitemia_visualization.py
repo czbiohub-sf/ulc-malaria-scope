@@ -20,7 +20,7 @@ def filter_ticks(ticks, min_val, max_val):
 def format_input(parasitemia, err):
     if parasitemia == np.inf:
         parasitemia_raw = np.nan
-        parasitemia_bounds = np.nan
+        parasitemia_plot = np.nan
     else:
         # Round values and truncate to 0
         parasitemia_raw = max(0, round(parasitemia))
@@ -98,7 +98,7 @@ def make_parasitemia_plot(parasitemia, err, savefile):
             fliers=[],
         )
     ]
-    bxp = ax1.bxp(
+    ax1.bxp(
         stats,
         medianprops=dict(color="black", linewidth=5),
         boxprops=dict(linewidth=3, alpha=0.5),
