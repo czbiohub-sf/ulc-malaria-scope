@@ -1,5 +1,6 @@
 from io import TextIOWrapper
 from csv import DictReader
+from os import remove
 from typing import Dict, List, Optional
 from pathlib import Path
 
@@ -10,9 +11,20 @@ from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
 import numpy as np
 import numpy.typing as npt
+import argparse
 
 from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT, RBCS_PER_UL
-from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PRED_THRESHOLD
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    YOGO_PRED_THRESHOLD,
+    YOGO_CLASS_LIST,
+    CLASS_IDS_FOR_THUMBNAILS,
+    ASEXUAL_PARASITE_CLASS_IDS,
+)
+from ulc_mm_package.summary_report.parasitemia_visualization import (
+    make_parasitemia_plot,
+)
+
+from stats_utils.compensator import CountCompensator
 
 COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7b6d2"]
 
@@ -22,6 +34,37 @@ COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7
 # This warning is raised whenever we're generating and saving plots to the disk
 # for use in the end-of-run summary report.
 matplotlib.use("agg")
+
+
+def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
+    """Format raw cell counts for display in summary report"""
+    # Express parasite classes as percent of total parasites
+    total_parasites = np.sum(cell_counts[ASEXUAL_PARASITE_CLASS_IDS])
+
+    if total_parasites > 0:
+        str_cell_counts = [
+            f"{ct} ({ct / total_parasites * 100.0:.3f}% of parasites)"
+            if i in ASEXUAL_PARASITE_CLASS_IDS
+            else f"{ct}"
+            for i, ct in enumerate(
+                [
+                    ct if i in CLASS_IDS_FOR_THUMBNAILS else 0
+                    for i, ct in enumerate(cell_counts)
+                ]
+            )
+        ]
+    else:
+        str_cell_counts = [
+            f"{ct}" if i in CLASS_IDS_FOR_THUMBNAILS else 0  # type:ignore
+            for i, ct in enumerate(cell_counts)
+        ]
+
+    # Add class name
+    class_name_to_cell_count = {
+        YOGO_CLASS_LIST[i].capitalize(): ct for (i, ct) in enumerate(str_cell_counts)
+    }
+
+    return class_name_to_cell_count
 
 
 def make_per_image_metadata_plots(
@@ -262,15 +305,9 @@ def make_html_report(
     dataset_name: str,
     experiment_metadata: Dict[str, str],
     per_image_metadata_plot_path: str,
-    total_rbcs: int,
-    class_name_to_cell_count: Dict[str, int],
-    raw_perc_parasitemia: str,
-    comp_perc_parasitemia: str,
-    comp_perc_parasitemia_interval: str,
-    raw_parasites_per_ul: str,
-    comp_parasites_per_ul: str,
-    comp_parasites_per_ul_interval: str,
+    cell_counts: npt.NDArray,
     thumbnails: Dict[str, List[str]],
+    parasitemia_plot_loc: str,
     counts_plot_loc: str,
     conf_plot_loc: str,
     objectness_plot_loc: str,
@@ -338,18 +375,12 @@ def make_html_report(
         "participant_id": participant,
         "notes": notes,
         "flowcell_id": fc_id,
-        "total_rbcs": total_rbcs,
-        "cell_counts": class_name_to_cell_count,
-        "raw_perc_parasitemia": raw_perc_parasitemia,
-        "comp_perc_parasitemia": comp_perc_parasitemia,
-        "comp_perc_parasitemia_interval": comp_perc_parasitemia_interval,
-        "raw_parasites_per_ul": raw_parasites_per_ul,
-        "comp_parasites_per_ul": comp_parasites_per_ul,
-        "comp_parasites_per_ul_interval": comp_parasites_per_ul_interval,
+        "class_name_to_cell_count": format_cell_counts(cell_counts),
         "parasites_per_ul_scaling_factor": f"{RBCS_PER_UL:.0E}",
         "all_thumbnails": thumbnails,
         "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
         "per_image_metadata_plot_filename": per_image_metadata_plot_path,
+        "parasitemia_plot_filename": parasitemia_plot_loc,
         "cell_count_plot_filename": counts_plot_loc,
         "confidence_hists_filename": conf_plot_loc,
         "objectness_hists_filename": objectness_plot_loc,
@@ -360,7 +391,7 @@ def make_html_report(
 
 
 def save_html_report(content: str, save_path: Path) -> None:
-    """Save the html report  (as .html) to a specified location on disk.
+    """Save the html report (as .html) to a specified location on disk.
 
     Parameters
     ----------
@@ -389,3 +420,54 @@ def create_pdf_from_html(path_to_html: Path, save_path: Path) -> None:
     with open(save_path, "w+b") as f:
         with open(path_to_html, "r") as f2:
             pisa.CreatePDF(f2, f)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("path", default="")
+    args = parser.parse_args()
+
+    base_path = Path(args.path)
+    parasitemia_file = base_path / "parasitemia.jpg"
+    html_file = base_path / "test.html"
+    pdf_file = base_path / "test.pdf"
+
+    # Dummy data
+    exp_metadata = {
+        "operator_id": "MK",
+        "participant_id": "1034",
+        "notes": "sample only",
+        "flowcell_id": "A5",
+    }
+    cell_counts = np.array([1000, 0, 0, 0, 0, 0, 0])
+
+    # Compensator
+    compensator = CountCompensator(
+        "elated-smoke-4492",
+        clinical=True,
+        skip=True,
+        conf_thresh=0.9,
+    )
+    (
+        comp_parasitemia,
+        comp_parasitemia_err,
+    ) = compensator.get_res_from_counts(cell_counts, units_ul_out=True)
+    make_parasitemia_plot(comp_parasitemia, comp_parasitemia_err, parasitemia_file)
+
+    content = make_html_report(
+        "Dummy test",
+        exp_metadata,
+        "",
+        cell_counts,
+        {},
+        str(parasitemia_file),
+        "",
+        "",
+        "",
+    )
+    save_html_report(content, html_file)
+    create_pdf_from_html(html_file, pdf_file)
+
+    remove(html_file)
+    remove(parasitemia_file)

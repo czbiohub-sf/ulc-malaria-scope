@@ -37,6 +37,13 @@
             </p>
         </div>
 
+        <font size="2">
+            <br>Estimated parasitemia is indicated by central bar below, with 95% confidence interval outlined by box.
+        </font>
+
+        <img src = "{{parasitemia_plot_filename}}">
+        <font size="2"><br><br><br></font>
+
         {# Experiment metadata #}
         <table style="table-layout: fixed;">
             <thead>
@@ -61,45 +68,21 @@
                 <td>{{ flowcell_id }}</td>
             </tr>
 
-            {# Parasitemia #}
-            <thead>
-                <tr>
-                    <th colspan="2">Parasitemia</th>
-                </tr>
-            </thead>
-            <tr>
-                <td>Estimated parasitemia (%)</td>
-                <td>{{comp_perc_parasitemia}}% {{comp_perc_parasitemia_interval}}</td>
-            </tr>
-            <tr>
-                <td>Estimated parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
-                <td>{{comp_parasites_per_ul}} {{comp_parasites_per_ul_interval}}</td>
-            </tr>
-            <tr>
-                <td>% Raw parasitemia</td>
-                <td>{{raw_perc_parasitemia}}%</td>
-            </tr>
-            <tr>
-                <td>Raw parasites / uL <br>(assuming {{parasites_per_ul_scaling_factor}} RBCs / uL)</td>
-                <td>{{raw_parasites_per_ul}}</td>
-            </tr>
-
-
             {# Estimated sample composition #}
             <thead>
                 <tr>
                     <th colspan="2">Estimated sample composition</th>
                 </tr>
             </thead>
-            {% for key in cell_counts %}
+            {% for key in class_name_to_cell_count %}
             <tr>
                 <td>{{key}}</td>
-                <td>{{cell_counts[key]}} ({{'{0:.3f}'.format(100*cell_counts[key] / total_rbcs)}}%)</td>
+                <td>{{class_name_to_cell_count[key]}}</td>
             </tr>
             {% endfor %}
         </table>
         <font size="-1">
-            <i>Parasitemia includes asexual stages only. Square brackets indicate 95% confidence interval</i>
+            <i>Parasitemia includes asexual stages only.</i>
         </font>
         
         {# Thumbnails #}

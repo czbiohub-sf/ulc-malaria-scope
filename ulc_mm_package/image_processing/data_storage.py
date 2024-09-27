@@ -26,14 +26,12 @@ from ulc_mm_package.neural_nets.utils import (
     save_thumbnails_to_disk,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
-    RBC_CLASS_IDS,
     YOGO_CLASS_LIST,
     YOGO_MODEL_NAME,
     YOGO_CONF_THRESHOLD,
 )
 from ulc_mm_package.scope_constants import (
     MAX_FRAMES,
-    RBCS_PER_UL,
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
     DESKTOP_CELL_COUNT_DIR,
@@ -48,6 +46,9 @@ from ulc_mm_package.summary_report.make_summary_report import (
     make_yogo_objectness_plots,
     save_html_report,
     create_pdf_from_html,
+)
+from ulc_mm_package.summary_report.parasitemia_visualization import (
+    make_parasitemia_plot,
 )
 
 
@@ -323,20 +324,26 @@ class DataStorage:
 
             # Get cell counts
             raw_cell_counts = np.asarray(get_class_counts(pred_tensors))
-            total_rbcs = sum(raw_cell_counts[RBC_CLASS_IDS])
             # Associate class with counts
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            raw_frac_parasitemia = self.compensator.calc_parasitemia(raw_cell_counts)
             (
-                comp_perc_parasitemia,
-                comp_perc_parasitemia_err,
-            ) = self.compensator.get_res_from_counts(raw_cell_counts)
+                comp_parasitemia,
+                comp_parasitemia_err,
+            ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
 
-            # Convert fractional percentages into normal percentages
-            raw_perc_parasitemia = raw_frac_parasitemia * 100
+            # Create parasitemia plot
+            parasitemia_plot_loc = str(summary_report_dir / "parasitemia.jpg")
+            try:
+                make_parasitemia_plot(
+                    comp_parasitemia,
+                    comp_parasitemia_err,
+                    parasitemia_plot_loc,
+                )
+            except Exception as e:
+                self.logger.error(f"Failed to make parasitemia plot - {e}")
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
@@ -344,21 +351,9 @@ class DataStorage:
                 self.time_str,
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
-                max(1, total_rbcs),  # Account for potential div-by-zero
-                class_name_to_cell_count,
-                f"{raw_perc_parasitemia:.4f}",
-                f"{comp_perc_parasitemia:.4f}",
-                (
-                    f"[{max(0, comp_perc_parasitemia-comp_perc_parasitemia_err):.4f}%, "
-                    f"{(comp_perc_parasitemia+comp_perc_parasitemia_err):.4f}%]"
-                ),
-                f"{RBCS_PER_UL/100*raw_perc_parasitemia:.0f}",
-                f"{RBCS_PER_UL/100*comp_perc_parasitemia:.0f}",
-                (
-                    f"[{max(0, RBCS_PER_UL/100*(comp_perc_parasitemia-comp_perc_parasitemia_err)):.0f}, "
-                    f"{(RBCS_PER_UL/100*(comp_perc_parasitemia+comp_perc_parasitemia_err)):.0f}]"
-                ),
+                raw_cell_counts,
                 class_to_all_thumbnails_abs_path,
+                parasitemia_plot_loc,
                 counts_plot_loc,
                 conf_plot_loc,
                 objectness_plot_loc,
@@ -378,6 +373,7 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
+            remove(parasitemia_plot_loc)
 
             if DEBUG_REPORT:
                 remove(counts_plot_loc)
