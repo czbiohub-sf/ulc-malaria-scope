@@ -18,20 +18,27 @@ def filter_ticks(ticks, min_val, max_val):
 
 
 def format_input(parasitemia, err):
-    bounds = [
-        parasitemia - err,
-        parasitemia + err,
-    ]
+    if parasitemia == np.inf:
+        parasitemia_raw = np.nan
+        parasitemia_bounds = np.nan
+    else:
+        # Round values and truncate to 0
+        parasitemia_raw = max(0, round(parasitemia))
+        # Reformat parasitemia position based on 0 zone
+        parasitemia_plot = CENTER0 if parasitemia_raw == 0 else parasitemia_raw
 
-    # Round values and truncate to 0
-    parasitemia_raw = max(0, round(parasitemia))
-    bounds_raw = [max(0, round(bounds[0])), max(0, round(bounds[1]))]
-
-    # Reformat parasitemia position based on 0 zone
-    parasitemia_plot = CENTER0 if parasitemia_raw == 0 else parasitemia_raw
-
-    # Reformat bound position based on XLIM zone
-    bounds_plot = [BOUND0 if bound == 0 else bound for bound in bounds_raw]
+    if err == np.inf:
+        bounds_raw = [np.nan, np.nan]
+        bounds_plot = [np.nan, np.nan]
+    else:
+        bounds = [
+            parasitemia - err,
+            parasitemia + err,
+        ]
+        # Round values and truncate to 0
+        bounds_raw = [max(0, round(bounds[0])), max(0, round(bounds[1]))]
+        # Reformat bound position based on XLIM zone
+        bounds_plot = [BOUND0 if bound == 0 else bound for bound in bounds_raw]
 
     return parasitemia_raw, bounds_raw, parasitemia_plot, bounds_plot
 
