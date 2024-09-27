@@ -438,7 +438,7 @@ if __name__ == "__main__":
         "notes": "sample only",
         "flowcell_id": "A5",
     }
-    cell_counts = np.array([148293, 121, 0, 0, 1, 523, 472])
+    cell_counts = np.array([500, 121, 0, 0, 1, 523, 472])
 
     # Compensator
     compensator = CountCompensator(
