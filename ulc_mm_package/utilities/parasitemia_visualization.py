@@ -16,7 +16,12 @@ def filter_ticks(ticks, min_val, max_val):
     # Filter tick marks
     return [tick for tick in ticks if tick <= min_val or tick >= max_val]
 
-def format_input(parasitemia, bounds):
+def format_input(parasitemia, err):
+    bounds = [
+        parasitemia -  err,
+        parasitemia + err,
+    ]
+
     # Round values and truncate to 0
     parasitemia_raw = max(0, round(parasitemia))
     bounds_raw = [max(0, round(bounds[0])), max(0, round(bounds[1]))]
@@ -29,9 +34,9 @@ def format_input(parasitemia, bounds):
 
     return parasitemia_raw, bounds_raw, parasitemia_plot, bounds_plot
 
-def plot_parasitemia(parasitemia, bounds):
+def make_parasitemia_plot(parasitemia, err, savefile):
     # Format values for plotting
-    parasitemia_raw, bounds_raw, parasitemia_plot, bounds_plot = format_input(parasitemia, bounds)
+    parasitemia_raw, bounds_raw, parasitemia_plot, bounds_plot = format_input(parasitemia, err)
 
     # Background (color gradient)
     fig, ax0 = plt.subplots(figsize=(10,2))
@@ -124,29 +129,17 @@ def plot_parasitemia(parasitemia, bounds):
 
     fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     fig.tight_layout()
-    return fig
+    plt.savefig(savefile)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('parasitemia')
     parser.add_argument('error')
-    parser.add_argument('-f', '--filename')
+    parser.add_argument('filename')
 
     args = parser.parse_args()
     parasitemia = int(args.parasitemia)
     err = int(args.error)
 
-    bounds = [
-        parasitemia -  err,
-        parasitemia + err,
-    ]
-
-    fig = plot_parasitemia(parasitemia, bounds)
-
-    if args.filename:
-        plt.savefig(args.filename)
-        print(f"Saved figure to {args.filename}")
-
-    # plt.tight_layout()
-    plt.show()
+    make_parasitemia_plot(parasitemia, err, args.filename)

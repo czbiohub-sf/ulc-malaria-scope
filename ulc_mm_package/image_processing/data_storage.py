@@ -49,6 +49,7 @@ from ulc_mm_package.summary_report.make_summary_report import (
     save_html_report,
     create_pdf_from_html,
 )
+from ulc_mm_package.utils.parasitemia_visualisation import make_parasitemia_plot
 
 
 class DataStorageError(Exception):
@@ -329,9 +330,16 @@ class DataStorage:
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
             (
-                comp_perc_parasitemia,
-                comp_perc_parasitemia_err,
-            ) = self.compensator.get_res_from_counts(raw_cell_counts)
+                comp_parasitemia,
+                comp_parasitemia_err,
+            ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
+
+            # Create parasitemia plot
+            parasitemia_plot_loc = str(summary_report_dir / "parasitemia.jpg")
+            try:
+                make_parasitemia_plot(pred_tensors, counts_plot_loc)
+            except Exception as e:
+                self.logger.error(f"Failed to make parasitemia plot - {e}")
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
@@ -340,9 +348,8 @@ class DataStorage:
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
                 raw_cell_counts,
-                comp_perc_parasitemia,
-                comp_perc_parasitemia_err,
                 class_to_all_thumbnails_abs_path,
+                parasitemia_plot_loc,
                 counts_plot_loc,
                 conf_plot_loc,
                 objectness_plot_loc,
@@ -362,6 +369,7 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
+            remove(parasitemia_plot_loc)
 
             if DEBUG_REPORT:
                 remove(counts_plot_loc)

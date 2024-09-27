@@ -34,6 +34,7 @@ matplotlib.use("agg")
 
 
 def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
+    """Format raw cell counts for display in summary report"""
     # Express parasite classes as percent of total parasites
     total_parasites = np.sum(cell_counts[ASEXUAL_PARASITE_CLASS_IDS])
     str_cell_counts = [
@@ -290,9 +291,8 @@ def make_html_report(
     experiment_metadata: Dict[str, str],
     per_image_metadata_plot_path: str,
     cell_counts: npt.NDArray,
-    comp_perc_parasitemia: float,
-    comp_perc_parasitemia_err: float,
     thumbnails: Dict[str, List[str]],
+    parasitemia_plot_loc: str,
     counts_plot_loc: str,
     conf_plot_loc: str,
     objectness_plot_loc: str,
@@ -361,16 +361,11 @@ def make_html_report(
         "notes": notes,
         "flowcell_id": fc_id,
         "class_name_to_cell_count": format_cell_counts(cell_counts),
-        "comp_parasites_per_ul": f"{RBCS_PER_UL/100*comp_perc_parasitemia:.0f}",
-        "comp_parasites_per_ul_interval": 
-            [
-                f"[{max(0, RBCS_PER_UL/100*(comp_perc_parasitemia-comp_perc_parasitemia_err)):.0f}",
-                f"{(RBCS_PER_UL/100*(comp_perc_parasitemia+comp_perc_parasitemia_err)):.0f}]",
-            ],
         "parasites_per_ul_scaling_factor": f"{RBCS_PER_UL:.0E}",
         "all_thumbnails": thumbnails,
         "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
         "per_image_metadata_plot_filename": per_image_metadata_plot_path,
+        "parasitemia_plot_filename": parasitemia_plot_loc,
         "cell_count_plot_filename": counts_plot_loc,
         "confidence_hists_filename": conf_plot_loc,
         "objectness_hists_filename": objectness_plot_loc,
@@ -378,7 +373,6 @@ def make_html_report(
     content = template.render(context)
 
     return content
-                
                 
 
 def save_html_report(content: str, save_path: Path) -> None:
@@ -459,3 +453,5 @@ if __name__ == "__main__":
     )
     save_html_report(content, html_file)
     pdf = create_pdf_from_html(html_file, pdf_file)
+
+    remove(html_file)
