@@ -49,7 +49,7 @@ from ulc_mm_package.summary_report.make_summary_report import (
     save_html_report,
     create_pdf_from_html,
 )
-from ulc_mm_package.utils.parasitemia_visualisation import make_parasitemia_plot
+from ulc_mm_package.summary_report.parasitemia_visualization import make_parasitemia_plot
 
 
 class DataStorageError(Exception):

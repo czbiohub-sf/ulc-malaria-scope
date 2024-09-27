@@ -1,5 +1,6 @@
 from io import TextIOWrapper
 from csv import DictReader
+from os import remove
 from typing import Dict, List, Optional
 from pathlib import Path
 
@@ -19,7 +20,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     CLASS_IDS_FOR_THUMBNAILS,
     ASEXUAL_PARASITE_CLASS_IDS,
 )
-
+from ulc_mm_package.summary_report.parasitemia_visualization import make_parasitemia_plot
 
 from stats_utils.compensator import CountCompensator
 
@@ -37,17 +38,24 @@ def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
     """Format raw cell counts for display in summary report"""
     # Express parasite classes as percent of total parasites
     total_parasites = np.sum(cell_counts[ASEXUAL_PARASITE_CLASS_IDS])
-    str_cell_counts = [
-        f"{ct} ({ct / total_parasites * 100.0:.3f}% of parasites)"
-        if i in ASEXUAL_PARASITE_CLASS_IDS
-        else f"{ct}"
-        for i, ct in enumerate(
-            [
-                ct if i in CLASS_IDS_FOR_THUMBNAILS else 0
-                for i, ct in enumerate(cell_counts)
-            ]
-        )
-    ]
+    
+    if total_parasites > 0:
+        str_cell_counts = [
+            f"{ct} ({ct / total_parasites * 100.0:.3f}% of parasites)"
+            if i in ASEXUAL_PARASITE_CLASS_IDS
+            else f"{ct}"
+            for i, ct in enumerate(
+                [
+                    ct if i in CLASS_IDS_FOR_THUMBNAILS else 0
+                    for i, ct in enumerate(cell_counts)
+                ]
+            )
+        ]
+    else:
+        str_cell_counts = [
+            f"{ct}" if i in CLASS_IDS_FOR_THUMBNAILS else 0
+            for i, ct in enumerate(cell_counts)
+        ]
 
     # Add class name
     class_name_to_cell_count = {
@@ -419,6 +427,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     base_path = Path(args.path)
+    parasitemia_file = base_path / "parasitemia.jpg"
     html_file = base_path / "test.html"
     pdf_file = base_path / "test.pdf"
 
@@ -429,7 +438,7 @@ if __name__ == "__main__":
         "notes": "sample only",
         "flowcell_id": "A5",
     }
-    cell_counts = np.array([148293, 123, 12, 3, 1, 523, 472])
+    cell_counts = np.array([148293, 121, 0, 0, 1, 523, 472])
 
     # Compensator
     compensator = CountCompensator(
@@ -439,18 +448,18 @@ if __name__ == "__main__":
         conf_thresh=0.9,
     )
     (
-        comp_perc_parasitemia,
-        comp_perc_parasitemia_err,
-    ) = compensator.get_res_from_counts(cell_counts)
+        comp_parasitemia,
+        comp_parasitemia_err,
+    ) = compensator.get_res_from_counts(cell_counts, units_ul_out=True)
+    make_parasitemia_plot(comp_parasitemia, comp_parasitemia_err, parasitemia_file)
 
     content = make_html_report(
         "Dummy test",
         exp_metadata,
         "",
         cell_counts,
-        comp_perc_parasitemia,
-        comp_perc_parasitemia_err,
         {},
+        parasitemia_file,
         "",
         "",
         "",
@@ -459,3 +468,4 @@ if __name__ == "__main__":
     pdf = create_pdf_from_html(html_file, pdf_file)
 
     remove(html_file)
+    remove(parasitemia_file)
