@@ -339,7 +339,11 @@ class DataStorage:
             # Create parasitemia plot
             parasitemia_plot_loc = str(summary_report_dir / "parasitemia.jpg")
             try:
-                make_parasitemia_plot(pred_tensors, counts_plot_loc)
+                make_parasitemia_plot(
+                    comp_parasitemia,
+                    comp_parasitemia_err,
+                    parasitemia_plot_loc,
+                )
             except Exception as e:
                 self.logger.error(f"Failed to make parasitemia plot - {e}")
 
