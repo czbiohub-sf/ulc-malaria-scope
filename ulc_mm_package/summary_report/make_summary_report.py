@@ -12,7 +12,9 @@ import numpy as np
 import numpy.typing as npt
 
 from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT, RBCS_PER_UL
-from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PRED_THRESHOLD
+from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PRED_THRESHOLD, YOGO_CLASS_LIST
+
+from stats_utils.compensator import CountCompensator
 
 COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7b6d2"]
 
@@ -262,14 +264,9 @@ def make_html_report(
     dataset_name: str,
     experiment_metadata: Dict[str, str],
     per_image_metadata_plot_path: str,
-    total_rbcs: int,
     class_name_to_cell_count: Dict[str, int],
-    raw_perc_parasitemia: str,
-    comp_perc_parasitemia: str,
-    comp_perc_parasitemia_interval: str,
-    raw_parasites_per_ul: str,
-    comp_parasites_per_ul: str,
-    comp_parasites_per_ul_interval: str,
+    comp_perc_parasitemia: float,
+    comp_perc_parasitemia_err: float,
     thumbnails: Dict[str, List[str]],
     counts_plot_loc: str,
     conf_plot_loc: str,
@@ -331,6 +328,8 @@ def make_html_report(
         else "-"
     )
 
+    # TODO compute number of parasites
+
     context = {
         "css_file": css_path,
         "dataset_name": dataset_name,
@@ -338,14 +337,13 @@ def make_html_report(
         "participant_id": participant,
         "notes": notes,
         "flowcell_id": fc_id,
-        "total_rbcs": total_rbcs,
         "cell_counts": class_name_to_cell_count,
-        "raw_perc_parasitemia": raw_perc_parasitemia,
-        "comp_perc_parasitemia": comp_perc_parasitemia,
-        "comp_perc_parasitemia_interval": comp_perc_parasitemia_interval,
-        "raw_parasites_per_ul": raw_parasites_per_ul,
-        "comp_parasites_per_ul": comp_parasites_per_ul,
-        "comp_parasites_per_ul_interval": comp_parasites_per_ul_interval,
+        "comp_parasites_per_ul": f"{RBCS_PER_UL/100*comp_perc_parasitemia:.0f}",
+        "comp_parasites_per_ul_interval": 
+            [
+                f"[{max(0, RBCS_PER_UL/100*(comp_perc_parasitemia-comp_perc_parasitemia_err)):.0f}",
+                f"{(RBCS_PER_UL/100*(comp_perc_parasitemia+comp_perc_parasitemia_err)):.0f}]",
+            ],
         "parasites_per_ul_scaling_factor": f"{RBCS_PER_UL:.0E}",
         "all_thumbnails": thumbnails,
         "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
@@ -357,10 +355,11 @@ def make_html_report(
     content = template.render(context)
 
     return content
-
+                
+                
 
 def save_html_report(content: str, save_path: Path) -> None:
-    """Save the html report  (as .html) to a specified location on disk.
+    """Save the html report (as .html) to a specified location on disk.
 
     Parameters
     ----------
@@ -389,3 +388,45 @@ def create_pdf_from_html(path_to_html: Path, save_path: Path) -> None:
     with open(save_path, "w+b") as f:
         with open(path_to_html, "r") as f2:
             pisa.CreatePDF(f2, f)
+
+
+if __name__ == "__main__":
+    exp_file = '~/Desktop/2024-09-09-140332exp__metadata.csv'
+    html_file = 'test.html'
+    pdf_file = 'test.pdf'
+
+    # Dummy data
+    exp_metadata = DictReader(exp_file)
+
+    counts = np.array([148293, 123, 12, 3, 1, 523, 472])
+    class_name_to_cell_count = {
+        x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, counts)
+    }
+
+    # Compensator
+    compensator = CountCompensator(
+        'elated-smoke-4492',
+        clinical=True,
+        skip=True,
+        conf_thresh=0.9,
+    )
+    (
+        comp_perc_parasitemia,
+        comp_perc_parasitemia_err,
+    ) = compensator.get_res_from_counts(counts)
+
+
+    content = make_html_report(
+        'Dummy test',
+        exp_metadata,
+        '',
+        class_name_to_cell_count,
+        comp_perc_parasitemia,
+        comp_perc_parasitemia_err,
+        {},
+        '',
+        '',
+        '',
+    )
+    save_html_report(content, html_file)
+    pdf = create_pdf_report_from_html(html_file, pdf_file)

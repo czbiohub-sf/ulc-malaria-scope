@@ -323,20 +323,15 @@ class DataStorage:
 
             # Get cell counts
             raw_cell_counts = np.asarray(get_class_counts(pred_tensors))
-            total_rbcs = sum(raw_cell_counts[RBC_CLASS_IDS])
             # Associate class with counts
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            raw_frac_parasitemia = self.compensator.calc_parasitemia(raw_cell_counts)
             (
                 comp_perc_parasitemia,
                 comp_perc_parasitemia_err,
             ) = self.compensator.get_res_from_counts(raw_cell_counts)
-
-            # Convert fractional percentages into normal percentages
-            raw_perc_parasitemia = raw_frac_parasitemia * 100
 
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
@@ -344,20 +339,9 @@ class DataStorage:
                 self.time_str,
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
-                max(1, total_rbcs),  # Account for potential div-by-zero
                 class_name_to_cell_count,
-                f"{raw_perc_parasitemia:.4f}",
-                f"{comp_perc_parasitemia:.4f}",
-                (
-                    f"[{max(0, comp_perc_parasitemia-comp_perc_parasitemia_err):.4f}%, "
-                    f"{(comp_perc_parasitemia+comp_perc_parasitemia_err):.4f}%]"
-                ),
-                f"{RBCS_PER_UL/100*raw_perc_parasitemia:.0f}",
-                f"{RBCS_PER_UL/100*comp_perc_parasitemia:.0f}",
-                (
-                    f"[{max(0, RBCS_PER_UL/100*(comp_perc_parasitemia-comp_perc_parasitemia_err)):.0f}, "
-                    f"{(RBCS_PER_UL/100*(comp_perc_parasitemia+comp_perc_parasitemia_err)):.0f}]"
-                ),
+                comp_perc_parasitemia,
+                comp_perc_parasitemia_err,
                 class_to_all_thumbnails_abs_path,
                 counts_plot_loc,
                 conf_plot_loc,
