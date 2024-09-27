@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
 import numpy as np
 import numpy.typing as npt
+import argparse
 
 from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT, RBCS_PER_UL
 from ulc_mm_package.neural_nets.neural_network_constants import YOGO_PRED_THRESHOLD, YOGO_CLASS_LIST
@@ -391,13 +392,22 @@ def create_pdf_from_html(path_to_html: Path, save_path: Path) -> None:
 
 
 if __name__ == "__main__":
-    exp_file = '~/Desktop/2024-09-09-140332exp__metadata.csv'
-    html_file = 'test.html'
-    pdf_file = 'test.pdf'
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('path', default='')
+    args = parser.parse_args()
+
+    base_path = Path(args.path)
+    html_file = base_path / 'test.html'
+    pdf_file = base_path / 'test.pdf'
 
     # Dummy data
-    exp_metadata = DictReader(exp_file)
-
+    exp_metadata = {
+        'operator_id': 'MK',
+        'participant_id': '1034',
+        'notes': 'sample only',
+        'flowcell_id': 'A5',
+    }
     counts = np.array([148293, 123, 12, 3, 1, 523, 472])
     class_name_to_cell_count = {
         x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, counts)
@@ -429,4 +439,4 @@ if __name__ == "__main__":
         '',
     )
     save_html_report(content, html_file)
-    pdf = create_pdf_report_from_html(html_file, pdf_file)
+    pdf = create_pdf_from_html(html_file, pdf_file)
