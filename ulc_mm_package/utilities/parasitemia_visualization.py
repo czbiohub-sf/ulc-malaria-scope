@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import argparse
 
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.ticker import LogLocator, FixedLocator
@@ -16,15 +17,15 @@ def filter_ticks(ticks, min_val, max_val):
     return [tick for tick in ticks if tick <= min_val or tick >= max_val]
 
 def format_input(parasitemia, bounds):
-    # Make sure all values are rounded
-    parasitemia_raw = round(parasitemia)
-    bounds_raw = [round(bounds[0]), round(bounds[1])]
+    # Round values and truncate to 0
+    parasitemia_raw = max(0, round(parasitemia))
+    bounds_raw = [max(0, round(bounds[0])), max(0, round(bounds[1]))]
 
     # Reformat parasitemia position based on 0 zone
     parasitemia_plot = CENTER0 if parasitemia_raw==0 else parasitemia_raw
     
     # Reformat bound position based on XLIM zone
-    bounds_plot = [BOUND0, bounds[1]] if bounds_raw[0]==0 else bounds_raw
+    bounds_plot = [BOUND0 if bound==0 else bound for bound in bounds_raw]
 
     return parasitemia_raw, bounds_raw, parasitemia_plot, bounds_plot
 
@@ -91,11 +92,10 @@ def plot_parasitemia(parasitemia, bounds):
 
     # Display numbers above plot
     ax1.text(parasitemia_plot, 10, parasitemia_raw, ha='center', va='bottom', fontweight='bold')
-    for bound_raw, bound_plot in zip(bounds_raw, bounds_plot):
-        ax1.text(bound_plot, 7, bound_raw, ha='center', va='bottom', alpha=0.7)
+    ax1.text(bounds_plot[0]*0.9, 6.5, bounds_raw[0], ha='right', va='bottom', alpha=0.7)
+    ax1.text(bounds_plot[1]*1.1, 6.5, bounds_raw[1], ha='left', va='bottom', alpha=0.7)
 
     # Block axis
-    # ax1.scatter(0.9, -4, s=100, color='white', marker='s')
     for spine in ax1.spines.values():
         spine.set_zorder(0)
     for spine in ax1.spines.values():
@@ -122,14 +122,31 @@ def plot_parasitemia(parasitemia, bounds):
     ax1.xaxis.set_major_locator(FixedLocator(filtered_major_ticks))
     ax1.xaxis.set_minor_locator(FixedLocator(filtered_minor_ticks))
 
+    fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     fig.tight_layout()
     return fig
 
 if __name__ == "__main__":
-    parasitemia = 15
-    bounds = [2, 25]
+    parser = argparse.ArgumentParser()
 
-    plot_parasitemia(parasitemia, bounds)
+    parser.add_argument('parasitemia')
+    parser.add_argument('error')
+    parser.add_argument('-f', '--filename')
+
+    args = parser.parse_args()
+    parasitemia = int(args.parasitemia)
+    err = int(args.error)
+
+    bounds = [
+        parasitemia -  err,
+        parasitemia + err,
+    ]
+
+    fig = plot_parasitemia(parasitemia, bounds)
+
+    if args.filename:
+        plt.savefig(args.filename)
+        print(f"Saved figure to {args.filename}")
 
     # plt.tight_layout()
     plt.show()
