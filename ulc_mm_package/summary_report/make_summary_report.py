@@ -20,7 +20,9 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     CLASS_IDS_FOR_THUMBNAILS,
     ASEXUAL_PARASITE_CLASS_IDS,
 )
-from ulc_mm_package.summary_report.parasitemia_visualization import make_parasitemia_plot
+from ulc_mm_package.summary_report.parasitemia_visualization import (
+    make_parasitemia_plot,
+)
 
 from stats_utils.compensator import CountCompensator
 
@@ -38,7 +40,7 @@ def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
     """Format raw cell counts for display in summary report"""
     # Express parasite classes as percent of total parasites
     total_parasites = np.sum(cell_counts[ASEXUAL_PARASITE_CLASS_IDS])
-    
+
     if total_parasites > 0:
         str_cell_counts = [
             f"{ct} ({ct / total_parasites * 100.0:.3f}% of parasites)"
