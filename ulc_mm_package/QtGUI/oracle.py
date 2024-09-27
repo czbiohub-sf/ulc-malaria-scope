@@ -158,37 +158,18 @@ class Oracle(Machine):
             self.liveview_window.update_tcp(tcp_addr)
             send_ngrok_email()
         except NgrokError as e:
-            message_result = self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH tunnel failed",
-                (
-                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
-                    "The SSH tunnel is only recreated when the scope is rebooted."
-                    '\n\nClick "OK" to continue running without SSH or click "Cancel" to exit.'
-                ),
-                buttons=Buttons.CANCEL,
+            self.logger.warning(
+                f"SSH address could not be found - {e}. This can be safely ignored."
             )
-            if message_result == QMessageBox.Cancel:
-                self.logger.warning(
-                    f"Terminating run because SSH address could not be found - {e}"
-                )
-                sys.exit(1)
-            self.logger.warning(f"SSH address could not be found - {e}")
             self.liveview_window.update_tcp("unavailable")
         except EmailError as e:
-            self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH email failed",
-                (
-                    "Could not automatically email SSH tunnel address. "
-                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
-                    '\n\nClick "OK" to continue running.'
-                ),
-                buttons=Buttons.OK,
+            self.logger.warning(
+                f"SSH address could not be emailed - {e}. This can be safely ignored."
             )
-            self.logger.warning(f"SSH address could not be emailed - {e}")
         except Exception as e:
-            self.logger.warning(f"Unexpected error while setting up TCP: {e}")
+            self.logger.warning(
+                f"Unexpected error while setting up TCP: {e}. This can be safely ignored."
+            )
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):
