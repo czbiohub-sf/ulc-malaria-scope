@@ -461,7 +461,7 @@ if __name__ == "__main__":
         "",
         cell_counts,
         {},
-        parasitemia_file,
+        str(parasitemia_file),
         "",
         "",
         "",
