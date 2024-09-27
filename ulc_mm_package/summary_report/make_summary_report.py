@@ -52,7 +52,7 @@ def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
                     for i, ct in enumerate(cell_counts)
                 ]
             )
-        ] # type:ignore
+        ]  # type:ignore
     else:
         str_cell_counts = [
             f"{ct}" if i in CLASS_IDS_FOR_THUMBNAILS else 0
