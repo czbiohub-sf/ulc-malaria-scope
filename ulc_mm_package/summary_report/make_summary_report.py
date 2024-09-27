@@ -38,10 +38,15 @@ def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
     # Express parasite classes as percent of total parasites
     total_parasites = np.sum(cell_counts[ASEXUAL_PARASITE_CLASS_IDS])
     str_cell_counts = [
-        f'{ct} ({ct / total_parasites * 100.0:.3f}% of parasites)' if i in ASEXUAL_PARASITE_CLASS_IDS else f'{ct}'
+        f"{ct} ({ct / total_parasites * 100.0:.3f}% of parasites)"
+        if i in ASEXUAL_PARASITE_CLASS_IDS
+        else f"{ct}"
         for i, ct in enumerate(
-            [ct if i in CLASS_IDS_FOR_THUMBNAILS else 0 for i, ct in enumerate(cell_counts)
-        ])
+            [
+                ct if i in CLASS_IDS_FOR_THUMBNAILS else 0
+                for i, ct in enumerate(cell_counts)
+            ]
+        )
     ]
 
     # Add class name
@@ -373,7 +378,7 @@ def make_html_report(
     content = template.render(context)
 
     return content
-                
+
 
 def save_html_report(content: str, save_path: Path) -> None:
     """Save the html report (as .html) to a specified location on disk.
@@ -410,25 +415,25 @@ def create_pdf_from_html(path_to_html: Path, save_path: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('path', default='')
+    parser.add_argument("path", default="")
     args = parser.parse_args()
 
     base_path = Path(args.path)
-    html_file = base_path / 'test.html'
-    pdf_file = base_path / 'test.pdf'
+    html_file = base_path / "test.html"
+    pdf_file = base_path / "test.pdf"
 
     # Dummy data
     exp_metadata = {
-        'operator_id': 'MK',
-        'participant_id': '1034',
-        'notes': 'sample only',
-        'flowcell_id': 'A5',
+        "operator_id": "MK",
+        "participant_id": "1034",
+        "notes": "sample only",
+        "flowcell_id": "A5",
     }
     cell_counts = np.array([148293, 123, 12, 3, 1, 523, 472])
 
     # Compensator
     compensator = CountCompensator(
-        'elated-smoke-4492',
+        "elated-smoke-4492",
         clinical=True,
         skip=True,
         conf_thresh=0.9,
@@ -438,18 +443,17 @@ if __name__ == "__main__":
         comp_perc_parasitemia_err,
     ) = compensator.get_res_from_counts(cell_counts)
 
-
     content = make_html_report(
-        'Dummy test',
+        "Dummy test",
         exp_metadata,
-        '',
+        "",
         cell_counts,
         comp_perc_parasitemia,
         comp_perc_parasitemia_err,
         {},
-        '',
-        '',
-        '',
+        "",
+        "",
+        "",
     )
     save_html_report(content, html_file)
     pdf = create_pdf_from_html(html_file, pdf_file)
