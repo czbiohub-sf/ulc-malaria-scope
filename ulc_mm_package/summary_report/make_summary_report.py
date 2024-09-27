@@ -440,7 +440,7 @@ if __name__ == "__main__":
         "notes": "sample only",
         "flowcell_id": "A5",
     }
-    cell_counts = np.array([148293, 121, 0, 0, 1, 523, 472])
+    cell_counts = np.array([1000, 0, 0, 0, 0, 0, 0])
 
     # Compensator
     compensator = CountCompensator(
@@ -467,7 +467,7 @@ if __name__ == "__main__":
         "",
     )
     save_html_report(content, html_file)
-    pdf = create_pdf_from_html(html_file, pdf_file)
+    create_pdf_from_html(html_file, pdf_file)
 
     remove(html_file)
     remove(parasitemia_file)
