@@ -353,9 +353,6 @@ def make_html_report(
         else "-"
     )
 
-    # TODO compute number of parasites
-    format_cell_counts(cell_counts)
-
     context = {
         "css_file": css_path,
         "dataset_name": dataset_name,
