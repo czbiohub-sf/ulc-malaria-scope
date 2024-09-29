@@ -158,37 +158,18 @@ class Oracle(Machine):
             self.liveview_window.update_tcp(tcp_addr)
             send_ngrok_email()
         except NgrokError as e:
-            message_result = self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH tunnel failed",
-                (
-                    "Could not create SSH tunnel, so the scope cannot be accessed remotely. "
-                    "The SSH tunnel is only recreated when the scope is rebooted."
-                    '\n\nClick "OK" to continue running without SSH or click "Cancel" to exit.'
-                ),
-                buttons=Buttons.CANCEL,
+            self.logger.warning(
+                f"SSH address could not be found - {e}. This can be safely ignored."
             )
-            if message_result == QMessageBox.Cancel:
-                self.logger.warning(
-                    f"Terminating run because SSH address could not be found - {e}"
-                )
-                sys.exit(1)
-            self.logger.warning(f"SSH address could not be found - {e}")
             self.liveview_window.update_tcp("unavailable")
         except EmailError as e:
-            self.display_message(
-                QMessageBox.Icon.Warning,
-                "SSH email failed",
-                (
-                    "Could not automatically email SSH tunnel address. "
-                    "If SSH is needed, please use the address printed in the liveviewer or terminal. "
-                    '\n\nClick "OK" to continue running.'
-                ),
-                buttons=Buttons.OK,
+            self.logger.warning(
+                f"SSH address could not be emailed - {e}. This can be safely ignored."
             )
-            self.logger.warning(f"SSH address could not be emailed - {e}")
         except Exception as e:
-            self.logger.warning(f"Unexpected error while setting up TCP: {e}")
+            self.logger.warning(
+                f"Unexpected error while setting up TCP: {e}. This can be safely ignored."
+            )
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):
@@ -327,15 +308,36 @@ class Oracle(Machine):
         self.acquisition.update_infopanel.connect(self.scopeop.update_infopanel)
 
     def _init_ssd(self):
+        self.ext_dir = None
+
         samsung_ext_dir = path.join(SSD_DIR, SSD_NAME)
-        if path.exists(samsung_ext_dir):
+        if path.exists(samsung_ext_dir) and DataStorage.is_there_sufficient_storage(
+            samsung_ext_dir
+        ):
             self.ext_dir = samsung_ext_dir + "/"
+            print(f"Saving data to {self.ext_dir}")
         else:
-            print(
-                f"Could not find '{SSD_NAME}' in {SSD_DIR}. Searching for other folders in this directory."
-            )
+            if not path.exists(samsung_ext_dir):
+                print(
+                    f"'Couldn't find {SSD_NAME}' in {SSD_DIR}. Searching for other folders in this directory."
+                )
+            elif not DataStorage.is_there_sufficient_storage(samsung_ext_dir):
+                print(
+                    f"'{SSD_NAME}' in {SSD_DIR} is out of storage. Searching for other folders in this directory."
+                )
+
             try:
-                self.ext_dir = SSD_DIR + listdir(SSD_DIR)[0] + "/"
+                candidates = listdir(SSD_DIR)
+                for candidate in candidates:
+                    # Check the size of the candidate folder
+                    candidate_path = path.join(SSD_DIR, candidate)
+
+                    # Let's ignore the originally checked folder
+                    if candidate_path != samsung_ext_dir and path.isdir(candidate_path):
+                        if DataStorage.is_there_sufficient_storage(candidate_path):
+                            self.ext_dir = candidate_path + "/"
+                            print(f"Saving data to {self.ext_dir}")
+                            break
             except (FileNotFoundError, IndexError):
                 print(
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
@@ -348,20 +350,19 @@ class Oracle(Machine):
                     buttons=Buttons.OK,
                 )
                 sys.exit(1)
-        print(f"Saving data to {self.ext_dir}")
 
-        if not DataStorage.is_there_sufficient_storage(self.ext_dir):
+        if not self.ext_dir:
             self.ssd_full_msg_and_exit()
             sys.exit(1)
 
     def ssd_full_msg_and_exit(self):
         print(
-            "The SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            "Couldn't find any folders in /media/pi with sufficient storage. Please eject and replace the SSD with a new one. Thank you!"
         )
         self.display_message(
             QMessageBox.Icon.Critical,
-            "SSD is full",
-            "The SSD is full. Data cannot be saved if the SSD is full. Please eject and then replace the SSD with a new one. Thank you!"
+            "No available storage folders",
+            "Couldn't find any folders in /media/pi with sufficient storage. Please eject and replace the SSD with a new one. Thank you!"
             + _ERROR_MSG,
             buttons=Buttons.OK,
         )

@@ -79,7 +79,7 @@ class CameraOptions(Enum):
         elif self == CameraOptions.SIMULATED:
             # FIXME: if 'avt' in videopath, assume it is an avt vid
             # a bit hacky, but workable for just sim mode
-            assert VIDEO_PATH is not None
+            # assert VIDEO_PATH is not None
             if "avt" in str(VIDEO_PATH):
                 return ImageDims(height=772, width=1032)
             return ImageDims(height=600, width=800)
