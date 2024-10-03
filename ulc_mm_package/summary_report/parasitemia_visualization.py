@@ -120,7 +120,16 @@ def make_parasitemia_plot(parasitemia, err, savefile):
         fontweight="bold",
         fontsize=14,
     )
-    ax1.arrow(parasitemia_plot, 10, 0, -3, clip_on=False, head_width=0.025*parasitemia_plot/XLIM[0], head_length=1, length_includes_head=True)
+    ax1.arrow(
+        parasitemia_plot,
+        10,
+        0,
+        -3,
+        clip_on=False,
+        head_width=0.025 * parasitemia_plot / XLIM[0],
+        head_length=1,
+        length_includes_head=True,
+    )
     ax1.text(
         bounds_plot[0] * 0.9, 6.5, bounds_raw[0], ha="right", va="bottom", alpha=0.7
     )
