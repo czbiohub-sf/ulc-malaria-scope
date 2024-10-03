@@ -17,6 +17,7 @@ from ulc_mm_package.scope_constants import CSS_FILE_NAME, DEBUG_REPORT, RBCS_PER
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_PRED_THRESHOLD,
     YOGO_CLASS_LIST,
+    CLASS_IDS_FOR_TABLE_COUNTS,
     CLASS_IDS_FOR_THUMBNAILS,
     ASEXUAL_PARASITE_CLASS_IDS,
 )
@@ -43,12 +44,12 @@ def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
 
     if total_parasites > 0:
         str_cell_counts = [
-            f"{ct} ({ct / total_parasites * 100.0:.3f}% of parasites)"
+            f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
             if i in ASEXUAL_PARASITE_CLASS_IDS
             else f"{ct}"
             for i, ct in enumerate(
                 [
-                    ct if i in CLASS_IDS_FOR_THUMBNAILS else 0
+                    ct if i in CLASS_IDS_FOR_TABLE_COUNTS else 0
                     for i, ct in enumerate(cell_counts)
                 ]
             )
