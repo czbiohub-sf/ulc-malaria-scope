@@ -1,5 +1,5 @@
 import enum
-
+import os
 from pathlib import Path
 
 from ulc_mm_package.neural_nets.neural_network_constants import YOGO_CLASS_IDX_MAP
@@ -48,6 +48,13 @@ SITE_LIST = [
     "Goodlife Kigali",
     "Goodlife Musanze",
 ]
+
+# Reorder the site list to move the environment variable specified default site to the first location
+env_var = os.getenv("DEFAULT_SITE")
+
+if env_var in SITE_LIST:
+    SITE_LIST.insert(0, SITE_LIST.pop(SITE_LIST.index(env_var)))
+
 
 CLINICAL_SAMPLE = "Whole blood (clinical, P. falciparum endemic)"
 CULTURED_SAMPLE = "Lab cultured P. falciparum"

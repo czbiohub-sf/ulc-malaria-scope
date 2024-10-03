@@ -63,3 +63,6 @@ The commands in the file can now be run from the terminal. At the time of writin
 - `lfm_run` - runs `oracle.py`
 - `lfm_dev` - runs `dev_run.py`
 - `send_address` - runs `email_utils.py` (attempts to send the ngrok address to `lfmscope@gmail.com`)
+
+### Setting a default location
+- In `~/.bashrc` add the following environment variable at the bottom of the file: `DEFAULT_SITE='NAME_OF_SITE'`. Note: the specified site MUST already be listed in `ulc_mm_package/QtGUI/gui_constants.py`'s `SITE_LIST` constant.
