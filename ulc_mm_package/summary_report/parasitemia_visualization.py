@@ -118,6 +118,17 @@ def make_parasitemia_plot(parasitemia, err, savefile):
         ha="center",
         va="bottom",
         fontweight="bold",
+        fontsize=14,
+    )
+    ax1.arrow(
+        parasitemia_plot,
+        10,
+        0,
+        -3,
+        clip_on=False,
+        head_width=0.025 * parasitemia_plot / XLIM[0],
+        head_length=1,
+        length_includes_head=True,
     )
     ax1.text(
         bounds_plot[0] * 0.9, 6.5, bounds_raw[0], ha="right", va="bottom", alpha=0.7
@@ -155,7 +166,7 @@ def make_parasitemia_plot(parasitemia, err, savefile):
     ax1.xaxis.set_major_locator(FixedLocator(filtered_major_ticks))
     ax1.xaxis.set_minor_locator(FixedLocator(filtered_minor_ticks))
 
-    fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
+    fig.subplots_adjust(left=0.1, right=0.9, top=0.8, bottom=0.1)
     fig.tight_layout()
     plt.savefig(savefile)
 
