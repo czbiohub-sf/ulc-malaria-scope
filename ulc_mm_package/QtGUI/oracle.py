@@ -589,7 +589,9 @@ class Oracle(Machine):
             "exposure"
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
-        self.experiment_metadata["autofocus_model"] = Path(AUTOFOCUS_MODEL_DIR).parent.stem
+        self.experiment_metadata["autofocus_model"] = Path(
+            AUTOFOCUS_MODEL_DIR
+        ).parent.stem
         self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).parent.stem
         try:
             (
