@@ -143,7 +143,7 @@ class FormGUI(QDialog):
 
         # Set the focus order
         self.operator_val.setFocus()
-        self.operator_val.setFocusPolicy(Qt.StrongFocus)
+        # self.operator_val.setFocusPolicy(Qt.StrongFocus)
 
     def unfreeze_buttons(self):
         self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
@@ -169,7 +169,7 @@ class FormGUI(QDialog):
 
         # Set the focus order
         self.operator_val.setFocus()
-        self.operator_val.setFocusPolicy(Qt.StrongFocus)
+        # self.operator_val.setFocusPolicy(Qt.StrongFocus)
 
     def get_form_input(self) -> dict:
         form_metadata = {
