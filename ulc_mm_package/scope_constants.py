@@ -158,6 +158,7 @@ EXPERIMENT_METADATA_KEYS = [
     "git_commit",
     "autofocus_model",
     "yogo_model",
+    "ambient_pressure",
 ]
 
 PER_IMAGE_METADATA_KEYS = [
