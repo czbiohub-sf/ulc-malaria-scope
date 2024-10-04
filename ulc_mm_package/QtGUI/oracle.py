@@ -589,8 +589,8 @@ class Oracle(Machine):
             "exposure"
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
-        self.experiment_metadata["autofocus_model"] = Path(AUTOFOCUS_MODEL_DIR).stem
-        self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).stem
+        self.experiment_metadata["autofocus_model"] = Path(AUTOFOCUS_MODEL_DIR).parent.stem
+        self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).parent.stem
         try:
             (
                 self.experiment_metadata["ambient_pressure"],
@@ -598,6 +598,7 @@ class Oracle(Machine):
             ) = self.scopeop.mscope.pneumatic_module.getPressure()
         except PressureSensorStaleValue as e:
             self.experiment_metadata["ambient_pressure"] = "STALE"
+            self.logger.info(f"Stale pressure sensor value - {e}")
 
         # TODO try a cleaner solution than nested try-excepts?
         # On Git branch
