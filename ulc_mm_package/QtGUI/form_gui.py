@@ -122,6 +122,14 @@ class FormGUI(QDialog):
         # Set tab behavior
         self.notes_val.setTabChangesFocus(True)
 
+        # Save all txtbox widgets
+        txtboxes = [
+            self.operator_val,
+            self.participant_val,
+            self.flowcell_val,
+            self.notes_val,
+        ]
+
         # Place widgets
         self.main_layout.addWidget(self.operator_lbl, 0, 0)
         self.main_layout.addWidget(self.participant_lbl, 1, 0)
@@ -144,6 +152,9 @@ class FormGUI(QDialog):
         # Set the focus order
         self.operator_val.setFocus()
         # self.operator_val.setFocusPolicy(Qt.StrongFocus)
+        for txtbox in txtboxes:
+            txtbox.setFocusPolicy(Qt.StrongFocus)
+
 
         self.start_btn.setDefault(False)
         self.exit_btn.setDefault(False)
