@@ -592,10 +592,13 @@ class Oracle(Machine):
         self.experiment_metadata["autofocus_model"] = Path(AUTOFOCUS_MODEL_DIR).stem
         self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).stem
         try:
-            (self.experiment_metadata["ambient_pressure"], _) = self.scopeop.mscope.pneumatic_module.getPressure()
+            (
+                self.experiment_metadata["ambient_pressure"],
+                _,
+            ) = self.scopeop.mscope.pneumatic_module.getPressure()
         except PressureSensorStaleValue as e:
             self.experiment_metadata["ambient_pressure"] = "STALE"
-            
+
         # TODO try a cleaner solution than nested try-excepts?
         # On Git branch
         try:
