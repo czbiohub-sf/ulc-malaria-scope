@@ -142,8 +142,8 @@ class FormGUI(QDialog):
         self.main_layout.addWidget(self.msg_lbl, 7, 0, 1, 2)
 
         # Set the focus order
-        self.operator_val.setFocus()
-        self.start_btn.setDefault(True)
+        self.operator_val.setFocus(Qt.StrongFocus)
+        # self.start_btn.setDefault(True)
 
     def unfreeze_buttons(self):
         self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
