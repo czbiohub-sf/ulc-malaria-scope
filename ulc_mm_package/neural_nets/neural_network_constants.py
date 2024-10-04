@@ -31,7 +31,7 @@ YOGO_AREA_FILTER_NORMED = YOGO_AREA_FILTER / (
 )
 YOGO_PRED_THRESHOLD = 0.5
 YOGO_CONF_THRESHOLD = (
-    0.99  # TODO: adaptive confidence threshold based on clinical or cultured use case
+    0.95  # TODO: adaptive confidence threshold based on clinical or cultured use case
 )
 YOGO_MODEL_NAME = "elated-smoke-4492"
 YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best.xml")
@@ -60,13 +60,19 @@ ASEXUAL_PARASITE_CLASS_IDS: List[int] = [
     YOGO_CLASS_IDX_MAP["trophozoite"],
     YOGO_CLASS_IDX_MAP["schizont"],
 ]
-CLASS_IDS_FOR_THUMBNAILS: List[int] = [
+CLASS_IDS_FOR_TABLE_COUNTS: List[int] = [
     YOGO_CLASS_IDX_MAP["healthy"],
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],
     YOGO_CLASS_IDX_MAP["schizont"],
     YOGO_CLASS_IDX_MAP["gametocyte"],
     YOGO_CLASS_IDX_MAP["wbc"],
+]
+CLASS_IDS_FOR_THUMBNAILS: List[int] = [
+    YOGO_CLASS_IDX_MAP["healthy"],
+    YOGO_CLASS_IDX_MAP["ring"],
+    YOGO_CLASS_IDX_MAP["trophozoite"],
+    YOGO_CLASS_IDX_MAP["schizont"],
 ]
 
 # best way to find this number is to look for input shape in the model definition xml file
