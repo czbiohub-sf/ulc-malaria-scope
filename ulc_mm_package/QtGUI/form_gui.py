@@ -141,10 +141,6 @@ class FormGUI(QDialog):
 
         self.main_layout.addWidget(self.msg_lbl, 7, 0, 1, 2)
 
-        # Set the focus order
-        self.operator_val.setFocus(Qt.StrongFocus)
-        # self.start_btn.setDefault(True)
-
     def unfreeze_buttons(self):
         self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
 
@@ -166,6 +162,10 @@ class FormGUI(QDialog):
         self.participant_val.setEnabled(True)
         self.flowcell_val.setEnabled(True)
         self.notes_val.setEnabled(True)
+
+        # Set the focus order
+        self.operator_val.setFocus()
+        self.operator_val.setFocusPolicy(Qt.StrongFocus)
 
     def get_form_input(self) -> dict:
         form_metadata = {
@@ -199,5 +199,6 @@ if __name__ == "__main__":
 
     print(gui.get_form_input())
 
+    gui.unfreeze_buttons()
     gui.show()
     sys.exit(app.exec_())
