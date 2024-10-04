@@ -44,6 +44,7 @@ from ulc_mm_package.scope_constants import (
     RESEARCH_USE_ONLY,
 )
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.hardware.pneumatic_module import PressureSensorStaleValue
 from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
@@ -69,6 +70,7 @@ from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
+
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
@@ -589,8 +591,18 @@ class Oracle(Machine):
             "exposure"
         ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
-        self.experiment_metadata["autofocus_model"] = Path(AUTOFOCUS_MODEL_DIR).stem
-        self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).stem
+        self.experiment_metadata["autofocus_model"] = Path(
+            AUTOFOCUS_MODEL_DIR
+        ).parent.stem
+        self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).parent.stem
+        try:
+            (
+                self.experiment_metadata["ambient_pressure"],
+                _,
+            ) = self.scopeop.mscope.pneumatic_module.getPressure()
+        except PressureSensorStaleValue as e:
+            self.experiment_metadata["ambient_pressure"] = "STALE"
+            self.logger.info(f"Stale pressure sensor value - {e}")
 
         # TODO try a cleaner solution than nested try-excepts?
         # On Git branch
