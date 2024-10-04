@@ -44,6 +44,7 @@ from ulc_mm_package.scope_constants import (
     RESEARCH_USE_ONLY,
 )
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
+from ulc_mm_package.hardware.pneumatic_module import PressureSensorStaleValue
 from ulc_mm_package.image_processing.data_storage import DataStorage
 from ulc_mm_package.image_processing.processing_constants import (
     TOP_PERC_TARGET_VAL,
@@ -69,6 +70,7 @@ from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
+
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
@@ -585,9 +587,9 @@ class Oracle(Machine):
         # Assign other metadata parameters
         self.experiment_metadata["scope"] = socket.gethostname()
         self.experiment_metadata["camera"] = CAMERA_SELECTION.name
-        self.experiment_metadata["exposure"] = (
-            self.scopeop.mscope.camera.exposureTime_ms
-        )
+        self.experiment_metadata[
+            "exposure"
+        ] = self.scopeop.mscope.camera.exposureTime_ms
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
         self.experiment_metadata["autofocus_model"] = Path(
             AUTOFOCUS_MODEL_DIR
