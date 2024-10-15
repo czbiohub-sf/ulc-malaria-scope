@@ -124,6 +124,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.routines = Routines()
 
+        self.ambient_pressure = None
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
@@ -327,7 +328,8 @@ class ScopeOp(QObject, NamedMachine):
             self.default_error.emit(
                 "Hardware pre-check failed",
                 "The following component(s) could not be instantiated: "
-                f"{', '.join(failed_components).capitalize()}.",
+                f"{', '.join(failed_components).capitalize()}."
+                "\n\nPlease contact Biohub.",
                 ERROR_BEHAVIORS.PRECHECK.value,
             )
             self.precheck_error.emit()
@@ -339,6 +341,9 @@ class ScopeOp(QObject, NamedMachine):
 
     def lid_closed_handler(self, *args):
         self.lid_opened = False
+
+    def set_ambient_pressure(self, ambient_pressure):
+        self.ambient_pressure = ambient_pressure
 
     def start(self):
         self.running = True
@@ -399,7 +404,8 @@ class ScopeOp(QObject, NamedMachine):
     def _check_pressure_seal(self, *args):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
         try:
-            pdiff = self.routines.checkPressureDifference(self.mscope)
+            final_pressure = self.routines.checkPressureDifference(self.mscope)
+            pdiff = self.ambient_pressure - final_pressure
             self.logger.info(
                 f"Passed pressure check. Pressure difference = {pdiff} hPa."
             )
@@ -414,11 +420,15 @@ class ScopeOp(QObject, NamedMachine):
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
         except PressureLeak as e:
-            self.logger.error(f"Improper seal / pressure leak detected - {e}")
+            pdiff = self.ambient_pressure - final_pressure
+            self.logger.error(
+                "Improper seal / pressure leak detected. "
+                f"Pressure difference = {pdiff} hPa.- {e}"
+            )
             # TODO provide instructions for dealing with pressure leak?
             self.default_error.emit(
                 "Calibration failed",
-                "Improper seal / pressure leak detected.",
+                f"Improper seal / pressure leak detected. Pressure difference = {pdiff} hPa.",
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
 

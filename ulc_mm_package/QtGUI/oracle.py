@@ -202,6 +202,8 @@ class Oracle(Machine):
 
         self.liveview_window.set_infopanel_vals()
 
+        self.ambient_pressure = None
+
         # Lid handler
         self.lid_handler_enabled = False
 
@@ -566,6 +568,13 @@ class Oracle(Machine):
         self.form_window.showMaximized()
 
     def _end_setup(self, *args):
+        try:
+            self.ambient_pressure, _ = self.scopeop.mscope.pneumatic_module.getPressure()
+        except PressureSensorStaleValue as e:
+            self.logger.warning(f"Stale value from pressure sensor: {e}")
+
+        self.scopeop.set_ambient_pressure(self.ambient_pressure)
+
         self.form_window.unfreeze_buttons()
 
     def _start_form(self, *args):
@@ -595,14 +604,7 @@ class Oracle(Machine):
             AUTOFOCUS_MODEL_DIR
         ).parent.stem
         self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).parent.stem
-        try:
-            (
-                self.experiment_metadata["ambient_pressure"],
-                _,
-            ) = self.scopeop.mscope.pneumatic_module.getPressure()
-        except PressureSensorStaleValue as e:
-            self.experiment_metadata["ambient_pressure"] = "STALE"
-            self.logger.info(f"Stale pressure sensor value - {e}")
+        self.experiment_metadata["ambient_pressure"] = self.ambient_pressure
 
         # TODO try a cleaner solution than nested try-excepts?
         # On Git branch

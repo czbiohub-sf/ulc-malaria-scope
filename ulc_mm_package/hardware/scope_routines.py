@@ -380,7 +380,7 @@ class Routines:
                 autobrightness.autobrightness_pid_control(img)
                 curr_img_brightness = autobrightness.prev_mean_img_brightness
 
-    def checkPressureDifference(self, mscope: MalariaScope) -> float:
+    def checkPressureDifference(self, mscope: MalariaScope, ambient_pressure: float) -> float:
         """Check the pressure differential. Raises an exception if difference is insufficent
         or if the pressure sensor cannot be read.
 
@@ -397,14 +397,6 @@ class Routines:
             Raised if the pressure difference between the fully extended and retracted syringe is insufficient.
         """
 
-        # Record pre-pull pressure
-        try:
-            initial_pressure, _ = mscope.pneumatic_module.getPressureMaxReadAttempts(
-                max_attempts=10
-            )
-        except PressureSensorBusy:
-            raise
-
         # Move syringe to its maximally extended (lowest) position
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
 
@@ -417,18 +409,18 @@ class Routines:
             raise
 
         # Check if there is a pressure leak
-        pressure_diff = initial_pressure - final_pressure
+        pressure_diff = ambient_pressure - final_pressure
         if pressure_diff < MIN_PRESSURE_DIFF:
             raise PressureLeak(
                 f"Pressure leak detected, could only generate {pressure_diff:.3f} hPa pressure differential."
             )
+            return final_pressure
         else:
             # Return syringe to its initial position
             mscope.pneumatic_module.setDutyCycle(
                 mscope.pneumatic_module.getMaxDutyCycle()
             )
-
-            return pressure_diff
+            return final_pressure
 
     @init_generator
     def find_cells_routine(
