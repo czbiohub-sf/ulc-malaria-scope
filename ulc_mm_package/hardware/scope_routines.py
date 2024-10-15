@@ -539,6 +539,16 @@ class Routines:
                         return cell_finder.get_cells_found_position()
                     except NoCellsFound:
                         pass
+            else:
+                # Move to the bottom and do a full sweep
+                for pos in range(mscope.motor.max_pos, 0, -steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
 
             # The below only runs if the function didn't return early in the for loop above
             max_attempts -= 1
