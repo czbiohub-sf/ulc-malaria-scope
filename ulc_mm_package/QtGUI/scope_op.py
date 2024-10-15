@@ -420,7 +420,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration failed",
                 "Failed to read pressure sensor to perform pressure seal check."
                 ERROR_BEHAVIORS.NO_RELOAD.value,
-                QR.PRESSURE.value,
+                QR.PRESSURE_READ.value,
             )
         except PressureLeak as e:
             pdiff = self.ambient_pressure - final_pressure
@@ -432,7 +432,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration failed",
                 f"Improper seal / pressure leak detected. Pressure difference = {pdiff} hPa."
                 ERROR_BEHAVIORS.RELOAD.value,
-                QR.PRESSURE.value,
+                QR.PRESSURE_LEAK.value,
             )
 
     def _start_cellfinder(self, *args):
@@ -606,7 +606,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration failed",
                 "LED is too dim to run experiment."
                 ERROR_BEHAVIORS.RELOAD.value,
-                QR.LED.value,
+                QR.LED_DIM.value,
             )
         except LEDNoPower as e:
             if not SIMULATION:
@@ -615,7 +615,7 @@ class ScopeOp(QObject, NamedMachine):
                     "Calibration failed",
                     "Did not pass the off/on LED test."
                     ERROR_BEHAVIORS.NO_RELOAD.value,
-                    QR.LED.value,
+                    QR.LED_OFF.value,
                 )
             else:
                 if self.state in {
@@ -719,7 +719,7 @@ class ScopeOp(QObject, NamedMachine):
                         "Calibration failed",
                         "Unable to achieve focus because the stage has reached its range of motion limit."
                         ERROR_BEHAVIORS.RELOAD.value,
-                        QR.focus.value,
+                        QR.FOCUS.value,
                     )
         else:
             self.last_img = img
@@ -767,7 +767,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration issue",
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                 ERROR_BEHAVIORS.FLOWCONTROL.value,
-                QR.FLOW.value,,
+                QR.FLOWRATE.value,,
             )
         except Exception as e:
             self.logger.error(f"Unexpected exception in fastflow - {e}")
@@ -775,7 +775,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Closed loop control failed",
                 "Unexpected exception in flow control routine.",
                 ERROR_BEHAVIORS.NO_RELOAD.value,
-                QR.FLOW.value,
+                QR.EXCEPTION.value,
             )
         else:
             if self.running:

@@ -26,11 +26,14 @@ class ERROR_BEHAVIORS(enum.Enum):
 QR_loc = Path(__file__).parent.resolve() / "gui_images" / QR
 
 class QR(enum.Enum):
-    PRESSURE =  QR_loc / 'pressure.png'
-    LED = QR_loc / 'led.png'
-    NO_CELLS = QR_loc / 'no_cells.png'
+    PRESSURE_LEAK =  QR_loc / 'pressure-leak.png'
+    PRESSURE_READ =  QR_loc / 'pressure-read.png'
+    LED_OFF = QR_loc / 'led-off.png'
+    LED_DIM = QR_loc / 'led-dim.png'
+    NO_CELLS = QR_loc / 'no-cells.png'
     FOCUS = QR_loc / 'focus.png'
-    FLOW = QR_loc / 'flow.png'
+    FLOWRATE = QR_loc / 'flowrate.png'
+    EXCEPTION = QR_loc / 'exception.png'
 
 
 # ================ State machine verification ================ #
