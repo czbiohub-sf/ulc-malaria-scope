@@ -16,9 +16,21 @@ class STATUS(enum.Enum):
 
 # ================ Oracle error options ================ #
 class ERROR_BEHAVIORS(enum.Enum):
-    DEFAULT = 0
-    PRECHECK = 1
-    FLOWCONTROL = 2
+    NO_RELOAD = 0
+    RELOAD = 1
+    PRECHECK = 2
+    FLOWCONTROL = 3
+
+
+# ================ QR codes ================ #
+QR_loc = Path(__file__).parent.resolve() / "gui_images" / QR
+
+class QR(enum.Enum):
+    PRESSURE =  QR_loc / 'pressure.png'
+    LED = QR_loc / 'led.png'
+    NO_CELLS = QR_loc / 'no_cells.png'
+    FOCUS = QR_loc / 'focus.png'
+    FLOW = QR_loc / 'flow.png'
 
 
 # ================ State machine verification ================ #

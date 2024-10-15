@@ -469,13 +469,28 @@ class Oracle(Machine):
             self.lid_handler_enabled = False
             self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
-    def error_handler(self, title, text, behavior):
-        if behavior == ERROR_BEHAVIORS.DEFAULT.value:
+    def error_handler(self, title, text, behavior, QR_code):
+        if behavior == ERROR_BEHAVIORS.NO_RELOAD.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + _ERROR_MSG,
+                text 
+                + "\n\nScan QR code to troubleshoot."
+                + _ERROR_MSG,
                 buttons=Buttons.OK,
+                image=QR_code,
+            )
+            self.scopeop.to_intermission("Ending experiment due to error.")
+
+        elif behavior == ERROR_BEHAVIORS.NO_RELOAD.value:
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                title,
+                text 
+                + "\n\nLoad a new flow cell. If problem persists, scan QR code to troubleshoot."
+                + _ERROR_MSG,
+                buttons=Buttons.OK,
+                image=QR_code,
             )
             self.scopeop.to_intermission("Ending experiment due to error.")
 
@@ -485,6 +500,7 @@ class Oracle(Machine):
                 title,
                 text + _ERROR_MSG,
                 buttons=Buttons.OK,
+                image=QR_code,
             )
 
         elif behavior == ERROR_BEHAVIORS.FLOWCONTROL.value:
@@ -494,6 +510,7 @@ class Oracle(Machine):
                 text
                 + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
                 buttons=Buttons.YN,
+                image=QR_code,
             )
             if message_result == QMessageBox.No:
                 self.scopeop.to_intermission("Ending experiment due to error.")

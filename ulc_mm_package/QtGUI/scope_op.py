@@ -63,6 +63,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
 from ulc_mm_package.scope_constants import (
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
+    QR,
 )
 
 # TODO populate info?
@@ -328,9 +329,10 @@ class ScopeOp(QObject, NamedMachine):
             self.default_error.emit(
                 "Hardware pre-check failed",
                 "The following component(s) could not be instantiated: "
-                f"{', '.join(failed_components).capitalize()}."
-                "\n\nPlease contact Biohub.",
+                + "\n\nPlease contact Biohub."
+                f"{', '.join(failed_components).capitalize()}.",
                 ERROR_BEHAVIORS.PRECHECK.value,
+                None,
             )
             self.precheck_error.emit()
 
@@ -416,8 +418,9 @@ class ScopeOp(QObject, NamedMachine):
             # TODO What to do in a case where the sensor is acting funky?
             self.default_error.emit(
                 "Calibration failed",
-                "Failed to read pressure sensor to perform pressure seal check.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                "Failed to read pressure sensor to perform pressure seal check."
+                ERROR_BEHAVIORS.NO_RELOAD.value,
+                QR.PRESSURE.value,
             )
         except PressureLeak as e:
             pdiff = self.ambient_pressure - final_pressure
@@ -425,11 +428,11 @@ class ScopeOp(QObject, NamedMachine):
                 "Improper seal / pressure leak detected. "
                 f"Pressure difference = {pdiff} hPa.- {e}"
             )
-            # TODO provide instructions for dealing with pressure leak?
             self.default_error.emit(
                 "Calibration failed",
-                f"Improper seal / pressure leak detected. Pressure difference = {pdiff} hPa.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                f"Improper seal / pressure leak detected. Pressure difference = {pdiff} hPa."
+                ERROR_BEHAVIORS.RELOAD.value,
+                QR.PRESSURE.value,
             )
 
     def _start_cellfinder(self, *args):
@@ -601,16 +604,18 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.default_error.emit(
                 "Calibration failed",
-                "LED is too dim to run experiment.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                "LED is too dim to run experiment."
+                ERROR_BEHAVIORS.RELOAD.value,
+                QR.LED.value,
             )
         except LEDNoPower as e:
             if not SIMULATION:
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
                 self.default_error.emit(
                     "Calibration failed",
-                    "Did not pass the off/on LED test.",
-                    ERROR_BEHAVIORS.DEFAULT.value,
+                    "Did not pass the off/on LED test."
+                    ERROR_BEHAVIORS.NO_RELOAD.value,
+                    QR.LED.value,
                 )
             else:
                 if self.state in {
@@ -644,8 +649,9 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.error("Cellfinder failed. No cells found.")
             self.default_error.emit(
                 "Calibration failed",
-                "No cells found.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                "No cells found."
+                ERROR_BEHAVIORS.RELOAD.value,
+                QR.NO_CELLS.value,
             )
         else:
             if self.running:
@@ -711,8 +717,9 @@ class ScopeOp(QObject, NamedMachine):
                     )
                     self.default_error.emit(
                         "Calibration failed",
-                        "Unable to achieve focus because the stage has reached its range of motion limit.",
-                        ERROR_BEHAVIORS.DEFAULT.value,
+                        "Unable to achieve focus because the stage has reached its range of motion limit."
+                        ERROR_BEHAVIORS.RELOAD.value,
+                        QR.focus.value,
                     )
         else:
             self.last_img = img
@@ -760,13 +767,15 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration issue",
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                 ERROR_BEHAVIORS.FLOWCONTROL.value,
+                QR.FLOW.value,,
             )
         except Exception as e:
             self.logger.error(f"Unexpected exception in fastflow - {e}")
             self.default_error.emit(
                 "Closed loop control failed",
                 "Unexpected exception in flow control routine.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                ERROR_BEHAVIORS.NO_RELOAD.value,
+                QR.FLOW.value,
             )
         else:
             if self.running:
@@ -877,7 +886,8 @@ class ScopeOp(QObject, NamedMachine):
                 self.default_error.emit(
                     "Closed loop control failed",
                     "Unable to achieve desired focus within condenser's depth of field.",
-                    ERROR_BEHAVIORS.DEFAULT.value,
+                    ERROR_BEHAVIORS.RELOAD.value,
+                    QR.FOCUS.value,
                 )
                 return
             else:
