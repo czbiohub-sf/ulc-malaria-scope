@@ -590,7 +590,7 @@ class ScopeOp(QObject, NamedMachine):
                 f"Autobrightness failed. Mean pixel value = {e.value}.",
             )
             self.default_error.emit(
-                "Autobrightness failed",
+                "Calibration failed",
                 "LED is too dim to run experiment.",
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
@@ -598,8 +598,8 @@ class ScopeOp(QObject, NamedMachine):
             if not SIMULATION:
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
                 self.default_error.emit(
-                    "LED failure",
-                    "The off/on LED test failed.",
+                    "Calibration failed",
+                    "Did not pass the off/on LED test.",
                     ERROR_BEHAVIORS.DEFAULT.value,
                 )
             else:
@@ -701,7 +701,7 @@ class ScopeOp(QObject, NamedMachine):
                     )
                     self.default_error.emit(
                         "Calibration failed",
-                        "Unable to achieve focus because the stage has reached its range of motion limit..",
+                        "Unable to achieve focus because the stage has reached its range of motion limit.",
                         ERROR_BEHAVIORS.DEFAULT.value,
                     )
         else:
@@ -754,7 +754,7 @@ class ScopeOp(QObject, NamedMachine):
         except Exception as e:
             self.logger.error(f"Unexpected exception in fastflow - {e}")
             self.default_error.emit(
-                "Flow control failed",
+                "Closed loop control failed",
                 "Unexpected exception in flow control routine.",
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
@@ -865,7 +865,7 @@ class ScopeOp(QObject, NamedMachine):
                     "Autofocus failed. Can't achieve focus within condenser's depth of field."
                 )
                 self.default_error.emit(
-                    "Autofocus failed",
+                    "Closed loop control failed",
                     "Unable to achieve desired focus within condenser's depth of field.",
                     ERROR_BEHAVIORS.DEFAULT.value,
                 )
