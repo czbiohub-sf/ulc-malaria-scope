@@ -540,8 +540,18 @@ class Routines:
                     except NoCellsFound:
                         pass
             else:
-                # Move to the bottom and do a full sweep
-                for pos in range(mscope.motor.max_pos, 0, -steps_per_image):
+                # Move from the current position to the bottom sweep as we're going down
+                for pos in range(mscope.motor.pos, 0, -steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
+
+                # If cells not found on the way down, sweep all the way back up
+                for pos in range(0, mscope.motor.max_pos, steps_per_image):
                     mscope.motor.move_abs(pos)
                     img = yield
                     cell_finder.add_image(mscope.motor.pos, img)
