@@ -503,6 +503,9 @@ class Routines:
                 raise NoCellsFound()
 
             # Pull the syringe maximally for `pull_time` seconds
+
+            # The syringe pull step is only skipped when this function is called from an OOF exception
+            # in which case, cells are already present, we just need to sweep the motor to find them
             if not (skip_syringe_pull):
                 start = perf_counter()
                 mscope.pneumatic_module.setDutyCycle(
@@ -516,14 +519,46 @@ class Routines:
                 )
 
             # Perform a full focal stack and get the cross-correlation value for each image
-            for pos in range(0, mscope.motor.max_pos, steps_per_image):
-                mscope.motor.move_abs(pos)
-                img = yield
-                cell_finder.add_image(mscope.motor.pos, img)
-                try:
-                    return cell_finder.get_cells_found_position()
-                except NoCellsFound:
-                    pass
+
+            # If we're currently at the bottom, do the bottom-up sweep. Otherwise, do the top-down sweep.
+            if mscope.motor.pos == 0:
+                for pos in range(0, mscope.motor.max_pos, steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
+            elif mscope.motor.pos == mscope.motor.max_pos:
+                for pos in range(mscope.motor.max_pos, 0, -steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
+            else:
+                # Move from the current position to the bottom sweep as we're going down
+                for pos in range(mscope.motor.pos, 0, -steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
+
+                # If cells not found on the way down, sweep all the way back up
+                for pos in range(0, mscope.motor.max_pos, steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
 
             # The below only runs if the function didn't return early in the for loop above
             max_attempts -= 1
