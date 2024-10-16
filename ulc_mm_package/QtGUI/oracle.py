@@ -475,9 +475,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text 
-                + "\n\nScan QR code to troubleshoot."
-                + _ERROR_MSG,
+                text + "\n\nScan QR code to troubleshoot." + _ERROR_MSG,
                 buttons=Buttons.OK,
                 image=QR_code,
             )
@@ -487,7 +485,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text 
+                text
                 + "\n\nLoad a new flow cell. If problem persists, scan QR code to troubleshoot."
                 + _ERROR_MSG,
                 buttons=Buttons.OK,
@@ -597,7 +595,10 @@ class Oracle(Machine):
 
     def _end_setup(self, *args):
         try:
-            self.ambient_pressure, _ = self.scopeop.mscope.pneumatic_module.getPressure()
+            (
+                self.ambient_pressure,
+                _,
+            ) = self.scopeop.mscope.pneumatic_module.getPressure()
         except PressureSensorStaleValue as e:
             self.logger.warning(f"Stale value from pressure sensor: {e}")
 

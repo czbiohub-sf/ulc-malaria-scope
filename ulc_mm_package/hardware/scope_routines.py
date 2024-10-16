@@ -380,7 +380,9 @@ class Routines:
                 autobrightness.autobrightness_pid_control(img)
                 curr_img_brightness = autobrightness.prev_mean_img_brightness
 
-    def checkPressureDifference(self, mscope: MalariaScope, ambient_pressure: float) -> float:
+    def checkPressureDifference(
+        self, mscope: MalariaScope, ambient_pressure: float
+    ) -> float:
         """Check the pressure differential. Raises an exception if difference is insufficent
         or if the pressure sensor cannot be read.
 
