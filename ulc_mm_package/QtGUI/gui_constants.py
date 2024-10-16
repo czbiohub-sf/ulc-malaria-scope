@@ -35,6 +35,7 @@ class QR(enum.Enum):
     FOCUS = str(QR_loc / "focus.png")
     FLOWRATE = str(QR_loc / "flowrate.png")
     EXCEPTION = str(QR_loc / "exception.png")
+    NONE = ""
 
 
 # ================ State machine verification ================ #

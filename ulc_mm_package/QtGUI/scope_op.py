@@ -328,7 +328,7 @@ class ScopeOp(QObject, NamedMachine):
                 + "\n\nPlease contact Biohub."
                 f"{', '.join(failed_components).capitalize()}.",
                 ERROR_BEHAVIORS.PRECHECK.value,
-                None,
+                QR.NONE.value,
             )
             self.precheck_error.emit()
 
