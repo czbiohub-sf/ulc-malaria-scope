@@ -421,11 +421,11 @@ class ScopeOp(QObject, NamedMachine):
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
         except PressureLeak as e:
-            self.logger.error(e.getMessage())
+            self.logger.error(str(e))
             # TODO provide instructions for dealing with pressure leak?
             self.default_error.emit(
                 "Calibration failed",
-                f"{e.getMessage()}",
+                str(e),
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
 
