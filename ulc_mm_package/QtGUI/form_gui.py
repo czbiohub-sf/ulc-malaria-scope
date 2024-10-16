@@ -82,7 +82,7 @@ class FormGUI(QDialog):
         self.notes_lbl = QLabel("Other notes")
         self.site_lbl = QLabel("Site")
         self.sample_lbl = QLabel("Sample type")
-        self.msg_lbl = QLabel("Hardware initializing, please wait to submit form...")
+        self.msg_lbl = QLabel("Please fill out experiment data.")
 
         # Text boxes
         self.operator_val = QLineEdit()
@@ -101,26 +101,9 @@ class FormGUI(QDialog):
         self.site_val.addItems(SITE_LIST)
         self.sample_val.addItems(SAMPLE_LIST)
 
-        # Disable buttons at startup
-        self.exit_btn.setEnabled(False)
-        self.start_btn.setEnabled(False)
-
-        # Disable [x] button at startup
-        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
-        self.setWindowFlag(Qt.WindowCloseButtonHint, False)
-
-        # Disable text boxes at startup
-        self.operator_val.setDisabled(True)
-        self.participant_val.setDisabled(True)
-        self.flowcell_val.setDisabled(True)
-        self.notes_val.setDisabled(True)
-
-        # Disable dropdown menus at startup
-        self.site_val.setDisabled(True)
-        self.sample_val.setDisabled(True)
-
         # Set tab behavior
         self.notes_val.setTabChangesFocus(True)
+        self.setTabOrder(self.notes_val, self.start_btn)
 
         # Place widgets
         self.main_layout.addWidget(self.operator_lbl, 0, 0)
@@ -144,28 +127,6 @@ class FormGUI(QDialog):
         # Set the focus order
         self.operator_val.setFocus()
         self.start_btn.setDefault(True)
-
-    def unfreeze_buttons(self):
-        self.msg_lbl.setText("Hardware initialized, form can now be submitted.")
-
-        self.setTabOrder(self.notes_val, self.start_btn)
-
-        # Enable buttons
-        self.exit_btn.setEnabled(True)
-        self.start_btn.setEnabled(True)
-
-        # Enable [x] button
-        self.setWindowFlag(Qt.WindowCloseButtonHint, True)
-
-        # Enable dropdown menus
-        self.site_val.setEnabled(True)
-        self.sample_val.setEnabled(True)
-
-        # Enable text boxes
-        self.operator_val.setEnabled(True)
-        self.participant_val.setEnabled(True)
-        self.flowcell_val.setEnabled(True)
-        self.notes_val.setEnabled(True)
 
     def get_form_input(self) -> dict:
         form_metadata = {

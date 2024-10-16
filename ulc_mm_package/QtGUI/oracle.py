@@ -565,10 +565,14 @@ class Oracle(Machine):
         self.scopeop_thread.start()
         self.acquisition_thread.start()
 
-        self.form_window.showMaximized()
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Starting up",
+            "Hardware is initializing, please wait.",
+        )
 
     def _end_setup(self, *args):
-        self.form_window.unfreeze_buttons()
+        self.display_message.close()
 
     def _start_form(self, *args):
         self.form_window.showMaximized()
