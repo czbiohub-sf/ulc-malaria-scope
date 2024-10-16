@@ -27,14 +27,14 @@ QR_loc = Path(__file__).parent.resolve() / "gui_images" / "QR"
 
 
 class QR(enum.Enum):
-    PRESSURE_LEAK = QR_loc / "pressure-leak.png"
-    PRESSURE_READ = QR_loc / "pressure-read.png"
-    LED_OFF = QR_loc / "led-off.png"
-    LED_DIM = QR_loc / "led-dim.png"
-    NO_CELLS = QR_loc / "no-cells.png"
-    FOCUS = QR_loc / "focus.png"
-    FLOWRATE = QR_loc / "flowrate.png"
-    EXCEPTION = QR_loc / "exception.png"
+    PRESSURE_LEAK = str(QR_loc / "pressure-leak.png")
+    PRESSURE_READ = str(QR_loc / "pressure-read.png")
+    LED_OFF = str(QR_loc / "led-off.png")
+    LED_DIM = str(QR_loc / "led-dim.png")
+    NO_CELLS = str(QR_loc / "no-cells.png")
+    FOCUS = str(QR_loc / "focus.png")
+    FLOWRATE = str(QR_loc / "flowrate.png")
+    EXCEPTION = str(QR_loc / "exception.png")
 
 
 # ================ State machine verification ================ #
