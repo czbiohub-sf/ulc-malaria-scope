@@ -532,8 +532,11 @@ class Oracle(Machine):
             # TODO: Mypy doesn't like this because of "too many args" and "alignment"
             layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)  # type: ignore
 
-        message_result = self.message_window.exec()
-        return message_result
+        if buttons is Buttons.NONE:
+            self.message_window.show()
+        else:
+            message_result = self.message_window.exec()
+            return message_result
 
     def close_lid_display_message(self):
         while self.scopeop.lid_opened:
