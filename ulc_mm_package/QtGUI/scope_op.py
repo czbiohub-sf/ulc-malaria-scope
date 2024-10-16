@@ -881,11 +881,11 @@ class ScopeOp(QObject, NamedMachine):
         except MotorControllerError as e:
             if not SIMULATION:
                 self.logger.error(
-                    "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    "Autofocus failed. Can't achieve focus within focal range."
                 )
                 self.default_error.emit(
                     "Closed loop control failed",
-                    "Unable to achieve desired focus within condenser's depth of field.",
+                    "Unable to achieve desired focus within focal range.",
                     ERROR_BEHAVIORS.RELOAD.value,
                     QR.FOCUS.value,
                 )
