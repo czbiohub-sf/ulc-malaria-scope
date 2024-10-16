@@ -16,19 +16,17 @@ from transitions import Machine, State
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
-
 from ulc_mm_package.hardware.scope_routines import Routines
+from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorControllerError
+from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
+from ulc_mm_package.hardware.pneumatic_module import (
+    PressureLeak,
+    PressureSensorStaleValue,
+    PressureSensorBusy,
+)
 
-from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.image_processing.classic_focus import OOF
 from ulc_mm_package.image_processing.focus_metrics import downsample_image
-from ulc_mm_package.scope_constants import (
-    DOWNSAMPLE_FACTOR,
-    PER_IMAGE_METADATA_KEYS,
-    SIMULATION,
-    MAX_FRAMES,
-    VERBOSE,
-)
 from ulc_mm_package.image_processing.flow_control import CantReachTargetFlowrate
 from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
@@ -39,33 +37,32 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     LEDNoPower,
 )
-from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
-from ulc_mm_package.hardware.pneumatic_module import (
-    PressureLeak,
-    PressureSensorStaleValue,
-    PressureSensorBusy,
-)
+
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     AF_BATCH_SIZE,
 )
-
 import ulc_mm_package.neural_nets.utils as nn_utils
 
+from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
+    QR,
 )
+
 from ulc_mm_package.scope_constants import (
+    DOWNSAMPLE_FACTOR,
+    PER_IMAGE_METADATA_KEYS,
+    SIMULATION,
+    MAX_FRAMES,
+    VERBOSE,
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
 )
-
-# TODO populate info?
 
 
 class NamedState(State):
@@ -89,7 +86,7 @@ class ScopeOp(QObject, NamedMachine):
     yield_mscope = pyqtSignal(MalariaScope)
 
     precheck_error = pyqtSignal()
-    default_error = pyqtSignal(str, str, int)
+    default_error = pyqtSignal(str, str, int, str)
 
     reload_pause = pyqtSignal(str, str)
     lid_open_pause = pyqtSignal()
@@ -124,6 +121,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.routines = Routines()
 
+        self.ambient_pressure = None
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
@@ -327,8 +325,10 @@ class ScopeOp(QObject, NamedMachine):
             self.default_error.emit(
                 "Hardware pre-check failed",
                 "The following component(s) could not be instantiated: "
+                + "\n\nPlease contact Biohub."
                 f"{', '.join(failed_components).capitalize()}.",
                 ERROR_BEHAVIORS.PRECHECK.value,
+                QR.NONE.value,
             )
             self.precheck_error.emit()
 
@@ -339,6 +339,9 @@ class ScopeOp(QObject, NamedMachine):
 
     def lid_closed_handler(self, *args):
         self.lid_opened = False
+
+    def set_ambient_pressure(self, ambient_pressure):
+        self.ambient_pressure = ambient_pressure
 
     def start(self):
         self.running = True
@@ -399,7 +402,9 @@ class ScopeOp(QObject, NamedMachine):
     def _check_pressure_seal(self, *args):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
         try:
-            pdiff = self.routines.checkPressureDifference(self.mscope)
+            pdiff = self.routines.checkPressureDifference(
+                self.mscope, self.ambient_pressure
+            )
             self.logger.info(
                 f"Passed pressure check. Pressure difference = {pdiff} hPa."
             )
@@ -411,15 +416,16 @@ class ScopeOp(QObject, NamedMachine):
             self.default_error.emit(
                 "Calibration failed",
                 "Failed to read pressure sensor to perform pressure seal check.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                ERROR_BEHAVIORS.NO_RELOAD.value,
+                QR.PRESSURE_READ.value,
             )
         except PressureLeak as e:
-            self.logger.error(f"Improper seal / pressure leak detected - {e}")
-            # TODO provide instructions for dealing with pressure leak?
+            self.logger.error(str(e))
             self.default_error.emit(
                 "Calibration failed",
-                "Improper seal / pressure leak detected.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                str(e),
+                ERROR_BEHAVIORS.RELOAD.value,
+                QR.PRESSURE_LEAK.value,
             )
 
     def _start_cellfinder(self, *args):
@@ -590,17 +596,19 @@ class ScopeOp(QObject, NamedMachine):
                 f"Autobrightness failed. Mean pixel value = {e.value}.",
             )
             self.default_error.emit(
-                "Autobrightness failed",
+                "Calibration failed",
                 "LED is too dim to run experiment.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                ERROR_BEHAVIORS.RELOAD.value,
+                QR.LED_DIM.value,
             )
         except LEDNoPower as e:
             if not SIMULATION:
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
                 self.default_error.emit(
-                    "LED failure",
-                    "The off/on LED test failed.",
-                    ERROR_BEHAVIORS.DEFAULT.value,
+                    "Calibration failed",
+                    "Did not pass the off/on LED test.",
+                    ERROR_BEHAVIORS.NO_RELOAD.value,
+                    QR.LED_OFF.value,
                 )
             else:
                 if self.state in {
@@ -635,7 +643,8 @@ class ScopeOp(QObject, NamedMachine):
             self.default_error.emit(
                 "Calibration failed",
                 "No cells found.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                ERROR_BEHAVIORS.RELOAD.value,
+                QR.NO_CELLS.value,
             )
         else:
             if self.running:
@@ -701,8 +710,9 @@ class ScopeOp(QObject, NamedMachine):
                     )
                     self.default_error.emit(
                         "Calibration failed",
-                        "Unable to achieve focus because the stage has reached its range of motion limit..",
-                        ERROR_BEHAVIORS.DEFAULT.value,
+                        "Unable to achieve focus because the stage has reached its range of motion limit.",
+                        ERROR_BEHAVIORS.RELOAD.value,
+                        QR.FOCUS.value,
                     )
         else:
             self.last_img = img
@@ -750,13 +760,15 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration issue",
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                 ERROR_BEHAVIORS.FLOWCONTROL.value,
+                QR.FLOWRATE.value,
             )
         except Exception as e:
             self.logger.error(f"Unexpected exception in fastflow - {e}")
             self.default_error.emit(
-                "Flow control failed",
+                "Closed loop control failed",
                 "Unexpected exception in flow control routine.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                ERROR_BEHAVIORS.NO_RELOAD.value,
+                QR.EXCEPTION.value,
             )
         else:
             if self.running:
@@ -865,9 +877,10 @@ class ScopeOp(QObject, NamedMachine):
                     "Autofocus failed. Can't achieve focus within focal range."
                 )
                 self.default_error.emit(
-                    "Autofocus failed",
+                    "Closed loop control failed",
                     "Unable to achieve desired focus within focal range.",
-                    ERROR_BEHAVIORS.DEFAULT.value,
+                    ERROR_BEHAVIORS.RELOAD.value,
+                    QR.FOCUS.value,
                 )
                 return
             else:

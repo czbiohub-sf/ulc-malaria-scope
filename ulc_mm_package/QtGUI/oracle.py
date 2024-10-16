@@ -203,6 +203,8 @@ class Oracle(Machine):
 
         self.liveview_window.set_infopanel_vals()
 
+        self.ambient_pressure = None
+
         # Lid handler
         self.lid_handler_enabled = False
 
@@ -468,13 +470,26 @@ class Oracle(Machine):
             self.lid_handler_enabled = False
             self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
-    def error_handler(self, title, text, behavior):
-        if behavior == ERROR_BEHAVIORS.DEFAULT.value:
+    def error_handler(self, title, text, behavior, QR_code):
+        if behavior == ERROR_BEHAVIORS.NO_RELOAD.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + _ERROR_MSG,
+                text + "\n\nScan QR code to troubleshoot." + _ERROR_MSG,
                 buttons=Buttons.OK,
+                image=QR_code,
+            )
+            self.scopeop.to_intermission("Ending experiment due to error.")
+
+        elif behavior == ERROR_BEHAVIORS.NO_RELOAD.value:
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                title,
+                text
+                + "\n\nLoad a new flow cell. If problem persists, scan QR code to troubleshoot."
+                + _ERROR_MSG,
+                buttons=Buttons.OK,
+                image=QR_code,
             )
             self.scopeop.to_intermission("Ending experiment due to error.")
 
@@ -484,6 +499,7 @@ class Oracle(Machine):
                 title,
                 text + _ERROR_MSG,
                 buttons=Buttons.OK,
+                image=QR_code,
             )
 
         elif behavior == ERROR_BEHAVIORS.FLOWCONTROL.value:
@@ -491,8 +507,10 @@ class Oracle(Machine):
                 QMessageBox.Icon.Critical,
                 title,
                 text
+                + "\n\nScan QR code to troubleshoot."
                 + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
                 buttons=Buttons.YN,
+                image=QR_code,
             )
             if message_result == QMessageBox.No:
                 self.scopeop.to_intermission(
@@ -577,6 +595,16 @@ class Oracle(Machine):
         )
 
     def _end_setup(self, *args):
+        try:
+            (
+                self.ambient_pressure,
+                _,
+            ) = self.scopeop.mscope.pneumatic_module.getPressure()
+        except PressureSensorStaleValue as e:
+            self.logger.warning(f"Stale value from pressure sensor: {e}")
+
+        self.scopeop.set_ambient_pressure(self.ambient_pressure)
+
         self.message_window.close()
 
     def _start_form(self, *args):
@@ -606,14 +634,7 @@ class Oracle(Machine):
             AUTOFOCUS_MODEL_DIR
         ).parent.stem
         self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).parent.stem
-        try:
-            (
-                self.experiment_metadata["ambient_pressure"],
-                _,
-            ) = self.scopeop.mscope.pneumatic_module.getPressure()
-        except PressureSensorStaleValue as e:
-            self.experiment_metadata["ambient_pressure"] = "STALE"
-            self.logger.info(f"Stale pressure sensor value - {e}")
+        self.experiment_metadata["ambient_pressure"] = self.ambient_pressure
 
         # TODO try a cleaner solution than nested try-excepts?
         # On Git branch
