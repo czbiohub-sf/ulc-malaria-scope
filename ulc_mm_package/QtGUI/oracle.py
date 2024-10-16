@@ -569,7 +569,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Starting up",
-            "Hardware is initializing, please wait.",
+            "Hardware is initializing, please wait...",
             buttons=Buttons.NONE,
         )
 
