@@ -421,14 +421,12 @@ class ScopeOp(QObject, NamedMachine):
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
         except PressureLeak as e:
-            self.logger.error(
-                "Improper seal / pressure leak detected. "
-                f"Pressure difference = {pdiff} hPa.- {e}"
+            self.logger.error(e.getMessage()"
             )
             # TODO provide instructions for dealing with pressure leak?
             self.default_error.emit(
                 "Calibration failed",
-                f"Improper seal / pressure leak detected. Pressure difference = {pdiff} hPa.",
+                f"{e.getMessage()}"
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
 

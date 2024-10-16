@@ -414,9 +414,8 @@ class Routines:
         pressure_diff = ambient_pressure - final_pressure
         if pressure_diff < MIN_PRESSURE_DIFF:
             raise PressureLeak(
-                f"Pressure leak detected, could only generate {pressure_diff:.3f} hPa pressure differential."
+                f"Pressure leak detected. Could only generate {pressure_diff:.3f} hPa pressure differential."
             )
-            return pressure_diff
         else:
             # Return syringe to its initial position
             mscope.pneumatic_module.setDutyCycle(
