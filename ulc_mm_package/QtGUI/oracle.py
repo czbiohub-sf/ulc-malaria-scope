@@ -507,6 +507,7 @@ class Oracle(Machine):
                 QMessageBox.Icon.Critical,
                 title,
                 text
+                + "\n\nScan QR code to troubleshoot."
                 + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
                 buttons=Buttons.YN,
                 image=QR_code,
