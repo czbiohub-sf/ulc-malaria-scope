@@ -59,6 +59,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     IMAGE_INSERT_PATH,
     IMAGE_REMOVE_PATH,
     IMAGE_RELOAD_PATH,
+    QR,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -471,23 +472,29 @@ class Oracle(Machine):
             self.scopeop.to_intermission("Ending experiment due to user prompt.")
 
     def error_handler(self, title, text, behavior, QR_code):
+        if QR_code is not QR.NONE.value:
+            if behavior == ERROR_BEHAVIORS.RELOAD.value:
+                QR_msg = "\n\nLoad a new flow cell. If problem persists, scan QR code to troubleshoot."
+            else:
+                QR_msg = "\n\nScan QR code to troubleshoot."
+        else:
+            QR_msg = ""
+
         if behavior == ERROR_BEHAVIORS.NO_RELOAD.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + "\n\nScan QR code to troubleshoot." + _ERROR_MSG,
+                text + QR_msg + _ERROR_MSG,
                 buttons=Buttons.OK,
                 image=QR_code,
             )
             self.scopeop.to_intermission("Ending experiment due to error.")
 
-        elif behavior == ERROR_BEHAVIORS.NO_RELOAD.value:
+        elif behavior == ERROR_BEHAVIORS.RELOAD.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text
-                + "\n\nLoad a new flow cell. If problem persists, scan QR code to troubleshoot."
-                + _ERROR_MSG,
+                text + QR_msg + _ERROR_MSG,
                 buttons=Buttons.OK,
                 image=QR_code,
             )
@@ -497,7 +504,7 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + _ERROR_MSG,
+                text + QR_msg + _ERROR_MSG,
                 buttons=Buttons.OK,
                 image=QR_code,
             )
@@ -507,7 +514,7 @@ class Oracle(Machine):
                 QMessageBox.Icon.Critical,
                 title,
                 text
-                + "\n\nScan QR code to troubleshoot."
+                + QR_msg
                 + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
                 buttons=Buttons.YN,
                 image=QR_code,
