@@ -82,6 +82,7 @@ class Buttons(enum.Enum):
     OK = QMessageBox.Ok
     CANCEL = QMessageBox.Cancel | QMessageBox.Ok
     YN = QMessageBox.No | QMessageBox.Yes
+    NONE = QMessageBox.NoButton
 
 
 class ShutoffApplication(QApplication):
@@ -392,7 +393,7 @@ class Oracle(Machine):
         icon=QMessageBox.Icon.Information,
         title="Pause run?",
         message=(
-            "While paused, you can add more sample to the flow cell. "
+            "While paused, the CAP module can be removed."
             "After pausing, the scope will restart the calibration steps."
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
@@ -496,7 +497,9 @@ class Oracle(Machine):
                 buttons=Buttons.YN,
             )
             if message_result == QMessageBox.No:
-                self.scopeop.to_intermission("Ending experiment due to error.")
+                self.scopeop.to_intermission(
+                    "Ending experiment due to error. Please rerun sample."
+                )
             else:
                 if self.scopeop.state == "fastflow":
                     self.scopeop.next_state()
@@ -531,8 +534,11 @@ class Oracle(Machine):
             # TODO: Mypy doesn't like this because of "too many args" and "alignment"
             layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)  # type: ignore
 
-        message_result = self.message_window.exec()
-        return message_result
+        if buttons is Buttons.NONE:
+            self.message_window.show()
+        else:
+            message_result = self.message_window.exec()
+            return message_result
 
     def close_lid_display_message(self):
         while self.scopeop.lid_opened:
@@ -565,7 +571,12 @@ class Oracle(Machine):
         self.scopeop_thread.start()
         self.acquisition_thread.start()
 
-        self.form_window.showMaximized()
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Starting up",
+            "Hardware is initializing, please wait...",
+            buttons=Buttons.NONE,
+        )
 
     def _end_setup(self, *args):
         try:
@@ -578,7 +589,7 @@ class Oracle(Machine):
 
         self.scopeop.set_ambient_pressure(self.ambient_pressure)
 
-        self.form_window.unfreeze_buttons()
+        self.message_window.close()
 
     def _start_form(self, *args):
         self.form_window.showMaximized()
