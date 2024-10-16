@@ -417,7 +417,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration failed",
                 "Failed to read pressure sensor to perform pressure seal check.",
                 ERROR_BEHAVIORS.NO_RELOAD.value,
-                QR.PRESSURE_READ.value,
+                QR.NONE.value,
             )
         except PressureLeak as e:
             self.logger.error(str(e))
@@ -425,7 +425,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration failed",
                 str(e),
                 ERROR_BEHAVIORS.RELOAD.value,
-                QR.PRESSURE_LEAK.value,
+                QR.NONE.value,
             )
 
     def _start_cellfinder(self, *args):
@@ -599,7 +599,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration failed",
                 "LED is too dim to run experiment.",
                 ERROR_BEHAVIORS.RELOAD.value,
-                QR.LED_DIM.value,
+                QR.NONE.value,
             )
         except LEDNoPower as e:
             if not SIMULATION:
@@ -608,7 +608,7 @@ class ScopeOp(QObject, NamedMachine):
                     "Calibration failed",
                     "Did not pass the off/on LED test.",
                     ERROR_BEHAVIORS.NO_RELOAD.value,
-                    QR.LED_OFF.value,
+                    QR.NONE.value,
                 )
             else:
                 if self.state in {
@@ -644,7 +644,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration failed",
                 "No cells found.",
                 ERROR_BEHAVIORS.RELOAD.value,
-                QR.NO_CELLS.value,
+                QR.NONE.value,
             )
         else:
             if self.running:
@@ -712,7 +712,7 @@ class ScopeOp(QObject, NamedMachine):
                         "Calibration failed",
                         "Unable to achieve focus because the stage has reached its range of motion limit.",
                         ERROR_BEHAVIORS.RELOAD.value,
-                        QR.FOCUS.value,
+                        QR.NONE.value,
                     )
         else:
             self.last_img = img
@@ -760,7 +760,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration issue",
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                 ERROR_BEHAVIORS.FLOWCONTROL.value,
-                QR.FLOWRATE.value,
+                QR.NONE.value,
             )
         except Exception as e:
             self.logger.error(f"Unexpected exception in fastflow - {e}")
@@ -768,7 +768,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Closed loop control failed",
                 "Unexpected exception in flow control routine.",
                 ERROR_BEHAVIORS.NO_RELOAD.value,
-                QR.EXCEPTION.value,
+                QR.NONE.value,
             )
         else:
             if self.running:
@@ -880,7 +880,7 @@ class ScopeOp(QObject, NamedMachine):
                     "Closed loop control failed",
                     "Unable to achieve desired focus within focal range.",
                     ERROR_BEHAVIORS.RELOAD.value,
-                    QR.FOCUS.value,
+                    QR.NONE.value,
                 )
                 return
             else:
