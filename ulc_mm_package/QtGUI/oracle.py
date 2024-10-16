@@ -569,7 +569,10 @@ class Oracle(Machine):
 
     def _end_setup(self, *args):
         try:
-            self.ambient_pressure, _ = self.scopeop.mscope.pneumatic_module.getPressure()
+            (
+                self.ambient_pressure,
+                _,
+            ) = self.scopeop.mscope.pneumatic_module.getPressure()
         except PressureSensorStaleValue as e:
             self.logger.warning(f"Stale value from pressure sensor: {e}")
 
