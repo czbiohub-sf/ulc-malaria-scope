@@ -416,13 +416,13 @@ class Routines:
             raise PressureLeak(
                 f"Pressure leak detected, could only generate {pressure_diff:.3f} hPa pressure differential."
             )
-            return final_pressure
+            return pressure_diff
         else:
             # Return syringe to its initial position
             mscope.pneumatic_module.setDutyCycle(
                 mscope.pneumatic_module.getMaxDutyCycle()
             )
-            return final_pressure
+            return pressure_diff
 
     @init_generator
     def find_cells_routine(

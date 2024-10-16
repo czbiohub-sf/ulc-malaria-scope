@@ -404,8 +404,7 @@ class ScopeOp(QObject, NamedMachine):
     def _check_pressure_seal(self, *args):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
         try:
-            final_pressure = self.routines.checkPressureDifference(self.mscope, self.ambient_pressure)
-            pdiff = self.ambient_pressure - final_pressure
+            pdiff = self.routines.checkPressureDifference(self.mscope, self.ambient_pressure)
             self.logger.info(
                 f"Passed pressure check. Pressure difference = {pdiff} hPa."
             )
@@ -420,7 +419,6 @@ class ScopeOp(QObject, NamedMachine):
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
         except PressureLeak as e:
-            pdiff = self.ambient_pressure - final_pressure
             self.logger.error(
                 "Improper seal / pressure leak detected. "
                 f"Pressure difference = {pdiff} hPa.- {e}"
