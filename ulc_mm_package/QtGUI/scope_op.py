@@ -86,7 +86,7 @@ class ScopeOp(QObject, NamedMachine):
     yield_mscope = pyqtSignal(MalariaScope)
 
     precheck_error = pyqtSignal()
-    default_error = pyqtSignal(str, str, int)
+    default_error = pyqtSignal(str, str, int, str)
 
     reload_pause = pyqtSignal(str, str)
     lid_open_pause = pyqtSignal()
