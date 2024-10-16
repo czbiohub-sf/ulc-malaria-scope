@@ -767,7 +767,7 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration issue",
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                 ERROR_BEHAVIORS.FLOWCONTROL.value,
-                QR.FLOWRATE.value,,
+                QR.FLOWRATE.value,
             )
         except Exception as e:
             self.logger.error(f"Unexpected exception in fastflow - {e}")
