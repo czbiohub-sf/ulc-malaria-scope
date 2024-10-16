@@ -418,7 +418,7 @@ class ScopeOp(QObject, NamedMachine):
             # TODO What to do in a case where the sensor is acting funky?
             self.default_error.emit(
                 "Calibration failed",
-                "Failed to read pressure sensor to perform pressure seal check."
+                "Failed to read pressure sensor to perform pressure seal check.",
                 ERROR_BEHAVIORS.NO_RELOAD.value,
                 QR.PRESSURE_READ.value,
             )
@@ -430,7 +430,7 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.default_error.emit(
                 "Calibration failed",
-                f"Improper seal / pressure leak detected. Pressure difference = {pdiff} hPa."
+                f"Improper seal / pressure leak detected. Pressure difference = {pdiff} hPa.",
                 ERROR_BEHAVIORS.RELOAD.value,
                 QR.PRESSURE_LEAK.value,
             )
@@ -604,7 +604,7 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.default_error.emit(
                 "Calibration failed",
-                "LED is too dim to run experiment."
+                "LED is too dim to run experiment.",
                 ERROR_BEHAVIORS.RELOAD.value,
                 QR.LED_DIM.value,
             )
@@ -613,7 +613,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
                 self.default_error.emit(
                     "Calibration failed",
-                    "Did not pass the off/on LED test."
+                    "Did not pass the off/on LED test.",
                     ERROR_BEHAVIORS.NO_RELOAD.value,
                     QR.LED_OFF.value,
                 )
@@ -649,7 +649,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.error("Cellfinder failed. No cells found.")
             self.default_error.emit(
                 "Calibration failed",
-                "No cells found."
+                "No cells found.",
                 ERROR_BEHAVIORS.RELOAD.value,
                 QR.NO_CELLS.value,
             )
@@ -717,7 +717,7 @@ class ScopeOp(QObject, NamedMachine):
                     )
                     self.default_error.emit(
                         "Calibration failed",
-                        "Unable to achieve focus because the stage has reached its range of motion limit."
+                        "Unable to achieve focus because the stage has reached its range of motion limit.",
                         ERROR_BEHAVIORS.RELOAD.value,
                         QR.FOCUS.value,
                     )
