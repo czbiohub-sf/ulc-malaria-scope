@@ -103,7 +103,6 @@ class FormGUI(QDialog):
 
         # Set tab behavior
         self.notes_val.setTabChangesFocus(True)
-        self.setTabOrder(self.notes_val, self.start_btn)
 
         # Place widgets
         self.main_layout.addWidget(self.operator_lbl, 0, 0)

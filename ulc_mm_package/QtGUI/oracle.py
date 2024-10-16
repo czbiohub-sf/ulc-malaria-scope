@@ -82,6 +82,7 @@ class Buttons(enum.Enum):
     OK = QMessageBox.Ok
     CANCEL = QMessageBox.Cancel | QMessageBox.Ok
     YN = QMessageBox.No | QMessageBox.Yes
+    NONE = QMessageBox.NoButton
 
 
 class ShutoffApplication(QApplication):
@@ -569,10 +570,11 @@ class Oracle(Machine):
             QMessageBox.Icon.Information,
             "Starting up",
             "Hardware is initializing, please wait.",
+            buttons=Buttons.NONE,
         )
 
     def _end_setup(self, *args):
-        self.display_message.close()
+        self.message_window.close()
 
     def _start_form(self, *args):
         self.form_window.showMaximized()
