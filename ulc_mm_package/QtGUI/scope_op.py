@@ -425,7 +425,7 @@ class ScopeOp(QObject, NamedMachine):
             # TODO provide instructions for dealing with pressure leak?
             self.default_error.emit(
                 "Calibration failed",
-                f"{e.getMessage()}"
+                f"{e.getMessage()}",
                 ERROR_BEHAVIORS.DEFAULT.value,
             )
 
