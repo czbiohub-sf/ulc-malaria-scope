@@ -390,7 +390,7 @@ class Oracle(Machine):
         icon=QMessageBox.Icon.Information,
         title="Pause run?",
         message=(
-            "While paused, you can add more sample to the flow cell. "
+            "While paused, the CAP module can be removed."
             "After pausing, the scope will restart the calibration steps."
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
@@ -494,7 +494,9 @@ class Oracle(Machine):
                 buttons=Buttons.YN,
             )
             if message_result == QMessageBox.No:
-                self.scopeop.to_intermission("Ending experiment due to error.")
+                self.scopeop.to_intermission(
+                    "Ending experiment due to error. Please rerun sample."
+                )
             else:
                 if self.scopeop.state == "fastflow":
                     self.scopeop.next_state()
