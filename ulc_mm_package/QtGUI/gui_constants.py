@@ -23,7 +23,7 @@ class ERROR_BEHAVIORS(enum.Enum):
 
 
 # ================ QR codes ================ #
-QR_loc = Path(__file__).parent.resolve() / "gui_images" / QR
+QR_loc = Path(__file__).parent.resolve() / "gui_images" / "QR"
 
 class QR(enum.Enum):
     PRESSURE_LEAK =  QR_loc / 'pressure-leak.png'
