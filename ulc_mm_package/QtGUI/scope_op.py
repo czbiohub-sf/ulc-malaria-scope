@@ -19,7 +19,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 from ulc_mm_package.hardware.scope_routines import Routines
 from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM,
+from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureLeak,
     PressureSensorStaleValue,
@@ -565,8 +565,11 @@ class ScopeOp(QObject, NamedMachine):
         self.finishing_experiment.emit(100)
 
     def _start_intermission(self, msg):
-        parasitemia_vis_path = 
-            self.mscope.data_storage.get_experiment_path() / SUMMARY_FOLDER / PARASITEMIA_VIS_FILE
+        parasitemia_vis_path = (
+            self.mscope.data_storage.get_experiment_path()
+            / SUMMARY_FOLDER
+            / PARASITEMIA_VIS_FILE
+        )
 
         if parasitemia_vis_path.exists():
             self.experiment_done.emit(msg, parasitemia_vis_path)
