@@ -337,7 +337,7 @@ class DataStorage:
             ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
 
             # Create parasitemia plot
-            parasitemia_plot_loc = str(summary_report_dir / "parasitemia.jpg")
+            parasitemia_plot_loc = str(summary_report_dir / PARASITEMIA_VIS_FILE)
             try:
                 make_parasitemia_plot(
                     comp_parasitemia,

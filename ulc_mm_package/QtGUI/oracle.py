@@ -545,7 +545,7 @@ class Oracle(Machine):
         if buttons is not None:
             self.message_window.setStandardButtons(buttons.value)
 
-        if image is not "":
+        if image != "":
             layout = self.message_window.layout()
 
             image_lbl = QLabel()
@@ -767,7 +767,7 @@ class Oracle(Machine):
         self.display_message(
             QMessageBox.Icon.Information,
             "Remove flow cell",
-            f'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
+            'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
             image=IMAGE_REMOVE_PATH,
         )
