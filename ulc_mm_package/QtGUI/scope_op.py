@@ -52,6 +52,8 @@ from ulc_mm_package.QtGUI.gui_constants import (
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
     QR,
+    COMPLETE_MSG,
+    TIMEOUT_MSG,
 )
 
 from ulc_mm_package.scope_constants import (
@@ -801,16 +803,12 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.frame_count >= MAX_FRAMES:
             if self.state == "experiment":
-                self.to_intermission(
-                    "Ending experiment since data collection is complete."
-                )
+                self.to_intermission(COMPLETE_MSG)
             return
 
         if current_time - self.start_time > TIMEOUT_PERIOD_S:
             if self.state == "experiment":
-                self.to_intermission(
-                    f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
-                )
+                self.to_intermission(TIMEOUT_MSG)
             return
 
         # Record timestamp before running routines

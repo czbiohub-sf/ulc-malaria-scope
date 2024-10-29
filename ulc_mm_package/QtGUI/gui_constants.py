@@ -38,6 +38,13 @@ class QR(enum.Enum):
     NONE = ""
 
 
+# ================ Message dialogs ================ #
+ERROR_MSG = '\n\nClick "OK" to end the current run.'
+COMPLETE_MSG = '<b>Run status: COMPLETE!</b>/n/n'
+TIMEOUT_MSG = f'<b>Run status: INCOMPLETE ({TIMEOUT_PERIOD_M} minute timeout)/n/nPlease rerun this sample.</b>/n/n'
+FAIL_MSG = '<b>Run status: INCOMPLETE (due to error)/n/nPlease rerun this sample.</b>/n/n'
+TERMINATED_MSG = '<b>Run status: INCOMPLETE (terminated by user)</b>/n/n'
+
 # ================ State machine verification ================ #
 NO_PAUSE_STATES = {"pause", "intermission"}
 
