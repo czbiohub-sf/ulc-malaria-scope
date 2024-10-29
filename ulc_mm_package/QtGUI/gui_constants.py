@@ -38,15 +38,6 @@ class QR(enum.Enum):
     NONE = ""
 
 
-# ================ Message dialogs ================ #
-ERROR_MSG = '\n\nClick "OK" to end the current run.'
-COMPLETE_MSG = f"<b>Run status: COMPLETE!</b>/n/nSee estimated parasitemia with 95% confidence bounds below."
-TIMEOUT_MSG = f"<b>Run status: INCOMPLETE ({TIMEOUT_PERIOD_M} minute timeout)</b>/n/nPlease rerun this sample./n/n"
-FAIL_MSG = (
-    "<b>Run status: INCOMPLETE (due to error)</b>/n/nPlease rerun this sample./n/n"
-)
-TERMINATED_MSG = "<b>Run status: INCOMPLETE (terminated by user)</b>/n/n"
-
 # ================ State machine verification ================ #
 NO_PAUSE_STATES = {"pause", "intermission"}
 
@@ -114,3 +105,12 @@ for image_path in (ICON_PATH, IMAGE_INSERT_PATH, IMAGE_REMOVE_PATH, IMAGE_RELOAD
 FLOWCELL_QC_FORM_LINK = (
     "https://docs.google.com/forms/d/16pOE3TAvOMZG4Yuu3ef73knGYKRdZfXSxg5vZlsR-AM/edit"
 )
+
+# ================ Message dialogs ================ #
+ERROR_MSG = '\n\nClick "OK" to end the current run.'
+COMPLETE_MSG = f"<b>Run status: COMPLETE!</b>/n/nSee estimated parasitemia with 95% confidence bounds below."
+TIMEOUT_MSG = f"<b>Run status: INCOMPLETE ({TIMEOUT_PERIOD_M} minute timeout)</b>/n/nPlease rerun this sample./n/n"
+FAIL_MSG = (
+    "<b>Run status: INCOMPLETE (due to error)</b>/n/nPlease rerun this sample./n/n"
+)
+TERMINATED_MSG = "<b>Run status: INCOMPLETE (terminated by user)</b>/n/n"
