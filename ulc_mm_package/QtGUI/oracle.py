@@ -76,8 +76,9 @@ from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # ================ Misc constants ================ #
-_ERROR_MSG = '\n\nClick "OK" to end this run.'
-
+_ERROR_MSG = '\n\nPlease rerun this sample. Click "OK" to end the current run.'
+_PASS_MSG = '<b>Run status: COMPLETE</b>/n/n'
+_FAIL_MSG = '<b>Run status: FAILED</b>/n/n'
 
 class Buttons(enum.Enum):
     OK = QMessageBox.Ok
