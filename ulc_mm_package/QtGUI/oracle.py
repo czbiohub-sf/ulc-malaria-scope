@@ -531,7 +531,7 @@ class Oracle(Machine):
         title,
         text,
         buttons=None,
-        image=None,
+        image="",
     ):
         self.message_window.close()
 
@@ -545,7 +545,7 @@ class Oracle(Machine):
         if buttons is not None:
             self.message_window.setStandardButtons(buttons.value)
 
-        if image is not None:
+        if image is not "":
             layout = self.message_window.layout()
 
             image_lbl = QLabel()
@@ -751,15 +751,23 @@ class Oracle(Machine):
     def _end_liveview(self, *args):
         self.liveview_window.close()
 
-    def _start_intermission(self, msg):
-        if msg == "":
+    def _start_intermission(self, msg=None, parasitemia_vis_path=""):
+        if msg is None:
             # Retriggered intermission due to race condition
             return
 
         self.display_message(
             QMessageBox.Icon.Information,
-            "Ending run",
-            f'{msg} Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
+            "Run status",
+            msg,
+            buttons=Buttons.OK,
+            image=parasitemia_vis_path,
+        )
+
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Remove flow cell",
+            f'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
             image=IMAGE_REMOVE_PATH,
         )
@@ -781,7 +789,7 @@ class Oracle(Machine):
                 try:
                     self.scopeop.rerun()
                 except MachineError:
-                    self.scopeop.to_intermission(None)
+                    self.scopeop.to_intermission()
                     self.scopeop.rerun()
 
     def shutoff(self):

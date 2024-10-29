@@ -12,13 +12,14 @@ import numpy as np
 from typing import Any
 from time import sleep, perf_counter
 from transitions import Machine, State
+from os import remove
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 from ulc_mm_package.hardware.scope_routines import Routines
 from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
+from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM,
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureLeak,
     PressureSensorStaleValue,
@@ -36,6 +37,10 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessTargetNotAchieved,
     BrightnessCriticallyLow,
     LEDNoPower,
+)
+from ulc_mm_package.image_processing.processing_constants import (
+    SUMMARY_FOLDER,
+    PARASITEMIA_VIS_FILE,
 )
 
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
@@ -82,7 +87,7 @@ class NamedMachine(Machine):
 
 class ScopeOp(QObject, NamedMachine):
     setup_done = pyqtSignal()
-    experiment_done = pyqtSignal(str)
+    experiment_done = pyqtSignal(str, str)
     reset_done = pyqtSignal()
 
     yield_mscope = pyqtSignal(MalariaScope)
@@ -245,6 +250,8 @@ class ScopeOp(QObject, NamedMachine):
 
         self.start_time = None
         self.accumulated_time = 0
+
+        self.parasitemia_vis_path = ""
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -558,7 +565,14 @@ class ScopeOp(QObject, NamedMachine):
         self.finishing_experiment.emit(100)
 
     def _start_intermission(self, msg):
-        self.experiment_done.emit(msg)
+        parasitemia_vis_path = 
+            self.mscope.data_storage.get_experiment_path() / SUMMARY_FOLDER / PARASITEMIA_VIS_FILE
+
+        if parasitemia_vis_path.exists():
+            self.experiment_done.emit(msg, parasitemia_vis_path)
+            remove(parasitemia_vis_path)
+        else:
+            self.experiment_done.emit(msg, "")
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):

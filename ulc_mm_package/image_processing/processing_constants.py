@@ -12,6 +12,10 @@ class FLOWRATE(enum.Enum):
     SLOW = 3.79  # 8 frames per cell
 
 
+# ================ Data storage figure locations ================ #
+SUMMARY_FOLDER = "summary_report"
+PARASITEMIA_VIS_FILE = "parasitemia.jpg"
+
 # ================ Autobrightness constants ================ #
 TOP_PERC_TARGET_VAL = 235
 TOP_PERC = 0.03

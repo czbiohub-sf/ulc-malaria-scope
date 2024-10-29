@@ -20,6 +20,8 @@ from ulc_mm_package.image_processing.processing_constants import (
     MIN_GB_REQUIRED,
     NUM_SUBSEQUENCES,
     SUBSEQUENCE_LENGTH,
+    SUMMARY_FOLDER,
+    PARASITEMIA_VIS_FILE,
 )
 from ulc_mm_package.neural_nets.utils import (
     get_class_counts,
@@ -274,7 +276,7 @@ class DataStorage:
 
             ### Create summary report
             self.logger.info("> Creating summary report...")
-            summary_report_dir = self.get_experiment_path() / "summary_report"
+            summary_report_dir = self.get_experiment_path() / SUMMARY_FOLDER
             Path.mkdir(summary_report_dir, exist_ok=True)
 
             ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
@@ -373,7 +375,6 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
-            remove(parasitemia_plot_loc)
 
             if DEBUG_REPORT:
                 remove(counts_plot_loc)
