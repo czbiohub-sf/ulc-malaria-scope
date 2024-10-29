@@ -53,7 +53,6 @@ import ulc_mm_package.neural_nets.utils as nn_utils
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.QtGUI.gui_constants import (
-    TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
     QR,
