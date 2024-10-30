@@ -58,6 +58,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     QR,
     COMPLETE_MSG,
     TIMEOUT_MSG,
+    PARASITEMIA_VIS_MSG,
 )
 
 from ulc_mm_package.scope_constants import (

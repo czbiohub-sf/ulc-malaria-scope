@@ -108,10 +108,10 @@ FLOWCELL_QC_FORM_LINK = (
 
 # ================ Message dialogs ================ #
 ERROR_MSG = '\n\nClick "OK" to end the current run.'
-COMPLETE_MSG = "<b>Run status: COMPLETE</b>"
-TIMEOUT_MSG = f"<b>Run status: INCOMPLETE</b> ({TIMEOUT_PERIOD_M} minute timeout)\n\nPlease rerun this sample.\n\n"
+COMPLETE_MSG = "Run status: <b>COMPLETE</b>"
+TIMEOUT_MSG = f"Run status: <b>INCOMPLETE</b> ({TIMEOUT_PERIOD_M} minute timeout)\n\nPlease rerun this sample.\n\n"
 FAIL_MSG = (
-    "<b>Run status: INCOMPLETE</b> (due to error)\n\nPlease rerun this sample.\n\n"
+    "Run status: <b>INCOMPLETE</b> (due to error)\n\nPlease rerun this sample.\n\n"
 )
-TERMINATED_MSG = "<b>Run status: INCOMPLETE</b> (terminated by user)</b>\n\n"
+TERMINATED_MSG = "Run status: <b>INCOMPLETE</b> (terminated by user)</b>\n\n"
 PARASITEMIA_VIS_MSG ="\n\nEstimated parasitemia with 95%% confidence bounds shown below."
