@@ -528,7 +528,7 @@ class DataStorage:
     def get_parasitemia_vis_filename(self) -> Path:
         """
         Return filename for saving parasitemia visualization
-        """        
+        """
         try:
             filename = self.get_experiment_path() / "summary_report" / "parasitemia.jpg"
             return filename
