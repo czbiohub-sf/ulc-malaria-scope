@@ -549,7 +549,7 @@ class Oracle(Machine):
             layout = self.message_window.layout()
 
             image_lbl = QLabel()
-            image_lbl.setPixmap(QPixmap(image))
+            image_lbl.setPixmap(QPixmap(image).scaledToWidth(150))
 
             # Row/column span determined using layout.rowCount() and layout.columnCount()
             # TODO: Mypy doesn't like this because of "too many args" and "alignment"
