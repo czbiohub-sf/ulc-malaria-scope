@@ -274,7 +274,7 @@ class DataStorage:
 
             ### Create summary report
             self.logger.info("> Creating summary report...")
-            summary_report_dir = self.get_parasitemia_vis_filename()
+            summary_report_dir = self.get_experiment_path() / "summary_report"
             Path.mkdir(summary_report_dir, exist_ok=True)
 
             ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
@@ -335,7 +335,7 @@ class DataStorage:
             ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
 
             # Create parasitemia plot
-            parasitemia_plot_loc = str(summary_report_dir / PARASITEMIA_VIS_FILE)
+            parasitemia_plot_loc = str(self.get_parasitemia_vis_filename())
             try:
                 make_parasitemia_plot(
                     comp_parasitemia,
@@ -512,17 +512,6 @@ class DataStorage:
             return experiment_path
         except Exception as e:
             self.logger.error(f"Could not get experiment path: {e}")
-            raise e
-
-    def get_summary_filename(self) -> Path:
-        """
-        Return filename for saving statistics summary
-        """
-        try:
-            filename = self.get_experiment_path() / f"{self.time_str}_summary.pdf"
-            return filename
-        except Exception as e:
-            self.logger.error(f"Could not get statistics filename: {e}")
             raise e
 
     def get_parasitemia_vis_filename(self) -> Path:
