@@ -571,7 +571,7 @@ class ScopeOp(QObject, NamedMachine):
         )
 
         if parasitemia_vis_path.exists():
-            self.experiment_done.emit(msg, parasitemia_vis_path)
+            self.experiment_done.emit(msg, str(parasitemia_vis_path))
             remove(parasitemia_vis_path)
         else:
             self.experiment_done.emit(msg, "")
