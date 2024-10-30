@@ -20,8 +20,6 @@ from ulc_mm_package.image_processing.processing_constants import (
     MIN_GB_REQUIRED,
     NUM_SUBSEQUENCES,
     SUBSEQUENCE_LENGTH,
-    SUMMARY_FOLDER,
-    PARASITEMIA_VIS_FILE,
 )
 from ulc_mm_package.neural_nets.utils import (
     get_class_counts,
@@ -276,7 +274,7 @@ class DataStorage:
 
             ### Create summary report
             self.logger.info("> Creating summary report...")
-            summary_report_dir = self.get_experiment_path() / SUMMARY_FOLDER
+            summary_report_dir = self.get_parasitemia_vis_filename()
             Path.mkdir(summary_report_dir, exist_ok=True)
 
             ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
@@ -522,6 +520,17 @@ class DataStorage:
         """
         try:
             filename = self.get_experiment_path() / f"{self.time_str}_summary.pdf"
+            return filename
+        except Exception as e:
+            self.logger.error(f"Could not get statistics filename: {e}")
+            raise e
+
+    def get_parasitemia_vis_filename(self) -> Path:
+        """
+        Return filename for saving parasitemia visualization
+        """        
+        try:
+            filename = self.get_experiment_path() / "summary_report" / "parasitemia.jpg"
             return filename
         except Exception as e:
             self.logger.error(f"Could not get statistics filename: {e}")

@@ -38,10 +38,6 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     LEDNoPower,
 )
-from ulc_mm_package.image_processing.processing_constants import (
-    SUMMARY_FOLDER,
-    PARASITEMIA_VIS_FILE,
-)
 
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
@@ -565,11 +561,7 @@ class ScopeOp(QObject, NamedMachine):
         self.finishing_experiment.emit(100)
 
     def _start_intermission(self, msg):
-        parasitemia_vis_path = (
-            self.mscope.data_storage.get_experiment_path()
-            / SUMMARY_FOLDER
-            / PARASITEMIA_VIS_FILE
-        )
+        parasitemia_vis_path = self.mscope.data_storage.get_parasitemia_vis_filename()
 
         if parasitemia_vis_path.exists():
             self.experiment_done.emit(
