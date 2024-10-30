@@ -60,6 +60,9 @@ from ulc_mm_package.QtGUI.gui_constants import (
     IMAGE_REMOVE_PATH,
     IMAGE_RELOAD_PATH,
     QR,
+    ERROR_MSG,
+    FAIL_MSG,
+    TERMINATED_MSG,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -74,9 +77,6 @@ from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-
-# ================ Misc constants ================ #
-_ERROR_MSG = '\n\nClick "OK" to end this run.'
 
 
 class Buttons(enum.Enum):
@@ -352,7 +352,7 @@ class Oracle(Machine):
                     QMessageBox.Icon.Critical,
                     "SSD not found",
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
-                    + _ERROR_MSG,
+                    + ERROR_MSG,
                     buttons=Buttons.OK,
                 )
                 sys.exit(1)
@@ -369,7 +369,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Critical,
             "No available storage folders",
             "Couldn't find any folders in /media/pi with sufficient storage. Please eject and replace the SSD with a new one. Thank you!"
-            + _ERROR_MSG,
+            + ERROR_MSG,
             buttons=Buttons.OK,
         )
 
@@ -469,12 +469,12 @@ class Oracle(Machine):
         )
         if message_result == QMessageBox.Ok:
             self.lid_handler_enabled = False
-            self.scopeop.to_intermission("Ending experiment due to user prompt.")
+            self.scopeop.to_intermission(TERMINATED_MSG)
 
     def error_handler(self, title, text, behavior, QR_code):
         if QR_code is not QR.NONE.value:
             if behavior == ERROR_BEHAVIORS.RELOAD.value:
-                QR_msg = "\n\nLoad a new flow cell. If problem persists, scan QR code to troubleshoot."
+                QR_msg = "\n\Try loading a new flow cell. If problem persists, scan QR code to troubleshoot."
             else:
                 QR_msg = "\n\nScan QR code to troubleshoot."
         else:
@@ -484,27 +484,27 @@ class Oracle(Machine):
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + QR_msg + _ERROR_MSG,
+                text + QR_msg + ERROR_MSG,
                 buttons=Buttons.OK,
                 image=QR_code,
             )
-            self.scopeop.to_intermission("Ending experiment due to error.")
+            self.scopeop.to_intermission(FAIL_MSG)
 
         elif behavior == ERROR_BEHAVIORS.RELOAD.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + QR_msg + _ERROR_MSG,
+                text + QR_msg + ERROR_MSG,
                 buttons=Buttons.OK,
                 image=QR_code,
             )
-            self.scopeop.to_intermission("Ending experiment due to error.")
+            self.scopeop.to_intermission(FAIL_MSG)
 
         elif behavior == ERROR_BEHAVIORS.PRECHECK.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + QR_msg + _ERROR_MSG,
+                text + QR_msg + ERROR_MSG,
                 buttons=Buttons.OK,
                 image=QR_code,
             )
@@ -520,9 +520,7 @@ class Oracle(Machine):
                 image=QR_code,
             )
             if message_result == QMessageBox.No:
-                self.scopeop.to_intermission(
-                    "Ending experiment due to error. Please rerun sample."
-                )
+                self.scopeop.to_intermission(FAIL_MSG)
             else:
                 if self.scopeop.state == "fastflow":
                     self.scopeop.next_state()
@@ -533,7 +531,7 @@ class Oracle(Machine):
         title,
         text,
         buttons=None,
-        image=None,
+        image="",
     ):
         self.message_window.close()
 
@@ -547,11 +545,13 @@ class Oracle(Machine):
         if buttons is not None:
             self.message_window.setStandardButtons(buttons.value)
 
-        if image is not None:
+        if image != "":
             layout = self.message_window.layout()
 
             image_lbl = QLabel()
-            image_lbl.setPixmap(QPixmap(image))
+            image_lbl.setPixmap(
+                QPixmap(image).scaledToWidth(700, Qt.SmoothTransformation)
+            )
 
             # Row/column span determined using layout.rowCount() and layout.columnCount()
             # TODO: Mypy doesn't like this because of "too many args" and "alignment"
@@ -753,15 +753,23 @@ class Oracle(Machine):
     def _end_liveview(self, *args):
         self.liveview_window.close()
 
-    def _start_intermission(self, msg):
-        if msg == "":
+    def _start_intermission(self, msg=None, parasitemia_vis_path=""):
+        if msg is None:
             # Retriggered intermission due to race condition
             return
 
         self.display_message(
             QMessageBox.Icon.Information,
-            "Run complete",
-            f'{msg} Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
+            "Run status",
+            msg,
+            buttons=Buttons.OK,
+            image=parasitemia_vis_path,
+        )
+
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Remove flow cell",
+            'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
             image=IMAGE_REMOVE_PATH,
         )
@@ -783,7 +791,7 @@ class Oracle(Machine):
                 try:
                     self.scopeop.rerun()
                 except MachineError:
-                    self.scopeop.to_intermission(None)
+                    self.scopeop.to_intermission()
                     self.scopeop.rerun()
 
     def shutoff(self):

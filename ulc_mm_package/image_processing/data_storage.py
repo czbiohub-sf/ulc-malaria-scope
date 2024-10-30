@@ -335,7 +335,7 @@ class DataStorage:
             ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
 
             # Create parasitemia plot
-            parasitemia_plot_loc = str(summary_report_dir / "parasitemia.jpg")
+            parasitemia_plot_loc = str(self.get_parasitemia_vis_filename())
             try:
                 make_parasitemia_plot(
                     comp_parasitemia,
@@ -373,7 +373,6 @@ class DataStorage:
             # Remove intermediate files
             remove(html_abs_path_temp_loc)
             remove(summary_report_dir / CSS_FILE_NAME)
-            remove(parasitemia_plot_loc)
 
             if DEBUG_REPORT:
                 remove(counts_plot_loc)
@@ -515,12 +514,12 @@ class DataStorage:
             self.logger.error(f"Could not get experiment path: {e}")
             raise e
 
-    def get_summary_filename(self) -> Path:
+    def get_parasitemia_vis_filename(self) -> Path:
         """
-        Return filename for saving statistics summary
+        Return filename for saving parasitemia visualization
         """
         try:
-            filename = self.get_experiment_path() / f"{self.time_str}_summary.pdf"
+            filename = self.get_experiment_path() / "summary_report" / "parasitemia.jpg"
             return filename
         except Exception as e:
             self.logger.error(f"Could not get statistics filename: {e}")

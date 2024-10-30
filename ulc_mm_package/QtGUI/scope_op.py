@@ -12,6 +12,7 @@ import numpy as np
 from typing import Any
 from time import sleep, perf_counter
 from transitions import Machine, State
+from os import remove
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
@@ -48,10 +49,12 @@ import ulc_mm_package.neural_nets.utils as nn_utils
 
 from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.QtGUI.gui_constants import (
-    TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
     QR,
+    COMPLETE_MSG,
+    TIMEOUT_MSG,
+    PARASITEMIA_VIS_MSG,
 )
 
 from ulc_mm_package.scope_constants import (
@@ -80,7 +83,7 @@ class NamedMachine(Machine):
 
 class ScopeOp(QObject, NamedMachine):
     setup_done = pyqtSignal()
-    experiment_done = pyqtSignal(str)
+    experiment_done = pyqtSignal(str, str)
     reset_done = pyqtSignal()
 
     yield_mscope = pyqtSignal(MalariaScope)
@@ -243,6 +246,8 @@ class ScopeOp(QObject, NamedMachine):
 
         self.start_time = None
         self.accumulated_time = 0
+
+        self.parasitemia_vis_path = ""
 
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
@@ -556,7 +561,15 @@ class ScopeOp(QObject, NamedMachine):
         self.finishing_experiment.emit(100)
 
     def _start_intermission(self, msg):
-        self.experiment_done.emit(msg)
+        parasitemia_vis_path = self.mscope.data_storage.get_parasitemia_vis_filename()
+
+        if parasitemia_vis_path.exists():
+            self.experiment_done.emit(
+                msg + PARASITEMIA_VIS_MSG, str(parasitemia_vis_path)
+            )
+            remove(parasitemia_vis_path)
+        else:
+            self.experiment_done.emit(msg, "")
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
@@ -801,16 +814,12 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.frame_count >= MAX_FRAMES:
             if self.state == "experiment":
-                self.to_intermission(
-                    "Ending experiment since data collection is complete."
-                )
+                self.to_intermission(COMPLETE_MSG)
             return
 
         if current_time - self.start_time > TIMEOUT_PERIOD_S:
             if self.state == "experiment":
-                self.to_intermission(
-                    f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
-                )
+                self.to_intermission(TIMEOUT_MSG)
             return
 
         # Record timestamp before running routines
