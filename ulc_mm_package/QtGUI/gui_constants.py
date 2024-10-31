@@ -116,5 +116,5 @@ TERMINATED_MSG = (
     "Run status: <b><font color='red'>INCOMPLETE</font></b> (terminated by user)</b>"
 )
 PARASITEMIA_VIS_MSG = (
-    "<br><br>Estimated parasitemia with 95%% confidence bounds shown below."
+    "<br><br>Estimated parasitemia with 95% confidence bounds shown below."
 )
