@@ -101,7 +101,7 @@ def make_parasitemia_plot(parasitemia, err, savefile):
     ax1.bxp(
         stats,
         medianprops=dict(color="black", linewidth=5),
-        boxprops=dict(linewidth=3, alpha=0.5),
+        boxprops=dict(linewidth=5, alpha=0.5),
         whiskerprops=dict(alpha=0),
         vert=False,
         widths=10,
