@@ -13,6 +13,7 @@ from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 
 from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
 
+MINPRESSURE = 550
 
 class FlowControlError(Exception):
     pass
@@ -221,7 +222,8 @@ class FlowController:
         elif flow_error > 0:
             try:
                 # Increase pressure, move syringe down
-                if not self.pneumatic_module.is_locked():
+                pressure, pressure_read = self.pneumatic_module.getPressure()
+                if not self.pneumatic_module.is_locked() and pressure > MINPRESSURE:
                     self.pneumatic_module.threadedDecreaseDutyCycle()
             except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate(self.flowrate)
