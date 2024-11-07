@@ -493,7 +493,7 @@ class DataStorage:
             assert self.main_dir is not None, "DataStorage has not been initialized"
             try:
                 dir_path = self.main_dir / self.experiment_folder / "sub_sample_imgs"
-                dir_path.mkdir()
+                dir_path.mkdir(exist_ok=True)
                 return str(dir_path)
             except Exception as e:
                 self.logger.error(f"Could not create the subsample directory: {e}")
