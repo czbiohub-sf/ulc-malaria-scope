@@ -32,6 +32,7 @@ INSIDE_BBOX_FLAG = 0
 FLOW_CONTROL_EWMA_ALPHA = 0.05
 TOL_PERC = 0.1
 FAILED_CORR_PERC_TOLERANCE = 0.75
+MIN_PRESSURE = 650
 
 # Factor by which to multiply the ewma feebdack adjustment delay (in frames) to set the window size
 # of the past measurements to check for failed xcorrs.
