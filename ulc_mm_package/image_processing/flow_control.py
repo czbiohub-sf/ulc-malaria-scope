@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 
-from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR
+from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR, MIN_PRESSURE
 from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 from ulc_mm_package.image_processing.processing_constants import (
     FLOW_CONTROL_EWMA_ALPHA,
@@ -12,8 +12,6 @@ from ulc_mm_package.image_processing.processing_constants import (
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 
 from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, SyringeEndOfTravel
-
-MINPRESSURE = 550
 
 class FlowControlError(Exception):
     pass
@@ -223,7 +221,7 @@ class FlowController:
             try:
                 # Increase pressure, move syringe down
                 pressure, pressure_read = self.pneumatic_module.getPressure()
-                if not self.pneumatic_module.is_locked() and pressure > MINPRESSURE:
+                if not self.pneumatic_module.is_locked() and pressure > MIN_PRESSURE:
                     self.pneumatic_module.threadedDecreaseDutyCycle()
             except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate(self.flowrate)
