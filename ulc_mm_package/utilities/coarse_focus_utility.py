@@ -9,7 +9,7 @@ from typing import List, Tuple
 
 from ulc_mm_package.hardware.camera import AVTCamera
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
-from ulc_mm_package.hardware.pneumatic_module import PneumaticModule, PressureLeak
+from ulc_mm_package.hardware.pneumatic_module import PneumaticModule
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
 from ulc_mm_package.hardware.scope_routines import CellFinder, NoCellsFound
