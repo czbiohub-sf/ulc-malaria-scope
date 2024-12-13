@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import List
+from typing import List, Tuple
 
 from ulc_mm_package.hardware.camera import AVTCamera
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
@@ -56,7 +56,7 @@ def perform_sweep(
     progress_callback,
     image_callback,
     motor_label_callback,
-) -> List[np.ndarray]:
+) -> Tuple[List[np.ndarray], List[int]]:
     logger.info("Starting sweep...")
     cell_finder.reset()
     led.turnOn()
