@@ -64,7 +64,7 @@ def perform_sweep(
     total_steps = len(sweep_range)
     images = []
 
-    logger.info(f"Moving motor...")
+    logger.info("Moving motor...")
     for step, motor_pos in enumerate(sweep_range, start=1):
         motor.move_abs(motor_pos)
         img, timestamp = next(camera.yieldImages())
@@ -257,7 +257,7 @@ def main():
             output_string = (
                 f"Stage adjustment successful!\nCells found at motor position {res}."
             )
-            messagebox.showinfo(f"Success", output_string)
+            messagebox.showinfo("Success", output_string)
         else:
             messagebox.showerror("Error", "An unexpected error occurred.")
 
