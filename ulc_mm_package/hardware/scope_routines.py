@@ -411,6 +411,8 @@ class Routines:
             raise
 
         # Check if there is a pressure leak
+        mscope.pneumatic_module.mpr.ambient_pressure = ambient_pressure
+        mscope.pneumatic_module.mpr.final_pressure = final_pressure
         pressure_diff = ambient_pressure - final_pressure
         if pressure_diff < MIN_PRESSURE_DIFF:
             raise PressureLeak(

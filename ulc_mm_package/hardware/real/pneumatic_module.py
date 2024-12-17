@@ -260,6 +260,7 @@ class AdafruitMPRLS:
         self.mprls_pwr_pin = mprls_pwr_pin
         self.prev_poll_time_s: float = 0.0
         self.prev_pressure: float = 0.0
+        self.ambient_pressure: float = 0.0
         self.prev_status = PressureSensorRead.ALL_GOOD
 
         self.io_error_counter = 0
