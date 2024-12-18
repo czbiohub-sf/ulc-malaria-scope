@@ -410,6 +410,9 @@ class Routines:
         except PressureSensorBusy:
             raise
 
+        mscope.pneumatic_module.mpr.ambient_pressure = ambient_pressure
+        mscope.pneumatic_module.mpr.final_pressure = final_pressure
+
         # Check if there is a pressure leak
         pressure_diff = ambient_pressure - final_pressure
         if pressure_diff < MIN_PRESSURE_DIFF:
