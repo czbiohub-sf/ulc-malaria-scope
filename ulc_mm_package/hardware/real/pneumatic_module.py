@@ -243,6 +243,9 @@ class PneumaticModule:
     ) -> Tuple[float, PressureSensorRead]:
         return self.mpr.getPressureMaxReadAttempts(max_attempts)
 
+    def getAmbientPressure(self) -> float:
+        return self.mpr.ambient_pressure
+    
     def direct_read(self) -> Tuple[float, PressureSensorRead]:
         return self.mpr.direct_read()
 

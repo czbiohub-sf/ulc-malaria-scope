@@ -224,7 +224,7 @@ class FlowController:
                 # Increase pressure, move syringe down
                 pressure, pressure_read = self.pneumatic_module.getPressure()
                 if not self.pneumatic_module.is_locked() and pressure > (
-                    self.pneumatic_module.mpr.ambient_pressure - MAX_VACUUM_PRESSURE
+                    self.pneumatic_module.getAmbientPressure() - MAX_VACUUM_PRESSURE
                 ):
                     self.pneumatic_module.threadedDecreaseDutyCycle()
             except SyringeEndOfTravel:
