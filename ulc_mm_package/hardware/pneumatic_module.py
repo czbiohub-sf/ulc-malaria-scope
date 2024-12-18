@@ -77,7 +77,7 @@ class PneumaticModuleBase(ABC):
 
     def getPressure(self):
         ...
-    
+
     def getAmbientPressure(self):
         ...
 
