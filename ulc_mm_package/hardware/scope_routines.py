@@ -202,11 +202,7 @@ class Routines:
     def count_parasitemia_periodic_wrapper(
         self,
         mscope: MalariaScope,
-    ) -> Generator[
-        List[AsyncInferenceResult],
-        Tuple[np.ndarray, Optional[int]],
-        None,
-    ]:
+    ) -> Generator[List[AsyncInferenceResult], Tuple[np.ndarray, Optional[int]], None,]:
         while True:
             img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
             mscope.cell_diagnosis_model(img, counts)
