@@ -14,6 +14,7 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     checkLedWorking,
 )
+from ulc_mm_package.image_processing.flow_control import FlowController
 
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
@@ -201,7 +202,11 @@ class Routines:
     def count_parasitemia_periodic_wrapper(
         self,
         mscope: MalariaScope,
-    ) -> Generator[List[AsyncInferenceResult], Tuple[np.ndarray, Optional[int]], None,]:
+    ) -> Generator[
+        List[AsyncInferenceResult],
+        Tuple[np.ndarray, Optional[int]],
+        None,
+    ]:
         while True:
             img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
             mscope.cell_diagnosis_model(img, counts)
@@ -478,6 +483,7 @@ class Routines:
         # Maximum number of times to run check for cells routine before aborting
         max_attempts = 3
         cell_finder = CellFinder()
+        flow_controller = FlowController(mscope.pneumatic_module)
         img = yield
 
         # Initial check for cells, return current motor position if cells found
@@ -503,11 +509,9 @@ class Routines:
             # in which case, cells are already present, we just need to sweep the motor to find them
             if not (skip_syringe_pull):
                 start = perf_counter()
-                mscope.pneumatic_module.setDutyCycle(
-                    mscope.pneumatic_module.getMinDutyCycle()
-                )
 
                 while perf_counter() - start < pull_time:
+                    flow_controller.adjustSyringe(-1)
                     img = yield
                 mscope.pneumatic_module.setDutyCycle(
                     mscope.pneumatic_module.getMaxDutyCycle()

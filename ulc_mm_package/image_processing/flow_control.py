@@ -191,7 +191,7 @@ class FlowController:
                 self.prev_adjustment_stamp = self.counter
 
                 try:
-                    self._adjustSyringe(flow_error)
+                    self.adjustSyringe(flow_error)
                     syringe_successfully_adjusted = True
                 except CantReachTargetFlowrate:
                     syringe_successfully_adjusted = False
@@ -203,7 +203,7 @@ class FlowController:
         else:
             return (None, None, None)
 
-    def _adjustSyringe(self, flow_error: float):
+    def adjustSyringe(self, flow_error: float):
         """Adjusts the syringe based on the flow error.
 
         Parameters
@@ -236,6 +236,7 @@ class FlowController:
                     self.pneumatic_module.threadedIncreaseDutyCycle()
             except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate(self.flowrate)
+
 
     def stop(self):
         self.fre.stop()

@@ -223,8 +223,8 @@ class PneumaticModule:
         # Cannot move the syringe down
         elif (
             self.duty_cycle - self.min_step_size < self.min_duty_cycle
-            or self.mpr.ambient_pressure - self.mpr.prev_pressure > MAX_VACUUM_PRESSURE
-        ) and move_dir == SyringeDirection.DOWN:
+            and move_dir == SyringeDirection.DOWN
+        ):
             return False
 
         return True
