@@ -49,6 +49,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorStaleValue,
     PressureSensorRead,
 )
+from ulc_mm_package.image_processing.processing_constants import MAX_VACUUM_PRESSURE
 
 SYRINGE_LOCK = threading.Lock()
 PSI_TO_HPA = 68.947572932
@@ -222,8 +223,8 @@ class PneumaticModule:
         # Cannot move the syringe down
         elif (
             self.duty_cycle - self.min_step_size < self.min_duty_cycle
-            and move_dir == SyringeDirection.DOWN
-        ):
+            or self.mpr.ambient_pressure - self.mpr.prev_pressure > MAX_VACUUM_PRESSURE
+        ) and move_dir == SyringeDirection.DOWN:
             return False
 
         return True
