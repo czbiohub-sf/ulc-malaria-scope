@@ -49,7 +49,6 @@ from ulc_mm_package.hardware.pneumatic_module import (
     PressureSensorStaleValue,
     PressureSensorRead,
 )
-from ulc_mm_package.image_processing.processing_constants import MAX_VACUUM_PRESSURE
 
 SYRINGE_LOCK = threading.Lock()
 PSI_TO_HPA = 68.947572932

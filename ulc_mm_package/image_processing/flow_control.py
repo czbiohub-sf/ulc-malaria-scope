@@ -237,7 +237,6 @@ class FlowController:
             except SyringeEndOfTravel:
                 raise CantReachTargetFlowrate(self.flowrate)
 
-
     def stop(self):
         self.fre.stop()
         self.fre.reset()
