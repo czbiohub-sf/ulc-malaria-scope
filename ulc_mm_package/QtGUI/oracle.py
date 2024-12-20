@@ -128,8 +128,9 @@ class Oracle(Machine):
             mkdir(log_dir)
 
         # Setup logger
+        logger_config_path = Path(__file__).resolve().parent.parent / "logger.config"
         fileConfig(
-            fname="../logger.config",
+            fname=str(logger_config_path),
             defaults={
                 "filename": path.join(log_dir, f"{self.datetime_str}.log"),
                 "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO",
