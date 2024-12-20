@@ -507,7 +507,7 @@ class Routines:
                 start = perf_counter()
 
                 while perf_counter() - start < pull_time:
-                    flow_controller.adjustSyringe(1.0) 
+                    flow_controller.adjustSyringe(1.0)
                     img = yield
                 mscope.pneumatic_module.setDutyCycle(
                     mscope.pneumatic_module.getMaxDutyCycle()
