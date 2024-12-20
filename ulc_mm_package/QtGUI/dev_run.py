@@ -1179,7 +1179,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.close()
 
 
-if __name__ == "__main__":
+def run():
     if path.isfile(LOCKFILE):
         print(
             f"Terminating run. Lockfile ({LOCKFILE}) exists, so scope is locked while another run is in progress."
@@ -1197,3 +1197,7 @@ if __name__ == "__main__":
         app.exec_()
     finally:
         main_window.mscope.shutoff()
+
+
+if __name__ == "__main__":
+    run()
