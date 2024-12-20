@@ -863,7 +863,7 @@ class Oracle(Machine):
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
 
-def run():
+def main():
     app = ShutoffApplication(sys.argv)
     oracle = Oracle()
 
@@ -887,4 +887,4 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    main()

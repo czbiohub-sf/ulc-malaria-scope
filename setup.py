@@ -62,6 +62,7 @@ setup(
     entry_points={
         "console_scripts": [
             "remo-run=ulc_mm_package.QtGUI.oracle:main",
+            "remo-dev=ulc_mm_package.QtGUI.dev_run:main",
             "remo-fix-focus=ulc_mm_package.utilities.coarse_focus_utility:main",
             "remo-pneumatic-calibration=ulc_mm_package.utilities.pneumatic_utility:main",
         ]
