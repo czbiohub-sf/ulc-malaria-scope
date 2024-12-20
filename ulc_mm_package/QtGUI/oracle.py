@@ -128,8 +128,9 @@ class Oracle(Machine):
             mkdir(log_dir)
 
         # Setup logger
+        logger_config_path = Path(__file__).resolve().parent.parent / "logger.config"
         fileConfig(
-            fname="../logger.config",
+            fname=str(logger_config_path),
             defaults={
                 "filename": path.join(log_dir, f"{self.datetime_str}.log"),
                 "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO",
@@ -474,7 +475,7 @@ class Oracle(Machine):
     def error_handler(self, title, text, behavior, QR_code):
         if QR_code is not QR.NONE.value:
             if behavior == ERROR_BEHAVIORS.RELOAD.value:
-                QR_msg = "\n\Try loading a new flow cell. If problem persists, scan QR code to troubleshoot."
+                QR_msg = "\nTry loading a new flow cell. If problem persists, scan QR code to troubleshoot."
             else:
                 QR_msg = "\n\nScan QR code to troubleshoot."
         else:
@@ -863,7 +864,7 @@ class Oracle(Machine):
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
 
-if __name__ == "__main__":
+def main():
     app = ShutoffApplication(sys.argv)
     oracle = Oracle()
 
@@ -884,3 +885,7 @@ if __name__ == "__main__":
     sys.excepthook = shutoff_excepthook
 
     app.exec()
+
+
+if __name__ == "__main__":
+    main()
