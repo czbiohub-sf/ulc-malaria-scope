@@ -92,7 +92,7 @@ class FlowController:
 
         self.first_image: bool = True
         self.target_flowrate: Optional[float] = None
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger()
 
     def reset(self):
         self.fre.reset()
@@ -192,7 +192,8 @@ class FlowController:
 
                 try:
                     pressure, pressure_read = self.pneumatic_module.getPressure()
-                    if pressure < (
+                    # While the current pressure is less than the allowable max vacuum, we can pull the syringe further
+                    if pressure > (
                         self.pneumatic_module.getAmbientPressure() - MAX_VACUUM_PRESSURE
                     ):
                         self.adjustSyringe(flow_error)
