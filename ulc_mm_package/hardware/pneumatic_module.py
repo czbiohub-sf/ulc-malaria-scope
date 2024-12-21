@@ -99,6 +99,9 @@ class PneumaticModuleBase(ABC):
     def is_locked(self):
         ...
 
+    def getPressureMaxReadAttempts(self, max_attempts: int):
+        ...
+
 
 @hardware
 class PneumaticModule(PneumaticModuleBase):
