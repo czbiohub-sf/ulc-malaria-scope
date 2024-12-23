@@ -14,6 +14,7 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     checkLedWorking,
 )
+from ulc_mm_package.image_processing.flow_control import FlowController
 
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
@@ -380,7 +381,9 @@ class Routines:
                 autobrightness.autobrightness_pid_control(img)
                 curr_img_brightness = autobrightness.prev_mean_img_brightness
 
-    def checkPressureDifference(self, mscope: MalariaScope) -> float:
+    def checkPressureDifference(
+        self, mscope: MalariaScope, ambient_pressure: float
+    ) -> float:
         """Check the pressure differential. Raises an exception if difference is insufficent
         or if the pressure sensor cannot be read.
 
@@ -397,14 +400,6 @@ class Routines:
             Raised if the pressure difference between the fully extended and retracted syringe is insufficient.
         """
 
-        # Record pre-pull pressure
-        try:
-            initial_pressure, _ = mscope.pneumatic_module.getPressureMaxReadAttempts(
-                max_attempts=10
-            )
-        except PressureSensorBusy:
-            raise
-
         # Move syringe to its maximally extended (lowest) position
         mscope.pneumatic_module.setDutyCycle(mscope.pneumatic_module.getMinDutyCycle())
 
@@ -417,17 +412,18 @@ class Routines:
             raise
 
         # Check if there is a pressure leak
-        pressure_diff = initial_pressure - final_pressure
+        mscope.pneumatic_module.mpr.ambient_pressure = ambient_pressure
+        mscope.pneumatic_module.mpr.final_pressure = final_pressure
+        pressure_diff = ambient_pressure - final_pressure
         if pressure_diff < MIN_PRESSURE_DIFF:
             raise PressureLeak(
-                f"Pressure leak detected, could only generate {pressure_diff:.3f} hPa pressure differential."
+                f"Pressure leak detected. Could only generate {pressure_diff:.3f} hPa pressure differential."
             )
         else:
             # Return syringe to its initial position
             mscope.pneumatic_module.setDutyCycle(
                 mscope.pneumatic_module.getMaxDutyCycle()
             )
-
             return pressure_diff
 
     @init_generator
@@ -483,6 +479,7 @@ class Routines:
         # Maximum number of times to run check for cells routine before aborting
         max_attempts = 3
         cell_finder = CellFinder()
+        flow_controller = FlowController(mscope.pneumatic_module)
         img = yield
 
         # Initial check for cells, return current motor position if cells found
@@ -503,27 +500,79 @@ class Routines:
                 raise NoCellsFound()
 
             # Pull the syringe maximally for `pull_time` seconds
-            if not (skip_syringe_pull):
-                start = perf_counter()
-                mscope.pneumatic_module.setDutyCycle(
-                    mscope.pneumatic_module.getMinDutyCycle()
-                )
 
-                while perf_counter() - start < pull_time:
+            # The syringe pull step is only skipped when this function is called from an OOF exception
+            # in which case, cells are already present, we just need to sweep the motor to find them
+            if not (skip_syringe_pull):
+                # Let's first pull until we reach the max allowable vacuum pressure
+                self.logger.info("Pulling pressure...")
+                curr_pressure_gauge = abs(
+                    mscope.pneumatic_module.getAmbientPressure()
+                    - mscope.pneumatic_module.getPressure()[0]
+                )
+                while curr_pressure_gauge < processing_constants.MAX_VACUUM_PRESSURE:
+                    # Pass in a flow_error=1.0 to pull the syringe down
+                    flow_controller.adjustSyringe(flow_error=1.0)
+                    curr_pressure_gauge = abs(
+                        mscope.pneumatic_module.getAmbientPressure()
+                        - mscope.pneumatic_module.getPressure()[0]
+                    )
                     img = yield
+
+                start = perf_counter()
+                self.logger.info(
+                    f"Reached gauge pressure: {curr_pressure_gauge:.2f} mBar"
+                )
+                self.logger.info("Waiting for cells...")
+                while perf_counter() - start < pull_time:
+                    # Wait the desired time
+                    yield
+                logging.info("Resetting pressure...")
                 mscope.pneumatic_module.setDutyCycle(
                     mscope.pneumatic_module.getMaxDutyCycle()
                 )
 
+            logging.info("Looking for cells...")
             # Perform a full focal stack and get the cross-correlation value for each image
-            for pos in range(0, mscope.motor.max_pos, steps_per_image):
-                mscope.motor.move_abs(pos)
-                img = yield
-                cell_finder.add_image(mscope.motor.pos, img)
-                try:
-                    return cell_finder.get_cells_found_position()
-                except NoCellsFound:
-                    pass
+            # If we're currently at the bottom, do the bottom-up sweep. Otherwise, do the top-down sweep.
+            if mscope.motor.pos == 0:
+                for pos in range(0, mscope.motor.max_pos, steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
+            elif mscope.motor.pos == mscope.motor.max_pos:
+                for pos in range(mscope.motor.max_pos, 0, -steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
+            else:
+                # Move from the current position to the bottom sweep as we're going down
+                for pos in range(mscope.motor.pos, 0, -steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
+
+                # If cells not found on the way down, sweep all the way back up
+                for pos in range(0, mscope.motor.max_pos, steps_per_image):
+                    mscope.motor.move_abs(pos)
+                    img = yield
+                    cell_finder.add_image(mscope.motor.pos, img)
+                    try:
+                        return cell_finder.get_cells_found_position()
+                    except NoCellsFound:
+                        pass
 
             # The below only runs if the function didn't return early in the for loop above
             max_attempts -= 1

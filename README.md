@@ -1,24 +1,15 @@
-# Remoscope: an automated, low-cost, and fast malaria diagnostic system
+# Remoscope: a label-free imaging cytometer for malaria diagnostics
 
 ![An artistic rendition of the Remoscope](icon.png)
 
-[TODO] - Add figure showing workflow once finalized
-
 ## Introduction
+This repository hosts instrument control software for the Remoscope, an automated and low-cost malaria diagnostic system, requiring minimal user training. The Remoscope was developed by the Bioengineering team at the Chan Zuckerberg Biohub San Francisco (CZBSF). The Remoscope images unstained fresh whole blood in liquid form and can screen up to two million red blood cells for _Plasmodium falciparum_ parasites. 
 
-TODO [Add reference to paper once uploaded]
+Please see our preprint here:
 
-This repository houses the machine learning models and instrument control software for the Remoscope, an automated and low-cost malaria diagnostic system, requiring minimal user training. The Remoscope was developed by the Bioengineering team at the Chan Zuckerberg Biohub San Francisco (CZBSF). The Remoscope images unstained fresh whole blood in liquid form and can screen up to two million red blood cells for _Plasmodium falciparum_ parasites.
+![image](https://github.com/user-attachments/assets/0a6896c8-2bae-41b2-a18e-0afa75b93250)
 
 The Remoscope runs off a Raspberry Pi 4 Model B 8GB and an Intel Neural Compute Stick 2 (no longer available) to accelerate on-device neural network inferencing. The instrument control software is written in Python 3.7.3.
-
-## User guide
-
-[TODO] - Verify that the user guide is publicly accessible (https://docs.google.com/document/d/11vunMRfG9IbehD3opIatyN18aQXaa78SdT_b89pUGIs/edit#)
-
-## Mechanical model
-
-[TODO] - Add Onshape link, rotating gif of onshape model here
 
 ## Repository structure
 
@@ -63,12 +54,8 @@ To start the software, navigate to ulc_mm_package/QtGUI and run `python3 oracle.
 
 To use developer mode, navigate to ulc_mm_package/QtGUI and run `python3 dev_run.py`. This opens a GUI with manual hardware control for debugging purposes.
 
-#### Related malaria scope repositories reference
-
-1. Main: https://github.com/czbiohub/ulc-malaria-scope
-2. Object detection - YOGO: https://github.com/czbiohub-sf/yogo
-3. Autofocus - SSAF: https://github.com/czbiohub-sf/ulc-malaria-autofocus
-4. Data processing utilities / model evaluations: https://github.com/czbiohub-sf/lfm-data-utilities/
-5. Dataset definitions (sets of files defining which datasets to use for training/testing, etc.): https://github.com/czbiohub-sf/lfm-dataset-definitions/tree/main
-6. Thumbnail labels (stored on flexo, backed up to this repository): https://github.com/czbiohub-sf/lfm-human-labels
-7. Statistics utilities: https://github.com/czbiohub-sf/remo-stats-utils
+#### Related repositories
+1. Object detection - YOGO: https://github.com/czbiohub-sf/yogo
+2. Autofocus - SSAF: https://github.com/czbiohub-sf/ulc-malaria-autofocus
+3. Data processing utilities / model evaluations: https://github.com/czbiohub-sf/lfm-data-utilities/
+4. Statistics utilities: https://github.com/czbiohub-sf/remo-stats-utils

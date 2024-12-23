@@ -16,9 +16,26 @@ class STATUS(enum.Enum):
 
 # ================ Oracle error options ================ #
 class ERROR_BEHAVIORS(enum.Enum):
-    DEFAULT = 0
-    PRECHECK = 1
-    FLOWCONTROL = 2
+    NO_RELOAD = 0
+    RELOAD = 1
+    PRECHECK = 2
+    FLOWCONTROL = 3
+
+
+# ================ QR codes ================ #
+QR_loc = Path(__file__).parent.resolve() / "gui_images" / "QR"
+
+
+class QR(enum.Enum):
+    PRESSURE_LEAK = str(QR_loc / "pressure-leak.png")
+    PRESSURE_READ = str(QR_loc / "pressure-read.png")
+    LED_OFF = str(QR_loc / "led-off.png")
+    LED_DIM = str(QR_loc / "led-dim.png")
+    NO_CELLS = str(QR_loc / "no-cells.png")
+    FOCUS = str(QR_loc / "focus.png")
+    FLOWRATE = str(QR_loc / "flowrate.png")
+    EXCEPTION = str(QR_loc / "exception.png")
+    NONE = ""
 
 
 # ================ State machine verification ================ #
@@ -87,4 +104,17 @@ for image_path in (ICON_PATH, IMAGE_INSERT_PATH, IMAGE_REMOVE_PATH, IMAGE_RELOAD
 
 FLOWCELL_QC_FORM_LINK = (
     "https://docs.google.com/forms/d/16pOE3TAvOMZG4Yuu3ef73knGYKRdZfXSxg5vZlsR-AM/edit"
+)
+
+# ================ Message dialogs ================ #
+# Use <br> for newline instead of \n where HTML formatting is used
+ERROR_MSG = '\n\nClick "OK" to end the current run.'
+COMPLETE_MSG = "Run status: <b><font color='green'>COMPLETE</font></b>"
+TIMEOUT_MSG = f"Run status: <b><font color='red'>INCOMPLETE</font></b> ({TIMEOUT_PERIOD_M} minute timeout)<br><br>Please rerun this sample."
+FAIL_MSG = "Run status: <b><font color='red'>INCOMPLETE</font></b> (due to error)<br><br>Please rerun this sample."
+TERMINATED_MSG = (
+    "Run status: <b><font color='red'>INCOMPLETE</font></b> (terminated by user)</b>"
+)
+PARASITEMIA_VIS_MSG = (
+    "<br><br>Estimated parasitemia with 95% confidence bounds shown below."
 )

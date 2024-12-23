@@ -78,6 +78,9 @@ class PneumaticModuleBase(ABC):
     def getPressure(self):
         ...
 
+    def getAmbientPressure(self):
+        ...
+
     def getMinDutyCycle(self):
         ...
 
@@ -94,6 +97,9 @@ class PneumaticModuleBase(ABC):
         ...
 
     def is_locked(self):
+        ...
+
+    def getPressureMaxReadAttempts(self, max_attempts: int):
         ...
 
 

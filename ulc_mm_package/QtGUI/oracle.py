@@ -16,6 +16,7 @@ from os import (
     listdir,
     mkdir,
     path,
+    remove,
 )
 from transitions import Machine
 from transitions.core import MachineError
@@ -59,6 +60,10 @@ from ulc_mm_package.QtGUI.gui_constants import (
     IMAGE_INSERT_PATH,
     IMAGE_REMOVE_PATH,
     IMAGE_RELOAD_PATH,
+    QR,
+    ERROR_MSG,
+    FAIL_MSG,
+    TERMINATED_MSG,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
@@ -74,14 +79,12 @@ from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
-# ================ Misc constants ================ #
-_ERROR_MSG = '\n\nClick "OK" to end this run.'
-
 
 class Buttons(enum.Enum):
     OK = QMessageBox.Ok
     CANCEL = QMessageBox.Cancel | QMessageBox.Ok
     YN = QMessageBox.No | QMessageBox.Yes
+    NONE = QMessageBox.NoButton
 
 
 class ShutoffApplication(QApplication):
@@ -126,8 +129,9 @@ class Oracle(Machine):
             mkdir(log_dir)
 
         # Setup logger
+        logger_config_path = Path(__file__).resolve().parent.parent / "logger.config"
         fileConfig(
-            fname="../logger.config",
+            fname=str(logger_config_path),
             defaults={
                 "filename": path.join(log_dir, f"{self.datetime_str}.log"),
                 "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO",
@@ -201,6 +205,8 @@ class Oracle(Machine):
         self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
 
         self.liveview_window.set_infopanel_vals()
+
+        self.ambient_pressure = None
 
         # Lid handler
         self.lid_handler_enabled = False
@@ -348,7 +354,7 @@ class Oracle(Machine):
                     QMessageBox.Icon.Critical,
                     "SSD not found",
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
-                    + _ERROR_MSG,
+                    + ERROR_MSG,
                     buttons=Buttons.OK,
                 )
                 sys.exit(1)
@@ -365,7 +371,7 @@ class Oracle(Machine):
             QMessageBox.Icon.Critical,
             "No available storage folders",
             "Couldn't find any folders in /media/pi with sufficient storage. Please eject and replace the SSD with a new one. Thank you!"
-            + _ERROR_MSG,
+            + ERROR_MSG,
             buttons=Buttons.OK,
         )
 
@@ -390,7 +396,7 @@ class Oracle(Machine):
         icon=QMessageBox.Icon.Information,
         title="Pause run?",
         message=(
-            "While paused, you can add more sample to the flow cell. "
+            "While paused, the CAP module can be removed."
             "After pausing, the scope will restart the calibration steps."
             '\n\nClick "OK" to pause this run and wait for the next dialog before removing the CAP module.'
         ),
@@ -465,24 +471,44 @@ class Oracle(Machine):
         )
         if message_result == QMessageBox.Ok:
             self.lid_handler_enabled = False
-            self.scopeop.to_intermission("Ending experiment due to user prompt.")
+            self.scopeop.to_intermission(TERMINATED_MSG)
 
-    def error_handler(self, title, text, behavior):
-        if behavior == ERROR_BEHAVIORS.DEFAULT.value:
+    def error_handler(self, title, text, behavior, QR_code):
+        if QR_code is not QR.NONE.value:
+            if behavior == ERROR_BEHAVIORS.RELOAD.value:
+                QR_msg = "\nTry loading a new flow cell. If problem persists, scan QR code to troubleshoot."
+            else:
+                QR_msg = "\n\nScan QR code to troubleshoot."
+        else:
+            QR_msg = ""
+
+        if behavior == ERROR_BEHAVIORS.NO_RELOAD.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + _ERROR_MSG,
+                text + QR_msg + ERROR_MSG,
                 buttons=Buttons.OK,
+                image=QR_code,
             )
-            self.scopeop.to_intermission("Ending experiment due to error.")
+            self.scopeop.to_intermission(FAIL_MSG)
+
+        elif behavior == ERROR_BEHAVIORS.RELOAD.value:
+            self.display_message(
+                QMessageBox.Icon.Critical,
+                title,
+                text + QR_msg + ERROR_MSG,
+                buttons=Buttons.OK,
+                image=QR_code,
+            )
+            self.scopeop.to_intermission(FAIL_MSG)
 
         elif behavior == ERROR_BEHAVIORS.PRECHECK.value:
             self.display_message(
                 QMessageBox.Icon.Critical,
                 title,
-                text + _ERROR_MSG,
+                text + QR_msg + ERROR_MSG,
                 buttons=Buttons.OK,
+                image=QR_code,
             )
 
         elif behavior == ERROR_BEHAVIORS.FLOWCONTROL.value:
@@ -490,11 +516,13 @@ class Oracle(Machine):
                 QMessageBox.Icon.Critical,
                 title,
                 text
+                + QR_msg
                 + '\n\nClick "Yes" to continue experiment with flowrate below target, or click "No" to end this run.',
                 buttons=Buttons.YN,
+                image=QR_code,
             )
             if message_result == QMessageBox.No:
-                self.scopeop.to_intermission("Ending experiment due to error.")
+                self.scopeop.to_intermission(FAIL_MSG)
             else:
                 if self.scopeop.state == "fastflow":
                     self.scopeop.next_state()
@@ -505,7 +533,7 @@ class Oracle(Machine):
         title,
         text,
         buttons=None,
-        image=None,
+        image="",
     ):
         self.message_window.close()
 
@@ -519,18 +547,23 @@ class Oracle(Machine):
         if buttons is not None:
             self.message_window.setStandardButtons(buttons.value)
 
-        if image is not None:
+        if image != "":
             layout = self.message_window.layout()
 
             image_lbl = QLabel()
-            image_lbl.setPixmap(QPixmap(image))
+            image_lbl.setPixmap(
+                QPixmap(image).scaledToWidth(700, Qt.SmoothTransformation)
+            )
 
             # Row/column span determined using layout.rowCount() and layout.columnCount()
             # TODO: Mypy doesn't like this because of "too many args" and "alignment"
             layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)  # type: ignore
 
-        message_result = self.message_window.exec()
-        return message_result
+        if buttons is Buttons.NONE:
+            self.message_window.show()
+        else:
+            message_result = self.message_window.exec()
+            return message_result
 
     def close_lid_display_message(self):
         while self.scopeop.lid_opened:
@@ -563,10 +596,25 @@ class Oracle(Machine):
         self.scopeop_thread.start()
         self.acquisition_thread.start()
 
-        self.form_window.showMaximized()
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Starting up",
+            "Hardware is initializing, please wait...",
+            buttons=Buttons.NONE,
+        )
 
     def _end_setup(self, *args):
-        self.form_window.unfreeze_buttons()
+        try:
+            (
+                self.ambient_pressure,
+                _,
+            ) = self.scopeop.mscope.pneumatic_module.getPressure()
+        except PressureSensorStaleValue as e:
+            self.logger.warning(f"Stale value from pressure sensor: {e}")
+
+        self.scopeop.set_ambient_pressure(self.ambient_pressure)
+
+        self.message_window.close()
 
     def _start_form(self, *args):
         self.form_window.showMaximized()
@@ -595,14 +643,7 @@ class Oracle(Machine):
             AUTOFOCUS_MODEL_DIR
         ).parent.stem
         self.experiment_metadata["yogo_model"] = Path(YOGO_MODEL_DIR).parent.stem
-        try:
-            (
-                self.experiment_metadata["ambient_pressure"],
-                _,
-            ) = self.scopeop.mscope.pneumatic_module.getPressure()
-        except PressureSensorStaleValue as e:
-            self.experiment_metadata["ambient_pressure"] = "STALE"
-            self.logger.info(f"Stale pressure sensor value - {e}")
+        self.experiment_metadata["ambient_pressure"] = self.ambient_pressure
 
         # TODO try a cleaner solution than nested try-excepts?
         # On Git branch
@@ -714,15 +755,25 @@ class Oracle(Machine):
     def _end_liveview(self, *args):
         self.liveview_window.close()
 
-    def _start_intermission(self, msg):
-        if msg == "":
+    def _start_intermission(self, msg=None, parasitemia_vis_path=""):
+        if msg is None:
             # Retriggered intermission due to race condition
             return
 
         self.display_message(
             QMessageBox.Icon.Information,
-            "Run complete",
-            f'{msg} Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
+            "Run status",
+            msg,
+            buttons=Buttons.OK,
+            image=parasitemia_vis_path,
+        )
+        if Path(parasitemia_vis_path).exists():
+            remove(parasitemia_vis_path)
+
+        self.display_message(
+            QMessageBox.Icon.Information,
+            "Remove flow cell",
+            'Remove CAP module and flow cell now.\n\nClick "OK" once they are removed.',
             buttons=Buttons.OK,
             image=IMAGE_REMOVE_PATH,
         )
@@ -744,7 +795,7 @@ class Oracle(Machine):
                 try:
                     self.scopeop.rerun()
                 except MachineError:
-                    self.scopeop.to_intermission(None)
+                    self.scopeop.to_intermission()
                     self.scopeop.rerun()
 
     def shutoff(self):
@@ -816,7 +867,7 @@ class Oracle(Machine):
             self.logger.info("EMERGENCY ORACLE SHUT OFF SUCCESSFUL.")
 
 
-if __name__ == "__main__":
+def main():
     app = ShutoffApplication(sys.argv)
     oracle = Oracle()
 
@@ -837,3 +888,7 @@ if __name__ == "__main__":
     sys.excepthook = shutoff_excepthook
 
     app.exec()
+
+
+if __name__ == "__main__":
+    main()

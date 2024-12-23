@@ -16,19 +16,17 @@ from transitions import Machine, State
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
-
 from ulc_mm_package.hardware.scope_routines import Routines
+from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorControllerError
+from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
+from ulc_mm_package.hardware.pneumatic_module import (
+    PressureLeak,
+    PressureSensorStaleValue,
+    PressureSensorBusy,
+)
 
-from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.image_processing.classic_focus import OOF
 from ulc_mm_package.image_processing.focus_metrics import downsample_image
-from ulc_mm_package.scope_constants import (
-    DOWNSAMPLE_FACTOR,
-    PER_IMAGE_METADATA_KEYS,
-    SIMULATION,
-    MAX_FRAMES,
-    VERBOSE,
-)
 from ulc_mm_package.image_processing.flow_control import CantReachTargetFlowrate
 from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
@@ -39,33 +37,34 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     LEDNoPower,
 )
-from ulc_mm_package.hardware.motorcontroller import InvalidMove, MotorControllerError
-from ulc_mm_package.hardware.hardware_constants import TH_PERIOD_NUM
-from ulc_mm_package.hardware.pneumatic_module import (
-    PressureLeak,
-    PressureSensorStaleValue,
-    PressureSensorBusy,
-)
+
 from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
     AF_BATCH_SIZE,
 )
-
 import ulc_mm_package.neural_nets.utils as nn_utils
 
+from ulc_mm_package.QtGUI.acquisition import Acquisition
 from ulc_mm_package.QtGUI.gui_constants import (
-    TIMEOUT_PERIOD_M,
     TIMEOUT_PERIOD_S,
     ERROR_BEHAVIORS,
+    QR,
+    COMPLETE_MSG,
+    TIMEOUT_MSG,
+    PARASITEMIA_VIS_MSG,
 )
+
 from ulc_mm_package.scope_constants import (
+    DOWNSAMPLE_FACTOR,
+    PER_IMAGE_METADATA_KEYS,
+    SIMULATION,
+    MAX_FRAMES,
+    VERBOSE,
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
 )
-
-# TODO populate info?
 
 
 class NamedState(State):
@@ -83,13 +82,13 @@ class NamedMachine(Machine):
 
 class ScopeOp(QObject, NamedMachine):
     setup_done = pyqtSignal()
-    experiment_done = pyqtSignal(str)
+    experiment_done = pyqtSignal(str, str)
     reset_done = pyqtSignal()
 
     yield_mscope = pyqtSignal(MalariaScope)
 
     precheck_error = pyqtSignal()
-    default_error = pyqtSignal(str, str, int)
+    default_error = pyqtSignal(str, str, int, str)
 
     reload_pause = pyqtSignal(str, str)
     lid_open_pause = pyqtSignal()
@@ -124,6 +123,7 @@ class ScopeOp(QObject, NamedMachine):
 
         self.routines = Routines()
 
+        self.ambient_pressure = None
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
 
@@ -246,6 +246,8 @@ class ScopeOp(QObject, NamedMachine):
         self.start_time = None
         self.accumulated_time = 0
 
+        self.parasitemia_vis_path = ""
+
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
 
@@ -327,8 +329,10 @@ class ScopeOp(QObject, NamedMachine):
             self.default_error.emit(
                 "Hardware pre-check failed",
                 "The following component(s) could not be instantiated: "
+                + "\n\nPlease contact Biohub."
                 f"{', '.join(failed_components).capitalize()}.",
                 ERROR_BEHAVIORS.PRECHECK.value,
+                QR.NONE.value,
             )
             self.precheck_error.emit()
 
@@ -339,6 +343,9 @@ class ScopeOp(QObject, NamedMachine):
 
     def lid_closed_handler(self, *args):
         self.lid_opened = False
+
+    def set_ambient_pressure(self, ambient_pressure):
+        self.ambient_pressure = ambient_pressure
 
     def start(self):
         self.running = True
@@ -399,9 +406,11 @@ class ScopeOp(QObject, NamedMachine):
     def _check_pressure_seal(self, *args):
         # Check that the pressure seal is good (i.e there is a sufficient pressure delta)
         try:
-            pdiff = self.routines.checkPressureDifference(self.mscope)
+            pdiff = self.routines.checkPressureDifference(
+                self.mscope, self.ambient_pressure
+            )
             self.logger.info(
-                f"Passed pressure check. Pressure difference = {pdiff} hPa."
+                f"Pressure check ✅. Ambient absolute pressure: {self.ambient_pressure:.2f} mBar. Gauge pressure = {pdiff:.2f} mBar."
             )
             if self.state == "pressure_check":
                 self.next_state()
@@ -411,15 +420,16 @@ class ScopeOp(QObject, NamedMachine):
             self.default_error.emit(
                 "Calibration failed",
                 "Failed to read pressure sensor to perform pressure seal check.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                ERROR_BEHAVIORS.NO_RELOAD.value,
+                QR.NONE.value,
             )
         except PressureLeak as e:
-            self.logger.error(f"Improper seal / pressure leak detected - {e}")
-            # TODO provide instructions for dealing with pressure leak?
+            self.logger.error(str(e))
             self.default_error.emit(
                 "Calibration failed",
-                "Improper seal / pressure leak detected.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                str(e),
+                ERROR_BEHAVIORS.RELOAD.value,
+                QR.NONE.value,
             )
 
     def _start_cellfinder(self, *args):
@@ -550,7 +560,14 @@ class ScopeOp(QObject, NamedMachine):
         self.finishing_experiment.emit(100)
 
     def _start_intermission(self, msg):
-        self.experiment_done.emit(msg)
+        parasitemia_vis_path = self.mscope.data_storage.get_parasitemia_vis_filename()
+
+        if parasitemia_vis_path.exists():
+            self.experiment_done.emit(
+                msg + PARASITEMIA_VIS_MSG, str(parasitemia_vis_path)
+            )
+        else:
+            self.experiment_done.emit(msg, "")
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
@@ -565,7 +582,7 @@ class ScopeOp(QObject, NamedMachine):
         except StopIteration as e:
             self.autobrightness_result = e.value
             self.logger.info(
-                f"Autobrightness successful. Mean pixel val = {self.autobrightness_result}."
+                f"Autobrightness ✅. Mean pixel val = {self.autobrightness_result}."
             )
             self.last_img = img
             if self.state in {
@@ -590,17 +607,19 @@ class ScopeOp(QObject, NamedMachine):
                 f"Autobrightness failed. Mean pixel value = {e.value}.",
             )
             self.default_error.emit(
-                "Autobrightness failed",
+                "Calibration failed",
                 "LED is too dim to run experiment.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                ERROR_BEHAVIORS.RELOAD.value,
+                QR.NONE.value,
             )
         except LEDNoPower as e:
             if not SIMULATION:
                 self.logger.error(f"LED initial functionality test did not pass - {e}")
                 self.default_error.emit(
-                    "LED failure",
-                    "The off/on LED test failed.",
-                    ERROR_BEHAVIORS.DEFAULT.value,
+                    "Calibration failed",
+                    "Did not pass the off/on LED test.",
+                    ERROR_BEHAVIORS.NO_RELOAD.value,
+                    QR.NONE.value,
                 )
             else:
                 if self.state in {
@@ -635,7 +654,8 @@ class ScopeOp(QObject, NamedMachine):
             self.default_error.emit(
                 "Calibration failed",
                 "No cells found.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                ERROR_BEHAVIORS.RELOAD.value,
+                QR.NONE.value,
             )
         else:
             if self.running:
@@ -701,8 +721,9 @@ class ScopeOp(QObject, NamedMachine):
                     )
                     self.default_error.emit(
                         "Calibration failed",
-                        "Unable to achieve focus because the stage has reached its range of motion limit..",
-                        ERROR_BEHAVIORS.DEFAULT.value,
+                        "Unable to achieve focus because the stage has reached its range of motion limit.",
+                        ERROR_BEHAVIORS.RELOAD.value,
+                        QR.NONE.value,
                     )
         else:
             self.last_img = img
@@ -738,7 +759,13 @@ class ScopeOp(QObject, NamedMachine):
                     raise CantReachTargetFlowrate(self.flowrate)
         except StopIteration as e:
             self.fastflow_result = e.value
-            self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
+            curr_pressure_gauge = abs(
+                self.mscope.pneumatic_module.getAmbientPressure()
+                - self.mscope.pneumatic_module.getPressure()[0]
+            )
+            self.logger.info(
+                f"Fastflow ✅. Flowrate = {self.fastflow_result:.2f} @ gauge pressure: {curr_pressure_gauge:.2f} mBar."
+            )
             self.update_flowrate.emit(self.fastflow_result)
             if self.state == "fastflow":
                 self.next_state()
@@ -750,13 +777,15 @@ class ScopeOp(QObject, NamedMachine):
                 "Calibration issue",
                 "Unable to achieve target flowrate with syringe at max position. Continue running anyway?",
                 ERROR_BEHAVIORS.FLOWCONTROL.value,
+                QR.NONE.value,
             )
         except Exception as e:
             self.logger.error(f"Unexpected exception in fastflow - {e}")
             self.default_error.emit(
-                "Flow control failed",
+                "Closed loop control failed",
                 "Unexpected exception in flow control routine.",
-                ERROR_BEHAVIORS.DEFAULT.value,
+                ERROR_BEHAVIORS.NO_RELOAD.value,
+                QR.NONE.value,
             )
         else:
             if self.running:
@@ -789,16 +818,14 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.frame_count >= MAX_FRAMES:
             if self.state == "experiment":
-                self.to_intermission(
-                    "Ending experiment since data collection is complete."
-                )
+                self.update_img_count.emit(self.frame_count)
+
+                self.to_intermission(COMPLETE_MSG)
             return
 
         if current_time - self.start_time > TIMEOUT_PERIOD_S:
             if self.state == "experiment":
-                self.to_intermission(
-                    f"Ending experiment since {TIMEOUT_PERIOD_M} minute timeout was reached."
-                )
+                self.to_intermission(TIMEOUT_MSG)
             return
 
         # Record timestamp before running routines
@@ -862,12 +889,13 @@ class ScopeOp(QObject, NamedMachine):
         except MotorControllerError as e:
             if not SIMULATION:
                 self.logger.error(
-                    "Autofocus failed. Can't achieve focus within condenser's depth of field."
+                    "Autofocus failed. Can't achieve focus within focal range."
                 )
                 self.default_error.emit(
-                    "Autofocus failed",
-                    "Unable to achieve desired focus within condenser's depth of field.",
-                    ERROR_BEHAVIORS.DEFAULT.value,
+                    "Closed loop control failed",
+                    "Unable to achieve desired focus within focal range.",
+                    ERROR_BEHAVIORS.RELOAD.value,
+                    QR.NONE.value,
                 )
                 return
             else:
