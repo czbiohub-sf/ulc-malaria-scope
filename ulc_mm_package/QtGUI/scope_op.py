@@ -12,7 +12,6 @@ import numpy as np
 from typing import Any
 from time import sleep, perf_counter
 from transitions import Machine, State
-from os import remove
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
@@ -567,7 +566,6 @@ class ScopeOp(QObject, NamedMachine):
             self.experiment_done.emit(
                 msg + PARASITEMIA_VIS_MSG, str(parasitemia_vis_path)
             )
-            remove(parasitemia_vis_path)
         else:
             self.experiment_done.emit(msg, "")
 

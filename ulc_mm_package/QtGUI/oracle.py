@@ -16,6 +16,7 @@ from os import (
     listdir,
     mkdir,
     path,
+    remove,
 )
 from transitions import Machine
 from transitions.core import MachineError
@@ -766,6 +767,8 @@ class Oracle(Machine):
             buttons=Buttons.OK,
             image=parasitemia_vis_path,
         )
+        if Path(parasitemia_vis_path).exists():
+            remove(parasitemia_vis_path)
 
         self.display_message(
             QMessageBox.Icon.Information,
