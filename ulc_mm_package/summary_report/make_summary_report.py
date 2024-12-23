@@ -44,9 +44,11 @@ def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
 
     if total_parasites > 0:
         str_cell_counts = [
-            f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
-            if i in ASEXUAL_PARASITE_CLASS_IDS
-            else f"{ct}"
+            (
+                f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
+                if i in ASEXUAL_PARASITE_CLASS_IDS
+                else f"{ct}"
+            )
             for i, ct in enumerate(
                 [
                     ct if i in CLASS_IDS_FOR_TABLE_COUNTS else 0

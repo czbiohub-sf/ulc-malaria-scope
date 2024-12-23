@@ -770,7 +770,6 @@ class Oracle(Machine):
         if Path(parasitemia_vis_path).exists():
             remove(parasitemia_vis_path)
 
-
         self.display_message(
             QMessageBox.Icon.Information,
             "Remove flow cell",
