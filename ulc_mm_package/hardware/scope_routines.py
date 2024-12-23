@@ -520,7 +520,9 @@ class Routines:
                     img = yield
 
                 start = perf_counter()
-                self.logger.info(f"Reached pressure: {curr_pressure_gauge:.2f} mBar")
+                self.logger.info(
+                    f"Reached gauge pressure: {curr_pressure_gauge:.2f} mBar"
+                )
                 self.logger.info("Waiting for cells...")
                 while perf_counter() - start < pull_time:
                     # Wait the desired time

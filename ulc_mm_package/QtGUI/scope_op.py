@@ -410,7 +410,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.mscope, self.ambient_pressure
             )
             self.logger.info(
-                f"Passed pressure check. Pressure difference = {pdiff} hPa."
+                f"Passed pressure check. Ambient pressure: {self.ambient_pressure:.2f} mBar. Gauge pressure = {pdiff:.2f} mBar."
             )
             if self.state == "pressure_check":
                 self.next_state()
@@ -759,7 +759,13 @@ class ScopeOp(QObject, NamedMachine):
                     raise CantReachTargetFlowrate(self.flowrate)
         except StopIteration as e:
             self.fastflow_result = e.value
-            self.logger.info(f"Fastflow successful. Flowrate = {self.fastflow_result}.")
+            curr_pressure_gauge = abs(
+                self.mscope.pneumatic_module.getAmbientPressure()
+                - self.mscope.pneumatic_module.getPressure()[0]
+            )
+            self.logger.info(
+                f"Fastflow successful. Flowrate = {self.fastflow_result} @ gauge pressure: {curr_pressure_gauge:.2f} mBar."
+            )
             self.update_flowrate.emit(self.fastflow_result)
             if self.state == "fastflow":
                 self.next_state()
