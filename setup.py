@@ -45,7 +45,7 @@ setup(
         "transitions==0.8.11",
         "pyngrok==7.0.3",
         "numba==0.56.0",
-        "Jinja2==3.1.3",
+        "Jinja2==3.1.5",
         "xhtml2pdf==0.2.11",
     ],
     extras_require={
