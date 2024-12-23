@@ -8,6 +8,7 @@ from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 from ulc_mm_package.image_processing.processing_constants import (
     FLOW_CONTROL_EWMA_ALPHA,
     TOL_PERC,
+    MAX_VACUUM_PRESSURE,
 )
 from ulc_mm_package.image_processing.flowrate import FlowRateEstimator
 
@@ -91,7 +92,7 @@ class FlowController:
 
         self.first_image: bool = True
         self.target_flowrate: Optional[float] = None
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger()
 
     def reset(self):
         self.fre.reset()
@@ -190,8 +191,15 @@ class FlowController:
                 self.prev_adjustment_stamp = self.counter
 
                 try:
-                    self._adjustSyringe(flow_error)
-                    syringe_successfully_adjusted = True
+                    pressure, pressure_read = self.pneumatic_module.getPressure()
+                    # While the current pressure is less than the allowable max vacuum, we can pull the syringe further
+                    if pressure > (
+                        self.pneumatic_module.getAmbientPressure() - MAX_VACUUM_PRESSURE
+                    ):
+                        self.adjustSyringe(flow_error)
+                        syringe_successfully_adjusted = True
+                    else:
+                        syringe_successfully_adjusted = False
                 except CantReachTargetFlowrate:
                     syringe_successfully_adjusted = False
 
@@ -202,7 +210,7 @@ class FlowController:
         else:
             return (None, None, None)
 
-    def _adjustSyringe(self, flow_error: float):
+    def adjustSyringe(self, flow_error: float):
         """Adjusts the syringe based on the flow error.
 
         Parameters

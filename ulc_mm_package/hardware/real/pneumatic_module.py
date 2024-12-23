@@ -243,6 +243,9 @@ class PneumaticModule:
     ) -> Tuple[float, PressureSensorRead]:
         return self.mpr.getPressureMaxReadAttempts(max_attempts)
 
+    def getAmbientPressure(self) -> float:
+        return self.mpr.ambient_pressure
+
     def direct_read(self) -> Tuple[float, PressureSensorRead]:
         return self.mpr.direct_read()
 
@@ -260,6 +263,7 @@ class AdafruitMPRLS:
         self.mprls_pwr_pin = mprls_pwr_pin
         self.prev_poll_time_s: float = 0.0
         self.prev_pressure: float = 0.0
+        self.ambient_pressure: float = 0.0
         self.prev_status = PressureSensorRead.ALL_GOOD
 
         self.io_error_counter = 0

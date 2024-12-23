@@ -14,6 +14,7 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     checkLedWorking,
 )
+from ulc_mm_package.image_processing.flow_control import FlowController
 
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
@@ -411,6 +412,8 @@ class Routines:
             raise
 
         # Check if there is a pressure leak
+        mscope.pneumatic_module.mpr.ambient_pressure = ambient_pressure
+        mscope.pneumatic_module.mpr.final_pressure = final_pressure
         pressure_diff = ambient_pressure - final_pressure
         if pressure_diff < MIN_PRESSURE_DIFF:
             raise PressureLeak(
@@ -476,6 +479,7 @@ class Routines:
         # Maximum number of times to run check for cells routine before aborting
         max_attempts = 3
         cell_finder = CellFinder()
+        flow_controller = FlowController(mscope.pneumatic_module)
         img = yield
 
         # Initial check for cells, return current motor position if cells found
@@ -500,19 +504,36 @@ class Routines:
             # The syringe pull step is only skipped when this function is called from an OOF exception
             # in which case, cells are already present, we just need to sweep the motor to find them
             if not (skip_syringe_pull):
-                start = perf_counter()
-                mscope.pneumatic_module.setDutyCycle(
-                    mscope.pneumatic_module.getMinDutyCycle()
+                # Let's first pull until we reach the max allowable vacuum pressure
+                self.logger.info("Pulling pressure...")
+                curr_pressure_gauge = abs(
+                    mscope.pneumatic_module.getAmbientPressure()
+                    - mscope.pneumatic_module.getPressure()[0]
                 )
-
-                while perf_counter() - start < pull_time:
+                while curr_pressure_gauge < processing_constants.MAX_VACUUM_PRESSURE:
+                    # Pass in a flow_error=1.0 to pull the syringe down
+                    flow_controller.adjustSyringe(flow_error=1.0)
+                    curr_pressure_gauge = abs(
+                        mscope.pneumatic_module.getAmbientPressure()
+                        - mscope.pneumatic_module.getPressure()[0]
+                    )
                     img = yield
+
+                start = perf_counter()
+                self.logger.info(
+                    f"Reached gauge pressure: {curr_pressure_gauge:.2f} mBar"
+                )
+                self.logger.info("Waiting for cells...")
+                while perf_counter() - start < pull_time:
+                    # Wait the desired time
+                    yield
+                logging.info("Resetting pressure...")
                 mscope.pneumatic_module.setDutyCycle(
                     mscope.pneumatic_module.getMaxDutyCycle()
                 )
 
+            logging.info("Looking for cells...")
             # Perform a full focal stack and get the cross-correlation value for each image
-
             # If we're currently at the bottom, do the bottom-up sweep. Otherwise, do the top-down sweep.
             if mscope.motor.pos == 0:
                 for pos in range(0, mscope.motor.max_pos, steps_per_image):
