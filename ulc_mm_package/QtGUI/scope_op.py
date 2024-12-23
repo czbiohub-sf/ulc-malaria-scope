@@ -812,6 +812,8 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.frame_count >= MAX_FRAMES:
             if self.state == "experiment":
+                self.update_img_count.emit(self.frame_count)
+                
                 self.to_intermission(COMPLETE_MSG)
             return
 
