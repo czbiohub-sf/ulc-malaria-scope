@@ -764,7 +764,7 @@ class ScopeOp(QObject, NamedMachine):
                 - self.mscope.pneumatic_module.getPressure()[0]
             )
             self.logger.info(
-                f"Fastflow ✅. Flowrate = {self.fastflow_result} @ gauge pressure: {curr_pressure_gauge:.2f} mBar."
+                f"Fastflow ✅. Flowrate = {self.fastflow_result:.2f} @ gauge pressure: {curr_pressure_gauge:.2f} mBar."
             )
             self.update_flowrate.emit(self.fastflow_result)
             if self.state == "fastflow":
