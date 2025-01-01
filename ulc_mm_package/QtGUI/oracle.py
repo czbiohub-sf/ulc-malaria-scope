@@ -767,7 +767,7 @@ class Oracle(Machine):
             buttons=Buttons.OK,
             image=parasitemia_vis_path,
         )
-        if Path(parasitemia_vis_path).exists():
+        if Path(parasitemia_vis_path).exists() and Path(parasitemia_vis_path).is_file():
             remove(parasitemia_vis_path)
 
         self.display_message(
