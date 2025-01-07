@@ -14,8 +14,10 @@ from ulc_mm_package.image_processing.autobrightness import (
     BrightnessCriticallyLow,
     checkLedWorking,
 )
-from ulc_mm_package.image_processing.flow_control import FlowController
-
+from ulc_mm_package.image_processing.flow_control import (
+    FlowController,
+    CantReachTargetFlowrate,
+)
 from ulc_mm_package.image_processing.cell_finder import (
     CellFinder,
     NoCellsFound,
@@ -518,7 +520,7 @@ class Routines:
                     # Pass in a flow_error=1.0 to pull the syringe down
                     try:
                         flow_controller.adjustSyringe(flow_error=1.0)
-                    except SyringeEndOfTravel:
+                    except (CantReachTargetFlowrate, SyringeEndOfTravel):
                         self.logger.info(
                             f"Syringe reached end of travel but current pressure: ({curr_pressure_gauge:.2f} mBar) is less than max allowable ({processing_constants.MAX_VACUUM_PRESSURE:.2f} mBar).\nContinuing with cell finder anyway..."
                         )
