@@ -26,6 +26,7 @@ from ulc_mm_package.image_processing.cell_finder import (
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureLeak,
     PressureSensorBusy,
+    SyringeEndOfTravel,
 )
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import (
@@ -519,7 +520,7 @@ class Routines:
                     # Pass in a flow_error=1.0 to pull the syringe down
                     try:
                         flow_controller.adjustSyringe(flow_error=1.0)
-                    except CantReachTargetFlowrate:
+                    except (CantReachTargetFlowrate, SyringeEndOfTravel):
                         self.logger.info(
                             f"Syringe reached end of travel but current pressure: ({curr_pressure_gauge:.2f} mBar) is less than max allowable ({processing_constants.MAX_VACUUM_PRESSURE:.2f} mBar).\nContinuing with cell finder anyway..."
                         )
