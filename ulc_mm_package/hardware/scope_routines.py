@@ -26,7 +26,6 @@ from ulc_mm_package.image_processing.cell_finder import (
 from ulc_mm_package.hardware.pneumatic_module import (
     PressureLeak,
     PressureSensorBusy,
-    SyringeEndOfTravel,
 )
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import (
