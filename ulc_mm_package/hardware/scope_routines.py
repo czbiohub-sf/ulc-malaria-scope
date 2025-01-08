@@ -516,7 +516,7 @@ class Routines:
                     mscope.pneumatic_module.getAmbientPressure()
                     - mscope.pneumatic_module.getPressure()[0]
                 )
-                while curr_pressure_gauge < processing_constants.MAX_VACUUM_PRESSURE:
+                while curr_pressure_gauge < MIN_PRESSURE_DIFF:
                     # Pass in a flow_error=1.0 to pull the syringe down
                     try:
                         flow_controller.adjustSyringe(flow_error=1.0)
