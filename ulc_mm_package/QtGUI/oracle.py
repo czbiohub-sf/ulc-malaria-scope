@@ -767,7 +767,7 @@ class Oracle(Machine):
             buttons=Buttons.OK,
             image=parasitemia_vis_path,
         )
-        if Path(parasitemia_vis_path).exists() and Path(parasitemia_vis_path).is_file():
+        if parasitemia_vis_path.exists():
             remove(parasitemia_vis_path)
 
         self.display_message(
@@ -840,9 +840,9 @@ class Oracle(Machine):
         self.shutoff_done = True
 
     def emergency_shutoff(self):
-        self.logger.warning("Starting emergency oracle shut off.")
-
         if not self.shutoff_done:
+            self.logger.warning("Starting emergency oracle shut off.")
+
             try:
                 os.remove(LOCKFILE)
                 self.logger.info(f"Removed lockfile ({LOCKFILE}).")
@@ -876,9 +876,12 @@ def main():
     def shutoff_excepthook(type, value, traceback):
         sys.__excepthook__(type, value, traceback)
         try:
+            oracle.logger.fatal(f"Oracle shutoff due to exception - {e}")
             app.shutoff.emit()
+
             # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
             sleep(3)
+            
             oracle.emergency_shutoff()
         except Exception as e:
             oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED - {e}")
