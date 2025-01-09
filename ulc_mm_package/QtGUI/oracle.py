@@ -881,7 +881,7 @@ def main():
 
             # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
             sleep(3)
-            
+
             oracle.emergency_shutoff()
         except Exception as e:
             oracle.logger.fatal(f"EMERGENCY ORACLE SHUT OFF FAILED - {e}")
