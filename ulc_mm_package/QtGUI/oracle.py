@@ -7,6 +7,7 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 import os
 import sys
+import traceback
 import socket
 import enum
 import logging
@@ -840,9 +841,8 @@ class Oracle(Machine):
         self.shutoff_done = True
 
     def emergency_shutoff(self):
-        self.logger.warning("Starting emergency oracle shut off.")
-
         if not self.shutoff_done:
+            self.logger.warning("Starting emergency oracle shut off.")
             try:
                 os.remove(LOCKFILE)
                 self.logger.info(f"Removed lockfile ({LOCKFILE}).")
@@ -873,8 +873,9 @@ def main():
 
     app.connect_signal(oracle.scopeop.shutoff)
 
-    def shutoff_excepthook(type, value, traceback):
-        sys.__excepthook__(type, value, traceback)
+    def shutoff_excepthook(type, value, tb):
+        tb_string = "".join(traceback.format_exception(type, value, tb))
+        oracle.logger.warning(f"Oracle shutoff due to exception - {tb_string}")
         try:
             app.shutoff.emit()
             # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
