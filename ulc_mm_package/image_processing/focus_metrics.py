@@ -97,6 +97,9 @@ def custom_gradient_average(img: np.ndarray):
     # and rewriting `get_diff` is a bit of a pain and ultimately inconsequential
     # for how we're using it here
     img_mean = np.mean(img)
+
+    # A guard against any potential division by zero errors
+    img_mean = 1 if img_mean == 0 else img_mean
     gx, gy = get_diff(img)
     gx = gx / img_mean
     gy = gy / img_mean
