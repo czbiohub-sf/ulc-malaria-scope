@@ -523,7 +523,7 @@ class ScopeOp(QObject, NamedMachine):
 
         runtime = self._get_experiment_runtime()
         if runtime != 0:
-            self.logger.info(f"Net FPS is {self.frame_count/runtime}")
+            self.logger.info(f"Net FPS is {self.frame_count/runtime:.1f}")
 
         self.finishing_experiment.emit(10)
 
@@ -587,7 +587,7 @@ class ScopeOp(QObject, NamedMachine):
         except StopIteration as e:
             self.autobrightness_result = e.value
             self.logger.info(
-                f"Autobrightness ✅. Mean pixel val = {self.autobrightness_result}."
+                f"Autobrightness ✅. Mean pixel val = {self.autobrightness_result:.1f}."
             )
             self.last_img = img
             if self.state in {
