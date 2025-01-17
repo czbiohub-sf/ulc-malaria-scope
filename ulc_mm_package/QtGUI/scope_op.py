@@ -523,7 +523,7 @@ class ScopeOp(QObject, NamedMachine):
 
         runtime = self._get_experiment_runtime()
         if runtime != 0:
-            self.logger.info(f"Net FPS is {self.frame_count/runtime}")
+            self.logger.info(f"Net FPS is {self.frame_count/runtime:.1f}")
 
         self.finishing_experiment.emit(10)
 
@@ -575,14 +575,19 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended.")
             return
 
-        self.img_signal.disconnect(self.run_autobrightness)
+        try:
+            self.img_signal.disconnect(self.run_autobrightness)
+        except TypeError:
+            self.logger.info(
+                "run_autobrightness: img_signal already disconnected, no signal/slot changes were made."
+            )
 
         try:
             self.autobrightness_routine.send(img)
         except StopIteration as e:
             self.autobrightness_result = e.value
             self.logger.info(
-                f"Autobrightness ✅. Mean pixel val = {self.autobrightness_result}."
+                f"Autobrightness ✅. Mean pixel val = {self.autobrightness_result:.1f}."
             )
             self.last_img = img
             if self.state in {
@@ -638,7 +643,12 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended")
             return
 
-        self.img_signal.disconnect(self.run_cellfinder)
+        try:
+            self.img_signal.disconnect(self.run_cellfinder)
+        except TypeError:
+            self.logger.info(
+                "run_cellfinder: img_signal already disconnected, no signal/slot changes were made."
+            )
 
         try:
             self.cellfinder_routine.send(img)
@@ -667,7 +677,12 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended.")
             return
 
-        self.img_signal.disconnect(self.run_autofocus)
+        try:
+            self.img_signal.disconnect(self.run_autofocus)
+        except TypeError:
+            self.logger.info(
+                "run_autofocus: img_signal already disconnected, no signal/slot changes were made."
+            )
 
         if not self.autofocus_done:
             if len(self.autofocus_batch) < AF_BATCH_SIZE:
@@ -742,7 +757,12 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended.")
             return
 
-        self.img_signal.disconnect(self.run_fastflow)
+        try:
+            self.img_signal.disconnect(self.run_fastflow)
+        except TypeError:
+            self.logger.info(
+                "run_fastflow: img_signal already disconnected, no signal/slot changes were made."
+            )
 
         try:
             img_ds_10x = downsample_image(img, DOWNSAMPLE_FACTOR)
@@ -806,7 +826,12 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.info("Slot executed after experiment ended.")
             return
 
-        self.img_signal.disconnect(self.run_experiment)
+        try:
+            self.img_signal.disconnect(self.run_experiment)
+        except TypeError:
+            self.logger.info(
+                "run_experiment: img_signal already disconnected, no signal/slot changes were made."
+            )
 
         current_time = perf_counter()
         self.img_metadata["looptime"] = current_time - self.last_time
