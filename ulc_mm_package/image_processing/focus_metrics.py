@@ -86,12 +86,19 @@ def get_diff(img: np.ndarray):
     return gy, gx
 
 
+def numba_mean(img: np.ndarray):
+    return np.mean(img)
+
+
 @njit(cache=True)
 def custom_gradient_average(img: np.ndarray):
     # I know these are flipped from what the return statement in `get_diff`
     # but my 'gy' corresponds to np.gradient's 'gx'
     # and rewriting `get_diff` is a bit of a pain and ultimately inconsequential
     # for how we're using it here
-    gx, gy = get_diff(img) / np.mean(img)
+    img_mean = np.mean(img)
+    gx, gy = get_diff(img)
+    gx = gx / img_mean
+    gy = gy / img_mean
 
     return np.mean(np.sqrt(gx**2 + gy**2))
