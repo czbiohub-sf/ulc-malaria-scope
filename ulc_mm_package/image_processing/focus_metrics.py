@@ -29,8 +29,8 @@ def logPowerSpectrumRadialAverageSum(img):
 
 
 def gradientAverage(img: np.ndarray):
-    """Returns the normalized gradient average (in x and y)"""
-    gx, gy = np.gradient(img) / np.max(img)
+    """Returns the normalized (by mean) gradient average (in x and y)"""
+    gx, gy = np.gradient(img) / np.mean(img)
     return np.average(np.sqrt(gx**2 + gy**2))
 
 
@@ -92,6 +92,6 @@ def custom_gradient_average(img: np.ndarray):
     # but my 'gy' corresponds to np.gradient's 'gx'
     # and rewriting `get_diff` is a bit of a pain and ultimately inconsequential
     # for how we're using it here
-    gx, gy = get_diff(img)
+    gx, gy = get_diff(img) / np.mean(img)
 
     return np.mean(np.sqrt(gx**2 + gy**2))
