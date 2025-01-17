@@ -874,8 +874,8 @@ def main():
     app.connect_signal(oracle.scopeop.shutoff)
 
     def shutoff_excepthook(type, value, tb):
-        tb_string = "".join(traceback.format_exception(value))
-        oracle.logger.fatal(f"Oracle shutoff due to exception - {tb_string}")
+        tb_string = "".join(traceback.format_exception(type, value, tb))
+        oracle.logger.warning(f"Oracle shutoff due to exception - {tb_string}")
         try:
             app.shutoff.emit()
             # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
