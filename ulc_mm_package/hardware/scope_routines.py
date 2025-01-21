@@ -208,7 +208,11 @@ class Routines:
     def count_parasitemia_periodic_wrapper(
         self,
         mscope: MalariaScope,
-    ) -> Generator[List[AsyncInferenceResult], Tuple[np.ndarray, Optional[int]], None,]:
+    ) -> Generator[
+        List[AsyncInferenceResult],
+        Tuple[np.ndarray, Optional[int]],
+        None,
+    ]:
         while True:
             img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
             mscope.cell_diagnosis_model(img, counts)
@@ -386,6 +390,7 @@ class Routines:
             if counter >= processing_constants.PERIODIC_AB_PERIOD_NUM_FRAMES:
                 autobrightness.autobrightness_pid_control(img)
                 curr_img_brightness = autobrightness.prev_mean_img_brightness
+                counter = 0
 
     def checkPressureDifference(
         self, mscope: MalariaScope, ambient_pressure: float
