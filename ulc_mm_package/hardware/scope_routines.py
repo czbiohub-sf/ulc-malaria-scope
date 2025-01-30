@@ -386,6 +386,7 @@ class Routines:
             if counter >= processing_constants.PERIODIC_AB_PERIOD_NUM_FRAMES:
                 autobrightness.autobrightness_pid_control(img)
                 curr_img_brightness = autobrightness.prev_mean_img_brightness
+                counter = 0
 
     def checkPressureDifference(
         self, mscope: MalariaScope, ambient_pressure: float
