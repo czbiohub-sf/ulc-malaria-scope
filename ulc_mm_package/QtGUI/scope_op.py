@@ -92,6 +92,7 @@ class ScopeOp(QObject, NamedMachine):
 
     reload_pause = pyqtSignal(str, str)
     lid_open_pause = pyqtSignal()
+    pressure_leak_pause = pyqtSignal()
 
     create_timers = pyqtSignal()
     start_timers = pyqtSignal()
@@ -411,6 +412,9 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.logger.info(
                 f"Pressure check ✅. Ambient absolute pressure: {self.ambient_pressure:.2f} mBar. Gauge pressure = {pdiff:.2f} mBar."
+            )
+            self.pressure_monitoring_routine = (
+                self.routines.pressure_monitoring_routine(self.ambient_pressure)
             )
             if self.state == "pressure_check":
                 self.next_state()
@@ -971,6 +975,7 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
         try:
             pressure, status = self.mscope.pneumatic_module.getPressure()
+            self.pressure_monitoring_routine.send(pressure)
             (
                 self.img_metadata["pressure_hpa"],
                 self.img_metadata["pressure_status_flag"],
@@ -978,6 +983,12 @@ class ScopeOp(QObject, NamedMachine):
         except PressureSensorStaleValue as e:
             ## TODO???
             self.logger.info(f"Stale pressure sensor value - {e}")
+        except PressureLeak as e:
+            self.logger.warning(
+                f"Pressure leak detected. Current pressure: {pressure:.2f}mBar (gauge: {pressure - self.ambient_pressure:.2f}mBar)."
+            )
+            self.pressure_leak_pause.emit()
+            return
 
         self.img_metadata["led_pwm_val"] = self.mscope.led.pwm_duty_cycle
         self.img_metadata[
