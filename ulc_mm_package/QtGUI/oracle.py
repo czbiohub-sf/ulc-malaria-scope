@@ -294,6 +294,7 @@ class Oracle(Machine):
 
         self.scopeop.reload_pause.connect(self.reload_pause_handler)
         self.scopeop.lid_open_pause.connect(self.lid_open_pause_handler)
+        self.scopeop.pressure_leak_pause.connect(self.pressure_leak_pause_handler)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -392,6 +393,17 @@ class Oracle(Machine):
             self.scopeop.to_pause()
             self.unpause()
 
+    def pressure_leak_pause_handler(self):
+        if self.scopeop.state not in NO_PAUSE_STATES:
+            self.scopeop.to_pause()
+            self.display_message(
+                QMessageBox.Icon.Information,
+                "Pressure leak detected - pausing...",
+                'Please open the lid and reseat the CAP module, a pressure leak has been detected. Press "OK" to resume.',
+                buttons=Buttons.OK,
+            )
+            self.unpause()
+
     def general_pause_handler(
         self,
         icon=QMessageBox.Icon.Information,
@@ -428,7 +440,6 @@ class Oracle(Machine):
             buttons=Buttons.OK,
             image=IMAGE_RELOAD_PATH,
         )
-        self.close_lid_display_message()
         self.unpause()
 
     def unpause(self):

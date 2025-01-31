@@ -31,6 +31,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import (
     MIN_PRESSURE_DIFF,
+    PRESSURE_EWMA_ALPHA,
     FOCUS_EWMA_ALPHA,
 )
 from ulc_mm_package.image_processing.classic_focus import OOF, ClassicImageFocus
@@ -432,6 +433,41 @@ class Routines:
                 mscope.pneumatic_module.getMaxDutyCycle()
             )
             return pressure_diff
+
+    @init_generator
+    def pressure_monitoring_routine(
+        self, ambient_pressure: float
+    ) -> Generator[None, float, None]:
+        """
+        Monitor the pressure and raise an exception if it drops below the minimum required pressure difference.
+
+        Parameters
+        ----------
+        mscope: MalariaScope
+
+        Exceptions
+        ----------
+        PressureLeak:
+            Raised if the pressure difference is less than the minimum required (as set in `hardware_constants.py` via MIN_PRESSURE_DIFF).
+        """
+
+        pressure_ewma_filter = EWMAFiltering(PRESSURE_EWMA_ALPHA)
+        pressure_ewma_filter.set_init_val(ambient_pressure)
+        period_num = pressure_ewma_filter.get_adjustment_period_ewma()
+        counter = 0
+
+        while True:
+            counter += 1
+            curr_pressure = yield
+            filtered_pressure = pressure_ewma_filter.update_and_get_val(curr_pressure)
+            gauge_pressure = ambient_pressure - filtered_pressure
+
+            if counter > period_num:
+                if gauge_pressure < MIN_PRESSURE_DIFF:
+                    raise PressureLeak(
+                        f"Pressure leak detected. Could only generate {gauge_pressure:.3f}mBar of pressure difference (ambient is at: {ambient_pressure:.2f}mBar)."
+                    )
+                counter = 0
 
     @init_generator
     def find_cells_routine(
