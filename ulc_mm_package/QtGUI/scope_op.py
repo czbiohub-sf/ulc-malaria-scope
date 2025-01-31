@@ -983,7 +983,7 @@ class ScopeOp(QObject, NamedMachine):
         except PressureSensorStaleValue as e:
             ## TODO???
             self.logger.info(f"Stale pressure sensor value - {e}")
-        except PressureLeak as e:
+        except PressureLeak:
             self.logger.warning(
                 f"Pressure leak detected. Current pressure: {pressure:.2f}mBar (gauge: {pressure - self.ambient_pressure:.2f}mBar)."
             )
