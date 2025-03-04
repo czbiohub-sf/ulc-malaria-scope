@@ -1,4 +1,4 @@
-""" Image manager
+"""Image manager
 
 Receives images from the camera and sends them to Liveview and ScopeOp.
 

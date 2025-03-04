@@ -1,4 +1,4 @@
-""" Liveview GUI window
+"""Liveview GUI window
 
 Displays camera preview and conveys info to user during runs."""
 
