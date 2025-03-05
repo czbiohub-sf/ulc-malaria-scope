@@ -84,8 +84,6 @@ class PredictionsHandler:
         }
         self.heatmaps.fill(0)
 
-        self.__init__()
-
     def add_raw_pred_to_heatmap(self, yogo_res: AsyncInferenceResult) -> None:
         """Add the raw YOGO prediction to the heatmap.
 
