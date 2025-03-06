@@ -44,7 +44,7 @@ setup(
         "tqdm==4.63.0",
         "transitions==0.8.11",
         "numba==0.56.0",
-        "Jinja2==3.1.3",
+        "Jinja2==3.1.6",
         "xhtml2pdf==0.2.11",
     ],
     extras_require={
