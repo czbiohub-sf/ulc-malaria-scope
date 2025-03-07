@@ -298,16 +298,16 @@ class DataStorage:
                 summary_report_dir / f"{self.time_str}_per_image_metadata_plot.jpg"
             )
 
-            per_img_metadata_file = open(self.per_img_metadata_filename, "r")
             counts_plot_loc = str(summary_report_dir / "counts.jpg")
             conf_plot_loc = str(summary_report_dir / "confs.jpg")
             objectness_plot_loc = str(summary_report_dir / "objectness.jpg")
 
             # Only generate additional plots if DEBUG_REPORT environment variable is set to True
             if DEBUG_REPORT:
-                make_per_image_metadata_plots(
-                    per_img_metadata_file, per_image_metadata_plot_save_loc
-                )
+                with open(self.per_img_metadata_filename, "r") as per_img_metadata_file:
+                    make_per_image_metadata_plots(
+                        per_img_metadata_file, per_image_metadata_plot_save_loc
+                    )
 
                 try:
                     make_cell_count_plot(pred_tensors, counts_plot_loc)
