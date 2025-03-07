@@ -247,6 +247,7 @@ class Routines:
             flow_controller.set_alpha(
                 processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
             )  # Double the alpha, ~halve the half life
+            flow_controller.pneumatic_module.min_step_size *= 2
 
         while True:
             img, timestamp = yield flow_val, syringe_can_move
@@ -269,6 +270,7 @@ class Routines:
             if fast_flow:
                 if flow_error is not None:
                     if flow_error == 0:
+                        flow_controller.pneumatic_module.min_step_size /= 2
                         return flow_val
 
     @init_generator
