@@ -7,7 +7,7 @@ curr_dir = Path(__file__).parent.resolve()  # Get full path
 
 
 # ================ Autofocus constants ================ #
-AF_PERIOD_S = 0.1 # (10 imgs/sec)
+AF_PERIOD_S = 0.1  # (10 imgs/sec)
 AF_PERIOD_NUM = int(
     AF_PERIOD_S * ACQUISITION_FPS
 )  # Used for periodic (ie. EWMA) autofocus
