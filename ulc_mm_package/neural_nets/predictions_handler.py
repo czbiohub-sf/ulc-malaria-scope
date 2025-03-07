@@ -72,7 +72,17 @@ class PredictionsHandler:
         self.heatmaps = np.zeros((len(YOGO_CLASS_LIST), sy * sx))
 
     def reset(self):
-        self.__init__()
+        self.pred_tensors.fill(0)
+        self.new_pred_pointer = 0
+        self.max_confs = {x: [] for x in self.class_ids}
+        self.curr_min_of_max_confs_by_class = {
+            x: HIGH_CONF_THRESH - 1e-6 for x in self.class_ids
+        }
+        self.min_confs = {x: [] for x in self.class_ids}
+        self.curr_max_of_min_confs_by_class = {
+            x: HIGH_CONF_THRESH for x in self.class_ids
+        }
+        self.heatmaps.fill(0)
 
     def add_raw_pred_to_heatmap(self, yogo_res: AsyncInferenceResult) -> None:
         """Add the raw YOGO prediction to the heatmap.
