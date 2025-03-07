@@ -15,7 +15,6 @@ from ulc_mm_package.image_processing.autobrightness import (
     checkLedWorking,
 )
 from ulc_mm_package.image_processing.flow_control import (
-    FlowController,
     CantReachTargetFlowrate,
 )
 from ulc_mm_package.image_processing.cell_finder import (
@@ -486,7 +485,7 @@ class Routines:
         # Maximum number of times to run check for cells routine before aborting
         max_attempts = 3
         cell_finder = CellFinder()
-        flow_controller = FlowController(mscope.pneumatic_module)
+        flow_controller = mscope.flow_controller
         img = yield
 
         # Initial check for cells, return current motor position if cells found
