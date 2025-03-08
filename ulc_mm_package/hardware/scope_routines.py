@@ -15,7 +15,6 @@ from ulc_mm_package.image_processing.autobrightness import (
     checkLedWorking,
 )
 from ulc_mm_package.image_processing.flow_control import (
-    FlowController,
     CantReachTargetFlowrate,
 )
 from ulc_mm_package.image_processing.cell_finder import (
@@ -249,6 +248,7 @@ class Routines:
             flow_controller.set_alpha(
                 processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
             )  # Double the alpha, ~halve the half life
+            flow_controller.pneumatic_module.min_step_size *= 2
 
         while True:
             img, timestamp = yield flow_val, syringe_can_move
@@ -271,6 +271,7 @@ class Routines:
             if fast_flow:
                 if flow_error is not None:
                     if flow_error == 0:
+                        flow_controller.pneumatic_module.min_step_size /= 2
                         return flow_val
 
     @init_generator
@@ -522,7 +523,9 @@ class Routines:
         # Maximum number of times to run check for cells routine before aborting
         max_attempts = 3
         cell_finder = CellFinder()
-        flow_controller = FlowController(mscope.pneumatic_module)
+        mscope.flow_controller.reset()
+        flow_controller = mscope.flow_controller
+
         img = yield
 
         # Initial check for cells, return current motor position if cells found
@@ -531,6 +534,11 @@ class Routines:
             return cell_finder.get_cells_found_position()
         except NoCellsFound:
             cell_finder.reset()
+
+        # Defensive check, ensure the motor isn't moving (say for example,
+        # if CellFinder was triggered by an OOF exception and SSAF just triggered a motor move)
+        while mscope.motor.is_locked():
+            pass
 
         while True:
             """

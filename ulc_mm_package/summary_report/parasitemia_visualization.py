@@ -169,6 +169,7 @@ def make_parasitemia_plot(parasitemia, err, savefile):
     fig.subplots_adjust(left=0.1, right=0.9, top=0.8, bottom=0.1)
     fig.tight_layout()
     plt.savefig(savefile)
+    plt.close()
 
 
 if __name__ == "__main__":
