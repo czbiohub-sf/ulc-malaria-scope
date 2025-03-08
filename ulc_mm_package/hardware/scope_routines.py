@@ -499,6 +499,11 @@ class Routines:
         except NoCellsFound:
             cell_finder.reset()
 
+        # Defensive check, ensure the motor isn't moving (say for example,
+        # if CellFinder was triggered by an OOF exception and SSAF just triggered a motor move)
+        while mscope.motor.is_locked():
+            pass
+
         while True:
             """
             1. Pull syringe for pull_time seconds (unless deliberately skipped)
