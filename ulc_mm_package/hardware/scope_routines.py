@@ -485,7 +485,9 @@ class Routines:
         # Maximum number of times to run check for cells routine before aborting
         max_attempts = 3
         cell_finder = CellFinder()
+        mscope.flow_controller.reset()
         flow_controller = mscope.flow_controller
+
         img = yield
 
         # Initial check for cells, return current motor position if cells found
