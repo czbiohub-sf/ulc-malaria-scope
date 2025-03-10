@@ -78,7 +78,6 @@ MPRLS_RST = 10
 MPRLS_PWR = 22
 
 MIN_PRESSURE_DIFF = 330  # In units of hPa
-PRESSURE_EWMA_ALPHA = 0.1
 # ================ Fan constants ================ #
 FAN_GPIO = 5
 CAM_FAN_1 = 23

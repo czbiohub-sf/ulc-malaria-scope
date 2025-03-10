@@ -1,4 +1,4 @@
-""" High-level state machine manager.
+"""High-level state machine manager.
 
 The Oracle sees all and knows all.
 It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
@@ -70,8 +70,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
     YOGO_MODEL_DIR,
 )
-from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
-from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.form_gui import FormGUI
@@ -159,24 +157,7 @@ class Oracle(Machine):
         self.next_state()
 
     def _init_tcp(self):
-        try:
-            tcp_addr = make_tcp_tunnel()
-            self.logger.info(f"SSH address is {tcp_addr}.")
-            self.liveview_window.update_tcp(tcp_addr)
-            send_ngrok_email()
-        except NgrokError as e:
-            self.logger.warning(
-                f"SSH address could not be found - {e}. This can be safely ignored."
-            )
-            self.liveview_window.update_tcp("unavailable")
-        except EmailError as e:
-            self.logger.warning(
-                f"SSH address could not be emailed - {e}. This can be safely ignored."
-            )
-        except Exception as e:
-            self.logger.warning(
-                f"Unexpected error while setting up TCP: {e}. This can be safely ignored."
-            )
+        self.liveview_window.update_tcp("unavailable")
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):
@@ -294,7 +275,6 @@ class Oracle(Machine):
 
         self.scopeop.reload_pause.connect(self.reload_pause_handler)
         self.scopeop.lid_open_pause.connect(self.lid_open_pause_handler)
-        self.scopeop.pressure_leak_pause.connect(self.pressure_leak_pause_handler)
 
         self.scopeop.create_timers.connect(self.acquisition.create_timers)
         self.scopeop.start_timers.connect(self.acquisition.start_timers)
@@ -393,17 +373,6 @@ class Oracle(Machine):
             self.scopeop.to_pause()
             self.unpause()
 
-    def pressure_leak_pause_handler(self):
-        if self.scopeop.state not in NO_PAUSE_STATES:
-            self.scopeop.to_pause()
-            self.display_message(
-                QMessageBox.Icon.Information,
-                "Pressure leak detected - pausing...",
-                'Please open the lid and reseat the CAP module, a pressure leak has been detected. Press "OK" to resume.',
-                buttons=Buttons.OK,
-            )
-            self.unpause()
-
     def general_pause_handler(
         self,
         icon=QMessageBox.Icon.Information,
@@ -440,6 +409,7 @@ class Oracle(Machine):
             buttons=Buttons.OK,
             image=IMAGE_RELOAD_PATH,
         )
+        self.close_lid_display_message()
         self.unpause()
 
     def unpause(self):

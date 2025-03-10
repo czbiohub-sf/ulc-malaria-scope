@@ -153,7 +153,7 @@ class MalariaScope:
         self.cell_diagnosis_model.reset(wait_for_jobs=False)
 
         # Reset predictions handler
-        self.predictions_handler: PredictionsHandler = PredictionsHandler()
+        self.predictions_handler.reset()
 
     def shutoff(self):
         self.logger.info("Shutting off scope hardware.")

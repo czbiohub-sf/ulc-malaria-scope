@@ -15,7 +15,6 @@ from ulc_mm_package.image_processing.autobrightness import (
     checkLedWorking,
 )
 from ulc_mm_package.image_processing.flow_control import (
-    FlowController,
     CantReachTargetFlowrate,
 )
 from ulc_mm_package.image_processing.cell_finder import (
@@ -31,7 +30,6 @@ from ulc_mm_package.hardware.pneumatic_module import (
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import (
     MIN_PRESSURE_DIFF,
-    PRESSURE_EWMA_ALPHA,
     FOCUS_EWMA_ALPHA,
 )
 from ulc_mm_package.image_processing.classic_focus import OOF, ClassicImageFocus
@@ -249,6 +247,7 @@ class Routines:
             flow_controller.set_alpha(
                 processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
             )  # Double the alpha, ~halve the half life
+            flow_controller.pneumatic_module.min_step_size *= 2
 
         while True:
             img, timestamp = yield flow_val, syringe_can_move
@@ -271,6 +270,7 @@ class Routines:
             if fast_flow:
                 if flow_error is not None:
                     if flow_error == 0:
+                        flow_controller.pneumatic_module.min_step_size /= 2
                         return flow_val
 
     @init_generator
@@ -435,41 +435,6 @@ class Routines:
             return pressure_diff
 
     @init_generator
-    def pressure_monitoring_routine(
-        self, ambient_pressure: float
-    ) -> Generator[None, float, None]:
-        """
-        Monitor the pressure and raise an exception if it drops below the minimum required pressure difference.
-
-        Parameters
-        ----------
-        mscope: MalariaScope
-
-        Exceptions
-        ----------
-        PressureLeak:
-            Raised if the pressure difference is less than the minimum required (as set in `hardware_constants.py` via MIN_PRESSURE_DIFF).
-        """
-
-        pressure_ewma_filter = EWMAFiltering(PRESSURE_EWMA_ALPHA)
-        pressure_ewma_filter.set_init_val(ambient_pressure)
-        period_num = pressure_ewma_filter.get_adjustment_period_ewma()
-        counter = 0
-
-        while True:
-            counter += 1
-            curr_pressure = yield
-            filtered_pressure = pressure_ewma_filter.update_and_get_val(curr_pressure)
-            gauge_pressure = ambient_pressure - filtered_pressure
-
-            if counter > period_num:
-                if gauge_pressure < MIN_PRESSURE_DIFF:
-                    raise PressureLeak(
-                        f"Pressure leak detected. Could only generate {gauge_pressure:.3f}mBar of pressure difference (ambient is at: {ambient_pressure:.2f}mBar)."
-                    )
-                counter = 0
-
-    @init_generator
     def find_cells_routine(
         self,
         mscope: MalariaScope,
@@ -522,7 +487,9 @@ class Routines:
         # Maximum number of times to run check for cells routine before aborting
         max_attempts = 3
         cell_finder = CellFinder()
-        flow_controller = FlowController(mscope.pneumatic_module)
+        mscope.flow_controller.reset()
+        flow_controller = mscope.flow_controller
+
         img = yield
 
         # Initial check for cells, return current motor position if cells found
@@ -531,6 +498,11 @@ class Routines:
             return cell_finder.get_cells_found_position()
         except NoCellsFound:
             cell_finder.reset()
+
+        # Defensive check, ensure the motor isn't moving (say for example,
+        # if CellFinder was triggered by an OOF exception and SSAF just triggered a motor move)
+        while mscope.motor.is_locked():
+            pass
 
         while True:
             """
