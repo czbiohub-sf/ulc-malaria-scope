@@ -116,9 +116,6 @@ class NCSModel:
                 compiled_model = self.core.compile_model(
                     model,
                     self.device_name,
-                    config={
-                        "PERFORMANCE_HINT": "THROUGHPUT",
-                    },
                 )
                 self.connected = True
                 return compiled_model

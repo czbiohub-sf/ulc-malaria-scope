@@ -1,4 +1,4 @@
-"""Mid-level/hardware state machine manager
+""" Mid-level/hardware state machine manager
 
 Controls hardware (ie. the Scope) operations.
 Manages hardware routines and interactions with Oracle and Acquisition.
@@ -879,9 +879,6 @@ class ScopeOp(QObject, NamedMachine):
             self.mscope.cell_diagnosis_model.work_queue_size(),
         )
 
-        # ------------------------------------
-        # Get and process YOGO results
-        # ------------------------------------
         t0 = perf_counter()
         for result in prev_yogo_results:
             self.mscope.predictions_handler.add_yogo_pred(result)
@@ -910,9 +907,6 @@ class ScopeOp(QObject, NamedMachine):
         t1 = perf_counter()
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
-        # ------------------------------------
-        # Run periodic singleshot autofocus routine
-        # ------------------------------------
         t0 = perf_counter()
         resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         try:
@@ -947,10 +941,8 @@ class ScopeOp(QObject, NamedMachine):
         if filtered_focus_err is not None:
             self.filtered_focus_err = filtered_focus_err
 
-        # ------------------------------------
-        # Get classic image sharpness metric
-        # ------------------------------------
         t0 = perf_counter()
+
         # Downsample image for use in flowrate + classic image focus metric
         img_ds_10x = downsample_image(img, 10)
         try:
@@ -963,10 +955,6 @@ class ScopeOp(QObject, NamedMachine):
             )
             self.oof_to_motor_sweep()
             return
-
-        # ------------------------------------
-        # Run flow control routine
-        # ------------------------------------
         try:
             self.flowrate, _ = self.flowcontrol_routine.send((img_ds_10x, timestamp))
         except Exception as e:
@@ -979,15 +967,11 @@ class ScopeOp(QObject, NamedMachine):
         t1 = perf_counter()
         self._update_metadata_if_verbose("flowrate_dt", t1 - t0)
 
-        # ------------------------------------
         # Run periodic autobrightness routine
-        # ------------------------------------
         curr_mean_pixel_val = self.periodic_autobrightness_routine.send(resized_img)
 
-        # ------------------------------------
-        # Update remaining metadata in per-image csv
-        # ------------------------------------
         t0 = perf_counter()
+        # Update remaining metadata
         self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
         try:
             pressure, status = self.mscope.pneumatic_module.getPressure()

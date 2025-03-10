@@ -1,4 +1,4 @@
-"""High-level state machine manager.
+""" High-level state machine manager.
 
 The Oracle sees all and knows all.
 It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
@@ -70,6 +70,8 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
     YOGO_MODEL_DIR,
 )
+from ulc_mm_package.utilities.email_utils import send_ngrok_email, EmailError
+from ulc_mm_package.utilities.ngrok_utils import make_tcp_tunnel, NgrokError
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.form_gui import FormGUI
@@ -157,7 +159,24 @@ class Oracle(Machine):
         self.next_state()
 
     def _init_tcp(self):
-        self.liveview_window.update_tcp("unavailable")
+        try:
+            tcp_addr = make_tcp_tunnel()
+            self.logger.info(f"SSH address is {tcp_addr}.")
+            self.liveview_window.update_tcp(tcp_addr)
+            send_ngrok_email()
+        except NgrokError as e:
+            self.logger.warning(
+                f"SSH address could not be found - {e}. This can be safely ignored."
+            )
+            self.liveview_window.update_tcp("unavailable")
+        except EmailError as e:
+            self.logger.warning(
+                f"SSH address could not be emailed - {e}. This can be safely ignored."
+            )
+        except Exception as e:
+            self.logger.warning(
+                f"Unexpected error while setting up TCP: {e}. This can be safely ignored."
+            )
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):

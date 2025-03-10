@@ -1,4 +1,4 @@
-"""Experiment form GUI window
+""" Experiment form GUI window
 
 Takes user input and exports experiment metadata.
 
