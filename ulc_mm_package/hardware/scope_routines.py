@@ -243,6 +243,7 @@ class Routines:
         mscope.flow_controller.reset()
         flow_controller = mscope.flow_controller
         flow_controller.set_target_flowrate(target_flowrate)
+        flow_controller.set_alpha(processing_constants.FLOW_CONTROL_EWMA_ALPHA)
         if fast_flow:
             flow_controller.set_alpha(
                 processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
@@ -261,8 +262,15 @@ class Routines:
             flow_val, flow_error, syringe_can_move = flow_controller.control_flow(
                 img, timestamp
             )
+
+            # This check is here so that we don't flood the logger with the same message repeatedly
             if (prev_can_move is True) and (syringe_can_move is False):
-                # This is here so that we don't flood the logger with the same message
+                # If we were in fast_flow, we need to reset the min_step_size
+                if fast_flow:
+                    flow_controller.pneumatic_module.min_step_size = (
+                        flow_controller.pneumatic_module.default_min_step_size
+                    )
+
                 self.logger.error(
                     "Can't reach target flowrate. Syringe at end of travel."
                 )
@@ -270,7 +278,9 @@ class Routines:
             if fast_flow:
                 if flow_error is not None:
                     if flow_error == 0:
-                        flow_controller.pneumatic_module.min_step_size /= 2
+                        flow_controller.pneumatic_module.min_step_size = (
+                            flow_controller.pneumatic_module.default_min_step_size
+                        )
                         return flow_val
 
     @init_generator
