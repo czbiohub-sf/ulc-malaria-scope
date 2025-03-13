@@ -15,7 +15,6 @@ from ulc_mm_package.image_processing.autobrightness import (
     checkLedWorking,
 )
 from ulc_mm_package.image_processing.flow_control import (
-    FlowController,
     CantReachTargetFlowrate,
 )
 from ulc_mm_package.image_processing.cell_finder import (
@@ -244,10 +243,12 @@ class Routines:
         mscope.flow_controller.reset()
         flow_controller = mscope.flow_controller
         flow_controller.set_target_flowrate(target_flowrate)
+        flow_controller.set_alpha(processing_constants.FLOW_CONTROL_EWMA_ALPHA)
         if fast_flow:
             flow_controller.set_alpha(
                 processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
             )  # Double the alpha, ~halve the half life
+            flow_controller.pneumatic_module.min_step_size *= 2
 
         while True:
             img, timestamp = yield flow_val, syringe_can_move
@@ -261,8 +262,15 @@ class Routines:
             flow_val, flow_error, syringe_can_move = flow_controller.control_flow(
                 img, timestamp
             )
+
+            # This check is here so that we don't flood the logger with the same message repeatedly
             if (prev_can_move is True) and (syringe_can_move is False):
-                # This is here so that we don't flood the logger with the same message
+                # If we were in fast_flow, we need to reset the min_step_size
+                if fast_flow:
+                    flow_controller.pneumatic_module.min_step_size = (
+                        flow_controller.pneumatic_module.default_min_step_size
+                    )
+
                 self.logger.error(
                     "Can't reach target flowrate. Syringe at end of travel."
                 )
@@ -270,6 +278,9 @@ class Routines:
             if fast_flow:
                 if flow_error is not None:
                     if flow_error == 0:
+                        flow_controller.pneumatic_module.min_step_size = (
+                            flow_controller.pneumatic_module.default_min_step_size
+                        )
                         return flow_val
 
     @init_generator
@@ -386,6 +397,7 @@ class Routines:
             if counter >= processing_constants.PERIODIC_AB_PERIOD_NUM_FRAMES:
                 autobrightness.autobrightness_pid_control(img)
                 curr_img_brightness = autobrightness.prev_mean_img_brightness
+                counter = 0
 
     def checkPressureDifference(
         self, mscope: MalariaScope, ambient_pressure: float
@@ -485,7 +497,9 @@ class Routines:
         # Maximum number of times to run check for cells routine before aborting
         max_attempts = 3
         cell_finder = CellFinder()
-        flow_controller = FlowController(mscope.pneumatic_module)
+        mscope.flow_controller.reset()
+        flow_controller = mscope.flow_controller
+
         img = yield
 
         # Initial check for cells, return current motor position if cells found
@@ -494,6 +508,11 @@ class Routines:
             return cell_finder.get_cells_found_position()
         except NoCellsFound:
             cell_finder.reset()
+
+        # Defensive check, ensure the motor isn't moving (say for example,
+        # if CellFinder was triggered by an OOF exception and SSAF just triggered a motor move)
+        while mscope.motor.is_locked():
+            pass
 
         while True:
             """

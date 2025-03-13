@@ -75,8 +75,9 @@ class PneumaticModule:
         (
             self.min_duty_cycle,
             self.max_duty_cycle,
-            self.min_step_size,
+            self.default_min_step_size,
         ) = self.get_config_params()
+        self.min_step_size = self.default_min_step_size
 
         self.duty_cycle = self.max_duty_cycle
         self.prev_duty_cycle = self.duty_cycle
