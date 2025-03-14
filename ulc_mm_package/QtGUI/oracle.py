@@ -787,7 +787,7 @@ class Oracle(Machine):
         """
 
         logging.shutdown()
-
+        log_dir = path.join(self.ext_dir, "logs")
         logger_config_path = Path(__file__).resolve().parent.parent / "logger.config"
         fileConfig(
             fname=str(logger_config_path),
@@ -798,7 +798,7 @@ class Oracle(Machine):
         )
         self.logger = logging.root
 
-        self.logger.info("CREATED LOG")
+        self.logger.info("CREATED LOG.")
 
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")
