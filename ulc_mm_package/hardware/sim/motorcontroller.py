@@ -265,7 +265,9 @@ class DRV8825Nema(RealDRV8825Nema):
                 self.logger.debug("Number of steps = {}".format(self.pos - start_pos))
                 self.logger.debug("Step Delay = {}".format(stepdelay))
                 self.logger.debug("Intial delay = {}".format(initdelay))
-                self.logger.debug("Size of turn in degrees = {}".format(self.degree_calc(steps)))
+                self.logger.debug(
+                    "Size of turn in degrees = {}".format(self.degree_calc(steps))
+                )
 
     @lock_no_block(MOTOR_LOCK, MotorInMotion)
     def move_abs(self, pos: int = 200, stepdelay=0.005, verbose=False, initdelay=0.05):
@@ -336,7 +338,9 @@ class DRV8825Nema(RealDRV8825Nema):
                 self.logger.debug("Number of steps = {}".format(self.pos - start_pos))
                 self.logger.debug("Step Delay = {}".format(stepdelay))
                 self.logger.debug("Intial delay = {}".format(initdelay))
-                self.logger.debug("Size of turn in degrees = {}".format(self.degree_calc(steps)))
+                self.logger.debug(
+                    "Size of turn in degrees = {}".format(self.degree_calc(steps))
+                )
 
     @staticmethod
     def is_locked():
