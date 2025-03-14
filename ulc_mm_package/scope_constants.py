@@ -206,3 +206,24 @@ if SIMULATION:
     SSD_DIR = "../QtGUI/sim_media/pi/"
 else:
     SSD_DIR = "/media/pi/"
+
+# ================ Log file constants ================ #
+PERIODIC_METADATA_KEYS = [
+    "motor_pos",
+    "pressure_hpa",
+    "syringe_pos",
+    "flowrate",
+    "filtered_focus_error",
+    "classic_sharpness_ratio",
+    "temperature",
+    "camera_temperature",
+]
+
+END_OF_RUN_METADATA_KEYS = [
+    "im_counter",
+    "location",
+    "estimated_parasitemia",
+    "cell_counts",
+]
+
+FRAME_LOG_INTERVAL = 100

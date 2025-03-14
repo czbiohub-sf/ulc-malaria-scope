@@ -64,6 +64,8 @@ from ulc_mm_package.scope_constants import (
     VERBOSE,
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
+    FRAME_LOG_INTERVAL,
+    PERIODIC_METADATA_KEYS,
 )
 
 
@@ -1005,6 +1007,16 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["focus_adjustment"] = focus_adjustment
         self.img_metadata["classic_sharpness_ratio"] = sharpness_ratio_rel_peak
         self.img_metadata["mean_pixel_val"] = curr_mean_pixel_val
+
+        if self.frame_count % FRAME_LOG_INTERVAL == 0:
+            all_values = {
+                key: self.img_metadata.get(key, None) for key in PERIODIC_METADATA_KEYS
+            }
+            self.logger.info(
+                f"[Frame {self.frame_count}] Full periodic metadata: {all_values}"
+            )
+        else:
+            all_values = []
 
         if self.frame_count % TH_PERIOD_NUM == 0:
             try:
