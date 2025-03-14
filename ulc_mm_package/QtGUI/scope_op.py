@@ -424,7 +424,7 @@ class ScopeOp(QObject, NamedMachine):
                 QR.NONE.value,
             )
         except PressureLeak as e:
-            self.logger.error(str(e))
+            self.logger.error(f"Pressure leak detected: {e}")
             self.default_error.emit(
                 "Calibration failed",
                 str(e),
@@ -578,7 +578,7 @@ class ScopeOp(QObject, NamedMachine):
         try:
             self.img_signal.disconnect(self.run_autobrightness)
         except TypeError:
-            self.logger.info(
+            self.logger.warning(
                 "run_autobrightness: img_signal already disconnected, no signal/slot changes were made."
             )
 
@@ -966,7 +966,7 @@ class ScopeOp(QObject, NamedMachine):
         try:
             self.flowrate, _ = self.flowcontrol_routine.send((img_ds_10x, timestamp))
         except Exception as e:
-            self.logger.warning(f"Unexpected flow control exception - {e}")
+            self.logger.error(f"Unexpected flow control exception - {e}")
             self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
@@ -993,7 +993,7 @@ class ScopeOp(QObject, NamedMachine):
             ) = (pressure, status)
         except PressureSensorStaleValue as e:
             ## TODO???
-            self.logger.info(f"Stale pressure sensor value - {e}")
+            self.logger.error(f"Stale pressure sensor value - {e}")
 
         self.img_metadata["led_pwm_val"] = self.mscope.led.pwm_duty_cycle
         self.img_metadata[
@@ -1020,7 +1020,7 @@ class ScopeOp(QObject, NamedMachine):
             except Exception as e:
                 # some error has occurred, but the TH sensor isn't critical, so just warn
                 # and move on
-                self.logger.warning(
+                self.logger.error(
                     f"exception occurred while retrieving temperature and humidity: {e}"
                 )
                 self.img_metadata["humidity"] = None

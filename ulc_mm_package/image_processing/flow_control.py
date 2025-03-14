@@ -92,7 +92,6 @@ class FlowController:
 
         self.first_image: bool = True
         self.target_flowrate: Optional[float] = None
-        self.logger = logging.getLogger()
 
     def reset(self):
         self.fre.reset()

@@ -465,13 +465,13 @@ class DataStorage:
                 num_subsequences=NUM_SUBSEQUENCES,
             )
         except ValueError:
-            self.logger.info("Too few images, so no subsample was generated.")
+            self.logger.error("Too few images, so no subsample was generated.")
             return
 
         try:
             sub_seq_path = self._create_subseq_folder()
         except:
-            self.logger.info(
+            self.logger.error(
                 "Unable to create the subsample folder. Aborting subsampling."
             )
             return

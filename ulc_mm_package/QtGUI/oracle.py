@@ -656,7 +656,7 @@ class Oracle(Machine):
                     .strip()
                 )
             except subprocess.CalledProcessError:
-                self.logger.info("No Git branch or tag found.")
+                self.logger.error("No Git branch or tag found.")
 
         self.scopeop.mscope.data_storage.createNewExperiment(
             self.ext_dir,
@@ -856,7 +856,7 @@ def main():
 
     def shutoff_excepthook(type, value, tb):
         tb_string = "".join(traceback.format_exception(type, value, tb))
-        oracle.logger.warning(f"Oracle shutoff due to exception - {tb_string}")
+        oracle.logger.error(f"Oracle shutoff due to exception - {tb_string}")
         try:
             app.shutoff.emit()
             # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff
