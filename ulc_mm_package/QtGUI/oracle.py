@@ -305,14 +305,14 @@ class Oracle(Machine):
             samsung_ext_dir
         ):
             self.ext_dir = samsung_ext_dir + "/"
-            print(f"Saving data to {self.ext_dir}")
+            self.logger.info(f"Saving data to {self.ext_dir}")
         else:
             if not path.exists(samsung_ext_dir):
-                print(
+                self.logger.warning(
                     f"'Couldn't find {SSD_NAME}' in {SSD_DIR}. Searching for other folders in this directory."
                 )
             elif not DataStorage.is_there_sufficient_storage(samsung_ext_dir):
-                print(
+                self.logger.warning(
                     f"'{SSD_NAME}' in {SSD_DIR} is out of storage. Searching for other folders in this directory."
                 )
 
@@ -326,10 +326,10 @@ class Oracle(Machine):
                     if candidate_path != samsung_ext_dir and path.isdir(candidate_path):
                         if DataStorage.is_there_sufficient_storage(candidate_path):
                             self.ext_dir = candidate_path + "/"
-                            print(f"Saving data to {self.ext_dir}")
+                            self.logger.info(f"Saving data to {self.ext_dir}")
                             break
             except (FileNotFoundError, IndexError):
-                print(
+                self.logger.error(
                     f"Could not find any folders within {SSD_DIR}. Check that the SSD is plugged in."
                 )
                 self.display_message(
@@ -346,7 +346,7 @@ class Oracle(Machine):
             sys.exit(1)
 
     def ssd_full_msg_and_exit(self):
-        print(
+        self.logger.error(
             "Couldn't find any folders in /media/pi with sufficient storage. Please eject and replace the SSD with a new one. Thank you!"
         )
         self.display_message(
@@ -769,6 +769,7 @@ class Oracle(Machine):
         if message_result == QMessageBox.No:
             self.shutoff()
         elif message_result == QMessageBox.Yes:
+            self._start_new_log()
             self.logger.info("Starting new experiment.")
             if not DataStorage.is_there_sufficient_storage(self.ext_dir):
                 self.ssd_full_msg_and_exit()
@@ -779,6 +780,25 @@ class Oracle(Machine):
                 except MachineError:
                     self.scopeop.to_intermission()
                     self.scopeop.rerun()
+
+    def _start_new_log(self):
+        """
+        Closes the current log file and creates new timestamped log file.
+        """
+
+        logging.shutdown()
+
+        logger_config_path = Path(__file__).resolve().parent.parent / "logger.config"
+        fileConfig(
+            fname=str(logger_config_path),
+            defaults={
+                "filename": path.join(log_dir, f"{self.datetime_str}.log"),
+                "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO",
+            },
+        )
+        self.logger = logging.root
+
+        self.logger.info("CREATED LOG")
 
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")
