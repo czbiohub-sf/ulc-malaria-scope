@@ -220,7 +220,7 @@ PERIODIC_METADATA_KEYS = [
 ]
 
 END_OF_RUN_METADATA_KEYS = [
-    "im_counter",
+    "frame_count",
     "location",
     "estimated_parasitemia",
     "cell_counts",

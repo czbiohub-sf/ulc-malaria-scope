@@ -128,6 +128,8 @@ class EWMAFiltering:
             self.prev_val, new_measurement, self.alpha
         )
 
+        return
+
     @staticmethod
     def get_halflife_from_smoothing_factor(alpha: float) -> float:
         """Determine the half-life of the filter given its alpha value

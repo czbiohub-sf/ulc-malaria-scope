@@ -250,6 +250,8 @@ class ScopeOp(QObject, NamedMachine):
 
         self.parasitemia_vis_path = ""
 
+        self.periodic_log_values = {key: None for key in PERIODIC_METADATA_KEYS}
+
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
 
@@ -552,6 +554,7 @@ class ScopeOp(QObject, NamedMachine):
             f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
         )
 
+
         self.finishing_experiment.emit(65)
 
         self.mscope.reset_for_end_experiment()
@@ -559,6 +562,16 @@ class ScopeOp(QObject, NamedMachine):
         # Turn camera back on
         self.mscope.camera.startAcquisition()
 
+        class_counts_str = ", ".join(
+            f"{class_name}={count}"
+            for class_name, count in zip(YOGO_CLASS_LIST, self.raw_cell_count)
+        )
+
+        self.logger.info(
+            f"Finished experiment at location {self.location}. "
+            f"Processed {self.frame_count} frames. "
+            f"Final class counts: {class_counts_str}"
+        )
         self.finishing_experiment.emit(100)
 
     def _start_intermission(self, msg):
@@ -983,7 +996,7 @@ class ScopeOp(QObject, NamedMachine):
         curr_mean_pixel_val = self.periodic_autobrightness_routine.send(resized_img)
 
         # ------------------------------------
-        # Update remaining metadata in per-image csv
+        # Update remaining metadata in per-image csv and log
         # ------------------------------------
         t0 = perf_counter()
         self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
@@ -1007,16 +1020,6 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["focus_adjustment"] = focus_adjustment
         self.img_metadata["classic_sharpness_ratio"] = sharpness_ratio_rel_peak
         self.img_metadata["mean_pixel_val"] = curr_mean_pixel_val
-
-        if self.frame_count % FRAME_LOG_INTERVAL == 0:
-            all_values = {
-                key: self.img_metadata.get(key, None) for key in PERIODIC_METADATA_KEYS
-            }
-            self.logger.info(
-                f"[Frame {self.frame_count}] Full periodic metadata: {all_values}"
-            )
-        else:
-            all_values = []
 
         if self.frame_count % TH_PERIOD_NUM == 0:
             try:
@@ -1059,6 +1062,17 @@ class ScopeOp(QObject, NamedMachine):
         self.frame_count += 1
         t1 = perf_counter()
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
+
+        for key in PERIODIC_METADATA_KEYS:
+            val = self.img_metadata.get(key, None)
+            if val is not None:
+                self.periodic_log_values[key] = val
+
+        if self.frame_count % FRAME_LOG_INTERVAL == 0:
+            # Log full periodic metadata
+            self.logger.info(
+                f"[Frame {self.frame_count}] Full periodic metadata: {self.periodic_log_values}"
+            )
 
         if self.running:
             self.img_signal.connect(self.run_experiment)
