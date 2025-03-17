@@ -554,7 +554,6 @@ class ScopeOp(QObject, NamedMachine):
             f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
         )
 
-
         self.finishing_experiment.emit(65)
 
         self.mscope.reset_for_end_experiment()
@@ -568,7 +567,7 @@ class ScopeOp(QObject, NamedMachine):
         )
 
         self.logger.info(
-            f"Finished experiment at location {self.location}. "
+            f"Finished experiment."
             f"Processed {self.frame_count} frames. "
             f"Final class counts: {class_counts_str}"
         )

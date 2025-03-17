@@ -667,6 +667,9 @@ class Oracle(Machine):
         )
 
         sample_type = self.experiment_metadata["sample_type"]
+
+        self.logger.info(f"Experiment Metadata: {self.experiment_metadata}")
+
         clinical = sample_type == CLINICAL_SAMPLE
         skip = not clinical and not sample_type == CULTURED_SAMPLE
         if skip:
