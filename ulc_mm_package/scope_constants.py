@@ -217,13 +217,7 @@ PERIODIC_METADATA_KEYS = [
     "classic_sharpness_ratio",
     "temperature",
     "camera_temperature",
-]
-
-END_OF_RUN_METADATA_KEYS = [
-    "frame_count",
-    "location",
-    "estimated_parasitemia",
-    "cell_counts",
+    "led_pwm_val",
 ]
 
 FRAME_LOG_INTERVAL = 100
