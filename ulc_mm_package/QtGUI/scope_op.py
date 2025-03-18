@@ -342,6 +342,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def lid_open_pause_handler(self, *args):
         self.lid_opened = True
+        self.logger.info("Lid opened.")
         if self.mscope.led._isOn:
             self.lid_open_pause.emit()
 
@@ -567,7 +568,7 @@ class ScopeOp(QObject, NamedMachine):
         )
 
         self.logger.info(
-            f"Finished experiment."
+            f"Finished experiment. "
             f"Processed {self.frame_count} frames. "
             f"Final class counts: {class_counts_str}"
         )
