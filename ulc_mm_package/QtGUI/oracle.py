@@ -23,6 +23,7 @@ from transitions import Machine
 from transitions.core import MachineError
 from time import sleep
 from logging.config import fileConfig
+from logging import LogRecord
 from datetime import datetime
 from pathlib import Path
 
@@ -109,6 +110,16 @@ class NoCloseMessageBox(QMessageBox):
             event.accept()
 
 
+class DateTimeFilter(logging.Filter):
+    def __init__(self, datetime_str):
+        super().__init__()
+        self.datetime_str = datetime_str
+
+    def filter(self, record: LogRecord):
+        record.datetime_str = self.datetime_str
+        return True
+
+
 class Oracle(Machine):
     def __init__(self):
         self.shutoff_done = False
@@ -137,6 +148,7 @@ class Oracle(Machine):
             },
         )
         self.logger = logging.root
+        self._init_log_format()
         self.logger.info("STARTING ORACLE.")
 
         # Instantiate GUI windows
@@ -158,6 +170,16 @@ class Oracle(Machine):
 
     def _init_tcp(self):
         self.liveview_window.update_tcp("unavailable")
+
+    def _init_log_format(self):
+        old_factory = logging.getLogRecordFactory()
+
+        def record_factory(*args, **kwargs):
+            record = old_factory(*args, **kwargs)
+            record.datetime_str = self.datetime_str  # Inject dynamically
+            return record
+
+        logging.setLogRecordFactory(record_factory)
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):
@@ -802,7 +824,7 @@ class Oracle(Machine):
             disable_existing_loggers=False,
         )
         self.logger = logging.root
-
+        self.logger.addFilter(DateTimeFilter(self.datetime_str))
         self.logger.info("CREATED LOG.")
 
     def shutoff(self):

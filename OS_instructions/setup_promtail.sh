@@ -71,6 +71,8 @@ scrape_configs:
       host: ${HOSTNAME}
       __path__: /media/pi/SamsungSSD/logs/*.log  # Watches all logs in this directory
   pipeline_stages:
+  - labeldrop:
+    - filename
   - match:
       selector: '{app="Remoscope"}'
       stages:
