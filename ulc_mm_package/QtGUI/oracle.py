@@ -23,6 +23,7 @@ from transitions import Machine
 from transitions.core import MachineError
 from time import sleep
 from logging.config import fileConfig
+from logging import LogRecord
 from datetime import datetime
 from pathlib import Path
 
@@ -109,6 +110,16 @@ class NoCloseMessageBox(QMessageBox):
             event.accept()
 
 
+class DateTimeFilter(logging.Filter):
+    def __init__(self, datetime_str):
+        super().__init__()
+        self.datetime_str = datetime_str
+
+    def filter(self, record: LogRecord):
+        record.datetime_str = self.datetime_str
+        return True
+
+
 class Oracle(Machine):
     def __init__(self):
         self.shutoff_done = False
@@ -137,6 +148,7 @@ class Oracle(Machine):
             },
         )
         self.logger = logging.root
+        self._init_log_format()
         self.logger.info("STARTING ORACLE.")
 
         # Instantiate GUI windows
@@ -158,6 +170,16 @@ class Oracle(Machine):
 
     def _init_tcp(self):
         self.liveview_window.update_tcp("unavailable")
+
+    def _init_log_format(self):
+        old_factory = logging.getLogRecordFactory()
+
+        def record_factory(*args, **kwargs):
+            record = old_factory(*args, **kwargs)
+            record.datetime_str = self.datetime_str  # Inject dynamically
+            return record
+
+        logging.setLogRecordFactory(record_factory)
 
     def _check_lock(self):
         if path.isfile(LOCKFILE):
@@ -346,7 +368,7 @@ class Oracle(Machine):
             sys.exit(1)
 
     def ssd_full_msg_and_exit(self):
-        print(
+        self.logger.error(
             "Couldn't find any folders in /media/pi with sufficient storage. Please eject and replace the SSD with a new one. Thank you!"
         )
         self.display_message(
@@ -656,7 +678,7 @@ class Oracle(Machine):
                     .strip()
                 )
             except subprocess.CalledProcessError:
-                self.logger.info("No Git branch or tag found.")
+                self.logger.error("No Git branch or tag found.")
 
         self.scopeop.mscope.data_storage.createNewExperiment(
             self.ext_dir,
@@ -667,6 +689,9 @@ class Oracle(Machine):
         )
 
         sample_type = self.experiment_metadata["sample_type"]
+
+        self.logger.info(f"Experiment Metadata: {self.experiment_metadata}")
+
         clinical = sample_type == CLINICAL_SAMPLE
         skip = not clinical and not sample_type == CULTURED_SAMPLE
         if skip:
@@ -769,6 +794,7 @@ class Oracle(Machine):
         if message_result == QMessageBox.No:
             self.shutoff()
         elif message_result == QMessageBox.Yes:
+            self._start_new_log()
             self.logger.info("Starting new experiment.")
             if not DataStorage.is_there_sufficient_storage(self.ext_dir):
                 self.ssd_full_msg_and_exit()
@@ -779,6 +805,27 @@ class Oracle(Machine):
                 except MachineError:
                     self.scopeop.to_intermission()
                     self.scopeop.rerun()
+
+    def _start_new_log(self):
+        """
+        Closes the current log file and creates new timestamped log file.
+        """
+
+        logging.shutdown()
+        log_dir = path.join(self.ext_dir, "logs")
+        logger_config_path = Path(__file__).resolve().parent.parent / "logger.config"
+        self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
+        fileConfig(
+            fname=str(logger_config_path),
+            defaults={
+                "filename": path.join(log_dir, f"{self.datetime_str}.log"),
+                "fileHandlerLevel": "DEBUG" if VERBOSE else "INFO",
+            },
+            disable_existing_loggers=False,
+        )
+        self.logger = logging.root
+        self.logger.addFilter(DateTimeFilter(self.datetime_str))
+        self.logger.info("CREATED LOG.")
 
     def shutoff(self):
         self.logger.info("Starting oracle shut off.")
@@ -856,7 +903,7 @@ def main():
 
     def shutoff_excepthook(type, value, tb):
         tb_string = "".join(traceback.format_exception(type, value, tb))
-        oracle.logger.warning(f"Oracle shutoff due to exception - {tb_string}")
+        oracle.logger.error(f"Oracle shutoff due to exception - {tb_string}")
         try:
             app.shutoff.emit()
             # Pause before shutting off hardware to ensure there are no calls to camera post-shutoff

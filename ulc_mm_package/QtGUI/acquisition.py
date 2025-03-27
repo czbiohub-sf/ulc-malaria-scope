@@ -89,7 +89,7 @@ class Acquisition(QObject):
             self.img, self.img_timestamp = next(self.img_gen)
             self.update_scopeop.emit(self.img, self.img_timestamp)
         except PyCamerasError as e:
-            self.logger.exception(e)
+            self.logger.error(f"Failed to grab image: {e}.")
 
     def send_img(self):
         self.update_liveview.emit(self.img)

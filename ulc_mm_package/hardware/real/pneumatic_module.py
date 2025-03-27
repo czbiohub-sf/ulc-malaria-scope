@@ -135,7 +135,7 @@ class PneumaticModule:
                     )
                 return min_duty_cycle, max_duty_cycle, step_size
             except Exception as e:
-                self.logger.exception(
+                self.logger.error(
                     f"Error encountered while reading syringe min/max from the config file, {CONFIGURATION_FILE}. Setting defaults instead.\nException: {e}"
                 )
                 return (
@@ -144,7 +144,7 @@ class PneumaticModule:
                     DEFAULT_STEP,
                 )
         else:
-            self.logger.info(
+            self.logger.warning(
                 f"{CONFIGURATION_FILE} was not found, using default values instead for syringe min/max duty cycle."
             )
             return (
@@ -319,7 +319,7 @@ class AdafruitMPRLS:
                 raise PressureSensorStaleValue(
                     f"{perf_counter() - self.prev_poll_time_s}s elapsed since last read (last value was: {self.prev_pressure} w/ status {self.prev_status.value})."
                 )
-            self.logger.info("Returning previous pressure value.")
+            self.logger.warning("Returning previous pressure value.")
             return self.prev_pressure, self.prev_status
 
     def getPressureImmediately(self) -> Tuple[float, PressureSensorRead]:
@@ -351,7 +351,7 @@ class AdafruitMPRLS:
                 self.prev_poll_time_s = perf_counter()
                 return (pressure, status)
             except PressureSensorBusy as e:
-                self.logger.info(f"Attempted read but pressure sensor is busy: {e}.")
+                self.logger.warning(f"Attempted read but pressure sensor is busy: {e}.")
                 raise PressureSensorBusy()
         else:
             raise PressureSensorNotInstantiated(self.mpr_err_msg)
