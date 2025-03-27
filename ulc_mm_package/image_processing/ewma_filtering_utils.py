@@ -109,27 +109,6 @@ class EWMAFiltering:
         )
         return self.prev_val
 
-    def update_and_get_val_arr(self, new_measurement: npt.NDArray) -> npt.NDArray:
-        """EWMA calculation step for arrays (uses an njit'd function under the hood, so is
-        slightly more performant than the regular `update_and_get_val()` call). However,
-        if using a single float value, this function is less performant than `update_and_get_val()`
-
-        Parameters
-        ----------
-        new_measurement: npt.NDArray
-
-        Returns
-        -------
-        npt.NDArray
-            The updated filter value.
-        """
-
-        self.prev_val = self._ewma_update_step_arr(
-            self.prev_val, new_measurement, self.alpha
-        )
-
-        return
-
     @staticmethod
     def get_halflife_from_smoothing_factor(alpha: float) -> float:
         """Determine the half-life of the filter given its alpha value
