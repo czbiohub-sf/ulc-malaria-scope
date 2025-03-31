@@ -271,7 +271,7 @@ class Routines:
                         flow_controller.pneumatic_module.default_min_step_size
                     )
 
-                self.logger.error(
+                self.logger.warning(
                     "Can't reach target flowrate. Syringe at end of travel."
                 )
 
@@ -540,7 +540,7 @@ class Routines:
                     try:
                         flow_controller.adjustSyringe(flow_error=1.0)
                     except (CantReachTargetFlowrate, SyringeEndOfTravel):
-                        self.logger.info(
+                        self.logger.error(
                             f"Syringe reached end of travel but current pressure: ({curr_pressure_gauge:.2f} mBar) is less than max allowable ({processing_constants.MAX_VACUUM_PRESSURE:.2f} mBar).\nContinuing with cell finder anyway..."
                         )
                         break
@@ -558,12 +558,12 @@ class Routines:
                 while perf_counter() - start < pull_time:
                     # Wait the desired time
                     yield
-                logging.info("Resetting pressure...")
+                self.logger.info("Resetting pressure...")
                 mscope.pneumatic_module.setDutyCycle(
                     mscope.pneumatic_module.getMaxDutyCycle()
                 )
 
-            logging.info("Looking for cells...")
+            self.logger.info("Looking for cells...")
             # Perform a full focal stack and get the cross-correlation value for each image
             # If we're currently at the bottom, do the bottom-up sweep. Otherwise, do the top-down sweep.
             if mscope.motor.pos == 0:

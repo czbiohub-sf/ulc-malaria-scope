@@ -126,3 +126,6 @@ lock.py
 
 # config ini files
 */configs/*.ini
+
+#logging config
+/log_config

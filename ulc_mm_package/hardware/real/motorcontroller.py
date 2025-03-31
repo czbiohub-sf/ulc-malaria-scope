@@ -305,7 +305,7 @@ class DRV8825Nema:
                     if time.perf_counter() - start_time >= timeout_s:
                         raise MotorMoveTimeout()
                     if verbose:
-                        print(f"Steps {i} \ Position: {self.pos}")
+                        self.logger.debug(f"Steps {i} \ Position: {self.pos}")
 
         except KeyboardInterrupt:
             raise MotorControllerError("User keyboard interrupt")
@@ -323,14 +323,16 @@ class DRV8825Nema:
 
             # Print report status
             if verbose:
-                print("\nRpiMotorLib, Motor Run finished, Details:.\n")
-                print("Motor type = {}".format(self.motor_type))
-                print("Direction = {}".format(dir))
-                print("Step Type = {}".format(self.steptype))
-                print("Number of steps = {}".format(self.pos - start_pos))
-                print("Step Delay = {}".format(stepdelay))
-                print("Intial delay = {}".format(initdelay))
-                print("Size of turn in degrees = {}".format(self.degree_calc(steps)))
+                self.logger.debug("\nRpiMotorLib, Motor Run finished, Details:.\n")
+                self.logger.debug("Motor type = {}".format(self.motor_type))
+                self.logger.debug("Direction = {}".format(dir))
+                self.logger.debug("Step Type = {}".format(self.steptype))
+                self.logger.debug("Number of steps = {}".format(self.pos - start_pos))
+                self.logger.debug("Step Delay = {}".format(stepdelay))
+                self.logger.debug("Intial delay = {}".format(initdelay))
+                self.logger.debug(
+                    "Size of turn in degrees = {}".format(self.degree_calc(steps))
+                )
 
     @lock_no_block(MOTOR_LOCK, MotorInMotion)
     def move_abs(self, pos: int = 200, stepdelay=0.005, verbose=False, initdelay=0.05):
@@ -384,14 +386,14 @@ class DRV8825Nema:
                     time.sleep(stepdelay)
                     self.pos += step_increment
                     if verbose:
-                        print(f"Steps {i} \ Position: {self.pos}")
+                        self.logger.debug(f"Steps {i} \ Position: {self.pos}")
 
         except KeyboardInterrupt:
-            print("User Keyboard Interrupt")
+            self.logger.error("User Keyboard Interrupt")
         except StopMotorInterrupt:
             raise
         except Exception:
-            print("RpiMotorLib  : Unexpected error:")
+            self.logger.error("RpiMotorLib  : Unexpected error:")
             raise
 
         finally:
@@ -401,14 +403,16 @@ class DRV8825Nema:
 
             # Print report status
             if verbose:
-                print("\nRpiMotorLib, Motor Run finished, Details:.\n")
-                print("Motor type = {}".format(self.motor_type))
-                print("Direction = {}".format(dir))
-                print("Step Type = {}".format(self.steptype))
-                print("Number of steps = {}".format(self.pos - start_pos))
-                print("Step Delay = {}".format(stepdelay))
-                print("Intial delay = {}".format(initdelay))
-                print("Size of turn in degrees = {}".format(self.degree_calc(steps)))
+                self.logger.debug("\nRpiMotorLib, Motor Run finished, Details:.\n")
+                self.logger.debug("Motor type = {}".format(self.motor_type))
+                self.logger.debug("Direction = {}".format(dir))
+                self.logger.debug("Step Type = {}".format(self.steptype))
+                self.logger.debug("Number of steps = {}".format(self.pos - start_pos))
+                self.logger.debug("Step Delay = {}".format(stepdelay))
+                self.logger.debug("Intial delay = {}".format(initdelay))
+                self.logger.debug(
+                    "Size of turn in degrees = {}".format(self.degree_calc(steps))
+                )
 
     def threaded_move_rel(self, *args, **kwargs):
         if not MOTOR_LOCK.locked():

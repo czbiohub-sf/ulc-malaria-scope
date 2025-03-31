@@ -64,6 +64,8 @@ from ulc_mm_package.scope_constants import (
     VERBOSE,
     ACQUISITION_PERIOD,
     LIVEVIEW_PERIOD,
+    FRAME_LOG_INTERVAL,
+    PERIODIC_METADATA_KEYS,
 )
 
 
@@ -248,6 +250,8 @@ class ScopeOp(QObject, NamedMachine):
 
         self.parasitemia_vis_path = ""
 
+        self.periodic_log_values = {key: None for key in PERIODIC_METADATA_KEYS}
+
         self.update_img_count.emit(0)
         self.update_msg.emit("Starting new experiment")
 
@@ -338,6 +342,7 @@ class ScopeOp(QObject, NamedMachine):
 
     def lid_open_pause_handler(self, *args):
         self.lid_opened = True
+        self.logger.info("Lid opened.")
         if self.mscope.led._isOn:
             self.lid_open_pause.emit()
 
@@ -424,7 +429,7 @@ class ScopeOp(QObject, NamedMachine):
                 QR.NONE.value,
             )
         except PressureLeak as e:
-            self.logger.error(str(e))
+            self.logger.error(f"Pressure leak detected: {e}")
             self.default_error.emit(
                 "Calibration failed",
                 str(e),
@@ -557,6 +562,16 @@ class ScopeOp(QObject, NamedMachine):
         # Turn camera back on
         self.mscope.camera.startAcquisition()
 
+        class_counts_str = ", ".join(
+            f"{class_name}={count}"
+            for class_name, count in zip(YOGO_CLASS_LIST, self.raw_cell_count)
+        )
+
+        self.logger.info(
+            f"Finished experiment. "
+            f"Processed {self.frame_count} frames. "
+            f"Final class counts: {class_counts_str}"
+        )
         self.finishing_experiment.emit(100)
 
     def _start_intermission(self, msg):
@@ -578,7 +593,7 @@ class ScopeOp(QObject, NamedMachine):
         try:
             self.img_signal.disconnect(self.run_autobrightness)
         except TypeError:
-            self.logger.info(
+            self.logger.warning(
                 "run_autobrightness: img_signal already disconnected, no signal/slot changes were made."
             )
 
@@ -966,7 +981,7 @@ class ScopeOp(QObject, NamedMachine):
         try:
             self.flowrate, _ = self.flowcontrol_routine.send((img_ds_10x, timestamp))
         except Exception as e:
-            self.logger.warning(f"Unexpected flow control exception - {e}")
+            self.logger.error(f"Unexpected flow control exception - {e}")
             self.flowrate = -1
             self.flowcontrol_routine = self.routines.flow_control_routine(
                 self.mscope, self.target_flowrate
@@ -981,7 +996,7 @@ class ScopeOp(QObject, NamedMachine):
         curr_mean_pixel_val = self.periodic_autobrightness_routine.send(resized_img)
 
         # ------------------------------------
-        # Update remaining metadata in per-image csv
+        # Update remaining metadata in per-image csv and log
         # ------------------------------------
         t0 = perf_counter()
         self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
@@ -993,7 +1008,7 @@ class ScopeOp(QObject, NamedMachine):
             ) = (pressure, status)
         except PressureSensorStaleValue as e:
             ## TODO???
-            self.logger.info(f"Stale pressure sensor value - {e}")
+            self.logger.error(f"Stale pressure sensor value - {e}")
 
         self.img_metadata["led_pwm_val"] = self.mscope.led.pwm_duty_cycle
         self.img_metadata[
@@ -1017,7 +1032,7 @@ class ScopeOp(QObject, NamedMachine):
             except Exception as e:
                 # some error has occurred, but the TH sensor isn't critical, so just warn
                 # and move on
-                self.logger.warning(
+                self.logger.error(
                     f"exception occurred while retrieving temperature and humidity: {e}"
                 )
                 self.img_metadata["humidity"] = None
@@ -1042,6 +1057,17 @@ class ScopeOp(QObject, NamedMachine):
         self.frame_count += 1
         t1 = perf_counter()
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
+
+        for key in PERIODIC_METADATA_KEYS:
+            val = self.img_metadata.get(key, None)
+            if val is not None:
+                self.periodic_log_values[key] = val
+
+        if self.frame_count % FRAME_LOG_INTERVAL == 0:
+            # Log full periodic metadata
+            self.logger.info(
+                f"[Frame {self.frame_count}] Full periodic metadata: {self.periodic_log_values}"
+            )
 
         if self.running:
             self.img_signal.connect(self.run_experiment)
