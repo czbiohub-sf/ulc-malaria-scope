@@ -50,7 +50,7 @@ class FormGUI(QDialog):
 
     def _validate_temperature(self):
         text = self.sample_storage_temp.text()
-        if not text.endswith(("C", "F")) or not text[:-1].isdigit():
+        if not text.endswith(("C", "F", "c", "f")) or not text[:-1].isdigit():
             self.sample_storage_temp.setStyleSheet("border: 1px solid red;")
             self.start_btn.setEnabled(False)
         else:
@@ -168,6 +168,9 @@ class FormGUI(QDialog):
             "operator_id": self.operator_val.text(),
             "participant_id": self.participant_val.text(),
             "flowcell_id": self.flowcell_val.text(),
+            "sample_collection_date": self.sample_collection_date.text(),
+            "sample_collection_time": self.sample_collection_time.text(),
+            "sample_storage_temp": self.sample_storage_temp.text(),
             "target_flowrate": (
                 TARGET_FLOWRATE.name.capitalize(),
                 TARGET_FLOWRATE.value,
