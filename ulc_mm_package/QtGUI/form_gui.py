@@ -56,7 +56,7 @@ class FormGUI(QDialog):
         else:
             self.sample_storage_temp.setStyleSheet("")
             self.start_btn.setEnabled(True)
-            
+
     def _load_ui(self):
         self.setWindowTitle("Experiment form")
 
@@ -112,7 +112,9 @@ class FormGUI(QDialog):
 
         # Sample storage temperature
         self.sample_storage_temp = QLineEdit()
-        self.sample_storage_temp.setPlaceholderText("Enter temperature (e.g. 25C or 77F)")
+        self.sample_storage_temp.setPlaceholderText(
+            "Enter temperature (e.g. 25C or 77F)"
+        )
         self.sample_storage_temp.textChanged.connect(self._validate_temperature)
 
         self.flowcell_val = QLineEdit()
