@@ -94,7 +94,6 @@ class FormGUI(QDialog):
         self.notes_lbl = QLabel("Other notes")
         self.site_lbl = QLabel("Site")
         self.sample_lbl = QLabel("Sample type")
-        self.msg_lbl = QLabel("Please fill out experiment data.")
 
         # Text boxes
         self.operator_val = QLineEdit()
@@ -157,7 +156,6 @@ class FormGUI(QDialog):
         self.main_layout.addWidget(self.notes_val, 8, 1)
         self.main_layout.addWidget(self.start_btn, 9, 1)
 
-        self.main_layout.addWidget(self.msg_lbl, 10, 0, 1, 2)
 
         # Set the focus order
         self.operator_val.setFocus()
