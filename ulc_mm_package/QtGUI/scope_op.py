@@ -1002,7 +1002,9 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
         try:
             pressure, status = self.mscope.pneumatic_module.getPressure()
-            self.img_metadata["pressure_hpa"] = round(pressure, 2)
+            self.img_metadata["pressure_hpa"] = (
+                round(pressure, 2) if pressure is not None else pressure
+            )
         except PressureSensorStaleValue as e:
             ## TODO???
             self.logger.error(f"Stale pressure sensor value - {e}")
@@ -1011,12 +1013,22 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["syringe_pos"] = round(
             self.mscope.pneumatic_module.getCurrentDutyCycle(), 4
         )
-        self.img_metadata["flowrate"] = round(self.flowrate, 4)
-        self.img_metadata["focus_error"] = round(raw_focus_err, 4)
-        self.img_metadata["filtered_focus_error"] = round(filtered_focus_err, 4)
+        self.img_metadata["flowrate"] = (
+            round(self.flowrate, 4) if self.flowrate is not None else self.flowrate
+        )
+        self.img_metadata["focus_error"] = (
+            round(raw_focus_err, 4) if raw_focus_err is not None else raw_focus_err
+        )
+        self.img_metadata["filtered_focus_error"] = (
+            round(filtered_focus_err, 4)
+            if filtered_focus_err is not None
+            else filtered_focus_err
+        )
         self.img_metadata["focus_adjustment"] = focus_adjustment
-        self.img_metadata["classic_sharpness_ratio"] = round(
-            sharpness_ratio_rel_peak, 4
+        self.img_metadata["classic_sharpness_ratio"] = (
+            round(sharpness_ratio_rel_peak, 4)
+            if sharpness_ratio_rel_peak is not None
+            else sharpness_ratio_rel_peak
         )
         self.img_metadata["mean_pixel_val"] = round(curr_mean_pixel_val, 4)
 
