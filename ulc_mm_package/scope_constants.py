@@ -145,6 +145,9 @@ except usb.core.NoBackendError:
 EXPERIMENT_METADATA_KEYS = [
     "operator_id",
     "participant_id",
+    "sample_collection_date",
+    "sample_collection_time",
+    "sample_storage_temp",
     "flowcell_id",
     "target_flowrate",
     "site",
