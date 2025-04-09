@@ -1030,7 +1030,11 @@ class ScopeOp(QObject, NamedMachine):
             if sharpness_ratio_rel_peak is not None
             else sharpness_ratio_rel_peak
         )
-        self.img_metadata["mean_pixel_val"] = round(curr_mean_pixel_val, 4)
+        self.img_metadata["mean_pixel_val"] = (
+            round(curr_mean_pixel_val, 4)
+            if curr_mean_pixel_val is not None
+            else curr_mean_pixel_val
+        )
 
         if self.frame_count % TH_PERIOD_NUM == 0:
             try:
