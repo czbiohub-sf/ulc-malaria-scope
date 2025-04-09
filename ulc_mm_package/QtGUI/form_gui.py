@@ -174,7 +174,7 @@ class FormGUI(QDialog):
         date_diff_in_hours = sample_date.daysTo(current_date) * 24
         time_diff_in_hours = sample_time.secsTo(current_time) / 3600
 
-        sample_age_hours = date_diff_in_hours + time_diff_in_hours
+        sample_age_hours = round(date_diff_in_hours + time_diff_in_hours, 2)
 
         form_metadata = {
             "operator_id": self.operator_val.text(),
