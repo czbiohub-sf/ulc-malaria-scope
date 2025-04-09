@@ -869,7 +869,7 @@ class ScopeOp(QObject, NamedMachine):
             return
 
         # Record timestamp before running routines
-        self.img_metadata["timestamp"] = timestamp
+        self.img_metadata["timestamp"] = round(timestamp, 2)
         self.img_metadata["im_counter"] = f"{self.frame_count:0{self.digits}d}"
 
         t0 = perf_counter()
@@ -1002,24 +1002,35 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["motor_pos"] = self.mscope.motor.getCurrentPosition()
         try:
             pressure, status = self.mscope.pneumatic_module.getPressure()
-            (
-                self.img_metadata["pressure_hpa"],
-                self.img_metadata["pressure_status_flag"],
-            ) = (pressure, status)
+            self.img_metadata["pressure_hpa"] = (
+                round(pressure, 2) if pressure is not None else pressure
+            )
         except PressureSensorStaleValue as e:
             ## TODO???
             self.logger.error(f"Stale pressure sensor value - {e}")
 
-        self.img_metadata["led_pwm_val"] = self.mscope.led.pwm_duty_cycle
-        self.img_metadata[
-            "syringe_pos"
-        ] = self.mscope.pneumatic_module.getCurrentDutyCycle()
-        self.img_metadata["flowrate"] = self.flowrate
-        self.img_metadata["focus_error"] = raw_focus_err
-        self.img_metadata["filtered_focus_error"] = filtered_focus_err
+        self.img_metadata["led_pwm_val"] = round(self.mscope.led.pwm_duty_cycle, 4)
+        self.img_metadata["syringe_pos"] = round(
+            self.mscope.pneumatic_module.getCurrentDutyCycle(), 4
+        )
+        self.img_metadata["flowrate"] = (
+            round(self.flowrate, 4) if self.flowrate is not None else self.flowrate
+        )
+        self.img_metadata["focus_error"] = (
+            round(raw_focus_err, 4) if raw_focus_err is not None else raw_focus_err
+        )
+        self.img_metadata["filtered_focus_error"] = (
+            round(filtered_focus_err, 4)
+            if filtered_focus_err is not None
+            else filtered_focus_err
+        )
         self.img_metadata["focus_adjustment"] = focus_adjustment
-        self.img_metadata["classic_sharpness_ratio"] = sharpness_ratio_rel_peak
-        self.img_metadata["mean_pixel_val"] = curr_mean_pixel_val
+        self.img_metadata["classic_sharpness_ratio"] = (
+            round(sharpness_ratio_rel_peak, 4)
+            if sharpness_ratio_rel_peak is not None
+            else sharpness_ratio_rel_peak
+        )
+        self.img_metadata["mean_pixel_val"] = round(curr_mean_pixel_val, 4)
 
         if self.frame_count % TH_PERIOD_NUM == 0:
             try:
@@ -1027,11 +1038,11 @@ class ScopeOp(QObject, NamedMachine):
                     temperature,
                     humidity,
                 ) = self.mscope.ht_sensor.get_temp_and_humidity()
-                self.img_metadata["humidity"] = humidity
-                self.img_metadata["temperature"] = temperature
-                self.img_metadata[
-                    "camera_temperature"
-                ] = self.mscope.camera._getTemperature()
+                self.img_metadata["humidity"] = round(humidity, 4)
+                self.img_metadata["temperature"] = round(temperature, 2)
+                self.img_metadata["camera_temperature"] = round(
+                    self.mscope.camera._getTemperature(), 2
+                )
             except Exception as e:
                 # some error has occurred, but the TH sensor isn't critical, so just warn
                 # and move on
