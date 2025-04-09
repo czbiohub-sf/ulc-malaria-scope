@@ -164,12 +164,25 @@ class FormGUI(QDialog):
         self.start_btn.setDefault(True)
 
     def get_form_input(self) -> dict:
+        # Determine the sample age from the current time and the sample collection time
+        current_date = QDate.currentDate()
+        current_time = QTime.currentTime()
+
+        sample_date = self.sample_collection_date.date()
+        sample_time = self.sample_collection_time.time()
+
+        date_diff_in_hours = sample_date.daysTo(current_date) * 24
+        time_diff_in_hours = sample_time.secsTo(current_time) / 3600
+
+        sample_age_hours = date_diff_in_hours + time_diff_in_hours
+
         form_metadata = {
             "operator_id": self.operator_val.text(),
             "participant_id": self.participant_val.text(),
             "flowcell_id": self.flowcell_val.text(),
             "sample_collection_date": self.sample_collection_date.text(),
             "sample_collection_time": self.sample_collection_time.text(),
+            "sample_age_hours": sample_age_hours,
             "sample_storage_temp": self.sample_storage_temp.text(),
             "target_flowrate": (
                 TARGET_FLOWRATE.name.capitalize(),

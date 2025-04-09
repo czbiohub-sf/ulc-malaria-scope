@@ -147,6 +147,7 @@ EXPERIMENT_METADATA_KEYS = [
     "participant_id",
     "sample_collection_date",
     "sample_collection_time",
+    "sample_age_hours",
     "sample_storage_temp",
     "flowcell_id",
     "target_flowrate",
