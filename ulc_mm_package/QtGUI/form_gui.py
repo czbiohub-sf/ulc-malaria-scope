@@ -156,7 +156,6 @@ class FormGUI(QDialog):
         self.main_layout.addWidget(self.notes_val, 8, 1)
         self.main_layout.addWidget(self.start_btn, 9, 1)
 
-
         # Set the focus order
         self.operator_val.setFocus()
         self.start_btn.setDefault(True)
