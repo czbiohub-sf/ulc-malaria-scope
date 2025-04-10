@@ -179,6 +179,7 @@ PER_IMAGE_METADATA_KEYS = [
     "classic_sharpness_ratio",
     "mean_pixel_val",
     "cell_count_cumulative",
+    "camera_temperature",
     "temperature",
     "humidity",
     "looptime",
