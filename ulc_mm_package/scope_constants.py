@@ -180,7 +180,6 @@ PER_IMAGE_METADATA_KEYS = [
     "mean_pixel_val",
     "cell_count_cumulative",
     "temperature",
-    "camera_temperature",
     "humidity",
     "looptime",
     "runtime",
