@@ -145,6 +145,10 @@ except usb.core.NoBackendError:
 EXPERIMENT_METADATA_KEYS = [
     "operator_id",
     "participant_id",
+    "sample_collection_date",
+    "sample_collection_time",
+    "sample_age_hours",
+    "sample_storage_temp",
     "flowcell_id",
     "target_flowrate",
     "site",
@@ -166,7 +170,6 @@ PER_IMAGE_METADATA_KEYS = [
     "timestamp",
     "motor_pos",
     "pressure_hpa",
-    "pressure_status_flag",
     "led_pwm_val",
     "syringe_pos",
     "flowrate",
