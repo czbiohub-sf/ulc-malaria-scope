@@ -8,6 +8,7 @@ These functions are used in `form_gui.py` to validate the `participant_id` field
 import inspect
 import logging
 import os
+import typing
 
 logger = logging.getLogger()
 
@@ -30,7 +31,7 @@ def is_luhn_valid(card_number):
     return luhn_checksum(card_number) == 0
 
 
-def _select_validation_function() -> callable:
+def _select_validation_function() -> typing.Callable:
     """Selects the validation function to use based on an environment variable which is unique for a field study.
 
     Important: The onus is on us to ensure that the environment variable is set on a machine prior to starting a study.
@@ -68,7 +69,7 @@ def _select_validation_function() -> callable:
     )
 
 
-def rwanda_phase_2_barcode_validation(participant_id: str) -> tuple[bool, str]:
+def rwanda_phase_2_barcode_validation(participant_id: str) -> typing.Tuple[bool, str]:
     """Validates the participant ID for the Rwanda Phase 2 field study.
 
     The codes used for this study must adhere to the following requirements:
