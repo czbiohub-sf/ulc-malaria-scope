@@ -29,6 +29,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     SAMPLE_LIST,
     TOOLBAR_OFFSET,
 )
+from ulc_mm_package.study_tools import id_verification as id_verification
 
 
 class FormGUI(QDialog):
@@ -55,6 +56,29 @@ class FormGUI(QDialog):
             self.start_btn.setEnabled(False)
         else:
             self.sample_storage_temp.setStyleSheet("")
+            self.start_btn.setEnabled(True)
+
+    def _validate_participant_id(self):
+        """Validate the participant ID based on the field study name. If the participant ID is invalid, the start experiment button is disabled and a
+        red border is added to the participant ID text field.
+
+        Note that this function only triggers once a user starts typing something in the participant_id field.
+        If the field is empty, the start experiment button remains enabled.
+
+        This has been done deliberately to account for cases where a user may want to run test chips and not want to enter a participant ID.
+        """
+
+        text = self.participant_val.text()
+        validation_func = id_verification._select_validation_function()
+
+        is_valid, expected_format = validation_func(text)
+
+        if not is_valid:
+            self.participant_val.setStyleSheet("border: 1px solid red;")
+            self.start_btn.setEnabled(False)
+            self.participant_lbl.setPlaceholderText(expected_format)
+        else:
+            self.participant_val.setStyleSheet("")
             self.start_btn.setEnabled(True)
 
     def _load_ui(self):
@@ -98,6 +122,7 @@ class FormGUI(QDialog):
         # Text boxes
         self.operator_val = QLineEdit()
         self.participant_val = QLineEdit()
+        self.participant_val.textChanged.connnect(self._validate_participant_id)
 
         # Sample collection date
         self.sample_collection_date = QDateEdit(QDate.currentDate())
