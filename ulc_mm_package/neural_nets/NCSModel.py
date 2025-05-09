@@ -99,6 +99,8 @@ class NCSModel:
             self.core is not None
         ), "initialize a subclass of NCSModel, not NCSModel itself"
 
+        self.core.set_property({'CACHE_DIR': 'cached_models/'})
+        self.core.set_property({'PERFORMANCE_HINT': 'THROUGHPUT'})
         model = self.core.read_model(model_path)
 
         ppp = PrePostProcessor(model)
@@ -116,9 +118,6 @@ class NCSModel:
                 compiled_model = self.core.compile_model(
                     model,
                     self.device_name,
-                    config={
-                        "PERFORMANCE_HINT": "THROUGHPUT",
-                    },
                 )
                 self.connected = True
                 return compiled_model
