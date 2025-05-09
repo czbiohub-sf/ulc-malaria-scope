@@ -105,6 +105,7 @@ class NCSModel:
         # Faster model read if it was previously cached
         # See: https://docs.openvino.ai/2025/openvino-workflow/running-inference/optimize-inference/optimizing-latency/model-caching-overview.html
         if os.path.isdir(self._cache_dir):
+            self.core.set_property({"CACHE_DIR": self._cache_dir})
             compiled_model = self.core.compile_model(
                 model_path,
                 self.device_name,
