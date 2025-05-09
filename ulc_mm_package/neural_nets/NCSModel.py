@@ -130,6 +130,7 @@ class NCSModel:
                     self.device_name,
                     config={
                         "PERFORMANCE_HINT": "THROUGHPUT",
+                        "CACHE_DIR": self._cache_dir,
                     },
                 )
                 self.connected = True
