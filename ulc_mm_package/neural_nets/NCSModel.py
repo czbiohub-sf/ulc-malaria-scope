@@ -112,6 +112,7 @@ class NCSModel:
             return compiled_model
 
         model = self.core.read_model(model_path)
+        self.core.set_property({"CACHE_DIR": self._cache_dir})
 
         ppp = PrePostProcessor(model)
         ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
@@ -130,7 +131,6 @@ class NCSModel:
                     self.device_name,
                     config={
                         "PERFORMANCE_HINT": "THROUGHPUT",
-                        "CACHE_DIR": self._cache_dir,
                     },
                 )
                 self.connected = True
