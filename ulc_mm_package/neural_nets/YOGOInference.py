@@ -16,6 +16,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_AREA_FILTER_NORMED,
     YOGO_PRED_THRESHOLD,
     YOGO_CROP_HEIGHT_PX,
+    YOGO_MODEL_CACHE_DIR,
 )
 
 
@@ -45,8 +46,9 @@ class YOGO(NCSModel):
     def __init__(
         self,
         model_path: str = YOGO_MODEL_DIR,
+        cache_dir: str = YOGO_MODEL_CACHE_DIR,
     ):
-        super().__init__(model_path)
+        super().__init__(model_path, cache_dir)
 
     @staticmethod
     def crop_img(img: npt.NDArray) -> npt.NDArray:

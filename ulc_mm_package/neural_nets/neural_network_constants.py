@@ -20,6 +20,7 @@ AUTOFOCUS_MODEL_NAME = "fast-cosmos-557"
 AUTOFOCUS_MODEL_DIR = str(
     curr_dir / "autofocus_model_files" / AUTOFOCUS_MODEL_NAME / "best.xml"
 )
+AUTOFOCUS_CACHE_DIR = str(curr_dir / "cached_models" / AUTOFOCUS_MODEL_NAME)
 
 if not Path(AUTOFOCUS_MODEL_DIR).exists():
     raise FileNotFoundError("autofocus model not found")
@@ -35,6 +36,7 @@ YOGO_CONF_THRESHOLD = (
 )
 YOGO_MODEL_NAME = "elated-smoke-4492"
 YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best.xml")
+YOGO_MODEL_CACHE_DIR = str(curr_dir / "cached_models" / YOGO_MODEL_NAME)
 
 if not Path(YOGO_MODEL_DIR).exists():
     raise FileNotFoundError("yogo model not found")

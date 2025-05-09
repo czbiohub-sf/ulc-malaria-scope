@@ -5,6 +5,7 @@ import queue
 import threading
 import numpy as np
 import operator as op
+import os
 import numpy.typing as npt
 
 from copy import copy
@@ -66,6 +67,7 @@ class NCSModel:
     def __init__(
         self,
         model_path: str,
+        cache_dir: Optional[str] = None,
     ):
         """
         params:
@@ -73,6 +75,7 @@ class NCSModel:
         """
         self.connected = False
         self.device_name = "MYRIAD"
+        self._cache_dir = cache_dir
         self.model = self._compile_model(model_path)
 
         self.asyn_result_lock = threading.Lock()
@@ -99,8 +102,15 @@ class NCSModel:
             self.core is not None
         ), "initialize a subclass of NCSModel, not NCSModel itself"
 
-        self.core.set_property({"CACHE_DIR": "cached_models/"})
-        self.core.set_property({"PERFORMANCE_HINT": "THROUGHPUT"})
+        # Faster model read if it was previously cached
+        # See: https://docs.openvino.ai/2025/openvino-workflow/running-inference/optimize-inference/optimizing-latency/model-caching-overview.html
+        if os.path.isdir(self._cache_dir):
+            compiled_model = self.core.compile_model(
+                model_path,
+                self.device_name,
+            )
+            return compiled_model
+
         model = self.core.read_model(model_path)
 
         ppp = PrePostProcessor(model)
@@ -118,6 +128,9 @@ class NCSModel:
                 compiled_model = self.core.compile_model(
                     model,
                     self.device_name,
+                    config={
+                        "PERFORMANCE_HINT": "THROUGHPUT",
+                    },
                 )
                 self.connected = True
                 return compiled_model
