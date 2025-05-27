@@ -1083,7 +1083,7 @@ class ScopeOp(QObject, NamedMachine):
 
         if self.frame_count % FRAME_LOG_INTERVAL == 0:
             # Log full periodic metadata
-            self.logger.info(
+            self.logger.debug(
                 f"[Frame {self.frame_count}] Full periodic metadata: {self.periodic_log_values}"
             )
 
