@@ -54,7 +54,7 @@ cat << 'EOF' > "$CONFIG_FILE"
 server:
   disable: true  # Disables Promtail's internal HTTP server
 positions:
-  filename: /home/pi/Documents/ulc-malaria-scope/log_config/positions.yaml  # Stores file tracking state
+  filename: /media/pi/SamsungSSD//positions.yaml  # Stores file tracking state
   sync_period: 10s
 clients:
   - url: https://api-grafana.sf.czbiohub.org/loki/push
@@ -71,14 +71,14 @@ scrape_configs:
       host: ${HOSTNAME}
       __path__: /media/pi/SamsungSSD/logs/*.log  # Watches all logs in this directory
   pipeline_stages:
-  - labeldrop:
-    - filename
   - match:
       selector: '{app="Remoscope"}'
       stages:
       - multiline:
           firstline: '^\\d{4}-\\d{2}-\\d{2}-\\d{6} .*'
-          max_wait_time: 5s
+          max_wait_time: 20s
+      - labeldrop:
+          - filename
       - regex:
           expression: '^\\d{4}-\\d{2}-\\d{2}-\\d{6} - (?P<severity>\\w+) - .*'
       - labels:
@@ -103,6 +103,7 @@ echo "Creating systemd service file for promtail..."
 sudo tee /etc/systemd/system/promtail.service > /dev/null <<'EOF'
 [Unit]
 Description=Promtail Service
+RequiresMountsFor=/media/pi/SamsungSSD  
 After=network.target
 
 [Service]
