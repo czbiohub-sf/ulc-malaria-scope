@@ -103,7 +103,8 @@ echo "Creating systemd service file for promtail..."
 sudo tee /etc/systemd/system/promtail.service > /dev/null <<'EOF'
 [Unit]
 Description=Promtail Service
-RequiresMountsFor=/media/pi/SamsungSSD  
+RequiresMountsFor=/media/pi/SamsungSSD
+BindsTo=media-pi-SamsungSSD.mount
 After=network.target
 
 [Service]
