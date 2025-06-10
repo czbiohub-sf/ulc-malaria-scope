@@ -98,19 +98,36 @@ echo "Making promtail executable and moving it to /usr/local/bin..."
 chmod +x /tmp/promtail-linux-arm
 sudo mv /tmp/promtail-linux-arm /usr/local/bin/promtail
 
-# --- Step 4: Create systemd service for Promtail using sed for environment variable substitution ---
-echo "Creating systemd service file for promtail..."
-sudo tee /etc/systemd/system/promtail.service > /dev/null <<'EOF'
+# --- Step 4: Create wrapper script to wait for SSD mount ---
+WRAPPER="/usr/local/bin/promtail-retry.sh"
+echo "Creating wrapper script at $WRAPPER..."
+
+sudo tee "$WRAPPER" > /dev/null << 'EOF'
+#!/bin/bash
+# Wait for SSD mount before launching promtail
+LOG_PATH="/media/pi/SamsungSSD/logs"
+while [ ! -d "$LOG_PATH" ]; do
+  echo "Waiting for $LOG_PATH to be available..."
+  sleep 10
+done
+exec /usr/local/bin/promtail --config.file=/home/pi/Documents/ulc-malaria-scope/log_config/promtail-config.yaml --config.expand-env=true
+EOF
+
+sudo chmod +x "$WRAPPER"
+
+# --- Step 5: Create systemd service ---
+echo "Creating systemd service file..."
+sudo tee /etc/systemd/system/promtail.service > /dev/null << EOF
 [Unit]
 Description=Promtail Service
-RequiresMountsFor=/media/pi/SamsungSSD
-BindsTo=media-pi-SamsungSSD.mount
-After=network.target
+After=network.target media-pi-SamsungSSD.mount
+Wants=media-pi-SamsungSSD.mount
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/promtail --config.file=/home/pi/Documents/ulc-malaria-scope/log_config/promtail-config.yaml --config.expand-env=true
-Restart=on-failure
+ExecStart=$WRAPPER
+Restart=always
+RestartSec=10
 User=pi
 Environment="HOSTNAME=HOST_PLACEHOLDER"
 Environment="LOKI_PASSWORD=PASSWORD_PLACEHOLDER"
