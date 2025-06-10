@@ -54,7 +54,7 @@ cat << 'EOF' > "$CONFIG_FILE"
 server:
   disable: true  # Disables Promtail's internal HTTP server
 positions:
-  filename: /media/pi/SamsungSSD//positions.yaml  # Stores file tracking state
+  filename: /media/pi/SamsungSSD/positions.yaml  # Stores file tracking state
   sync_period: 10s
 clients:
   - url: https://api-grafana.sf.czbiohub.org/loki/push
