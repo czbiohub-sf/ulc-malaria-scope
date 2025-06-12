@@ -131,7 +131,7 @@ After=network-online.target
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/promtail-retry.sh
-Restart=
+Restart=always
 RestartSec=10
 User=pi
 Environment="HOSTNAME=${HOST}"
