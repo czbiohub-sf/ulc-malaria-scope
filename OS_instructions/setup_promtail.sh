@@ -100,26 +100,46 @@ sudo mv /tmp/promtail-linux-arm /usr/local/bin/promtail
 
 echo "Creating Promtail systemd unit…"
 
-sudo tee /etc/systemd/system/promtail.service > /dev/null << 'EOF'
+# --- STEP 4: wrapper that exits (and lets systemd retry) --------------------
+WRAPPER="/usr/local/bin/promtail-retry.sh"
+echo "Creating wrapper script at $WRAPPER…"
+
+sudo tee "$WRAPPER" > /dev/null <<'EOF'
+#!/bin/bash
+SSD_DIR="/media/pi/SamsungSSD"
+
+# If the drive isn't mounted yet - retry
+if ! mountpoint -q "$SSD_DIR"; then
+  echo "Promtail: $SSD_DIR not mounted yet, exiting so systemd can retry…" >&2
+  exit 1
+fi
+
+exec /usr/local/bin/promtail \
+     --config.file=/home/pi/Documents/ulc-malaria-scope/log_config/promtail-config.yaml \
+     --config.expand-env=true
+EOF
+
+sudo chmod +x "$WRAPPER"
+
+# --- STEP 5: promtail-service file setup --------------------
+
+sudo tee /etc/systemd/system/promtail.service > /dev/null <<'EOF'
 [Unit]
 Description=Promtail (logs on removable SSD)
-After=network-online.target media-pi-SamsungSSD.mount
-RequiresMountsFor=/media/pi/SamsungSSD          # don't start without the SSD
-BindsTo=media-pi-SamsungSSD.mount               # stop immediately when un-mounted
-PartOf=media-pi-SamsungSSD.mount                # follow 'systemctl stop …mount'
+After=network-online.target     # wait for network
+BindsTo=media-pi-SamsungSSD.mount
+PartOf=media-pi-SamsungSSD.mount
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/promtail \
-          --config.file=/home/pi/Documents/ulc-malaria-scope/log_config/promtail-config.yaml \
-          --config.expand-env=true
+ExecStart=/usr/local/bin/promtail-retry.sh
+Restart=on-failure              # try again when wrapper exits with code 1
+RestartSec=10
+User=pi
 Environment="HOSTNAME=${HOST}"
 Environment="LOKI_PASSWORD=${PASSWORD}"
-User=pi
-Restart=on-failure
-RestartSec=5
-KillMode=mixed          # be sure children are killed
-ExecStopPost=/bin/sync  # flush positions.yaml before the drive vanishes
+KillMode=mixed
+ExecStopPost=/bin/sync          # flush positions.yaml just in case
 
 [Install]
 WantedBy=multi-user.target
