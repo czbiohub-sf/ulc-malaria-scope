@@ -127,13 +127,11 @@ sudo tee /etc/systemd/system/promtail.service > /dev/null <<'EOF'
 [Unit]
 Description=Promtail (logs on removable SSD)
 After=network-online.target
-BindsTo=media-pi-SamsungSSD.mount
-PartOf=media-pi-SamsungSSD.mount
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/promtail-retry.sh
-Restart=on-failure
+Restart=
 RestartSec=10
 User=pi
 Environment="HOSTNAME=${HOST}"
