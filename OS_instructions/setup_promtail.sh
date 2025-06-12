@@ -126,20 +126,20 @@ sudo chmod +x "$WRAPPER"
 sudo tee /etc/systemd/system/promtail.service > /dev/null <<'EOF'
 [Unit]
 Description=Promtail (logs on removable SSD)
-After=network-online.target     # wait for network
+After=network-online.target
 BindsTo=media-pi-SamsungSSD.mount
 PartOf=media-pi-SamsungSSD.mount
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/promtail-retry.sh
-Restart=on-failure              # try again when wrapper exits with code 1
+Restart=on-failure
 RestartSec=10
 User=pi
 Environment="HOSTNAME=${HOST}"
 Environment="LOKI_PASSWORD=${PASSWORD}"
 KillMode=mixed
-ExecStopPost=/bin/sync          # flush positions.yaml just in case
+ExecStopPost=/bin/sync
 
 [Install]
 WantedBy=multi-user.target
