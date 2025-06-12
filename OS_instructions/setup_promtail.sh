@@ -168,14 +168,13 @@ echo "Starting promtail service..."
 # --- STEP 6: Install udev rule for hard-pull safety --------------------------
 echo "Adding udev rule to stop promtail on drive removal…"
 
-sudo tee /etc/udev/rules.d/99-stop-promtail.rules > /dev/null <<'EOF'
-# Stop Promtail if the SSD (label SamsungSSD) is yanked.
-# ACTION=="remove"
-# SUBSYSTEM=="block"
-# ENV{ID_FS_LABEL}
+sudo tee /etc/udev/rules.d/99-promtail-ssd.rules > /dev/null <<'EOF'
 ACTION=="remove", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="SamsungSSD", \
-    RUN+="/bin/sync", RUN+="/usr/bin/systemctl stop promtail.service"
+    RUN+="/usr/bin/systemctl stop promtail.service"
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="SamsungSSD", \
+    RUN+="/usr/bin/systemctl start promtail.service"
 EOF
+sudo udevadm control --reload
 
 # Reload udev so the new rule is active immediately
 sudo udevadm control --reload
