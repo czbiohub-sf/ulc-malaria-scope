@@ -134,8 +134,8 @@ ExecStart=/usr/local/bin/promtail-retry.sh
 Restart=always
 RestartSec=10
 User=pi
-Environment="HOSTNAME=${HOST}"
-Environment="LOKI_PASSWORD=${PASSWORD}"
+Environment="HOSTNAME=HOST_PLACEHOLDER"
+Environment="LOKI_PASSWORD=PASSWORD_PLACEHOLDER"
 KillMode=mixed
 ExecStopPost=/bin/sync
 
