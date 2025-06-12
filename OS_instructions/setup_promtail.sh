@@ -98,43 +98,33 @@ echo "Making promtail executable and moving it to /usr/local/bin..."
 chmod +x /tmp/promtail-linux-arm
 sudo mv /tmp/promtail-linux-arm /usr/local/bin/promtail
 
-# --- Step 4: Create wrapper script to wait for SSD mount ---
-WRAPPER="/usr/local/bin/promtail-retry.sh"
-echo "Creating wrapper script at $WRAPPER..."
+echo "Creating Promtail systemd unit…"
 
-sudo tee "$WRAPPER" > /dev/null << 'EOF'
-#!/bin/bash
-# Wait for SSD mount before launching promtail
-LOG_PATH="/media/pi/SamsungSSD/logs"
-while [ ! -d "$LOG_PATH" ]; do
-  echo "Waiting for $LOG_PATH to be available..."
-  sleep 10
-done
-exec /usr/local/bin/promtail --config.file=/home/pi/Documents/ulc-malaria-scope/log_config/promtail-config.yaml --config.expand-env=true
-EOF
-
-sudo chmod +x "$WRAPPER"
-
-# --- Step 5: Create systemd service ---
-echo "Creating systemd service file..."
-sudo tee /etc/systemd/system/promtail.service > /dev/null << EOF
+sudo tee /etc/systemd/system/promtail.service > /dev/null << 'EOF'
 [Unit]
-Description=Promtail Service
-After=network.target media-pi-SamsungSSD.mount
-Wants=media-pi-SamsungSSD.mount
+Description=Promtail (logs on removable SSD)
+After=network-online.target media-pi-SamsungSSD.mount
+RequiresMountsFor=/media/pi/SamsungSSD          # don't start without the SSD
+BindsTo=media-pi-SamsungSSD.mount               # stop immediately when un-mounted
+PartOf=media-pi-SamsungSSD.mount                # follow 'systemctl stop …mount'
 
 [Service]
 Type=simple
-ExecStart=$WRAPPER
-Restart=always
-RestartSec=10
+ExecStart=/usr/local/bin/promtail \
+          --config.file=/home/pi/Documents/ulc-malaria-scope/log_config/promtail-config.yaml \
+          --config.expand-env=true
+Environment="HOSTNAME=${HOST}"
+Environment="LOKI_PASSWORD=${PASSWORD}"
 User=pi
-Environment="HOSTNAME=HOST_PLACEHOLDER"
-Environment="LOKI_PASSWORD=PASSWORD_PLACEHOLDER"
+Restart=on-failure
+RestartSec=5
+KillMode=mixed          # be sure children are killed
+ExecStopPost=/bin/sync  # flush positions.yaml before the drive vanishes
 
 [Install]
 WantedBy=multi-user.target
 EOF
+
 
 echo "Updating systemd service file with provided HOST and PASSWORD..."
 sudo sed -i "s/Environment=\"HOSTNAME=HOST_PLACEHOLDER\"/Environment=\"HOSTNAME=${HOST}\"/" /etc/systemd/system/promtail.service
@@ -156,6 +146,25 @@ sudo systemctl daemon-reload
 echo "Enabling promtail service..."
 sudo systemctl enable promtail.service
 echo "Starting promtail service..."
+
+# --- STEP 6: Install udev rule for hard-pull safety --------------------------
+echo "Adding udev rule to stop promtail on drive removal…"
+
+sudo tee /etc/udev/rules.d/99-stop-promtail.rules > /dev/null <<'EOF'
+# Stop Promtail if the SSD (label SamsungSSD) is yanked.
+# ACTION=="remove"
+# SUBSYSTEM=="block"
+# ENV{ID_FS_LABEL}
+ACTION=="remove", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="SamsungSSD", \
+    RUN+="/bin/sync", RUN+="/usr/bin/systemctl stop promtail.service"
+EOF
+
+# Reload udev so the new rule is active immediately
+sudo udevadm control --reload
+sudo udevadm trigger --subsystem-match=block  # optional: re-evaluate current devices
+
+echo "udev rule installed - Promtail will shut down if the SSD is hard-pulled."
+
 sudo systemctl start promtail.service
 
 echo "Promtail setup complete."
