@@ -13,7 +13,7 @@ AF_PERIOD_NUM = int(
 )  # Used for periodic (ie. EWMA) autofocus
 AF_BATCH_SIZE = 20  # Used for single shot autofocus
 
-AF_THRESHOLD = 2
+AF_THRESHOLD = 1.5
 AF_QSIZE = 25
 
 AUTOFOCUS_MODEL_NAME = "fast-cosmos-557"
