@@ -13,7 +13,7 @@ AF_PERIOD_NUM = int(
 )  # Used for periodic (ie. EWMA) autofocus
 AF_BATCH_SIZE = 20  # Used for single shot autofocus
 
-AF_THRESHOLD = 2
+AF_THRESHOLD = 1.5
 AF_QSIZE = 25
 
 AUTOFOCUS_MODEL_NAME = "fast-cosmos-557"
@@ -86,3 +86,7 @@ IMG_RESIZED_DIMS = (400, 300)
 # ================ Prediction filtering constants ================ #
 IOU_THRESH = 0.5
 # add constant for min size filtering (by class?)
+
+# ================ QC constants ================ #
+QC_MODEL_DIR = str(curr_dir / "qc_model_files" / "20250209_with_tororo" / "best.xml")
+QC_CACHE_DIR = str(curr_dir / "cached_models" / "qc")
