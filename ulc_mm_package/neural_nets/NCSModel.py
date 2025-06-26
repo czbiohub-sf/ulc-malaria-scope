@@ -78,8 +78,8 @@ class NCSModel:
         self.connected = False
         self.device_name = "MYRIAD"
         self._cache_dir = cache_dir
-        self.model = self._compile_model(model_path)
         self._model_type = model_type
+        self.model = self._compile_model(model_path)
 
         self.asyn_result_lock = threading.Lock()
 
