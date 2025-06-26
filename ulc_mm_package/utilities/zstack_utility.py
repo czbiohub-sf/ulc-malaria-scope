@@ -81,7 +81,7 @@ def sweep(
     total_steps = len(sweep_range)
 
     # Initialize collection list if needed
-    collected_images = [] if collect_images else None
+    collected_images: Optional[list] = [] if collect_images else None
 
     # Create save directory if provided
     if save_path:
@@ -105,7 +105,7 @@ def sweep(
 
             # Collect image for manual review if requested
             if collect_images:
-                collected_images.append((motor_pos, img))
+                collected_images.append((motor_pos, img))  # type:ignore
 
             progress_callback(step, total_steps)
             image_callback(img)
