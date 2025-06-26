@@ -140,6 +140,8 @@ def main():
     n_steps = args.sweep_range_about_center_steps
     imgs_per_step = args.imgs_per_step
 
+    logger.info(f"Starting Z-stack utility with n_steps={n_steps} and imgs_per_step={imgs_per_step}")
+
     # Save location
     device_name = socket.gethostname()
     curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
