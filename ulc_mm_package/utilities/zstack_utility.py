@@ -137,7 +137,12 @@ def pressure_check(pm: PneumaticModule) -> bool:
     return pressure_diff >= MIN_PRESSURE_DIFF
 
 
-def main(n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = None):
+def main(n_steps: int = 15, imgs_per_step: int = 2):
+    # Save location
+    device_name = socket.gethostname()
+    curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    save_path = Path(SSD_DIR) / f"coarse_sweep_{device_name}_{curr_time}"
+
     # Initialize hardware
     camera, pm, motor, led = init_hardware()
     cell_finder = CellFinder()
@@ -310,12 +315,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    device_name = socket.gethostname()
-    curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    save_path = Path("/media/pi/SamsungSSD") / f"coarse_sweep_{device_name}_{curr_time}"
-
     main(
         n_steps=args.sweep_range_about_center_steps,
         imgs_per_step=args.imgs_per_step,
-        save_path=save_path,
     )
