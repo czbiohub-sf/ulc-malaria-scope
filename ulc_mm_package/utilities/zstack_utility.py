@@ -271,17 +271,17 @@ def manual_review(images_with_positions, on_select):
 
     # Image display
     image_canvas = tk.Label(review_win, bg="black")
-    image_canvas.grid(row=1, column=0, pady=10, sticky="nsew")
+    image_canvas.grid(row=1, column=0, rowspan=4, pady=0, sticky="nsew")
 
     # Position info
     position_label = tk.Label(
         review_win, text="Motor Position: 0", font=("Helvetica", 12)
     )
-    position_label.grid(row=2, column=0, pady=5, sticky="n")
+    position_label.grid(row=4, column=0, pady=5, sticky="n")
 
     # Slider frame
     slider_frame = tk.Frame(review_win)
-    slider_frame.grid(row=3, column=0, pady=10, sticky="ew")
+    slider_frame.grid(row=5, column=0, pady=10, sticky="ew")
     slider_frame.grid_columnconfigure(0, weight=1)
 
     # Slider
@@ -302,17 +302,9 @@ def manual_review(images_with_positions, on_select):
         row=1, column=0, sticky="e", padx=10
     )
 
-    # Image counter
-    counter_label = tk.Label(
-        slider_frame,
-        text="Image 1 of {}".format(len(images_with_positions)),
-        font=("Helvetica", 10),
-    )
-    counter_label.grid(row=2, column=0, pady=5)
-
     # Button frame
     button_frame = tk.Frame(review_win)
-    button_frame.grid(row=4, column=0, pady=20, sticky="s")
+    button_frame.grid(row=6, column=0, pady=20, sticky="s")
 
     def update_display():
         """Update the displayed image and position information."""
@@ -322,11 +314,6 @@ def manual_review(images_with_positions, on_select):
 
             # Update position label
             position_label.config(text=f"Motor Position: {motor_pos}")
-
-            # Update counter
-            counter_label.config(
-                text=f"Image {idx + 1} of {len(images_with_positions)}"
-            )
 
             # Convert and display image
             img_pil = Image.fromarray(img)
@@ -433,13 +420,13 @@ def main():
     status_label.config(text="Please load a flow cell (with blood) and close the lid.")
 
     image_canvas = tk.Label(root, bg="black")
-    image_canvas.grid(row=1, column=0, pady=10, sticky="n")
+    image_canvas.grid(row=1, column=0, pady=10, rowspan=4, sticky="nsew")
 
     progress = ttk.Progressbar(root, orient="horizontal", mode="determinate")
-    progress.grid(row=2, column=0, pady=10, sticky="ew")
+    progress.grid(row=4, column=0, pady=10, sticky="ew")
 
     motor_label = tk.Label(root, text="Motor Position: 0", font=("Helvetica", 14))
-    motor_label.grid(row=3, column=0, pady=10, sticky="n")
+    motor_label.grid(row=5, column=0, pady=10, sticky="n")
 
     button_frame = tk.Frame(root)
     button_frame.grid(row=5, column=0, pady=20, sticky="se")
