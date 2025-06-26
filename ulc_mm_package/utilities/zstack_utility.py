@@ -65,7 +65,7 @@ def sweep(
     motor_label_callback,
     n_imgs_per_step: int = 2,
     save_path: Optional[Path] = None,
-) -> Tuple[List[np.ndarray], List[int]]:
+) -> None:
     """Sweeps and updates passed-in cell finder with images. The caller can then check cell_finder to see if it found cells.
 
     If a save_path is provided, images will be saved to that path with the motor position and image number in the filename.
