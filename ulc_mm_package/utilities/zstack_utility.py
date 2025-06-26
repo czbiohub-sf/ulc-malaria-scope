@@ -101,6 +101,7 @@ def sweep(
             progress_callback(step, total_steps)
             image_callback(img)
             motor_label_callback(motor_pos)
+            sleep(0.05)  # Allow motor to settle
         except Exception as e:
             logger.error(f"Unexpected error at motor position {motor_pos}: {e}")
             continue
@@ -140,7 +141,9 @@ def main():
     n_steps = args.sweep_range_about_center_steps
     imgs_per_step = args.imgs_per_step
 
-    logger.info(f"Starting Z-stack utility with n_steps={n_steps} and imgs_per_step={imgs_per_step}")
+    logger.info(
+        f"Starting Z-stack utility with n_steps={n_steps} and imgs_per_step={imgs_per_step}"
+    )
 
     # Save location
     device_name = socket.gethostname()
