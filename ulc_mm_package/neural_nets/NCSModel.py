@@ -115,14 +115,8 @@ class NCSModel:
             model = ppp.build()
             return model
         elif model_type == MODELS.QC:
-            ppp = PrePostProcessor(model)
-            ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
-            ppp.input().model().set_layout(Layout("NCHW"))
-            ppp.output().tensor().set_element_type(Type.f16)
-            ppp.input().preprocess().convert_element_type(Type.f16).mean(
-                [0.485, 0.456, 0.406]
-            ).scale([0.229, 0.224, 0.225])
-            model = ppp.build()
+            # Do the preprocessing on CPU, for QC since
+            # the NCS seems to bungle up the necessary steps
             return model
 
     def _compile_model(
