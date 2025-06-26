@@ -191,7 +191,9 @@ def main(n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = 
     def update_motor_label(position):
         motor_label.config(text=f"Motor Position: {position}")
 
-    def start_sweep(n_steps: int = 15, imgs_per_step: int = 2, save_path: Path = None):
+    def start_sweep(
+        n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = None
+    ):
         status_label.config(text="Sweeping in progress...")
         status_label.config(text="Checking that a flow cell is loaded...")
         root.update()
