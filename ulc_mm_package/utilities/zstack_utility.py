@@ -2,7 +2,9 @@ import argparse
 from datetime import datetime
 import logging
 from functools import partial
+import shutil
 import socket
+import subprocess
 from time import sleep
 from pathlib import Path
 
@@ -64,10 +66,12 @@ def sweep(
     motor_label_callback,
     n_imgs_per_step: int = 2,
     save_path: Optional[Path] = None,
-) -> None:
-    """Sweeps and updates passed-in cell finder with images. The caller can then check cell_finder to see if it found cells.
+    collect_images: bool = False,
+) -> Optional[list]:
+    """Sweeps and updates the given CellFinder object with images. The caller can then check cell_finder to see if it found cells.
 
     If a save_path is provided, images will be saved to that path with the motor position and image number in the filename.
+    If collect_images is True, returns a list of (motor_pos, img) tuples for manual review.
     """
 
     logger.info("Starting sweep...")
@@ -75,6 +79,9 @@ def sweep(
     led.turnOn()
     led.setDutyCycle(LED_BRIGHTNESS_PERC)
     total_steps = len(sweep_range)
+
+    # Initialize collection list if needed
+    collected_images: Optional[list] = [] if collect_images else None
 
     # Create save directory if provided
     if save_path:
@@ -95,6 +102,11 @@ def sweep(
                     )  # Small delay to ensure image is saved before next capture
             img, _ = next(camera.yieldImages())
             cell_finder.add_image(motor_pos, img)
+
+            # Collect image for manual review if requested
+            if collect_images:
+                collected_images.append((motor_pos, img))  # type:ignore
+
             progress_callback(step, total_steps)
             image_callback(img)
             motor_label_callback(motor_pos)
@@ -105,6 +117,103 @@ def sweep(
 
     led.turnOff()
     logger.info("Sweep completed.")
+
+    if collect_images:
+        return collected_images
+    else:
+        return None
+
+
+def compress_saved_images(
+    save_path: Path, remove_original: bool = True
+) -> Optional[Path]:
+    """Compress the saved images folder using tar with pigz compression.
+
+    Args:
+        save_path: Path to the folder containing saved images
+        remove_original: If True, remove the original folder after successful compression
+
+    Returns:
+        Path to the compressed archive, or None if compression failed
+    """
+    if not save_path.exists():
+        logger.warning(f"Save path does not exist: {save_path}")
+        return None
+
+    # Create archive name in the same directory as save_path
+    archive_path = save_path.parent / f"{save_path.name}.tar.gz"
+
+    try:
+        logger.info(f"Compressing {save_path} to {archive_path}...")
+
+        # First try with pigz (parallel gzip)
+        try:
+            cmd = [
+                "tar",
+                "-I",
+                "pigz -9",
+                "-cf",
+                str(archive_path),
+                "-C",
+                str(save_path.parent),
+                save_path.name,
+            ]
+
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
+            logger.info("Used pigz for compression")
+
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Fallback to regular gzip if pigz is not available
+            logger.info("pigz not available, falling back to gzip")
+            cmd = [
+                "tar",
+                "-czf",
+                str(archive_path),
+                "-C",
+                str(save_path.parent),
+                save_path.name,
+            ]
+
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
+            logger.info("Used gzip for compression")
+
+        if archive_path.exists():
+            archive_size = archive_path.stat().st_size / (1024 * 1024)  # Size in MB
+
+            # Calculate original folder size in MB
+            def get_folder_size(path):
+                total = 0
+                for p in path.rglob("*"):
+                    if p.is_file():
+                        total += p.stat().st_size
+                return total / (1024 * 1024)  # Size in MB
+
+            original_size = get_folder_size(save_path)
+            logger.info(
+                f"Compression completed successfully. Archive size: {archive_size:.2f} MB, Original folder size: {original_size:.2f} MB"
+            )
+
+            # Remove original folder if requested
+            if remove_original:
+                try:
+                    shutil.rmtree(save_path)
+                    logger.info(f"Removed original folder: {save_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to remove original folder: {e}")
+
+            return archive_path
+        else:
+            logger.error("Compression completed but archive file not found")
+            return None
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Compression failed with error: {e}")
+        logger.error(f"stdout: {e.stdout}")
+        logger.error(f"stderr: {e.stderr}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error during compression: {e}")
+        return None
 
 
 def determine_sweep_range(motor):
@@ -131,6 +240,147 @@ def pressure_check(pm: PneumaticModule) -> bool:
     pressure_diff = initial_pressure - post_pull_pressure
     logger.info(f"Measure pressure difference is: {pressure_diff}hPa.")
     return pressure_diff >= MIN_PRESSURE_DIFF
+
+
+def manual_review(images_with_positions, on_select):
+    """Manual review interface for when CellFinder fails to find cells.
+
+    Args:
+        images_with_positions: List of (motor_pos, img) tuples
+        on_select: Callback function that takes a motor position and performs the local sweep
+    """
+    if not images_with_positions:
+        messagebox.showinfo("No Images", "No images available for manual review.")
+        return
+
+    # Create review window
+    review_win = tk.Toplevel()
+    review_win.title("Manual Cell Selection")
+    review_win.geometry("900x700")
+    review_win.grid_rowconfigure(1, weight=1)
+    review_win.grid_columnconfigure(0, weight=1)
+
+    # Header
+    header_label = tk.Label(
+        review_win,
+        text="No cells found automatically. Please manually select a position with cells.",
+        font=("Helvetica", 14),
+        wraplength=800,
+    )
+    header_label.grid(row=0, column=0, pady=10, sticky="n")
+
+    # Image display
+    image_canvas = tk.Label(review_win, bg="black")
+    image_canvas.grid(row=1, column=0, rowspan=4, pady=0, sticky="nsew")
+
+    # Position info
+    position_label = tk.Label(
+        review_win, text="Motor Position: 0", font=("Helvetica", 12)
+    )
+    position_label.grid(row=4, column=0, pady=5, sticky="n")
+
+    # Slider frame
+    slider_frame = tk.Frame(review_win)
+    slider_frame.grid(row=5, column=0, pady=10, sticky="ew")
+    slider_frame.grid_columnconfigure(0, weight=1)
+
+    # Slider
+    current_index = tk.IntVar(value=0)
+    slider = ttk.Scale(
+        slider_frame,
+        from_=0,
+        to=len(images_with_positions) - 1,
+        orient="horizontal",
+        variable=current_index,
+        command=lambda x: update_display(),
+    )
+    slider.grid(row=0, column=0, sticky="ew", padx=10)
+
+    # Slider labels
+    tk.Label(slider_frame, text="0").grid(row=1, column=0, sticky="w", padx=10)
+    tk.Label(slider_frame, text=str(len(images_with_positions) - 1)).grid(
+        row=1, column=0, sticky="e", padx=10
+    )
+
+    # Button frame
+    button_frame = tk.Frame(review_win)
+    button_frame.grid(row=6, column=0, pady=20, sticky="s")
+
+    def update_display():
+        """Update the displayed image and position information."""
+        idx = current_index.get()
+        if 0 <= idx < len(images_with_positions):
+            motor_pos, img = images_with_positions[idx]
+
+            # Update position label
+            position_label.config(text=f"Motor Position: {motor_pos}")
+
+            # Convert and display image
+            img_pil = Image.fromarray(img)
+
+            # Resize image to fit in the window while maintaining aspect ratio
+            canvas_width = 800
+            canvas_height = 400
+            img_width, img_height = img_pil.size
+            scale = min(canvas_width / img_width, canvas_height / img_height)
+            new_width = int(img_width * scale)
+            new_height = int(img_height * scale)
+            img_pil = img_pil.resize((new_width, new_height), Image.ANTIALIAS)
+
+            img_tk = ImageTk.PhotoImage(img_pil)
+            image_canvas.config(image=img_tk)
+            image_canvas.image = img_tk  # Keep a reference
+
+    def sweep_here():
+        """Trigger the local sweep at the currently selected position."""
+        idx = current_index.get()
+        if 0 <= idx < len(images_with_positions):
+            motor_pos, _ = images_with_positions[idx]
+            review_win.destroy()
+            on_select(motor_pos)
+
+    def cancel():
+        """Cancel the manual review."""
+        review_win.destroy()
+
+    # Buttons
+    tk.Button(
+        button_frame,
+        text="Sweep Here",
+        font=("Helvetica", 14),
+        command=sweep_here,
+        bg="green",
+        fg="white",
+    ).pack(side=tk.LEFT, padx=10)
+    tk.Button(button_frame, text="Cancel", font=("Helvetica", 14), command=cancel).pack(
+        side=tk.LEFT, padx=10
+    )
+
+    # Keyboard shortcuts
+    def on_key(event):
+        if event.keysym == "Left":
+            if current_index.get() > 0:
+                current_index.set(current_index.get() - 1)
+                update_display()
+        elif event.keysym == "Right":
+            if current_index.get() < len(images_with_positions) - 1:
+                current_index.set(current_index.get() + 1)
+                update_display()
+        elif event.keysym == "Return":
+            sweep_here()
+        elif event.keysym == "Escape":
+            cancel()
+
+    review_win.bind("<Key>", on_key)
+    review_win.focus_set()
+
+    # Initialize display
+    update_display()
+
+    # Make window modal
+    review_win.transient()
+    review_win.grab_set()
+    review_win.wait_window()
 
 
 def main():
@@ -170,13 +420,13 @@ def main():
     status_label.config(text="Please load a flow cell (with blood) and close the lid.")
 
     image_canvas = tk.Label(root, bg="black")
-    image_canvas.grid(row=1, column=0, pady=10, sticky="n")
+    image_canvas.grid(row=1, column=0, pady=10, rowspan=4, sticky="nsew")
 
     progress = ttk.Progressbar(root, orient="horizontal", mode="determinate")
-    progress.grid(row=2, column=0, pady=10, sticky="ew")
+    progress.grid(row=4, column=0, pady=10, sticky="ew")
 
     motor_label = tk.Label(root, text="Motor Position: 0", font=("Helvetica", 14))
-    motor_label.grid(row=3, column=0, pady=10, sticky="n")
+    motor_label.grid(row=5, column=0, pady=10, sticky="n")
 
     button_frame = tk.Frame(root)
     button_frame.grid(row=5, column=0, pady=20, sticky="se")
@@ -231,7 +481,7 @@ def main():
         status_label.config(text="Finding cells...")
         root.update()
         sweep_range = determine_sweep_range(motor)
-        sweep(
+        collected_images = sweep(
             camera,
             motor,
             led,
@@ -242,6 +492,7 @@ def main():
             update_motor_label,
             n_imgs_per_step=imgs_per_step,
             save_path=None,
+            collect_images=True,
         )
 
         try:
@@ -251,12 +502,31 @@ def main():
             result = None
 
         if result is None:
-            messagebox.showinfo(
-                "No cells found.",
-                "No cells found. Please try sweeping again.",
-            )
-            status_label.config(text="No cells found. Please try sweeping again.")
-            return
+            # No cells found automatically - launch manual review
+            def do_local_sweep(center_pos):
+                """Perform local sweep around user-selected position."""
+                status_label.config(
+                    text=f"Performing local sweep around position {center_pos}..."
+                )
+                root.update()
+                logger.info(f"User selected motor position: {center_pos}")
+                sweep_range = range(center_pos - n_steps, center_pos + n_steps + 1, 1)
+                sweep(
+                    camera,
+                    motor,
+                    led,
+                    sweep_range,
+                    cell_finder,
+                    update_progress,
+                    update_image,
+                    update_motor_label,
+                    n_imgs_per_step=imgs_per_step,
+                    save_path=save_path,
+                    collect_images=False,
+                )
+                status_label.config(text="Sweep completed.")
+
+            manual_review(collected_images, do_local_sweep)
         elif (result - n_steps) > 0 and (result + n_steps) < motor.max_pos:
             status_label.config(
                 text=f"Cells found. Performing a sweep of +/- {n_steps}."
@@ -274,9 +544,15 @@ def main():
                 update_motor_label,
                 n_imgs_per_step=imgs_per_step,
                 save_path=save_path,
+                collect_images=False,
             )
 
         status_label.config(text="Sweep completed.")
+        if save_path:
+            logger.info("Compressing images...")
+            compressed_path = compress_saved_images(save_path)
+            if compressed_path:
+                status_label.config(text="Images saved and compressed.")
 
     def quit_application():
         camera.deactivateCamera()
