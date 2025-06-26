@@ -132,7 +132,7 @@ def pressure_check(pm: PneumaticModule) -> bool:
     return pressure_diff >= MIN_PRESSURE_DIFF
 
 
-def main(n_steps: int = 15, imgs_per_step: int = 2, save_path: Path = None):
+def main(n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = None):
     # Initialize hardware
     camera, pm, motor, led = init_hardware()
     cell_finder = CellFinder()
