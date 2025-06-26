@@ -120,6 +120,8 @@ def sweep(
 
     if collect_images:
         return collected_images
+    else:
+        return None
 
 
 def compress_saved_images(
