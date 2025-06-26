@@ -91,7 +91,8 @@ def sweep(
                 )
                 for i in range(n_imgs_per_step):
                     img, _ = next(camera.yieldImages())
-                    cv2.imwrite(save_path / f"motor_pos_{motor_pos}_n{i:03d}.png", img)
+                    save_loc = save_path / f"motor_pos_{motor_pos}_n{i:03d}.png"
+                    cv2.imwrite(str(save_loc), img)
                     sleep(
                         0.1
                     )  # Small delay to ensure image is saved before next capture
