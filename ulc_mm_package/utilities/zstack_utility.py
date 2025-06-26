@@ -80,6 +80,8 @@ def sweep(
     if save_path:
         save_path.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created save directory: {save_path}")
+    else:
+        logger.info("No save path provided. Images will not be saved.")
 
     logger.info("Moving motor...")
     for step, motor_pos in enumerate(sweep_range, start=1):
@@ -193,7 +195,7 @@ def main(n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = 
         motor_label.config(text=f"Motor Position: {position}")
 
     def start_sweep(
-        n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = None
+        n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = save_path
     ):
         status_label.config(text="Sweeping in progress...")
         status_label.config(text="Checking that a flow cell is loaded...")
@@ -215,7 +217,7 @@ def main(n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = 
         pm.setDutyCycle(pm.getMaxDutyCycle())
 
         progress["value"] = 0
-        status_label.config(text="Sweeping in progress...")
+        status_label.config(text="Finding cells...")
         root.update()
         sweep_range = determine_sweep_range(motor)
         sweep(
@@ -228,11 +230,12 @@ def main(n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = 
             update_image,
             update_motor_label,
             n_imgs_per_step=imgs_per_step,
-            save_path=save_path,
+            save_path=None,
         )
 
         try:
             result = cell_finder.get_cells_found_position()
+            status_label.config(text="Cells found!")
         except NoCellsFound:
             result = None
 
@@ -247,6 +250,7 @@ def main(n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = 
             status_label.config(
                 text=f"Cells found. Performing a sweep of +/- {n_steps}."
             )
+            logger.info(f"Cells found at motor position: {result}")
             sweep_range = range(result - n_steps, result + n_steps + 1, 1)
             sweep(
                 camera,
@@ -306,7 +310,7 @@ if __name__ == "__main__":
 
     device_name = socket.gethostname()
     curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    save_path = Path(SSD_DIR) / f"coarse_sweep_{device_name}_{curr_time}"
+    save_path = Path("/media/pi/SamsungSSD") / f"coarse_sweep_{device_name}_{curr_time}"
 
     main(
         n_steps=args.sweep_range_about_center_steps,
