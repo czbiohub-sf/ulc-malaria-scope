@@ -96,7 +96,6 @@ def sweep(
                     sleep(
                         0.1
                     )  # Small delay to ensure image is saved before next capture
-                sleep(1)
             img, _ = next(camera.yieldImages())
             cell_finder.add_image(motor_pos, img)
             progress_callback(step, total_steps)
