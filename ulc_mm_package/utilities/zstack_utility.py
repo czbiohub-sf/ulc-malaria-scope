@@ -225,6 +225,8 @@ def main(n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = 
             update_progress,
             update_image,
             update_motor_label,
+            n_imgs_per_step=imgs_per_step,
+            save_path=save_path,
         )
 
         try:
