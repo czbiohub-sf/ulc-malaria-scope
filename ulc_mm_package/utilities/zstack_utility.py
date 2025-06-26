@@ -139,7 +139,7 @@ def main(n_steps: int = 15, imgs_per_step: int = 2):
     # Save location
     device_name = socket.gethostname()
     curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    save_path = Path(SSD_DIR) / SSD_NAME / f"coarse_sweep_{device_name}_{curr_time}"
+    save_path = Path(SSD_DIR) / SSD_NAME / f"zstack_{device_name}_{curr_time}"
 
     # Initialize hardware
     camera, pm, motor, led = init_hardware()
