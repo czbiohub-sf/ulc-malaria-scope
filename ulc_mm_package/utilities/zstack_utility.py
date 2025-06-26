@@ -7,11 +7,10 @@ from time import sleep
 from pathlib import Path
 
 import cv2
-import numpy as np
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import List, Tuple, Optional
+from typing import Optional
 
 from ulc_mm_package.hardware.camera import AVTCamera
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
