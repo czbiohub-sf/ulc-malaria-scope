@@ -7,6 +7,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
     AUTOFOCUS_CACHE_DIR,
     AF_QSIZE,
+    MODELS,
 )
 
 
@@ -26,7 +27,9 @@ class AutoFocus(NCSModel):
         model_path: str = AUTOFOCUS_MODEL_DIR,
         cache_dir: str = AUTOFOCUS_CACHE_DIR,
     ):
-        super().__init__(model_path=model_path, cache_dir=cache_dir)
+        super().__init__(
+            model_path=model_path, model_type=MODELS.AUTOFOCUS, cache_dir=cache_dir
+        )
 
         # Bypass mypy because it dislikes changing the queue type
         self._executor._work_queue = queue.Queue(maxsize=AF_QSIZE)  # type:ignore

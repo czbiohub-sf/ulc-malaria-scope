@@ -1,9 +1,16 @@
+from enum import Enum, auto
 from pathlib import Path
 from typing import Tuple, Dict, List
 
 from ulc_mm_package.scope_constants import ACQUISITION_FPS, CAMERA_SELECTION
 
 curr_dir = Path(__file__).parent.resolve()  # Get full path
+
+
+class MODELS(Enum):
+    AUTOFOCUS = auto()
+    YOGO = auto()
+    QC = auto()
 
 
 # ================ Autofocus constants ================ #

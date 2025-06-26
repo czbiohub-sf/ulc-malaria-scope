@@ -23,6 +23,7 @@ from typing import (
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
+from ulc_mm_package.neural_nets.neural_network_constants import MODELS
 
 
 from openvino.preprocess import PrePostProcessor
@@ -67,6 +68,7 @@ class NCSModel:
     def __init__(
         self,
         model_path: str,
+        model_type: MODELS,
         cache_dir: Optional[str] = None,
     ):
         """
@@ -77,6 +79,7 @@ class NCSModel:
         self.device_name = "MYRIAD"
         self._cache_dir = cache_dir
         self.model = self._compile_model(model_path)
+        self._model_type = model_type
 
         self.asyn_result_lock = threading.Lock()
 
@@ -89,6 +92,38 @@ class NCSModel:
         self._asyn_results: List[AsyncInferenceResult] = []
 
         self._executor = ThreadPoolExecutor(max_workers=1)
+
+    def _preprocess_steps(self, model, model_type: MODELS):
+        """
+        Returns the built model with the necessary pre-post processing steps.
+
+        Parameters
+        ----------
+        model_type : MODELS
+            The type of the model to preprocess.
+
+        Returns
+        -------
+        The result of PrePostProcessor.build()
+        """
+
+        if model_type == MODELS.AUTOFOCUS or model_type == MODELS.YOGO:
+            ppp = PrePostProcessor(model)
+            ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
+            ppp.input().model().set_layout(Layout("NCHW"))
+            ppp.output().tensor().set_element_type(Type.f16)
+            model = ppp.build()
+            return model
+        elif model_type == MODELS.QC:
+            ppp = PrePostProcessor(model)
+            ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
+            ppp.input().model().set_layout(Layout("NCHW"))
+            ppp.output().tensor().set_element_type(Type.f16)
+            ppp.input().preprocess().convert_element_type(Type.f16).mean(
+                [0.485, 0.456, 0.406]
+            ).scale([0.229, 0.224, 0.225])
+            model = ppp.build()
+            return model
 
     def _compile_model(
         self,
@@ -114,12 +149,9 @@ class NCSModel:
 
         model = self.core.read_model(model_path)
         self.core.set_property({"CACHE_DIR": self._cache_dir})
+        self.core.set_property({"PERFORMANCE_HINT": "THROUGHPUT"})
 
-        ppp = PrePostProcessor(model)
-        ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
-        ppp.input().model().set_layout(Layout("NCHW"))
-        ppp.output().tensor().set_element_type(Type.f16)
-        model = ppp.build()
+        model = self._preprocess_steps(model, self._model_type)
 
         err_msg = ""
         connection_attempts = 0

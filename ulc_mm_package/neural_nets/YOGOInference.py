@@ -12,6 +12,7 @@ from ulc_mm_package.neural_nets.NCSModel import (
     AsyncInferenceResult,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
+    MODELS,
     YOGO_MODEL_DIR,
     YOGO_AREA_FILTER_NORMED,
     YOGO_PRED_THRESHOLD,
@@ -48,7 +49,9 @@ class YOGO(NCSModel):
         model_path: str = YOGO_MODEL_DIR,
         cache_dir: str = YOGO_MODEL_CACHE_DIR,
     ):
-        super().__init__(model_path, cache_dir)
+        super().__init__(
+            model_path=model_path, model_type=MODELS.YOGO, cache_dir=cache_dir
+        )
 
     @staticmethod
     def crop_img(img: npt.NDArray) -> npt.NDArray:
