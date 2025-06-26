@@ -5,6 +5,7 @@ import numpy.typing as npt
 
 from ulc_mm_package.neural_nets.NCSModel import NCSModel
 from ulc_mm_package.neural_nets.neural_network_constants import (
+    MODELS,
     QC_MODEL_DIR,
     QC_CACHE_DIR,
 )
@@ -20,7 +21,9 @@ class QC(NCSModel):
         model_path: str = QC_MODEL_DIR,
         cache_dir: str = QC_CACHE_DIR,
     ):
-        super().__init__(model_path=model_path, cache_dir=cache_dir)
+        super().__init__(
+            model_path=model_path, model_type=MODELS.QC, cache_dir=cache_dir
+        )
 
     def _format_image_to_tensor(self, img: npt.NDArray) -> npt.NDArray:
         # Single-channel image to 3-channel
