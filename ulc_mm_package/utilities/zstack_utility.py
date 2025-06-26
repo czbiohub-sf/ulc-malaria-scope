@@ -86,9 +86,6 @@ def sweep(
         try:
             motor.move_abs(motor_pos)
             if save_path:
-                logger.info(
-                    f"Capturing {n_imgs_per_step} image(s) at motor position {motor_pos}..."
-                )
                 for i in range(n_imgs_per_step):
                     img, _ = next(camera.yieldImages())
                     save_loc = save_path / f"motor_pos_{motor_pos}_n{i:03d}.png"
