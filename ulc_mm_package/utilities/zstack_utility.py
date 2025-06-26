@@ -374,9 +374,11 @@ def manual_review(images_with_positions, on_select):
         if event.keysym == "Left":
             if current_index.get() > 0:
                 current_index.set(current_index.get() - 1)
+                update_display()
         elif event.keysym == "Right":
             if current_index.get() < len(images_with_positions) - 1:
                 current_index.set(current_index.get() + 1)
+                update_display()
         elif event.keysym == "Return":
             sweep_here()
         elif event.keysym == "Escape":
@@ -538,7 +540,6 @@ def main():
                 status_label.config(text="Sweep completed.")
 
             manual_review(collected_images, do_local_sweep)
-            return
         elif (result - n_steps) > 0 and (result + n_steps) < motor.max_pos:
             status_label.config(
                 text=f"Cells found. Performing a sweep of +/- {n_steps}."
@@ -564,9 +565,7 @@ def main():
             logger.info("Compressing images...")
             compressed_path = compress_saved_images(save_path)
             if compressed_path:
-                status_label.config(
-                    text=f"Images saved and compressed to {compressed_path}"
-                )
+                status_label.config(text="Images saved and compressed.")
 
     def quit_application():
         camera.deactivateCamera()
