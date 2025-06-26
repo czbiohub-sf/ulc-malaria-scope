@@ -135,7 +135,11 @@ def pressure_check(pm: PneumaticModule) -> bool:
     return pressure_diff >= MIN_PRESSURE_DIFF
 
 
-def main(n_steps: int = 15, imgs_per_step: int = 2):
+def main():
+    args = parse_args()
+    n_steps = args.sweep_range_about_center_steps
+    imgs_per_step = args.imgs_per_step
+
     # Save location
     device_name = socket.gethostname()
     curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -200,7 +204,7 @@ def main(n_steps: int = 15, imgs_per_step: int = 2):
         motor_label.config(text=f"Motor Position: {position}")
 
     def start_sweep(
-        n_steps: int = 15, imgs_per_step: int = 2, save_path: Optional[Path] = save_path
+        n_steps: int = 20, imgs_per_step: int = 2, save_path: Optional[Path] = save_path
     ):
         status_label.config(text="Sweeping in progress...")
         status_label.config(text="Checking that a flow cell is loaded...")
@@ -292,14 +296,15 @@ def main(n_steps: int = 15, imgs_per_step: int = 2):
     root.mainloop()
 
 
-if __name__ == "__main__":
+def parse_args():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="Coarse Focus Adjustment / Save Z-stack Utility"
     )
     parser.add_argument(
         "--sweep_range_about_center_steps",
         "-s",
-        default=15,
+        default=20,
         type=int,
         help="Number of steps (plus/minus) about the motor position where cells were found. I.e if this value is 15 and cells were found at motor position 450,"
         " the sweep will be from 435 to 465 with step increments of 1. Default: 15",
@@ -313,7 +318,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    main(
-        n_steps=args.sweep_range_about_center_steps,
-        imgs_per_step=args.imgs_per_step,
-    )
+    return args
+
+
+if __name__ == "__main__":
+    main()
