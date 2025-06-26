@@ -19,7 +19,7 @@ from ulc_mm_package.hardware.motorcontroller import DRV8825Nema
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
 from ulc_mm_package.hardware.scope_routines import CellFinder, NoCellsFound
 from ulc_mm_package.scope_constants import CAMERA_SELECTION
-from ulc_mm_package.scope_constants import SSD_DIR
+from ulc_mm_package.scope_constants import SSD_DIR, SSD_NAME
 
 PNEUMATIC_PULL_TIME_S = 7
 LED_BRIGHTNESS_PERC = 0.15
@@ -80,8 +80,6 @@ def sweep(
     if save_path:
         save_path.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created save directory: {save_path}")
-    else:
-        logger.info("No save path provided. Images will not be saved.")
 
     logger.info("Moving motor...")
     for step, motor_pos in enumerate(sweep_range, start=1):
@@ -141,7 +139,7 @@ def main(n_steps: int = 15, imgs_per_step: int = 2):
     # Save location
     device_name = socket.gethostname()
     curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    save_path = Path(SSD_DIR) / f"coarse_sweep_{device_name}_{curr_time}"
+    save_path = Path(SSD_DIR) / SSD_NAME / f"coarse_sweep_{device_name}_{curr_time}"
 
     # Initialize hardware
     camera, pm, motor, led = init_hardware()
