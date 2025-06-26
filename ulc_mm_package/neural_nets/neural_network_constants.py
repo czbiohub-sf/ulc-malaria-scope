@@ -93,3 +93,8 @@ IMG_RESIZED_DIMS = (400, 300)
 # ================ Prediction filtering constants ================ #
 IOU_THRESH = 0.5
 # add constant for min size filtering (by class?)
+
+# ================ QC Model constants ================ #
+QC_MODEL_NAME = "20250209_with_tororo"
+QC_MODEL_DIR = str(curr_dir / "qc_model_files" / QC_MODEL_NAME / "best.xml")
+QC_CACHE_DIR = str(curr_dir / "cached_models" / QC_MODEL_NAME)
