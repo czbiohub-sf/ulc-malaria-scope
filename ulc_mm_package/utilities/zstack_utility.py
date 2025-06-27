@@ -12,7 +12,7 @@ import cv2
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Optional
+from typing import Callable, Optional
 
 from ulc_mm_package.hardware.camera import AVTCamera
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
@@ -20,7 +20,15 @@ from ulc_mm_package.hardware.pneumatic_module import PneumaticModule
 from ulc_mm_package.hardware.motorcontroller import DRV8825Nema
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT
 from ulc_mm_package.hardware.scope_routines import CellFinder, NoCellsFound
-from ulc_mm_package.scope_constants import CAMERA_SELECTION
+from ulc_mm_package.image_processing.autobrightness import (
+    Autobrightness,
+    BrightnessTargetNotAchieved,
+    BrightnessCriticallyLow,
+)
+from ulc_mm_package.image_processing.flow_control import FlowController
+import ulc_mm_package.image_processing.processing_constants as processing_constants
+from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR
+from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.scope_constants import SSD_DIR, SSD_NAME
 
 PNEUMATIC_PULL_TIME_S = 7
@@ -65,21 +73,24 @@ def sweep(
     image_callback,
     motor_label_callback,
     n_imgs_per_step: int = 2,
+    autobrightness: Optional[Autobrightness] = None,
+    autobrightness_fn: Optional[Callable] = None,
     save_path: Optional[Path] = None,
     collect_images: bool = False,
+    run_brightness: bool = False,
+    status_label: Optional[tk.Label] = None,
 ) -> Optional[list]:
     """Sweeps and updates the given CellFinder object with images. The caller can then check cell_finder to see if it found cells.
 
     If a save_path is provided, images will be saved to that path with the motor position and image number in the filename.
     If collect_images is True, returns a list of (motor_pos, img) tuples for manual review.
     """
-
-    logger.info("Starting sweep...")
     cell_finder.reset()
     led.turnOn()
     led.setDutyCycle(LED_BRIGHTNESS_PERC)
     total_steps = len(sweep_range)
 
+    logger.info("Starting sweep...")
     # Initialize collection list if needed
     collected_images: Optional[list] = [] if collect_images else None
 
@@ -92,6 +103,10 @@ def sweep(
     for step, motor_pos in enumerate(sweep_range, start=1):
         try:
             motor.move_abs(motor_pos)
+            if step == 1 and run_brightness is True:
+                autobrightness_fn(autobrightness)  # type:ignore
+                if status_label:
+                    status_label.config(text="Sweep in progress...")
             if save_path:
                 for i in range(n_imgs_per_step):
                     img, _ = next(camera.yieldImages())
@@ -238,7 +253,7 @@ def pressure_check(pm: PneumaticModule) -> bool:
     pm.setDutyCycle(pm.getMaxDutyCycle())
 
     pressure_diff = initial_pressure - post_pull_pressure
-    logger.info(f"Measure pressure difference is: {pressure_diff}hPa.")
+    logger.info(f"Measure pressure difference is: {pressure_diff:.2f}mBar.")
     return pressure_diff >= MIN_PRESSURE_DIFF
 
 
@@ -387,9 +402,15 @@ def main():
     args = parse_args()
     n_steps = args.sweep_range_about_center_steps
     imgs_per_step = args.imgs_per_step
+    target_flowrate = args.flowrate
 
     logger.info(
-        f"Starting Z-stack utility with n_steps={n_steps} and imgs_per_step={imgs_per_step}"
+        "\n"
+        "+-------------------+-------------------+-------------------+\n"
+        "|   n_steps         |   imgs_per_step   |   target_flowrate |\n"
+        "+-------------------+-------------------+-------------------+\n"
+        f"|   {n_steps:<17} |   {imgs_per_step:<15} |   {target_flowrate:<15} |\n"
+        "+-------------------+-------------------+-------------------+\n"
     )
 
     # Save location
@@ -400,6 +421,8 @@ def main():
     # Initialize hardware
     camera, pm, motor, led = init_hardware()
     cell_finder = CellFinder()
+    autobrightness = Autobrightness(led)
+    flow_control = FlowController(pm)
 
     # Retrieve camera dimensions
     img_width, img_height = (
@@ -455,6 +478,64 @@ def main():
     def update_motor_label(position):
         motor_label.config(text=f"Motor Position: {position}")
 
+    def set_flow(flow_controller: FlowController, target_flowrate: float) -> None:
+        """Sets the flow rate to the target flow rate."""
+        status_label.config(text="Setting flow rate...")
+        root.update()
+
+        flow_controller.set_target_flowrate(target_flowrate)
+
+        # Fast flow, increase EWMA response time
+        flow_controller.set_alpha(
+            processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
+        )  # Double the alpha, ~halve the half life
+        flow_controller.pneumatic_module.min_step_size *= 2  # type:ignore
+        syringe_can_move: Optional[bool] = None
+        prev_can_move = True
+        while True:
+            img, timestamp = next(camera.yieldImages())
+            img = downsample_image(img, DOWNSAMPLE_FACTOR)
+
+            prev_can_move = (
+                syringe_can_move if syringe_can_move is not None else prev_can_move
+            )
+
+            flow_val, flow_error, syringe_can_move = flow_controller.control_flow(
+                img, timestamp
+            )
+            if (prev_can_move is True) and (syringe_can_move is False):
+                # If we were in fast_flow, we need to reset the min_step_size
+                flow_controller.pneumatic_module.min_step_size = (  # type:ignore
+                    flow_controller.pneumatic_module.default_min_step_size  # type:ignore
+                )
+
+                logger.warning("Can't reach target flowrate. Syringe at end of travel.")
+                return
+            if flow_error is not None:
+                if flow_error == 0:
+                    logger.info("Target flowrate achieved.")
+                    return
+
+    def set_brightness(autobrightness: Autobrightness) -> None:
+        """Runs autobrightness in a loop until the target brightness is achieved.
+
+        If the target brightness is not achieved, it will show a message box and return.
+        """
+        status_label.config(text="Adjusting LED brightness...")
+        root.update()
+
+        brightness_achieved = False
+        while not brightness_achieved:
+            img, _ = next(camera.yieldImages())
+            try:
+                brightness_achieved = autobrightness.runAutobrightness(img)
+            except BrightnessTargetNotAchieved:
+                logger.info("Brightness target not achieved but usable. Proceeding...")
+                break
+            except BrightnessCriticallyLow:
+                logger.info("Brightness critically low. Continuing anyway...")
+                return
+
     def start_sweep(
         n_steps: int = 20, imgs_per_step: int = 2, save_path: Optional[Path] = save_path
     ):
@@ -476,8 +557,11 @@ def main():
         pm.setDutyCycle(pm.getMinDutyCycle())
         sleep(PNEUMATIC_PULL_TIME_S)  # Allow cells to enter
         pm.setDutyCycle(pm.getMaxDutyCycle())
+        set_brightness(autobrightness)
 
         progress["value"] = 0
+
+        # Set up flow
         status_label.config(text="Finding cells...")
         root.update()
         sweep_range = determine_sweep_range(motor)
@@ -498,6 +582,7 @@ def main():
         try:
             result = cell_finder.get_cells_found_position()
             status_label.config(text="Cells found!")
+            set_flow(flow_control, target_flowrate)
         except NoCellsFound:
             result = None
 
@@ -505,6 +590,9 @@ def main():
             # No cells found automatically - launch manual review
             def do_local_sweep(center_pos):
                 """Perform local sweep around user-selected position."""
+
+                set_flow(flow_control, target_flowrate)
+
                 status_label.config(
                     text=f"Performing local sweep around position {center_pos}..."
                 )
@@ -523,8 +611,13 @@ def main():
                     n_imgs_per_step=imgs_per_step,
                     save_path=save_path,
                     collect_images=False,
+                    run_brightness=True,
+                    autobrightness=autobrightness,
+                    autobrightness_fn=set_brightness,
+                    status_label=status_label,
                 )
                 status_label.config(text="Sweep completed.")
+                root.update()
 
             manual_review(collected_images, do_local_sweep)
         elif (result - n_steps) > 0 and (result + n_steps) < motor.max_pos:
@@ -545,16 +638,25 @@ def main():
                 n_imgs_per_step=imgs_per_step,
                 save_path=save_path,
                 collect_images=False,
+                run_brightness=True,
+                autobrightness=autobrightness,
+                autobrightness_fn=set_brightness,
+                status_label=status_label,
             )
 
-        status_label.config(text="Sweep completed.")
+        status_label.config(text="Sweep completed. Compressing images...")
+        root.update()
         if save_path:
             logger.info("Compressing images...")
             compressed_path = compress_saved_images(save_path)
             if compressed_path:
                 status_label.config(text="Images saved and compressed.")
+        pm.setDutyCycle(pm.getMaxDutyCycle())
+        status_label.config(text="Press 'Start Sweep' to collect another stack.")
 
     def quit_application():
+        pm.setDutyCycle(pm.getMaxDutyCycle())
+        led.turnOff()
         camera.deactivateCamera()
         led.turnOff()
         root.destroy()
@@ -593,6 +695,15 @@ def parse_args():
         default=2,
         type=int,
         help="Number of images to capture at each motor position during the sweep. Default: 2",
+    )
+    parser.add_argument(
+        "--flowrate",
+        "-f",
+        default=processing_constants.FLOWRATE.MEDIUM.value,
+        type=float,
+        choices=[f.value for f in processing_constants.FLOWRATE],
+        help="Target flowrate (μL/min). Choices: "
+        + ", ".join(str(f.value) for f in processing_constants.FLOWRATE),
     )
     args = parser.parse_args()
 
