@@ -5,7 +5,6 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
 
-import concurrent.futures
 import logging
 
 from typing import Any
@@ -572,22 +571,25 @@ class ScopeOp(QObject, NamedMachine):
                 self.logger.info(
                     f"Running QC on {len(subsample_img_paths)} subsample images."
                 )
-                # Open each of the images in subsample_img_paths
 
-                # Function to load and fully read an image (ensures file handle closes)
                 def load_image(path):
                     with Image.open(path) as img:
                         return img.copy()
 
-                # Concurrently load all images
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    images = list(executor.map(load_image, subsample_img_paths))
+                # Using threading to load these images did not provide much of a speedup (sequential time was ~26s, threaded was ~24s)
+                for x in subsample_img_paths:
+                    img = load_image(x)
+                    self.mscope.qc.asyn(img)
 
-                # Run QC
-                for x in images:
-                    self.mscope.qc(x)
                 qc_results = self.mscope.qc.get_asyn_results(timeout=None)
+                qc_results = [self.mscope.qc._sigmoid(x.result) for x in qc_results]
                 self.logger.info(f"QC results: {qc_results}")
+                self.logger.info(
+                    f"QC mean: {np.mean(qc_results):.3f}\tQC standard deviation: {np.std(qc_results):.3f}"
+                )
+                self.logger.info(
+                    f"Num images < 0.3 {np.sum(np.array(qc_results) < 0.1)} (total: {len(qc_results)})"
+                )
 
         except Exception as e:
             self.logger.error(
