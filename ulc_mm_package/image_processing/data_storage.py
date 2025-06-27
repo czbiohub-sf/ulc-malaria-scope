@@ -579,7 +579,7 @@ class DataStorage:
 
         return zarr.open(str(self.zarr_filepath), mode="r")
 
-    def save_qc_data(self, img_indices: List[int], qc_results: list[float]) -> None:
+    def save_qc_data(self, img_indices: List[int], qc_results: List[float]) -> None:
         """Save the QC results to a file."""
 
         if self.main_dir is None or self.experiment_folder is None:
