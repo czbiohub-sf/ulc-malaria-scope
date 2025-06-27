@@ -5,15 +5,17 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
 
-import cv2
+import concurrent.futures
 import logging
-import numpy as np
 
 from typing import Any
 from time import sleep, perf_counter
-from transitions import Machine, State
 
+import cv2
+import numpy as np
+from PIL import Image
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from transitions import Machine, State
 
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 from ulc_mm_package.hardware.scope_routines import Routines
@@ -558,6 +560,39 @@ class ScopeOp(QObject, NamedMachine):
         self.finishing_experiment.emit(65)
 
         self.mscope.reset_for_end_experiment()
+
+        # Run the QC model on the subsample data
+        try:
+            subsample_img_paths = sorted(
+                list(self.mscope.data_storage.sub_seq_path.glob("*.png"))
+            )
+
+            # Threaded open
+            if subsample_img_paths:
+                self.logger.info(
+                    f"Running QC on {len(subsample_img_paths)} subsample images."
+                )
+                # Open each of the images in subsample_img_paths
+
+                # Function to load and fully read an image (ensures file handle closes)
+                def load_image(path):
+                    with Image.open(path) as img:
+                        return img.copy()
+
+                # Concurrently load all images
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    images = list(executor.map(load_image, subsample_img_paths))
+
+                # Run QC
+                for x in images:
+                    self.mscope.qc(x)
+                qc_results = self.mscope.qc.get_asyn_results(timeout=None)
+                self.logger.info(f"QC results: {qc_results}")
+
+        except Exception as e:
+            self.logger.error(
+                f"Could not find the subsample folder - skipping QC. Error: {e}"
+            )
 
         # Turn camera back on
         self.mscope.camera.startAcquisition()

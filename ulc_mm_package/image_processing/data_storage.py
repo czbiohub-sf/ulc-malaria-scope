@@ -135,6 +135,9 @@ class DataStorage:
         # mypy
         assert self.main_dir is not None
 
+        # Reset subsample folder
+        self.sub_seq_path = None
+
         # Create per-image metadata file
         self.time_str = datetime.now().strftime(DATETIME_FORMAT)
         self.experiment_folder = self.time_str + f"_{custom_experiment_name}"
@@ -470,6 +473,7 @@ class DataStorage:
 
         try:
             sub_seq_path = self._create_subseq_folder()
+            self.sub_seq_path = Path(sub_seq_path)
         except:
             self.logger.error(
                 "Unable to create the subsample folder. Aborting subsampling."

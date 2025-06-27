@@ -1,6 +1,6 @@
 """
 The malaria scope object, containing all the different hardware
-periperhals which make up the malaria scope.
+peripherals which make up the malaria scope.
 
 Components
     - Motorcontroller (DRV8825 Nema)
@@ -50,6 +50,7 @@ from ulc_mm_package.image_processing.data_storage import DataStorage, DataStorag
 from ulc_mm_package.image_processing.flow_control import FlowController
 from ulc_mm_package.neural_nets.YOGOInference import YOGO
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
+from ulc_mm_package.neural_nets.QCInference import QC
 from ulc_mm_package.neural_nets.NCSModel import GPUError
 from ulc_mm_package.neural_nets.predictions_handler import PredictionsHandler
 
@@ -129,7 +130,7 @@ class MalariaScope:
 
     def reset_for_end_experiment(self) -> None:
         """
-        Reset syringe, turn LED off, reset flow control, reset YOGO / Autofoucs,
+        Reset syringe, turn LED off, reset flow control, reset YOGO / Autofocus,
         and close data storage.
         """
 
@@ -322,6 +323,7 @@ class MalariaScope:
             self.logger.info("Initializing GPU...")
             self.autofocus_model = AutoFocus()
             self.cell_diagnosis_model = YOGO()
+            self.qc = QC()
             self.gpu_enabled = True
         except GPUError as e:
             self.logger.error(f"GPU initialization failed. {e}")
