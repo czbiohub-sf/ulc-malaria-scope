@@ -12,7 +12,7 @@ import cv2
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Optional
+from typing import Callable, Optional
 
 from ulc_mm_package.hardware.camera import AVTCamera
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
@@ -74,7 +74,7 @@ def sweep(
     motor_label_callback,
     n_imgs_per_step: int = 2,
     autobrightness: Optional[Autobrightness] = None,
-    autobrightness_fn: Optional[callable] = None,
+    autobrightness_fn: Optional[Callable] = None,
     save_path: Optional[Path] = None,
     collect_images: bool = False,
     run_brightness: bool = False,
@@ -104,7 +104,7 @@ def sweep(
         try:
             motor.move_abs(motor_pos)
             if step == 1 and run_brightness is True:
-                autobrightness_fn(autobrightness)
+                autobrightness_fn(autobrightness)  # type:ignore
                 if status_label:
                     status_label.config(text="Sweep in progress...")
             if save_path:
