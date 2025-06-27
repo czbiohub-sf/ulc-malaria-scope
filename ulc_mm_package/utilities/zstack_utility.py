@@ -74,7 +74,7 @@ def sweep(
     motor_label_callback,
     n_imgs_per_step: int = 2,
     autobrightness: Optional[Autobrightness] = None,
-    autobrightness_fn: callable = None,
+    autobrightness_fn: Optional[callable] = None,
     save_path: Optional[Path] = None,
     collect_images: bool = False,
     run_brightness: bool = False,
@@ -489,7 +489,7 @@ def main():
         flow_controller.set_alpha(
             processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
         )  # Double the alpha, ~halve the half life
-        flow_controller.pneumatic_module.min_step_size *= 2
+        flow_controller.pneumatic_module.min_step_size *= 2  # type:ignore
         syringe_can_move: Optional[bool] = None
         prev_can_move = True
         while True:
@@ -505,8 +505,8 @@ def main():
             )
             if (prev_can_move is True) and (syringe_can_move is False):
                 # If we were in fast_flow, we need to reset the min_step_size
-                flow_controller.pneumatic_module.min_step_size = (
-                    flow_controller.pneumatic_module.default_min_step_size
+                flow_controller.pneumatic_module.min_step_size = (  # type:ignore
+                    flow_controller.pneumatic_module.default_min_step_size  # type:ignore
                 )
 
                 logger.warning("Can't reach target flowrate. Syringe at end of travel.")
