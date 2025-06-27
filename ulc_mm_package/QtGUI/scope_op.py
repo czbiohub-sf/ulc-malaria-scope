@@ -561,7 +561,7 @@ class ScopeOp(QObject, NamedMachine):
 
         # Run the QC model a small partition of the data
         self.logger.info("Running QC on images.")
-        zf = self.scope.data_storage.get_read_only_zarr()
+        zf = self.mscope.data_storage.get_read_only_zarr()
         img_indices = np.linspace(0, zf.initialized - 1, 50)
         for idx in img_indices:
             img = zf[:, :, idx]
