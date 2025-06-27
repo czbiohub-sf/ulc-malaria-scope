@@ -568,28 +568,21 @@ class ScopeOp(QObject, NamedMachine):
 
             # Threaded open
             if subsample_img_paths:
-                self.logger.info(
-                    f"Running QC on {len(subsample_img_paths)} subsample images."
-                )
+                self.logger.info("Running QC on subsample images.")
 
                 def load_image(path):
                     with Image.open(path) as img:
                         return img.copy()
 
                 # Using threading to load these images did not provide much of a speedup (sequential time was ~26s, threaded was ~24s)
+                # Run on half the subsample images to speed up the QC process
+                subsample_img_paths = subsample_img_paths[::2]
                 for x in subsample_img_paths:
                     img = load_image(x)
                     self.mscope.qc.asyn(img)
 
                 qc_results = self.mscope.qc.get_asyn_results(timeout=None)
                 qc_results = [self.mscope.qc._sigmoid(x.result) for x in qc_results]
-                self.logger.info(f"QC results: {qc_results}")
-                self.logger.info(
-                    f"QC mean: {np.mean(qc_results):.3f}\tQC standard deviation: {np.std(qc_results):.3f}"
-                )
-                self.logger.info(
-                    f"Num images < 0.3 {np.sum(np.array(qc_results) < 0.1)} (total: {len(qc_results)})"
-                )
 
         except Exception as e:
             self.logger.error(
