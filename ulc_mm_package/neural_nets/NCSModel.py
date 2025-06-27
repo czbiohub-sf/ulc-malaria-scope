@@ -117,6 +117,7 @@ class NCSModel:
         elif model_type == MODELS.QC:
             # Do the preprocessing on CPU, for QC since
             # the NCS seems to bungle up the necessary steps
+            # (see `QCInferece.py`'s `_format_image_to_tensor`)
             return model
 
     def _compile_model(
