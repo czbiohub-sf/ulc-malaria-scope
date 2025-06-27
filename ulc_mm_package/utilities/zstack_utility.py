@@ -652,7 +652,7 @@ def main():
             if compressed_path:
                 status_label.config(text="Images saved and compressed.")
         pm.setDutyCycle(pm.getMaxDutyCycle())
-        status_label.config("Press 'Start Sweep' to collect another stack.")
+        status_label.config(text="Press 'Start Sweep' to collect another stack.")
 
     def quit_application():
         pm.setDutyCycle(pm.getMaxDutyCycle())
