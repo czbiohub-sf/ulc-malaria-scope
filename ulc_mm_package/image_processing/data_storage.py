@@ -1,19 +1,20 @@
-import io
+from concurrent.futures import Future
 import csv
-import shutil
+from datetime import datetime
+import io
 import logging
 from os import remove
 from pathlib import Path
+import shutil
 from time import perf_counter
-from datetime import datetime
-from concurrent.futures import Future
 from typing import Dict, List, Optional
-from stats_utils.compensator import CountCompensator
 
+import cv2
 import numpy as np
 import numpy.typing as npt
-import cv2
+import zarr
 
+from stats_utils.compensator import CountCompensator
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
@@ -181,7 +182,13 @@ class DataStorage:
             / self.experiment_folder
             / f"{self.time_str}_{custom_experiment_name}"
         )
+        self.zarr_filepath = filename.with_suffix(".zip")
         self.zw.createNewFile(str(filename))
+
+        # QC csv
+        self.qc_filename = (
+            self.main_dir / self.experiment_folder / f"{self.time_str}_qc_results.csv"
+        )
 
     def writeData(self, image: np.ndarray, metadata: Dict, count: int):
         """Write a new image and its corresponding metadata.
@@ -562,3 +569,28 @@ class DataStorage:
             all_indices.extend(list(range(idx, idx + subsequence_length)))
 
         return all_indices
+
+    def get_read_only_zarr(self):
+        """Get a read-only Zarr store for the current experiment.
+
+        Returns
+        -------
+        The result of zarr.open() with read-only mode.
+        """
+
+        if self.zarr_filepath is None:
+            raise DataStorageError("Zarr file path is not set. Cannot open Zarr store.")
+
+        return zarr.open(str(self.zarr_filepath), mode="r")
+
+    def save_qc_data(self, img_indices: list[int], qc_results: list[float]) -> None:
+        """Save the QC results to a file."""
+
+        if self.main_dir is None or self.experiment_folder is None:
+            raise DataStorageError("DataStorage has not been initialized.")
+
+        with open(self.qc_filename, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(["img_idx", "qc_score"])
+            for idx, result in zip(img_indices, qc_results):
+                writer.writerow([idx, result])

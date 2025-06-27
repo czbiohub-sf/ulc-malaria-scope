@@ -12,7 +12,6 @@ from time import sleep, perf_counter
 
 import cv2
 import numpy as np
-from PIL import Image
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from transitions import Machine, State
 
@@ -560,34 +559,19 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope.reset_for_end_experiment()
 
-        # Run the QC model on the subsample data
-        try:
-            subsample_img_paths = sorted(
-                list(self.mscope.data_storage.sub_seq_path.glob("*.png"))
-            )
+        # Run the QC model a small partition of the data
+        self.logger.info("Running QC on images.")
+        zf = self.scope.data_storage.get_read_only_zarr()
+        img_indices = np.linspace(0, zf.initialized - 1, 50)
+        for idx in img_indices:
+            img = zf[:, :, idx]
+            self.mscope.qc.asyn(img)
 
-            # Threaded open
-            if subsample_img_paths:
-                self.logger.info("Running QC on subsample images.")
+        qc_results = self.mscope.qc.get_asyn_results(timeout=None)
+        qc_results = [self.mscope.qc._sigmoid(x.result) for x in qc_results]
 
-                def load_image(path):
-                    with Image.open(path) as img:
-                        return img.copy()
-
-                # Using threading to load these images did not provide much of a speedup (sequential time was ~26s, threaded was ~24s)
-                # Run on half the subsample images to speed up the QC process
-                subsample_img_paths = subsample_img_paths[::2]
-                for x in subsample_img_paths:
-                    img = load_image(x)
-                    self.mscope.qc.asyn(img)
-
-                qc_results = self.mscope.qc.get_asyn_results(timeout=None)
-                qc_results = [self.mscope.qc._sigmoid(x.result) for x in qc_results]
-
-        except Exception as e:
-            self.logger.error(
-                f"Could not find the subsample folder - skipping QC. Error: {e}"
-            )
+        # Save qc results
+        self.mscope.data_storage.save_qc_data(img_indices, qc_results)
 
         # Turn camera back on
         self.mscope.camera.startAcquisition()
@@ -607,12 +591,15 @@ class ScopeOp(QObject, NamedMachine):
     def _start_intermission(self, msg):
         parasitemia_vis_path = self.mscope.data_storage.get_parasitemia_vis_filename()
 
+        # Display parasitemia visualization if it exists
         if parasitemia_vis_path.exists():
             self.experiment_done.emit(
                 msg + PARASITEMIA_VIS_MSG, str(parasitemia_vis_path)
             )
         else:
             self.experiment_done.emit(msg, "")
+
+        # Display the QC results
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
