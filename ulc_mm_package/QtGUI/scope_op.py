@@ -7,7 +7,7 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 import logging
 
-from typing import Any
+from typing import Any, Literal
 from time import sleep, perf_counter
 
 import cv2
@@ -41,6 +41,8 @@ from ulc_mm_package.image_processing.autobrightness import (
 from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     QC_GOODNESS_THRESHOLD,
+    QC_STATUS,
+    PERC_IMAGES_GOOD,
 )
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
@@ -87,7 +89,7 @@ class NamedMachine(Machine):
 
 class ScopeOp(QObject, NamedMachine):
     setup_done = pyqtSignal()
-    experiment_done = pyqtSignal(str, str)
+    experiment_done = pyqtSignal(str, str, int)
     reset_done = pyqtSignal()
 
     yield_mscope = pyqtSignal(MalariaScope)
@@ -304,7 +306,7 @@ class ScopeOp(QObject, NamedMachine):
                 )
             )
 
-    def run_status_from_qc_results(self, qc_results: np.ndarray) -> str:
+    def run_status_from_qc_results(self, qc_results: np.ndarray) -> QC_STATUS:
         """Logic for determining whether a run was decent based on the QC results at the end of a run.
 
         Parameters
@@ -314,11 +316,10 @@ class ScopeOp(QObject, NamedMachine):
 
         Returns
         -------
-        str
+        QC_STATUS
             Status of the run based on the QC results.
             - "good" if X% of results are below the QC_GOODNESS_THRESHOLD (i.e considered 'good')
-            - "passable" if Y% of results are below the threshold
-            - "poor" if Z% of results are above the threshold
+            - "poor" if Y% of results are above the threshold
         """
 
         num_good = (qc_results <= QC_GOODNESS_THRESHOLD).sum()
@@ -328,12 +329,10 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.warning("No QC results available. Cannot determine run status.")
             raise ValueError("Run status cannot be determined without QC results.")
 
-        if num_good / num_total >= 0.70:
-            return "good"
-        elif num_good / num_total >= 0.5:
-            return "passable"
+        if num_good / num_total >= PERC_IMAGES_GOOD:
+            return QC_STATUS.GOOD
         else:
-            return "poor"
+            return QC_STATUS.POOR
 
     def setup(self):
         self.create_timers.emit()
@@ -627,7 +626,7 @@ class ScopeOp(QObject, NamedMachine):
                 f"QC worst score: {qc_results_np.max():.3f}, "
                 f"QC number of images good: {num_qc_results_good}/{num_imgs_qc} ({num_qc_results_good/num_imgs_qc:.2%})%"
             )
-            self.did_run_pass_qc = self.run_status_from_qc_results(qc_results_np)
+            self.did_run_pass_qc = self.run_status_from_qc_results(qc_results_np).value
         else:
             self.logger.warning("No QC results available. Skipping QC...")
 

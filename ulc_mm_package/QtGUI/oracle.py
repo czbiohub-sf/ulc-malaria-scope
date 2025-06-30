@@ -12,7 +12,7 @@ import subprocess
 import socket
 import sys
 import traceback
-from typing import Optional
+from typing import Literal, Optional
 
 from os import (
     listdir,
@@ -71,6 +71,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
     YOGO_MODEL_DIR,
+    QC_STATUS,
 )
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
@@ -764,7 +765,10 @@ class Oracle(Machine):
         self.liveview_window.close()
 
     def _start_intermission(
-        self, msg=None, parasitemia_vis_path="", run_qc_status: Optional[str] = None
+        self,
+        msg=None,
+        parasitemia_vis_path="",
+        run_qc_status: Optional[int] = None,
     ):
         if msg is None:
             # Retriggered intermission due to race condition
@@ -774,21 +778,14 @@ class Oracle(Machine):
         # An Enum would be great but `pyqtsignal` on PyQt5 does not support Enums
         # and a workaround would be uglier
         if run_qc_status:
-            if run_qc_status == "good":
+            if run_qc_status == QC_STATUS.GOOD.value:
                 self.display_message(
                     QMessageBox.Icon.Information,
                     "Run Quality: GOOD",
                     "✅ The run quality is GOOD.\n\n",
                     buttons=Buttons.OK,
                 )
-            elif run_qc_status == "passable":
-                self.display_message(
-                    QMessageBox.Icon.Warning,
-                    "Run Quality: PASSABLE",
-                    "⚠️ The run quality is PASSABLE.\n\nResults may be less reliable.",
-                    buttons=Buttons.OK,
-                )
-            elif run_qc_status == "poor":
+            elif run_qc_status == QC_STATUS.POOR.value:
                 self.display_message(
                     QMessageBox.Icon.Critical,
                     "Run Quality: POOR",
