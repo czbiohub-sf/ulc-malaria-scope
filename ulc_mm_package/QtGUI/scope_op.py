@@ -570,6 +570,17 @@ class ScopeOp(QObject, NamedMachine):
         qc_results = self.mscope.qc.get_asyn_results(timeout=None)
         qc_results = [self.mscope.qc._sigmoid(x.result) for x in qc_results]
 
+        # Log QC results
+        qc_results_np = np.array(qc_results)
+        self.logger.debug(
+            f"All qc results: {qc_results_np}\n"
+            f"QC mean: {qc_results_np.mean():.3f}, "
+            f"stdev: {qc_results_np.std():.3f}, "
+            f"best image score: {qc_results_np.min():.3f}, "
+            f"worst image score: {qc_results_np.max():.3f}, "
+            f"num images good (thresh for good is 0.3): {(qc_results_np < 0.3).sum()}"
+        )
+
         # Save qc results
         self.mscope.data_storage.save_qc_data(img_indices, qc_results)
 
