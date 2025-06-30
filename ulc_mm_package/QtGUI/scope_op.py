@@ -631,7 +631,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.warning("No QC results available. Skipping QC...")
 
         # Save qc results
-        self.mscope.data_storage.save_qc_data(img_indices, qc_results)
+        self.mscope.data_storage.save_qc_data(img_indices, qc_results_np)
         self.finishing_experiment.emit(80)
 
         # Turn camera back on
