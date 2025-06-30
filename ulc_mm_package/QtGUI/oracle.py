@@ -12,7 +12,7 @@ import subprocess
 import socket
 import sys
 import traceback
-from typing import Literal, Optional
+from typing import Optional
 
 from os import (
     listdir,

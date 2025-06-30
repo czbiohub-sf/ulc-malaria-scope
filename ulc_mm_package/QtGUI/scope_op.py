@@ -7,7 +7,7 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 import logging
 
-from typing import Any, Literal
+from typing import Any
 from time import sleep, perf_counter
 
 import cv2
