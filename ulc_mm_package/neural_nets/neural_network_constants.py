@@ -98,3 +98,4 @@ IOU_THRESH = 0.5
 QC_MODEL_NAME = "20250209_with_tororo"
 QC_MODEL_DIR = str(curr_dir / "qc_model_files" / QC_MODEL_NAME / "best.xml")
 QC_CACHE_DIR = str(curr_dir / "cached_models" / QC_MODEL_NAME)
+QC_GOODNESS_THRESHOLD = 0.3  # Threshold where scores <= are considered 'good images'

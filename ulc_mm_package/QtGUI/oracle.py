@@ -5,13 +5,14 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
 
-import os
-import sys
-import traceback
-import socket
 import enum
 import logging
+import os
 import subprocess
+import socket
+import sys
+import traceback
+from typing import Optional
 
 from os import (
     listdir,
@@ -762,10 +763,42 @@ class Oracle(Machine):
     def _end_liveview(self, *args):
         self.liveview_window.close()
 
-    def _start_intermission(self, msg=None, parasitemia_vis_path=""):
+    def _start_intermission(
+        self, msg=None, parasitemia_vis_path="", run_qc_status: Optional[str] = None
+    ):
         if msg is None:
             # Retriggered intermission due to race condition
             return
+
+        # Display QC results if available
+        # An Enum would be great but `pyqtsignal` on PyQt5 does not support Enums
+        # and a workaround would be uglier
+        if run_qc_status:
+            if run_qc_status == "good":
+                self.display_message(
+                    QMessageBox.Icon.Information,
+                    "Run Quality: GOOD",
+                    "✅ The run quality is GOOD.\n\n",
+                    buttons=Buttons.OK,
+                )
+            elif run_qc_status == "passable":
+                self.display_message(
+                    QMessageBox.Icon.Warning,
+                    "Run Quality: PASSABLE",
+                    "⚠️ The run quality is PASSABLE.\n\nResults may be less reliable.",
+                    buttons=Buttons.OK,
+                )
+            elif run_qc_status == "poor":
+                self.display_message(
+                    QMessageBox.Icon.Critical,
+                    "Run Quality: POOR",
+                    "❌ The run quality is POOR.\n\nPlease RE-RUN THE SAMPLE to ensure valid results.",
+                    buttons=Buttons.OK,
+                )
+            else:
+                raise ValueError(
+                    f"Invalid run_qc_status: {run_qc_status}. Expected 'good', 'passable', or 'poor'."
+                )
 
         self.display_message(
             QMessageBox.Icon.Information,

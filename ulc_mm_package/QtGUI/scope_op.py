@@ -38,7 +38,10 @@ from ulc_mm_package.image_processing.autobrightness import (
     LEDNoPower,
 )
 
-from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    IMG_RESIZED_DIMS,
+    QC_GOODNESS_THRESHOLD,
+)
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
@@ -301,6 +304,37 @@ class ScopeOp(QObject, NamedMachine):
                 )
             )
 
+    def run_status_from_qc_results(self, qc_results: np.ndarray) -> str:
+        """Logic for determining whether a run was decent based on the QC results at the end of a run.
+
+        Parameters
+        ----------
+        qc_results : np.ndarray
+            Array of QC results from the QC model.
+
+        Returns
+        -------
+        str
+            Status of the run based on the QC results.
+            - "good" if X% of results are below the QC_GOODNESS_THRESHOLD (i.e considered 'good')
+            - "passable" if Y% of results are below the threshold
+            - "poor" if Z% of results are above the threshold
+        """
+
+        num_good = (qc_results <= QC_GOODNESS_THRESHOLD).sum()
+        num_total = len(qc_results)
+
+        if num_total == 0:
+            self.logger.warning("No QC results available. Cannot determine run status.")
+            raise ValueError("Run status cannot be determined without QC results.")
+
+        if num_good / num_total >= 0.70:
+            return "good"
+        elif num_good / num_total >= 0.5:
+            return "passable"
+        else:
+            return "poor"
+
     def setup(self):
         self.create_timers.emit()
 
@@ -561,28 +595,45 @@ class ScopeOp(QObject, NamedMachine):
 
         # Run the QC model a small partition of the data
         self.logger.info("Running QC on images.")
-        zf = self.mscope.data_storage.get_read_only_zarr()
-        img_indices = np.linspace(0, zf.initialized - 1, 50).astype(int)
-        for idx in img_indices:
-            img = zf[:, :, idx]
-            self.mscope.qc.asyn(img)
+        qc_results = None
+        try:
+            zf = self.mscope.data_storage.get_read_only_zarr()
 
-        qc_results = self.mscope.qc.get_asyn_results(timeout=None)
-        qc_results = [self.mscope.qc._sigmoid(x.result) for x in qc_results]
+            try:
+                img_indices = np.linspace(0, zf.initialized - 1, 50).astype(int)
+                for idx in img_indices:
+                    img = zf[:, :, idx]
+                    self.mscope.qc.asyn(img)
+                qc_results = self.mscope.qc.get_asyn_results(timeout=None)
+                qc_results = [self.mscope.qc._sigmoid(x.result) for x in qc_results]
+            except Exception as e:
+                self.logger.error(
+                    f"Unexpected error while submitting images to QC model: {e}. Skipping QC..."
+                )
+        except Exception as e:
+            self.logger.error(f"Failed to get zarr data for QC: {e}.\nSkipping QC...")
 
         # Log QC results
-        qc_results_np = np.array(qc_results)
-        self.logger.debug(
-            f"All qc results: {qc_results_np}\n"
-            f"QC mean: {qc_results_np.mean():.3f}, "
-            f"stdev: {qc_results_np.std():.3f}, "
-            f"best image score: {qc_results_np.min():.3f}, "
-            f"worst image score: {qc_results_np.max():.3f}, "
-            f"num images good (thresh for good is 0.3): {(qc_results_np < 0.3).sum()}"
-        )
+        if qc_results:
+            self.did_run_pass_qc = None
+            qc_results_np = np.array(qc_results)
+            num_qc_results_good = (qc_results_np <= QC_GOODNESS_THRESHOLD).sum()
+            num_imgs_qc = len(qc_results_np)
+            self.logger.debug(
+                f"QC all results: {qc_results_np}\n"
+                f"QC mean: {qc_results_np.mean():.3f}, "
+                f"QC stdev: {qc_results_np.std():.3f}, "
+                f"QC best score: {qc_results_np.min():.3f}, "
+                f"QC worst score: {qc_results_np.max():.3f}, "
+                f"QC number of images good: {num_qc_results_good}/{num_imgs_qc} ({num_qc_results_good/num_imgs_qc:.2%})%"
+            )
+            self.did_run_pass_qc = self.run_status_from_qc_results(qc_results_np)
+        else:
+            self.logger.warning("No QC results available. Skipping QC...")
 
         # Save qc results
         self.mscope.data_storage.save_qc_data(img_indices, qc_results)
+        self.finishing_experiment.emit(80)
 
         # Turn camera back on
         self.mscope.camera.startAcquisition()
@@ -605,12 +656,12 @@ class ScopeOp(QObject, NamedMachine):
         # Display parasitemia visualization if it exists
         if parasitemia_vis_path.exists():
             self.experiment_done.emit(
-                msg + PARASITEMIA_VIS_MSG, str(parasitemia_vis_path)
+                msg + PARASITEMIA_VIS_MSG,
+                str(parasitemia_vis_path),
+                self.did_run_pass_qc,
             )
         else:
-            self.experiment_done.emit(msg, "")
-
-        # Display the QC results
+            self.experiment_done.emit(msg, "", self.did_run_pass_qc)
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
