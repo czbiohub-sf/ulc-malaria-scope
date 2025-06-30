@@ -42,7 +42,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     IMG_RESIZED_DIMS,
     QC_GOODNESS_THRESHOLD,
     QC_STATUS,
-    PERC_IMAGES_GOOD,
+    PERC_OF_IMAGES_GOOD,
 )
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
@@ -329,7 +329,7 @@ class ScopeOp(QObject, NamedMachine):
             self.logger.warning("No QC results available. Cannot determine run status.")
             raise ValueError("Run status cannot be determined without QC results.")
 
-        if num_good / num_total >= PERC_IMAGES_GOOD:
+        if num_good / num_total >= PERC_OF_IMAGES_GOOD:
             return QC_STATUS.GOOD
         else:
             return QC_STATUS.POOR
