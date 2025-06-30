@@ -615,10 +615,10 @@ class ScopeOp(QObject, NamedMachine):
         # Log QC results
         if qc_results:
             self.did_run_pass_qc = None
-            qc_results_np = np.array(qc_results)
+            qc_results_np = np.array(qc_results).flatten()
             num_qc_results_good = (qc_results_np <= QC_GOODNESS_THRESHOLD).sum()
             num_imgs_qc = len(qc_results_np)
-            self.logger.debug(
+            self.logger.info(
                 f"QC all results: {qc_results_np}\n"
                 f"QC mean: {qc_results_np.mean():.3f}, "
                 f"QC stdev: {qc_results_np.std():.3f}, "
