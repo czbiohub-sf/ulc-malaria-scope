@@ -413,10 +413,7 @@ def main():
         "+-------------------+-------------------+-------------------+\n"
     )
 
-    # Save location
     device_name = socket.gethostname()
-    curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    save_path = Path(SSD_DIR) / SSD_NAME / f"zstack_{device_name}_{curr_time}"
 
     # Initialize hardware
     camera, pm, motor, led = init_hardware()
@@ -536,9 +533,9 @@ def main():
                 logger.info("Brightness critically low. Continuing anyway...")
                 return
 
-    def start_sweep(
-        n_steps: int = 20, imgs_per_step: int = 2, save_path: Optional[Path] = save_path
-    ):
+    def start_sweep(n_steps: int = 20, imgs_per_step: int = 2):
+        curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        save_path = Path(SSD_DIR) / SSD_NAME / f"zstack_{device_name}_{curr_time}"
         status_label.config(text="Sweeping in progress...")
         status_label.config(text="Checking that a flow cell is loaded...")
         root.update()
@@ -582,7 +579,8 @@ def main():
         try:
             result = cell_finder.get_cells_found_position()
             status_label.config(text="Cells found!")
-            set_flow(flow_control, target_flowrate)
+            if target_flowrate > 0:
+                set_flow(flow_control, target_flowrate)
         except NoCellsFound:
             result = None
 
@@ -591,7 +589,8 @@ def main():
             def do_local_sweep(center_pos):
                 """Perform local sweep around user-selected position."""
 
-                set_flow(flow_control, target_flowrate)
+                if target_flowrate > 0:
+                    set_flow(flow_control, target_flowrate)
 
                 status_label.config(
                     text=f"Performing local sweep around position {center_pos}..."
@@ -662,9 +661,7 @@ def main():
         root.destroy()
 
     # Buttons
-    sweep_fn = partial(
-        start_sweep, n_steps=n_steps, imgs_per_step=imgs_per_step, save_path=save_path
-    )
+    sweep_fn = partial(start_sweep, n_steps=n_steps, imgs_per_step=imgs_per_step)
     tk.Button(
         button_frame, text="Start Sweep", font=("Helvetica", 16), command=sweep_fn
     ).pack(side=tk.RIGHT, padx=10)
@@ -696,12 +693,17 @@ def parse_args():
         type=int,
         help="Number of images to capture at each motor position during the sweep. Default: 2",
     )
+
+    # Get all flowrate options and add the no-flow option as well
+    flowrate_options = [f.value for f in processing_constants.FLOWRATE]
+    flowrate_options.append(0.0)  # Add no-flow option
+
     parser.add_argument(
         "--flowrate",
         "-f",
         default=processing_constants.FLOWRATE.MEDIUM.value,
         type=float,
-        choices=[f.value for f in processing_constants.FLOWRATE],
+        choices=flowrate_options,
         help="Target flowrate (μL/min). Choices: "
         + ", ".join(str(f.value) for f in processing_constants.FLOWRATE),
     )
