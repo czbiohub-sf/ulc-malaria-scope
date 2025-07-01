@@ -810,6 +810,7 @@ class Oracle(Machine):
                         )
                         if os.name == "posix":
                             subprocess.call(["xdg-open", subsample_dir])
+                            sleep(1.5)  # Give the file explorer time to open
 
             elif run_qc_status == QC_STATUS.POOR.value:
                 investigate_btn = None
@@ -840,6 +841,7 @@ class Oracle(Machine):
                     if msg_box.clickedButton() == investigate_btn:
                         if os.name == "posix":
                             subprocess.call(["xdg-open", subsample_dir])
+                            sleep(1.5)  # Give the file explorer time to open
             else:
                 raise ValueError(
                     f"Invalid run_qc_status: {run_qc_status}. Expected 'good' or 'poor'."
