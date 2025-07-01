@@ -582,7 +582,8 @@ def main():
         try:
             result = cell_finder.get_cells_found_position()
             status_label.config(text="Cells found!")
-            set_flow(flow_control, target_flowrate)
+            if target_flowrate > 0:
+                set_flow(flow_control, target_flowrate)
         except NoCellsFound:
             result = None
 
@@ -591,7 +592,8 @@ def main():
             def do_local_sweep(center_pos):
                 """Perform local sweep around user-selected position."""
 
-                set_flow(flow_control, target_flowrate)
+                if target_flowrate > 0:
+                    set_flow(flow_control, target_flowrate)
 
                 status_label.config(
                     text=f"Performing local sweep around position {center_pos}..."
