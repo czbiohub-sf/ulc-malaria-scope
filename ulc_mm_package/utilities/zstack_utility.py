@@ -413,9 +413,7 @@ def main():
         "+-------------------+-------------------+-------------------+\n"
     )
 
-    # Save location
     device_name = socket.gethostname()
-    curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Initialize hardware
     camera, pm, motor, led = init_hardware()
@@ -536,6 +534,7 @@ def main():
                 return
 
     def start_sweep(n_steps: int = 20, imgs_per_step: int = 2):
+        curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         save_path = Path(SSD_DIR) / SSD_NAME / f"zstack_{device_name}_{curr_time}"
         status_label.config(text="Sweeping in progress...")
         status_label.config(text="Checking that a flow cell is loaded...")
