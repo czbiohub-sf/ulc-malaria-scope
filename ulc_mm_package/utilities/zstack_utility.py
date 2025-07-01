@@ -416,7 +416,6 @@ def main():
     # Save location
     device_name = socket.gethostname()
     curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    save_path = Path(SSD_DIR) / SSD_NAME / f"zstack_{device_name}_{curr_time}"
 
     # Initialize hardware
     camera, pm, motor, led = init_hardware()
@@ -536,9 +535,8 @@ def main():
                 logger.info("Brightness critically low. Continuing anyway...")
                 return
 
-    def start_sweep(
-        n_steps: int = 20, imgs_per_step: int = 2, save_path: Optional[Path] = save_path
-    ):
+    def start_sweep(n_steps: int = 20, imgs_per_step: int = 2):
+        save_path = Path(SSD_DIR) / SSD_NAME / f"zstack_{device_name}_{curr_time}"
         status_label.config(text="Sweeping in progress...")
         status_label.config(text="Checking that a flow cell is loaded...")
         root.update()
@@ -664,9 +662,7 @@ def main():
         root.destroy()
 
     # Buttons
-    sweep_fn = partial(
-        start_sweep, n_steps=n_steps, imgs_per_step=imgs_per_step, save_path=save_path
-    )
+    sweep_fn = partial(start_sweep, n_steps=n_steps, imgs_per_step=imgs_per_step)
     tk.Button(
         button_frame, text="Start Sweep", font=("Helvetica", 16), command=sweep_fn
     ).pack(side=tk.RIGHT, padx=10)
