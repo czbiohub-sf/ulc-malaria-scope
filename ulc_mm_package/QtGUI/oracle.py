@@ -779,16 +779,40 @@ class Oracle(Machine):
         # An Enum would be great but `pyqtsignal` on PyQt5 does not support Enums
         # and a workaround would be uglier
         if run_qc_status is not None:
-            if run_qc_status == QC_STATUS.GOOD.value:
-                self.display_message(
-                    QMessageBox.Icon.Information,
-                    "Run Quality: GOOD",
-                    "✅ The run quality is GOOD.\n\n",
-                    buttons=Buttons.OK,
+            subsample_dir = self.scopeop.mscope.data_storage.get_subsample_folder_path()
+            if not os.path.exists(subsample_dir):
+                self.logger.error(
+                    f"Subsample images directory does not exist: {subsample_dir}"
                 )
+                subsample_dir = None
+            if run_qc_status == QC_STATUS.GOOD.value:
+                # Add a custom button labeled
+                investigate_btn = None
+
+                msg_box = NoCloseMessageBox()
+                msg_box.setWindowIcon(QIcon(ICON_PATH))
+                msg_box.setIcon(QMessageBox.Icon.Information)
+                msg_box.setWindowTitle("Run Quality: GOOD")
+                msg_box.setText("✅ The run quality is GOOD.\n\n")
+
+                # Ok button
+                msg_box.addButton(QMessageBox.Ok)
+
+                # Add button to open subsample images
+                if subsample_dir is not None:
+                    investigate_btn = QPushButton("View subsample images")
+                    msg_box.addButton(investigate_btn, QMessageBox.ActionRole)
+                    msg_box.exec()
+                    if msg_box.clickedButton() == investigate_btn:
+                        # Path to the subsample images directory
+                        subsample_dir = (
+                            self.scopeop.mscope.data_storage.get_subsample_folder_path()
+                        )
+                        if os.name == "posix":
+                            subprocess.call(["xdg-open", subsample_dir])
+
             elif run_qc_status == QC_STATUS.POOR.value:
-                # Add a custom button labeled 'Investigate images'
-                investigate_btn = msg_box = None
+                investigate_btn = None
 
                 msg_box = NoCloseMessageBox()
                 msg_box.setWindowIcon(QIcon(ICON_PATH))
@@ -801,6 +825,7 @@ class Oracle(Machine):
                     (
                         "Open the run's subsample images to investigate its quality. The QC result is usually indicative of image quality, however "
                         "in cases where the images are unusual for another reason (anemia, SCD, other hemoglobinopathies), the QC result may not be accurate."
+                        "If the images appear in-focus (i.e NOT blurry), and the cells are NOT coagulated, then you do not need to re-run the sample. If you are unsure, please re-run the sample."
                     )
                 )
 
@@ -808,22 +833,11 @@ class Oracle(Machine):
                 msg_box.addButton(QMessageBox.Ok)
 
                 # Add button to open subsample images
-                investigate_btn = QPushButton("Investigate images")
-                msg_box.addButton(investigate_btn, QMessageBox.ActionRole)
-                msg_box.exec()
-                if msg_box.clickedButton() == investigate_btn:
-                    # Path to the subsample images directory
-                    subsample_dir = os.path.join(
-                        self.ext_dir, self.datetime_str, "subsample_images"
-                    )
-                    subsample_dir = (
-                        self.scopeop.mscope.data_storage.get_subsample_folder_path()
-                    )
-                    if not os.path.exists(subsample_dir):
-                        self.logger.error(
-                            f"Subsample images directory does not exist: {subsample_dir}"
-                        )
-                    else:
+                if subsample_dir is not None:
+                    investigate_btn = QPushButton("View subsample images")
+                    msg_box.addButton(investigate_btn, QMessageBox.ActionRole)
+                    msg_box.exec()
+                    if msg_box.clickedButton() == investigate_btn:
                         if os.name == "posix":
                             subprocess.call(["xdg-open", subsample_dir])
             else:
