@@ -496,7 +496,10 @@ class DataStorage:
         Path:
             Path to the subsample folder
         """
-        return self.main_dir / self.experiment_folder / "sub_sample_imgs"
+        if self.main_dir is not None:
+            return self.main_dir / self.experiment_folder / "sub_sample_imgs"
+        else:
+            raise DataStorageError("DataStorage has not been initialized")
 
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
