@@ -539,21 +539,25 @@ def main():
         status_label.config(text="Sweeping in progress...")
         status_label.config(text="Checking that a flow cell is loaded...")
         root.update()
-        if not pressure_check(pm):
-            messagebox.showinfo(
-                "Error",
-                "Please ensure the CAP module is on and a flow cell is loaded.",
-            )
-            status_label.config(
-                text="Please load a flow cell (with blood) and close the lid."
-            )
+
+        # Skip pressure check and initial pull for the 0 flowrate case
+        # (i.e we want to image nanoparticles which have already been loaded manually)
+        if target_flowrate > 0:
+            if not pressure_check(pm):
+                messagebox.showinfo(
+                    "Error",
+                    "Please ensure the CAP module is on and a flow cell is loaded.",
+                )
+                status_label.config(
+                    text="Please load a flow cell (with blood) and close the lid."
+                )
+                root.update()
+                return
+            status_label.config(text="Pulling RBCs into the field of view...")
             root.update()
-            return
-        status_label.config(text="Pulling RBCs into the field of view...")
-        root.update()
-        pm.setDutyCycle(pm.getMinDutyCycle())
-        sleep(PNEUMATIC_PULL_TIME_S)  # Allow cells to enter
-        pm.setDutyCycle(pm.getMaxDutyCycle())
+            pm.setDutyCycle(pm.getMinDutyCycle())
+            sleep(PNEUMATIC_PULL_TIME_S)  # Allow cells to enter
+            pm.setDutyCycle(pm.getMaxDutyCycle())
         set_brightness(autobrightness)
 
         progress["value"] = 0
