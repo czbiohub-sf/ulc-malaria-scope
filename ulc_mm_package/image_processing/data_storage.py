@@ -488,13 +488,13 @@ class DataStorage:
             img_path = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
             write_img(img, img_path)
 
-    def get_subsample_folder_path(self) -> str:
+    def get_subsample_folder_path(self) -> Path:
         """Get the path to the subsample folder.
 
         Returns
         -------
-        str:
-            Path as a string
+        Path:
+            Path to the subsample folder
         """
         return self.main_dir / self.experiment_folder / "sub_sample_imgs"
 
