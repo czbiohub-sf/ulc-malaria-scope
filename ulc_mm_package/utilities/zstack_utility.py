@@ -696,12 +696,17 @@ def parse_args():
         type=int,
         help="Number of images to capture at each motor position during the sweep. Default: 2",
     )
+
+    # Get all flowrate options and add the no-flow option as well
+    flowrate_options = [f.value for f in processing_constants.FLOWRATE]
+    flowrate_options.append(0.0)  # Add no-flow option
+
     parser.add_argument(
         "--flowrate",
         "-f",
         default=processing_constants.FLOWRATE.MEDIUM.value,
         type=float,
-        choices=[f.value for f in processing_constants.FLOWRATE],
+        choices=flowrate_options,
         help="Target flowrate (μL/min). Choices: "
         + ", ".join(str(f.value) for f in processing_constants.FLOWRATE),
     )
