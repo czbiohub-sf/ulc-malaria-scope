@@ -488,6 +488,16 @@ class DataStorage:
             img_path = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
             write_img(img, img_path)
 
+    def get_subsample_folder_path(self) -> str:
+        """Get the path to the subsample folder.
+
+        Returns
+        -------
+        str:
+            Path as a string
+        """
+        return self.main_dir / self.experiment_folder / "sub_sample_imgs"
+
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
 
@@ -499,7 +509,7 @@ class DataStorage:
         if self.zw.store is not None:
             assert self.main_dir is not None, "DataStorage has not been initialized"
             try:
-                dir_path = self.main_dir / self.experiment_folder / "sub_sample_imgs"
+                dir_path = self.get_subsample_folder_path()
                 dir_path.mkdir(exist_ok=True)
                 return str(dir_path)
             except Exception as e:

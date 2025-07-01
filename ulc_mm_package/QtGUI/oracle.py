@@ -77,6 +77,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
+from PyQt5.QtWidgets import QPushButton
 
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
@@ -777,7 +778,7 @@ class Oracle(Machine):
         # Display QC results if available
         # An Enum would be great but `pyqtsignal` on PyQt5 does not support Enums
         # and a workaround would be uglier
-        if run_qc_status:
+        if run_qc_status is not None:
             if run_qc_status == QC_STATUS.GOOD.value:
                 self.display_message(
                     QMessageBox.Icon.Information,
@@ -786,15 +787,48 @@ class Oracle(Machine):
                     buttons=Buttons.OK,
                 )
             elif run_qc_status == QC_STATUS.POOR.value:
-                self.display_message(
-                    QMessageBox.Icon.Critical,
-                    "Run Quality: POOR",
-                    "❌ The run quality is POOR.\n\nPlease RE-RUN THE SAMPLE to ensure valid results.",
-                    buttons=Buttons.OK,
+                # Add a custom button labeled 'Investigate images'
+                investigate_btn = msg_box = None
+
+                msg_box = NoCloseMessageBox()
+                msg_box.setWindowIcon(QIcon(ICON_PATH))
+                msg_box.setIcon(QMessageBox.Icon.Critical)
+                msg_box.setWindowTitle("Run Quality: POOR")
+                msg_box.setText(
+                    "❌ The run quality is POOR.\n\nPlease RE-RUN THE SAMPLE to ensure valid results."
                 )
+                msg_box.setDetailedText(
+                    (
+                        "Open the run's subsample images to investigate its quality. The QC result is usually indicative of image quality, however "
+                        "in cases where the images are unusual for another reason (anemia, SCD, other hemoglobinopathies), the QC result may not be accurate."
+                    )
+                )
+
+                # Ok button
+                msg_box.addButton(QMessageBox.Ok)
+
+                # Add button to open subsample images
+                investigate_btn = QPushButton("Investigate images")
+                msg_box.addButton(investigate_btn, QMessageBox.ActionRole)
+                msg_box.exec()
+                if msg_box.clickedButton() == investigate_btn:
+                    # Path to the subsample images directory
+                    subsample_dir = os.path.join(
+                        self.ext_dir, self.datetime_str, "subsample_images"
+                    )
+                    subsample_dir = (
+                        self.scopeop.mscope.data_storage.get_subsample_folder_path()
+                    )
+                    if not os.path.exists(subsample_dir):
+                        self.logger.error(
+                            f"Subsample images directory does not exist: {subsample_dir}"
+                        )
+                    else:
+                        if os.name == "posix":
+                            subprocess.call(["xdg-open", subsample_dir])
             else:
                 raise ValueError(
-                    f"Invalid run_qc_status: {run_qc_status}. Expected 'good', 'passable', or 'poor'."
+                    f"Invalid run_qc_status: {run_qc_status}. Expected 'good' or 'poor'."
                 )
 
         self.display_message(
