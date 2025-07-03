@@ -998,7 +998,7 @@ class ScopeOp(QObject, NamedMachine):
         # ------------------------------------
         # Run periodic autobrightness routine
         # ------------------------------------
-        curr_mean_pixel_val = self.periodic_autobrightness_routine.send(img_ds_10x)
+        curr_mean_pixel_val = self.periodic_autobrightness_routine.send(resized_img)
 
         # ------------------------------------
         # Update remaining metadata in per-image csv and log
