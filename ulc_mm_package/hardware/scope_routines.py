@@ -348,7 +348,7 @@ class Routines:
         # Turn the led on to max and acquire an image
         mscope.led.turnOn()
         mscope.led.setDutyCycle(1)
-        sleep(0.25)
+        sleep(0.75)
         img_on = yield
         checkLedWorking(img_off, img_on, n_devs=3)
 
