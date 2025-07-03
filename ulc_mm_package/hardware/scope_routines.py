@@ -30,11 +30,9 @@ from ulc_mm_package.hardware.pneumatic_module import (
 from ulc_mm_package.hardware.motorcontroller import Direction, MotorControllerError
 from ulc_mm_package.hardware.hardware_constants import (
     MIN_PRESSURE_DIFF,
-    FOCUS_EWMA_ALPHA,
 )
 from ulc_mm_package.image_processing.classic_focus import OOF, ClassicImageFocus
 from ulc_mm_package.neural_nets.NCSModel import AsyncInferenceResult
-from ulc_mm_package.image_processing.ewma_filtering_utils import EWMAFiltering
 
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 import ulc_mm_package.image_processing.processing_constants as processing_constants
