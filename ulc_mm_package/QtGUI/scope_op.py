@@ -1005,11 +1005,7 @@ class ScopeOp(QObject, NamedMachine):
         t0 = perf_counter()
         resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         try:
-            (
-                raw_focus_err,
-                filtered_focus_err,
-                focus_adjustment,
-            ) = self.PSSAF_routine.send(resized_img)
+            motor_adjustment_steps = self.PSSAF_routine.send(resized_img)
         except MotorControllerError as e:
             if not SIMULATION:
                 self.logger.error(
@@ -1026,15 +1022,14 @@ class ScopeOp(QObject, NamedMachine):
                 self.logger.warning(
                     f"Ignoring periodic SSAF exception in simulation mode - {e}"
                 )
-                raw_focus_err = None
 
                 self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
 
         t1 = perf_counter()
         self._update_metadata_if_verbose("pssaf", t1 - t0)
 
-        if filtered_focus_err is not None:
-            self.filtered_focus_err = filtered_focus_err
+        if motor_adjustment_steps is not None:
+            self.filtered_focus_err = motor_adjustment_steps
 
         # ------------------------------------
         # Get classic image sharpness metric
@@ -1094,15 +1089,11 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["flowrate"] = (
             round(self.flowrate, 4) if self.flowrate is not None else self.flowrate
         )
-        self.img_metadata["focus_error"] = (
-            round(raw_focus_err, 4) if raw_focus_err is not None else raw_focus_err
-        )
         self.img_metadata["filtered_focus_error"] = (
-            round(filtered_focus_err, 4)
-            if filtered_focus_err is not None
-            else filtered_focus_err
+            round(motor_adjustment_steps, 4)
+            if motor_adjustment_steps is not None
+            else motor_adjustment_steps
         )
-        self.img_metadata["focus_adjustment"] = focus_adjustment
         self.img_metadata["classic_sharpness_ratio"] = (
             round(sharpness_ratio_rel_peak, 4)
             if sharpness_ratio_rel_peak is not None

@@ -19,6 +19,7 @@ AF_PERIOD_NUM = int(
     AF_PERIOD_S * ACQUISITION_FPS
 )  # Used for periodic (ie. EWMA) autofocus
 AF_BATCH_SIZE = 20  # Used for single shot autofocus
+AF_BATCH_PERIOD_IN_FRAMES = 100
 
 AF_THRESHOLD = 2
 AF_QSIZE = 25

@@ -90,91 +90,61 @@ class Routines:
     @init_generator
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope
-    ) -> Generator[
-        Tuple[Optional[float], Optional[float], Optional[bool]], np.ndarray, None
-    ]:
-        """Periodic autofocus calculations with EWMA filtering
+    ) -> Generator[Optional[int], np.ndarray, None]:
+        """
+        Periodic autofocus calculations by batching N images and making an adjustment every Y frames.
 
-        This function adds a simple time wrapper around the autofocus model and EWMA filter
-        such that inferences and motor adjustments are done every `AF_PERIOD_NUM' frames.
+        This function collects a batch of images (batch_size=N), runs the autofocus model on the batch
+        every Y frames, and then makes a motor adjustment based on the average result.
 
-        When not making an adjustment, this Generator yields None. After an adjustment has been completed, the next
-        `.send(img)` will yield a float value.
-
-        The caller of this function should have an isinstance(float) or isinstance(None) check to the output received.
-
-        Returns
+        Yields
         -------
-        None:
-            In between periods, images are not being sent to SSAF.
-        int:
-            Number of motor steps taken, returned after an image has been sent once
-            AF_PERIOD_NUM frames have elapsed since the last adjustment.
+        Optional[int]:
+            If the autofocus model is not ready to run, it yields None. Otherwise, it yields the number of motor steps taken
         """
 
-        filtered_error = 0.0
-        img_counter = 0
-        throttle_counter = 0
-        move_counter = 0
+        batch_size = nn_constants.AF_BATCH_SIZE  # Number of images per batch
+        adjust_period = (
+            nn_constants.AF_BATCH_PERIOD_IN_FRAMES
+        )  # Number of frames between adjustments
+        results_batch: List[float] = []
+        frame_counter = 0
+        steps_to_move = None
 
-        adjusted = None
-        steps_from_focus = None
-
-        # reset the autofocus in case we got here fm. classic focus restarting us to this point.
-        # we want to make sure we don't pollute the new PSSAF w/ old data
         mscope.autofocus_model.reset(wait_for_jobs=False)
 
-        ssaf_filter = EWMAFiltering(FOCUS_EWMA_ALPHA)
-        ssaf_filter.set_init_val(0)
-
-        ssaf_period_num = ssaf_filter.get_adjustment_period_ewma()
-        self.logger.info(
-            f"Minimum SSAF adjustment period = {ssaf_period_num} measurements"
-        )
-
         while True:
-            throttle_counter += 1
-            if throttle_counter >= nn_constants.AF_PERIOD_NUM:
-                img_counter += 1
-                img = yield steps_from_focus, filtered_error, adjusted
-                adjusted = False
+            frame_counter += 1
+            img = yield steps_to_move
+            if frame_counter % adjust_period == 0:
+                for idx in range(batch_size):
+                    img = yield steps_to_move
 
-                # if mscope.autofocus_model._executor._work_queue.full(), this will block
-                # until an element is removed from the queue
-                # TODO watch performance, if blocking a lot then we must subclass ThreadPoolExecutor and change
-                # https://github.com/python/cpython/blob/a712c5f42d5904e1a1cdaf11bd1f05852cfdd830/Lib/concurrent/futures/thread.py#L175
-                # to `put_nowait`
-                mscope.autofocus_model.asyn(img, img_counter)
-                results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
+                    # Start adding images to the batch
+                    mscope.autofocus_model.asyn(img, frame_counter + idx)
 
-                for res in sorted(results, key=lambda res: res.id):
-                    move_counter += 1
-
-                    steps_from_focus = res.result.item()
-                    filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
-
-                throttle_counter = 0
-
-                if (
-                    move_counter >= ssaf_period_num
-                    and abs(filtered_error) > nn_constants.AF_THRESHOLD
-                ):
-                    steps_to_move = -round(filtered_error)
-                    self.logger.info(
-                        f"Adjusted focus by {steps_to_move:.2f} steps after {move_counter} measurements"
+                while len(results_batch) < batch_size:
+                    # Run autofocus model on the batch
+                    results = mscope.autofocus_model.get_asyn_results()
+                    results_batch.extend(
+                        [
+                            x.result.item()
+                            for x in sorted(results, key=lambda res: res.id)
+                        ]
                     )
-                    move_counter = 0
-                    adjusted = True
+                    img = yield steps_to_move
 
-                    try:
-                        dir = Direction.CW if steps_to_move > 0 else Direction.CCW
-                        mscope.motor.threaded_move_rel(
-                            dir=dir, steps=abs(steps_to_move)
-                        )
-                    except MotorControllerError as e:
-                        raise e
-            else:
-                _ = yield None, None, None
+                steps_to_move = -round(np.mean(results_batch))
+                try:
+                    dir = Direction.CW if steps_to_move > 0 else Direction.CCW
+                    mscope.motor.threaded_move_rel(dir=dir, steps=abs(steps_to_move))
+                    img = yield steps_to_move
+                    steps_to_move = None
+                    results_batch.clear()
+                except MotorControllerError as e:
+                    steps_to_move = None
+                    results_batch.clear()
+                    raise e
 
     @init_generator
     def classic_focus_routine(
