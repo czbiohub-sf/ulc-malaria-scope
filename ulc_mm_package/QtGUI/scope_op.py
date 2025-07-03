@@ -922,43 +922,6 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("yogo_result_mgmt", t1 - t0)
 
         # ------------------------------------
-        # Run periodic singleshot autofocus routine
-        # ------------------------------------
-        t0 = perf_counter()
-        resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
-        try:
-            (
-                raw_focus_err,
-                filtered_focus_err,
-                focus_adjustment,
-            ) = self.PSSAF_routine.send(resized_img)
-        except MotorControllerError as e:
-            if not SIMULATION:
-                self.logger.error(
-                    "Autofocus failed. Can't achieve focus within focal range."
-                )
-                self.default_error.emit(
-                    "Closed loop control failed",
-                    "Unable to achieve desired focus within focal range.",
-                    ERROR_BEHAVIORS.RELOAD.value,
-                    QR.NONE.value,
-                )
-                return
-            else:
-                self.logger.warning(
-                    f"Ignoring periodic SSAF exception in simulation mode - {e}"
-                )
-                raw_focus_err = None
-
-                self.PSSAF_routine = self.routines.periodicAutofocusWrapper(self.mscope)
-
-        t1 = perf_counter()
-        self._update_metadata_if_verbose("pssaf", t1 - t0)
-
-        if filtered_focus_err is not None:
-            self.filtered_focus_err = filtered_focus_err
-
-        # ------------------------------------
         # Get classic image sharpness metric
         # ------------------------------------
         t0 = perf_counter()
@@ -968,6 +931,10 @@ class ScopeOp(QObject, NamedMachine):
             # Returns the ratio of the current sharpness metric over the best seen
             # so far
             sharpness_ratio_rel_peak = self.classic_focus_routine.send(img_ds_10x)
+            if self.frame_count % 1000 == 0:
+                raise OOF(
+                    "Classic focus metric: re-running classic stack since 1000 frames have passed."
+                )
         except OOF as e:
             self.logger.warning(
                 f"Strayed too far away from focus, transitioning to cell-finder. {e}"
@@ -993,7 +960,7 @@ class ScopeOp(QObject, NamedMachine):
         # ------------------------------------
         # Run periodic autobrightness routine
         # ------------------------------------
-        curr_mean_pixel_val = self.periodic_autobrightness_routine.send(resized_img)
+        curr_mean_pixel_val = self.periodic_autobrightness_routine.send(img_ds_10x)
 
         # ------------------------------------
         # Update remaining metadata in per-image csv and log
@@ -1016,15 +983,6 @@ class ScopeOp(QObject, NamedMachine):
         self.img_metadata["flowrate"] = (
             round(self.flowrate, 4) if self.flowrate is not None else self.flowrate
         )
-        self.img_metadata["focus_error"] = (
-            round(raw_focus_err, 4) if raw_focus_err is not None else raw_focus_err
-        )
-        self.img_metadata["filtered_focus_error"] = (
-            round(filtered_focus_err, 4)
-            if filtered_focus_err is not None
-            else filtered_focus_err
-        )
-        self.img_metadata["focus_adjustment"] = focus_adjustment
         self.img_metadata["classic_sharpness_ratio"] = (
             round(sharpness_ratio_rel_peak, 4)
             if sharpness_ratio_rel_peak is not None
