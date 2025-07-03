@@ -519,6 +519,7 @@ def main():
         If the target brightness is not achieved, it will show a message box and return.
         """
         status_label.config(text="Adjusting LED brightness...")
+        logger.info("Adjusting LED brightness...")
         root.update()
 
         brightness_achieved = False
