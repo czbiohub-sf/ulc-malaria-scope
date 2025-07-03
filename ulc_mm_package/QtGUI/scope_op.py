@@ -968,7 +968,7 @@ class ScopeOp(QObject, NamedMachine):
             # Returns the ratio of the current sharpness metric over the best seen
             # so far
             sharpness_ratio_rel_peak = self.classic_focus_routine.send(img_ds_10x)
-            if self.frame_count > 0 and self.frame_count % 1000 == 0:
+            if self.frame_count > 0 and self.frame_count % 2000 == 0:
                 self.logger.info(
                     "Running periodic classic stack + 2SSAFs - 1000 frames have passed since the last."
                 )
