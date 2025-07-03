@@ -1006,6 +1006,10 @@ class ScopeOp(QObject, NamedMachine):
         resized_img = cv2.resize(img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC)
         try:
             motor_adjustment_steps = self.PSSAF_routine.send(resized_img)
+            if motor_adjustment_steps is not None:
+                self.logger.info(
+                    f"Periodic single shot autofocus adjustment: {motor_adjustment_steps} steps."
+                )
         except MotorControllerError as e:
             if not SIMULATION:
                 self.logger.error(
