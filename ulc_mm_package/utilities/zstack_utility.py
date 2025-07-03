@@ -526,11 +526,14 @@ def main():
             img, _ = next(camera.yieldImages())
             try:
                 brightness_achieved = autobrightness.runAutobrightness(img)
+                autobrightness.reset()
             except BrightnessTargetNotAchieved:
                 logger.info("Brightness target not achieved but usable. Proceeding...")
-                break
+                autobrightness.reset()
+                return
             except BrightnessCriticallyLow:
                 logger.info("Brightness critically low. Continuing anyway...")
+                autobrightness.reset()
                 return
 
     def start_sweep(n_steps: int = 20, imgs_per_step: int = 2):
