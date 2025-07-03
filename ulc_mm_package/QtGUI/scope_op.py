@@ -972,7 +972,7 @@ class ScopeOp(QObject, NamedMachine):
                 self.logger.info(
                     "Running periodic classic stack + 2SSAFs - 1000 frames have passed since the last."
                 )
-                self._oof_to_motor_sweep()
+                self.oof_to_motor_sweep()
         except OOF as e:
             self.logger.warning(
                 f"Strayed too far away from focus, transitioning to cell-finder. {e}"
