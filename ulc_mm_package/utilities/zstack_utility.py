@@ -519,6 +519,7 @@ def main():
         If the target brightness is not achieved, it will show a message box and return.
         """
         status_label.config(text="Adjusting LED brightness...")
+        logger.info("Adjusting LED brightness...")
         root.update()
 
         brightness_achieved = False
@@ -526,11 +527,14 @@ def main():
             img, _ = next(camera.yieldImages())
             try:
                 brightness_achieved = autobrightness.runAutobrightness(img)
+                autobrightness.reset()
             except BrightnessTargetNotAchieved:
                 logger.info("Brightness target not achieved but usable. Proceeding...")
-                break
+                autobrightness.reset()
+                return
             except BrightnessCriticallyLow:
                 logger.info("Brightness critically low. Continuing anyway...")
+                autobrightness.reset()
                 return
 
     def start_sweep(n_steps: int = 20, imgs_per_step: int = 2):
