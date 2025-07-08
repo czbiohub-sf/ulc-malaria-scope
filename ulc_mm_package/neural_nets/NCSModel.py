@@ -309,7 +309,9 @@ class NCSModel:
         self.asyn_infer_queue.wait_all()
         self._temp_infer_queue.wait_all()
 
-    def reset(self, wait_for_jobs: bool = True) -> List[AsyncInferenceResult]:
+    def reset(
+        self, wait_for_jobs: bool = True
+    ) -> Union[AsyncInferenceResult, List[AsyncInferenceResult]]:
         """
         wait for the NCS's AsyncInferQueue to finish, then reset the
         ThreadPoolExecutor. Note that this will not drop the reference to the NCS.
