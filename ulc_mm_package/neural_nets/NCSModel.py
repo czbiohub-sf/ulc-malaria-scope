@@ -240,7 +240,7 @@ class NCSModel:
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
-    ) -> Union[AsyncInferenceResult, List[AsyncInferenceResult]]:
+    ) -> List[Union[AsyncInferenceResult, List[AsyncInferenceResult]]]:
         """
         Maybe return some asyn_results. Will return an empty list if it can not get the lock
         on results within `timeout`. To disable timeout (i.e. just block indefinitely),
