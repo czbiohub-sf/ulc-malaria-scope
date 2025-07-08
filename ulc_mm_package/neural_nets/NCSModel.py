@@ -91,7 +91,7 @@ class NCSModel:
         self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
         self._asyn_results: List[
-            Union[AsyncInferenceResult, Tuple[AsyncInferenceResult]]
+            Union[AsyncInferenceResult, List[AsyncInferenceResult]]
         ] = []
 
         self._executor = ThreadPoolExecutor(max_workers=1)
