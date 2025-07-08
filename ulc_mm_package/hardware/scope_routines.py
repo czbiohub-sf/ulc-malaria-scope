@@ -157,9 +157,13 @@ class Routines:
 
                 for res in sorted(results, key=lambda res: res[0].id):
                     move_counter += 1
+                    direction_asyn_result = res[0]
+                    mag_asyn_result = res[1]
 
-                    direction = np.argmax(res[0][0]) - 1  # -1, 0, +1
-                    magnitude = np.argmax(res[1][0])
+                    direction = (
+                        np.argmax(direction_asyn_result.result) - 1
+                    )  # Subtract 1 so that it maps to -1, 0, +1
+                    magnitude = np.argmax(mag_asyn_result.result)
                     steps_from_focus = direction * magnitude
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
