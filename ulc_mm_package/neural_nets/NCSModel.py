@@ -16,10 +16,11 @@ from collections import namedtuple
 from typing import (
     Any,
     List,
-    Sequence,
     Optional,
-    Union,
+    Sequence,
+    Tuple,
     TypeVar,
+    Union,
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
@@ -89,7 +90,9 @@ class NCSModel:
         # used for asyn
         self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        self._asyn_results: List[AsyncInferenceResult] = []
+        self._asyn_results: List[
+            AsyncInferenceResult | Tuple[AsyncInferenceResult]
+        ] = []
 
         self._executor = ThreadPoolExecutor(max_workers=1)
 
