@@ -5,6 +5,12 @@ import queue
 from typing import Any, Union, List
 
 import numpy.typing as npt
+from openvino.preprocess import PrePostProcessor
+from openvino.runtime import (
+    Layout,
+    Type,
+    InferRequest,
+)
 
 from ulc_mm_package.neural_nets.NCSModel import (
     NCSModel,
@@ -42,6 +48,27 @@ class AutoFocus(NCSModel):
 
         # Bypass mypy because it dislikes changing the queue type
         self._executor._work_queue = queue.Queue(maxsize=AF_QSIZE)  # type:ignore
+
+    def _preprocess_steps(self, model):
+        """
+        Returns the built model with the necessary pre-post processing steps.
+
+        Parameters
+        ----------
+        model
+
+        Returns
+        -------
+        The result of PrePostProcessor.build()
+        """
+
+        ppp = PrePostProcessor(model)
+        ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
+        ppp.input().model().set_layout(Layout("NCHW"))
+        ppp.output(0).tensor().set_element_type(Type.f16)
+        ppp.output(1).tensor().set_element_type(Type.f16)
+        model = ppp.build()
+        return model
 
     def __call__(self, input_img):
         return self.syn(input_img)
