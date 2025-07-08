@@ -81,8 +81,8 @@ class Routines:
         # The indices of the first output correspond to below/in/above focus.
         # We subtract one so that it maps to -1, 0, +1, and then subsequently take the element-wise product with the
         # magnitude vector to get the number of steps away from focus.
-        above_or_below_vec = np.array([np.argmax(r[0].result) - 1 for r in res])
-        magnitude_vec = np.array([np.argmax(r[1].result) for r in res])
+        above_or_below_vec = np.array([np.argmax(r[0][0]) - 1 for r in res])
+        magnitude_vec = np.array([np.argmax(r[1][0]) for r in res])
         steps_vec = above_or_below_vec * magnitude_vec
 
         steps_to_move = -round(np.mean(steps_vec))
@@ -158,8 +158,8 @@ class Routines:
                 for res in sorted(results, key=lambda res: res[0].id):
                     move_counter += 1
 
-                    direction = np.argmax(res[0].result) - 1  # -1, 0, +1
-                    magnitude = np.argmax(res[1].result)
+                    direction = np.argmax(res[0][0]) - 1  # -1, 0, +1
+                    magnitude = np.argmax(res[1][0])
                     steps_from_focus = direction * magnitude
                     filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
 
