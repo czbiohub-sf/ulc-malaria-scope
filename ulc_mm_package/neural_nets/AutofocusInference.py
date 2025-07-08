@@ -17,6 +17,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     AF_QSIZE,
     MODELS,
 )
+from ulc_mm_package.utilities.lock_utils import lock_timeout
 
 
 class AutoFocus(NCSModel):
@@ -58,6 +59,18 @@ class AutoFocus(NCSModel):
                 ),
             ]
         )
+
+    def _default_callback(self, infer_request: InferRequest, userdata: Any) -> None:
+        r = [
+            AsyncInferenceResult(
+                id=userdata, result=infer_request.output_tensors[0].data.copy()
+            ),
+            AsyncInferenceResult(
+                id=userdata, result=infer_request.output_tensors[1].data.copy()
+            ),
+        ]
+        with lock_timeout(self.asyn_result_lock):
+            self._asyn_results.append(r)
 
     def syn(
         self, input_imgs: Union[npt.NDArray, List[npt.NDArray]], sort: bool = False

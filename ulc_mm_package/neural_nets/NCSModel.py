@@ -107,11 +107,19 @@ class NCSModel:
         The result of PrePostProcessor.build()
         """
 
-        if model_type == MODELS.AUTOFOCUS or model_type == MODELS.YOGO:
+        if model_type == MODELS.YOGO:
             ppp = PrePostProcessor(model)
             ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
             ppp.input().model().set_layout(Layout("NCHW"))
             ppp.output().tensor().set_element_type(Type.f16)
+            model = ppp.build()
+            return model
+        elif model_type == MODELS.AUTOFOCUS:
+            ppp = PrePostProcessor(model)
+            ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
+            ppp.input().model().set_layout(Layout("NCHW"))
+            ppp.output(0).tensor().set_element_type(Type.f16)
+            ppp.output(1).tensor().set_element_type(Type.f16)
             model = ppp.build()
             return model
         elif model_type == MODELS.QC:
