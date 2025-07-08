@@ -779,10 +779,7 @@ class ScopeOp(QObject, NamedMachine):
 
         if not self.autofocus_done:
             if len(self.autofocus_batch) < AF_BATCH_SIZE:
-                resized_img = cv2.resize(
-                    img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
-                )
-                self.autofocus_batch.append(resized_img)
+                self.autofocus_batch.append(img)
 
                 if self.running:
                     self.img_signal.connect(self.run_autofocus)
@@ -1009,7 +1006,7 @@ class ScopeOp(QObject, NamedMachine):
                 raw_focus_err,
                 filtered_focus_err,
                 focus_adjustment,
-            ) = self.PSSAF_routine.send(resized_img)
+            ) = self.PSSAF_routine.send(img)
         except MotorControllerError as e:
             if not SIMULATION:
                 self.logger.error(
