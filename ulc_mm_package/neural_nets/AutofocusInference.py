@@ -15,7 +15,6 @@ from openvino.runtime import (
 from ulc_mm_package.neural_nets.NCSModel import (
     NCSModel,
     AsyncInferenceResult,
-    InferRequest,
 )
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
