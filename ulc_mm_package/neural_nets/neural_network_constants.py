@@ -23,7 +23,7 @@ AF_BATCH_SIZE = 20  # Used for single shot autofocus
 AF_THRESHOLD = 2
 AF_QSIZE = 25
 
-AUTOFOCUS_MODEL_NAME = "fast-cosmos-557"
+AUTOFOCUS_MODEL_NAME = "2025-07-08_085922"
 AUTOFOCUS_MODEL_DIR = str(
     curr_dir / "autofocus_model_files" / AUTOFOCUS_MODEL_NAME / "best.xml"
 )
