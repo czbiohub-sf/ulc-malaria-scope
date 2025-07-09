@@ -164,7 +164,7 @@ class Routines:
                         np.argmax(direction_asyn_result.result) - 1
                     )  # Subtract 1 so that it maps to -1, 0, +1
                     magnitude = np.argmax(mag_asyn_result.result)
-                    mag_conf = mag_asyn_result.result[magnitude]
+                    mag_conf = mag_asyn_result.result[0][magnitude]
                     if mag_conf >= nn_constants.MAG_CONF_THRESH:
                         steps_from_focus = direction * magnitude
                         filtered_error = ssaf_filter.update_and_get_val(
