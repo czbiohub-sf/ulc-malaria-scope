@@ -74,7 +74,7 @@ cpu = CPUTemperature()
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # Qt GUI Files
-_UI_FILE_DIR = "dev_run.ui"
+_UI_FILE_DIR = os.path.join(os.path.dirname(__file__), "dev_run.ui")
 
 
 class ApplicationError(Exception):
@@ -468,8 +468,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             retval = self._displayMessageBox(
                 QtWidgets.QMessageBox.Icon.Critical,
                 "Error - harddrive not detected.",
-                "ERROR! No external harddrive / SSD detected. Press OK to close the application.",
-                cancel=False,
+                "ERROR! No external harddrive / SSD detected. Press OK to close the application, cancel to continue anyway.",
+                cancel=True,
             )
             if retval == QtWidgets.QMessageBox.Ok:
                 quit()
