@@ -74,6 +74,7 @@ cpu = CPUTemperature()
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # Qt GUI Files
+os.chdir(os.path.dirname(__file__))
 _UI_FILE_DIR = os.path.join(os.path.dirname(__file__), "dev_run.ui")
 
 
@@ -473,6 +474,8 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             )
             if retval == QtWidgets.QMessageBox.Ok:
                 quit()
+            else:
+                self.external_dir = None
 
         # List hardware components
         self.acquisitionThread = None
@@ -682,6 +685,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.acquisitionThread.update_liveview = 1
 
     def btnSnapHandler(self):
+        if self.external_dir is None:
+            _ = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Critical,
+                "Error - no external harddrive detected.",
+                "ERROR! No external harddrive / SSD detected. Connect an SSD and restart the application if you want to save images.",
+                cancel=False,
+            )
+            return
+
         if self.recording:
             self.recording = False
             self.acquisitionThread.continuous_save = False
@@ -945,6 +957,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.updateMotorPos = True
 
     def btnFullZStackHandler(self):
+        if self.external_dir is None:
+            _ = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Critical,
+                "Error - no external harddrive detected.",
+                "ERROR! No external harddrive / SSD detected. Connect an SSD and restart the application if you want to save z-stacks.",
+                cancel=False,
+            )
+            return
+
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Full Range ZStack",
@@ -957,6 +978,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.acquisitionThread.runFullZStack()
 
     def btnLocalZStackHandler(self):
+        if self.external_dir is None:
+            _ = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Critical,
+                "Error - no external harddrive detected.",
+                "ERROR! No external harddrive / SSD detected. Connect an SSD and restart the application if you want to save images.",
+                cancel=False,
+            )
+            return
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Local Vicinity ZStack",
