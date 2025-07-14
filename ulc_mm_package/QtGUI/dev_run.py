@@ -74,6 +74,7 @@ cpu = CPUTemperature()
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # Qt GUI Files
+os.chdir(__file__)
 _UI_FILE_DIR = os.path.join(os.path.dirname(__file__), "dev_run.ui")
 
 
