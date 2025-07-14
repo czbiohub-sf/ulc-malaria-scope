@@ -276,15 +276,6 @@ class AcquisitionThread(QThread):
         self.camera.exposureTime_ms = exposure
 
     def takeImage(self):
-        if self.external_dir is None:
-            _ = self._displayMessageBox(
-                QtWidgets.QMessageBox.Icon.Critical,
-                "Error - no external harddrive detected.",
-                "ERROR! No external harddrive / SSD detected. Connect an SSD and restart the application if you want to save images.",
-                cancel=False,
-            )
-            return
-
         if self.main_dir is None:
             self.data_storage.createTopLevelFolder(
                 self.external_dir, datetime.now().strftime(DATETIME_FORMAT)
@@ -693,6 +684,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.acquisitionThread.update_liveview = 1
 
     def btnSnapHandler(self):
+        if self.external_dir is None:
+            _ = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Critical,
+                "Error - no external harddrive detected.",
+                "ERROR! No external harddrive / SSD detected. Connect an SSD and restart the application if you want to save images.",
+                cancel=False,
+            )
+            return
+
         if self.recording:
             self.recording = False
             self.acquisitionThread.continuous_save = False
