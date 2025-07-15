@@ -22,7 +22,7 @@ import board
 import pigpio
 import adafruit_mprls
 
-from ulc_mm_package.scope_constants import CONFIGURATION_FILE
+from ulc_mm_package.scope_constants import PNEUMATIC_CONFIGURATION_FILE
 from ulc_mm_package.utilities.lock_utils import lock_no_block
 from ulc_mm_package.hardware.hardware_constants import (
     SERVO_5V_PIN,
@@ -107,7 +107,7 @@ class PneumaticModule:
 
     def config_exists(self) -> bool:
         """Check for the existence of a configuration file."""
-        if Path(CONFIGURATION_FILE).is_file():
+        if Path(PNEUMATIC_CONFIGURATION_FILE).is_file():
             return True
         return False
 
@@ -117,8 +117,8 @@ class PneumaticModule:
             config = configparser.ConfigParser()
             try:
                 assert (
-                    len(config.read(f"{CONFIGURATION_FILE}")) > 0
-                ), f"configparser failed to read file {CONFIGURATION_FILE}."
+                    len(config.read(f"{PNEUMATIC_CONFIGURATION_FILE}")) > 0
+                ), f"configparser failed to read file {PNEUMATIC_CONFIGURATION_FILE}."
                 min_duty_cycle = float(config["SYRINGE"]["MIN_DUTY_CYCLE"])
                 max_duty_cycle = float(config["SYRINGE"]["MAX_DUTY_CYCLE"])
                 step_size = float(config["SYRINGE"]["DUTY_CYCLE_STEP"])
@@ -136,7 +136,7 @@ class PneumaticModule:
                 return min_duty_cycle, max_duty_cycle, step_size
             except Exception as e:
                 self.logger.error(
-                    f"Error encountered while reading syringe min/max from the config file, {CONFIGURATION_FILE}. Setting defaults instead.\nException: {e}"
+                    f"Error encountered while reading syringe min/max from the config file, {PNEUMATIC_CONFIGURATION_FILE}. Setting defaults instead.\nException: {e}"
                 )
                 return (
                     DEFAULT_SYRINGE_MIN_DUTY_CYCLE,
@@ -145,7 +145,7 @@ class PneumaticModule:
                 )
         else:
             self.logger.warning(
-                f"{CONFIGURATION_FILE} was not found, using default values instead for syringe min/max duty cycle."
+                f"{PNEUMATIC_CONFIGURATION_FILE} was not found, using default values instead for syringe min/max duty cycle."
             )
             return (
                 DEFAULT_SYRINGE_MIN_DUTY_CYCLE,
