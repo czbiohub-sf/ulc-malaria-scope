@@ -48,7 +48,7 @@ class AutoFocus(NCSModel):
         # Bypass mypy because it dislikes changing the queue type
         self._executor._work_queue = queue.Queue(maxsize=AF_QSIZE)  # type:ignore
 
-    def _preprocess_steps(self, model):
+    def _preprocess_steps(self, model, *args):
         """
         Returns the built model with the necessary pre-post processing steps.
 
