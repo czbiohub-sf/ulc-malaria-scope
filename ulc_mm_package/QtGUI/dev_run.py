@@ -469,13 +469,13 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             retval = self._displayMessageBox(
                 QtWidgets.QMessageBox.Icon.Critical,
                 "Error - harddrive not detected.",
-                "ERROR! No external harddrive / SSD detected. Press OK to close the application, cancel to continue anyway.",
+                "ERROR! No external harddrive / SSD detected. Press OK to continue, cancel to quit.",
                 cancel=True,
             )
             if retval == QtWidgets.QMessageBox.Ok:
-                quit()
-            else:
                 self.external_dir = None
+            else:
+                quit()
 
         # List hardware components
         self.acquisitionThread = None
