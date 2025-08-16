@@ -112,6 +112,7 @@ class DataStorage:
         ext_dir: str,
         custom_experiment_name: str,
         datetime_str: str,
+        time_str: str,
         experiment_initialization_metadata: Dict,
         per_image_metadata_keys: list,
     ):
@@ -136,7 +137,7 @@ class DataStorage:
         assert self.main_dir is not None
 
         # Create per-image metadata file
-        self.time_str = datetime.now().strftime(DATETIME_FORMAT)
+        self.time_str = time_str
         self.experiment_folder = self.time_str + f"_{custom_experiment_name}"
 
         # Keep experiment metadata

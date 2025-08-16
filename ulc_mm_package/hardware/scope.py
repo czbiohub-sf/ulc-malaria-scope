@@ -28,7 +28,6 @@ from ulc_mm_package.hardware.motorcontroller import (
     Direction,
     MotorControllerError,
 )
-from ulc_mm_package.hardware.rtc_d23231m import RTC_DS3231M, RTCError
 from ulc_mm_package.hardware.led_driver_tps54201ddct import LED_TPS5420TDDCT, LEDError
 from ulc_mm_package.hardware.pim522_rotary_encoder import (
     PIM522RotaryEncoder,
@@ -62,7 +61,6 @@ class GPIOEdge(Enum):
 
 
 class Components(Enum):
-    RTC = auto()
     MOTOR = auto()
     CAMERA = auto()
     PNEUMATIC_MODULE = auto()
@@ -81,7 +79,6 @@ class MalariaScope:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-        self.rtc_enabled = False
         self.motor_enabled = False
         self.camera_enabled = False
         self.pneumatic_module_enabled = False
@@ -95,7 +92,6 @@ class MalariaScope:
         self.predictions_handler_enabled = False
 
         # Initialize Components
-        self._init_rtc()
         self._init_motor()
         self._init_camera()
         self._init_pneumatic_module()
@@ -183,7 +179,6 @@ class MalariaScope:
         """
 
         return {
-            Components.RTC: self.rtc_enabled,
             Components.MOTOR: self.motor_enabled,
             Components.CAMERA: self.camera_enabled,
             Components.PNEUMATIC_MODULE: self.pneumatic_module_enabled,
@@ -197,14 +192,6 @@ class MalariaScope:
             Components.PREDICTIONS_HANDLER: self.predictions_handler_enabled,
         }
     
-    def _init_rtc(self):
-        try:
-            self.logger.info("Initializing RTC...")
-            self.rtc = RTC_DS3231M()
-            self.rtc_enabled = True
-        except RTCError as e:
-            self.logger.error(f"RTC_DS3231M initialization failed. {e}")
-
     def _init_motor(self):
         # Create motor w/ default pins/settings (full step)
         try:

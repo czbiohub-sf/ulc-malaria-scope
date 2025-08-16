@@ -32,7 +32,7 @@ class RTC_DS3231M:
     
 
 if __name__ == "__main__":
-    rtc = RTC()
+    rtc = RTC_DS3231M()
     rtc.sync()
 
     print("Raspberry Pi=\t" + time.strftime("%Y-%m-%d %H:%M:%S"))
