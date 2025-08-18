@@ -129,6 +129,7 @@ class Oracle(Machine):
 
         # Save startup datetime
         self.datetime_str = self.get_datetime()
+        self.datetime_obj = datetime.strptime(self.datetime_str, DATETIME_FORMAT)
 
         # Instantiate message dialog
         self.message_window = NoCloseMessageBox()
@@ -155,7 +156,7 @@ class Oracle(Machine):
         self.logger.info("STARTING ORACLE.")
 
         # Instantiate GUI windows
-        self.form_window = FormGUI(self.datetime_str)
+        self.form_window = FormGUI(self.datetime_obj)
         self.liveview_window = LiveviewGUI()
 
         # Check lock and tcp tunnel
