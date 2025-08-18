@@ -155,7 +155,7 @@ class Oracle(Machine):
         self.logger.info("STARTING ORACLE.")
 
         # Instantiate GUI windows
-        self.form_window = FormGUI()
+        self.form_window = FormGUI(self.datetime_str)
         self.liveview_window = LiveviewGUI()
 
         # Check lock and tcp tunnel

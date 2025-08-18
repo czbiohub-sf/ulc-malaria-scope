@@ -5,6 +5,7 @@ Takes user input and exports experiment metadata.
 """
 
 import sys
+import datetime
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -204,7 +205,7 @@ class FormGUI(QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    gui = FormGUI()
+    gui = FormGUI(datetime.datetime.now())
     gui.exit_btn.clicked.connect(gui.close)
 
     print(gui.get_form_input())
