@@ -28,13 +28,13 @@ class RTC_DS3231M:
 
     def get_time(self):
         datetime = self.rtc.read_datetime()
-        return datetime.strfrtime(DATETIME_FORMAT)
+        return datetime.strftime(DATETIME_FORMAT)
     
 
 if __name__ == "__main__":
     rtc = RTC_DS3231M()
-    rtc.sync()
+    rtc.write_now()
 
     print("Raspberry Pi=\t" + time.strftime("%Y-%m-%d %H:%M:%S"))
-    print("DS3231=\t\t%s" % ds3231.read_datetime())
-    print("DS3231 Temp=", ds3231.getTemp())
+    print("DS3231=\t\t%s" % rtc.read_datetime())
+    print("DS3231 Temp=", rtc.getTemp())
