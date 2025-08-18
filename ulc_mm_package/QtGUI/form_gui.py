@@ -36,10 +36,10 @@ class FormGUI(QDialog):
 
     close_event = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, datetime):
         super().__init__()
 
-        self._load_ui()
+        self._load_ui(datetime)
 
     def closeEvent(self, event):
         if event.spontaneous():
@@ -57,7 +57,7 @@ class FormGUI(QDialog):
             self.sample_storage_temp.setStyleSheet("")
             self.start_btn.setEnabled(True)
 
-    def _load_ui(self):
+    def _load_ui(self, datetime):
         self.setWindowTitle("Experiment form")
 
         # Get screen parameters
@@ -100,12 +100,12 @@ class FormGUI(QDialog):
         self.participant_val = QLineEdit()
 
         # Sample collection date
-        self.sample_collection_date = QDateEdit(QDate.currentDate())
+        self.sample_collection_date = QDateEdit(datetime)
         self.sample_collection_date.setCalendarPopup(True)
         self.sample_collection_date.setDisplayFormat("yyyy-MMM-dd")
 
         # Sample collection time
-        self.sample_collection_time = QTimeEdit(QTime.currentTime())
+        self.sample_collection_time = QTimeEdit(datetime)
         self.sample_collection_time.setDisplayFormat("hh:mm AP")
         self.sample_collection_time.setCalendarPopup(True)
 
