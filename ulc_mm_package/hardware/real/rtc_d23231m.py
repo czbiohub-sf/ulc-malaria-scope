@@ -162,7 +162,7 @@ class RTC_DS3231M():
         """Return a string in the specified datetime format.
         """
         datetime = self.read_datetime()
-        return datetime.strfrtime(format)
+        return datetime.strftime(format)
         
     def write_all(self, seconds=None, minutes=None, hours=None, day=None,
             date=None, month=None, year=None, save_as_24h=True):
