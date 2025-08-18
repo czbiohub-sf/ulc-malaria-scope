@@ -380,7 +380,7 @@ class Oracle(Machine):
 
     def get_datetime(self):
         if self.rtc_enabled:
-            return self.rtc.get_time()
+            return self.rtc.read_strftime(DATETIME_FORMAT)
         else:
             return datetime.now().strftime(DATETIME_FORMAT)
 
