@@ -191,7 +191,7 @@ class MalariaScope:
             Components.GPU: self.gpu_enabled,
             Components.PREDICTIONS_HANDLER: self.predictions_handler_enabled,
         }
-    
+
     def _init_motor(self):
         # Create motor w/ default pins/settings (full step)
         try:
