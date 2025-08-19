@@ -833,7 +833,7 @@ class Oracle(Machine):
         logging.shutdown()
         log_dir = path.join(self.ext_dir, "logs")
         logger_config_path = Path(__file__).resolve().parent.parent / "logger.config"
-        self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
+        self.datetime_str = self.get_datetime()
         fileConfig(
             fname=str(logger_config_path),
             defaults={
