@@ -18,7 +18,7 @@ sudo chmod +x rc.local
 sudo chmod +x dhcpcd.exit-hook
 ```
 
-## Tests
+## Tests (optional)
 
 Reboot after adding the above files to start the RTC before testing.
 
