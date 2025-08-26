@@ -64,7 +64,7 @@ Test the use case where the Pi reconnects to Internet:
 
 Turn on wifi when it was previously off or reboot Pi. Both the system time and RTC time should be correct and can be verified by running `timedatectl`
 
-_NOTE: If you want to overwrite the RTC using the NTP time on the spot, run `sudo hwclock -w`._
+_NOTE: If you ever want to overwrite the RTC using the NTP time on the spot, run `sudo hwclock -w`._
 
 
 ## Supplementary info
