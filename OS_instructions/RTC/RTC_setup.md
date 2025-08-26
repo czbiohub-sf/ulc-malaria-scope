@@ -1,8 +1,10 @@
 # RTC
 
-The OS needs to be correctly configured for the following behavior:
+The RTC ensures the Pi has accurate datetime regardless of Internet connection and power loss. To stay up to date, the RTC also needs to be updated whenever the Pi has correct time via network time protocol (NTP) syncing.
+
+The instructions below configure the OS for the following behavior:
 - If Pi is disconnected from internet at startup: Update system time from RTC
-- If Pi successfully syncs to network time protocol (NTP) via internet: Update RTC from system (NTP) time
+- If Pi successfully syncs to NTP via internet: Update RTC from system (NTP) time
 
 ## Files
 
