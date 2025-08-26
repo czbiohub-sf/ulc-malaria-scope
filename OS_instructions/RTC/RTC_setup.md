@@ -6,7 +6,7 @@ The instructions below configure the OS for the following behavior:
 - If Pi is disconnected from internet at startup: Update system time from RTC
 - If Pi successfully syncs to NTP via internet: Update RTC from system (NTP) time
 
-## Files
+## Setup instructions
 
 The following files need to live in the Pi's `/etc/` directory:
 - `rc.local` sets behavior on boot
