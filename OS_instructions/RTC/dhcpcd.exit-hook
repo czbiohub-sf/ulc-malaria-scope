@@ -1,0 +1,15 @@
+#!/bin/sh
+# Runs after dhcpcd processes a DHCP event.
+# Env vars available: $interface, $reason, $new_ip_address, $new_routers, etc.
+
+# Only act on Wi-Fi and only when we (re)obtained a lease
+if [ "$interface" = "wlan0" ]; then
+  case "$reason" in
+    BOUND|RENEW|REBIND|REBOOT)
+      timedatectl set-ntp true
+      sleep(1)
+      if timedatectl show -p NTPSynchronized | grep -q "yes"; then
+        sudo hwclock --systohc --noadjfile --localtime
+      fi
+  esac
+fi
