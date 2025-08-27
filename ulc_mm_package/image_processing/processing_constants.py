@@ -20,7 +20,7 @@ MIN_ACCEPTABLE_MEAN_BRIGHTNESS = 200
 PERIODIC_AB_PERIOD_NUM_FRAMES = 60  # At 30 fps, this is roughly once per 2 seconds
 
 # Autobrightness PID constants
-AB_PID_KP = 0.001
+AB_PID_KP = 0.0005
 AB_PID_KI = 0.0
 AB_PID_KD = 0.0001
 INTEGRAL_WINDUP_BOUND = 10
