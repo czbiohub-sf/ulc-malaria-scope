@@ -527,7 +527,6 @@ def main():
             img, _ = next(camera.yieldImages())
             try:
                 brightness_achieved = autobrightness.runAutobrightness(img)
-                autobrightness.reset()
             except BrightnessTargetNotAchieved:
                 logger.info("Brightness target not achieved but usable. Proceeding...")
                 autobrightness.reset()
@@ -589,6 +588,30 @@ def main():
             status_label.config(text="Cells found!")
             if target_flowrate > 0:
                 set_flow(flow_control, target_flowrate)
+        except NoCellsFound:
+            result = None
+
+        # Re-run sweep since setting the syringe lifts the flow cell up
+        # when we set the flowrate
+        status_label.config(text="CelFinder post flow...")
+        root.update()
+        collected_images = sweep(
+            camera,
+            motor,
+            led,
+            sweep_range,
+            cell_finder,
+            update_progress,
+            update_image,
+            update_motor_label,
+            n_imgs_per_step=imgs_per_step,
+            save_path=None,
+            collect_images=True,
+        )
+
+        try:
+            result = cell_finder.get_cells_found_position()
+            status_label.config(text="Cells found!")
         except NoCellsFound:
             result = None
 
