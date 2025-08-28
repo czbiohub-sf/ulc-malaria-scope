@@ -26,9 +26,11 @@ sleep(1)
 if timedatectl show -p NTPSynchronized | grep -q "yes"; then
   # Update RTC from system time
   sudo hwclock --systohc --noadjfile --localtime
-else
-  # Update system time from RTC
-  sudo hwclock -s
 fi
+
+# Always update system time from RTC!
+# For some reason this doesn't work in else statement
+timedatectl set-ntp false
+sudo hwclock -s
 
 exit 0
