@@ -43,7 +43,7 @@ Test the use case where there's no Internet connection:
 
 First, turn off NTP sync, otherwise the time will automatically be corrected when `timedatectl` is run.
 ```
-timedatectl ntp-sync false
+timedatectl set-ntp false
 ```
 
 Then, manually write an incorrect date/time to the RTC.
