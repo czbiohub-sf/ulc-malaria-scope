@@ -5,6 +5,7 @@ Takes user input and exports experiment metadata.
 """
 
 import sys
+import datetime
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -36,10 +37,10 @@ class FormGUI(QDialog):
 
     close_event = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, datetime_obj):
         super().__init__()
 
-        self._load_ui()
+        self._load_ui(datetime_obj)
 
     def closeEvent(self, event):
         if event.spontaneous():
@@ -57,7 +58,7 @@ class FormGUI(QDialog):
             self.sample_storage_temp.setStyleSheet("")
             self.start_btn.setEnabled(True)
 
-    def _load_ui(self):
+    def _load_ui(self, datetime_obj):
         self.setWindowTitle("Experiment form")
 
         # Get screen parameters
@@ -100,12 +101,12 @@ class FormGUI(QDialog):
         self.participant_val = QLineEdit()
 
         # Sample collection date
-        self.sample_collection_date = QDateEdit(QDate.currentDate())
+        self.sample_collection_date = QDateEdit(datetime_obj.date())
         self.sample_collection_date.setCalendarPopup(True)
         self.sample_collection_date.setDisplayFormat("yyyy-MMM-dd")
 
         # Sample collection time
-        self.sample_collection_time = QTimeEdit(QTime.currentTime())
+        self.sample_collection_time = QTimeEdit(datetime_obj.time())
         self.sample_collection_time.setDisplayFormat("hh:mm AP")
         self.sample_collection_time.setCalendarPopup(True)
 
@@ -204,7 +205,7 @@ class FormGUI(QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    gui = FormGUI()
+    gui = FormGUI(datetime.datetime.now())
     gui.exit_btn.clicked.connect(gui.close)
 
     print(gui.get_form_input())

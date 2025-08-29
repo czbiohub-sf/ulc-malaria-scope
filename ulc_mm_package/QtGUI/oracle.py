@@ -46,6 +46,7 @@ from ulc_mm_package.scope_constants import (
     SSD_NAME,
     RESEARCH_USE_ONLY,
 )
+from ulc_mm_package.hardware.rtc_d23231m import RTC_DS3231M, RTCError
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.hardware.pneumatic_module import PressureSensorStaleValue
 from ulc_mm_package.image_processing.data_storage import DataStorage
@@ -124,8 +125,11 @@ class Oracle(Machine):
     def __init__(self):
         self.shutoff_done = False
 
+        self._init_rtc()
+
         # Save startup datetime
-        self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
+        self.datetime_str = self.get_datetime()
+        self.datetime_obj = datetime.strptime(self.datetime_str, DATETIME_FORMAT)
 
         # Instantiate message dialog
         self.message_window = NoCloseMessageBox()
@@ -152,7 +156,7 @@ class Oracle(Machine):
         self.logger.info("STARTING ORACLE.")
 
         # Instantiate GUI windows
-        self.form_window = FormGUI()
+        self.form_window = FormGUI(self.datetime_obj)
         self.liveview_window = LiveviewGUI()
 
         # Check lock and tcp tunnel
@@ -167,6 +171,14 @@ class Oracle(Machine):
 
         # Trigger first transition
         self.next_state()
+
+    def _init_rtc(self):
+        try:
+            self.rtc = RTC_DS3231M()
+            self.rtc_enabled = True
+        except RTCError as e:
+            print(f"RTC_DS3231M initialization failed. {e}")
+            self.rtc_enabled = False
 
     def _init_tcp(self):
         self.liveview_window.update_tcp("unavailable")
@@ -366,6 +378,12 @@ class Oracle(Machine):
         if not self.ext_dir:
             self.ssd_full_msg_and_exit()
             sys.exit(1)
+
+    def get_datetime(self):
+        if self.rtc_enabled:
+            return self.rtc.read_strftime(DATETIME_FORMAT)
+        else:
+            return datetime.now().strftime(DATETIME_FORMAT)
 
     def ssd_full_msg_and_exit(self):
         print(
@@ -684,6 +702,7 @@ class Oracle(Machine):
             self.ext_dir,
             "",
             self.datetime_str,
+            self.get_datetime(),
             self.experiment_metadata,
             PER_IMAGE_METADATA_KEYS,
         )
@@ -814,7 +833,7 @@ class Oracle(Machine):
         logging.shutdown()
         log_dir = path.join(self.ext_dir, "logs")
         logger_config_path = Path(__file__).resolve().parent.parent / "logger.config"
-        self.datetime_str = datetime.now().strftime(DATETIME_FORMAT)
+        self.datetime_str = self.get_datetime()
         fileConfig(
             fname=str(logger_config_path),
             defaults={
