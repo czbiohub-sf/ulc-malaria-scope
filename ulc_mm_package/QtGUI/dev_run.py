@@ -1,11 +1,12 @@
+from datetime import datetime, timedelta
+import os
+from os import listdir
+from pathlib import Path
 import sys
 import traceback
 import subprocess
 from typing import Dict
 from time import perf_counter, sleep
-from os import listdir
-from pathlib import Path
-from datetime import datetime, timedelta
 
 import cv2
 import numpy as np
@@ -67,6 +68,7 @@ QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # Qt GUI Files
 curr_dir = Path(__file__).parent.resolve()  # Get full path
+os.chdir(curr_dir)
 _UI_FILE_DIR = curr_dir / "dev_run.ui"
 
 
