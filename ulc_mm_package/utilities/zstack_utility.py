@@ -712,7 +712,7 @@ def parse_args():
     parser.add_argument(
         "--sweep_range_about_center_steps",
         "-s",
-        default=20,
+        default=15,
         type=int,
         help="Number of steps (plus/minus) about the motor position where cells were found. I.e if this value is 15 and cells were found at motor position 450,"
         " the sweep will be from 435 to 465 with step increments of 1. Default: 15",
@@ -720,7 +720,7 @@ def parse_args():
     parser.add_argument(
         "--imgs_per_step",
         "-i",
-        default=2,
+        default=5,
         type=int,
         help="Number of images to capture at each motor position during the sweep. Default: 2",
     )
