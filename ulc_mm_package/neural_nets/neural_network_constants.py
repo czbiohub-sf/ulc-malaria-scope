@@ -1,9 +1,16 @@
+from enum import Enum, auto
 from pathlib import Path
 from typing import Tuple, Dict, List
 
 from ulc_mm_package.scope_constants import ACQUISITION_FPS, CAMERA_SELECTION
 
 curr_dir = Path(__file__).parent.resolve()  # Get full path
+
+
+class MODELS(Enum):
+    AUTOFOCUS = auto()
+    YOGO = auto()
+    QC = auto()
 
 
 # ================ Autofocus constants ================ #
@@ -13,13 +20,15 @@ AF_PERIOD_NUM = int(
 )  # Used for periodic (ie. EWMA) autofocus
 AF_BATCH_SIZE = 20  # Used for single shot autofocus
 
-AF_THRESHOLD = 2
+AF_THRESHOLD = 0
 AF_QSIZE = 25
+MAG_CONF_THRESH = 0
 
-AUTOFOCUS_MODEL_NAME = "fast-cosmos-557"
+AUTOFOCUS_MODEL_NAME = "2025-07-08_085922"
 AUTOFOCUS_MODEL_DIR = str(
     curr_dir / "autofocus_model_files" / AUTOFOCUS_MODEL_NAME / "best.xml"
 )
+AUTOFOCUS_CACHE_DIR = str(curr_dir / "cached_models" / AUTOFOCUS_MODEL_NAME)
 
 if not Path(AUTOFOCUS_MODEL_DIR).exists():
     raise FileNotFoundError("autofocus model not found")
@@ -35,6 +44,7 @@ YOGO_CONF_THRESHOLD = (
 )
 YOGO_MODEL_NAME = "elated-smoke-4492"
 YOGO_MODEL_DIR = str(curr_dir / "yogo_model_files" / YOGO_MODEL_NAME / "best.xml")
+YOGO_MODEL_CACHE_DIR = str(curr_dir / "cached_models" / YOGO_MODEL_NAME)
 
 if not Path(YOGO_MODEL_DIR).exists():
     raise FileNotFoundError("yogo model not found")
@@ -84,3 +94,17 @@ IMG_RESIZED_DIMS = (400, 300)
 # ================ Prediction filtering constants ================ #
 IOU_THRESH = 0.5
 # add constant for min size filtering (by class?)
+
+# ================ QC Model constants ================ #
+QC_MODEL_NAME = "20250209_with_tororo"
+QC_MODEL_DIR = str(curr_dir / "qc_model_files" / QC_MODEL_NAME / "best.xml")
+QC_CACHE_DIR = str(curr_dir / "cached_models" / QC_MODEL_NAME)
+QC_GOODNESS_THRESHOLD = 0.3  # Threshold where scores <= are considered 'good images'
+PERC_OF_IMAGES_GOOD = (
+    0.7  # Percentage of images that should pass QC for a run to be considered 'good'
+)
+
+
+class QC_STATUS(Enum):
+    GOOD = auto()
+    POOR = auto()

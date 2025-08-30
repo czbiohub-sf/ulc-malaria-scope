@@ -5,13 +5,14 @@ It owns all GUI windows, threads, and worker objects (ScopeOp and Acquisition).
 
 """
 
-import os
-import sys
-import traceback
-import socket
 import enum
 import logging
+import os
 import subprocess
+import socket
+import sys
+import traceback
+from typing import Optional
 
 from os import (
     listdir,
@@ -70,11 +71,13 @@ from ulc_mm_package.QtGUI.gui_constants import (
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
     YOGO_MODEL_DIR,
+    QC_STATUS,
 )
 
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
+from PyQt5.QtWidgets import QPushButton
 
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
@@ -762,10 +765,85 @@ class Oracle(Machine):
     def _end_liveview(self, *args):
         self.liveview_window.close()
 
-    def _start_intermission(self, msg=None, parasitemia_vis_path=""):
+    def _start_intermission(
+        self,
+        msg=None,
+        parasitemia_vis_path="",
+        run_qc_status: Optional[int] = None,
+    ):
         if msg is None:
             # Retriggered intermission due to race condition
             return
+
+        # Display QC results if available
+        # An Enum would be great but `pyqtsignal` on PyQt5 does not support Enums
+        # and a workaround would be uglier
+        if run_qc_status is not None:
+            subsample_dir = self.scopeop.mscope.data_storage.get_subsample_folder_path()
+            if not os.path.exists(subsample_dir):
+                self.logger.error(
+                    f"Subsample images directory does not exist: {subsample_dir}"
+                )
+                subsample_dir = None
+            if run_qc_status == QC_STATUS.GOOD.value:
+                # Add a custom button labeled
+                investigate_btn = None
+
+                msg_box = NoCloseMessageBox()
+                msg_box.setWindowIcon(QIcon(ICON_PATH))
+                msg_box.setIcon(QMessageBox.Icon.Information)
+                msg_box.setWindowTitle("Run Quality: GOOD")
+                msg_box.setText("✅ The run quality is GOOD.\n\n")
+
+                # Ok button
+                msg_box.addButton(QMessageBox.Ok)
+
+                # Add button to open subsample images
+                if subsample_dir is not None:
+                    investigate_btn = QPushButton("View subsample images")
+                    msg_box.addButton(investigate_btn, QMessageBox.ActionRole)
+                    msg_box.exec()
+                    if msg_box.clickedButton() == investigate_btn:
+                        # Path to the subsample images directory
+                        subsample_dir = (
+                            self.scopeop.mscope.data_storage.get_subsample_folder_path()
+                        )
+                        if os.name == "posix":
+                            subprocess.call(["xdg-open", subsample_dir])
+
+            elif run_qc_status == QC_STATUS.POOR.value:
+                investigate_btn = None
+
+                msg_box = NoCloseMessageBox()
+                msg_box.setWindowIcon(QIcon(ICON_PATH))
+                msg_box.setIcon(QMessageBox.Icon.Critical)
+                msg_box.setWindowTitle("Run Quality: POOR")
+                msg_box.setText(
+                    "❌ The run quality is POOR.\n\nPlease RE-RUN THE SAMPLE to ensure valid results."
+                )
+                msg_box.setDetailedText(
+                    (
+                        "Open the run's subsample images to investigate its quality. The QC result is usually indicative of image quality, however "
+                        "in cases where the images are unusual for another reason (anemia, SCD, other hemoglobinopathies), the QC result may not be accurate."
+                        "If the images appear in-focus (i.e NOT blurry), and the cells are NOT coagulated, then you do not need to re-run the sample. If you are unsure, please re-run the sample."
+                    )
+                )
+
+                # Ok button
+                msg_box.addButton(QMessageBox.Ok)
+
+                # Add button to open subsample images
+                if subsample_dir is not None:
+                    investigate_btn = QPushButton("View subsample images")
+                    msg_box.addButton(investigate_btn, QMessageBox.ActionRole)
+                    msg_box.exec()
+                    if msg_box.clickedButton() == investigate_btn:
+                        if os.name == "posix":
+                            subprocess.call(["xdg-open", subsample_dir])
+            else:
+                raise ValueError(
+                    f"Invalid run_qc_status: {run_qc_status}. Expected 'good' or 'poor'."
+                )
 
         self.display_message(
             QMessageBox.Icon.Information,

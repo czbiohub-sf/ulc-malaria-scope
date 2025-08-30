@@ -5,6 +5,7 @@ import queue
 import threading
 import numpy as np
 import operator as op
+import os
 import numpy.typing as npt
 
 from copy import copy
@@ -15,13 +16,14 @@ from collections import namedtuple
 from typing import (
     Any,
     List,
-    Sequence,
     Optional,
-    Union,
+    Sequence,
     TypeVar,
+    Union,
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
+from ulc_mm_package.neural_nets.neural_network_constants import MODELS
 
 
 from openvino.preprocess import PrePostProcessor
@@ -66,6 +68,8 @@ class NCSModel:
     def __init__(
         self,
         model_path: str,
+        model_type: MODELS,
+        cache_dir: Optional[str] = None,
     ):
         """
         params:
@@ -73,6 +77,8 @@ class NCSModel:
         """
         self.connected = False
         self.device_name = "MYRIAD"
+        self._cache_dir = cache_dir
+        self._model_type = model_type
         self.model = self._compile_model(model_path)
 
         self.asyn_result_lock = threading.Lock()
@@ -83,9 +89,46 @@ class NCSModel:
         # used for asyn
         self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        self._asyn_results: List[AsyncInferenceResult] = []
+        self._asyn_results: List[
+            Union[AsyncInferenceResult, List[AsyncInferenceResult]]
+        ] = []
 
         self._executor = ThreadPoolExecutor(max_workers=1)
+
+    def _preprocess_steps(self, model, model_type: MODELS):
+        """
+        Returns the built model with the necessary pre-post processing steps.
+
+        Parameters
+        ----------
+        model_type : MODELS
+            The type of the model to preprocess.
+
+        Returns
+        -------
+        The result of PrePostProcessor.build()
+        """
+
+        if model_type == MODELS.YOGO:
+            ppp = PrePostProcessor(model)
+            ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
+            ppp.input().model().set_layout(Layout("NCHW"))
+            ppp.output().tensor().set_element_type(Type.f16)
+            model = ppp.build()
+            return model
+        elif model_type == MODELS.AUTOFOCUS:
+            ppp = PrePostProcessor(model)
+            ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
+            ppp.input().model().set_layout(Layout("NCHW"))
+            ppp.output(0).tensor().set_element_type(Type.f16)
+            ppp.output(1).tensor().set_element_type(Type.f16)
+            model = ppp.build()
+            return model
+        elif model_type == MODELS.QC:
+            # Do the preprocessing on CPU, for QC since
+            # the NCS seems to bungle up the necessary steps
+            # (see `QCInferece.py`'s `_format_image_to_tensor`)
+            return model
 
     def _compile_model(
         self,
@@ -99,13 +142,23 @@ class NCSModel:
             self.core is not None
         ), "initialize a subclass of NCSModel, not NCSModel itself"
 
-        model = self.core.read_model(model_path)
+        # Faster model read if it was previously cached
+        # See: https://docs.openvino.ai/2025/openvino-workflow/running-inference/optimize-inference/optimizing-latency/model-caching-overview.html
+        if os.path.isdir(self._cache_dir):
+            self.core.set_property({"CACHE_DIR": self._cache_dir})
+            model = self.core.read_model(model=model_path)
+            model = self._preprocess_steps(model, self._model_type)
+            compiled_model = self.core.compile_model(
+                model,
+                self.device_name,
+            )
+            return compiled_model
 
-        ppp = PrePostProcessor(model)
-        ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC"))
-        ppp.input().model().set_layout(Layout("NCHW"))
-        ppp.output().tensor().set_element_type(Type.f16)
-        model = ppp.build()
+        model = self.core.read_model(model_path)
+        self.core.set_property({"CACHE_DIR": self._cache_dir})
+        self.core.set_property({"PERFORMANCE_HINT": "THROUGHPUT"})
+
+        model = self._preprocess_steps(model, self._model_type)
 
         err_msg = ""
         connection_attempts = 0
@@ -186,7 +239,7 @@ class NCSModel:
 
     def get_asyn_results(
         self, timeout: Optional[float] = 0.01
-    ) -> List[AsyncInferenceResult]:
+    ) -> List[Union[AsyncInferenceResult, List[AsyncInferenceResult]]]:
         """
         Maybe return some asyn_results. Will return an empty list if it can not get the lock
         on results within `timeout`. To disable timeout (i.e. just block indefinitely),
@@ -255,7 +308,9 @@ class NCSModel:
         self.asyn_infer_queue.wait_all()
         self._temp_infer_queue.wait_all()
 
-    def reset(self, wait_for_jobs: bool = True) -> List[AsyncInferenceResult]:
+    def reset(
+        self, wait_for_jobs: bool = True
+    ) -> List[Union[AsyncInferenceResult, List[AsyncInferenceResult]]]:
         """
         wait for the NCS's AsyncInferQueue to finish, then reset the
         ThreadPoolExecutor. Note that this will not drop the reference to the NCS.

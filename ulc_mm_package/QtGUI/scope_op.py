@@ -5,15 +5,15 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 
 """
 
-import cv2
 import logging
-import numpy as np
 
 from typing import Any
 from time import sleep, perf_counter
-from transitions import Machine, State
 
+import cv2
+import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from transitions import Machine, State
 
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
 from ulc_mm_package.hardware.scope_routines import Routines
@@ -38,7 +38,12 @@ from ulc_mm_package.image_processing.autobrightness import (
     LEDNoPower,
 )
 
-from ulc_mm_package.neural_nets.neural_network_constants import IMG_RESIZED_DIMS
+from ulc_mm_package.neural_nets.neural_network_constants import (
+    IMG_RESIZED_DIMS,
+    QC_GOODNESS_THRESHOLD,
+    QC_STATUS,
+    PERC_OF_IMAGES_GOOD,
+)
 from ulc_mm_package.neural_nets.YOGOInference import YOGO, ClassCountResult
 from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CLASS_LIST,
@@ -84,7 +89,7 @@ class NamedMachine(Machine):
 
 class ScopeOp(QObject, NamedMachine):
     setup_done = pyqtSignal()
-    experiment_done = pyqtSignal(str, str)
+    experiment_done = pyqtSignal(str, str, int)
     reset_done = pyqtSignal()
 
     yield_mscope = pyqtSignal(MalariaScope)
@@ -300,6 +305,34 @@ class ScopeOp(QObject, NamedMachine):
                     ),
                 )
             )
+
+    def run_status_from_qc_results(self, qc_results: np.ndarray) -> QC_STATUS:
+        """Logic for determining whether a run was decent based on the QC results at the end of a run.
+
+        Parameters
+        ----------
+        qc_results : np.ndarray
+            Array of QC results from the QC model.
+
+        Returns
+        -------
+        QC_STATUS
+            Status of the run based on the QC results.
+            - "good" if X% of results are below the QC_GOODNESS_THRESHOLD (i.e considered 'good')
+            - "poor" if Y% of results are above the threshold
+        """
+
+        num_good = (qc_results <= QC_GOODNESS_THRESHOLD).sum()
+        num_total = len(qc_results)
+
+        if num_total == 0:
+            self.logger.warning("No QC results available. Cannot determine run status.")
+            raise ValueError("Run status cannot be determined without QC results.")
+
+        if num_good / num_total >= PERC_OF_IMAGES_GOOD:
+            return QC_STATUS.GOOD
+        else:
+            return QC_STATUS.POOR
 
     def setup(self):
         self.create_timers.emit()
@@ -559,6 +592,48 @@ class ScopeOp(QObject, NamedMachine):
 
         self.mscope.reset_for_end_experiment()
 
+        # Run the QC model a small partition of the data
+        self.logger.info("Running QC on images.")
+        qc_results = None
+        try:
+            zf = self.mscope.data_storage.get_read_only_zarr()
+
+            try:
+                img_indices = np.linspace(0, zf.initialized - 1, 50).astype(int)
+                for idx in img_indices:
+                    img = zf[:, :, idx]
+                    self.mscope.qc.asyn(img)
+                qc_results = self.mscope.qc.get_asyn_results(timeout=None)
+                qc_results = [self.mscope.qc._sigmoid(x.result) for x in qc_results]
+            except Exception as e:
+                self.logger.error(
+                    f"Unexpected error while submitting images to QC model: {e}. Skipping QC..."
+                )
+        except Exception as e:
+            self.logger.error(f"Failed to get zarr data for QC: {e}.\nSkipping QC...")
+
+        # Log QC results
+        if qc_results:
+            self.did_run_pass_qc = None
+            qc_results_np = np.array([x[0][0] for x in qc_results])
+            num_qc_results_good = (qc_results_np <= QC_GOODNESS_THRESHOLD).sum()
+            num_imgs_qc = len(qc_results_np)
+            self.logger.info(
+                f"QC all results: {qc_results_np}\n"
+                f"QC mean: {qc_results_np.mean():.3f}, "
+                f"QC stdev: {qc_results_np.std():.3f}, "
+                f"QC best score: {qc_results_np.min():.3f}, "
+                f"QC worst score: {qc_results_np.max():.3f}, "
+                f"QC number of images good: {num_qc_results_good}/{num_imgs_qc} ({num_qc_results_good/num_imgs_qc:.2%})%"
+            )
+            self.did_run_pass_qc = self.run_status_from_qc_results(qc_results_np).value
+        else:
+            self.logger.warning("No QC results available. Skipping QC...")
+
+        # Save qc results
+        self.mscope.data_storage.save_qc_data(img_indices, qc_results_np)
+        self.finishing_experiment.emit(80)
+
         # Turn camera back on
         self.mscope.camera.startAcquisition()
 
@@ -577,12 +652,15 @@ class ScopeOp(QObject, NamedMachine):
     def _start_intermission(self, msg):
         parasitemia_vis_path = self.mscope.data_storage.get_parasitemia_vis_filename()
 
+        # Display parasitemia visualization if it exists
         if parasitemia_vis_path.exists():
             self.experiment_done.emit(
-                msg + PARASITEMIA_VIS_MSG, str(parasitemia_vis_path)
+                msg + PARASITEMIA_VIS_MSG,
+                str(parasitemia_vis_path),
+                self.did_run_pass_qc,
             )
         else:
-            self.experiment_done.emit(msg, "")
+            self.experiment_done.emit(msg, "", self.did_run_pass_qc)
 
     @pyqtSlot(np.ndarray, float)
     def run_autobrightness(self, img, _timestamp):
@@ -701,10 +779,7 @@ class ScopeOp(QObject, NamedMachine):
 
         if not self.autofocus_done:
             if len(self.autofocus_batch) < AF_BATCH_SIZE:
-                resized_img = cv2.resize(
-                    img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
-                )
-                self.autofocus_batch.append(resized_img)
+                self.autofocus_batch.append(img)
 
                 if self.running:
                     self.img_signal.connect(self.run_autofocus)
@@ -931,7 +1006,7 @@ class ScopeOp(QObject, NamedMachine):
                 raw_focus_err,
                 filtered_focus_err,
                 focus_adjustment,
-            ) = self.PSSAF_routine.send(resized_img)
+            ) = self.PSSAF_routine.send(img)
         except MotorControllerError as e:
             if not SIMULATION:
                 self.logger.error(
