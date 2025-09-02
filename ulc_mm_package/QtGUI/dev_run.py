@@ -1,18 +1,30 @@
-import cv2
+from datetime import datetime, timedelta
+import os
+from os import listdir
+from pathlib import Path
+import sys
+import traceback
+import subprocess
+from typing import Dict
+from time import perf_counter, sleep
 
-from ulc_mm_package.QtGUI.gui_constants import FLOWCELL_QC_FORM_LINK
+import cv2
+import numpy as np
+from PyQt5 import QtWidgets, uic  # type: ignore
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QImage, QPixmap
+from qimage2ndarray import gray2qimage
+from gpiozero import CPUTemperature
+
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.hardware.real.camera import BinningMode
-
 from ulc_mm_package.scope_constants import (
-    LOCKFILE,
     SSD_DIR,
     VIDEO_PATH,
     VIDEO_REC,
     SIMULATION,
 )
 from ulc_mm_package.hardware.scope import MalariaScope, Components
-
 from ulc_mm_package.hardware.motorcontroller import (
     Direction,
     MotorControllerError,
@@ -28,9 +40,7 @@ from ulc_mm_package.hardware.pneumatic_module import (
     SyringeEndOfTravel,
     PressureSensorStaleValue,
 )
-
 from ulc_mm_package.hardware.scope_routines import Routines
-
 from ulc_mm_package.image_processing.autobrightness import (
     BrightnessTargetNotAchieved,
     BrightnessCriticallyLow,
@@ -52,29 +62,14 @@ from ulc_mm_package.image_processing.processing_constants import FLOWRATE
 from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 
-import os
-import sys
-import traceback
-import numpy as np
-import webbrowser
-import subprocess
-
-from typing import Dict
-from time import perf_counter, sleep
-from os import listdir, path
-from datetime import datetime, timedelta
-from PyQt5 import QtWidgets, uic  # type: ignore
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QImage, QPixmap
-from qimage2ndarray import gray2qimage
-from gpiozero import CPUTemperature
-
 cpu = CPUTemperature()
 
 QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # Qt GUI Files
-_UI_FILE_DIR = "dev_run.ui"
+curr_dir = Path(__file__).parent.resolve()  # Get full path
+os.chdir(curr_dir)
+_UI_FILE_DIR = curr_dir / "dev_run.ui"
 
 
 class ApplicationError(Exception):
@@ -468,10 +463,12 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             retval = self._displayMessageBox(
                 QtWidgets.QMessageBox.Icon.Critical,
                 "Error - harddrive not detected.",
-                "ERROR! No external harddrive / SSD detected. Press OK to close the application.",
-                cancel=False,
+                "ERROR! No external harddrive / SSD detected. Press OK to continue, cancel to quit.",
+                cancel=True,
             )
             if retval == QtWidgets.QMessageBox.Ok:
+                self.external_dir = None
+            else:
                 quit()
 
         # List hardware components
@@ -615,7 +612,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.btnSnap.clicked.connect(self.btnSnapHandler)
         self.vsExposure.valueChanged.connect(self.exposureSliderHandler)
         self.btnChangeBinning.clicked.connect(self.btnChangeBinningHandler)
-        self.btnQCForm.clicked.connect(self.btnQCFormHandler)
 
         # Pressure control
         self.btnFlowUp.clicked.connect(self.btnFlowUpHandler)
@@ -682,6 +678,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.acquisitionThread.update_liveview = 1
 
     def btnSnapHandler(self):
+        if self.external_dir is None:
+            _ = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Critical,
+                "Error - no external harddrive detected.",
+                "ERROR! No external harddrive / SSD detected. Connect an SSD and restart the application if you want to save images.",
+                cancel=False,
+            )
+            return
+
         if self.recording:
             self.recording = False
             self.acquisitionThread.continuous_save = False
@@ -697,15 +702,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             print(
                 f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
             )
-
-            retval = self._displayMessageBox(
-                QtWidgets.QMessageBox.Icon.Information,
-                "Open Flowcell QC Post-run Form?",
-                "Press okay to open the Google form. A browser window will be opened.",
-                cancel=True,
-            )
-            if retval == QtWidgets.QMessageBox.Ok:
-                webbrowser.open(FLOWCELL_QC_FORM_LINK, new=1, autoraise=True)
 
             return
 
@@ -731,16 +727,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         curr_binning_mode = self.acquisitionThread.camera.getBinning()
         change_to = 1 if curr_binning_mode == 2 else 2
         self.btnChangeBinning.setText(f"Change to {change_to}X binning")
-
-    def btnQCFormHandler(self):
-        retval = self._displayMessageBox(
-            QtWidgets.QMessageBox.Icon.Information,
-            "Open Flowcell QC Post-run Form?",
-            "Press okay to open the Google form. A browser window will be opened.",
-            cancel=True,
-        )
-        if retval == QtWidgets.QMessageBox.Ok:
-            webbrowser.open(FLOWCELL_QC_FORM_LINK, new=1, autoraise=True)
 
     @pyqtSlot(QImage)
     def updateImage(self, qimage):
@@ -945,6 +931,15 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.acquisitionThread.updateMotorPos = True
 
     def btnFullZStackHandler(self):
+        if self.external_dir is None:
+            _ = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Critical,
+                "Error - no external harddrive detected.",
+                "ERROR! No external harddrive / SSD detected. Connect an SSD and restart the application if you want to save z-stacks.",
+                cancel=False,
+            )
+            return
+
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Full Range ZStack",
@@ -957,6 +952,14 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             self.acquisitionThread.runFullZStack()
 
     def btnLocalZStackHandler(self):
+        if self.external_dir is None:
+            _ = self._displayMessageBox(
+                QtWidgets.QMessageBox.Icon.Critical,
+                "Error - no external harddrive detected.",
+                "ERROR! No external harddrive / SSD detected. Connect an SSD and restart the application if you want to save images.",
+                cancel=False,
+            )
+            return
         retval = self._displayMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Local Vicinity ZStack",
@@ -1156,12 +1159,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             if self.encoder:
                 self.encoder.close()
 
-            try:
-                os.remove(LOCKFILE)
-                print(f"Removed lockfile ({LOCKFILE}).")
-            except FileNotFoundError:
-                print(f"Lockfile ({LOCKFILE}) does not exist and could not be deleted.")
-
             quit()
 
     def closeEvent(self, event):
@@ -1170,16 +1167,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
 
 
 def main():
-    if path.isfile(LOCKFILE):
-        print(
-            f"Terminating run. Lockfile ({LOCKFILE}) exists, so scope is locked while another run is in progress."
-        )
-        text = input("Enter 'y' to continue anyway, or enter to exit: ")
-        if text != "y":
-            sys.exit(1)
-    else:
-        open(LOCKFILE, "w")
-
     try:
         app = QtWidgets.QApplication(sys.argv)
         main_window = MalariaScopeGUI()
