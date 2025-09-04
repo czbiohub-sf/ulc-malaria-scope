@@ -7,7 +7,7 @@ if [ "$interface" = "wlan0" ]; then
   case "$reason" in
     BOUND|RENEW|REBIND|REBOOT)
       timedatectl set-ntp true
-      sleep(1)
+      sleep 1
       if timedatectl show -p NTPSynchronized | grep -q "yes"; then
         sudo hwclock --systohc --noadjfile --localtime
       fi
