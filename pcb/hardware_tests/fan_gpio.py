@@ -1,8 +1,14 @@
 import RPi.GPIO as GPIO
 import time
 
-pin = 24
-# Scope fan = 5, cam fan 1 = 23, cam fan 2 = 24
+pin = int(input("Enter pin: "))
+valid_pins = {
+    'scope fan': 5,
+    'cam fan 1': 23,
+    'cam fan 2': 24,
+}
+if pin not in valid_pins.values:
+    raise ValueError(f"Invalid pin, expected one of {valid_pins}")
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
