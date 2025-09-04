@@ -6,7 +6,7 @@ valid_pins = {
     'LS1': 18,
     'LS2': 15,
 }
-if pin not in valid_pins.values:
+if pin not in valid_pins.values():
     raise ValueError(f"Invalid pin, expected one of {valid_pins}")
 
 

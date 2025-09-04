@@ -7,7 +7,7 @@ valid_pins = {
     'cam fan 1': 23,
     'cam fan 2': 24,
 }
-if pin not in valid_pins.values:
+if pin not in valid_pins.values():
     raise ValueError(f"Invalid pin, expected one of {valid_pins}")
 
 GPIO.setmode(GPIO.BCM)
