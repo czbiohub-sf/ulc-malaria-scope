@@ -26,11 +26,15 @@ sleep 1
 if timedatectl show -p NTPSynchronized | grep -q "yes"; then
   # Update RTC from system time
   sudo hwclock --systohc --noadjfile --localtime
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL update RTC from system time" >> ~/Desktop/rtc.log
+else
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL not synced" >> ~/Desktop/rtc.log
 fi
 
 # Always update system time from RTC!
 # For some reason this doesn't work in else statement
 timedatectl set-ntp false
 sudo hwclock -s
+echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL update system time from RTC" >> ~/Desktop/rtc.log
 
 exit 0
