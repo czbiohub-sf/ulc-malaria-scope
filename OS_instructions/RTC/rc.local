@@ -27,17 +27,13 @@ if timedatectl show -p NTPSynchronized | grep -q "yes"; then
   # Update RTC from system time
   sudo hwclock --systohc --noadjfile --utc
   
-  if [ "${RTC_LOGGING:-}" = "1" ]; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL sync passed, updated RTC from system time" >> /home/pi/Desktop/rtc.log
-  fi
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL sync passed, updated RTC from system time" >> /home/pi/Desktop/rtc.log
 else
   # Update system time from RTC
   timedatectl set-ntp false
   sudo hwclock -s
   
-  if [ "${RTC_LOGGING:-}" = "1" ]; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL sync failed, updated system time from RTC and turned off sync" >> /home/pi/Desktop/rtc.log
-  fi
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL sync failed, updated system time from RTC and turned off sync" >> /home/pi/Desktop/rtc.log
 fi
 
 exit 0

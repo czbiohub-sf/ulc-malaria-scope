@@ -2,9 +2,7 @@
 # Runs after dhcpcd processes a DHCP event.
 # Env vars available: $interface, $reason, $new_ip_address, $new_routers, etc.
 
-if [ "${RTC_LOGGING:-}" = "1" ]; then
-  echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD $interface $reason" >> /home/pi/Desktop/rtc.log
-fi
+echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD $interface $reason" >> /home/pi/Desktop/rtc.log
 
 # Only act when wifi or ethernet (re)obtained a lease
 case "$reason" in
@@ -15,12 +13,8 @@ case "$reason" in
       # Update RTC from system time
       sudo hwclock --systohc --noadjfile --utc
 
-      if [ "${RTC_LOGGING:-}" = "1" ]; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD sync passed, updated RTC from system time" >> /home/pi/Desktop/rtc.log
-      fi
+      echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD sync passed, updated RTC from system time" >> /home/pi/Desktop/rtc.log
     else	
-      if [ "${RTC_LOGGING:-}" = "1" ]; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD sync failed, no RTC action" >> /home/pi/Desktop/rtc.log
-      fi
+      echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD sync failed, no RTC action" >> /home/pi/Desktop/rtc.log
     fi
 esac
