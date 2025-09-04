@@ -66,6 +66,7 @@ setup(
             "remo-fix-focus=ulc_mm_package.utilities.coarse_focus_utility:main",
             "remo-pneumatic-calibration=ulc_mm_package.utilities.pneumatic_utility:main",
             "remo-zstack=ulc_mm_package.utilities.zstack_utility:main",
+            "remo-led-on=ulc_mm_package.utilities.led_utility:main"
         ]
     },
 )
