@@ -18,13 +18,25 @@ sudo chmod +x rc.local
 sudo chmod +x dhcpcd.exit-hook
 ```
 
+Finally, make sure the RTC runs off universal time by running
+```
+timedatectl set-local-rtc 0
+```
+
 ## Tests (optional)
 
 Reboot after adding the above files to start the RTC before testing.
 
-### RTC in use
+### RTC and I2C successully configured
 
-Verify system vs RTC time using `timedatectl` in terminal. You will see a printout like this:
+Ensure `i2c-tools` was installed and correctly setup by running
+```
+i2cdetect -y 1
+```
+
+The RTC should show up under bit `x68`. This bit should be marked as "UU" to indicate it's in use. This means `rc.local` succesfully ran and the RTC is currently being used.
+
+Somewhat redundant, but you can now verify system vs RTC time using `timedatectl` in terminal. You will see a printout like this:
 ```
                Local time: Mon 2025-08-25 15:42:07 PDT
            Universal time: Mon 2025-08-25 22:42:07 UTC
