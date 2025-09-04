@@ -25,16 +25,19 @@ timedatectl set-ntp true
 sleep 1
 if timedatectl show -p NTPSynchronized | grep -q "yes"; then
   # Update RTC from system time
-  sudo hwclock --systohc --noadjfile --localtime
-  echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL update RTC from system time" >> ~/Desktop/rtc.log
+  sudo hwclock --systohc --noadjfile --utc
+  
+  if [ "${RTC_LOGGING:-}" = "1" ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL sync passed, updated RTC from system time" >> /home/pi/Desktop/rtc.log
+  fi
 else
-  echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL not synced" >> ~/Desktop/rtc.log
+  # Update system time from RTC
+  timedatectl set-ntp false
+  sudo hwclock -s
+  
+  if [ "${RTC_LOGGING:-}" = "1" ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL sync failed, updated system time from RTC and turned off sync" >> /home/pi/Desktop/rtc.log
+  fi
 fi
-
-# Always update system time from RTC!
-# For some reason this doesn't work in else statement
-timedatectl set-ntp false
-sudo hwclock -s
-echo "$(date '+%Y-%m-%d %H:%M:%S') - RCLOCAL update system time from RTC" >> ~/Desktop/rtc.log
 
 exit 0

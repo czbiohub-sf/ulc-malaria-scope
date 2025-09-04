@@ -2,20 +2,25 @@
 # Runs after dhcpcd processes a DHCP event.
 # Env vars available: $interface, $reason, $new_ip_address, $new_routers, etc.
 
-
-echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD reason $reason" >> ~/Desktop/rtc.log
-
-# Only act on Wi-Fi and only when we (re)obtained a lease
-if [ "$interface" = "wlan0" ]; then
-  case "$reason" in
-    BOUND|RENEW|REBIND|REBOOT)
-      timedatectl set-ntp true
-      sleep 1
-      if timedatectl show -p NTPSynchronized | grep -q "yes"; then
-        sudo hwclock --systohc --noadjfile --localtime
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD update RTC from system time" >> ~/Desktop/rtc.log
-      else
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD not synced" >> ~/Desktop/rtc.log
-      fi
-  esac
+if [ "${RTC_LOGGING:-}" = "1" ]; then
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD $interface $reason" >> /home/pi/Desktop/rtc.log
 fi
+
+# Only act when wifi or ethernet (re)obtained a lease
+case "$reason" in
+  BOUND|RENEW|REBIND|REBOOT)
+    timedatectl set-ntp true
+    sleep 1
+    if timedatectl show -p NTPSynchronized | grep -q "yes"; then
+      # Update RTC from system time
+      sudo hwclock --systohc --noadjfile --utc
+
+      if [ "${RTC_LOGGING:-}" = "1" ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD sync passed, updated RTC from system time" >> /home/pi/Desktop/rtc.log
+      fi
+    else	
+      if [ "${RTC_LOGGING:-}" = "1" ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - DHCPCD sync failed, no RTC action" >> /home/pi/Desktop/rtc.log
+      fi
+    fi
+esac
