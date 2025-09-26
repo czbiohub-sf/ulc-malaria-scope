@@ -48,8 +48,8 @@ def format_cell_counts(compensator: CountCompensator, raw_cell_counts: npt.NDArr
         str_cell_counts = [
             [
                 f'{ct}',
-                f'{int(compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=True))} p/uL',
-                f'{compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=False):.2f} %',
+                f'{int(compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=True)[0])} p/uL',
+                f'{compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=False)[0]:.2f} %',
             ]
             # f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
             if i in ALL_PARASITE_CLASS_IDS
@@ -469,20 +469,22 @@ if __name__ == "__main__":
         "notes": "sample only",
         "flowcell_id": "A5",
     }
-    raw_cell_counts = np.array([1000, 10, 0, 0, 0, 0, 0])
+    raw_cell_counts = np.array([1000, 1, 0, 0, 0, 0, 0])
 
     # Compensator
     compensator = CountCompensator(
         "elated-smoke-4492",
-        clinical=True,
-        skip=True,
-        conf_thresh=0.9,
+        clinical=False,
+        skip=False,
+        conf_thresh=0.7,
     )
     (
         comp_parasitemia,
         comp_parasitemia_err,
     ) = compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
     make_parasitemia_plot(comp_parasitemia, comp_parasitemia_err, parasitemia_file)
+
+    print(compensator.inv_cmatrix)
 
     content = make_html_report(
         compensator,
