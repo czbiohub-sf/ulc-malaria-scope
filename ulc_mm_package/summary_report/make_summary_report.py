@@ -48,8 +48,8 @@ def format_cell_counts(compensator: CountCompensator, raw_cell_counts: npt.NDArr
         str_cell_counts = [
             [
                 f'{ct}',
-                f'{int(compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=True))}',
-                f'{compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=False):.2f}',
+                f'{int(compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=True))} p/uL',
+                f'{compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=False):.2f} %',
             ]
             # f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
             if i in ALL_PARASITE_CLASS_IDS
@@ -69,8 +69,8 @@ def format_cell_counts(compensator: CountCompensator, raw_cell_counts: npt.NDArr
         str_cell_counts = [
             [
                 f'{ct}',
-                '0',
-                '0.00',
+                '0 p/uL',
+                '0.00 %',
             ]
             # f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
             if i in ALL_PARASITE_CLASS_IDS
@@ -87,10 +87,15 @@ def format_cell_counts(compensator: CountCompensator, raw_cell_counts: npt.NDArr
             )
         ]
 
+    # TEMP
+    print(str_cell_counts)
+
     # Add class name
     class_name_to_cell_count = {
         YOGO_CLASS_LIST[i].capitalize(): cts for (i, cts) in enumerate(str_cell_counts)
     }
+    # TEMP
+    print(class_name_to_cell_count)
 
     return class_name_to_cell_count
 
@@ -330,10 +335,11 @@ def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: str) -> None:
 
 
 def make_html_report(
+    compensator: CountCompensator,
     dataset_name: str,
     experiment_metadata: Dict[str, str],
     per_image_metadata_plot_path: str,
-    cell_counts: npt.NDArray,
+    cell_counts: List,
     thumbnails: Dict[str, List[str]],
     parasitemia_plot_loc: str,
     counts_plot_loc: str,
@@ -403,7 +409,7 @@ def make_html_report(
         "participant_id": participant,
         "notes": notes,
         "flowcell_id": fc_id,
-        "class_name_to_cell_count": format_cell_counts(cell_counts),
+        "class_name_to_cell_count": format_cell_counts(compensator, cell_counts),
         "parasites_per_ul_scaling_factor": f"{RBCS_PER_UL:.0E}",
         "all_thumbnails": thumbnails,
         "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
@@ -413,6 +419,8 @@ def make_html_report(
         "confidence_hists_filename": conf_plot_loc,
         "objectness_hists_filename": objectness_plot_loc,
     }
+    # TEMP
+    print(context)
     content = template.render(context)
 
     return content
@@ -468,7 +476,7 @@ if __name__ == "__main__":
         "notes": "sample only",
         "flowcell_id": "A5",
     }
-    cell_counts = np.array([1000, 0, 0, 0, 0, 0, 0])
+    raw_cell_counts = np.array([1000, 0, 0, 0, 0, 0, 0])
 
     # Compensator
     compensator = CountCompensator(
@@ -480,14 +488,15 @@ if __name__ == "__main__":
     (
         comp_parasitemia,
         comp_parasitemia_err,
-    ) = compensator.get_res_from_counts(cell_counts, units_ul_out=True)
+    ) = compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
     make_parasitemia_plot(comp_parasitemia, comp_parasitemia_err, parasitemia_file)
 
     content = make_html_report(
+        compensator,
         "Dummy test",
         exp_metadata,
         "",
-        cell_counts,
+        raw_cell_counts,
         {},
         str(parasitemia_file),
         "",
