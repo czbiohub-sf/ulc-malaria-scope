@@ -47,6 +47,7 @@ from ulc_mm_package.summary_report.make_summary_report import (
     make_yogo_objectness_plots,
     save_html_report,
     create_pdf_from_html,
+    format_cell_counts,
 )
 from ulc_mm_package.summary_report.parasitemia_visualization import (
     make_parasitemia_plot,
@@ -331,15 +332,13 @@ class DataStorage:
 
             # Get cell counts
             raw_cell_counts = np.asarray(get_class_counts(pred_tensors))
-            # Associate class with counts
-            class_name_to_cell_count = {
-                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
-            }
-            # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
             (
                 comp_parasitemia,
                 comp_parasitemia_err,
             ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
+            # Associate class with counts
+            class_name_to_cell_count = format_cell_counts(self.compensator, raw_cell_counts)
+            # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
 
             # Create parasitemia plot
             parasitemia_plot_loc = str(self.get_parasitemia_vis_filename())

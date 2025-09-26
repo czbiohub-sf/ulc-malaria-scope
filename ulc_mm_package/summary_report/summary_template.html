@@ -71,13 +71,21 @@
             {# Estimated sample composition #}
             <thead>
                 <tr>
-                    <th colspan="2">Estimated sample composition</th>
+                    <th colspan="4">Estimated sample composition</th>
                 </tr>
             </thead>
+            <tr>
+                <td></td>
+                <td><b>Raw count</b></td>
+                <td><b>Estimated parasitemia (p/uL)</b></td>
+                <td><b>Estimated parasitemia (%)</b></td>
+            </tr>
             {% for key in class_name_to_cell_count %}
             <tr>
                 <td>{{key}}</td>
-                <td>{{class_name_to_cell_count[key]}}</td>
+                <td>{{class_name_to_cell_count[key][0]}}</td>
+                <td>{{class_name_to_cell_count[key][1]}} p/uL</td>
+                <td>{{class_name_to_cell_count[key][2]}} %</td>
             </tr>
             {% endfor %}
         </table>

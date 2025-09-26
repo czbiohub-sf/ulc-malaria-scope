@@ -20,6 +20,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     CLASS_IDS_FOR_TABLE_COUNTS,
     CLASS_IDS_FOR_THUMBNAILS,
     ASEXUAL_PARASITE_CLASS_IDS,
+    ALL_PARASITE_CLASS_IDS,
 )
 from ulc_mm_package.summary_report.parasitemia_visualization import (
     make_parasitemia_plot,
@@ -37,32 +38,58 @@ COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7
 matplotlib.use("agg")
 
 
-def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
+def format_cell_counts(compensator: CountCompensator, raw_cell_counts: npt.NDArray) -> Dict[str, str]:
     """Format raw cell counts for display in summary report"""
     # Express parasite classes as percent of total parasites
-    total_parasites = np.sum(cell_counts[ASEXUAL_PARASITE_CLASS_IDS])
+    total_parasites = np.sum(raw_cell_counts[ALL_PARASITE_CLASS_IDS])
+    total_cells = raw_cell_counts[0] + total_parasites
 
     if total_parasites > 0:
         str_cell_counts = [
-            f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
-            if i in ASEXUAL_PARASITE_CLASS_IDS
-            else f"{ct}"
+            [
+                f'{ct}',
+                f'{int(compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=True))}',
+                f'{compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=False):.2f}',
+            ]
+            # f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
+            if i in ALL_PARASITE_CLASS_IDS
+            else [
+                f'{ct}',
+                '--',
+                '--',
+            ]
             for i, ct in enumerate(
                 [
                     ct if i in CLASS_IDS_FOR_TABLE_COUNTS else 0
-                    for i, ct in enumerate(cell_counts)
+                    for i, ct in enumerate(raw_cell_counts)
                 ]
             )
         ]
     else:
         str_cell_counts = [
-            f"{ct}" if i in CLASS_IDS_FOR_THUMBNAILS else 0  # type:ignore
-            for i, ct in enumerate(cell_counts)
+            [
+                f'{ct}',
+                '0',
+                '0.00',
+            ]
+            # f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
+            if i in ALL_PARASITE_CLASS_IDS
+            else [
+                f'{ct}',
+                '--',
+                '--',
+            ]
+            for i, ct in enumerate(
+                [
+                    ct if i in CLASS_IDS_FOR_TABLE_COUNTS else 0
+                    for i, ct in enumerate(raw_cell_counts)
+                ]
+            )
         ]
 
     # Add class name
     class_name_to_cell_count = {
-        YOGO_CLASS_LIST[i].capitalize(): ct for (i, ct) in enumerate(str_cell_counts)
+        YOGO_CLASS_LIST[i].capitalize(): cts for (i, cts) in enumerate(str_cell_counts)
     }
 
     return class_name_to_cell_count
