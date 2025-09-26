@@ -38,7 +38,9 @@ COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7
 matplotlib.use("agg")
 
 
-def format_cell_counts(compensator: CountCompensator, raw_cell_counts: npt.NDArray) -> Dict[str, str]:
+def format_cell_counts(
+    compensator: CountCompensator, raw_cell_counts: npt.NDArray
+) -> Dict[str, str]:
     """Format raw cell counts for display in summary report"""
     # Express parasite classes as percent of total parasites
     total_parasites = np.sum(raw_cell_counts[ALL_PARASITE_CLASS_IDS])
@@ -47,16 +49,16 @@ def format_cell_counts(compensator: CountCompensator, raw_cell_counts: npt.NDArr
     if total_parasites > 0:
         str_cell_counts = [
             [
-                f'{ct}',
-                f'{int(compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=True)[0])} p/uL',
-                f'{compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=False)[0]:.2f} %',
+                f"{ct}",
+                f"{int(compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=True)[0])} p/uL",
+                f"{compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=False)[0]:.2f} %",
             ]
             # f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
             if i in ALL_PARASITE_CLASS_IDS
             else [
-                f'{ct}',
-                '--',
-                '--',
+                f"{ct}",
+                "--",
+                "--",
             ]
             for i, ct in enumerate(
                 [
@@ -68,16 +70,16 @@ def format_cell_counts(compensator: CountCompensator, raw_cell_counts: npt.NDArr
     else:
         str_cell_counts = [
             [
-                f'{ct}',
-                '0 p/uL',
-                '0.00 %',
+                f"{ct}",
+                "0 p/uL",
+                "0.00 %",
             ]
             # f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
             if i in ALL_PARASITE_CLASS_IDS
             else [
-                f'{ct}',
-                '--',
-                '--',
+                f"{ct}",
+                "--",
+                "--",
             ]
             for i, ct in enumerate(
                 [
