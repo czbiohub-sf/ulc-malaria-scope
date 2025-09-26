@@ -18,8 +18,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_PRED_THRESHOLD,
     YOGO_CLASS_LIST,
     CLASS_IDS_FOR_TABLE_COUNTS,
-    CLASS_IDS_FOR_THUMBNAILS,
-    ASEXUAL_PARASITE_CLASS_IDS,
+    ALL_PARASITE_CLASS_IDS,
 )
 from ulc_mm_package.summary_report.parasitemia_visualization import (
     make_parasitemia_plot,
@@ -37,32 +36,60 @@ COLORS = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7
 matplotlib.use("agg")
 
 
-def format_cell_counts(cell_counts: npt.NDArray) -> Dict[str, str]:
+def format_cell_counts(
+    compensator: CountCompensator, raw_cell_counts: npt.NDArray
+) -> Dict[str, List[str]]:
     """Format raw cell counts for display in summary report"""
     # Express parasite classes as percent of total parasites
-    total_parasites = np.sum(cell_counts[ASEXUAL_PARASITE_CLASS_IDS])
+    total_parasites = np.sum(raw_cell_counts[ALL_PARASITE_CLASS_IDS])
+    total_cells = raw_cell_counts[0] + total_parasites
 
     if total_parasites > 0:
         str_cell_counts = [
-            f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
-            if i in ASEXUAL_PARASITE_CLASS_IDS
-            else f"{ct}"
+            [
+                f"{ct}",
+                f"{int(compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=True)[0])} p/uL",
+                f"{compensator._get_res_from_counts(np.array([total_cells - raw_cell_counts[i], raw_cell_counts[i]]), units_ul_out=False)[0]:.2f} %",
+            ]
+            # f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
+            if i in ALL_PARASITE_CLASS_IDS
+            else [
+                f"{ct}",
+                "--",
+                "--",
+            ]
             for i, ct in enumerate(
                 [
                     ct if i in CLASS_IDS_FOR_TABLE_COUNTS else 0
-                    for i, ct in enumerate(cell_counts)
+                    for i, ct in enumerate(raw_cell_counts)
                 ]
             )
         ]
     else:
         str_cell_counts = [
-            f"{ct}" if i in CLASS_IDS_FOR_THUMBNAILS else 0  # type:ignore
-            for i, ct in enumerate(cell_counts)
+            [
+                f"{ct}",
+                "0 p/uL",
+                "0.00 %",
+            ]
+            # f"{ct} ({ct / total_parasites * 100.0:.0f}% of parasites)"
+            if i in ALL_PARASITE_CLASS_IDS
+            else [
+                f"{ct}",
+                "--",
+                "--",
+            ]
+            for i, ct in enumerate(
+                [
+                    ct if i in CLASS_IDS_FOR_TABLE_COUNTS else 0
+                    for i, ct in enumerate(raw_cell_counts)
+                ]
+            )
         ]
 
     # Add class name
     class_name_to_cell_count = {
-        YOGO_CLASS_LIST[i].capitalize(): ct for (i, ct) in enumerate(str_cell_counts)
+        YOGO_CLASS_LIST[i].capitalize(): cts for (i, cts) in enumerate(str_cell_counts)
     }
 
     return class_name_to_cell_count
@@ -303,10 +330,11 @@ def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: str) -> None:
 
 
 def make_html_report(
+    compensator: CountCompensator,
     dataset_name: str,
     experiment_metadata: Dict[str, str],
     per_image_metadata_plot_path: str,
-    cell_counts: npt.NDArray,
+    cell_counts: List,
     thumbnails: Dict[str, List[str]],
     parasitemia_plot_loc: str,
     counts_plot_loc: str,
@@ -376,7 +404,7 @@ def make_html_report(
         "participant_id": participant,
         "notes": notes,
         "flowcell_id": fc_id,
-        "class_name_to_cell_count": format_cell_counts(cell_counts),
+        "class_name_to_cell_count": format_cell_counts(compensator, cell_counts),
         "parasites_per_ul_scaling_factor": f"{RBCS_PER_UL:.0E}",
         "all_thumbnails": thumbnails,
         "DEBUG_SUMMARY_REPORT": DEBUG_REPORT,
@@ -441,26 +469,29 @@ if __name__ == "__main__":
         "notes": "sample only",
         "flowcell_id": "A5",
     }
-    cell_counts = np.array([1000, 0, 0, 0, 0, 0, 0])
+    raw_cell_counts = np.array([1000, 1, 0, 0, 0, 0, 0])
 
     # Compensator
     compensator = CountCompensator(
         "elated-smoke-4492",
-        clinical=True,
-        skip=True,
-        conf_thresh=0.9,
+        clinical=False,
+        skip=False,
+        conf_thresh=0.7,
     )
     (
         comp_parasitemia,
         comp_parasitemia_err,
-    ) = compensator.get_res_from_counts(cell_counts, units_ul_out=True)
+    ) = compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
     make_parasitemia_plot(comp_parasitemia, comp_parasitemia_err, parasitemia_file)
 
+    print(compensator.inv_cmatrix)
+
     content = make_html_report(
+        compensator,
         "Dummy test",
         exp_metadata,
         "",
-        cell_counts,
+        raw_cell_counts,
         {},
         str(parasitemia_file),
         "",

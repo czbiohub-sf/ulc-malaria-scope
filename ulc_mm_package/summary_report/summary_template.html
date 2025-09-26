@@ -67,24 +67,34 @@
                 <td>Flowcell ID</td>
                 <td>{{ flowcell_id }}</td>
             </tr>
+        </table>
 
+        <table style="table-layout: fixed;">
             {# Estimated sample composition #}
             <thead>
                 <tr>
-                    <th colspan="2">Estimated sample composition</th>
+                    <th colspan="4">Estimated sample composition</th>
                 </tr>
             </thead>
-            {% for key in class_name_to_cell_count %}
+            <tr>
+                <td><b>Class</b></td>
+                <td><b>Raw count</b></td>
+                <td><b>Parasitemia (p/uL)</b></td>
+                <td><b>Parasitemia (%)</b></td>
+            </tr>
+            {% for key, vals in class_name_to_cell_count.items() %}
             <tr>
                 <td>{{key}}</td>
-                <td>{{class_name_to_cell_count[key]}}</td>
+                <td>{{vals[0]}}</td>
+                <td>{{vals[1]}}</td>
+                <td>{{vals[2]}}</td>
             </tr>
             {% endfor %}
         </table>
         <font size="-1">
             <i>Parasitemia includes asexual stages only.</i>
         </font>
-        
+                
         {# Thumbnails #}
         <div>
             <pdf:nextpage /> 

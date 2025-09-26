@@ -331,15 +331,15 @@ class DataStorage:
 
             # Get cell counts
             raw_cell_counts = np.asarray(get_class_counts(pred_tensors))
+            (
+                comp_parasitemia,
+                comp_parasitemia_err,
+            ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
             # Associate class with counts
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            (
-                comp_parasitemia,
-                comp_parasitemia_err,
-            ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
 
             # Create parasitemia plot
             parasitemia_plot_loc = str(self.get_parasitemia_vis_filename())
@@ -355,6 +355,7 @@ class DataStorage:
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
             html_report_with_abs_path = make_html_report(
+                self.compensator,
                 self.time_str,
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
