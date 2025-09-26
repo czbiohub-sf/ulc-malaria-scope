@@ -40,7 +40,7 @@ matplotlib.use("agg")
 
 def format_cell_counts(
     compensator: CountCompensator, raw_cell_counts: npt.NDArray
-) -> Dict[str, str]:
+) -> Dict[str, List[str]]:
     """Format raw cell counts for display in summary report"""
     # Express parasite classes as percent of total parasites
     total_parasites = np.sum(raw_cell_counts[ALL_PARASITE_CLASS_IDS])
