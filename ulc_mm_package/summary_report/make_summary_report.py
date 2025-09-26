@@ -87,15 +87,10 @@ def format_cell_counts(compensator: CountCompensator, raw_cell_counts: npt.NDArr
             )
         ]
 
-    # TEMP
-    print(str_cell_counts)
-
     # Add class name
     class_name_to_cell_count = {
         YOGO_CLASS_LIST[i].capitalize(): cts for (i, cts) in enumerate(str_cell_counts)
     }
-    # TEMP
-    print(class_name_to_cell_count)
 
     return class_name_to_cell_count
 
@@ -419,8 +414,6 @@ def make_html_report(
         "confidence_hists_filename": conf_plot_loc,
         "objectness_hists_filename": objectness_plot_loc,
     }
-    # TEMP
-    print(context)
     content = template.render(context)
 
     return content
@@ -476,7 +469,7 @@ if __name__ == "__main__":
         "notes": "sample only",
         "flowcell_id": "A5",
     }
-    raw_cell_counts = np.array([1000, 0, 0, 0, 0, 0, 0])
+    raw_cell_counts = np.array([1000, 10, 0, 0, 0, 0, 0])
 
     # Compensator
     compensator = CountCompensator(
