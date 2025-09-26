@@ -62,6 +62,7 @@ SITE_LIST = [
     "Biohub SF",
     "DeRisi Lab",
     "Filipa Lab",
+    "Rosenthal Lab",
     "Goodlife Kigali",
     "Goodlife Musanze",
 ]
