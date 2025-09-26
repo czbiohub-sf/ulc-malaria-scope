@@ -18,8 +18,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_PRED_THRESHOLD,
     YOGO_CLASS_LIST,
     CLASS_IDS_FOR_TABLE_COUNTS,
-    CLASS_IDS_FOR_THUMBNAILS,
-    ASEXUAL_PARASITE_CLASS_IDS,
     ALL_PARASITE_CLASS_IDS,
 )
 from ulc_mm_package.summary_report.parasitemia_visualization import (
