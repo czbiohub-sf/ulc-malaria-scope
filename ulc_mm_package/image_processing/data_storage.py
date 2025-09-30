@@ -1,19 +1,20 @@
-import io
+from concurrent.futures import Future
 import csv
-import shutil
+from datetime import datetime
+import io
 import logging
 from os import remove
 from pathlib import Path
+import shutil
 from time import perf_counter
-from datetime import datetime
-from concurrent.futures import Future
 from typing import Dict, List, Optional
-from stats_utils.compensator import CountCompensator
 
+import cv2
 import numpy as np
 import numpy.typing as npt
-import cv2
+import zarr
 
+from stats_utils.compensator import CountCompensator
 from ulc_mm_package.hardware.hardware_constants import DATETIME_FORMAT
 from ulc_mm_package.image_processing.zarrwriter import ZarrWriter
 from ulc_mm_package.image_processing.processing_constants import (
@@ -178,7 +179,13 @@ class DataStorage:
             / self.experiment_folder
             / f"{self.time_str}_{custom_experiment_name}"
         )
+        self.zarr_filepath = filename.with_suffix(".zip")
         self.zw.createNewFile(str(filename))
+
+        # QC csv
+        self.qc_filename = (
+            self.main_dir / self.experiment_folder / f"{self.time_str}_qc_results.csv"
+        )
 
     def writeData(self, image: np.ndarray, metadata: Dict, count: int):
         """Write a new image and its corresponding metadata.
@@ -324,15 +331,15 @@ class DataStorage:
 
             # Get cell counts
             raw_cell_counts = np.asarray(get_class_counts(pred_tensors))
+            (
+                comp_parasitemia,
+                comp_parasitemia_err,
+            ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
             # Associate class with counts
             class_name_to_cell_count = {
                 x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
             }
             # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-            (
-                comp_parasitemia,
-                comp_parasitemia_err,
-            ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
 
             # Create parasitemia plot
             parasitemia_plot_loc = str(self.get_parasitemia_vis_filename())
@@ -348,6 +355,7 @@ class DataStorage:
             # HTML w/ absolute path
             abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
             html_report_with_abs_path = make_html_report(
+                self.compensator,
                 self.time_str,
                 self.experiment_level_metadata,
                 per_image_metadata_plot_save_loc,
@@ -481,6 +489,19 @@ class DataStorage:
             img_path = Path(sub_seq_path) / f"{idx:0{self.digits}d}.png"
             write_img(img, img_path)
 
+    def get_subsample_folder_path(self) -> Path:
+        """Get the path to the subsample folder.
+
+        Returns
+        -------
+        Path:
+            Path to the subsample folder
+        """
+        if self.main_dir is not None:
+            return self.main_dir / self.experiment_folder / "sub_sample_imgs"
+        else:
+            raise DataStorageError("DataStorage has not been initialized")
+
     def _create_subseq_folder(self) -> str:
         """Creates a folder to store the random subsample of data.
 
@@ -492,7 +513,7 @@ class DataStorage:
         if self.zw.store is not None:
             assert self.main_dir is not None, "DataStorage has not been initialized"
             try:
-                dir_path = self.main_dir / self.experiment_folder / "sub_sample_imgs"
+                dir_path = self.get_subsample_folder_path()
                 dir_path.mkdir(exist_ok=True)
                 return str(dir_path)
             except Exception as e:
@@ -558,3 +579,28 @@ class DataStorage:
             all_indices.extend(list(range(idx, idx + subsequence_length)))
 
         return all_indices
+
+    def get_read_only_zarr(self):
+        """Get a read-only Zarr store for the current experiment.
+
+        Returns
+        -------
+        The result of zarr.open() with read-only mode.
+        """
+
+        if self.zarr_filepath is None:
+            raise DataStorageError("Zarr file path is not set. Cannot open Zarr store.")
+
+        return zarr.open(str(self.zarr_filepath), mode="r")
+
+    def save_qc_data(self, img_indices: List[int], qc_results: List[float]) -> None:
+        """Save the QC results to a file."""
+
+        if self.main_dir is None or self.experiment_folder is None:
+            raise DataStorageError("DataStorage has not been initialized.")
+
+        with open(self.qc_filename, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(["img_idx", "qc_score"])
+            for idx, result in zip(img_indices, qc_results):
+                writer.writerow([idx, result])

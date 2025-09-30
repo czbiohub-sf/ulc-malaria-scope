@@ -62,15 +62,16 @@ SITE_LIST = [
     "Biohub SF",
     "DeRisi Lab",
     "Filipa Lab",
+    "Rosenthal/Conrad Lab",
     "Goodlife Kigali",
     "Goodlife Musanze",
 ]
 
 # Reorder the site list to move the environment variable specified default site to the first location
-env_var = os.getenv("DEFAULT_SITE")
+site_env_var = os.getenv("DEFAULT_SITE")
 
-if env_var in SITE_LIST:
-    SITE_LIST.insert(0, SITE_LIST.pop(SITE_LIST.index(env_var)))
+if site_env_var in SITE_LIST:
+    SITE_LIST.insert(0, SITE_LIST.pop(SITE_LIST.index(site_env_var)))
 
 
 CLINICAL_SAMPLE = "Whole blood (clinical, P. falciparum endemic)"
@@ -82,6 +83,11 @@ SAMPLE_LIST = [
     "Other/unknown",
     "Development (for testing use only)",
 ]
+
+# Reorder the sample type list
+sample_env_var = os.getenv("DEFAULT_SAMPLE_TYPE")
+if sample_env_var in SAMPLE_LIST:
+    SAMPLE_LIST.insert(0, SAMPLE_LIST.pop(SAMPLE_LIST.index(sample_env_var)))
 
 # ================ Experiment end conditions period ================ #
 # Timeout period

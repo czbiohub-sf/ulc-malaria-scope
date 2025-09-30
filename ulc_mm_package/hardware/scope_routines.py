@@ -76,8 +76,16 @@ class Routines:
             The number of steps that the motor was moved.
         """
 
-        ssaf_steps_from_focus = mscope.autofocus_model(img_arr)
-        steps_to_move = -round(np.mean(ssaf_steps_from_focus))
+        res = mscope.autofocus_model(img_arr)
+
+        # The indices of the first output correspond to below/in/above focus.
+        # We subtract one so that it maps to -1, 0, +1, and then subsequently take the element-wise product with the
+        # magnitude vector to get the number of steps away from focus.
+        above_or_below_vec = np.array([np.argmax(r[0][0]) - 1 for r in res])
+        magnitude_vec = np.array([np.argmax(r[1][0]) for r in res])
+        steps_vec = above_or_below_vec * magnitude_vec
+
+        steps_to_move = -round(np.mean(steps_vec))
 
         try:
             dir = Direction.CW if steps_to_move > 0 else Direction.CCW
@@ -147,11 +155,21 @@ class Routines:
                 mscope.autofocus_model.asyn(img, img_counter)
                 results = mscope.autofocus_model.get_asyn_results(timeout=0.005) or []
 
-                for res in sorted(results, key=lambda res: res.id):
+                for res in sorted(results, key=lambda res: res[0].id):
                     move_counter += 1
+                    direction_asyn_result = res[0]
+                    mag_asyn_result = res[1]
 
-                    steps_from_focus = res.result.item()
-                    filtered_error = ssaf_filter.update_and_get_val(steps_from_focus)
+                    direction = (
+                        np.argmax(direction_asyn_result.result) - 1
+                    )  # Subtract 1 so that it maps to -1, 0, +1
+                    magnitude = np.argmax(mag_asyn_result.result)
+                    mag_conf = mag_asyn_result.result[0][magnitude]
+                    if mag_conf >= nn_constants.MAG_CONF_THRESH:
+                        steps_from_focus = direction * magnitude
+                        filtered_error = ssaf_filter.update_and_get_val(
+                            steps_from_focus
+                        )
 
                 throttle_counter = 0
 
