@@ -926,6 +926,7 @@ class Oracle(Machine):
         self.logger.info("Successfully terminated acquisition and liveview timer.")
 
         # Shut off hardware
+        self.scopeop.mscope.fan.turn_off_all()
         self.scopeop.mscope.shutoff()
 
         # Shut off acquisition thread
