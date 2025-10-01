@@ -25,6 +25,7 @@ from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
 from PyQt5.QtWidgets import QDateEdit, QTimeEdit
 from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
+    SITE_ENV_VAR,
     SITE_LIST,
     SAMPLE_LIST,
     TOOLBAR_OFFSET,
@@ -129,6 +130,9 @@ class FormGUI(QDialog):
 
         self.site_val.addItems(SITE_LIST)
         self.sample_val.addItems(SAMPLE_LIST)
+
+        if SITE_ENV_VAR is not None:
+            self.site_val.setEnabled(False)
 
         # Set tab behavior
         self.notes_val.setTabChangesFocus(True)

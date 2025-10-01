@@ -68,10 +68,10 @@ SITE_LIST = [
 ]
 
 # Reorder the site list to move the environment variable specified default site to the first location
-site_env_var = os.getenv("DEFAULT_SITE")
+SITE_ENV_VAR = os.getenv("DEFAULT_SITE")
 
-if site_env_var in SITE_LIST:
-    SITE_LIST.insert(0, SITE_LIST.pop(SITE_LIST.index(site_env_var)))
+if SITE_ENV_VAR in SITE_LIST:
+    SITE_LIST.insert(0, SITE_LIST.pop(SITE_LIST.index(SITE_ENV_VAR)))
 
 
 CLINICAL_SAMPLE = "Whole blood (clinical, P. falciparum endemic)"
