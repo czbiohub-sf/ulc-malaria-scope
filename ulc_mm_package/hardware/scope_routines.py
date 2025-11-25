@@ -520,13 +520,6 @@ class Routines:
 
         img = yield
 
-        # Initial check for cells, return current motor position if cells found
-        cell_finder.add_image(mscope.motor.pos, img)
-        try:
-            return cell_finder.get_cells_found_position()
-        except NoCellsFound:
-            cell_finder.reset()
-
         # Defensive check, ensure the motor isn't moving (say for example,
         # if CellFinder was triggered by an OOF exception and SSAF just triggered a motor move)
         while mscope.motor.is_locked():
@@ -582,7 +575,7 @@ class Routines:
                 )
 
             self.logger.info("Looking for cells...")
-            # Perform a full focal stack and get the cross-correlation value for each image
+
             # If we're currently at the bottom, do the bottom-up sweep. Otherwise, do the top-down sweep.
             if mscope.motor.pos == 0:
                 for pos in range(0, mscope.motor.max_pos, steps_per_image):
@@ -603,18 +596,11 @@ class Routines:
                     except NoCellsFound:
                         pass
             else:
-                # Move from the current position to the bottom sweep as we're going down
-                for pos in range(mscope.motor.pos, 0, -steps_per_image):
-                    mscope.motor.move_abs(pos)
-                    img = yield
-                    cell_finder.add_image(mscope.motor.pos, img)
-                    try:
-                        return cell_finder.get_cells_found_position()
-                    except NoCellsFound:
-                        pass
-
-                # If cells not found on the way down, sweep all the way back up
-                for pos in range(0, mscope.motor.max_pos, steps_per_image):
+                # Sweep down from current position to bottom, then sweep from bottom to top
+                positions = list(range(mscope.motor.pos, 0, -steps_per_image)) + list(
+                    range(0, mscope.motor.max_pos, steps_per_image)
+                )
+                for pos in positions:
                     mscope.motor.move_abs(pos)
                     img = yield
                     cell_finder.add_image(mscope.motor.pos, img)
