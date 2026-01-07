@@ -1153,7 +1153,7 @@ class ScopeOp(QObject, NamedMachine):
         t1 = perf_counter()
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
 
-        mem_usage = int(self.vmem.used / 1024**2)
+        mem_usage = int(psutil.virtual_memory().used / 1024**2)
         self._update_metadata_if_verbose("mem_usage_mb", mem_usage)
 
         for key in PERIODIC_METADATA_KEYS:
