@@ -47,6 +47,7 @@ setup(
         "numba==0.56.0",
         "Jinja2==3.1.3",
         "xhtml2pdf==0.2.11",
+        "psutil==5.5.1",
     ],
     extras_require={
         "dev": [
