@@ -87,7 +87,7 @@ class NCSModel:
         self._temp_infer_queue = AsyncInferQueue(self.model)
 
         # used for asyn
-        self.asyn_infer_queue = AsyncInferQueue(self.model)
+        self.asyn_infer_queue = AsyncInferQueue(self.model, jobs=16)
         self.asyn_infer_queue.set_callback(self._default_callback)
         self._asyn_results: List[
             Union[AsyncInferenceResult, List[AsyncInferenceResult]]
