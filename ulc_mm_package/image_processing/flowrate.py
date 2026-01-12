@@ -57,7 +57,6 @@ class FlowRateEstimator:
         self.img_height, self.img_width = img_height, img_width
 
         # for multi-proc
-        print(f"FRE expects: {img_height}, {img_width}")
         self.multiproc_interface = msr.MultiProcFunc.from_arg_definitions(
             get_flowrate_with_cross_correlation,
             work_fn_inputs=[

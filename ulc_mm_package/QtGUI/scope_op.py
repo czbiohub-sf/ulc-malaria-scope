@@ -858,7 +858,6 @@ class ScopeOp(QObject, NamedMachine):
 
         try:
             img_ds = downsample_image(img, DOWNSAMPLE_FACTOR)
-            print(f"Starting fast flow - sending img of shape {img_ds.shape}")
             self.flowrate, syringe_can_move = self.fastflow_routine.send(
                 (img_ds, timestamp)
             )

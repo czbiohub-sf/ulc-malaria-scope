@@ -271,7 +271,6 @@ class Routines:
         while True:
             img, timestamp = yield flow_val, syringe_can_move
 
-            print(f"Flow control received img of shape: {img.shape}")
             # Get the flow value, difference from target flow, and whether the syringe can move
             # If syringe_can_move is False, a CantReachTargetFlowrate exception was raised, meaning
             # the syringe can't move further and the target flowrate has not been reached.
