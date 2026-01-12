@@ -123,7 +123,7 @@ class AVTCamera(CameraBase):
         self.camera.ReverseY.set(True)
 
         # 2x2 binning
-        self.setBinning(bin_factor=2)
+        self.setBinning(bin_factor=1)
 
         # Monochrome uint8
         self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
