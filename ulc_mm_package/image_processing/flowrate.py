@@ -20,7 +20,6 @@ class FlowRateEstimator:
         self,
         img_height: int = CAMERA_SELECTION.IMG_HEIGHT // DOWNSAMPLE_FACTOR,
         img_width: int = CAMERA_SELECTION.IMG_WIDTH // DOWNSAMPLE_FACTOR,
-        scale_factor: int = DOWNSAMPLE_FACTOR,
     ):
         """A class for estimating the flow rate of cells using a 2D cross-correlation.
         The class holds two images at a time in `frame_a` and `frame_b`. To use this class,
@@ -58,6 +57,7 @@ class FlowRateEstimator:
         self.img_height, self.img_width = img_height, img_width
 
         # for multi-proc
+        print(f"FRE expects: {img_height}, {img_width}")
         self.multiproc_interface = msr.MultiProcFunc.from_arg_definitions(
             get_flowrate_with_cross_correlation,
             work_fn_inputs=[

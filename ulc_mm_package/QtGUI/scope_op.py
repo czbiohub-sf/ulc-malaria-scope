@@ -517,11 +517,11 @@ class ScopeOp(QObject, NamedMachine):
         try:
             if self.classic_focus_routine is None:
                 self.classic_focus_routine = self.routines.classic_focus_routine(
-                    downsample_image(self.last_img, 10)
+                    downsample_image(self.last_img, DOWNSAMPLE_FACTOR)
                 )
             else:
                 self.routines.classic_focus._check_and_update_metric(
-                    downsample_image(self.last_img, 10)
+                    downsample_image(self.last_img, DOWNSAMPLE_FACTOR)
                 )
         except Exception as e:
             self.logger.error(
@@ -780,7 +780,8 @@ class ScopeOp(QObject, NamedMachine):
 
         if not self.autofocus_done:
             if len(self.autofocus_batch) < AF_BATCH_SIZE:
-                self.autofocus_batch.append(img)
+                img_ds = downsample_image(img, 2)
+                self.autofocus_batch.append(img_ds)
 
                 if self.running:
                     self.img_signal.connect(self.run_autofocus)
@@ -856,9 +857,10 @@ class ScopeOp(QObject, NamedMachine):
             )
 
         try:
-            img_ds_10x = downsample_image(img, DOWNSAMPLE_FACTOR)
+            img_ds = downsample_image(img, DOWNSAMPLE_FACTOR)
+            print(f"Starting fast flow - sending img of shape {img_ds.shape}")
             self.flowrate, syringe_can_move = self.fastflow_routine.send(
-                (img_ds_10x, timestamp)
+                (img_ds, timestamp)
             )
 
             if self.flowrate is not None:
@@ -953,9 +955,10 @@ class ScopeOp(QObject, NamedMachine):
         t1 = perf_counter()
         self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
+        img_ds_2x = downsample_image(img, 2)
         t0 = perf_counter()
         prev_yogo_results = self.routines.count_parasitemia(
-            self.mscope, YOGO.crop_img(img), self.frame_count
+            self.mscope, YOGO.crop_img(img_ds_2x), self.frame_count
         )
         t1 = perf_counter()
 
@@ -1007,7 +1010,7 @@ class ScopeOp(QObject, NamedMachine):
                 raw_focus_err,
                 filtered_focus_err,
                 focus_adjustment,
-            ) = self.PSSAF_routine.send(img)
+            ) = self.PSSAF_routine.send(img_ds_2x)
         except MotorControllerError as e:
             if not SIMULATION:
                 self.logger.error(
@@ -1039,11 +1042,11 @@ class ScopeOp(QObject, NamedMachine):
         # ------------------------------------
         t0 = perf_counter()
         # Downsample image for use in flowrate + classic image focus metric
-        img_ds_10x = downsample_image(img, 10)
+        img_ds = downsample_image(img, DOWNSAMPLE_FACTOR)
         try:
             # Returns the ratio of the current sharpness metric over the best seen
             # so far
-            sharpness_ratio_rel_peak = self.classic_focus_routine.send(img_ds_10x)
+            sharpness_ratio_rel_peak = self.classic_focus_routine.send(img_ds)
         except OOF as e:
             self.logger.warning(
                 f"Strayed too far away from focus, transitioning to cell-finder. {e}"
@@ -1055,7 +1058,7 @@ class ScopeOp(QObject, NamedMachine):
         # Run flow control routine
         # ------------------------------------
         try:
-            self.flowrate, _ = self.flowcontrol_routine.send((img_ds_10x, timestamp))
+            self.flowrate, _ = self.flowcontrol_routine.send((img_ds, timestamp))
         except Exception as e:
             self.logger.error(f"Unexpected flow control exception - {e}")
             self.flowrate = -1

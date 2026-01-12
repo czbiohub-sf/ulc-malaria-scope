@@ -18,6 +18,7 @@ from PyQt5.QtCore import (
 from py_cameras import PyCamerasError
 
 from ulc_mm_package.hardware.scope import MalariaScope
+from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.scope_constants import ACQUISITION_PERIOD
 
 
@@ -92,5 +93,6 @@ class Acquisition(QObject):
             self.logger.error(f"Failed to grab image: {e}.")
 
     def send_img(self):
-        self.update_liveview.emit(self.img)
+        img_ds = downsample_image(self.img, 2)
+        self.update_liveview.emit(img_ds)
         self.update_infopanel.emit()
