@@ -89,7 +89,7 @@ def create_widget_for_field(field_def):
         w = QComboBox()
         w.addItem("True", True)
         w.addItem("False", False)
-        w.AddItem("None", None)
+        w.addItem("None", None)
         w.setCurrentIndex(-1)
     else:
         raise ValueError(f"Unsupported field type: {t}")
