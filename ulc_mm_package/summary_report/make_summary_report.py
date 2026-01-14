@@ -385,10 +385,8 @@ def make_html_report(
         if experiment_metadata["operator_id"]
         else "-"
     )
-    participant = (
-        experiment_metadata["participant_id"]
-        if experiment_metadata["participant_id"]
-        else "-"
+    sample = (
+        experiment_metadata["sample_id"] if experiment_metadata["sample_id"] else "-"
     )
     notes = experiment_metadata["notes"] if experiment_metadata["notes"] else "-"
     fc_id = (
@@ -401,7 +399,7 @@ def make_html_report(
         "css_file": css_path,
         "dataset_name": dataset_name,
         "operator_id": operator,
-        "participant_id": participant,
+        "sample_id": sample,
         "notes": notes,
         "flowcell_id": fc_id,
         "class_name_to_cell_count": format_cell_counts(compensator, cell_counts),
@@ -465,7 +463,7 @@ if __name__ == "__main__":
     # Dummy data
     exp_metadata = {
         "operator_id": "MK",
-        "participant_id": "1034",
+        "sample_id": "1034",
         "notes": "sample only",
         "flowcell_id": "A5",
     }

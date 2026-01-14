@@ -114,6 +114,7 @@ class DataStorage:
         custom_experiment_name: str,
         datetime_str: str,
         experiment_initialization_metadata: Dict,
+        study_metadata: Optional[Dict],
         per_image_metadata_keys: list,
     ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
@@ -125,6 +126,9 @@ class DataStorage:
 
         experiment_initialization_metadata: Dict [str : val]
             A dictionary of the experiment initialization parameters.
+
+        study_metadata: Optional[Dict]
+            If a study was selected, additional metadata is provided that will be stored in a separate study_metadata.csv
 
         per_image_metadata_keys: list [str]
             A list of the metadata keys to be stored on a per-image basis. The keys are used to create a .csv file.
@@ -172,6 +176,18 @@ class DataStorage:
             )
             writer.writeheader()
             writer.writerow(experiment_initialization_metadata)
+
+        # Create study metadata file
+        if study_metadata is not None:
+            study_md_file = (
+                self.main_dir
+                / self.experiment_folder
+                / f"{self.time_str}_study_metadata.csv"
+            )
+            with open(study_md_file, "w") as f:
+                writer = csv.DictWriter(f, fieldnames=list(study_metadata.keys()))
+                writer.writeheader()
+                writer.writerow(study_metadata)
 
         # Create Zarr Storage
         filename = (
@@ -281,112 +297,122 @@ class DataStorage:
 
             ### Create summary report
             self.logger.info("> Creating summary report...")
-            summary_report_dir = self.get_experiment_path() / "summary_report"
-            Path.mkdir(summary_report_dir, exist_ok=True)
-
-            ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
-            ### so provide absolute filepaths only. Note this means that the html file will be broken if viewed from anywhere other than the Pi.
-
-            class_to_all_thumbnails_abs_path: Dict[str, List[str]] = {
-                x: [
-                    str(y.resolve())
-                    for y in list(class_to_thumbnails_path[x].rglob("*.png"))
-                ]
-                for x in class_to_thumbnails_path.keys()
-            }
-
-            html_abs_path_temp_loc = (
-                summary_report_dir / f"{self.time_str}_temp_summary.html"
-            )
-            pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
-
-            # Create per-image metadata plot
-            per_image_metadata_plot_save_loc = str(
-                summary_report_dir / f"{self.time_str}_per_image_metadata_plot.jpg"
-            )
-
-            counts_plot_loc = str(summary_report_dir / "counts.jpg")
-            conf_plot_loc = str(summary_report_dir / "confs.jpg")
-            objectness_plot_loc = str(summary_report_dir / "objectness.jpg")
-
-            # Only generate additional plots if DEBUG_REPORT environment variable is set to True
-            if DEBUG_REPORT:
-                with open(self.per_img_metadata_filename, "r") as per_img_metadata_file:
-                    make_per_image_metadata_plots(
-                        per_img_metadata_file, per_image_metadata_plot_save_loc
-                    )
-
-                try:
-                    make_cell_count_plot(pred_tensors, counts_plot_loc)
-                except Exception as e:
-                    self.logger.error(f"Failed to make cell count plot - {e}")
-                try:
-                    make_yogo_conf_plots(pred_tensors, conf_plot_loc)
-                except Exception as e:
-                    self.logger.error(f"Failed to make yogo confidence plots - {e}")
-                try:
-                    make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
-                except Exception as e:
-                    self.logger.error(f"Failed to make yogo objectness plots - {e}")
-
-            # Get cell counts
-            raw_cell_counts = np.asarray(get_class_counts(pred_tensors))
-            (
-                comp_parasitemia,
-                comp_parasitemia_err,
-            ) = self.compensator.get_res_from_counts(raw_cell_counts, units_ul_out=True)
-            # Associate class with counts
-            class_name_to_cell_count = {
-                x.capitalize(): y for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
-            }
-            # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
-
-            # Create parasitemia plot
-            parasitemia_plot_loc = str(self.get_parasitemia_vis_filename())
             try:
-                make_parasitemia_plot(
+                summary_report_dir = self.get_experiment_path() / "summary_report"
+                Path.mkdir(summary_report_dir, exist_ok=True)
+
+                ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
+                ### so provide absolute filepaths only. Note this means that the html file will be broken if viewed from anywhere other than the Pi.
+
+                class_to_all_thumbnails_abs_path: Dict[str, List[str]] = {
+                    x: [
+                        str(y.resolve())
+                        for y in list(class_to_thumbnails_path[x].rglob("*.png"))
+                    ]
+                    for x in class_to_thumbnails_path.keys()
+                }
+
+                html_abs_path_temp_loc = (
+                    summary_report_dir / f"{self.time_str}_temp_summary.html"
+                )
+                pdf_save_loc = summary_report_dir / f"{self.time_str}_summary.pdf"
+
+                # Create per-image metadata plot
+                per_image_metadata_plot_save_loc = str(
+                    summary_report_dir / f"{self.time_str}_per_image_metadata_plot.jpg"
+                )
+
+                counts_plot_loc = str(summary_report_dir / "counts.jpg")
+                conf_plot_loc = str(summary_report_dir / "confs.jpg")
+                objectness_plot_loc = str(summary_report_dir / "objectness.jpg")
+
+                # Only generate additional plots if DEBUG_REPORT environment variable is set to True
+                if DEBUG_REPORT:
+                    with open(
+                        self.per_img_metadata_filename, "r"
+                    ) as per_img_metadata_file:
+                        make_per_image_metadata_plots(
+                            per_img_metadata_file, per_image_metadata_plot_save_loc
+                        )
+
+                    try:
+                        make_cell_count_plot(pred_tensors, counts_plot_loc)
+                    except Exception as e:
+                        self.logger.error(f"Failed to make cell count plot - {e}")
+                    try:
+                        make_yogo_conf_plots(pred_tensors, conf_plot_loc)
+                    except Exception as e:
+                        self.logger.error(f"Failed to make yogo confidence plots - {e}")
+                    try:
+                        make_yogo_objectness_plots(pred_tensors, objectness_plot_loc)
+                    except Exception as e:
+                        self.logger.error(f"Failed to make yogo objectness plots - {e}")
+
+                # Get cell counts
+                raw_cell_counts = np.asarray(get_class_counts(pred_tensors))
+                (
                     comp_parasitemia,
                     comp_parasitemia_err,
-                    parasitemia_plot_loc,
+                ) = self.compensator.get_res_from_counts(
+                    raw_cell_counts, units_ul_out=True
                 )
+                # Associate class with counts
+                class_name_to_cell_count = {
+                    x.capitalize(): y
+                    for (x, y) in zip(YOGO_CLASS_LIST, raw_cell_counts)
+                }
+                # 'parasites per ul' is # of rings / total rbcs * scaling factor (RBCS_PER_UL)
+
+                # Create parasitemia plot
+                parasitemia_plot_loc = str(self.get_parasitemia_vis_filename())
+                try:
+                    make_parasitemia_plot(
+                        comp_parasitemia,
+                        comp_parasitemia_err,
+                        parasitemia_plot_loc,
+                    )
+                except Exception as e:
+                    self.logger.error(f"Failed to make parasitemia plot - {e}")
+
+                # HTML w/ absolute path
+                abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
+                html_report_with_abs_path = make_html_report(
+                    self.compensator,
+                    self.time_str,
+                    self.experiment_level_metadata,
+                    per_image_metadata_plot_save_loc,
+                    raw_cell_counts,
+                    class_to_all_thumbnails_abs_path,
+                    parasitemia_plot_loc,
+                    counts_plot_loc,
+                    conf_plot_loc,
+                    objectness_plot_loc,
+                    css_path=abs_css_file_path,
+                )
+
+                # Copy the CSS file to the summary directory
+                shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
+
+                # Save the temporary HTML file w/ absolute path so we can properly generate the PDF
+                save_html_report(html_report_with_abs_path, html_abs_path_temp_loc)
+                create_pdf_from_html(html_abs_path_temp_loc, pdf_save_loc)
+
+                # Make a copy of the summary PDF to the Desktop
+                shutil.copy(pdf_save_loc, DESKTOP_SUMMARY_DIR)
+
+                # Remove intermediate files
+                remove(html_abs_path_temp_loc)
+                remove(summary_report_dir / CSS_FILE_NAME)
+
+                if DEBUG_REPORT:
+                    remove(counts_plot_loc)
+                    remove(per_image_metadata_plot_save_loc)
+                    remove(conf_plot_loc)
+                    remove(objectness_plot_loc)
             except Exception as e:
-                self.logger.error(f"Failed to make parasitemia plot - {e}")
-
-            # HTML w/ absolute path
-            abs_css_file_path = str((summary_report_dir / CSS_FILE_NAME).resolve())
-            html_report_with_abs_path = make_html_report(
-                self.compensator,
-                self.time_str,
-                self.experiment_level_metadata,
-                per_image_metadata_plot_save_loc,
-                raw_cell_counts,
-                class_to_all_thumbnails_abs_path,
-                parasitemia_plot_loc,
-                counts_plot_loc,
-                conf_plot_loc,
-                objectness_plot_loc,
-                css_path=abs_css_file_path,
-            )
-
-            # Copy the CSS file to the summary directory
-            shutil.copy(SUMMARY_REPORT_CSS_FILE, summary_report_dir)
-
-            # Save the temporary HTML file w/ absolute path so we can properly generate the PDF
-            save_html_report(html_report_with_abs_path, html_abs_path_temp_loc)
-            create_pdf_from_html(html_abs_path_temp_loc, pdf_save_loc)
-
-            # Make a copy of the summary PDF to the Desktop
-            shutil.copy(pdf_save_loc, DESKTOP_SUMMARY_DIR)
-
-            # Remove intermediate files
-            remove(html_abs_path_temp_loc)
-            remove(summary_report_dir / CSS_FILE_NAME)
-
-            if DEBUG_REPORT:
-                remove(counts_plot_loc)
-                remove(per_image_metadata_plot_save_loc)
-                remove(conf_plot_loc)
-                remove(objectness_plot_loc)
+                self.logger.error(
+                    f"Unexpected exception when saving summary report: {e}. Skipping report and continuing..."
+                )
 
             # Write to a separate csv with just cell counts for each class
             self.logger.info("Writing cell counts to csv...")
