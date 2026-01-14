@@ -6,11 +6,13 @@ from PyQt5.QtGui import QIntValidator
 from PyQt5.QtGui import QDoubleValidator
 
 from PyQt5.QtWidgets import (
+    QAbstractItemView,
     QComboBox,
     QDialog,
     QDateEdit,
     QFormLayout,
     QLineEdit,
+    QListWidget,
     QPushButton,
     QScrollArea,
     QTextEdit,
@@ -25,7 +27,8 @@ DATATYPE_TO_WIDGET = {
     "float": "doublespinbox",
     "date": "dateedit",
     "enum": "combobox",
-    "bool": "checkbox",
+    "bool": "combobox",
+    "multiselect": "listwidget",
 }
 
 
@@ -91,6 +94,11 @@ def create_widget_for_field(field_def):
         w.addItem("False", False)
         w.addItem("None", None)
         w.setCurrentIndex(-1)
+    elif t == "multiselect":
+        w = QListWidget()
+        for choice in field_def.get("choices", []):
+            w.addItem(choice)
+        w.setSelectionMode(QAbstractItemView.MultiSelection)
     else:
         raise ValueError(f"Unsupported field type: {t}")
 
