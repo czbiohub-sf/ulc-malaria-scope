@@ -35,6 +35,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtWidgets import QPushButton
 
 from ulc_mm_package.scope_constants import (
     LOCKFILE,
@@ -68,6 +69,7 @@ from ulc_mm_package.QtGUI.gui_constants import (
     FAIL_MSG,
     TERMINATED_MSG,
 )
+import ulc_mm_package.QtGUI.study_metadata_form as study_form
 from ulc_mm_package.neural_nets.neural_network_constants import (
     AUTOFOCUS_MODEL_DIR,
     YOGO_MODEL_DIR,
@@ -77,7 +79,6 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
 from ulc_mm_package.QtGUI.scope_op import ScopeOp
 from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
-from PyQt5.QtWidgets import QPushButton
 
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
@@ -209,6 +210,7 @@ class Oracle(Machine):
     def _set_variables(self):
         # Instantiate metadata dicts
         self.form_metadata = None
+        self.study_metadata = None
         self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
 
         self.liveview_window.set_infopanel_vals()
@@ -268,7 +270,7 @@ class Oracle(Machine):
 
     def _init_sigslots(self):
         # Connect experiment form buttons
-        self.form_window.start_btn.clicked.connect(self.save_form)
+        self.form_window.start_btn.clicked.connect(self._maybe_start_study_form)
         self.form_window.exit_btn.clicked.connect(self.form_exit_handler)
         self.form_window.close_event.connect(self.close_handler)
 
@@ -428,7 +430,7 @@ class Oracle(Machine):
             (
                 "The CAP module can now be removed."
                 "\n\nPlease empty both reservoirs and reload 12 uL of fresh "
-                "diluted blood (from the same participant) into the sample reservoir. Make sure to close the lid after."
+                "diluted blood (from the same sample) into the sample reservoir. Make sure to close the lid after."
                 '\n\nAfter reloading the reservoir and closing the lid, click "OK" to resume this run.'
             ),
             buttons=Buttons.OK,
@@ -626,6 +628,26 @@ class Oracle(Machine):
     def _start_form(self, *args):
         self.form_window.showMaximized()
 
+    def _maybe_start_study_form(self):
+        form_metadata = self.form_window.get_form_input()
+        study_id = form_metadata["study_id"]
+        if study_id != "":
+            cfg = study_form.get_cfg_from_study_id(study_id)
+            if cfg is not None:
+                self.study_form_dialog = study_form.StudyMetadata(cfg, self.form_window)
+                self.study_form_dialog.btn_start.clicked.connect(
+                    self.get_study_metadata
+                )
+                self.study_form_dialog.showMaximized()
+            else:
+                self.save_form()
+        else:
+            self.save_form()
+
+    def get_study_metadata(self):
+        self.study_metadata = self.study_form_dialog.get_form_input()
+        self.save_form()
+
     def save_form(self):
         self.form_metadata = self.form_window.get_form_input()
         self.form_window.reset_parameters()
@@ -634,10 +656,6 @@ class Oracle(Machine):
 
         for key in self.form_metadata:
             self.experiment_metadata[key] = self.form_metadata[key]
-
-        # DATA-TODO verify if user input satisfies required format
-        # -> if data fails verification, prompt user for correction using "display_message" (defined above)
-        # -> if data passes verification, call "self.next_state" to open liveview
 
         # Assign other metadata parameters
         self.experiment_metadata["scope"] = socket.gethostname()
@@ -688,6 +706,7 @@ class Oracle(Machine):
             "",
             self.datetime_str,
             self.experiment_metadata,
+            self.study_metadata,
             PER_IMAGE_METADATA_KEYS,
         )
 

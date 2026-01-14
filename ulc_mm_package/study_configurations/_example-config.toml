@@ -1,0 +1,50 @@
+[study_description]
+key = "example_study" # IMPORTANT! Ensure this study ID is unique.
+name = "Example Study"
+
+# Metadata fields
+[[metadata]]
+key = "key1_blah"
+label = "numbers galore"
+datatype = "int"
+required = true
+
+[[metadata]]
+key = "key2_blah"
+label = "string stuff"
+datatype = "string"
+required = true
+
+[[metadata]]
+key = "key3"
+label = "choices"
+datatype = "enum"
+choices = ["control", "low_dose", "high_dose"]
+default = "control"
+
+[[metadata]]
+key = "key4"
+label = "Multiselect"
+datatype = "multiselect"
+choices = ["pickme", "orme", "orwho", "or", "allofus"]
+
+
+[[metadata]]
+key = "key5"
+label = "Long string"
+datatype = "string"
+placeholder = "[your sonata here]"
+required = false
+multiline = true
+
+[[metadata]]
+key = "key6"
+label = "what time is it"
+datatype = "date"
+required = false
+
+[[metadata]]
+key = "key7"
+label = "floating"
+datatype = "float"
+required = true
