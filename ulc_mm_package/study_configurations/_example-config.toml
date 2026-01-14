@@ -1,5 +1,5 @@
 [study_description]
-id = "example_study" # IMPORTANT! Ensure this study ID is unique.
+key = "example_study" # IMPORTANT! Ensure this study ID is unique.
 name = "Example Study"
 
 # Metadata fields
