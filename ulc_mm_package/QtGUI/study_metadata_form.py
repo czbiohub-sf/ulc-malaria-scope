@@ -181,7 +181,6 @@ class StudyMetadata(QDialog):
                     break
         if all_filled:
             self.btn_start.setEnabled(True)
-            self.btn_start.setFocus(True)
         else:
             self.btn_start.setEnabled(False)
 
@@ -208,6 +207,8 @@ class StudyMetadata(QDialog):
                 value = widget.currentText()
             elif t == "bool":
                 value = widget.currentData()
+            elif t == "multiselect":
+                value = [x.text() for x in widget.selectedItems()]
             else:
                 value = None
 
