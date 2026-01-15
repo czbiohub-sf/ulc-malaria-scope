@@ -646,6 +646,7 @@ class Oracle(Machine):
 
     def get_study_metadata(self):
         self.study_metadata = self.study_form_dialog.get_form_input()
+        self.study_form_dialog.close()
         self.save_form()
 
     def save_form(self):

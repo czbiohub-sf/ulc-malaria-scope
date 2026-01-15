@@ -4,13 +4,13 @@ name = "Example Study"
 
 # Metadata fields
 [[metadata]]
-key = "key1_blah"
+key = "key1"
 label = "numbers galore"
 datatype = "int"
 required = true
 
 [[metadata]]
-key = "key2_blah"
+key = "key2"
 label = "string stuff"
 datatype = "string"
 required = true
