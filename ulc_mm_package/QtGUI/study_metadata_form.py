@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from typing import Dict, List, Optional, Tuple
 
 from PyQt5.QtCore import QDate
@@ -240,7 +241,9 @@ class StudyMetadata(QDialog):
                 value = None if not text else int(widget.text())
             elif t == "float":
                 text = widget.text().strip()
-                value = None if not text else float(widget.text())
+                value = (
+                    None if not text else float(re.sub(r"[^\d.]", "", widget.text()))
+                )
             elif t == "date":
                 qd = widget.date()
                 value = qd.toString("yyyy-MM-dd")
