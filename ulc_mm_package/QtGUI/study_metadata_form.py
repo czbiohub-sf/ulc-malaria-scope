@@ -230,8 +230,7 @@ class StudyMetadata(QDialog):
         subkeys = []
         for _, (widget, field) in self._widgets.items():
             t = field["datatype"]
-            key = field["key"]
-
+            key = field.get("key")
             if t == "string":
                 value = (
                     widget.toPlainText() if field.get("multiline") else widget.text()
