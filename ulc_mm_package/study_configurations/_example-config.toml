@@ -21,12 +21,15 @@ label = "choices"
 datatype = "enum"
 choices = ["control", "low_dose", "high_dose"]
 default = "control"
+required = true
 
 [[metadata]]
 key = "key4"
 label = "Multiselect"
 datatype = "multiselect"
 choices = ["pickme", "orme", "orwho", "or", "allofus"]
+subkeys = ["choice1", "choice2", "choice3", "choice4", "choice5"]
+required = false
 
 
 [[metadata]]
