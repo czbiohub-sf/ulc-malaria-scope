@@ -1,4 +1,4 @@
-""" SHT3x-DIS - Humidity and Temperature Sensor
+"""SHT3x-DIS - Humidity and Temperature Sensor
 
 See HT sensor module under hardware/real/ for more info.
 

@@ -1,9 +1,5 @@
-from typing import List, Tuple
-
 import cv2
 import numpy as np
-
-from typing import Optional
 
 from ulc_mm_package.hardware import multiprocess_scope_routine as msr
 from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR
@@ -54,7 +50,7 @@ class FlowRateEstimator:
             sets the size of the displacement arrays determines when `isFull` returns True.
         """
 
-        self.timestamps: List[float] = [0.0, 0.0]
+        self.timestamps: list[float] = [0.0, 0.0]
         self.img_height, self.img_width = img_height, img_width
 
         # for multi-proc
@@ -73,7 +69,7 @@ class FlowRateEstimator:
 
         self.frame_a, self.frame_b = self.multiproc_interface._input_ctypes
 
-        self._prev_img: Optional[np.ndarray] = None
+        self._prev_img: np.ndarray | None = None
 
     def reset(self) -> None:
         """Reset initialization booleans."""
@@ -120,7 +116,7 @@ class FlowRateEstimator:
     ) -> float:
         return (displacement / tdiff) / img_dim
 
-    def _calculate_pair_displacement(self) -> Tuple[float, float, float]:
+    def _calculate_pair_displacement(self) -> tuple[float, float, float]:
         """Return dx, dy displacement in px and the cross correlation coefficient ('confidence')"""
 
         dx, dy, confidence = self.multiproc_interface._func_call()  # type:ignore
@@ -128,7 +124,7 @@ class FlowRateEstimator:
 
     def add_image_and_calculate_pair_displacement(
         self, img: np.ndarray, timestamp: float
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         """A convenience function to add an image and perform a displacement calculation.
 
         Note: The very first measurement returned (after sending only a single image) should be ignored,
@@ -205,7 +201,7 @@ def get_flowrate_with_cross_correlation(
     temp_x2_perc: float = 0.85,
     temp_y2_perc: float = 0.45,
     debug: bool = False,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Find the displacement of a subregion of an image with another, temporally adjacent, image.
 
     Parameters

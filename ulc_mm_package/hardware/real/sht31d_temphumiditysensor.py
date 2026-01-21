@@ -1,4 +1,4 @@
-""" SHT3x-DIS - Humidity and Temperature Sensor
+"""SHT3x-DIS - Humidity and Temperature Sensor
 
 -- Important Links --
 Datasheet:

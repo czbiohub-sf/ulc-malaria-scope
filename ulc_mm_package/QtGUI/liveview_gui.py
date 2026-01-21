@@ -4,13 +4,15 @@ Displays camera preview and conveys info to user during runs."""
 
 import sys
 from functools import partial
-from typing import List, NamedTuple, Dict, Tuple
+from typing import NamedTuple
 from time import strftime, gmtime
 
 from qimage2ndarray import gray2qimage
 import numpy as np
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtCore import Qt, pyqtSlot, pyqtSignal, QSize, QRect
+from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
     QGridLayout,
@@ -27,10 +29,7 @@ from PyQt5.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QScrollBar,
-    QDesktopWidget,
 )
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QSize
-from PyQt5.QtGui import QPixmap, QIcon
 
 from ulc_mm_package.image_processing.flow_control import get_flow_error
 
@@ -59,8 +58,8 @@ class ThumbnailDisplay(NamedTuple):
     class_name: str
     class_id: int
     list_widget: QListWidget
-    list_widget_conf_labels: List[QLabel]
-    list_widget_img_labels: List[QLabel]
+    list_widget_conf_labels: list[QLabel]
+    list_widget_img_labels: list[QLabel]
 
 
 class LiveviewGUI(QMainWindow):
@@ -72,7 +71,12 @@ class LiveviewGUI(QMainWindow):
         self.target_flowrate = None
 
         # Get screen parameters
-        self.screen = QDesktopWidget().screenGeometry()
+        screen = QApplication.primaryScreen()
+        if screen is not None:
+            self.screen = screen.geometry()
+        else:
+            self.screen = QRect(0, 0, 800, 480)
+
         if self.screen.height() > 480:
             self.big_screen = True
         else:
@@ -225,8 +229,8 @@ class LiveviewGUI(QMainWindow):
     @pyqtSlot(object)
     def update_thumbnails(
         self,
-        tuple_of_dict_of_thumbnails: Tuple[
-            Dict[int, List[Thumbnail]], Dict[int, List[Thumbnail]]
+        tuple_of_dict_of_thumbnails: tuple[
+            dict[int, list[Thumbnail]], dict[int, list[Thumbnail]]
         ],
     ):
         max_confs = tuple_of_dict_of_thumbnails[0]
@@ -350,14 +354,14 @@ class LiveviewGUI(QMainWindow):
         self.flowrate_val = QLabel("-")
 
         # Set title alignments
-        self.state_lbl.setAlignment(Qt.AlignCenter)
-        self.cell_count_title.setAlignment(Qt.AlignCenter)
-        self.focus_title.setAlignment(Qt.AlignCenter)
-        self.flowrate_title.setAlignment(Qt.AlignCenter)
-        self.tcp_lbl.setAlignment(Qt.AlignCenter)
-        self.end_of_run_progress_bar.setAlignment(Qt.AlignCenter)
+        self.state_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.cell_count_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.focus_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.flowrate_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.tcp_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.end_of_run_progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.end_of_run_progress_bar.setStyleSheet(
-            "QProgressBar::chunk " "{" "background-color: green;" "}"
+            "QProgressBar::chunk {background-color: green;}"
         )
 
         # Setup column size
@@ -429,7 +433,7 @@ class LiveviewGUI(QMainWindow):
         # Populate liveview tab
         self.liveview_img = QLabel()
 
-        self.liveview_img.setAlignment(Qt.AlignCenter)
+        self.liveview_img.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.liveview_img.setMinimumSize(1, 1)
         self.liveview_img.setScaledContents(True)
 
@@ -443,22 +447,27 @@ class LiveviewGUI(QMainWindow):
 
         # Populate thumbnail tab
         class_labels = [QLabel(c.capitalize()) for c in CLASSES_TO_DISPLAY]
-        [label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft) for label in class_labels]
+        [
+            label.setAlignment(
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft
+            )
+            for label in class_labels
+        ]
 
-        self.max_and_min_conf_thumbnail_displays: Dict[str, List[ThumbnailDisplay]] = {
+        self.max_and_min_conf_thumbnail_displays: dict[str, list[ThumbnailDisplay]] = {
             "max_conf": [],
             "min_conf": [],
         }
         for k in self.max_and_min_conf_thumbnail_displays.keys():
-            thumbnail_lists: List[ThumbnailDisplay] = []
+            thumbnail_lists: list[ThumbnailDisplay] = []
             for i, c in enumerate(CLASSES_TO_DISPLAY):
                 class_id = CLASS_IDS[i]
                 class_name = c
-                conf_labels: List[QLabel] = []
-                img_labels: List[QLabel] = []
+                conf_labels: list[QLabel] = []
+                img_labels: list[QLabel] = []
 
                 list_widget = QListWidget()
-                list_widget.setFlow(QListView.LeftToRight)
+                list_widget.setFlow(QListView.Flow.LeftToRight)
                 list_widget.setContentsMargins(0, 0, 0, 0)
 
                 for i in range(MAX_THUMBNAILS):
@@ -470,7 +479,9 @@ class LiveviewGUI(QMainWindow):
                     )
 
                     conf_label = QLabel()
-                    conf_label.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
+                    conf_label.setAlignment(
+                        Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter
+                    )
 
                     img_label = QLabel()
                     conf_labels.append(conf_label)
@@ -478,11 +489,11 @@ class LiveviewGUI(QMainWindow):
 
                     layout.addWidget(conf_label)
                     layout.addWidget(img_label)
-                    layout.setAlignment(Qt.AlignVCenter)
+                    layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
                     w.setLayout(layout)
 
                     v = QListWidgetItem()
-                    v.setFlags(Qt.NoItemFlags)
+                    v.setFlags(Qt.ItemFlag.NoItemFlags)
                     qs = QSize()
                     qs.setHeight(MIN_THUMBNAIL_DISPLAY_SIZE)
                     qs.setWidth(MIN_THUMBNAIL_DISPLAY_SIZE)
@@ -617,4 +628,4 @@ if __name__ == "__main__":
 
     gui.showMaximized()
     gui.exit_btn.clicked.connect(gui.close)
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

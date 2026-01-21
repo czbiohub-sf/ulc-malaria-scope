@@ -1,4 +1,4 @@
-""" TPS54201DDCT - Synchronous Buck Mono-Colour/IR LED Driver
+"""TPS54201DDCT - Synchronous Buck Mono-Colour/IR LED Driver
 
 See LED module under hardware/real/ for more info.
 
@@ -16,17 +16,13 @@ class LED_TPS5420TDDCT_Base:
     def __init__(self):
         self.pwm_duty_cycle = ANALOG_DIM_MODE_DUTYCYCLE
 
-    def turnOn(self):
-        ...
+    def turnOn(self): ...
 
-    def turnOff(self):
-        ...
+    def turnOff(self): ...
 
-    def close(self):
-        ...
+    def close(self): ...
 
-    def setDutyCycle(self, duty_cycle_perc: float):
-        ...
+    def setDutyCycle(self, duty_cycle_perc: float): ...
 
 
 @hardware

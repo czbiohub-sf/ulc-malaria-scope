@@ -1,6 +1,5 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Tuple, Dict, List
 
 from ulc_mm_package.scope_constants import ACQUISITION_FPS, CAMERA_SELECTION
 
@@ -49,7 +48,7 @@ YOGO_MODEL_CACHE_DIR = str(curr_dir / "cached_models" / YOGO_MODEL_NAME)
 if not Path(YOGO_MODEL_DIR).exists():
     raise FileNotFoundError("yogo model not found")
 
-YOGO_CLASS_LIST: Tuple[str, ...] = (
+YOGO_CLASS_LIST: tuple[str, ...] = (
     "healthy",
     "ring",
     "trophozoite",
@@ -58,25 +57,25 @@ YOGO_CLASS_LIST: Tuple[str, ...] = (
     "wbc",
     "misc",
 )
-YOGO_CLASS_IDX_MAP: Dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
-RBC_CLASS_IDS: List[int] = [
+YOGO_CLASS_IDX_MAP: dict[str, int] = {k: idx for idx, k in enumerate(YOGO_CLASS_LIST)}
+RBC_CLASS_IDS: list[int] = [
     YOGO_CLASS_IDX_MAP["healthy"],
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],
     YOGO_CLASS_IDX_MAP["schizont"],
 ]
-ASEXUAL_PARASITE_CLASS_IDS: List[int] = [
+ASEXUAL_PARASITE_CLASS_IDS: list[int] = [
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],
     YOGO_CLASS_IDX_MAP["schizont"],
 ]
-ALL_PARASITE_CLASS_IDS: List[int] = [
+ALL_PARASITE_CLASS_IDS: list[int] = [
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],
     YOGO_CLASS_IDX_MAP["schizont"],
     YOGO_CLASS_IDX_MAP["gametocyte"],
 ]
-CLASS_IDS_FOR_TABLE_COUNTS: List[int] = [
+CLASS_IDS_FOR_TABLE_COUNTS: list[int] = [
     YOGO_CLASS_IDX_MAP["healthy"],
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],
@@ -84,7 +83,7 @@ CLASS_IDS_FOR_TABLE_COUNTS: List[int] = [
     YOGO_CLASS_IDX_MAP["gametocyte"],
     YOGO_CLASS_IDX_MAP["wbc"],
 ]
-CLASS_IDS_FOR_THUMBNAILS: List[int] = [
+CLASS_IDS_FOR_THUMBNAILS: list[int] = [
     YOGO_CLASS_IDX_MAP["healthy"],
     YOGO_CLASS_IDX_MAP["ring"],
     YOGO_CLASS_IDX_MAP["trophozoite"],

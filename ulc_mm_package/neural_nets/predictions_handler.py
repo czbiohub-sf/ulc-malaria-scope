@@ -1,5 +1,4 @@
 import heapq as hq
-from typing import Dict, List, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -48,14 +47,14 @@ class PredictionsHandler:
         class_ids = [YOGO_CLASS_IDX_MAP[x] for x in YOGO_CLASS_LIST]
         self.class_ids = class_ids
 
-        self.max_confs: Dict[int, List[nn_utils.SinglePredictedObject]] = {
+        self.max_confs: dict[int, list[nn_utils.SinglePredictedObject]] = {
             x: [] for x in class_ids
         }
         self.curr_min_of_max_confs_by_class = {
             x: HIGH_CONF_THRESH - 1e-6 for x in class_ids
         }
 
-        self.min_confs: Dict[int, List[nn_utils.SinglePredictedObject]] = {
+        self.min_confs: dict[int, list[nn_utils.SinglePredictedObject]] = {
             x: [] for x in class_ids
         }
         self.curr_max_of_min_confs_by_class = {x: HIGH_CONF_THRESH for x in class_ids}
@@ -98,7 +97,7 @@ class PredictionsHandler:
 
     def _add_pred_tensor_to_store(
         self, img_id: int, prediction_tensor: npt.NDArray
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Append the image id to the given prediction tensor and add it to the storage.
 
         Parameters
@@ -109,7 +108,7 @@ class PredictionsHandler:
 
         Returns
         -------
-        Tuple[int, int]
+        tuple[int, int]
             The start and end column positions of the added array in the tensor store
         """
 
@@ -239,24 +238,24 @@ class PredictionsHandler:
     def _get_thumbnails(
         self,
         zarr_store: zarr.core.Array,
-        confs: Dict[int, List[nn_utils.SinglePredictedObject]],
-    ) -> Dict[int, List[Thumbnail]]:
+        confs: dict[int, list[nn_utils.SinglePredictedObject]],
+    ) -> dict[int, list[Thumbnail]]:
         """Extract thumbnails from the specified confidence Dict (i.e self.min_confs or self.max_confs)
 
         Parameters
         ----------
         zarr_store: zarr.core.Array
             Zarr store in which the original images are stored
-        confs: Dict[int, List[nn_utils.SinglePredictedObject]]
+        confs: dict[int, list[nn_utils.SinglePredictedObject]]
             Either self.min_confs or self.max_confs
 
         Returns
         -------
-        Dict[int, List[Thumbnail]]
+        dict[int, list[Thumbnail]]
             int (class_id) -> List of thumbnails (numpy arrays)
         """
 
-        thumbnails: Dict[int, List[Thumbnail]] = {x: [] for x in self.class_ids}
+        thumbnails: dict[int, list[Thumbnail]] = {x: [] for x in self.class_ids}
         for c in self.class_ids:
             for obj in confs[c]:
                 img_id = obj.parsed[0].astype(np.uint32)
@@ -273,7 +272,7 @@ class PredictionsHandler:
 
     def get_max_conf_thumbnails(
         self, zarr_store: zarr.core.Array
-    ) -> Dict[int, List[Thumbnail]]:
+    ) -> dict[int, list[Thumbnail]]:
         """Get the maximum confidence thumbnails.
 
         Parameters
@@ -291,7 +290,7 @@ class PredictionsHandler:
 
     def get_min_conf_thumbnails(
         self, zarr_store: zarr.core.Array
-    ) -> Dict[int, List[Thumbnail]]:
+    ) -> dict[int, list[Thumbnail]]:
         """Get the minimum confidence thumbnails.
 
         Parameters

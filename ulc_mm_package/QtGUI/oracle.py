@@ -12,7 +12,6 @@ import subprocess
 import socket
 import sys
 import traceback
-from typing import Optional
 
 from os import (
     listdir,
@@ -28,14 +27,14 @@ from logging import LogRecord
 from datetime import datetime
 from pathlib import Path
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtWidgets import (
     QApplication,
     QMessageBox,
     QLabel,
+    QPushButton,
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QPushButton
 
 from ulc_mm_package.scope_constants import (
     LOCKFILE,
@@ -81,14 +80,11 @@ from ulc_mm_package.QtGUI.form_gui import FormGUI
 from ulc_mm_package.QtGUI.liveview_gui import LiveviewGUI
 
 
-QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-
-
 class Buttons(enum.Enum):
-    OK = QMessageBox.Ok
-    CANCEL = QMessageBox.Cancel | QMessageBox.Ok
-    YN = QMessageBox.No | QMessageBox.Yes
-    NONE = QMessageBox.NoButton
+    OK = QMessageBox.StandardButton.Ok
+    CANCEL = QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Ok
+    YN = QMessageBox.StandardButton.No | QMessageBox.StandardButton.Yes
+    NONE = QMessageBox.StandardButton.NoButton
 
 
 class ShutoffApplication(QApplication):
@@ -103,8 +99,8 @@ class NoCloseMessageBox(QMessageBox):
         super().__init__()
 
         # Disable [x] button (this doesn't work on all raspian images!)
-        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.CustomizeWindowHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
 
     # In case the [x] button can't be disabled, this prevents the window from closing when it's clicked
     def closeEvent(self, event):
@@ -195,7 +191,7 @@ class Oracle(Machine):
                 'Click "Yes" to override lock and run anyways, at your own risk.',
                 buttons=Buttons.YN,
             )
-            if message_result == QMessageBox.No:
+            if message_result == QMessageBox.StandardButton.No:
                 self.logger.warning(
                     f"Terminating run because scope is locked when lockfile ({LOCKFILE}) exists."
                 )
@@ -417,7 +413,7 @@ class Oracle(Machine):
             message,
             buttons=buttons,
         )
-        if message_result == QMessageBox.Ok:
+        if message_result == QMessageBox.StandardButton.Ok:
             if self.scopeop.state not in NO_PAUSE_STATES:
                 self.scopeop.to_pause()
         else:
@@ -468,7 +464,7 @@ class Oracle(Machine):
             'Click "OK" to end the experiment and shutoff the scope.',
             buttons=Buttons.CANCEL,
         )
-        if message_result == QMessageBox.Ok:
+        if message_result == QMessageBox.StandardButton.Ok:
             self.shutoff()
 
     def liveview_exit_handler(self):
@@ -478,7 +474,7 @@ class Oracle(Machine):
             'Click "OK" to end this run.',
             buttons=Buttons.CANCEL,
         )
-        if message_result == QMessageBox.Ok:
+        if message_result == QMessageBox.StandardButton.Ok:
             self.lid_handler_enabled = False
             self.scopeop.to_intermission(TERMINATED_MSG)
 
@@ -530,7 +526,7 @@ class Oracle(Machine):
                 buttons=Buttons.YN,
                 image=QR_code,
             )
-            if message_result == QMessageBox.No:
+            if message_result == QMessageBox.StandardButton.No:
                 self.scopeop.to_intermission(FAIL_MSG)
             else:
                 if self.scopeop.state == "fastflow":
@@ -561,12 +557,16 @@ class Oracle(Machine):
 
             image_lbl = QLabel()
             image_lbl.setPixmap(
-                QPixmap(image).scaledToWidth(700, Qt.SmoothTransformation)
+                QPixmap(image).scaledToWidth(
+                    700, Qt.TransformationMode.SmoothTransformation
+                )
             )
 
             # Row/column span determined using layout.rowCount() and layout.columnCount()
             # TODO: Mypy doesn't like this because of "too many args" and "alignment"
-            layout.addWidget(image_lbl, 4, 0, 1, 3, alignment=Qt.AlignCenter)  # type: ignore
+            layout.addWidget(
+                image_lbl, 4, 0, 1, 3, alignment=Qt.AlignmentFlag.AlignCenter
+            )  # type: ignore
 
         if buttons is Buttons.NONE:
             self.message_window.show()
@@ -661,9 +661,9 @@ class Oracle(Machine):
         # Assign other metadata parameters
         self.experiment_metadata["scope"] = socket.gethostname()
         self.experiment_metadata["camera"] = CAMERA_SELECTION.name
-        self.experiment_metadata[
-            "exposure"
-        ] = self.scopeop.mscope.camera.exposureTime_ms
+        self.experiment_metadata["exposure"] = (
+            self.scopeop.mscope.camera.exposureTime_ms
+        )
         self.experiment_metadata["target_brightness"] = TOP_PERC_TARGET_VAL
         self.experiment_metadata["autofocus_model"] = Path(
             AUTOFOCUS_MODEL_DIR
@@ -789,7 +789,7 @@ class Oracle(Machine):
         self,
         msg=None,
         parasitemia_vis_path="",
-        run_qc_status: Optional[int] = None,
+        run_qc_status: int = None,
     ):
         if msg is None:
             # Retriggered intermission due to race condition
@@ -816,12 +816,14 @@ class Oracle(Machine):
                 msg_box.setText("✅ The run quality is GOOD.\n\n")
 
                 # Ok button
-                msg_box.addButton(QMessageBox.Ok)
+                msg_box.addButton(QMessageBox.StandardButton.Ok)
 
                 # Add button to open subsample images
                 if subsample_dir is not None:
                     investigate_btn = QPushButton("View subsample images")
-                    msg_box.addButton(investigate_btn, QMessageBox.ActionRole)
+                    msg_box.addButton(
+                        investigate_btn, QMessageBox.ButtonRole.ActionRole
+                    )
                     msg_box.exec()
                     if msg_box.clickedButton() == investigate_btn:
                         # Path to the subsample images directory
@@ -850,12 +852,14 @@ class Oracle(Machine):
                 )
 
                 # Ok button
-                msg_box.addButton(QMessageBox.Ok)
+                msg_box.addButton(QMessageBox.StandardButton.Ok)
 
                 # Add button to open subsample images
                 if subsample_dir is not None:
                     investigate_btn = QPushButton("View subsample images")
-                    msg_box.addButton(investigate_btn, QMessageBox.ActionRole)
+                    msg_box.addButton(
+                        investigate_btn, QMessageBox.ButtonRole.ActionRole
+                    )
                     msg_box.exec()
                     if msg_box.clickedButton() == investigate_btn:
                         if os.name == "posix":
@@ -889,9 +893,9 @@ class Oracle(Machine):
             'Click "Yes" to start a new run or "No" to shutoff scope.',
             buttons=Buttons.YN,
         )
-        if message_result == QMessageBox.No:
+        if message_result == QMessageBox.StandardButton.No:
             self.shutoff()
-        elif message_result == QMessageBox.Yes:
+        elif message_result == QMessageBox.StandardButton.Yes:
             self._start_new_log()
             self.logger.info("Starting new experiment.")
             if not DataStorage.is_there_sufficient_storage(self.ext_dir):

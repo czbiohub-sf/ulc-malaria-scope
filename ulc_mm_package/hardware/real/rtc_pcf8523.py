@@ -1,10 +1,10 @@
-""" PCF8523 - Real-Time Clock (RTC) and Calendar
+"""PCF8523 - Real-Time Clock (RTC) and Calendar
 
--- Important Links -- 
+-- Important Links --
 Datasheet:
     https://www.nxp.com/docs/en/data-sheet/PCF8523.pdf
 Adafruit's PCF8523 Python library:
-    https://circuitpython.readthedocs.io/projects/pcf8523/en/latest/ 
+    https://circuitpython.readthedocs.io/projects/pcf8523/en/latest/
 """
 
 import time

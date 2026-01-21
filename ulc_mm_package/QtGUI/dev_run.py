@@ -5,14 +5,13 @@ from pathlib import Path
 import sys
 import traceback
 import subprocess
-from typing import Dict
 from time import perf_counter, sleep
 
 import cv2
 import numpy as np
-from PyQt5 import QtWidgets, uic  # type: ignore
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt6 import QtWidgets, uic  # type: ignore
+from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
+from PyQt6.QtGui import QImage, QPixmap
 from qimage2ndarray import gray2qimage
 from gpiozero import CPUTemperature
 
@@ -63,8 +62,6 @@ from ulc_mm_package.neural_nets.AutofocusInference import AutoFocus
 import ulc_mm_package.neural_nets.neural_network_constants as nn_constants
 
 cpu = CPUTemperature()
-
-QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
 # Qt GUI Files
 curr_dir = Path(__file__).parent.resolve()  # Get full path
@@ -149,7 +146,7 @@ class AcquisitionThread(QThread):
             self.autofocus_model = AutoFocus()
         except RuntimeError as e:
             raise RuntimeError(
-                f'got {str(e)}:\n {subprocess.getoutput("lsusb | grep Myriad")}'
+                f"got {str(e)}:\n {subprocess.getoutput('lsusb | grep Myriad')}"
             )
         self.active_autofocus = False
         self.prev_autofocus_time = 0.0
@@ -182,7 +179,7 @@ class AcquisitionThread(QThread):
                     print(e)
                     print(traceback.format_exc())
 
-    def getMetadata(self) -> Dict:
+    def getMetadata(self) -> dict:
         """Required metadata:
         - Measurement type (actual diagnostic experiment or data collection)
         - Sample type / sample name (i.e dataset name)
@@ -466,7 +463,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
                 "ERROR! No external harddrive / SSD detected. Press OK to continue, cancel to quit.",
                 cancel=True,
             )
-            if retval == QtWidgets.QMessageBox.Ok:
+            if retval == QtWidgets.QMessageBox.StandardButton.Ok:
                 self.external_dir = None
             else:
                 quit()
@@ -646,10 +643,11 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         msgBox.setText(f"{text}")
         if cancel:
             msgBox.setStandardButtons(
-                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+                QtWidgets.QMessageBox.StandardButton.Ok
+                | QtWidgets.QMessageBox.StandardButton.Cancel
             )
         else:
-            msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgBox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
         return msgBox.exec()
 
     def txtBoxFocusGotFocus(self):
@@ -700,7 +698,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             start_time = self.acquisitionThread.start_time
             num_images = self.acquisitionThread.im_counter
             print(
-                f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time-start_time):.2f} fps)"
+                f"{num_images} images taken in {end_time - start_time:.2f}s ({num_images / (end_time - start_time):.2f} fps)"
             )
 
             return
@@ -947,7 +945,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             cancel=True,
         )
 
-        if retval == QtWidgets.QMessageBox.Ok:
+        if retval == QtWidgets.QMessageBox.StandardButton.Ok:
             self.disableMotorUIElements()
             self.acquisitionThread.runFullZStack()
 
@@ -967,7 +965,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             cancel=True,
         )
 
-        if retval == QtWidgets.QMessageBox.Ok:
+        if retval == QtWidgets.QMessageBox.StandardButton.Ok:
             self.disableMotorUIElements()
             self.acquisitionThread.runLocalZStack()
 
@@ -1142,7 +1140,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             cancel=True,
         )
 
-        if retval == QtWidgets.QMessageBox.Ok:
+        if retval == QtWidgets.QMessageBox.StandardButton.Ok:
             # Move syringe back and de-energize
             self.pneumatic_module.close()
 
@@ -1171,7 +1169,7 @@ def main():
         app = QtWidgets.QApplication(sys.argv)
         main_window = MalariaScopeGUI()
         main_window.show()
-        app.exec_()
+        app.exec()
     finally:
         main_window.mscope.shutoff()
 

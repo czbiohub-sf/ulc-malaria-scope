@@ -1,4 +1,4 @@
-""" daA1600-60um - Basler dart camera
+"""daA1600-60um - Basler dart camera
 
 See camera module under hardware/real/ for more info.
 

@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
 
-from typing import List, Optional
-
 
 from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.image_processing.processing_constants import (
@@ -67,9 +65,9 @@ class CellFinder:
             cv2.imread(template_path, 0), downsample_factor
         )
         self.downsample_factor = downsample_factor
-        self.motor_pos: List[int] = []
-        self.confidences: List[float] = []
-        self.maps: List[np.ndarray] = []
+        self.motor_pos: list[int] = []
+        self.confidences: list[float] = []
+        self.maps: list[np.ndarray] = []
 
     def add_image(self, motor_pos: int, img: np.ndarray) -> None:
         """Check for cells for the given image, store the result + motor position the image was taken at."""
@@ -79,7 +77,7 @@ class CellFinder:
         self.confidences.append(np.max(xcorr_map))
         self.maps.append(xcorr_map)
 
-    def get_cells_found_position(self) -> Optional[int]:
+    def get_cells_found_position(self) -> int | None:
         """Check if the cross-correlation value exceeds the threshold for cell detection and there are
         a sufficient number of points above the cells found threshold.
 

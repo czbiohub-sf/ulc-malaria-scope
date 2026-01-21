@@ -1,7 +1,6 @@
 import functools
 
 from threading import Lock
-from typing import Optional
 from contextlib import contextmanager
 
 
@@ -26,7 +25,7 @@ def lock_no_block(lock, exception):
 
 
 @contextmanager
-def lock_timeout(lock: Lock, timeout: Optional[float] = None):
+def lock_timeout(lock: Lock, timeout: float | None = None):
     """lock context manager w/ timeout
 
     timeout value of 'None' or negative numbers disables timeout

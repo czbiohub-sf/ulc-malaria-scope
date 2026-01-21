@@ -7,7 +7,7 @@ Receives images from the camera and sends them to Liveview and ScopeOp.
 import logging
 import numpy as np
 
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     QObject,
     QTimer,
     pyqtSignal,
@@ -40,11 +40,11 @@ class Acquisition(QObject):
     @pyqtSlot()
     def create_timers(self):
         self.acquisition_timer = QTimer()
-        self.acquisition_timer.setTimerType(Qt.PreciseTimer)
+        self.acquisition_timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.acquisition_timer.timeout.connect(self.get_img)
 
         self.liveview_timer = QTimer()
-        self.liveview_timer.setTimerType(Qt.PreciseTimer)
+        self.liveview_timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.liveview_timer.timeout.connect(self.send_img)
 
         self.logger.info("Created acquisition and liveview timers.")

@@ -7,7 +7,6 @@ from os import remove
 from pathlib import Path
 import shutil
 from time import perf_counter
-from typing import Dict, List, Optional
 
 import cv2
 import numpy as np
@@ -68,13 +67,13 @@ def write_img(img: np.ndarray, filepath: Path):
 
 
 class DataStorage:
-    def __init__(self, default_fps: Optional[float] = None):
+    def __init__(self, default_fps: float | None = None):
         self.logger = logging.getLogger(__name__)
         self.stats_utils = None
         self.zw = ZarrWriter()
-        self.md_writer: Optional[csv.DictWriter] = None
-        self.metadata_file: Optional[io.TextIOWrapper] = None
-        self.main_dir: Optional[Path] = None
+        self.md_writer: csv.DictWriter | None = None
+        self.metadata_file: io.TextIOWrapper | None = None
+        self.main_dir: Path | None = None
         self.md_keys = None
         if default_fps is not None:
             self.fps = default_fps
@@ -113,9 +112,9 @@ class DataStorage:
         ext_dir: str,
         custom_experiment_name: str,
         datetime_str: str,
-        experiment_initialization_metadata: Dict,
+        experiment_initialization_metadata: dict,
         per_image_metadata_keys: list,
-        study_metadata: Optional[Dict] = None,
+        study_metadata: dict | None = None,
     ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
 
@@ -203,7 +202,7 @@ class DataStorage:
             self.main_dir / self.experiment_folder / f"{self.time_str}_qc_results.csv"
         )
 
-    def writeData(self, image: np.ndarray, metadata: Dict, count: int):
+    def writeData(self, image: np.ndarray, metadata: dict, count: int):
         """Write a new image and its corresponding metadata.
 
         Parameters
@@ -251,9 +250,9 @@ class DataStorage:
 
     def close(
         self,
-        pred_tensors: Optional[npt.NDArray] = None,
-        heatmap: Optional[npt.NDArray] = None,
-    ) -> Optional[Future]:
+        pred_tensors: npt.NDArray | None = None,
+        heatmap: npt.NDArray | None = None,
+    ) -> Future | None:
         """Close the per-image metadata .csv file and Zarr image store
 
         Parameters
@@ -270,7 +269,7 @@ class DataStorage:
             (future.done())
         """
 
-        self.logger.info(f"{'='*10}Closing data storage.{'='*10}")
+        self.logger.info(f"{'=' * 10}Closing data storage.{'=' * 10}")
 
         self.logger.info("> Saving subsample images...")
         self.save_uniform_sample()
@@ -291,7 +290,7 @@ class DataStorage:
             self.logger.info(
                 "> Saving subset of healthy and parasite thumbnails to disk..."
             )
-            class_to_thumbnails_path: Dict[str, Path] = save_thumbnails_to_disk(
+            class_to_thumbnails_path: dict[str, Path] = save_thumbnails_to_disk(
                 self.zw.array, pred_tensors, self.get_experiment_path()
             )
 
@@ -304,7 +303,7 @@ class DataStorage:
                 ### NOTE: xhtml2pdf fails if you provide relative image file paths, e.g ("../thumbnails/ring/1.png")
                 ### so provide absolute filepaths only. Note this means that the html file will be broken if viewed from anywhere other than the Pi.
 
-                class_to_all_thumbnails_abs_path: Dict[str, List[str]] = {
+                class_to_all_thumbnails_abs_path: dict[str, list[str]] = {
                     x: [
                         str(y.resolve())
                         for y in list(class_to_thumbnails_path[x].rglob("*.png"))
@@ -575,7 +574,7 @@ class DataStorage:
     @staticmethod
     def _unif_subsequence_distribution(
         max_val: int, subsequence_length: int, num_subsequences: int
-    ) -> List[int]:
+    ) -> list[int]:
         """Generate a set number of uniformly distributed subsequences.
 
         Parameters
@@ -599,7 +598,7 @@ class DataStorage:
                 f"Too few images to extract {num_subsequences} subsequences of size {subsequence_length}"
             )
 
-        all_indices: List[int] = []
+        all_indices: list[int] = []
         for multiple in range(0, num_subsequences):
             idx = int(multiple * interval)
             all_indices.extend(list(range(idx, idx + subsequence_length)))
@@ -619,7 +618,7 @@ class DataStorage:
 
         return zarr.open(str(self.zarr_filepath), mode="r")
 
-    def save_qc_data(self, img_indices: List[int], qc_results: List[float]) -> None:
+    def save_qc_data(self, img_indices: list[int], qc_results: list[float]) -> None:
         """Save the QC results to a file."""
 
         if self.main_dir is None or self.experiment_folder is None:

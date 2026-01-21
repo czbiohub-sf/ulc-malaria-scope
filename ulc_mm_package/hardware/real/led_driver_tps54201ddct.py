@@ -1,4 +1,4 @@
-""" TPS54201DDCT - Synchronous Buck Mono-Colour/IR LED Driver
+"""TPS54201DDCT - Synchronous Buck Mono-Colour/IR LED Driver
 
 -- Important Links --
 Datasheet:

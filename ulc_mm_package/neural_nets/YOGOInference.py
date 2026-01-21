@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
-from typing import Any, List, Union
-from typing_extensions import TypeAlias
+from typing import Any, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -78,9 +77,7 @@ class YOGO(NCSModel):
     def __call__(self, input_img: npt.NDArray, idxs: Any = None):
         return self.asyn(input_img, idxs)
 
-    def syn(
-        self, input_imgs: Union[npt.NDArray, List[npt.NDArray]], sort: bool = False
-    ):
+    def syn(self, input_imgs: npt.NDArray | list[npt.NDArray], sort: bool = False):
         return [YOGO._format_res(r) for r in super().syn(input_imgs, sort)]
 
     def _default_callback(self, infer_request, userdata: Any):

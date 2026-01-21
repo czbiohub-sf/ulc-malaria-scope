@@ -1,4 +1,4 @@
-""" Adafruit MPRLS Ported Pressure Sensor Breakout Board and PWM Servo
+"""Adafruit MPRLS Ported Pressure Sensor Breakout Board and PWM Servo
 
 See RTC under hardware/real/ for more info
 

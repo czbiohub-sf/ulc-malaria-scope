@@ -1,5 +1,4 @@
 import enum
-from typing import Tuple, Optional
 
 import numpy as np
 
@@ -82,7 +81,7 @@ def assessBrightness(
 
 def adjustBrightness(
     img: np.ndarray, target_pixel_val: int, led: LED_TPS5420TDDCT, step_size_perc: float
-) -> Tuple[AB, float]:
+) -> tuple[AB, float]:
     """Adjusts the LED's duty cycle to achieve the target brightness.
 
     Returns
@@ -162,8 +161,8 @@ class Autobrightness:
         ki: float = pc.AB_PID_KI,
         kd: float = pc.AB_PID_KD,
     ):
-        self.prev_brightness_enum: Optional[AB] = None
-        self.prev_mean_img_brightness: Optional[float] = None
+        self.prev_brightness_enum: AB | None = None
+        self.prev_mean_img_brightness: float | None = None
         self.target_pixel_val: int = target_pixel_val
         self.led = led
         self.step_size_perc = step_size_perc
@@ -176,7 +175,7 @@ class Autobrightness:
         self.ki = ki
         self.kd = kd
 
-        self.prev_error: Optional[float] = None
+        self.prev_error: float | None = None
         self.integral_error = 0.0
 
     def runAutobrightness(self, img: np.ndarray) -> bool:

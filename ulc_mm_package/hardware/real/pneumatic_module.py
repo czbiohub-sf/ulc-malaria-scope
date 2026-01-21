@@ -1,4 +1,4 @@
-""" Adafruit MPRLS Ported Pressure Sensor Breakout Board and PWM Servo
+"""Adafruit MPRLS Ported Pressure Sensor Breakout Board and PWM Servo
 
 -- Important Links --
 Adafruit Product Page:
@@ -14,7 +14,6 @@ import threading
 import configparser
 
 from time import sleep, perf_counter
-from typing import Tuple
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
@@ -111,14 +110,14 @@ class PneumaticModule:
             return True
         return False
 
-    def get_config_params(self) -> Tuple[float, float, float]:
+    def get_config_params(self) -> tuple[float, float, float]:
         """Returns min/max duty cycles for syringe position and step size from the configuration file if it exists."""
         if self.config_exists():
             config = configparser.ConfigParser()
             try:
-                assert (
-                    len(config.read(f"{CONFIGURATION_FILE}")) > 0
-                ), f"configparser failed to read file {CONFIGURATION_FILE}."
+                assert len(config.read(f"{CONFIGURATION_FILE}")) > 0, (
+                    f"configparser failed to read file {CONFIGURATION_FILE}."
+                )
                 min_duty_cycle = float(config["SYRINGE"]["MIN_DUTY_CYCLE"])
                 max_duty_cycle = float(config["SYRINGE"]["MAX_DUTY_CYCLE"])
                 step_size = float(config["SYRINGE"]["DUTY_CYCLE_STEP"])
@@ -233,21 +232,21 @@ class PneumaticModule:
     def is_locked():
         return SYRINGE_LOCK.locked()
 
-    def getPressure(self) -> Tuple[float, PressureSensorRead]:
+    def getPressure(self) -> tuple[float, PressureSensorRead]:
         return self.mpr.getPressure()
 
-    def getPressureImmediately(self) -> Tuple[float, PressureSensorRead]:
+    def getPressureImmediately(self) -> tuple[float, PressureSensorRead]:
         return self.mpr.getPressureImmediately()
 
     def getPressureMaxReadAttempts(
         self, max_attempts: int = 10
-    ) -> Tuple[float, PressureSensorRead]:
+    ) -> tuple[float, PressureSensorRead]:
         return self.mpr.getPressureMaxReadAttempts(max_attempts)
 
     def getAmbientPressure(self) -> float:
         return self.mpr.ambient_pressure
 
-    def direct_read(self) -> Tuple[float, PressureSensorRead]:
+    def direct_read(self) -> tuple[float, PressureSensorRead]:
         return self.mpr.direct_read()
 
 
@@ -290,7 +289,7 @@ class AdafruitMPRLS:
         sleep(0.005)
         self._pi.write(self.mprls_pwr_pin, 1)
 
-    def getPressure(self) -> Tuple[float, PressureSensorRead]:
+    def getPressure(self) -> tuple[float, PressureSensorRead]:
         """Attempt to read the pressure sensor. Return pressure and status.
 
         If a read is done while the pressure sensor is busy, the previous value will be returned.
@@ -298,7 +297,7 @@ class AdafruitMPRLS:
 
         Returns
         -------
-        Tuple[float, PressureSensorRead]:
+        tuple[float, PressureSensorRead]:
             float - pressure valuei.
             PressureSensorRead - enum which shows whether a status bit was funky when reading the pressure.
 
@@ -322,7 +321,7 @@ class AdafruitMPRLS:
             self.logger.warning("Returning previous pressure value.")
             return self.prev_pressure, self.prev_status
 
-    def getPressureImmediately(self) -> Tuple[float, PressureSensorRead]:
+    def getPressureImmediately(self) -> tuple[float, PressureSensorRead]:
         """Attempt to read the pressure sensor immediately, raises an exception if sensor busy.
 
         This differs from `getPressure()` in that `getPressure()` will return the most recent
@@ -331,7 +330,7 @@ class AdafruitMPRLS:
 
         Returns
         -------
-        Tuple[float, PressureSensorRead]:
+        tuple[float, PressureSensorRead]:
             float - pressure valuei.
             PressureSensorRead - enum which shows whether a status bit was funky when reading the pressure.
 
@@ -358,7 +357,7 @@ class AdafruitMPRLS:
 
     def getPressureMaxReadAttempts(
         self, max_attempts: int = 10
-    ) -> Tuple[float, PressureSensorRead]:
+    ) -> tuple[float, PressureSensorRead]:
         """Attempt to read the sensor `max_attempt` times before raising an exception.
 
         Parameters
@@ -421,7 +420,7 @@ class AdafruitMPRLS:
             i2c.readinto(self.mpr._buffer, end=4)
             return True
 
-    def direct_read(self) -> Tuple[float, PressureSensorRead]:
+    def direct_read(self) -> tuple[float, PressureSensorRead]:
         """Pressure sensor direct read.
 
         This pressure sensor has had a notorious track record of throwing Integrity Errors.
@@ -432,7 +431,7 @@ class AdafruitMPRLS:
 
         Returns
         -------
-        Tuple[float, PressureSensorRead]:
+        tuple[float, PressureSensorRead]:
             float - pressure
             PressureSensorRead - status bit (all good, saturation, or integrity error)
 

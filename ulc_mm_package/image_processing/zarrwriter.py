@@ -1,4 +1,4 @@
-""" Simple Zarr storage format wrapper
+"""Simple Zarr storage format wrapper
 
 -- Important Links --
 Library Documentation:
@@ -9,7 +9,6 @@ Library Documentation:
 import zarr
 import logging
 
-from typing import List
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, Future, wait
 
 from ulc_mm_package.scope_constants import CameraOptions, CAMERA_SELECTION, MAX_FRAMES
@@ -32,7 +31,7 @@ class WriteInProgress(Exception):
 class ZarrWriter:
     def __init__(self, camera_selection: CameraOptions = CAMERA_SELECTION):
         self.writable = False
-        self.futures: List[Future] = []
+        self.futures: list[Future] = []
         self.logger = logging.getLogger(__name__)
         self.executor = ThreadPoolExecutor(max_workers=1)
 

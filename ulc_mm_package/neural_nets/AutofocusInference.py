@@ -2,7 +2,7 @@
 
 from functools import partial
 import queue
-from typing import Any, Union, List
+from typing import Any
 
 import numpy.typing as npt
 from openvino.preprocess import PrePostProcessor
@@ -73,7 +73,7 @@ class AutoFocus(NCSModel):
         return self.syn(input_img)
 
     def _cb(
-        self, result_list: List, infer_request: InferRequest, userdata: Any
+        self, result_list: list, infer_request: InferRequest, userdata: Any
     ) -> None:
         result_list.append(
             [
@@ -99,8 +99,8 @@ class AutoFocus(NCSModel):
             self._asyn_results.append(r)
 
     def syn(
-        self, input_imgs: Union[npt.NDArray, List[npt.NDArray]], sort: bool = False
-    ) -> List[npt.NDArray]:
+        self, input_imgs: npt.NDArray | list[npt.NDArray], sort: bool = False
+    ) -> list[npt.NDArray]:
         """'Synchronously' infers images on the NCS.
 
         The AutoFocus model returns two outputs:
@@ -118,7 +118,7 @@ class AutoFocus(NCSModel):
             input_imgs: the image/images to be inferred.
             sort: sort the outputs
         """
-        res: List[AsyncInferenceResult] = []
+        res: list[AsyncInferenceResult] = []
 
         self._temp_infer_queue.set_callback(partial(self._cb, res))
 

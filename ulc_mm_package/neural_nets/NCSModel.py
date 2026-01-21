@@ -15,11 +15,8 @@ from functools import partial
 from collections import namedtuple
 from typing import (
     Any,
-    List,
-    Optional,
     Sequence,
     TypeVar,
-    Union,
 )
 
 from ulc_mm_package.utilities.lock_utils import lock_timeout
@@ -69,7 +66,7 @@ class NCSModel:
         self,
         model_path: str,
         model_type: MODELS,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
     ):
         """
         params:
@@ -89,9 +86,7 @@ class NCSModel:
         # used for asyn
         self.asyn_infer_queue = AsyncInferQueue(self.model)
         self.asyn_infer_queue.set_callback(self._default_callback)
-        self._asyn_results: List[
-            Union[AsyncInferenceResult, List[AsyncInferenceResult]]
-        ] = []
+        self._asyn_results: list[AsyncInferenceResult | list[AsyncInferenceResult]] = []
 
         self._executor = ThreadPoolExecutor(max_workers=1)
 
@@ -138,9 +133,9 @@ class NCSModel:
             raise RuntimeError(f"model {self} already compiled")
 
         # when the first subclass is initialized, core will be given a value
-        assert (
-            self.core is not None
-        ), "initialize a subclass of NCSModel, not NCSModel itself"
+        assert self.core is not None, (
+            "initialize a subclass of NCSModel, not NCSModel itself"
+        )
 
         # Faster model read if it was previously cached
         # See: https://docs.openvino.ai/2025/openvino-workflow/running-inference/optimize-inference/optimizing-latency/model-caching-overview.html
@@ -186,8 +181,8 @@ class NCSModel:
         raise GPUError(f"Failed to connect to NCS: {err_msg}")
 
     def syn(
-        self, input_imgs: Union[npt.NDArray, List[npt.NDArray]], sort: bool = False
-    ) -> List[npt.NDArray]:
+        self, input_imgs: npt.NDArray | list[npt.NDArray], sort: bool = False
+    ) -> list[npt.NDArray]:
         """'Synchronously' infers images on the NCS
 
         Under the hood, it is asynchronous, because asynchronous performance matches synchronous
@@ -201,7 +196,7 @@ class NCSModel:
             input_imgs: the image/images to be inferred.
             sort: sort the outputs
         """
-        res: List[AsyncInferenceResult] = []
+        res: list[AsyncInferenceResult] = []
 
         self._temp_infer_queue.set_callback(partial(self._cb, res))
 
@@ -218,7 +213,7 @@ class NCSModel:
     def asyn(
         self,
         input_img: npt.NDArray,
-        id: Optional[int] = None,
+        id: int | None = None,
     ) -> None:
         """Asynchronously submits inference jobs to the NCS
 
@@ -238,8 +233,8 @@ class NCSModel:
         )
 
     def get_asyn_results(
-        self, timeout: Optional[float] = 0.01
-    ) -> List[Union[AsyncInferenceResult, List[AsyncInferenceResult]]]:
+        self, timeout: float | None = 0.01
+    ) -> list[AsyncInferenceResult | list[AsyncInferenceResult]]:
         """
         Maybe return some asyn_results. Will return an empty list if it can not get the lock
         on results within `timeout`. To disable timeout (i.e. just block indefinitely),
@@ -268,7 +263,7 @@ class NCSModel:
             self._asyn_results.append(r)
 
     def _cb(
-        self, result_list: List, infer_request: InferRequest, userdata: Any
+        self, result_list: list, infer_request: InferRequest, userdata: Any
     ) -> None:
         result_list.append(
             AsyncInferenceResult(
@@ -276,7 +271,7 @@ class NCSModel:
             )
         )
 
-    def _as_sequence(self, maybe_list: Union[T, List[T]]) -> Sequence[T]:
+    def _as_sequence(self, maybe_list: T | list[T]) -> Sequence[T]:
         if isinstance(maybe_list, Sequence):
             return maybe_list
         return [maybe_list]
@@ -310,7 +305,7 @@ class NCSModel:
 
     def reset(
         self, wait_for_jobs: bool = True
-    ) -> List[Union[AsyncInferenceResult, List[AsyncInferenceResult]]]:
+    ) -> list[AsyncInferenceResult | list[AsyncInferenceResult]]:
         """
         wait for the NCS's AsyncInferQueue to finish, then reset the
         ThreadPoolExecutor. Note that this will not drop the reference to the NCS.

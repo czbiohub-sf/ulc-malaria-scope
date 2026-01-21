@@ -1,4 +1,4 @@
-""" Basler dart camera (daA1600-60um) / AVT Camera (AVT Alvium 1800 U-319m mono bareboard)
+"""Basler dart camera (daA1600-60um) / AVT Camera (AVT Alvium 1800 U-319m mono bareboard)
 
 -- Important Links --
 Basler API:

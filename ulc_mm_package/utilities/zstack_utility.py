@@ -12,7 +12,7 @@ import cv2
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Callable, Optional
+from typing import Callable
 
 from ulc_mm_package.hardware.camera import AVTCamera
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
@@ -73,13 +73,13 @@ def sweep(
     image_callback,
     motor_label_callback,
     n_imgs_per_step: int = 2,
-    autobrightness: Optional[Autobrightness] = None,
-    autobrightness_fn: Optional[Callable] = None,
-    save_path: Optional[Path] = None,
+    autobrightness: Autobrightness | None = None,
+    autobrightness_fn: Callable | None = None,
+    save_path: Path | None = None,
     collect_images: bool = False,
     run_brightness: bool = False,
-    status_label: Optional[tk.Label] = None,
-) -> Optional[list]:
+    status_label: tk.Label | None = None,
+) -> list | None:
     """Sweeps and updates the given CellFinder object with images. The caller can then check cell_finder to see if it found cells.
 
     If a save_path is provided, images will be saved to that path with the motor position and image number in the filename.
@@ -92,7 +92,7 @@ def sweep(
 
     logger.info("Starting sweep...")
     # Initialize collection list if needed
-    collected_images: Optional[list] = [] if collect_images else None
+    collected_images: list | None = [] if collect_images else None
 
     # Create save directory if provided
     if save_path:
@@ -139,9 +139,7 @@ def sweep(
         return None
 
 
-def compress_saved_images(
-    save_path: Path, remove_original: bool = True
-) -> Optional[Path]:
+def compress_saved_images(save_path: Path, remove_original: bool = True) -> Path | None:
     """Compress the saved images folder using tar with pigz compression.
 
     Args:
@@ -487,7 +485,7 @@ def main():
             processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2
         )  # Double the alpha, ~halve the half life
         flow_controller.pneumatic_module.min_step_size *= 2  # type:ignore
-        syringe_can_move: Optional[bool] = None
+        syringe_can_move: bool | None = None
         prev_can_move = True
         while True:
             img, timestamp = next(camera.yieldImages())

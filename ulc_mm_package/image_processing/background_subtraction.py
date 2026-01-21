@@ -1,4 +1,4 @@
-""" PatchyBackgroundSubtraction - Find the average image background based on bounding boxes
+"""PatchyBackgroundSubtraction - Find the average image background based on bounding boxes
 Find and average pixel values that lay outside bounding boxes across a series of image frames.
 
 #TODO

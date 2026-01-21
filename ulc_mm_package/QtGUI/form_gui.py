@@ -6,7 +6,9 @@ Takes user input and exports experiment metadata.
 
 import sys
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtCore import QRect, pyqtSignal
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
     QGridLayout,
@@ -15,10 +17,7 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QPlainTextEdit,
     QComboBox,
-    QDesktopWidget,
 )
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal
 
 from ulc_mm_package.scope_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
@@ -60,13 +59,20 @@ class FormGUI(QDialog):
         self.setWindowTitle("Experiment form")
 
         # Get screen parameters
-        self.screen = QDesktopWidget().screenGeometry()
+        screen = QApplication.primaryScreen()
+        if screen is not None:
+            self.screen = screen.geometry()
+            available_geometry = screen.availableGeometry()
+        else:
+            self.screen = QRect(0, 0, 800, 480)
+            available_geometry = self.screen
+
         if self.screen.height() > 480:
             self.setGeometry(0, 0, 675, 500)
 
             # Move window to middle of screen
             window_geometry = self.frameGeometry()
-            centerpoint = QDesktopWidget().availableGeometry().center()
+            centerpoint = available_geometry.center()
             window_geometry.moveCenter(centerpoint)
             self.move(window_geometry.topLeft())
         else:
@@ -196,4 +202,4 @@ if __name__ == "__main__":
     print(gui.get_form_input())
 
     gui.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

@@ -5,7 +5,6 @@ import numpy as np
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import List, Tuple
 
 from ulc_mm_package.hardware.camera import AVTCamera
 from ulc_mm_package.hardware.hardware_constants import MIN_PRESSURE_DIFF
@@ -56,7 +55,7 @@ def perform_sweep(
     progress_callback,
     image_callback,
     motor_label_callback,
-) -> Tuple[List[np.ndarray], List[int]]:
+) -> tuple[list[np.ndarray], list[int]]:
     logger.info("Starting sweep...")
     cell_finder.reset()
     led.turnOn()
@@ -167,7 +166,7 @@ def main():
     def update_motor_label(position):
         motor_label.config(text=f"Motor Position: {position}")
 
-    def display_images(images: List[np.ndarray], motor_positions: List[int]):
+    def display_images(images: list[np.ndarray], motor_positions: list[int]):
         nonlocal slider  # Reference the global slider
         if slider:
             slider.destroy()  # Destroy the existing slider if present

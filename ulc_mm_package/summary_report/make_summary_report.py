@@ -1,7 +1,6 @@
 from io import TextIOWrapper
 from csv import DictReader
 from os import remove
-from typing import Dict, List, Optional
 from pathlib import Path
 
 import matplotlib
@@ -38,7 +37,7 @@ matplotlib.use("agg")
 
 def format_cell_counts(
     compensator: CountCompensator, raw_cell_counts: npt.NDArray
-) -> Dict[str, List[str]]:
+) -> dict[str, list[str]]:
     """Format raw cell counts for display in summary report"""
     # Express parasite classes as percent of total parasites
     total_parasites = np.sum(raw_cell_counts[ALL_PARASITE_CLASS_IDS])
@@ -96,7 +95,7 @@ def format_cell_counts(
 
 
 def make_per_image_metadata_plots(
-    per_image_metadata_file: Optional[TextIOWrapper], save_loc: str
+    per_image_metadata_file: TextIOWrapper | None, save_loc: str
 ) -> None:
     """Create and save per-image metadata plots to the summary report directory.
 
@@ -332,15 +331,15 @@ def make_yogo_objectness_plots(preds: npt.NDArray, save_loc: str) -> None:
 def make_html_report(
     compensator: CountCompensator,
     dataset_name: str,
-    experiment_metadata: Dict[str, str],
+    experiment_metadata: dict[str, str],
     per_image_metadata_plot_path: str,
-    cell_counts: List,
-    thumbnails: Dict[str, List[str]],
+    cell_counts: list,
+    thumbnails: dict[str, list[str]],
     parasitemia_plot_loc: str,
     counts_plot_loc: str,
     conf_plot_loc: str,
     objectness_plot_loc: str,
-    css_path: Optional[str] = CSS_FILE_NAME,
+    css_path: str | None = CSS_FILE_NAME,
 ) -> str:
     """Generate an html report.
 

@@ -55,7 +55,7 @@ class TestYOGOTensorParsing(unittest.TestCase):
 
     def tearDown(self):
         t = time.time() - self.start_time
-        print(f"{self.id()} - {t*1e6:.1f}us")
+        print(f"{self.id()} - {t * 1e6:.1f}us")
 
     def test_verify_raw_yogo_output_shape(self):
         (

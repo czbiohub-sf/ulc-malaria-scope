@@ -11,13 +11,7 @@ from ctypes import _SimpleCData
 from contextlib import contextmanager
 from typing import (
     cast,
-    Dict,
-    Type,
     Callable,
-    Optional,
-    Union,
-    List,
-    Tuple,
     NamedTuple,
 )
 
@@ -80,7 +74,7 @@ Future additions
 
 
 @contextmanager
-def lock_timeout(lock, timeout: Optional[float] = None):
+def lock_timeout(lock, timeout: float | None = None):
     """lock context manager w/ timeout
 
     timeout value of 'None' or negative numbers disables timeout
@@ -105,13 +99,13 @@ class ctypeValueDefn(NamedTuple):
 
 class ctypeArrayDefn(NamedTuple):
     type_str: str
-    shape: Tuple[int, int]
+    shape: tuple[int, int]
 
 
-ctypeDefn = Union[ctypeValueDefn, ctypeArrayDefn]
+ctypeDefn = ctypeValueDefn | ctypeArrayDefn
 
 
-_typecode_to_type: Dict[str, Type[_SimpleCData]] = {
+_typecode_to_type: dict[str, type[_SimpleCData]] = {
     "c": ctypes.c_char,
     "u": ctypes.c_wchar,
     "b": ctypes.c_byte,
@@ -131,11 +125,11 @@ _type_to_typecode = {v: k for k, v in _typecode_to_type.items()}
 
 _ctype_codes = list(_typecode_to_type.keys())
 
-_pytype = Union[Real, npt.NDArray[np.uint8]]
-_ctype_type = Union[Type[_SimpleCData], str]
+_pytype = Real | npt.NDArray[np.uint8]
+_ctype_type = type[_SimpleCData] | str
 
 
-def get_ctype_image_defn(shape: Tuple[int, int]):
+def get_ctype_image_defn(shape: tuple[int, int]):
     "helper for common ctype"
     return ctypeArrayDefn("B", shape)
 
@@ -145,8 +139,7 @@ def get_ctype_float_defn():
     return ctypeValueDefn("d")
 
 
-class SharedctypeLockTimeout(Exception):
-    ...
+class SharedctypeLockTimeout(Exception): ...
 
 
 class SharedctypeWrapper(abc.ABC):
@@ -206,7 +199,7 @@ class SharedctypeWrapper(abc.ABC):
 
 
 class SharedctypeValue(SharedctypeWrapper):
-    def __init__(self, type_: _ctype_type, init_value: Optional[Real]):
+    def __init__(self, type_: _ctype_type, init_value: Real | None):
         self._memory: mp.sharedctypes.Synchronized[Real] = cast(
             "mp.sharedctypes.Synchronized[Real]", mp.Value(type_, init_value)
         )
@@ -219,7 +212,7 @@ class SharedctypeValue(SharedctypeWrapper):
             )
         return cls(defn.type_str, defn.init_value)
 
-    def set(self, v: _pytype, timeout: Optional[float] = 1.0) -> None:
+    def set(self, v: _pytype, timeout: float | None = 1.0) -> None:
         """
         Try to set the shared memory to v
 
@@ -232,7 +225,7 @@ class SharedctypeValue(SharedctypeWrapper):
         with lock_timeout(self._memory.get_lock(), timeout=timeout):
             self._memory.value = v
 
-    def get(self, timeout: Optional[float] = 1.0) -> _pytype:
+    def get(self, timeout: float | None = 1.0) -> _pytype:
         """
         Try to get the shared memory value
 
@@ -244,7 +237,7 @@ class SharedctypeValue(SharedctypeWrapper):
 
 
 class SharedctypeArray(SharedctypeWrapper):
-    def __init__(self, type_: _ctype_type, shape: Tuple[int, ...]):
+    def __init__(self, type_: _ctype_type, shape: tuple[int, ...]):
         self._lock = mp.Lock()
 
         size = int(np.prod(shape))
@@ -261,7 +254,7 @@ class SharedctypeArray(SharedctypeWrapper):
             )
         return cls(defn.type_str, defn.shape)
 
-    def set(self, v: _pytype, timeout: Optional[float] = 1.0) -> None:
+    def set(self, v: _pytype, timeout: float | None = 1.0) -> None:
         """
         Try to set the shared memory to v.
 
@@ -281,12 +274,10 @@ class SharedctypeArray(SharedctypeWrapper):
         return self._np_wrapper.copy()
 
 
-class MultiProcFuncHalted(Exception):
-    ...
+class MultiProcFuncHalted(Exception): ...
 
 
-class MultiProcFuncTerminated(Exception):
-    ...
+class MultiProcFuncTerminated(Exception): ...
 
 
 class MultiProcFunc:
@@ -337,8 +328,8 @@ class MultiProcFunc:
     def __init__(
         self,
         work_fcn: Callable,
-        work_fn_inputs: List[SharedctypeWrapper],
-        work_fn_outputs: List[SharedctypeWrapper],
+        work_fn_inputs: list[SharedctypeWrapper],
+        work_fn_outputs: list[SharedctypeWrapper],
     ):
         self.work_fcn: Callable = work_fcn
 
@@ -418,16 +409,16 @@ class MultiProcFunc:
     def from_arg_definitions(
         cls,
         work_fcn: Callable,
-        work_fn_inputs: List[ctypeDefn],
-        work_fn_outputs: List[ctypeDefn],
+        work_fn_inputs: list[ctypeDefn],
+        work_fn_outputs: list[ctypeDefn],
     ) -> MultiProcFunc:
         """
         Create a MultiProcFunc from the work_fcn and input definitions
         """
-        input_vals: List[SharedctypeWrapper] = [
+        input_vals: list[SharedctypeWrapper] = [
             SharedctypeWrapper.sharedctype_from_defn(inp) for inp in work_fn_inputs
         ]
-        output_vals: List[SharedctypeWrapper] = [
+        output_vals: list[SharedctypeWrapper] = [
             SharedctypeWrapper.sharedctype_from_defn(out) for out in work_fn_outputs
         ]
 
@@ -435,7 +426,7 @@ class MultiProcFunc:
 
     @staticmethod
     def _set_ctypes(
-        set_values: List[_pytype], targets: List[SharedctypeWrapper]
+        set_values: list[_pytype], targets: list[SharedctypeWrapper]
     ) -> None:
         """
         Set the ctypes from the pythonic types
@@ -447,7 +438,7 @@ class MultiProcFunc:
             target.set(set_val)
 
     def _work(
-        self, input_args: List[SharedctypeWrapper], outputs: List[SharedctypeWrapper]
+        self, input_args: list[SharedctypeWrapper], outputs: list[SharedctypeWrapper]
     ) -> None:
         """
         This is where the actual work happens (in another process, of course).
@@ -475,7 +466,7 @@ class MultiProcFunc:
 
                 self._ret_value_ready.set()
 
-    def call(self, args: List[_pytype]) -> Union[_pytype, Tuple[_pytype, ...]]:
+    def call(self, args: list[_pytype]) -> _pytype | tuple[_pytype, ...]:
         """
         Call the _work function given args.
 
@@ -487,7 +478,7 @@ class MultiProcFunc:
 
         return self._func_call()
 
-    def _func_call(self) -> Union[_pytype, Tuple[_pytype, ...]]:
+    def _func_call(self) -> _pytype | tuple[_pytype, ...]:
         """
         If self._input_ctypes has been set somewhere else,
         we want to still be able to smoothly call the work func.

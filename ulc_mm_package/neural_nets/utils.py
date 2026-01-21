@@ -1,7 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import NamedTuple, List, Tuple, no_type_check, Dict
-from typing_extensions import TypeAlias
+from typing import NamedTuple, no_type_check, TypeAlias
 import xml.etree.ElementTree as ET
 
 import cv2
@@ -52,7 +51,7 @@ class SinglePredictedObject(NamedTuple):
         return f"img_id: {self.parsed[0]} - conf: {self.conf}\n"
 
 
-def get_output_layer_dims_from_xml(xml_path: Path) -> Tuple[int, int]:
+def get_output_layer_dims_from_xml(xml_path: Path) -> tuple[int, int]:
     """Get the output layer dimensions from the model's xml file.
 
     Note: I am unsure how reliably formatted the generated `.xml` file format is,
@@ -84,7 +83,7 @@ def _parse_prediction_tensor(
     img_h: int = DEFAULT_H,
     img_w: int = DEFAULT_W,
     DTYPE=np.float32,
-) -> Tuple[
+) -> tuple[
     npt.NDArray,
     npt.NDArray,
     npt.NDArray,
@@ -303,8 +302,8 @@ def save_thumbnails_to_disk(
     zarr_store: zarr.core.Array,
     parsed_prediction_tensor: npt.NDArray,
     dataset_dir: Path,
-    desired_class_ids: List[int] = CLASS_IDS_FOR_THUMBNAILS,
-) -> Dict[str, Path]:
+    desired_class_ids: list[int] = CLASS_IDS_FOR_THUMBNAILS,
+) -> dict[str, Path]:
     """Save thumbnails to disk
 
     Parameters
@@ -381,7 +380,7 @@ def get_col_ids_for_matching_class_and_above_conf_thresh(
     parsed_prediction_tensor: npt.NDArray,
     class_id: int,
     confidence_threshold: DTYPE,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Get the column ids of the passed-in prediction tensor which have
     the given class_id and are above the given confidence threshold.
 
@@ -411,7 +410,7 @@ def get_col_ids_for_matching_class_and_below_conf_thresh(
     parsed_prediction_tensor: npt.NDArray,
     class_id: int,
     confidence_threshold: DTYPE,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Get the column ids of the passed-in prediction tensor which have
     the given class_id and are below the given confidence threshold.
 
@@ -483,9 +482,9 @@ def get_vals_less_than_conf_thresh(
 
 def get_individual_prediction_objs_from_parsed_tensor(
     parsed_prediction_tensor: npt.NDArray,
-    col_idxs: Tuple[npt.NDArray],
+    col_idxs: tuple[npt.NDArray],
     flip_conf_sign: bool = False,
-) -> List[SinglePredictedObject]:
+) -> list[SinglePredictedObject]:
     """Get a list of individual prediction objects given a prediction tensor and
     a list of specified columns.
 
@@ -546,7 +545,7 @@ def get_all_argmax_confs_for_specific_class(
 
 def get_all_argmax_class_confidences_for_all_classes(
     prediction_tensor: npt.NDArray, num_classes: int = NUM_CLASSES
-) -> List[npt.NDArray]:
+) -> list[npt.NDArray]:
     """Get all the confidences for each predicted class.
 
     Parameters
@@ -591,7 +590,7 @@ def get_all_confs_for_specific_class(
 
 def get_all_confs_for_all_classes(
     prediction_tensor: npt.NDArray, num_classes: int = NUM_CLASSES
-) -> List[npt.NDArray]:
+) -> list[npt.NDArray]:
     """Get all the confidences for each class (includes confidences that are not the argmax
     confidence for that particular prediction!).
 
@@ -619,7 +618,7 @@ def get_class_counts(
     prediction_tensor: npt.NDArray,
     num_classes: int = NUM_CLASSES,
     conf_thresh: float = YOGO_CONF_THRESHOLD,
-) -> List[int]:
+) -> list[int]:
     """Get the number of occurrences for each class.
 
     Parameters
@@ -645,7 +644,7 @@ def get_class_counts(
 
 
 @njit(cache=True)
-def nms(parsed_prediction_tensor: npt.NDArray, thresh: float) -> List[int]:
+def nms(parsed_prediction_tensor: npt.NDArray, thresh: float) -> list[int]:
     """
     Fast R-CNN
     Copyright (c) 2015 Microsoft

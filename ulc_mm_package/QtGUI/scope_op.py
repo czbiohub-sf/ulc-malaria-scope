@@ -12,7 +12,7 @@ from time import sleep, perf_counter
 
 import cv2
 import numpy as np
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot
 from transitions import Machine, State
 
 from ulc_mm_package.hardware.scope import MalariaScope, GPIOEdge
@@ -561,7 +561,7 @@ class ScopeOp(QObject, NamedMachine):
 
         runtime = self._get_experiment_runtime()
         if runtime != 0:
-            self.logger.info(f"Net FPS is {self.frame_count/runtime:.1f}")
+            self.logger.info(f"Net FPS is {self.frame_count / runtime:.1f}")
 
         self.finishing_experiment.emit(10)
 
@@ -585,7 +585,7 @@ class ScopeOp(QObject, NamedMachine):
         t1 = perf_counter()
 
         self.logger.info(
-            f"Finished processing {num_images_leftover} images in {t1-t0:.0f} seconds"
+            f"Finished processing {num_images_leftover} images in {t1 - t0:.0f} seconds"
         )
 
         self.finishing_experiment.emit(65)
@@ -624,7 +624,7 @@ class ScopeOp(QObject, NamedMachine):
                 f"QC stdev: {qc_results_np.std():.3f}, "
                 f"QC best score: {qc_results_np.min():.3f}, "
                 f"QC worst score: {qc_results_np.max():.3f}, "
-                f"QC number of images good: {num_qc_results_good}/{num_imgs_qc} ({num_qc_results_good/num_imgs_qc:.2%})%"
+                f"QC number of images good: {num_qc_results_good}/{num_imgs_qc} ({num_qc_results_good / num_imgs_qc:.2%})%"
             )
             self.did_run_pass_qc = self.run_status_from_qc_results(qc_results_np).value
 
@@ -787,10 +787,10 @@ class ScopeOp(QObject, NamedMachine):
             else:
                 try:
                     if self.autofocus_results[0] is None:
-                        self.autofocus_results[
-                            0
-                        ] = self.routines.singleShotAutofocusRoutine(
-                            self.mscope, self.autofocus_batch
+                        self.autofocus_results[0] = (
+                            self.routines.singleShotAutofocusRoutine(
+                                self.mscope, self.autofocus_batch
+                            )
                         )
                         self.logger.info(
                             f"First autofocus batch complete. Calculated focus error = {self.autofocus_results[0]} steps."
@@ -807,10 +807,10 @@ class ScopeOp(QObject, NamedMachine):
                         if self.running:
                             self.img_signal.connect(self.run_autofocus)
                     else:
-                        self.autofocus_results[
-                            1
-                        ] = self.routines.singleShotAutofocusRoutine(
-                            self.mscope, self.autofocus_batch
+                        self.autofocus_results[1] = (
+                            self.routines.singleShotAutofocusRoutine(
+                                self.mscope, self.autofocus_batch
+                            )
                         )
                         self.logger.info(
                             f"Second autofocus batch complete. Calculated focus error = {self.autofocus_results[1]} steps."

@@ -1,12 +1,9 @@
 from pathlib import Path
 import re
-from typing import Dict, List, Optional, Tuple
 
-from PyQt5.QtCore import QDate
-from PyQt5.QtGui import QIntValidator
-from PyQt5.QtGui import QDoubleValidator
-
-from PyQt5.QtWidgets import (
+from PyQt6.QtCore import QDate
+from PyQt6.QtGui import QIntValidator, QDoubleValidator
+from PyQt6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
     QDialog,
@@ -68,7 +65,7 @@ def create_widget_for_field(field_def):
             validator = QDoubleValidator(-1e308, field_def["max"], 10)
         else:
             validator = QDoubleValidator()
-        validator.setNotation(QDoubleValidator.StandardNotation)
+        validator.setNotation(QDoubleValidator.Notation.StandardNotation)
         w.setValidator(validator)
 
     elif t == "date":
@@ -98,7 +95,7 @@ def create_widget_for_field(field_def):
         w = QListWidget()
         for choice in field_def.get("choices", []):
             w.addItem(choice)
-        w.setSelectionMode(QAbstractItemView.MultiSelection)
+        w.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
     else:
         raise ValueError(f"Unsupported field type: {t}")
 
@@ -119,7 +116,7 @@ class StudyMetadata(QDialog):
         self.config_data = cfg
         metadata = self.config_data["metadata"]
         self._widgets = {}
-        self._required_widgets: List[QWidget] = []
+        self._required_widgets: list[QWidget] = []
 
         # Confirmation buttons
         btn_cancel = QPushButton("Cancel")
@@ -162,7 +159,7 @@ class StudyMetadata(QDialog):
         # run an initial check to set OK button state
         self.check_required()
 
-    def _get_widget_text(self, w: QWidget) -> Optional[str]:
+    def _get_widget_text(self, w: QWidget) -> str | None:
         if isinstance(w, QTextEdit):
             return w.toPlainText()
         elif isinstance(w, QLineEdit):
@@ -199,7 +196,7 @@ class StudyMetadata(QDialog):
 
         return False
 
-    def _check_widget(self, w: QWidget, field: dict) -> Tuple[bool, str]:
+    def _check_widget(self, w: QWidget, field: dict) -> tuple[bool, str]:
         required = field.get("required")
         if self._is_empty(w) and required:
             return False, "Required"
@@ -274,13 +271,13 @@ class StudyMetadata(QDialog):
         return result
 
 
-def _load(path: Path) -> Dict:
+def _load(path: Path) -> dict:
     with open(path, "rb") as f:
         config = tomli.load(f)
     return config
 
 
-def list_available_studies() -> Dict[str, dict]:
+def list_available_studies() -> dict[str, dict]:
     """List the available studies (those .toml files stored in study_configurations/).
     Note if a file is prepended with `_`, it will be ignored.
 
@@ -300,7 +297,7 @@ def list_available_studies() -> Dict[str, dict]:
     return study_name_to_metadata
 
 
-def get_cfg_from_study_id(study_id: str) -> Optional[Dict]:
+def get_cfg_from_study_id(study_id: str) -> dict | None:
     if study_id == "" or study_id is None:
         return None
     studies = list_available_studies()

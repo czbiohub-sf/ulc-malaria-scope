@@ -124,9 +124,9 @@ def calculate_allan_dev(data, fname):
 
 
 def draw_rects(img: np.ndarray, rects: List[np.ndarray]) -> Image:
-    assert (
-        len(img.shape) == 2
-    ), f"takes single grayscale image - should be 2d, got {img.shape}"
+    assert len(img.shape) == 2, (
+        f"takes single grayscale image - should be 2d, got {img.shape}"
+    )
     h, w = img.shape
 
     formatted_rects = [

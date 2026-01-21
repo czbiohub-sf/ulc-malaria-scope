@@ -5,7 +5,7 @@
 
 Purpose: Dummy hardware object simulating encoder.
          See encoder module under hardware/real/ for info on actual functionality.
-         
+
 """
 
 from typing import Callable

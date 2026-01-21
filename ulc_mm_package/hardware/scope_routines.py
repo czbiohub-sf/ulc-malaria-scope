@@ -2,7 +2,7 @@ import logging
 
 from functools import wraps
 from time import perf_counter, sleep
-from typing import Any, Callable, List, Tuple, Optional, Sequence, Generator
+from typing import Any, Callable, Generator, Sequence
 
 import numpy as np
 
@@ -41,7 +41,7 @@ import ulc_mm_package.image_processing.processing_constants as processing_consta
 
 
 def init_generator(
-    generator: Callable[..., Generator[Any, Any, Any]]
+    generator: Callable[..., Generator[Any, Any, Any]],
 ) -> Callable[..., Generator[Any, Any, Any]]:
     @wraps(generator)
     def call(*a, **k):
@@ -58,7 +58,7 @@ class Routines:
         self.logger = logging.getLogger(__name__)
 
     def singleShotAutofocusRoutine(
-        self, mscope: MalariaScope, img_arr: List[np.ndarray]
+        self, mscope: MalariaScope, img_arr: list[np.ndarray]
     ) -> int:
         """Single shot autofocus routine.
 
@@ -98,9 +98,7 @@ class Routines:
     @init_generator
     def periodicAutofocusWrapper(
         self, mscope: MalariaScope
-    ) -> Generator[
-        Tuple[Optional[float], Optional[float], Optional[bool]], np.ndarray, None
-    ]:
+    ) -> Generator[tuple[float | None, float | None, bool | None], np.ndarray, None]:
         """Periodic autofocus calculations with EWMA filtering
 
         This function adds a simple time wrapper around the autofocus model and EWMA filter
@@ -215,8 +213,8 @@ class Routines:
         self,
         mscope: MalariaScope,
         img: np.ndarray,
-        counts: Optional[Sequence[int]] = None,
-    ) -> List[AsyncInferenceResult]:
+        counts: Sequence[int] | None = None,
+    ) -> list[AsyncInferenceResult]:
         results = mscope.cell_diagnosis_model.get_asyn_results()
         mscope.cell_diagnosis_model(img, counts)
         return results
@@ -225,7 +223,11 @@ class Routines:
     def count_parasitemia_periodic_wrapper(
         self,
         mscope: MalariaScope,
-    ) -> Generator[List[AsyncInferenceResult], Tuple[np.ndarray, Optional[int]], None,]:
+    ) -> Generator[
+        list[AsyncInferenceResult],
+        tuple[np.ndarray, int | None],
+        None,
+    ]:
         while True:
             img, counts = yield mscope.cell_diagnosis_model.get_asyn_results()
             mscope.cell_diagnosis_model(img, counts)
@@ -233,7 +235,7 @@ class Routines:
     @init_generator
     def flow_control_routine(
         self, mscope: MalariaScope, target_flowrate: float, fast_flow: bool = False
-    ) -> Generator[Tuple[Optional[float], Optional[bool]], np.ndarray, Optional[float]]:
+    ) -> Generator[tuple[float | None, bool | None], np.ndarray, float | None]:
         """Keep the flowrate steady by continuously calculating the flowrate and periodically
         adjusting the syringe position. Need to initially pass in the flowrate to maintain.
 
@@ -255,8 +257,8 @@ class Routines:
             is still outside the tolerance band.
         """
 
-        flow_val: Optional[float] = None
-        syringe_can_move: Optional[bool] = None
+        flow_val: float | None = None
+        syringe_can_move: bool | None = None
         prev_can_move: bool = True
         mscope.flow_controller.reset()
         flow_controller = mscope.flow_controller
@@ -395,7 +397,7 @@ class Routines:
     @init_generator
     def periodic_autobrightness_routine(
         self, mscope: MalariaScope
-    ) -> Generator[Optional[float], np.ndarray, None]:
+    ) -> Generator[float | None, np.ndarray, None]:
         """
         This routine is a wrapper around the autobrightness routine that will run at a set periodicity,
         defined by the constant CONTINUOUS_AB_PERIOD_NUM, during an acquisition.
@@ -406,7 +408,7 @@ class Routines:
         """
 
         autobrightness = Autobrightness(mscope.led)
-        curr_img_brightness: Optional[float] = None
+        curr_img_brightness: float | None = None
 
         counter = 0
         while True:
@@ -469,7 +471,7 @@ class Routines:
         pull_time: float = 7,
         steps_per_image: int = 10,
         skip_syringe_pull: bool = False,
-    ) -> Generator[None, np.ndarray, Optional[int]]:
+    ) -> Generator[None, np.ndarray, int | None]:
         """Routine to pull pressure, sweep the motor, and assess whether cells are present.
 
         This routine does the following:
@@ -630,7 +632,7 @@ class Routines:
             )
 
     @init_generator
-    def cell_density_routine(self) -> Generator[Optional[int], List[int], None]:
+    def cell_density_routine(self) -> Generator[int | None, list[int], None]:
         prev_time = perf_counter()
         prev_measurements = np.asarray(
             [100] * processing_constants.CELL_DENSITY_HISTORY_LEN

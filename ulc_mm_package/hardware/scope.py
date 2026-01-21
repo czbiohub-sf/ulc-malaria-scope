@@ -16,7 +16,7 @@ Components
 import logging
 from enum import Enum, auto
 from time import sleep
-from typing import Dict, Optional, Callable
+from typing import Callable
 
 import pigpio
 
@@ -170,7 +170,7 @@ class MalariaScope:
         else:
             self.logger.info("Camera was not activated, no operations needed.")
 
-    def getComponentStatus(self) -> Dict:
+    def getComponentStatus(self) -> dict:
         """Returns a dictionary of component to initialization status.
 
         Can be used by the caller of MalariaScope to check that different
@@ -309,7 +309,7 @@ class MalariaScope:
         except Exception as e:
             self.logger.error(f"Temperature/humidity sensor initialization failed. {e}")
 
-    def _init_data_storage(self, fps_lim: Optional[float] = None):
+    def _init_data_storage(self, fps_lim: float | None = None):
         try:
             self.logger.info("Initializing DataStorage...")
             self.data_storage = DataStorage(default_fps=fps_lim)

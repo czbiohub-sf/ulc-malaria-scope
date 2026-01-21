@@ -1,4 +1,3 @@
-from typing import Optional, Tuple
 import logging
 
 import numpy as np
@@ -82,7 +81,7 @@ class FlowController:
         self.logger = logging.getLogger(__name__)
 
         self.pneumatic_module: PneumaticModule = pneumatic_module
-        self.flowrate: Optional[float] = None
+        self.flowrate: float | None = None
         self.alpha: float = FLOW_CONTROL_EWMA_ALPHA
         self.EWMA = EWMAFiltering(self.alpha)
         self.counter: int = 0
@@ -91,14 +90,14 @@ class FlowController:
         self.fre: FlowRateEstimator = FlowRateEstimator(h, w)
 
         self.first_image: bool = True
-        self.target_flowrate: Optional[float] = None
+        self.target_flowrate: float | None = None
 
     def reset(self):
         self.fre.reset()
-        self.flowrate: Optional[float] = None
+        self.flowrate: float | None = None
         self.counter: int = 0
         self.prev_adjustment_stamp: int = 0
-        self.target_flowrate: Optional[float] = None
+        self.target_flowrate: float | None = None
 
     def set_alpha(self, alpha: float) -> None:
         """Set the alpha value for EWMA filtering"""
@@ -145,7 +144,7 @@ class FlowController:
 
     def control_flow(
         self, img: np.ndarray, timestamp: int
-    ) -> Tuple[Optional[float], Optional[float], Optional[bool]]:
+    ) -> tuple[float | None, float | None, bool | None]:
         """Takes in an image, calculates, and adjusts flowrate periodically to maintain the target (within a tolerance bound).
         Periodically is defined as twice the half-life of the EWMA filter (based on its alpha value).
 

@@ -1,4 +1,4 @@
-""" PIM522 Pimoroni RGB Rotary Encoder w/ Nuvoton microcontroller
+"""PIM522 Pimoroni RGB Rotary Encoder w/ Nuvoton microcontroller
 
 -- Important Links --
 Pimoroni Product Page:
