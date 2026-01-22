@@ -707,8 +707,8 @@ class Oracle(Machine):
             "",
             self.datetime_str,
             self.experiment_metadata,
-            self.study_metadata,
             PER_IMAGE_METADATA_KEYS,
+            self.study_metadata,
         )
 
         sample_type = self.experiment_metadata["sample_type"]
