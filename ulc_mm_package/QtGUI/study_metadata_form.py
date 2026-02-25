@@ -101,7 +101,6 @@ def create_widget_for_field(field_def):
         w.setSelectionMode(QAbstractItemView.MultiSelection)
     else:
         raise ValueError(f"Unsupported field type: {t}")
-
     return w
 
 
@@ -134,10 +133,11 @@ class StudyMetadata(QDialog):
 
             widget = create_widget_for_field(field)
             self._widgets[field["label"]] = (widget, field)
-            if field.get("required") is True:
+            if field.get("required") is True and field.get("show_gui") is not False:
                 self._required_widgets.append(widget)
                 self.btn_start.setEnabled(False)
-            layout.addRow(label, widget)
+            if field.get("show_gui") is not False:
+                layout.addRow(label, widget)
 
         self.btn_start.clicked.connect(self.validate)
         btn_cancel.clicked.connect(self.close)
