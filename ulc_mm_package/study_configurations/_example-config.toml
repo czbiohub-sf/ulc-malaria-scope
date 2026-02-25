@@ -8,6 +8,7 @@ key = "key1"
 label = "numbers galore"
 datatype = "int"
 required = true
+show_gui = false # specify whether this field should show up in the form GUI in Oracle
 
 [[metadata]]
 key = "key2"
