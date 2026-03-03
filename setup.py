@@ -31,6 +31,8 @@ setup(
         "pypylon==1.7.2",
         "zarr==2.10.1",
         "pigpio==1.78",
+        "adafruit-blinka==8.70.0",
+        "adafruit-platformdetect==3.88.0",
         "adafruit-circuitpython-pcf8523==1.5.5",
         "adafruit-circuitpython-mprls==1.2.7",
         "adafruit-circuitpython-sht31d",
