@@ -199,6 +199,7 @@ PER_IMAGE_TIMING_KEYS = [
     "datastorage.writeData",
     "yogo_qsize",
     "ssaf_qsize",
+    "mem_usage_mb",
 ]
 
 if VERBOSE:
