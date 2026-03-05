@@ -164,6 +164,7 @@ class MalariaScope:
         self.flow_controller.stop()
         self.autofocus_model.reset(wait_for_jobs=False)
         self.cell_diagnosis_model.reset(wait_for_jobs=False)
+        self.fan.turn_off_all()
 
         if self.camera._isActivated:
             self.camera.deactivateCamera()
