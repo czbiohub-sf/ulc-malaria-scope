@@ -114,8 +114,8 @@ class DataStorage:
         custom_experiment_name: str,
         datetime_str: str,
         experiment_initialization_metadata: Dict,
-        study_metadata: Optional[Dict],
         per_image_metadata_keys: list,
+        study_metadata: Optional[Dict] = None,
     ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
 

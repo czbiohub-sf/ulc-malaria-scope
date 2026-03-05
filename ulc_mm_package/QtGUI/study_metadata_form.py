@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Dict, List, Optional
+import re
+from typing import Dict, List, Optional, Tuple
 
 from PyQt5.QtCore import QDate
 from PyQt5.QtGui import QIntValidator
@@ -84,7 +85,6 @@ def create_widget_for_field(field_def):
 
         default = field_def.get("default")
         if default is not None:
-            print("default is")
             idx = w.findText(default)
             if idx >= 0:
                 w.setCurrentIndex(idx)
@@ -101,7 +101,6 @@ def create_widget_for_field(field_def):
         w.setSelectionMode(QAbstractItemView.MultiSelection)
     else:
         raise ValueError(f"Unsupported field type: {t}")
-
     return w
 
 
@@ -134,12 +133,13 @@ class StudyMetadata(QDialog):
 
             widget = create_widget_for_field(field)
             self._widgets[field["label"]] = (widget, field)
-            if field.get("required") is True:
+            if field.get("required") is True and field.get("show_gui") is not False:
                 self._required_widgets.append(widget)
                 self.btn_start.setEnabled(False)
-            layout.addRow(label, widget)
+            if field.get("show_gui") is not False:
+                layout.addRow(label, widget)
 
-        self.btn_start.clicked.connect(self.accept)
+        self.btn_start.clicked.connect(self.validate)
         btn_cancel.clicked.connect(self.close)
 
         layout.addRow(btn_cancel, self.btn_start)
@@ -162,34 +162,76 @@ class StudyMetadata(QDialog):
         # run an initial check to set OK button state
         self.check_required()
 
+    def _get_widget_text(self, w: QWidget) -> Optional[str]:
+        if isinstance(w, QTextEdit):
+            return w.toPlainText()
+        elif isinstance(w, QLineEdit):
+            return w.text()
+        elif isinstance(w, QComboBox):
+            return "" if w.currentIndex() < 0 else w.currentText()
+        elif isinstance(w, QListWidget):
+            return "\n".join(i.text() for i in w.selectedItems())
+
+        if hasattr(w, "text"):
+            return w.text()
+        return None
+
+    def _is_empty(self, w) -> bool:
+        text = self._get_widget_text(w)
+        return (text is not None) and (not text.strip())
+
+    def _has_value_and_valid(self, w: QWidget) -> bool:
+        if self._is_empty(w):
+            return True
+
+        if isinstance(w, QTextEdit):
+            return bool(w.toPlainText().strip())
+        elif isinstance(w, QLineEdit):
+            text = w.text().strip()
+            return bool(text) and w.hasAcceptableInput()
+        elif isinstance(w, QComboBox):
+            return w.currentIndex() >= 0
+        elif isinstance(w, QListWidget):
+            return len(w.selectedItems()) >= 0
+
+        if hasattr(w, "text"):
+            return bool(w.text().strip())
+
+        return False
+
+    def _check_widget(self, w: QWidget, field: dict) -> Tuple[bool, str]:
+        required = field.get("required")
+        if self._is_empty(w) and required:
+            return False, "Required"
+
+        if not self._has_value_and_valid(w):
+            return False, "Invalid"
+
+        return True, ""
+
     def check_required(self):
         """Ensure that all required widgets have a value."""
-        all_filled = True
-        for w in self._required_widgets:
-            if hasattr(w, "toPlainText"):
-                if not w.toPlainText().strip():
-                    all_filled = False
-                    break
-            elif hasattr(w, "text"):
-                if not w.text().strip():
-                    all_filled = False
-                    break
-            elif hasattr(w, "currentIndex"):
-                # -1 index means no selection made
-                if w.currentIndex() < 0:
-                    all_filled = False
-                    break
-        if all_filled:
-            self.btn_start.setEnabled(True)
-        else:
-            self.btn_start.setEnabled(False)
+        self.btn_start.setEnabled(
+            all([self._has_value_and_valid(x) for x in self._required_widgets])
+        )
+
+    def validate(self):
+        for lbl, (w, field) in self._widgets.items():
+            valid, error_msg = self._check_widget(w, field)
+            if not valid:
+                print(lbl, field, error_msg)
+                w.setFocus()
+                return
+        self.accept()
 
     def get_form_input(self):
         result = {"study_id": self.config_data["study_description"]["key"]}
         errors = []
-        for name, (widget, field) in self._widgets.items():
+        possible_choices = []
+        subkeys = []
+        for _, (widget, field) in self._widgets.items():
             t = field["datatype"]
-
+            key = field.get("key")
             if t == "string":
                 value = (
                     widget.toPlainText() if field.get("multiline") else widget.text()
@@ -199,7 +241,9 @@ class StudyMetadata(QDialog):
                 value = None if not text else int(widget.text())
             elif t == "float":
                 text = widget.text().strip()
-                value = None if not text else float(widget.text())
+                value = (
+                    None if not text else float(re.sub(r"[^\d.]", "", widget.text()))
+                )
             elif t == "date":
                 qd = widget.date()
                 value = qd.toString("yyyy-MM-dd")
@@ -209,10 +253,20 @@ class StudyMetadata(QDialog):
                 value = widget.currentData()
             elif t == "multiselect":
                 value = [x.text() for x in widget.selectedItems()]
+                possible_choices = [
+                    widget.item(i).text() for i in range(widget.count())
+                ]
+                subkeys = field["subkeys"]
             else:
                 value = None
 
-            result[name] = value
+            # Accommodate the multiselect case separately (i.e. save each choice as its own col)
+            if isinstance(value, list):
+                selected_set = set(value)
+                for choice, choice_key in zip(possible_choices, subkeys):
+                    result[choice_key] = choice in selected_set
+            else:
+                result[key] = value
 
         if errors:
             raise ValueError("\n".join(errors))

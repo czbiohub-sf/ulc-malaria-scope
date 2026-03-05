@@ -4,13 +4,14 @@ name = "Example Study"
 
 # Metadata fields
 [[metadata]]
-key = "key1_blah"
+key = "key1"
 label = "numbers galore"
 datatype = "int"
 required = true
+show_gui = false # specify whether this field should show up in the form GUI in Oracle
 
 [[metadata]]
-key = "key2_blah"
+key = "key2"
 label = "string stuff"
 datatype = "string"
 required = true
@@ -21,12 +22,15 @@ label = "choices"
 datatype = "enum"
 choices = ["control", "low_dose", "high_dose"]
 default = "control"
+required = true
 
 [[metadata]]
 key = "key4"
 label = "Multiselect"
 datatype = "multiselect"
 choices = ["pickme", "orme", "orwho", "or", "allofus"]
+subkeys = ["choice1", "choice2", "choice3", "choice4", "choice5"]
+required = false
 
 
 [[metadata]]

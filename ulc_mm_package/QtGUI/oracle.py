@@ -646,6 +646,7 @@ class Oracle(Machine):
 
     def get_study_metadata(self):
         self.study_metadata = self.study_form_dialog.get_form_input()
+        self.study_form_dialog.close()
         self.save_form()
 
     def save_form(self):
@@ -706,8 +707,8 @@ class Oracle(Machine):
             "",
             self.datetime_str,
             self.experiment_metadata,
-            self.study_metadata,
             PER_IMAGE_METADATA_KEYS,
+            self.study_metadata,
         )
 
         sample_type = self.experiment_metadata["sample_type"]
