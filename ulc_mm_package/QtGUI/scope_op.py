@@ -6,12 +6,12 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 """
 
 import logging
-
-from typing import Any
 from time import sleep, perf_counter
+from typing import Any
 
 import cv2
 import numpy as np
+import psutil
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from transitions import Machine, State
 
@@ -133,6 +133,7 @@ class ScopeOp(QObject, NamedMachine):
         self.ambient_pressure = None
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
+        self.vmem = psutil.virtual_memory()
 
         self._set_exp_variables()
 
@@ -1153,6 +1154,9 @@ class ScopeOp(QObject, NamedMachine):
         self.frame_count += 1
         t1 = perf_counter()
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
+
+        mem_usage = int(psutil.virtual_memory().used / 1024**2)
+        self._update_metadata_if_verbose("mem_usage_mb", mem_usage)
 
         for key in PERIODIC_METADATA_KEYS:
             val = self.img_metadata.get(key, None)

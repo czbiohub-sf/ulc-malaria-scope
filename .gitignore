@@ -127,5 +127,8 @@ lock.py
 # config ini files
 */configs/*.ini
 
+# study config
+ulc_mm_package/study_configurations/*.toml
+
 #logging config
 /log_config

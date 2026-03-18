@@ -140,7 +140,6 @@ class MalariaScope:
         # Close data storage
         closing_file_future = self.data_storage.close(
             self.predictions_handler.get_prediction_tensors(),
-            self.predictions_handler.heatmaps,
         )
         if closing_file_future is not None:
             while not closing_file_future.done():
@@ -164,6 +163,7 @@ class MalariaScope:
         self.flow_controller.stop()
         self.autofocus_model.reset(wait_for_jobs=False)
         self.cell_diagnosis_model.reset(wait_for_jobs=False)
+        self.fan.turn_off_all()
 
         if self.camera._isActivated:
             self.camera.deactivateCamera()
