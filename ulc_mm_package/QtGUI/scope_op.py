@@ -32,6 +32,7 @@ from ulc_mm_package.image_processing.cell_finder import (
     LowDensity,
     NoCellsFound,
 )
+import ulc_mm_package.image_processing.processing_constants as processing_constants
 from ulc_mm_package.image_processing.autobrightness import (
     BrightnessTargetNotAchieved,
     BrightnessCriticallyLow,
@@ -1154,7 +1155,20 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
 
         mem_usage = int(psutil.virtual_memory().used / 1024**2)
+        self.vmem = mem_usage
         self._update_metadata_if_verbose("mem_usage_mb", mem_usage)
+        if self.vmem >= processing_constants.MAX_RAM_USAGE_CUTOFF_MB:  # RAM cutoff
+            self.logger.error(
+                "The RAM memory / image queue is growing - the scope cannot keep up. RAM at: {self.vmem}MB"
+            )
+            self.default_error.emit(
+                "Excessive images in queue - preemptive RAM warning",
+                "The memory usage is growing too quickly - the NCS may be overheating. "
+                "Please poweroff the scope, verify the NCS is correctly mounted in its holder. "
+                "You can also run `htop` in a separate terminal window to monitor the RAM usage.",
+                ERROR_BEHAVIORS.PRECHECK.value,
+                QR.NONE.value,
+            )
 
         for key in PERIODIC_METADATA_KEYS:
             val = self.img_metadata.get(key, None)

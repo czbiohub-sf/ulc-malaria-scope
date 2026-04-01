@@ -52,6 +52,10 @@ if SIMULATION:
     MIN_GB_REQUIRED = 0.1  # 100 MB
 else:
     MIN_GB_REQUIRED = 50
+
+# Failsafe in case there's memory runoff (say due to the NCS becoming throttled, and an infinitely growing frame queue)
+MAX_RAM_USAGE_CUTOFF_MB = 1500
+
 NUM_SUBSEQUENCES = 10
 SUBSEQUENCE_LENGTH = 10
 
