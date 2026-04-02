@@ -1159,7 +1159,7 @@ class ScopeOp(QObject, NamedMachine):
         self._update_metadata_if_verbose("mem_usage_mb", mem_usage)
         if self.vmem >= processing_constants.MAX_RAM_USAGE_CUTOFF_MB:  # RAM cutoff
             self.logger.error(
-                "The RAM memory / image queue is growing - the scope cannot keep up. RAM at: {self.vmem}MB"
+                f"The RAM memory / image queue is growing - the scope cannot keep up. RAM at: {self.vmem}MB"
             )
             self.default_error.emit(
                 "Excessive images in queue - preemptive RAM warning",
@@ -1169,6 +1169,7 @@ class ScopeOp(QObject, NamedMachine):
                 ERROR_BEHAVIORS.PRECHECK.value,
                 QR.NONE.value,
             )
+            raise ValueError()
 
         for key in PERIODIC_METADATA_KEYS:
             val = self.img_metadata.get(key, None)
