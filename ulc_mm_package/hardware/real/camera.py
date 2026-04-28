@@ -250,8 +250,10 @@ class AVTCamera(CameraBase):
         # For some reason, setting the binning mode only changes the maximum image width/height, and not the current
         # image width/height. So they must be set manually. (I figured this out by looking at the Vimba Viewer and noticing
         # that the max height/width were changed when adjusting binning factor, but not the current image height/width)
-        self.camera.Width.set(self.camera.WidthMax.get())
-        self.camera.Height.set(self.camera.HeightMax.get())
+
+        # This branch hardcodes the binning at 1x1, so here we set the ROI to match that of the 2x2
+        self.camera.Width.set(1032)
+        self.camera.Height.set(772)
 
     def getBinning(self):
         """Return the binning factor."""
