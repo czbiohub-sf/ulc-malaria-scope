@@ -781,7 +781,7 @@ class ScopeOp(QObject, NamedMachine):
 
         if not self.autofocus_done:
             if len(self.autofocus_batch) < AF_BATCH_SIZE:
-                img_ds = downsample_image(img, 2)
+                img_ds = downsample_image(img, 1)
                 self.autofocus_batch.append(img_ds)
 
                 if self.running:
@@ -955,10 +955,10 @@ class ScopeOp(QObject, NamedMachine):
         t1 = perf_counter()
         self._update_metadata_if_verbose("update_img_count", t1 - t0)
 
-        img_ds_2x = downsample_image(img, 2)
+        img_ds = downsample_image(img, 1)
         t0 = perf_counter()
         prev_yogo_results = self.routines.count_parasitemia(
-            self.mscope, YOGO.crop_img(img_ds_2x), self.frame_count
+            self.mscope, YOGO.crop_img(img_ds), self.frame_count
         )
         t1 = perf_counter()
 
@@ -1010,7 +1010,7 @@ class ScopeOp(QObject, NamedMachine):
                 raw_focus_err,
                 filtered_focus_err,
                 focus_adjustment,
-            ) = self.PSSAF_routine.send(img_ds_2x)
+            ) = self.PSSAF_routine.send(img_ds)
         except MotorControllerError as e:
             if not SIMULATION:
                 self.logger.error(

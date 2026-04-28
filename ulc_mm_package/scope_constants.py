@@ -38,8 +38,8 @@ if SIMULATION:
 
 CONFIGURATION_FILE = curr_dir / "configs" / f"{socket.gethostname()}-config.ini"
 
-# ================ For flowcontrol and classc image focus ================ #
-DOWNSAMPLE_FACTOR = 20
+# ================ For flowcontrol and classic image focus ================ #
+DOWNSAMPLE_FACTOR = 10
 
 # ================ Summary PDF constants ================ #
 DEBUG_REPORT = int(
