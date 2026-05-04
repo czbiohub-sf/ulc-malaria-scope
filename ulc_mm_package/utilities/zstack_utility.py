@@ -30,11 +30,13 @@ import ulc_mm_package.image_processing.processing_constants as processing_consta
 from ulc_mm_package.scope_constants import CAMERA_SELECTION, DOWNSAMPLE_FACTOR
 from ulc_mm_package.image_processing.focus_metrics import downsample_image
 from ulc_mm_package.scope_constants import SSD_DIR, SSD_NAME
+from ulc_mm_package.utilities.stage_grad import run_flatness_check
 
 PNEUMATIC_PULL_TIME_S = 7
 LED_BRIGHTNESS_PERC = 0.15
 MIN_ACCEPTABLE_MOTOR_POS = 200
 MAX_ACCEPTABLE_MOTOR_POS = 600
+FLATNESS_TILE = 128
 
 # Set up logging
 logger = logging.getLogger()
@@ -292,7 +294,7 @@ def manual_review(images_with_positions, on_select):
     position_label = tk.Label(
         review_win, text="Motor Position: 0", font=("Helvetica", 12)
     )
-    position_label.grid(row=4, column=0, pady=5, sticky="n")
+    position_label.grid(row=4, column=0, padx=10, pady=5, sticky="w")
 
     # Slider frame
     slider_frame = tk.Frame(review_win)
@@ -536,6 +538,27 @@ def main():
                 autobrightness.reset()
                 return
 
+    state: dict = {
+        "last_stack": None,
+        "check_flatness_btn": None,
+    }
+
+    def check_flatness() -> None:
+        stack = state["last_stack"]
+        if stack is None or not stack.exists():
+            messagebox.showinfo("No stack", "Acquire a stack first.")
+            return
+        status_label.config(text="Computing flatness...")
+        root.update()
+        try:
+            run_flatness_check(stack, FLATNESS_TILE)
+        except Exception as e:
+            logger.error(f"Flatness check failed: {e}")
+            messagebox.showerror("Flatness check failed", str(e))
+            status_label.config(text="Flatness check failed.")
+            return
+        status_label.config(text="Flatness check complete.")
+
     def start_sweep(n_steps: int = 20, imgs_per_step: int = 2):
         curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         save_path = Path(SSD_DIR) / SSD_NAME / f"zstack_{device_name}_{curr_time}"
@@ -674,15 +697,16 @@ def main():
                 status_label=status_label,
             )
 
-        status_label.config(text="Sweep completed. Compressing images...")
-        root.update()
-        if save_path:
-            logger.info("Compressing images...")
-            compressed_path = compress_saved_images(save_path)
-            if compressed_path:
-                status_label.config(text="Images saved and compressed.")
         pm.setDutyCycle(pm.getMaxDutyCycle())
-        status_label.config(text="Press 'Start Sweep' to collect another stack.")
+        if save_path.exists():
+            state["last_stack"] = save_path
+            if state["check_flatness_btn"] is not None:
+                state["check_flatness_btn"].config(state="normal")
+            status_label.config(
+                text="Sweep complete. Click 'Check Flatness' or 'Start Sweep' for another stack."
+            )
+        else:
+            status_label.config(text="Press 'Start Sweep' to collect another stack.")
 
     def quit_application():
         pm.setDutyCycle(pm.getMaxDutyCycle())
@@ -696,6 +720,15 @@ def main():
     tk.Button(
         button_frame, text="Start Sweep", font=("Helvetica", 16), command=sweep_fn
     ).pack(side=tk.RIGHT, padx=10)
+    check_flatness_btn = tk.Button(
+        button_frame,
+        text="Check Flatness",
+        font=("Helvetica", 16),
+        command=check_flatness,
+        state="disabled",
+    )
+    check_flatness_btn.pack(side=tk.RIGHT, padx=10)
+    state["check_flatness_btn"] = check_flatness_btn
     tk.Button(
         button_frame, text="Quit", font=("Helvetica", 16), command=quit_application
     ).pack(side=tk.RIGHT, padx=10)
