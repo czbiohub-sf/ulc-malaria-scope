@@ -11,6 +11,7 @@
 import argparse
 from pathlib import Path
 import re
+import sys
 from typing import List, Tuple, Union
 
 import matplotlib
@@ -20,7 +21,8 @@ import numpy as np
 import numpy.typing as npt
 from tqdm import tqdm
 
-matplotlib.use("TkAgg")
+if sys.platform not in ["win32", "darwin"]:
+    matplotlib.use("TkAgg")
 
 
 def parse_fn(fn: Path) -> Tuple[int, int]:
@@ -111,23 +113,43 @@ def view_sharpness_map(
     fig, (ax_img, ax_energy) = plt.subplots(1, 2)
     fig.set_facecolor("#FFFFF7")
     fig.subplots_adjust(left=0.02, right=0.98, top=0.95, bottom=0.02, wspace=0.05)
-    im_img = ax_img.imshow(imread(paths[0, 0]), cmap="gray")
+    im = ax_img.imshow(imread(paths[0, 0]), cmap="gray")
     im_energy = ax_energy.imshow(mean_energy[0], cmap="gray")
     ax_img.set_title(f"Image — motor pos {positions[0]}")
     ax_energy.set_title("Image gradient energy map")
     ax_img.axis("off")
     ax_energy.axis("off")
 
-    im_img._idx = 0
+    im._idx = 0
 
     def scroll(event):
-        i = im_img._idx + (1 if event.button == "up" else -1)
-        im_img._idx = np.clip(i, 0, len(mean_energy) - 1)
-        idx = im_img._idx
-        im_img.set_data(imread(paths[idx, 0]))
+        i = im._idx + (1 if event.button == "up" else -1)
+        im._idx = np.clip(i, 0, len(mean_energy) - 1)
+        idx = im._idx
+        im.set_data(imread(paths[idx, 0]))
         im_energy.set_data(mean_energy[idx])
         ax_img.set_title(f"Image — pos {positions[idx]}")
         fig.canvas.draw_idle()
+
+    def step(delta: int) -> None:
+        im._idx = int(np.clip(im._idx + delta, 0, len(mean_energy) - 1))
+        idx = im._idx
+        im.set_data(imread(paths[idx, 0]))
+        im_energy.set_data(mean_energy[idx])
+        ax_img.set_title(f"Image — pos {positions[idx]}")
+        fig.canvas.draw_idle()
+
+    def on_scroll(event):
+        step(1 if event.button == "up" else -1)
+
+    def on_key(event):
+        if event.key in ("up", "right"):
+            step(1)
+        elif event.key in ("down", "left"):
+            step(-1)
+
+    fig.canvas.mpl_connect("scroll_event", on_scroll)
+    fig.canvas.mpl_connect("key_press_event", on_key)
 
     fig.canvas.mpl_connect("scroll_event", scroll)
     plt.tight_layout()
@@ -356,7 +378,6 @@ def run_flatness_check(stack_dir: Path, tile: int = 128) -> None:
     pos, energy, paths = stream_sharpness(stack_dir, tile)
     peak_idx = get_peak_from_parabolic_fit(energy)
     print_plane_diag(peak_idx)
-    view_sharpness_map(energy, paths, pos)
     view_focus_gradient(energy, pos)
 
 
@@ -371,7 +392,7 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
 
     # check whether user passed in a single stack or a directory of stacks
@@ -381,7 +402,12 @@ if __name__ == "__main__":
 
         print_plane_diag(peak_idx)
         view_traces(energy, pos)
-        view_sharpness_map(energy, paths, pos)
+
+        # This graph with the interactive energy map isn't particularly useful on-scope, but it is
+        # a fun widget toy to play with on your laptop
+        if sys.platform in ["win32", "darwin"]:
+            view_sharpness_map(energy, paths, pos)
+
         view_focus_gradient(energy, pos)
     else:
         names, maps = analyze_multiple_stacks(args.dir, args.tile)
@@ -389,3 +415,6 @@ if __name__ == "__main__":
 
         view_peak_maps(maps, names)
         view_mean_peak_map(maps)
+
+if __name__ == "__main__":
+    main()

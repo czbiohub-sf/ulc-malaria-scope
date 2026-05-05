@@ -70,6 +70,7 @@ setup(
             "remo-fix-focus=ulc_mm_package.utilities.coarse_focus_utility:main",
             "remo-pneumatic-calibration=ulc_mm_package.utilities.pneumatic_utility:main",
             "remo-zstack=ulc_mm_package.utilities.zstack_utility:main",
+            "remo-check-flatness=ulc_mm_package.utilities.stage_grad:main"
         ]
     },
 )
