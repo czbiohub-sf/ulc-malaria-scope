@@ -453,7 +453,7 @@ def main():
         root.update()
         fc.set_target_flowrate(target)
         fc.set_alpha(processing_constants.FLOW_CONTROL_EWMA_ALPHA * 2)
-        fc.pneumatic_module.min_step_size *= 2  # type:ignore
+        fc.pneumatic_module.min_step_size *= 2 #type: ignore
         can_move: Optional[bool] = None
         prev = True
         while True:
@@ -464,7 +464,7 @@ def main():
             if prev and not can_move:
                 fc.pneumatic_module.min_step_size = (
                     fc.pneumatic_module.default_min_step_size
-                )  # type:ignore
+                )  #type:ignore
                 logger.warning("Syringe at end of travel.")
                 return
             if err is not None and err == 0:
