@@ -416,5 +416,6 @@ def main():
         view_peak_maps(maps, names)
         view_mean_peak_map(maps)
 
+
 if __name__ == "__main__":
     main()
