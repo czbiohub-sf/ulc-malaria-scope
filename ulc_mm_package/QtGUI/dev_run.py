@@ -284,6 +284,8 @@ class AcquisitionThread(QThread):
                 datetime_str=datetime.now().strftime(DATETIME_FORMAT),
                 experiment_initialization_metadata={},
                 per_image_metadata_keys=self.getMetadata().keys(),
+                width=self.mscope.camera.camera.Width.get(),
+                height=self.mscope.camera.camera.Height.get(),
             )
 
             self.im_counter = 0
@@ -870,8 +872,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.vsExposure.setValue(exposure)
 
     def btnFocusUpHandler(self):
+        dir = Direction.CW if Direction.CW.value else Direction.CCW
         try:
-            self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
+            self.motor.threaded_move_rel(dir=dir, steps=1)
         except MotorInMotion as e:
             print(e)
 
@@ -879,8 +882,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFocus.setText(f"{self.motor.pos}")
 
     def btnFocusDownHandler(self):
+        dir = Direction.CCW if Direction.CCW.value else Direction.CW
         try:
-            self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
+            self.motor.threaded_move_rel(dir=dir, steps=1)
         except MotorInMotion as e:
             print(e)
 

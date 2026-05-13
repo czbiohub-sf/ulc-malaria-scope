@@ -36,9 +36,7 @@ class ZarrWriter:
         self.logger = logging.getLogger(__name__)
         self.executor = ThreadPoolExecutor(max_workers=1)
 
-        self.camera_selection: CameraOptions = camera_selection
-
-    def createNewFile(self, filename: str, overwrite: bool = True):
+    def createNewFile(self, filename: str, width: int=CAMERA_SELECTION.IMG_WIDTH, height: int=CAMERA_SELECTION.IMG_HEIGHT, overwrite: bool = True):
         """Create a new zarr file.
 
         Parameters
@@ -55,13 +53,13 @@ class ZarrWriter:
             )
             self.array = zarr.zeros(
                 shape=(
-                    self.camera_selection.IMG_HEIGHT,
-                    self.camera_selection.IMG_WIDTH,
+                    height,
+                    width,
                     MAX_FRAMES,
                 ),
                 chunks=(
-                    self.camera_selection.IMG_HEIGHT,
-                    self.camera_selection.IMG_WIDTH,
+                    height,
+                    width,
                     1,
                 ),
                 compressor=None,

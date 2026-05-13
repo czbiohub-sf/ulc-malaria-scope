@@ -32,6 +32,7 @@ from ulc_mm_package.neural_nets.neural_network_constants import (
     YOGO_CONF_THRESHOLD,
 )
 from ulc_mm_package.scope_constants import (
+    CAMERA_SELECTION,
     MAX_FRAMES,
     SUMMARY_REPORT_CSS_FILE,
     DESKTOP_SUMMARY_DIR,
@@ -116,6 +117,8 @@ class DataStorage:
         experiment_initialization_metadata: Dict,
         per_image_metadata_keys: list,
         study_metadata: Optional[Dict] = None,
+        width: int = CAMERA_SELECTION.width,
+        height: int = CAMERA_SELECTION.height,
     ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
 
