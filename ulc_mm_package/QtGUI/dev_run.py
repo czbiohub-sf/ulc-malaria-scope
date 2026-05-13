@@ -198,6 +198,7 @@ class AcquisitionThread(QThread):
 
         try:
             pressure, pressure_sensor_status = self.pneumatic_module.getPressure()
+            pressure_sensor_status = pressure_sensor_status.value
         except PressureSensorNotInstantiated:
             # TODO: Add logging
             pressure = -1
@@ -205,6 +206,9 @@ class AcquisitionThread(QThread):
         except PressureSensorStaleValue as e:
             # TODO: Add logging
             print(f"Stale value from pressure sensor: {e}")
+            pressure = -1
+            pressure_sensor_status = -1
+        except Excception as e:
             pressure = -1
             pressure_sensor_status = -1
 
@@ -1124,19 +1128,6 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             "The target flowrate can not be attained, stopping active flow control.",
             cancel=False,
         )
-
-    def manualFocusWithEncoder(self, increment: int):
-        try:
-            if increment == 1:
-                self.motor.threaded_move_rel(dir=Direction.CW, steps=1)
-            elif increment == -1:
-                self.motor.threaded_move_rel(dir=Direction.CCW, steps=1)
-            sleep(0.01)
-            self.updateMotorPosition(self.motor.pos)
-        except MotorControllerError:
-            self.encoder.setColor(255, 0, 0)
-            sleep(0.1)
-            self.encoder.setColor(12, 159, 217)
 
     def exit(self):
         retval = self._displayMessageBox(
