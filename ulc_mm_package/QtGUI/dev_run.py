@@ -882,7 +882,7 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
         self.txtBoxFocus.setText(f"{self.motor.pos}")
 
     def btnFocusDownHandler(self):
-        dir = Direction.CCW if Direction.CCW.value else Direction.CW
+        dir = Direction.CCW if Direction.CW.value else Direction.CW
         try:
             self.motor.threaded_move_rel(dir=dir, steps=1)
         except MotorInMotion as e:
