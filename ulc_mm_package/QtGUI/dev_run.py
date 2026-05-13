@@ -1153,6 +1153,9 @@ class MalariaScopeGUI(QtWidgets.QMainWindow):
             # Turn off the LED
             self.led.close()
 
+            # Turn off the motor
+            self.motor.close()
+
             # Turn off camera
             if self.acquisitionThread is not None:
                 self.acquisitionThread.camera_activated = False
