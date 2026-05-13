@@ -220,7 +220,7 @@ class AcquisitionThread(QThread):
             "exposure": self.camera.exposureTime_ms,
             "motor_pos": self.motor.pos,
             "pressure_hpa": pressure,
-            "pressure_status_flag": pressure_sensor_status.value,
+            "pressure_status_flag": pressure_sensor_status,
             "syringe_pos": self.pneumatic_module.getCurrentDutyCycle(),
             "flow_control_on": self.flowcontrol_enabled,
             "target_flowrate": self.flow_controller.target_flowrate,
