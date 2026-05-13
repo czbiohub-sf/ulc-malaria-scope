@@ -199,7 +199,7 @@ class DataStorage:
             / f"{self.time_str}_{custom_experiment_name}"
         )
         self.zarr_filepath = filename.with_suffix(".zip")
-        self.zw.createNewFile(str(filename))
+        self.zw.createNewFile(str(filename), width=width, height=height)
 
         # QC csv
         self.qc_filename = (
