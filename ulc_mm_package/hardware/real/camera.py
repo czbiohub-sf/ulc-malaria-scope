@@ -36,32 +36,6 @@ class BinningMode(Enum):
     SUM = "Sum"
 
 
-class BaslerCamera(Basler, CameraBase):
-    """Extends the Basler camera class from pycameras and makes a few ULCMM specific configuration changes."""
-
-    def __init__(self):
-        try:
-            super().__init__()
-
-            self.logger = logging.getLogger(__name__)
-
-            # 2x2 binning w/ averaging (https://docs.baslerweb.com/binning)
-            # Note that setting the binning mode to "Sum" saturates the values (i.e if
-            # the pixel mode is 8-bit (0-256), summing does NOT increase the maximum value to 512)
-            self.setBinning(bin_factor=2, mode="Average")
-            self.camera.PixelFormat.SetValue("Mono8")
-            self.exposureTime_ms = DEFAULT_EXPOSURE_MS
-            self.grabStrategy = GrabStrategy.LATEST_IMAGE_ONLY
-        except Exception:
-            raise CameraError("Camera could not be instantiated.")
-
-    def yieldImages(self):
-        return super().yieldImages(self.grabStrategy)
-
-    def _getTemperature(self):
-        return self.camera.DeviceTemperature.GetValue()
-
-
 class AVTCamera(CameraBase):
     """A class initially written for the AVT Alvium 1800 U-319m mono bareboard which wraps
     AVT's `VimbaPython' library (https://github.com/alliedvision/VimbaPython)
@@ -122,7 +96,7 @@ class AVTCamera(CameraBase):
         # Flip image in y (malaria scope specific nuance, want RBCs to be flowing 'downward' in the display)
         self.camera.ReverseY.set(True)
 
-        # 2x2 binning
+        # 1x1 binning with resolution fixed to 772x1032
         self.setBinning(bin_factor=2)
 
         # Monochrome uint8
@@ -239,19 +213,27 @@ class AVTCamera(CameraBase):
 
         bin_factor: int
         """
+
+        SENSOR_W, SENSOR_H = 2064, 1544
+        ROI_W, ROI_H = 1032, 772
+
         while self.camera.is_streaming():
             self.camera.stop_streaming()
+
+        self.camera.OffsetX.set(0)
+        self.camera.OffsetY.set(0)
 
         self.camera.BinningHorizontalMode.set(mode.value)
         self.camera.BinningVerticalMode.set(mode.value)
         self.camera.BinningHorizontal.set(bin_factor)
         self.camera.BinningVertical.set(bin_factor)
 
-        # For some reason, setting the binning mode only changes the maximum image width/height, and not the current
-        # image width/height. So they must be set manually. (I figured this out by looking at the Vimba Viewer and noticing
-        # that the max height/width were changed when adjusting binning factor, but not the current image height/width)
-        self.camera.Width.set(self.camera.WidthMax.get())
-        self.camera.Height.set(self.camera.HeightMax.get())
+        self.camera.Width.set(1032)
+        self.camera.Height.set(772)
+
+        if bin_factor == 1:
+            self.camera.OffsetX.set(516)
+            self.camera.OffsetY.set(386)
 
     def getBinning(self):
         """Return the binning factor."""
