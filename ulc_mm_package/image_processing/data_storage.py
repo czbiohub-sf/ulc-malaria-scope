@@ -117,8 +117,8 @@ class DataStorage:
         experiment_initialization_metadata: Dict,
         per_image_metadata_keys: list,
         study_metadata: Optional[Dict] = None,
-        width: int = CAMERA_SELECTION.width,
-        height: int = CAMERA_SELECTION.height,
+        width: int = CAMERA_SELECTION.IMG_WIDTH,
+        height: int = CAMERA_SELECTION.IMG_HEIGHT,
     ):
         """Create the storage files for a new experiment (Zarr storage, metadata .csv files)
 
