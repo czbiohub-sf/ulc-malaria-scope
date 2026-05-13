@@ -231,7 +231,7 @@ class DRV8825Nema:
 
         self.stop_motor = True
 
-    def _move_rel_steps(self, steps: int, dir=Direction.CCW, stepdelay=0.005):
+    def _move_rel_steps(self, steps: int, dir=Direction.CCW, stepdelay=0.0025):
         # set direction
         self._pi.write(self.direction_pin, dir.value)
 
@@ -248,7 +248,7 @@ class DRV8825Nema:
         self,
         dir=Direction.CCW,
         steps: int = 200,
-        stepdelay=0.005,
+        stepdelay=0.0025,
         timeout_s: int = int(1e6),
         verbose=False,
         initdelay=0.05,
@@ -335,7 +335,7 @@ class DRV8825Nema:
                 )
 
     @lock_no_block(MOTOR_LOCK, MotorInMotion)
-    def move_abs(self, pos: int = 200, stepdelay=0.005, verbose=False, initdelay=0.05):
+    def move_abs(self, pos: int = 200, stepdelay=0.0025, verbose=False, initdelay=0.05):
         """Move the motor to the given position (if valid).
 
         Parameters
