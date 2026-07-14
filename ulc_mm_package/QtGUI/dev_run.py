@@ -312,7 +312,10 @@ class AcquisitionThread(QThread):
     def runFullZStack(self):
         self.takeZStack = True
         self.zstack = full_sweep_image_collection(
-            motor=self.motor, steps_per_coarse=10, save_loc=self.external_dir, custom_name=self.custom_image_prefix,
+            motor=self.motor,
+            steps_per_coarse=10,
+            save_loc=self.external_dir,
+            custom_name=self.custom_image_prefix,
         )
         self.zstack.send(None)
 

@@ -50,7 +50,10 @@ def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=No
 
 
 def full_sweep_image_collection(
-    motor: DRV8825Nema, steps_per_coarse: int = 10, save_loc: Optional[str] = None, custom_name: Optional[str] = None,
+    motor: DRV8825Nema,
+    steps_per_coarse: int = 10,
+    save_loc: Optional[str] = None,
+    custom_name: Optional[str] = None,
 ) -> Generator[None, np.ndarray, None]:
     """Do a full sweep of the motor range and save images at defined motor position increments.
 
