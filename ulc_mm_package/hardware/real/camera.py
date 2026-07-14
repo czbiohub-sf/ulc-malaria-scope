@@ -97,7 +97,7 @@ class AVTCamera(CameraBase):
         self.camera.ReverseY.set(True)
 
         # 1x1 binning with resolution fixed to 772x1032
-        self.setBinning(bin_factor=2)
+        self.setBinning(bin_factor=1)
 
         # Monochrome uint8
         self.camera.set_pixel_format(vimba.PixelFormat.Mono8)
@@ -228,12 +228,13 @@ class AVTCamera(CameraBase):
         self.camera.BinningHorizontal.set(bin_factor)
         self.camera.BinningVertical.set(bin_factor)
 
+        # For some reason, setting the binning mode only changes the maximum image width/height, and not the current
+        # image width/height. So they must be set manually. (I figured this out by looking at the Vimba Viewer and noticing
+        # that the max height/width were changed when adjusting binning factor, but not the current image height/width)
+
+        # This branch hardcodes the binning at 1x1, so here we set the ROI to match that of the 2x2
         self.camera.Width.set(1032)
         self.camera.Height.set(772)
-
-        if bin_factor == 1:
-            self.camera.OffsetX.set(516)
-            self.camera.OffsetY.set(384)
 
     def getBinning(self):
         """Return the binning factor."""

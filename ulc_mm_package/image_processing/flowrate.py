@@ -20,7 +20,6 @@ class FlowRateEstimator:
         self,
         img_height: int = CAMERA_SELECTION.IMG_HEIGHT // DOWNSAMPLE_FACTOR,
         img_width: int = CAMERA_SELECTION.IMG_WIDTH // DOWNSAMPLE_FACTOR,
-        scale_factor: int = DOWNSAMPLE_FACTOR,
     ):
         """A class for estimating the flow rate of cells using a 2D cross-correlation.
         The class holds two images at a time in `frame_a` and `frame_b`. To use this class,
