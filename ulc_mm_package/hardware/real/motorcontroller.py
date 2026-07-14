@@ -269,7 +269,7 @@ class DRV8825Nema:
 
         self.stop_motor = False
         steps = int(steps)
-        step_increment = 1 if dir.value else -1
+        step_increment = 1 if not dir.value else -1
 
         # Set direction
         self._pi.write(self.direction_pin, dir.value)

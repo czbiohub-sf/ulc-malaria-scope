@@ -426,10 +426,7 @@ class AcquisitionThread(QThread):
         if self.active_autofocus:
             print("Autofocusing!")
             try:
-                resized_img = cv2.resize(
-                    img, IMG_RESIZED_DIMS, interpolation=cv2.INTER_CUBIC
-                )
-                steps_from_focus = -int(self.autofocus_model(resized_img).pop())
+                steps_from_focus = -int(self.autofocus_model(img).pop())
                 print(f"SSAF: {steps_from_focus} steps")
                 self.af_adjustment_done = True
 

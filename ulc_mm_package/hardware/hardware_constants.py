@@ -16,7 +16,7 @@ CAMERA_FPS = 53
 
 # ================ Motor controller constants ================ #
 FULL_STEP_TO_TRAVEL_DIST_UM = 0.56
-DEFAULT_FULL_STEP_HOMING_TIMEOUT = 15
+DEFAULT_FULL_STEP_HOMING_TIMEOUT = 60
 
 # Pin numbers in BCM, see https://pinout.xyz/
 MOTOR_ENABLE = 6

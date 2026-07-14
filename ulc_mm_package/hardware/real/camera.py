@@ -233,7 +233,7 @@ class AVTCamera(CameraBase):
 
         if bin_factor == 1:
             self.camera.OffsetX.set(516)
-            self.camera.OffsetY.set(386)
+            self.camera.OffsetY.set(384)
 
     def getBinning(self):
         """Return the binning factor."""

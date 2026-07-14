@@ -10,8 +10,10 @@ from ulc_mm_package.hardware.hardware_wrapper import hardware
 
 
 class Direction(enum.Enum):
-    CW = True
-    CCW = False
+    #CW = True
+    #CCW = False
+    CW = False
+    CCW = True
 
 
 class Steptype(enum.Enum):
@@ -36,7 +38,7 @@ STEP_TYPE_TO_ANGLE = {
     Steptype.ONE_ONE_HUNDRED_TWENTY_EIGHTH: 0.0140625,
 }
 
-MAX_STEPS_ON_FULL_STEPPING = 450
+MAX_STEPS_ON_FULL_STEPPING = 1500
 
 
 class MotorControllerError(Exception):
