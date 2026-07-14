@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 import os
 from os import listdir
 from pathlib import Path
+import re
+import socket
 import sys
 import traceback
 import subprocess
@@ -278,9 +280,11 @@ class AcquisitionThread(QThread):
             self.main_dir = self.data_storage.main_dir
 
         if self.continuous_save:
+            hostname = re.sub(r"[^A-Za-z0-9._-]", "-", socket.gethostname())
+            exp_name = f"{self.custom_image_prefix}-{hostname}"
             self.data_storage.createNewExperiment(
                 self.external_dir,
-                custom_experiment_name=f"{self.custom_image_prefix}",
+                custom_experiment_name=exp_name,
                 datetime_str=datetime.now().strftime(DATETIME_FORMAT),
                 experiment_initialization_metadata={},
                 per_image_metadata_keys=self.getMetadata().keys(),
@@ -308,7 +312,10 @@ class AcquisitionThread(QThread):
     def runFullZStack(self):
         self.takeZStack = True
         self.zstack = full_sweep_image_collection(
-            motor=self.motor, steps_per_coarse=10, save_loc=self.external_dir
+            motor=self.motor,
+            steps_per_coarse=10,
+            save_loc=self.external_dir,
+            custom_name=self.custom_image_prefix,
         )
         self.zstack.send(None)
 
@@ -316,7 +323,10 @@ class AcquisitionThread(QThread):
         self.takeZStack = True
         self.mscope.fan.turn_off_all()
         self.zstack = local_sweep_image_collection(
-            self.motor, self.motor.pos, save_loc=self.external_dir
+            self.motor,
+            self.motor.pos,
+            save_loc=self.external_dir,
+            custom_name=self.custom_image_prefix,
         )
         self.zstack.send(None)
 
