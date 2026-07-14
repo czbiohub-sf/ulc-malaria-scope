@@ -281,7 +281,7 @@ class AcquisitionThread(QThread):
 
         if self.continuous_save:
             hostname = re.sub(r"[^A-Za-z0-9._-]", "-", socket.gethostname())
-            exp_name = f"{custom_image_prefix}-{hostname}"
+            exp_name = f"{self.custom_image_prefix}-{hostname}"
             self.data_storage.createNewExperiment(
                 self.external_dir,
                 custom_experiment_name=exp_name,
