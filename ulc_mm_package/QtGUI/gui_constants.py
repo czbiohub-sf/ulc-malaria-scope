@@ -65,6 +65,7 @@ SITE_LIST = [
     "Rosenthal/Conrad Lab",
     "Goodlife Kigali",
     "Goodlife Musanze",
+    "Siaya County, Kenya",
 ]
 
 # Reorder the site list to move the environment variable specified default site to the first location
