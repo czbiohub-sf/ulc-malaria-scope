@@ -1,4 +1,7 @@
 import os
+import re
+import socket
+
 import cv2
 import numpy as np
 
@@ -47,7 +50,10 @@ def takeZStack(camera, motor: DRV8825Nema, steps_per_image: int = 1, save_loc=No
 
 
 def full_sweep_image_collection(
-    motor: DRV8825Nema, steps_per_coarse: int = 10, save_loc: Optional[str] = None
+    motor: DRV8825Nema,
+    steps_per_coarse: int = 10,
+    save_loc: Optional[str] = None,
+    custom_name: Optional[str] = None,
 ) -> Generator[None, np.ndarray, None]:
     """Do a full sweep of the motor range and save images at defined motor position increments.
 
@@ -61,7 +67,14 @@ def full_sweep_image_collection(
     """
     if save_loc is not None:
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
-        save_dir = os.path.join(save_loc, timestamp + "-global_zstack/")
+        hostname = re.sub(r"[^A-Za-z0-9._-]", "-", socket.gethostname())
+        metadata = timestamp + "-local-stack-" + hostname
+
+        if custom_name is not None:
+            # Sanitize input
+            custom_name = re.sub(r"[^A-Za-z0-9._-]", "-", custom_name)
+            metadata += f"-{custom_name}"
+        save_dir = os.path.join(save_loc, metadata + "/")
         try:
             os.mkdir(save_dir)
         except Exception as e:
@@ -90,6 +103,7 @@ def local_sweep_image_collection(
     steps_per_image: int = 1,
     num_imgs_per_step: int = 60,
     save_loc: Optional[str] = None,
+    custom_name: Optional[str] = None,
 ) -> Generator[None, np.ndarray, None]:
     """Sweep through a local vicinity (+/- num_steps from the start_point) and save images.
 
@@ -108,7 +122,13 @@ def local_sweep_image_collection(
 
     if save_loc is not None:
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
-        save_dir = os.path.join(save_loc, timestamp + "-local_zstack/")
+        hostname = re.sub(r"[^A-Za-z0-9._-]", "-", socket.gethostname())
+        metadata = timestamp + "-local-stack-" + hostname
+        if custom_name is not None:
+            # Sanitize input
+            custom_name = re.sub(r"[^A-Za-z0-9._-]", "-", custom_name)
+            metadata += f"-{custom_name}"
+        save_dir = os.path.join(save_loc, metadata + "/")
         try:
             os.mkdir(save_dir)
         except Exception as e:

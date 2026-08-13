@@ -91,7 +91,7 @@ class LiveviewGUI(QMainWindow):
     def update_experiment(self, metadata: dict):
         # TODO standardize dict input
         self.operator_val.setText(f"{metadata['operator_id']}")
-        self.participant_val.setText(f"{metadata['participant_id']}")
+        self.sample_val.setText(f"{metadata['sample_id']}")
         self.flowcell_val.setText(f"{metadata['flowcell_id']}")
         self.target_flowrate_val.setText(f"{metadata['target_flowrate'][0]}")
         self.site_val.setText(f"{metadata['site']}")
@@ -560,35 +560,35 @@ class LiveviewGUI(QMainWindow):
 
         # Populate metadata tab
         self.operator_lbl = QLabel("Operator ID")
-        self.participant_lbl = QLabel("Participant ID")
+        self.sample_lbl = QLabel("Sample ID")
         self.flowcell_lbl = QLabel("Flowcell ID")
         self.target_flowrate_lbl = QLabel("Flowrate")
         self.site_lbl = QLabel("Site")
         self.notes_lbl = QLabel("Other notes")
 
         self.operator_val = QLineEdit()
-        self.participant_val = QLineEdit()
+        self.sample_val = QLineEdit()
         self.flowcell_val = QLineEdit()
         self.target_flowrate_val = QLineEdit()
         self.site_val = QLineEdit()
         self.notes_val = QPlainTextEdit()
 
         self.operator_val.setReadOnly(True)
-        self.participant_val.setReadOnly(True)
+        self.sample_val.setReadOnly(True)
         self.flowcell_val.setReadOnly(True)
         self.target_flowrate_val.setReadOnly(True)
         self.site_val.setReadOnly(True)
         self.notes_val.setReadOnly(True)
 
         self.metadata_layout.addWidget(self.operator_lbl, 1, 1)
-        self.metadata_layout.addWidget(self.participant_lbl, 2, 1)
+        self.metadata_layout.addWidget(self.sample_lbl, 2, 1)
         self.metadata_layout.addWidget(self.flowcell_lbl, 3, 1)
         self.metadata_layout.addWidget(self.target_flowrate_lbl, 4, 1)
         self.metadata_layout.addWidget(self.site_lbl, 5, 1)
         self.metadata_layout.addWidget(self.notes_lbl, 6, 1)
 
         self.metadata_layout.addWidget(self.operator_val, 1, 2)
-        self.metadata_layout.addWidget(self.participant_val, 2, 2)
+        self.metadata_layout.addWidget(self.sample_val, 2, 2)
         self.metadata_layout.addWidget(self.flowcell_val, 3, 2)
         self.metadata_layout.addWidget(self.target_flowrate_val, 4, 2)
         self.metadata_layout.addWidget(self.site_val, 5, 2)
@@ -601,7 +601,7 @@ if __name__ == "__main__":
 
     experiment_metadata = {
         "operator_id": "1234",
-        "participant_id": "567",
+        "sample_id": "567",
         "flowcell_id": "A2",
         "target_flowrate": ("Fast", 15),
         "site": "Uganda",

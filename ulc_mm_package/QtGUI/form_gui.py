@@ -18,17 +18,18 @@ from PyQt5.QtWidgets import (
     QDesktopWidget,
 )
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal, QDate, QTime
+from PyQt5.QtCore import pyqtSignal
 
 from ulc_mm_package.scope_constants import EXPERIMENT_METADATA_KEYS
 from ulc_mm_package.image_processing.processing_constants import TARGET_FLOWRATE
-from PyQt5.QtWidgets import QDateEdit, QTimeEdit
 from ulc_mm_package.QtGUI.gui_constants import (
     ICON_PATH,
+    SITE_ENV_VAR,
     SITE_LIST,
     SAMPLE_LIST,
     TOOLBAR_OFFSET,
 )
+import ulc_mm_package.QtGUI.study_metadata_form as study_form
 
 
 class FormGUI(QDialog):
@@ -41,21 +42,19 @@ class FormGUI(QDialog):
 
         self._load_ui()
 
+    def _study_select(self) -> None:
+        text = self.study_select_val.currentText()
+        if text != "":
+            self.start_btn.setText("Enter additional study metadata")
+        else:
+            self.start_btn.setText("Start")
+
     def closeEvent(self, event):
         if event.spontaneous():
             self.close_event.emit()
             event.ignore()
         else:
             event.accept()
-
-    def _validate_temperature(self):
-        text = self.sample_storage_temp.text()
-        if not text.endswith(("C", "F", "c", "f")) or not text[:-1].isdigit():
-            self.sample_storage_temp.setStyleSheet("border: 1px solid red;")
-            self.start_btn.setEnabled(False)
-        else:
-            self.sample_storage_temp.setStyleSheet("")
-            self.start_btn.setEnabled(True)
 
     def _load_ui(self):
         self.setWindowTitle("Experiment form")
@@ -86,10 +85,8 @@ class FormGUI(QDialog):
 
         # Labels
         self.operator_lbl = QLabel("Operator ID")
-        self.participant_lbl = QLabel("Non-identifying participant ID")
-        self.sample_collection_date_lbl = QLabel("Sample collection date")
-        self.sample_collection_time_lbl = QLabel("Sample collection time")
-        self.sample_storage_temp_lbl = QLabel("Sample storage temperature (°C or °F)")
+        self.sample_id_lbl = QLabel("Non-identifying sample ID")
+        self.study_select_lbl = QLabel("Select study")
         self.flowcell_lbl = QLabel("Flowcell ID")
         self.notes_lbl = QLabel("Other notes")
         self.site_lbl = QLabel("Site")
@@ -97,24 +94,7 @@ class FormGUI(QDialog):
 
         # Text boxes
         self.operator_val = QLineEdit()
-        self.participant_val = QLineEdit()
-
-        # Sample collection date
-        self.sample_collection_date = QDateEdit(QDate.currentDate())
-        self.sample_collection_date.setCalendarPopup(True)
-        self.sample_collection_date.setDisplayFormat("yyyy-MMM-dd")
-
-        # Sample collection time
-        self.sample_collection_time = QTimeEdit(QTime.currentTime())
-        self.sample_collection_time.setDisplayFormat("hh:mm AP")
-        self.sample_collection_time.setCalendarPopup(True)
-
-        # Sample storage temperature
-        self.sample_storage_temp = QLineEdit()
-        self.sample_storage_temp.setPlaceholderText(
-            "Enter temperature (e.g. 25C or 77F)"
-        )
-        self.sample_storage_temp.textChanged.connect(self._validate_temperature)
+        self.sample_id_val = QLineEdit()
 
         self.flowcell_val = QLineEdit()
         self.notes_val = QPlainTextEdit()
@@ -126,19 +106,26 @@ class FormGUI(QDialog):
         # Dropdown menus
         self.site_val = QComboBox()
         self.sample_val = QComboBox()
+        self.study_select_val = QComboBox()
+        self.study_select_val.currentTextChanged.connect(self._study_select)
 
         self.site_val.addItems(SITE_LIST)
         self.sample_val.addItems(SAMPLE_LIST)
+        self.study_select_val.addItems(
+            list(study_form.list_available_studies().keys()) + [""]
+        )
+        self.study_select_val.setCurrentIndex(-1)
+
+        if SITE_ENV_VAR is not None:
+            self.site_val.setEnabled(False)
 
         # Set tab behavior
         self.notes_val.setTabChangesFocus(True)
 
         # Place widgets
         self.main_layout.addWidget(self.operator_lbl, 0, 0)
-        self.main_layout.addWidget(self.participant_lbl, 1, 0)
-        self.main_layout.addWidget(self.sample_collection_date_lbl, 2, 0)
-        self.main_layout.addWidget(self.sample_collection_time_lbl, 3, 0)
-        self.main_layout.addWidget(self.sample_storage_temp_lbl, 4, 0)
+        self.main_layout.addWidget(self.sample_id_lbl, 1, 0)
+        self.main_layout.addWidget(self.study_select_lbl, 2, 0)
         self.main_layout.addWidget(self.flowcell_lbl, 5, 0)
         self.main_layout.addWidget(self.site_lbl, 6, 0)
         self.main_layout.addWidget(self.sample_lbl, 7, 0)
@@ -146,10 +133,8 @@ class FormGUI(QDialog):
         self.main_layout.addWidget(self.exit_btn, 9, 0)
 
         self.main_layout.addWidget(self.operator_val, 0, 1)
-        self.main_layout.addWidget(self.participant_val, 1, 1)
-        self.main_layout.addWidget(self.sample_collection_date, 2, 1)
-        self.main_layout.addWidget(self.sample_collection_time, 3, 1)
-        self.main_layout.addWidget(self.sample_storage_temp, 4, 1)
+        self.main_layout.addWidget(self.sample_id_val, 1, 1)
+        self.main_layout.addWidget(self.study_select_val, 2, 1)
         self.main_layout.addWidget(self.flowcell_val, 5, 1)
         self.main_layout.addWidget(self.site_val, 6, 1)
         self.main_layout.addWidget(self.sample_val, 7, 1)
@@ -161,26 +146,16 @@ class FormGUI(QDialog):
         self.start_btn.setDefault(True)
 
     def get_form_input(self) -> dict:
-        # Determine the sample age from the current time and the sample collection time
-        current_date = QDate.currentDate()
-        current_time = QTime.currentTime()
-
-        sample_date = self.sample_collection_date.date()
-        sample_time = self.sample_collection_time.time()
-
-        date_diff_in_hours = sample_date.daysTo(current_date) * 24
-        time_diff_in_hours = sample_time.secsTo(current_time) / 3600
-
-        sample_age_hours = round(date_diff_in_hours + time_diff_in_hours, 2)
+        study_name = self.study_select_val.currentText()
+        if study_name != "":
+            study_id = study_form.get_study_id_from_name(study_name)
+        else:
+            study_id = None
 
         form_metadata = {
             "operator_id": self.operator_val.text(),
-            "participant_id": self.participant_val.text(),
+            "sample_id": self.sample_id_val.text(),
             "flowcell_id": self.flowcell_val.text(),
-            "sample_collection_date": self.sample_collection_date.text(),
-            "sample_collection_time": self.sample_collection_time.text(),
-            "sample_age_hours": sample_age_hours,
-            "sample_storage_temp": self.sample_storage_temp.text(),
             "target_flowrate": (
                 TARGET_FLOWRATE.name.capitalize(),
                 TARGET_FLOWRATE.value,
@@ -188,6 +163,7 @@ class FormGUI(QDialog):
             "site": self.site_val.currentText(),
             "sample_type": self.sample_val.currentText(),
             "notes": self.notes_val.toPlainText(),
+            "study_id": study_id,
         }
 
         if not all(key in EXPERIMENT_METADATA_KEYS for key in form_metadata):
@@ -197,15 +173,25 @@ class FormGUI(QDialog):
 
     def reset_parameters(self) -> None:
         """Clear specific inputs which are expected to be unique for the next run."""
-        self.participant_val.setText("")
+        self.sample_id_val.setText("")
         self.flowcell_val.setText("")
         self.notes_val.setPlainText("")
+
+    def sf(self) -> None:
+        metadata = self.get_form_input()
+        cfg = study_form.get_cfg_from_study_id(metadata["study_id"])
+        if cfg is not None:
+            sf = study_form.StudyMetadata(cfg, gui)
+            sf.show()
+        else:
+            raise ValueError(f"Was unable to fetch {metadata['study_id']}")
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui = FormGUI()
     gui.exit_btn.clicked.connect(gui.close)
+    gui.start_btn.clicked.connect(gui.sf)
 
     print(gui.get_form_input())
 
