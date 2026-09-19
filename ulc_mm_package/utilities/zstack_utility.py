@@ -33,6 +33,7 @@ from ulc_mm_package.scope_constants import SSD_DIR, SSD_NAME
 from ulc_mm_package.utilities.stage_grad import run_flatness_check
 
 PNEUMATIC_PULL_TIME_S = 7
+FIRST_PULL = True
 LED_BRIGHTNESS_PERC = 0.15
 MIN_ACCEPTABLE_MOTOR_POS = 200
 MAX_ACCEPTABLE_MOTOR_POS = 600
@@ -461,7 +462,8 @@ def main():
             img = downsample_image(img, DOWNSAMPLE_FACTOR)
             prev = can_move if can_move is not None else prev
             _, err, can_move = fc.control_flow(img, ts)
-            if prev and not can_move:
+            print(err, can_move)
+            if can_move is not None and not can_move and not prev:
                 fc.pneumatic_module.min_step_size = (  # type: ignore
                     fc.pneumatic_module.default_min_step_size  # type: ignore
                 )  # type:ignore
@@ -504,6 +506,8 @@ def main():
             status_label.config(text="Flatness check failed.")
 
     def start_sweep(n_steps: int = 20, imgs_per_step: int = 2):
+        global FIRST_PULL
+
         now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         save_path = Path(SSD_DIR) / SSD_NAME / f"zstack_{device_name}_{now}"
 
@@ -519,11 +523,14 @@ def main():
                     text="Load a flow cell (with blood) and close the lid."
                 )
                 return
-            status_label.config(text="Pulling RBCs into field of view...")
-            root.update()
-            pm.setDutyCycle(pm.getMinDutyCycle())
-            sleep(PNEUMATIC_PULL_TIME_S)
-            pm.setDutyCycle(pm.getMaxDutyCycle())
+
+            if FIRST_PULL:
+                status_label.config(text="Pulling RBCs into field of view...")
+                root.update()
+                pm.setDutyCycle(pm.getMinDutyCycle())
+                sleep(PNEUMATIC_PULL_TIME_S)
+                pm.setDutyCycle(pm.getMaxDutyCycle())
+                FIRST_PULL = False
 
         set_brightness(ab)
         progress["value"] = 0
@@ -545,37 +552,10 @@ def main():
             collect_images=True,
         )
 
-        try:
-            result = cell_finder.get_cells_found_position()
-            status_label.config(text="Cells found!")
-            if target_flowrate > 0:
-                set_flow(flow_control, target_flowrate)
-        except NoCellsFound:
-            result = None
-
-        # Re-sweep post-flow
-        status_label.config(text="CellFinder post-flow...")
-        root.update()
-        collected = sweep(
-            camera,
-            motor,
-            led,
-            sr,
-            cell_finder,
-            update_progress,
-            update_image,
-            update_motor_label,
-            n_imgs_per_step=imgs_per_step,
-            collect_images=True,
-        )
-
-        try:
-            result = cell_finder.get_cells_found_position()
-            status_label.config(text="Cells found!")
-        except NoCellsFound:
-            result = None
-
         def _fine_sweep(center: int):
+            status_label.config(f"Moving motor to center at {center}...")
+            root.update()
+            motor.move_abs(center)
             if target_flowrate > 0:
                 set_flow(flow_control, target_flowrate)
             status_label.config(text=f"Fine sweep around {center}...")
@@ -596,6 +576,12 @@ def main():
                 autobrightness_fn=set_brightness,
                 status_label=status_label,
             )
+
+        try:
+            result = cell_finder.get_cells_found_position()
+            status_label.config(text="Cells found!")
+        except NoCellsFound:
+            result = None
 
         if result is None:
             manual_review(collected, _fine_sweep)
@@ -674,16 +660,16 @@ def parse_args():
     parser.add_argument(
         "--sweep_range_about_center_steps",
         "-s",
-        default=30,
+        default=20,
         type=int,
-        help="Steps +/- about cell position (default: 15)",
+        help="Steps +/- about cell position (default: 20)",
     )
     parser.add_argument(
         "--imgs_per_step",
         "-i",
-        default=3,
+        default=2,
         type=int,
-        help="Images per motor position (default: 5)",
+        help="Images per motor position (default: 2)",
     )
     flowrate_options = [f.value for f in processing_constants.FLOWRATE] + [0.0]
     parser.add_argument(
