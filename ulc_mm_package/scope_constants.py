@@ -144,7 +144,7 @@ except usb.core.NoBackendError:
 # ================ Data storage metadata ================ #
 EXPERIMENT_METADATA_KEYS = [
     "operator_id",
-    "participant_id",
+    "sample_id",
     "sample_collection_date",
     "sample_collection_time",
     "sample_age_hours",
@@ -163,6 +163,7 @@ EXPERIMENT_METADATA_KEYS = [
     "autofocus_model",
     "yogo_model",
     "ambient_pressure",
+    "study_id",
 ]
 
 PER_IMAGE_METADATA_KEYS = [
@@ -198,6 +199,7 @@ PER_IMAGE_TIMING_KEYS = [
     "datastorage.writeData",
     "yogo_qsize",
     "ssaf_qsize",
+    "mem_usage_mb",
 ]
 
 if VERBOSE:

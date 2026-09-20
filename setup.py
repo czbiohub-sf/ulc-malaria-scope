@@ -31,6 +31,8 @@ setup(
         "pypylon==1.7.2",
         "zarr==2.10.1",
         "pigpio==1.78",
+        "adafruit-blinka<8.70.0",
+        "adafruit-platformdetect==3.88.0",
         "adafruit-circuitpython-pcf8523==1.5.5",
         "adafruit-circuitpython-mprls==1.2.7",
         "adafruit-circuitpython-sht31d",
@@ -40,6 +42,7 @@ setup(
         "py_cameras @ git+https://github.com/czbiohub/pyCameras@master",
         "pymotors @ git+https://github.com/czbiohub/PyMotors@master",
         "stats_utils @ git+https://github.com/czbiohub-sf/remo-stats-utils@v0.0.14",
+        "tomli==2.0.1",
         "typer==0.4.1",
         "tqdm==4.63.0",
         "transitions==0.8.11",
@@ -47,6 +50,7 @@ setup(
         "numba==0.56.0",
         "Jinja2==3.1.3",
         "xhtml2pdf==0.2.11",
+        "psutil==5.5.1",
     ],
     extras_require={
         "dev": [
@@ -66,6 +70,7 @@ setup(
             "remo-fix-focus=ulc_mm_package.utilities.coarse_focus_utility:main",
             "remo-pneumatic-calibration=ulc_mm_package.utilities.pneumatic_utility:main",
             "remo-zstack=ulc_mm_package.utilities.zstack_utility:main",
+            "remo-check-flatness=ulc_mm_package.utilities.stage_grad:main"
         ]
     },
 )

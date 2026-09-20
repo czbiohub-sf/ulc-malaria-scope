@@ -6,12 +6,12 @@ Manages hardware routines and interactions with Oracle and Acquisition.
 """
 
 import logging
-
-from typing import Any
 from time import sleep, perf_counter
+from typing import Any
 
 import cv2
 import numpy as np
+import psutil
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from transitions import Machine, State
 
@@ -133,6 +133,7 @@ class ScopeOp(QObject, NamedMachine):
         self.ambient_pressure = None
         self.mscope = None
         self.digits = int(np.log10(MAX_FRAMES - 1)) + 1
+        self.vmem = psutil.virtual_memory()
 
         self._set_exp_variables()
 
@@ -627,11 +628,12 @@ class ScopeOp(QObject, NamedMachine):
                 f"QC number of images good: {num_qc_results_good}/{num_imgs_qc} ({num_qc_results_good/num_imgs_qc:.2%})%"
             )
             self.did_run_pass_qc = self.run_status_from_qc_results(qc_results_np).value
+
+            # Save qc results
+            self.mscope.data_storage.save_qc_data(img_indices, qc_results_np)
         else:
             self.logger.warning("No QC results available. Skipping QC...")
 
-        # Save qc results
-        self.mscope.data_storage.save_qc_data(img_indices, qc_results_np)
         self.finishing_experiment.emit(80)
 
         # Turn camera back on
@@ -1150,6 +1152,9 @@ class ScopeOp(QObject, NamedMachine):
         self.frame_count += 1
         t1 = perf_counter()
         self._update_metadata_if_verbose("datastorage.writeData", t1 - t0)
+
+        mem_usage = int(psutil.virtual_memory().used / 1024**2)
+        self._update_metadata_if_verbose("mem_usage_mb", mem_usage)
 
         for key in PERIODIC_METADATA_KEYS:
             val = self.img_metadata.get(key, None)
