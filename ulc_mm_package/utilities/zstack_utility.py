@@ -553,8 +553,6 @@ def main():
         )
 
         def _fine_sweep(center: int):
-            status_label.config(f"Moving motor to center at {center}...")
-            root.update()
             motor.move_abs(center)
             if target_flowrate > 0:
                 set_flow(flow_control, target_flowrate)
