@@ -113,7 +113,7 @@ class LiveviewGUI(QMainWindow):
             self.study_layout.removeRow(0)
 
         if not items:
-            self.study_group.setVisible(False)
+            self.study_scroll.setVisible(False)
             return
 
         self.study_group.setTitle(f"Study metadata: {study_name}")
@@ -122,7 +122,7 @@ class LiveviewGUI(QMainWindow):
             val.setReadOnly(True)
             val.setCursorPosition(0)
             self.study_layout.addRow(label, val)
-        self.study_group.setVisible(True)
+        self.study_scroll.setVisible(True)
 
     def update_tcp(self, tcp_addr):
         self.tcp_lbl.setText(f"SSH: {tcp_addr}")
@@ -604,28 +604,30 @@ class LiveviewGUI(QMainWindow):
         self.notes_val.setReadOnly(True)
 
         self.metadata_layout.addWidget(self.operator_lbl, 1, 1)
-        self.metadata_layout.addWidget(self.sample_lbl, 2, 1)
-        self.metadata_layout.addWidget(self.flowcell_lbl, 3, 1)
-        self.metadata_layout.addWidget(self.target_flowrate_lbl, 4, 1)
-        self.metadata_layout.addWidget(self.site_lbl, 5, 1)
-        self.metadata_layout.addWidget(self.notes_lbl, 6, 1)
+        self.metadata_layout.addWidget(self.target_flowrate_lbl, 2, 1)
+        self.metadata_layout.addWidget(self.site_lbl, 3, 1)
+        self.metadata_layout.addWidget(self.notes_lbl, 4, 1)
 
         self.metadata_layout.addWidget(self.operator_val, 1, 2)
-        self.metadata_layout.addWidget(self.sample_val, 2, 2)
-        self.metadata_layout.addWidget(self.flowcell_val, 3, 2)
-        self.metadata_layout.addWidget(self.target_flowrate_val, 4, 2)
-        self.metadata_layout.addWidget(self.site_val, 5, 2)
-        self.metadata_layout.addWidget(self.notes_val, 6, 2)
+        self.metadata_layout.addWidget(self.target_flowrate_val, 2, 2)
+        self.metadata_layout.addWidget(self.site_val, 3, 2)
+        self.metadata_layout.addWidget(self.notes_val, 4, 2)
 
         # Additional study-specific metadata (populated only if a study is selected)
         self.study_group = QGroupBox("Study metadata")
         self.study_layout = QFormLayout()
         self.study_group.setLayout(self.study_layout)
-        study_scroll = QScrollArea()
-        study_scroll.setWidgetResizable(True)
-        study_scroll.setWidget(self.study_group)
-        self.metadata_layout.addWidget(study_scroll, 7, 1, 1, 2)
-        self.study_group.setVisible(False)
+        self.study_scroll = QScrollArea()
+        self.study_scroll.setWidgetResizable(True)
+        self.study_scroll.setWidget(self.study_group)
+        self.metadata_layout.addWidget(self.study_scroll, 5, 1, 1, 2)
+        self.study_scroll.setVisible(False)
+
+        # Sample + flowcell IDs are no longer entered in the experiment form
+        self.metadata_layout.addWidget(self.sample_lbl, 6, 1)
+        self.metadata_layout.addWidget(self.flowcell_lbl, 7, 1)
+        self.metadata_layout.addWidget(self.sample_val, 6, 2)
+        self.metadata_layout.addWidget(self.flowcell_val, 7, 2)
 
 
 if __name__ == "__main__":
