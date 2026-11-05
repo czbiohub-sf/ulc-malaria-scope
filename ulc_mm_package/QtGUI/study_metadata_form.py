@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 from typing import Dict, List, Optional, Tuple
 
-from PyQt5.QtCore import QDate
+from PyQt5.QtCore import QDate, QDateTime, QTime
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtGui import QDoubleValidator
 
@@ -73,9 +73,13 @@ def create_widget_for_field(field_def):
 
     elif t == "date":
         w = QDateTimeEdit()
-        w.setDisplayFormat("yyyy-MM-dd HH:mm:ss")
-        # w.setDate(QDate.currentDateTime())
+        w.setDisplayFormat("yyyy-MM-dd HH:mm")
+        w.setDateTime(QDateTime(QDate(2026, 1, 1), QTime(0, 0)))
         w.setCalendarPopup(True)
+        
+        # Ensure user has edited this field to consider it 'changed'
+        w.setProperty("user_edited", False)
+        w.dateTimeChanged.connect(lambda *_: w.setProperty("user_edited", True))
 
     elif t == "enum":
         w = QComboBox()
@@ -156,8 +160,8 @@ class StudyMetadata(QDialog):
                 w.currentIndexChanged.connect(lambda *_: self.check_required())
             elif hasattr(w, "valueChanged"):
                 w.valueChanged.connect(lambda *_: self.check_required())
-            elif hasattr(w, "dateChanged"):
-                w.dateChanged.connect(lambda *_: self.check_required())
+            elif hasattr(w, "dateTimeChanged"):
+                w.dateTimeChanged.connect(lambda *_: self.check_required())
 
         # run an initial check to set OK button state
         self.check_required()
@@ -177,6 +181,9 @@ class StudyMetadata(QDialog):
         return None
 
     def _is_empty(self, w) -> bool:
+        if isinstance(w, QDateTimeEdit):
+            # Date widgets always display a value, so treat an untouched default as empty
+            return not w.property("user_edited")
         text = self._get_widget_text(w)
         return (text is not None) and (not text.strip())
 
@@ -212,7 +219,13 @@ class StudyMetadata(QDialog):
     def check_required(self):
         """Ensure that all required widgets have a value."""
         self.btn_start.setEnabled(
-            all([self._has_value_and_valid(x) for x in self._required_widgets])
+            all(
+                [
+                    self._has_value_and_valid(x)
+                    and not (isinstance(x, QDateTimeEdit) and self._is_empty(x))
+                    for x in self._required_widgets
+                ]
+            )
         )
 
     def validate(self):
