@@ -124,20 +124,20 @@ class FormGUI(QDialog):
 
         # Place widgets
         self.main_layout.addWidget(self.operator_lbl, 0, 0)
-        self.main_layout.addWidget(self.sample_id_lbl, 1, 0)
+        # self.main_layout.addWidget(self.sample_id_lbl, 1, 0)
         self.main_layout.addWidget(self.study_select_lbl, 2, 0)
-        self.main_layout.addWidget(self.flowcell_lbl, 5, 0)
+        # self.main_layout.addWidget(self.flowcell_lbl, 5, 0)
         self.main_layout.addWidget(self.site_lbl, 6, 0)
-        self.main_layout.addWidget(self.sample_lbl, 7, 0)
+        # self.main_layout.addWidget(self.sample_lbl, 7, 0)
         self.main_layout.addWidget(self.notes_lbl, 8, 0)
         self.main_layout.addWidget(self.exit_btn, 9, 0)
 
         self.main_layout.addWidget(self.operator_val, 0, 1)
-        self.main_layout.addWidget(self.sample_id_val, 1, 1)
+        # self.main_layout.addWidget(self.sample_id_val, 1, 1)
         self.main_layout.addWidget(self.study_select_val, 2, 1)
-        self.main_layout.addWidget(self.flowcell_val, 5, 1)
+        # self.main_layout.addWidget(self.flowcell_val, 5, 1)
         self.main_layout.addWidget(self.site_val, 6, 1)
-        self.main_layout.addWidget(self.sample_val, 7, 1)
+        # self.main_layout.addWidget(self.sample_val, 7, 1)
         self.main_layout.addWidget(self.notes_val, 8, 1)
         self.main_layout.addWidget(self.start_btn, 9, 1)
 
