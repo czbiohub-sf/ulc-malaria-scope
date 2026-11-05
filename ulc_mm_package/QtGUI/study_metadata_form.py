@@ -74,7 +74,7 @@ def create_widget_for_field(field_def):
     elif t == "date":
         w = QDateEdit()
         w.setDisplayFormat("yyyy-MM-dd HH:mm:ss")
-        w.setDate(QDate.currentDateTime())
+        # w.setDate(QDate.currentDateTime())
         w.setCalendarPopup(True)
 
     elif t == "enum":
