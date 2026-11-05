@@ -187,9 +187,10 @@ class StudyMetadata(QDialog):
         text = self._get_widget_text(w)
         return (text is not None) and (not text.strip())
 
-    def _has_value_and_valid(self, w: QWidget) -> bool:
+    def _has_value_and_valid(self, w: QWidget, required: bool = False) -> bool:
+        # A blank optional field is fine; a blank required field is not
         if self._is_empty(w):
-            return True
+            return not required
 
         if isinstance(w, QTextEdit):
             return bool(w.toPlainText().strip())
@@ -221,8 +222,7 @@ class StudyMetadata(QDialog):
         self.btn_start.setEnabled(
             all(
                 [
-                    self._has_value_and_valid(x)
-                    and not (isinstance(x, QDateTimeEdit) and self._is_empty(x))
+                    self._has_value_and_valid(x, required=True)
                     for x in self._required_widgets
                 ]
             )
