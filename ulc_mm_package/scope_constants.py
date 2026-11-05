@@ -8,6 +8,9 @@ from collections import namedtuple
 
 curr_dir = Path(__file__).parent.resolve()  # Get full path
 
+# Study configuration files (.toml)
+STUDY_CONFIG_PATH = curr_dir / "study_configurations"
+
 # RESEARCH USE ONLY DISCLAIMER
 RESEARCH_USE_ONLY = "For Research Use Only. Not for use in diagnostic procedures.\nClick OK to acknowledge that this device is for RESEARCH USE ONLY."
 

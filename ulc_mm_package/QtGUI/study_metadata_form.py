@@ -22,6 +22,8 @@ from PyQt5.QtWidgets import (
 )
 import tomli
 
+from ulc_mm_package.scope_constants import STUDY_CONFIG_PATH
+
 DATATYPE_TO_WIDGET = {
     "string": "lineedit",
     "int": "spinbox",
@@ -301,8 +303,7 @@ def list_available_studies() -> Dict[str, dict]:
     -------
     A dictionary mapping the study name (as defined in its toml file) to its parsed dictionary.
     """
-    study_config_dir = Path(__file__).resolve().parent.parent / "study_configurations"
-    possible_studies = list(study_config_dir.parent.rglob("*.toml"))
+    possible_studies = list(STUDY_CONFIG_PATH.rglob("*.toml"))
     valid_studies = [x for x in possible_studies if x.stem[0] != "_"]
 
     study_name_to_metadata: dict = {}
