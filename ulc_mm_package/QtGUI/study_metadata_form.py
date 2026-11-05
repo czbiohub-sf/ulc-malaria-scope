@@ -35,6 +35,22 @@ DATATYPE_TO_WIDGET = {
 }
 
 
+def _field_flag(field_def: dict, name: str, default: bool) -> bool:
+    """Read a boolean flag (e.g. `required`, `show_gui`) from a field definition.
+    
+    Accept both TOML booleans and quoted strings ()"true"/"false")
+    """
+    
+    value = field_def.get(name, default)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.strip().lower() in ("true", "false"):
+        return value.strip().lower() == "true"
+    raise ValueError(
+        f"`{name}` must be true or false for field {field_def.get('label')!r}, got {value!r}"
+    )
+
+
 def create_widget_for_field(field_def):
     t = field_def["datatype"]
 
@@ -139,10 +155,11 @@ class StudyMetadata(QDialog):
 
             widget = create_widget_for_field(field)
             self._widgets[field["label"]] = (widget, field)
-            if field.get("required") is True and field.get("show_gui") is not False:
+            show_gui = _field_flag(field, "show_gui", default=True)
+            if _field_flag(field, "required", default=False) and show_gui:
                 self._required_widgets.append(widget)
                 self.btn_start.setEnabled(False)
-            if field.get("show_gui") is not False:
+            if show_gui:
                 layout.addRow(label, widget)
 
         self.btn_start.clicked.connect(self.validate)
@@ -210,7 +227,7 @@ class StudyMetadata(QDialog):
         return False
 
     def _check_widget(self, w: QWidget, field: dict) -> Tuple[bool, str]:
-        required = field.get("required")
+        required = _field_flag(field, "required", default=False)
         if self._is_empty(w) and required:
             return False, "Required"
 
