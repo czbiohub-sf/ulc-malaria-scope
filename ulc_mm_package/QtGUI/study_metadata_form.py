@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
     QAbstractItemView,
     QComboBox,
     QDialog,
-    QDateEdit,
+    QDateTimeEdit,
     QFormLayout,
     QLineEdit,
     QListWidget,
@@ -72,7 +72,7 @@ def create_widget_for_field(field_def):
         w.setValidator(validator)
 
     elif t == "date":
-        w = QDateEdit()
+        w = QDateTimeEdit()
         w.setDisplayFormat("yyyy-MM-dd HH:mm:ss")
         # w.setDate(QDate.currentDateTime())
         w.setCalendarPopup(True)
