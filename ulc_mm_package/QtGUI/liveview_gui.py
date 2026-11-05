@@ -4,7 +4,7 @@ Displays camera preview and conveys info to user during runs."""
 
 import sys
 from functools import partial
-from typing import List, NamedTuple, Dict, Tuple
+from typing import List, NamedTuple, Dict, Optional, Tuple
 from time import strftime, gmtime
 
 from qimage2ndarray import gray2qimage
@@ -28,6 +28,9 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QScrollBar,
     QDesktopWidget,
+    QFormLayout,
+    QGroupBox,
+    QScrollArea,
 )
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QSize
 from PyQt5.QtGui import QPixmap, QIcon
@@ -100,6 +103,26 @@ class LiveviewGUI(QMainWindow):
         # Update target flowrate in infopanel
         self.target_flowrate = metadata["target_flowrate"][1]
         self.flowrate_lbl.setText(f"Target = {self.target_flowrate}")
+
+    def update_study_metadata(
+        self, study_name: Optional[str], items: Optional[List[Tuple[str, str]]]
+    ):
+        """Display (label, value) pairs from the study metadata form.
+        Pass None to clear and hide the study section."""
+        while self.study_layout.rowCount() > 0:
+            self.study_layout.removeRow(0)
+
+        if not items:
+            self.study_group.setVisible(False)
+            return
+
+        self.study_group.setTitle(f"Study metadata: {study_name}")
+        for label, value in items:
+            val = QLineEdit(value)
+            val.setReadOnly(True)
+            val.setCursorPosition(0)
+            self.study_layout.addRow(label, val)
+        self.study_group.setVisible(True)
 
     def update_tcp(self, tcp_addr):
         self.tcp_lbl.setText(f"SSH: {tcp_addr}")
@@ -593,6 +616,16 @@ class LiveviewGUI(QMainWindow):
         self.metadata_layout.addWidget(self.target_flowrate_val, 4, 2)
         self.metadata_layout.addWidget(self.site_val, 5, 2)
         self.metadata_layout.addWidget(self.notes_val, 6, 2)
+
+        # Additional study-specific metadata (populated only if a study is selected)
+        self.study_group = QGroupBox("Study metadata")
+        self.study_layout = QFormLayout()
+        self.study_group.setLayout(self.study_layout)
+        study_scroll = QScrollArea()
+        study_scroll.setWidgetResizable(True)
+        study_scroll.setWidget(self.study_group)
+        self.metadata_layout.addWidget(study_scroll, 7, 1, 1, 2)
+        self.study_group.setVisible(False)
 
 
 if __name__ == "__main__":

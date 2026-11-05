@@ -211,6 +211,7 @@ class Oracle(Machine):
         # Instantiate metadata dicts
         self.form_metadata = None
         self.study_metadata = None
+        self.study_display = None
         self.experiment_metadata = {key: None for key in EXPERIMENT_METADATA_KEYS}
 
         self.liveview_window.set_infopanel_vals()
@@ -646,6 +647,10 @@ class Oracle(Machine):
 
     def get_study_metadata(self):
         self.study_metadata = self.study_form_dialog.get_form_input()
+        self.study_display = (
+            self.study_form_dialog.config_data["study_description"]["name"],
+            self.study_form_dialog.get_display_input(),
+        )
         self.study_form_dialog.close()
         self.save_form()
 
@@ -653,6 +658,9 @@ class Oracle(Machine):
         self.form_metadata = self.form_window.get_form_input()
         self.form_window.reset_parameters()
         self.liveview_window.update_experiment(self.form_metadata)
+        self.liveview_window.update_study_metadata(
+            *(self.study_display or (None, None))
+        )
         self.liveview_window.clear_thumbnails()
 
         for key in self.form_metadata:

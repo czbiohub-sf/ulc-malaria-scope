@@ -256,6 +256,21 @@ class StudyMetadata(QDialog):
                 return
         self.accept()
 
+    def get_display_input(self) -> List[Tuple[str, str]]:
+        """Return (label, value) pairs of the GUI-visible fields, formatted for display."""
+        items = []
+        for label, (widget, field) in self._widgets.items():
+            if not _field_flag(field, "show_gui", default=True):
+                continue
+            if isinstance(widget, QDateTimeEdit):
+                value = widget.text() if widget.property("user_edited") else ""
+            elif isinstance(widget, QListWidget):
+                value = ", ".join(x.text() for x in widget.selectedItems())
+            else:
+                value = self._get_widget_text(widget) or ""
+            items.append((label, value))
+        return items
+
     def get_form_input(self):
         result = {"study_id": self.config_data["study_description"]["key"]}
         errors = []
@@ -277,8 +292,7 @@ class StudyMetadata(QDialog):
                     None if not text else float(re.sub(r"[^\d.]", "", widget.text()))
                 )
             elif t == "date":
-                qd = widget.date()
-                value = qd.toString("yyyy-MM-dd")
+                value = widget.dateTime().toString("yyyy-MM-dd HH:mm")
             elif t == "enum":
                 value = widget.currentText()
             elif t == "bool":
