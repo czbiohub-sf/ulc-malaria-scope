@@ -30,6 +30,11 @@ from ulc_mm_package.QtGUI.gui_constants import (
     TOOLBAR_OFFSET,
 )
 import ulc_mm_package.QtGUI.study_metadata_form as study_form
+from ulc_mm_package.QtGUI.user_defaults import (
+    STUDY_SELECTION_KEY,
+    load_user_defaults,
+    save_user_default,
+)
 
 
 class FormGUI(QDialog):
@@ -114,7 +119,14 @@ class FormGUI(QDialog):
         self.study_select_val.addItems(
             list(study_form.list_available_studies().keys()) + [""]
         )
-        self.study_select_val.setCurrentIndex(-1)
+        # Preselect the study chosen on the last run, if it's still available
+        self.study_select_val.setCurrentIndex(
+            self.study_select_val.findText(
+                load_user_defaults().get(STUDY_SELECTION_KEY, "")
+            )
+        )
+        if self.study_select_val.currentText() == "":
+            self.study_select_val.setCurrentIndex(-1)
 
         if SITE_ENV_VAR is not None:
             self.site_val.setEnabled(False)
@@ -144,6 +156,12 @@ class FormGUI(QDialog):
         # Set the focus order
         self.operator_val.setFocus()
         self.start_btn.setDefault(True)
+
+        # Remember the selected study for the next run
+        self.start_btn.clicked.connect(self._save_study_selection)
+
+    def _save_study_selection(self) -> None:
+        save_user_default(STUDY_SELECTION_KEY, self.study_select_val.currentText())
 
     def get_form_input(self) -> dict:
         study_name = self.study_select_val.currentText()
