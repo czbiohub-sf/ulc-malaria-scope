@@ -128,8 +128,8 @@ class FormGUI(QDialog):
         if self.study_select_val.currentText() == "":
             self.study_select_val.setCurrentIndex(-1)
 
-        if SITE_ENV_VAR is not None:
-            self.site_val.setEnabled(False)
+        # if SITE_ENV_VAR is not None:
+        #     self.site_val.setEnabled(False)
 
         # Set tab behavior
         self.notes_val.setTabChangesFocus(True)

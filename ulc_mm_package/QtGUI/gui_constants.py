@@ -57,15 +57,16 @@ THUMBNAIL_SPACING = 5
 
 # ================ Dropdown menu options ================ #
 SITE_LIST = [
-    "Tororo, Uganda",
-    "Masafu, Uganda",
-    "Biohub SF",
-    "DeRisi Lab",
-    "Filipa Lab",
-    "Rosenthal/Conrad Lab",
-    "Goodlife Kigali",
-    "Goodlife Musanze",
+    # "Tororo, Uganda",
+    # "Masafu, Uganda",
+    # "Biohub SF",
+    # "DeRisi Lab",
+    # "Filipa Lab",
+    # "Rosenthal/Conrad Lab",
+    # "Goodlife Kigali",
+    # "Goodlife Musanze",
     "Rabuor Sub-County Hospital, Kenya",
+    "Kakamega Sub-County Hospital, Kenya"
 ]
 
 # Reorder the site list to move the environment variable specified default site to the first location
