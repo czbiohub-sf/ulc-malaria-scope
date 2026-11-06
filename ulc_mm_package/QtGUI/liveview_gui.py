@@ -94,8 +94,6 @@ class LiveviewGUI(QMainWindow):
     def update_experiment(self, metadata: dict):
         # TODO standardize dict input
         self.operator_val.setText(f"{metadata['operator_id']}")
-        self.sample_val.setText(f"{metadata['sample_id']}")
-        self.flowcell_val.setText(f"{metadata['flowcell_id']}")
         self.target_flowrate_val.setText(f"{metadata['target_flowrate'][0]}")
         self.site_val.setText(f"{metadata['site']}")
         self.notes_val.setPlainText(f"{metadata['notes']}")
@@ -583,22 +581,16 @@ class LiveviewGUI(QMainWindow):
 
         # Populate metadata tab
         self.operator_lbl = QLabel("Operator ID")
-        self.sample_lbl = QLabel("Sample ID")
-        self.flowcell_lbl = QLabel("Flowcell ID")
         self.target_flowrate_lbl = QLabel("Flowrate")
         self.site_lbl = QLabel("Site")
         self.notes_lbl = QLabel("Other notes")
 
         self.operator_val = QLineEdit()
-        self.sample_val = QLineEdit()
-        self.flowcell_val = QLineEdit()
         self.target_flowrate_val = QLineEdit()
         self.site_val = QLineEdit()
         self.notes_val = QPlainTextEdit()
 
         self.operator_val.setReadOnly(True)
-        self.sample_val.setReadOnly(True)
-        self.flowcell_val.setReadOnly(True)
         self.target_flowrate_val.setReadOnly(True)
         self.site_val.setReadOnly(True)
         self.notes_val.setReadOnly(True)
@@ -622,12 +614,6 @@ class LiveviewGUI(QMainWindow):
         self.study_scroll.setWidget(self.study_group)
         self.metadata_layout.addWidget(self.study_scroll, 5, 1, 1, 2)
         self.study_scroll.setVisible(False)
-
-        # Sample + flowcell IDs are no longer entered in the experiment form
-        self.metadata_layout.addWidget(self.sample_lbl, 6, 1)
-        self.metadata_layout.addWidget(self.flowcell_lbl, 7, 1)
-        self.metadata_layout.addWidget(self.sample_val, 6, 2)
-        self.metadata_layout.addWidget(self.flowcell_val, 7, 2)
 
 
 if __name__ == "__main__":
